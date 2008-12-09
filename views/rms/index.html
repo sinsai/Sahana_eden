@@ -1,0 +1,21 @@
+{{extend 'layout.html'}}
+
+<div id="home">
+{{=H2(T(title))}}
+<p>
+{{=T("The")}} {{=T(title)}} {{=T("System is a central online repository where all relief organizations, relief workers, government agents and camp sites for displaced personnels can coordinate the supply of the aids with their demand. It allows users to allocate the available resources to fulfill the demands effectively and efficiently.")}} 
+</p>
+<h3>{{=T("Features Include")}}:</h3>
+<ul>
+<li>{{=T("Basic information on the requests and donations, such as category, the units, contact details and the status.")}}</li>
+<li>{{=T("Customisable category of aid")}}</li>
+<li>{{=T("Filtered search of aid pledges and requests")}}</li>
+<li>{{=T("Ability to track partial fulfillment of the request")}}</li>
+</ul>
+<strong>{{=T("Description of Actions")}}:</strong><br/>
+<ul>
+{{for option in options:}}
+<li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+{{pass}}
+</ul>
+</div>

@@ -1,0 +1,20 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>{{=response.title or URL(r=request)}}</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="{{=response.keywords}}" />
+<meta name="description" content="{{=response.description}}" />
+
+<link rel="stylesheet" type="text/css" href="/sahana/static/mfbase/ext/resources/css/ext-all.css" />
+<script type="text/javascript" src="/sahana/static/mfbase/ext/adapter/ext/ext-base.js"></script>
+<!-- Change to ext-all.js for Production installs -->
+<script type="text/javascript" src="/sahana/static/mfbase/ext/ext-all-debug.js"></script>
+
+{{include}}
+
+</head>
+<body>
+ <div id="map"></div>
+</body>
+</html>

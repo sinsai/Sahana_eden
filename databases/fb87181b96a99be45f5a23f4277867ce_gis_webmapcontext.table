@@ -1,0 +1,14 @@
+(dp1
+S'modified_on'
+p2
+S'TIMESTAMP'
+p3
+sS'id'
+p4
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p5
+sS'user'
+p6
+S'REFERENCES user(id) ON DELETE CASCADE'
+p7
+s.

@@ -1,0 +1,19 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+ {{=H2(T(title))}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=keys}}
+{{except:}}
+{{pass}}
+<p>&nbsp;</p>
+<strong>{{=T("Add New Key")}}:</strong>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+<p>&nbsp;</p>
+</div>

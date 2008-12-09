@@ -1,0 +1,30 @@
+(dp1
+S'date_of_death'
+p2
+S'DATE'
+p3
+sS'person'
+p4
+S'REFERENCES person(id) ON DELETE CASCADE'
+p5
+sS'details'
+p6
+S'CHAR(32)'
+p7
+sS'modified_on'
+p8
+S'TIMESTAMP'
+p9
+sS'place_of_death'
+p10
+S'CHAR(32)'
+p11
+sS'id'
+p12
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p13
+sS'comments'
+p14
+S'CHAR(256)'
+p15
+s.

@@ -1,0 +1,21 @@
+{{extend 'layout.html'}}
+
+<div id="home">
+{{=H2(T(title))}}
+<p>
+{{=T("The")}} {{=T(title)}} {{=T("System is a database to keep track of all aid items and supplies kept in your Organization's inventories. It not only keeps track of the location and quantities of items available, but it also tracks expiry dates, re-order levels and items in transit. The system is designed to be simple to a diverse groups of users to interact and manage stocks in inventories located around the region.")}}
+</p>
+<h3>{{=T("Features Include")}}:</h3>
+<ul>
+<li><a>{{=T("Find Items")}}:</a><br/>
+{{=T("Enables end user to search items available in ware houses. End-User is also allowed to search available items, expired items and already destroyed items.")}}</li>
+<li><a>{{=T("List Inventories")}}:</a><br/>
+{{=T("Facilitates to manage multiple Inventories and enables end-user to add,edit or delete Inventories.")}}</li>
+</ul>
+<strong>{{=T("Description of Actions")}}:</strong><br/>
+<ul>
+{{for option in options:}}
+<li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+{{pass}}
+</ul>
+</div>

@@ -1,0 +1,7 @@
+sessions/*
+.raw_sahana/*
+static/.mfexamples/*
+static/mfbase/ext/.examples/*
+static/mfbase/openlayers/.examples/*
+static/*/.svn/*
+static/*test*

@@ -1,0 +1,34 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+ {{=H2(T(title))}}
+{{except:}}
+{{pass}}
+<table>
+<tr><td id='btn-panel'>
+<input type="button" id="defaults-btn" value="{{=T("Defaults")}}" />
+</td><td id='btn-panel'>
+<input type="button" id="files-btn" value="{{=T("Files")}}" />
+</td><td id='btn-panel'>
+<input type="button" id="keys-btn" value="{{=T("Keys")}}" />
+</td><td id='btn-panel'>
+<input type="button" id="markers-btn" value="{{=T("Markers")}}" />
+</td><td id='btn-panel'>
+<input type="button" id="projections-btn" value="{{=T("Projections")}}" />
+</td></tr>
+</table>
+<p>&nbsp;</p>
+<div class='form-container'>
+<h3>{{=T("Layers")}}:</h3>
+{{try:}}
+ {{=layers}}
+{{except:}}
+{{pass}}
+<p>&nbsp;</p>
+<strong>{{=T("Add New Layer")}}:</strong>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+<p>&nbsp;</p>
+</div>

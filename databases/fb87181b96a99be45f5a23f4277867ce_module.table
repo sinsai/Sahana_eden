@@ -1,0 +1,26 @@
+(dp1
+S'name'
+p2
+S'CHAR(32)'
+p3
+sS'enabled'
+p4
+S'CHAR(32)'
+p5
+sS'name_nice'
+p6
+S'CHAR(32)'
+p7
+sS'menu_priority'
+p8
+S'INTEGER'
+p9
+sS'id'
+p10
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p11
+sS'description'
+p12
+S'CHAR(256)'
+p13
+s.

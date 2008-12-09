@@ -1,0 +1,20 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+ {{=H2(T(title))}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+<h3>{{=T("Layers")}}:</h3>
+{{try:}}
+ {{=layers}}
+{{except:}}
+{{pass}}
+<p>&nbsp;</p>
+<strong>{{=T("Add New Layer")}}:</strong>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+<p>&nbsp;</p>
+</div>

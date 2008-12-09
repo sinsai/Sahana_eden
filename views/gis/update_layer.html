@@ -1,0 +1,13 @@
+{{extend 'layout.html'}}
+
+<div class='form-container'>
+<h2>{{=T("Edit Layer")}}</h2>
+
+{{try:}}
+{{=form}}
+{{except:}}
+{{pass}}
+
+<p>&nbsp;</p>
+</div>
+{{=A(T("Map Service Catalogue"),_href=t2.action('map_service_catalogue'))}}

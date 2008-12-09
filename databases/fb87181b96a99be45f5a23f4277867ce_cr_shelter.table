@@ -1,0 +1,38 @@
+(dp1
+S'capacity'
+p2
+S'INTEGER'
+p3
+sS'description'
+p4
+S'CHAR(256)'
+p5
+sS'contact'
+p6
+S'REFERENCES contact(id) ON DELETE CASCADE'
+p7
+sS'location'
+p8
+S'REFERENCES gis_feature(id) ON DELETE CASCADE'
+p9
+sS'shelters'
+p10
+S'INTEGER'
+p11
+sS'address'
+p12
+S'CHAR(256)'
+p13
+sS'modified_on'
+p14
+S'TIMESTAMP'
+p15
+sS'id'
+p16
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p17
+sS'name'
+p18
+S'CHAR(32)'
+p19
+s.

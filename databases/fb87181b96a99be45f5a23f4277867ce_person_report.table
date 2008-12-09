@@ -1,0 +1,22 @@
+(dp1
+S'modified_on'
+p2
+S'TIMESTAMP'
+p3
+sS'person'
+p4
+S'REFERENCES person(id) ON DELETE CASCADE'
+p5
+sS'relation'
+p6
+S'CHAR(32)'
+p7
+sS'id'
+p8
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p9
+sS'reporter'
+p10
+S'REFERENCES person(id) ON DELETE CASCADE'
+p11
+s.

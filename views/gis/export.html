@@ -1,0 +1,7 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+{{=H2(T(title))}}
+{{except:}}
+{{=BEAUTIFY(response._vars)}}
+{{pass}}

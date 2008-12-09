@@ -1,0 +1,30 @@
+(dp1
+S'layer'
+p2
+S'REFERENCES gis_layer(id) ON DELETE CASCADE'
+p3
+sS'name'
+p4
+S'REFERENCES gis_layer(id) ON DELETE CASCADE'
+p5
+sS'visible'
+p6
+S'CHAR(32)'
+p7
+sS'key'
+p8
+S'REFERENCES gis_key(id) ON DELETE CASCADE'
+p9
+sS'modified_on'
+p10
+S'TIMESTAMP'
+p11
+sS'type'
+p12
+S'CHAR(32)'
+p13
+sS'id'
+p14
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p15
+s.

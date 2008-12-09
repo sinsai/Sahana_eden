@@ -1,0 +1,19 @@
+{{extend 'layout.html'}}
+
+<div id="home">
+{{=H2(T(title))}}
+<p>
+{{=T("The")}} {{=T(title)}} {{=T("module provides a mechanism to collaboratively provide an overview of the developing disaster, using online mapping (GIS). You can add markers and pictures to pin point incidents on the map.")}}
+</p>
+<h3>{{=T("Features Include")}}:</h3>
+<ul>
+<li>{{=T("Provides a map based view of the disaster situtation")}}</li>
+<li>{{=T("Allow users to collaboratively add markers of the developing disaster situation")}}</li>
+</ul>
+<strong>{{=T("Description of Actions")}}:</strong><br/>
+<ul>
+{{for option in options:}}
+<li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+{{pass}}
+</ul>
+</div>

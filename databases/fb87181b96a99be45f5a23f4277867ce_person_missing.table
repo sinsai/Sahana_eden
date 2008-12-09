@@ -1,0 +1,26 @@
+(dp1
+S'last_clothing'
+p2
+S'CHAR(32)'
+p3
+sS'comments'
+p4
+S'CHAR(256)'
+p5
+sS'person'
+p6
+S'REFERENCES person(id) ON DELETE CASCADE'
+p7
+sS'modified_on'
+p8
+S'TIMESTAMP'
+p9
+sS'id'
+p10
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p11
+sS'last_seen'
+p12
+S'CHAR(32)'
+p13
+s.

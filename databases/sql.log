@@ -1,0 +1,952 @@
+timestamp: 2008-11-30T11:06:07.078000
+CREATE TABLE user(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	password CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:06:07.203000
+CREATE TABLE gis_webmapcontext(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	user REFERENCES user(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-11-30T11:06:07.343000
+CREATE TABLE gis_feature(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	feature_class CHAR(32),
+	metadata CHAR(32),
+	type CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:09:34.046000
+CREATE TABLE gis_feature_metadata(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	author REFERENCES user(id) ON DELETE CASCADE,
+	timestamp_event TIMESTAMP,
+	timestamp_added TIMESTAMP
+);
+success!
+timestamp: 2008-11-30T11:09:34.250000
+CREATE TABLE gis_feature_class(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:41:44.625000
+CREATE TABLE gis_projection(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:41:44.812000
+CREATE TABLE gis_style(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:41:44.968000
+CREATE TABLE gis_layer(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:41:45.109000
+CREATE TABLE gis_layer_wms(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:52:17.046000
+CREATE TABLE module(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-11-30T11:52:17.234000
+ALTER TABLE gis_layer ADD type CHAR(32);
+success!
+timestamp: 2008-11-30T11:52:17.390000
+ALTER TABLE gis_layer_wms ADD url CHAR(32);
+success!
+timestamp: 2008-11-30T12:33:13.671000
+ALTER TABLE gis_feature ADD lon CHAR(32);
+success!
+timestamp: 2008-11-30T12:33:13.781000
+ALTER TABLE gis_feature ADD lat CHAR(32);
+success!
+timestamp: 2008-11-30T15:05:08.781000
+CREATE TABLE gis_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-11-30T17:09:05.750000
+CREATE TABLE gis_feature_group(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	author REFERENCES user(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-11-30T17:09:05.890000
+ALTER TABLE gis_layer ADD enabled CHAR(32);
+success!
+timestamp: 2008-11-30T17:09:06.046000
+CREATE TABLE gis_layer_internal(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	group CHAR(32)
+);
+timestamp: 2008-11-30T17:12:13.671000
+CREATE TABLE gis_layer_internal(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	group CHAR(32)
+);
+timestamp: 2008-11-30T17:23:29.843000
+CREATE TABLE gis_layer_internal(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	group REFERENCES gis_feature_group(id) ON DELETE CASCADE
+);
+timestamp: 2008-11-30T17:24:07.750000
+CREATE TABLE gis_layer_internal(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	feature_group REFERENCES gis_feature_group(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-11-30T17:24:07.906000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	type CHAR(32),
+	visible CHAR(32)
+);
+success!
+timestamp: 2008-11-30T17:24:08.046000
+ALTER TABLE gis_layer_wms ADD visible CHAR(32);
+success!
+timestamp: 2008-11-30T17:24:08.187000
+CREATE TABLE gis_key(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	service CHAR(32),
+	key CHAR(32)
+);
+success!
+timestamp: 2008-11-30T17:24:08.359000
+ALTER TABLE gis_projection ADD epsg CHAR(32);
+success!
+timestamp: 2008-11-30T18:23:49.796000
+CREATE TABLE t2_person(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	email CHAR(32),
+	registration_key CHAR(64),
+	password CHAR(32),
+	created_by_ip CHAR(32),
+	created_on TIMESTAMP
+);
+success!
+timestamp: 2008-11-30T18:23:49.968000
+CREATE TABLE t2_group(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description TEXT,
+	created_on TIMESTAMP,
+	created_by INTEGER,
+	created_signature CHAR(32)
+);
+success!
+timestamp: 2008-11-30T18:23:50.156000
+CREATE TABLE t2_membership(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	person_id REFERENCES t2_person(id) ON DELETE CASCADE,
+	group_id REFERENCES t2_group(id) ON DELETE CASCADE,
+	membership_type CHAR(32),
+	status CHAR(32),
+	created_on TIMESTAMP,
+	created_by INTEGER,
+	created_signature CHAR(32)
+);
+success!
+timestamp: 2008-11-30T18:23:50.296000
+CREATE TABLE t2_access(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	group_id REFERENCES t2_group(id) ON DELETE CASCADE,
+	table_name CHAR(32),
+	record_id INTEGER,
+	access_type CHAR(32),
+	created_on TIMESTAMP,
+	created_by INTEGER,
+	created_signature CHAR(32)
+);
+success!
+timestamp: 2008-11-30T18:23:50.484000
+CREATE TABLE t2_attachment(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	table_name CHAR(32),
+	record_id INTEGER,
+	created_on TIMESTAMP,
+	created_by INTEGER,
+	created_signature CHAR(32),
+	name CHAR(32),
+	description TEXT,
+	file CHAR(128),
+	file_data BLOB,
+	filename CHAR(32),
+	status CHAR(32)
+);
+success!
+timestamp: 2008-11-30T18:23:50.718000
+CREATE TABLE t2_comment(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	table_name CHAR(32),
+	record_id INTEGER,
+	parent_record INTEGER,
+	created_by INTEGER,
+	created_signature CHAR(32),
+	created_on TIMESTAMP,
+	body TEXT,
+	status CHAR(32)
+);
+success!
+timestamp: 2008-11-30T18:23:50.890000
+CREATE TABLE t2_review(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	table_name CHAR(32),
+	record_id INTEGER,
+	rating INTEGER,
+	created_by INTEGER,
+	created_signature CHAR(32),
+	created_on TIMESTAMP,
+	body TEXT,
+	status CHAR(32)
+);
+success!
+timestamp: 2008-11-30T18:40:30.359000
+ALTER TABLE gis_layer ADD description CHAR(256);
+success!
+timestamp: 2008-11-30T20:37:11.671000
+CREATE TABLE gis_map(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-11-30T20:46:50.687000
+CREATE TABLE gis_marker(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	image CHAR(128)
+);
+success!
+timestamp: 2008-11-30T21:53:06.390000
+CREATE TABLE gis_layer_base(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	type CHAR(32)
+);
+success!
+timestamp: 2008-11-30T21:53:06.578000
+CREATE TABLE gis_layer_overlay(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	type CHAR(32)
+);
+success!
+timestamp: 2008-12-01T18:46:51.203000
+ALTER TABLE module ADD name_nice CHAR(32);
+success!
+timestamp: 2008-12-01T19:16:47.687000
+CREATE TABLE gis_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T19:23:25.250000
+ALTER TABLE gis_menu_option ADD priority CHAR(32);
+success!
+timestamp: 2008-12-01T19:26:26
+ALTER TABLE module ADD menu_priority INTEGER;
+success!
+timestamp: 2008-12-01T21:37:30.015000
+CREATE TABLE cr_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T21:37:30.203000
+CREATE TABLE dvr_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T21:37:30.375000
+CREATE TABLE ims_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T21:37:30.593000
+CREATE TABLE mpr_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T21:37:30.859000
+CREATE TABLE or_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T21:37:31.015000
+CREATE TABLE rms_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T21:37:31.218000
+CREATE TABLE vol_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(32)
+);
+success!
+timestamp: 2008-12-01T22:32:21.484000
+ALTER TABLE gis_layer_overlay ADD visible CHAR(1);
+success!
+timestamp: 2008-12-01T22:32:21.609000
+CREATE TABLE gis_layer_base_wms(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	url CHAR(32)
+);
+success!
+timestamp: 2008-12-01T22:32:21.750000
+CREATE TABLE gis_layer_overlay_wms(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name REFERENCES gis_layer(id) ON DELETE CASCADE,
+	url CHAR(32)
+);
+success!
+timestamp: 2008-12-01T22:54:15.953000
+ALTER TABLE gis_layer_google ADD key REFERENCES gis_key(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-02T10:49:24.765000
+ALTER TABLE gis_layer_base ADD layer_id REFERENCES gis_layer(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-02T15:00:36.562000
+ALTER TABLE gis_layer ADD feature_group REFERENCES gis_feature_group(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-02T15:00:36.718000
+ALTER TABLE gis_layer ADD visible CHAR(1);
+success!
+timestamp: 2008-12-02T15:00:36.890000
+ALTER TABLE gis_layer ADD url CHAR(32);
+success!
+timestamp: 2008-12-02T15:00:37.031000
+ALTER TABLE gis_layer ADD subtype CHAR(32);
+success!
+timestamp: 2008-12-02T15:00:37.140000
+ALTER TABLE gis_layer ADD base CHAR(1);
+success!
+timestamp: 2008-12-02T15:00:37.265000
+ALTER TABLE gis_layer ADD key REFERENCES gis_key(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-02T15:40:36.562000
+ALTER TABLE gis_layer ADD feature_group_id REFERENCES gis_feature_group(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-02T21:34:41.546000
+ALTER TABLE gis_key ADD description CHAR(256);
+success!
+timestamp: 2008-12-02T22:15:43.156000
+ALTER TABLE gis_feature ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:43.343000
+ALTER TABLE gis_feature_metadata ADD modified_by REFERENCES t2_person(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-02T22:15:43.515000
+ALTER TABLE gis_feature_metadata ADD event_time TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:43.640000
+ALTER TABLE gis_feature_metadata ADD created_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:43.796000
+ALTER TABLE gis_feature_metadata ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:43.968000
+ALTER TABLE gis_feature_class ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:44.140000
+ALTER TABLE gis_feature_group ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:44.312000
+ALTER TABLE gis_key ADD displays CHAR(32);
+success!
+timestamp: 2008-12-02T22:15:44.453000
+ALTER TABLE gis_key ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:44.625000
+ALTER TABLE gis_layer ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:44.781000
+ALTER TABLE gis_projection ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:44.906000
+ALTER TABLE gis_marker ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:45.093000
+ALTER TABLE gis_map ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:45.234000
+ALTER TABLE gis_style ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-02T22:15:45.375000
+ALTER TABLE gis_webmapcontext ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-03T07:34:08
+CREATE TABLE gis(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	key CHAR(32),
+	service CHAR(32)
+);
+success!
+timestamp: 2008-12-03T23:21:01.578000
+CREATE TABLE home_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2008-12-05T18:36:57.875000
+CREATE TABLE gis_default(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	setting CHAR(32),
+	description CHAR(256),
+	value CHAR(32)
+);
+success!
+timestamp: 2008-12-05T18:41:11.812000
+ALTER TABLE gis_feature_class ADD marker CHAR(32);
+success!
+timestamp: 2008-12-05T18:41:11.984000
+ALTER TABLE gis_layer ADD projection CHAR(32);
+success!
+timestamp: 2008-12-05T21:14:43.515000
+ALTER TABLE gis_layer ADD priority INTEGER;
+success!
+timestamp: 2008-12-05T22:44:13.234000
+ALTER TABLE gis_default ADD projection REFERENCES gis_projection(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-06T11:47:28.656000
+CREATE TABLE field_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	field_name CHAR(32),
+	option_code CHAR(20),
+	option_description CHAR(50)
+);
+success!
+timestamp: 2008-12-06T11:47:28.843000
+CREATE TABLE contact(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-06T11:47:29.109000
+CREATE TABLE cr_shelter(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	address CHAR(256),
+	capacity INTEGER,
+	shelters INTEGER,
+	contact REFERENCES contact(id) ON DELETE CASCADE,
+	location REFERENCES gis_feature(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-12-06T12:15:48.937000
+CREATE TABLE or_organisation(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	address CHAR(256),
+	contact REFERENCES contact(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-12-06T13:26:42.500000
+ALTER TABLE t2_person ADD modified_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:42.656000
+ALTER TABLE t2_person ADD created_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:42.765000
+ALTER TABLE t2_person ADD created_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:42.875000
+ALTER TABLE t2_person ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-06T13:26:43.046000
+ALTER TABLE t2_person ADD modified_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:43.156000
+ALTER TABLE t2_group ADD modified_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:43.265000
+ALTER TABLE t2_group ADD created_by_ip CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:43.375000
+ALTER TABLE t2_group ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-06T13:26:43.484000
+ALTER TABLE t2_group ADD modified_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:43.640000
+ALTER TABLE t2_membership ADD modified_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:43.765000
+ALTER TABLE t2_membership ADD created_by_ip CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:43.906000
+ALTER TABLE t2_membership ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-06T13:26:44.125000
+ALTER TABLE t2_membership ADD modified_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:44.250000
+ALTER TABLE t2_access ADD modified_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:44.390000
+ALTER TABLE t2_access ADD created_by_ip CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:44.500000
+ALTER TABLE t2_access ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-06T13:26:44.656000
+ALTER TABLE t2_access ADD modified_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:44.796000
+ALTER TABLE t2_attachment ADD modified_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:44.921000
+ALTER TABLE t2_attachment ADD created_by_ip CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:45.171000
+ALTER TABLE t2_attachment ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-06T13:26:45.296000
+ALTER TABLE t2_attachment ADD modified_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:45.468000
+ALTER TABLE t2_comment ADD modified_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:45.656000
+ALTER TABLE t2_comment ADD created_by_ip CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:45.781000
+ALTER TABLE t2_comment ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-06T13:26:45.921000
+ALTER TABLE t2_comment ADD modified_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:46.109000
+ALTER TABLE t2_review ADD modified_by INTEGER;
+success!
+timestamp: 2008-12-06T13:26:46.296000
+ALTER TABLE t2_review ADD created_by_ip CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:46.421000
+ALTER TABLE t2_review ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-06T13:26:46.593000
+ALTER TABLE t2_review ADD modified_signature CHAR(32);
+success!
+timestamp: 2008-12-06T13:26:46.734000
+CREATE TABLE t2_wiki(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	title CHAR(32),
+	menu CHAR(1),
+	public CHAR(1),
+	body TEXT,
+	created_signature CHAR(32),
+	created_by_ip CHAR(32),
+	created_by INTEGER,
+	created_on TIMESTAMP,
+	modified_signature CHAR(32),
+	modified_by INTEGER,
+	modified_on TIMESTAMP
+);
+success!
+timestamp: 2008-12-06T18:25:59.125000
+CREATE TABLE default(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	setting CHAR(32),
+	description CHAR(256),
+	value CHAR(32)
+);
+timestamp: 2008-12-06T18:27:37.921000
+CREATE TABLE system_default(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	setting CHAR(32),
+	description CHAR(256),
+	value CHAR(32)
+);
+success!
+timestamp: 2008-12-06T18:31:15.656000
+CREATE TABLE system_config(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	setting CHAR(32),
+	description CHAR(256),
+	value CHAR(32)
+);
+success!
+timestamp: 2008-12-06T18:31:15.828000
+CREATE TABLE gis_config(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	setting CHAR(32),
+	description CHAR(256),
+	value CHAR(32)
+);
+success!
+timestamp: 2008-12-07T01:39:43.921000
+CREATE TABLE person(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	full_name CHAR(32),
+	family_name CHAR(32),
+	l10_name CHAR(32)
+);
+success!
+timestamp: 2008-12-07T01:40:37.140000
+CREATE TABLE person_contact(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	opt_contact_type CHAR(32),
+	contact_value CHAR(32)
+);
+success!
+timestamp: 2008-12-07T01:47:58.359000
+CREATE TABLE person_identity(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	opt_id_type CHAR(32),
+	id_value CHAR(32)
+);
+success!
+timestamp: 2008-12-07T01:47:58.578000
+ALTER TABLE gis_feature_metadata ADD feature REFERENCES gis_feature(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-07T01:47:58.796000
+CREATE TABLE gis_layer_shapefile(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-12-07T01:47:58.984000
+ALTER TABLE gis_layer_wms ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-07T01:47:59.109000
+ALTER TABLE gis_layer_wms ADD layer REFERENCES gis_layer(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-07T01:47:59.343000
+ALTER TABLE gis_layer_wms ADD type CHAR(32);
+success!
+timestamp: 2008-12-07T01:47:59.531000
+ALTER TABLE cr_shelter ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-07T01:48:41.875000
+ALTER TABLE or_organisation ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-07T02:03:41.890000
+ALTER TABLE gis_layer_google ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-07T02:03:42.015000
+ALTER TABLE gis_layer_google ADD layer REFERENCES gis_layer(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-07T02:04:37
+CREATE TABLE gis_layer_features(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE,
+	feature_group REFERENCES gis_feature_group(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-12-07T02:04:37.234000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE,
+	type CHAR(32)
+);
+success!
+timestamp: 2008-12-07T02:04:37.375000
+ALTER TABLE gis_layer_shapefile ADD projection REFERENCES gis_projection(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-07T02:04:37.500000
+CREATE TABLE gis_layer_wms_base(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE,
+	url CHAR(32),
+	projection REFERENCES gis_projection(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-12-07T02:04:37.656000
+CREATE TABLE gis_layer_wms_overlay(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE,
+	url CHAR(32),
+	projection REFERENCES gis_projection(id) ON DELETE CASCADE,
+	visible CHAR(1)
+);
+success!
+timestamp: 2008-12-07T09:32:46.593000
+ALTER TABLE t2_wiki ADD name CHAR(32);
+success!
+timestamp: 2008-12-07T09:32:46.843000
+CREATE TABLE person_details(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	next_kin REFERENCES person(id) ON DELETE CASCADE,
+	birth_date CHAR(32),
+	opt_age_group CHAR(32),
+	relation CHAR(32),
+	opt_country CHAR(32),
+	opt_race CHAR(32),
+	opt_religion CHAR(32),
+	opt_marital_status CHAR(32),
+	opt_gender CHAR(32),
+	occupation CHAR(32)
+);
+success!
+timestamp: 2008-12-07T12:46:40.046000
+ALTER TABLE gis_projection ADD units CHAR(32);
+success!
+timestamp: 2008-12-07T12:46:40.218000
+ALTER TABLE gis_projection ADD maxResolution CHAR(32);
+success!
+timestamp: 2008-12-07T12:46:40.437000
+ALTER TABLE gis_projection ADD maxExtent CHAR(32);
+success!
+timestamp: 2008-12-07T13:00:45.500000
+ALTER TABLE gis_marker ADD size CHAR(32);
+success!
+timestamp: 2008-12-07T13:00:45.703000
+CREATE TABLE gis_layer_georss(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE,
+	url CHAR(32),
+	icon REFERENCES gis_marker(id) ON DELETE CASCADE,
+	projection REFERENCES gis_projection(id) ON DELETE CASCADE,
+	visible CHAR(1)
+);
+success!
+timestamp: 2008-12-07T13:00:45.906000
+ALTER TABLE gis_layer_wms ADD layers CHAR(32);
+success!
+timestamp: 2008-12-09T11:56:59.171000
+ALTER TABLE person ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-09T11:56:59.359000
+ALTER TABLE person_contact ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-09T11:56:59.500000
+ALTER TABLE person_identity ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-09T11:56:59.671000
+ALTER TABLE person_details ADD modified_on TIMESTAMP;
+success!
+timestamp: 2008-12-09T11:56:59.796000
+CREATE TABLE person_status(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	isReliefWorker CHAR(1),
+	isVictim CHAR(1),
+	opt_status CHAR(32),
+	id_value CHAR(32)
+);
+success!
+timestamp: 2008-12-09T11:56:59.953000
+CREATE TABLE person_physical(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	height CHAR(32),
+	weight CHAR(32),
+	opt_blood_type CHAR(32),
+	opt_eye_color CHAR(32),
+	opt_skin_color CHAR(32),
+	opt_hair_color CHAR(32),
+	injuries CHAR(32),
+	comments CHAR(256)
+);
+success!
+timestamp: 2008-12-09T11:57:00.093000
+CREATE TABLE person_missing(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	last_seen CHAR(32),
+	last_clothing CHAR(32),
+	comments CHAR(256)
+);
+success!
+timestamp: 2008-12-09T11:57:00.281000
+CREATE TABLE person_deceased(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	details CHAR(32),
+	date_of_death DATE,
+	place_of_death CHAR(32),
+	comments CHAR(256)
+);
+success!
+timestamp: 2008-12-09T11:57:00.437000
+CREATE TABLE person_report(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	reporter REFERENCES person(id) ON DELETE CASCADE,
+	relation CHAR(32)
+);
+success!
+timestamp: 2008-12-09T11:57:00.578000
+CREATE TABLE person_group(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	opt_group_type CHAR(32)
+);
+success!
+timestamp: 2008-12-09T11:57:00.703000
+CREATE TABLE person_group_details(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	group REFERENCES person_group(id) ON DELETE CASCADE,
+	head REFERENCES person(id) ON DELETE CASCADE,
+	no_of_adult_males INTEGER,
+	no_of_adult_females INTEGER,
+	no_of_children INTEGER,
+	no_displaced INTEGER,
+	no_missing INTEGER,
+	no_dead INTEGER,
+	no_rehabilitated INTEGER,
+	checklist CHAR(32),
+	description CHAR(256)
+);
+timestamp: 2008-12-09T16:02:59.250000
+CREATE TABLE person_group_details(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	group REFERENCES person_group(id) ON DELETE CASCADE,
+	head REFERENCES person(id) ON DELETE CASCADE,
+	no_of_adult_males INTEGER,
+	no_of_adult_females INTEGER,
+	no_of_children INTEGER,
+	no_displaced INTEGER,
+	no_missing INTEGER,
+	no_dead INTEGER,
+	no_rehabilitated INTEGER,
+	checklist CHAR(32),
+	description CHAR(256)
+);
+timestamp: 2008-12-09T16:08:42.437000
+ALTER TABLE or_organisation ADD archived CHAR(1);
+success!
+timestamp: 2008-12-09T16:08:42.578000
+ALTER TABLE or_organisation ADD opt_org_type CHAR(32);
+success!
+timestamp: 2008-12-09T16:08:42.765000
+ALTER TABLE or_organisation ADD manpower CHAR(32);
+success!
+timestamp: 2008-12-09T16:08:42.906000
+ALTER TABLE or_organisation ADD privacy INTEGER;
+success!
+timestamp: 2008-12-09T16:08:43.015000
+ALTER TABLE or_organisation ADD equipment CHAR(32);
+success!
+timestamp: 2008-12-09T16:08:43.156000
+ALTER TABLE or_organisation ADD registration CHAR(32);
+success!
+timestamp: 2008-12-09T19:52:02.515000
+CREATE TABLE gis_layer_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-09T20:10:18.140000
+CREATE TABLE person_group_details(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	group REFERENCES person_group(id) ON DELETE CASCADE,
+	head REFERENCES person(id) ON DELETE CASCADE,
+	no_of_adult_males INTEGER,
+	no_of_adult_females INTEGER,
+	no_of_children INTEGER,
+	no_displaced INTEGER,
+	no_missing INTEGER,
+	no_dead INTEGER,
+	no_rehabilitated INTEGER,
+	checklist CHAR(32),
+	description CHAR(256)
+);
+timestamp: 2008-12-09T20:11:01.593000
+CREATE TABLE person_group_details(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	person_group REFERENCES person_group(id) ON DELETE CASCADE,
+	head REFERENCES person(id) ON DELETE CASCADE,
+	no_of_adult_males INTEGER,
+	no_of_adult_females INTEGER,
+	no_of_children INTEGER,
+	no_displaced INTEGER,
+	no_missing INTEGER,
+	no_dead INTEGER,
+	no_rehabilitated INTEGER,
+	checklist CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-09T20:11:35.234000
+CREATE TABLE person_to_group(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	person REFERENCES person(id) ON DELETE CASCADE,
+	person_group REFERENCES person_group(id) ON DELETE CASCADE
+);
+success!

@@ -1,0 +1,30 @@
+(dp1
+S'isVictim'
+p2
+S'CHAR(1)'
+p3
+sS'isReliefWorker'
+p4
+S'CHAR(1)'
+p5
+sS'person'
+p6
+S'REFERENCES person(id) ON DELETE CASCADE'
+p7
+sS'id_value'
+p8
+S'CHAR(32)'
+p9
+sS'modified_on'
+p10
+S'TIMESTAMP'
+p11
+sS'id'
+p12
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p13
+sS'opt_status'
+p14
+S'CHAR(32)'
+p15
+s.

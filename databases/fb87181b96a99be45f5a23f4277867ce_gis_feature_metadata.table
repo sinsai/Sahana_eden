@@ -1,0 +1,46 @@
+(dp1
+S'timestamp_added'
+p2
+S'TIMESTAMP'
+p3
+sS'timestamp_event'
+p4
+S'TIMESTAMP'
+p5
+sS'modified_by'
+p6
+S'REFERENCES t2_person(id) ON DELETE CASCADE'
+p7
+sS'description'
+p8
+S'CHAR(256)'
+p9
+sS'event_time'
+p10
+S'TIMESTAMP'
+p11
+sS'author'
+p12
+S'REFERENCES user(id) ON DELETE CASCADE'
+p13
+sS'feature'
+p14
+S'REFERENCES gis_feature(id) ON DELETE CASCADE'
+p15
+sS'created_on'
+p16
+S'TIMESTAMP'
+p17
+sS'modified_on'
+p18
+S'TIMESTAMP'
+p19
+sS'id'
+p20
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p21
+sS'name'
+p22
+S'CHAR(32)'
+p23
+s.

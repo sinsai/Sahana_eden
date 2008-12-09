@@ -183,16 +183,15 @@ def display_layer():
 	# We want more control than T2 allows us
 	# - type_nice
 	# - Req fields
-	# !!! This should be moved to the View!!!
-	#(T2 gives us a <div class="t2-display"> around the table & a <label> around each label)
 	layer=db(db.gis_layer.id==t2.id).select()[0]
 	type_nice=db(db.gis_layer_type.id==layer.type).select()[0].name
-	main=TABLE(TR(T("Name:"),layer.name),
-				TR(T("Description:"),T(layer.description)),
-				TR(T("Type:"),type_nice),
-				#TR(T("Sub-type:"),layer.name),
-				TR(T("Priority:"),layer.priority),
-				TR(T("Enabled:"),layer.enabled))
+	# !!! This has been moved to the View!!!
+	main=DIV(TABLE(TR(LABEL(T("Name:")),layer.name),
+				TR(LABEL(T("Description:")),T(layer.description)),
+				TR(LABEL(T("Type:")),type_nice),
+				#TR(LABEL(T("Sub-type:")),layer.name),
+				#TR(LABEL(T("Priority:")),layer.priority),
+				TR(LABEL(T("Enabled:")),layer.enabled)),_class="t2-display")
 	
 	#type=db(db.gis_layer.id==t2.id).select()[0].type
 	#if type=='google':
@@ -201,7 +200,7 @@ def display_layer():
 	#	type_display=t2.display(db.gis_layer_openstreetmap,query='gis_layer_openstreetmap.layer==id')
 		
 	#return dict(modules=modules,options=options,main=main,type=type_display)
-	return dict(modules=modules,options=options,main=main)
+	return dict(modules=modules,options=options,layer=layer,type_nice=type_nice)
 
 @t2.requires_login('login')
 def update_layer():

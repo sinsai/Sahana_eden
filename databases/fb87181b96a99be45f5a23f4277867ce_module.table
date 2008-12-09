@@ -1,7 +1,7 @@
 (dp1
-S'name'
+S'description'
 p2
-S'CHAR(32)'
+S'CHAR(256)'
 p3
 sS'enabled'
 p4
@@ -19,8 +19,8 @@ sS'id'
 p10
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p11
-sS'description'
+sS'name'
 p12
-S'CHAR(256)'
+S'CHAR(32)'
 p13
 s.

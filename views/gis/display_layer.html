@@ -7,6 +7,18 @@
 {{try:}}
 {{=main}}
 {{except:}}
+<div class="t2-display">
+<table>
+<tr><td><label>{{=T("Name:")}}</label></td>
+<td>{{=layer.name}}</td></tr>
+<tr><td><label>{{=T("Description:")}}</label></td>
+<td>{{=layer.description}}</td></tr>
+<tr><td><label>{{=T("Type:")}}</label></td>
+<td>{{=type_nice}}</td></tr>
+<tr><td><label>{{=T("Enabled:")}}</label></td>
+<td>{{=layer.enabled}}</td></tr>
+</table>
+</div>
 {{pass}}
 
 {{try:}}

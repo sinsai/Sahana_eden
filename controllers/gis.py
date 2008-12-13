@@ -32,63 +32,94 @@ def open():
     redirect(URL(r=request,f=option))
 
 # Map Service Catalogue
+# NB No login required: unidentified users can Read/Create layers (although they need to login to Update/Delete layers)
 def map_service_catalogue():
-	# Page Title
-	title=T('Map Service Catalogue')
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	#layers=t2.itemize(db.gis_layer,query='gis_layer.id==gis_layer_openstreetmap.layer')
-	layers=t2.itemize(db.gis_layer)
-	if layers=="No data":
-		layers="No Layers currently defined."
-	
-	#form=t2.create(db.gis_layer)
-	#[OPTION(x.name,_value=x.id)for x in db().select(db.gis_layer_type.ALL)]
-	#types=['openstreetmap','google']
-	# We'll update this list dynamically using jQuery
-	subtypes=['mapnik','osmarender']
-	form=FORM(TABLE(TR(T("Name:"),INPUT(_type="text",_name="name")),
-				TR(T("Description:"),INPUT(_type="text",_name="description")),
-				TR(T("Type:"),SELECT(_type="select",_name="type",*[OPTION(x.name,_value=x.id)for x in db().select(db.gis_layer_type.ALL)])),
-				TR(T("Sub-type:"),SELECT(_type="select",_name="subtype",*subtypes)),
-                TR(T("Priority:"),INPUT(_type="text",_name="priority")),
-				TR(T("Enabled:"),INPUT(_type="checkbox",_name="enabled",value=True)),
-				TR("",INPUT(_type="submit",_value=T("Submit")))))
-	if form.accepts(request.vars,session):
-		db.gis_layer.insert(
-			name=form.vars.name,
-			description=form.vars.description,
-			type=form.vars.type,
-			priority=form.vars.priority,
-			enabled=form.vars.enabled
-		)
-		#type=db(db.gis_layer_type.id==form.vars.type).select()[0].name
-		#id=db(db.gis_layer.name==form.vars.name).select()[0].id
-		#if type=="openstreetmap":
-		#	db.gis_layer_openstreetmap.insert(
-		#		layer=id,
-		#		type=form.vars.subtype
-		#	)
-		#if type=="google":
-		#	db.gis_layer_google.insert(
-		#		layer=id,
-		#		type=form.vars.subtype
-		#	)
-		#	db.gis_key.insert(
-		#		layer=id,
-		#		key=form.vars.key
-		#	)
-		response.confirmation=T("Layer added")
-		# Need to refresh the layer list using jQuery
-	elif form.errors: 
-		response.error=T("Form is invalid")
-	else: 
-		response.notification=T("Please fill the form")
+    # Page Title
+    title=T('Map Service Catalogue')
+    # List Modules (from which to build Menu of Modules)
+    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+    # List Options (from which to build Menu for this Module)
+    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
 
-	return dict(title=title,modules=modules,options=options,layers=layers,form=form)
+    layers=t2.itemize(db.gis_layer)
+    if layers=="No data":
+        layers="No Layers currently defined."
+
+    # Default to OpenStreetMap - promote Open Data!
+    type="openstreetmap"
+    subtype="1" # Mapnik
+    key="ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw" # Google Key for 127.0.0.1
+    
+    # Pull out options for dropdowns
+    options_type = db().select(db.gis_layer_type.ALL)
+    options_subtype = db().select(db['gis_layer_%s_type' % type].ALL)
+    # 0-99, take away all used priorities
+    options_priority = range(100)
+    options_used = db().select(db.gis_layer.priority)
+    for row in options_used:
+        options_priority.remove(row.priority)
+    
+    # Build form
+    # Neither SQLFORM nor T2 support multiple tables
+    # Customised method could be developed by extending T2, but wouldn't give us MVC separation, so best to port it to here & view
+    # HTML is built manually in the view...this provides a hook for processing
+    # we need to add validation here because this form doesn't know about the database
+    form=FORM(INPUT(_name="name",requires=IS_NOT_EMPTY()),
+            INPUT(_name="description"),
+            SELECT(_name="type",requires=IS_NOT_EMPTY()),
+            #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % type].ALL)])
+            SELECT(_name="subtype"),
+            INPUT(_name="key",requires=IS_NOT_EMPTY()),
+            INPUT(_name="priority",requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]),
+            INPUT(_name="enabled"),
+            INPUT(_type="submit"))
+
+    # Process form
+    if form.accepts(request.vars,session,keepvalues=True):
+        if form.vars.enabled=="on":
+            enabled=True
+        else:
+            enabled=False
+        # Update Database
+        id=db.gis_layer.insert(
+            name=form.vars.name,
+            description=form.vars.description,
+            type=form.vars.type,
+            priority=form.vars.priority,
+            enabled=enabled
+        )
+        type_new=db(db.gis_layer_type.id==form.vars.type).select()[0].name
+        if type_new=="openstreetmap":
+            db['gis_layer_%s' % type_new].insert(
+                layer=id,
+                type=form.vars.subtype
+            )
+        elif type_new=="google":
+            db['gis_layer_%s' % type_new].insert(
+                layer=id,
+                type=form.vars.subtype
+            )
+            # Check to see whether a Key already exists for this service
+            if len(db(db.gis_key.service==type_new).select()):
+                # Update
+                db(db.gis_key.service==type_new).select()[0].update_record(
+                    key=form.vars.key
+                )
+            else:
+                # Insert
+                db.gis_key.insert(
+                    service=type_new,
+                    key=form.vars.key
+                )
+        # FIXME: Refresh Layers list
+        # Notify user :)
+        response.confirmation=T("Layer updated")
+    elif form.errors: 
+        response.error=T("Form is invalid")
+    else: 
+        response.notification=T("Please fill the form")
+
+    return dict(title=title,modules=modules,options=options,layers=layers,form=form,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
 
 def keys():
 	# Page Title
@@ -105,52 +136,18 @@ def keys():
 	return dict(title=title,modules=modules,options=options,keys=keys,form=form)
 	
 def layers():
-	# Page Title
-	title=T('GIS Layers')
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	layers=t2.itemize(db.gis_layer)
-	if layers=="No data":
-		layers="No Layers currently defined."
+    # Page Title
+    title=T('GIS Layers')
+    # List Modules (from which to build Menu of Modules)
+    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+    # List Options (from which to build Menu for this Module)
+    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
 
-	#form=t2.create(db.gis_layer)
-	form=FORM(TABLE(TR(T("Name:"),INPUT(_type="text",_name="name")),
-				TR(T("Description:"),INPUT(_type="text",_name="description")),
-				TR(T("Type:"),SELECT(_type="select",_name="type",*[OPTION(x.name,_value=x.id)for x in db().select(db.gis_layer_type.ALL)])),
-				TR(T("Sub-type:"),SELECT(_type="select",_name="subtype",*[OPTION("mapnik","osmarender","satellite","hybrid","terrain")])),
-                TR(T("Priority:"),INPUT(_type="text",_name="priority")),
-				TR(T("Enabled:"),INPUT(_type="checkbox",_name="enabled",value=True)),
-				TR("",INPUT(_type="submit",_value=T("Submit")))))
-	if form.accepts(request.vars,session,keepvalues=True):
-		db(db.gis_layer.id==t2.id).update(
-			name=form.vars.name,
-			description=form.vars.description,
-			type=form.vars.type,
-			priority=form.vars.priority,
-			enabled=form.vars.enabled
-		)
-		type=db(db.gis_layer_type.id==form.vars.type).select()[0].name
-		if type=="openstreetmap":
-			db(db.gis_layer_openstreetmap.layer==t2.id).update(
-				type=form.vars.subtype
-			)
-		if type=="google":
-			db(db.gis_layer_google.layer==t2.id).update(
-				type=form.vars.subtype
-			)
-		#	db.gis_key.insert(
-		#		key=form.vars.key
-		#	)
-		response.confirmation=T("Layer added")
-	elif form.errors: 
-		response.error=T("Form is invalid")
-	else: 
-		response.notification=T("Please fill the form")
+    layers=t2.itemize(db.gis_layer)
+    if layers=="No data":
+        layers="No Layers currently defined."
 
-	return dict(title=title,modules=modules,options=options,layers=layers,form=form)
+    return dict(title=title,modules=modules,options=options,layers=layers)
 	
 # Actions called by representations in Model
 def display_key():
@@ -169,128 +166,173 @@ def update_key():
     # List Options (from which to build Menu for this Module)
 	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
 	
-	item=t2.update(db.gis_key)
-	return dict(modules=modules,options=options,item=item)
+	form=t2.update(db.gis_key)
+	return dict(modules=modules,options=options,form=form)
 
 def display_layer():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+    # List Modules (from which to build Menu of Modules)
+    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
     # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	#db.gis_layer.displays=['name','description','type','enabled']
-	#main=t2.display(db.gis_layer)
-	# We want more control than T2 allows us
-	# - type_nice
-	# - Req fields
-	layer=db(db.gis_layer.id==t2.id).select()[0]
-	type_nice=db(db.gis_layer_type.id==layer.type).select()[0].name
-	# !!! This has been moved to the View!!!
-	main=DIV(TABLE(TR(LABEL(T("Name:")),layer.name),
-				TR(LABEL(T("Description:")),T(layer.description)),
-				TR(LABEL(T("Type:")),type_nice),
-				#TR(LABEL(T("Sub-type:")),layer.name),
-				#TR(LABEL(T("Priority:")),layer.priority),
-				TR(LABEL(T("Enabled:")),layer.enabled)),_class="t2-display")
-	
-	#type=db(db.gis_layer.id==t2.id).select()[0].type
-	#if type=='google':
-	#	type_display=t2.display(db.gis_layer_google,query='gis_layer_google.layer==id')
-	#elif type=='openstreetmap':
-	#	type_display=t2.display(db.gis_layer_openstreetmap,query='gis_layer_openstreetmap.layer==id')
-		
-	#return dict(modules=modules,options=options,main=main,type=type_display)
-	return dict(modules=modules,options=options,layer=layer,type_nice=type_nice)
+    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
+
+    #db.gis_layer.displays=['name','description','type','enabled']
+    #main=t2.display(db.gis_layer)
+
+    # We want more control than T2 allows us (& we also want proper MVC separation)
+    # - sub-tables
+    # - names not numbers for type/subtype
+    # - Req fields
+    layer=db(db.gis_layer.id==t2.id).select()[0]
+    type=db(db.gis_layer_type.id==layer.type).select(db.gis_layer_type.ALL)[0].name
+    if type=="openstreetmap":
+        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        key=0
+    if type=="google":
+        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
+    else:
+        subtype=0
+        key=0
+
+    return dict(modules=modules,options=options,layer=layer,type=type,subtype=subtype,key=key)
 
 @t2.requires_login('login')
 def update_layer():
     # List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
     # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	# T2 form doesn't handle multiple tables :/
-	#form=t2.update(db.gis_layer)
-	# SQLFORM not good either: http://groups.google.com/group/web2py/browse_thread/thread/292e4ed76de9889b
-	#form=SQLFORM(db.gis_layer,fields=['name','description','type','priority','enabled'])
-	#form=form_factory(SQLField('type', label='Type:',requires=IS_IN_SET(['openstreetmap','google']))) 
-	
-	# Pull out current settings to pre-populate form with
-	layer=db(db.gis_layer.id==t2.id).select()[0]
-	types=['openstreetmap','google']
-	subtypes=['mapnik','osmarender']
-	# Build form
-	form=FORM(TABLE(TR(T("Name:"),INPUT(_type="text",_name="name",_value=layer.name)),
-                    TR(T("Description:"),INPUT(_type="text",_name="description",_value=layer.description)),
-					# How to get list of options & yet also set default?
-                    #[OPTION(x.name,_value=x.id)for x in db().select(db.gis_layer_type.ALL)]
-					TR(T("Type:"),SELECT(_type="select",_name="type",*types)),
-                    TR(T("Sub-type:"),SELECT(_type="select",_name="subtype",*subtypes)),
-					TR(T("Priority:"),INPUT(_type="text",_name="priority",_value=layer.priority)),
-					TR(T("Enabled:"),INPUT(_type="checkbox",_name="enabled",value=layer.enabled)),
-                    TR("",INPUT(_type="submit",_value=T("Submit")))))
-	# Add link to AJAX for hiding/unhiding rows
-	#_onclick="ajax('ajaxwiki_onclick',['text'],'html')"
-	if form.accepts(request.vars,session,keepvalues=True):
-		db(db.gis_layer.id==t2.id).update(
-			name=form.vars.name,
-			description=form.vars.description,
-			type=form.vars.type,
-			priority=form.vars.priority,
-			enabled=form.vars.enabled
-		)
-		type=db(db.gis_layer_type.id==form.vars.type).select()[0].name
-		if type=="openstreetmap":
-			db(db.gis_layer_openstreetmap.layer==t2.id).update(
-				type=form.vars.subtype
-			)
-		if type=="google":
-			db(db.gis_layer_google.layer==t2.id).update(
-				type=form.vars.subtype
-			)
-		#	db.gis_key.insert(
-		#		key=form.vars.key
-		#	)
-		response.confirmation=T("Layer updated")
-	elif form.errors: 
-		response.error=T("Form is invalid")
-	else: 
-		response.notification=T("Please fill the form")
+    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
 
-	return dict(modules=modules,options=options,form=form)
+    # Get a pointer to the Layer record (for getting default values out & saving updated values back)
+    layer=db(db.gis_layer.id==t2.id).select()[0]
+    
+    # Pull out current settings to pre-populate form with
+    type=db(db.gis_layer_type.id==layer.type).select()[0].name
+    if type=="openstreetmap":
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        key=0
+    elif type=="google":
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
+    else:
+        subtype=0
+        key=0
+
+    # Pull out options for dropdowns
+    options_type = db().select(db.gis_layer_type.ALL)
+    options_subtype = db().select(db['gis_layer_%s_type' % type].ALL)
+    # 0-99, take away all used priorities, add back the current priority
+    options_priority = range(100)
+    options_used = db().select(db.gis_layer.priority)
+    for row in options_used:
+        options_priority.remove(row.priority)
+    priority=layer.priority
+    options_priority.insert(0,priority)
+    
+    # Build form
+    # Neither SQLFORM nor T2 support multiple tables
+    #form=SQLFORM(db.gis_layer,record,deletable=True)
+    #form=t2.update(db.gis_layer)
+    # Customised method could be developed by extending T2, but wouldn't give us MVC separation, so best to port it to here & view
+    #form=t2.update_layer(db.gis_layer)
+    # HTML is built manually in the view...this provides a hook for processing
+    # we need to add validation here because this form doesn't know about the database
+    form=FORM(INPUT(_name="id",requires=IS_NOT_EMPTY()),
+            INPUT(_name="modified_on"),
+            INPUT(_name="name",requires=IS_NOT_EMPTY()),
+            INPUT(_name="description"),
+            SELECT(_name="type",requires=IS_NOT_EMPTY()),
+            #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % type].ALL)])
+            SELECT(_name="subtype",requires=IS_NOT_EMPTY()),
+            INPUT(_name="key",requires=IS_NOT_EMPTY()),
+            # Should develop an IS_THIS_OR_IS_NOT_IN_DB(this,table) validator (so as to not rely on View)
+            #INPUT(_name="priority",requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]),
+            INPUT(_name="priority",requires=IS_NOT_EMPTY()),
+            INPUT(_name="enabled"),
+            INPUT(_type="submit"))
+    
+    # use T2 for conflict detection
+    t2._stamp_many([db.gis_layer,db['gis_layer_%s' % type]],form)
+    hidden={'modified_on__original':str(layer.get('modified_on',None))}
+    if request.vars.modified_on__original and request.vars.modified_on__original!=hidden['modified_on__original']:
+            session.flash=self.messages.record_was_altered
+            redirect(self.action(args=request.args))
+    
+    # Process form
+    if form.accepts(request.vars,session,keepvalues=True):
+    	if form.vars.enabled=="on":
+            enabled=True
+        else:
+            enabled=False
+        # Update Database
+        layer.update_record(
+    		name=form.vars.name,
+    		description=form.vars.description,
+    		type=form.vars.type,
+    		priority=form.vars.priority,
+    		enabled=enabled
+    	)
+    	type_new=db(db.gis_layer_type.id==form.vars.type).select()[0].name
+    	if type_new=="openstreetmap":
+    		db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
+    			type=form.vars.subtype
+    		)
+    	elif type_new=="google":
+    		db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
+    			type=form.vars.subtype
+    		)
+    		db(db.gis_key.service==type_new).select()[0].update_record(
+    			key=form.vars.key
+    		)
+    	# Notify user :)
+        response.confirmation=T("Layer updated")
+    elif form.errors: 
+    	response.error=T("Form is invalid")
+    else: 
+    	response.notification=T("Please fill the form")
+
+    return dict(modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
 
 # Map Viewing Client
 def map_viewing_client():
     # Page Title
-	title=T('Map Viewing Client')
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
+    title=T('Map Viewing Client')
+    # List Modules (from which to build Menu of Modules)
+    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+    # List Options (from which to build Menu for this Module)
+    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
+
+    # Get Config
+    projection=db(db.gis_config.setting=='projection').select(db.gis_config.value)[0].value
+    lat=db(db.gis_config.setting=='lat').select(db.gis_config.value)[0].value
+    lon=db(db.gis_config.setting=='lon').select(db.gis_config.value)[0].value
+    zoom=db(db.gis_config.setting=='zoom').select(db.gis_config.value)[0].value
+    units=db(db.gis_projection.epsg==projection).select()[0].units
+    maxResolution=db(db.gis_projection.epsg==projection).select()[0].maxResolution
+    maxExtent=db(db.gis_projection.epsg==projection).select()[0].maxExtent
     
-	# Get Config
-	projection=db(db.gis_config.setting=='projection').select(db.gis_config.value)[0].value
-	
     # Get enabled Layers
-	layers=db(db.gis_layer.enabled==True).select(db.gis_layer.ALL,orderby=db.gis_layer.priority)
-	
-	# Check for enabled Google layers
-	google=0
-	google_key=""
-	for row in layers:
-		if row.type=='google':
-			google=1
-	if google==1:
-		# Check for Google Key
-		_google_key=db(db.gis_key.service=='google').select(db.gis_key.key)
-		if len(_google_key):
-			google_key=_google_key[0].key
-		else:
-			response.flash=T('Please enter a Google Key if you wish to use Google Layers')
-			google=0
-			# Redirect to Key entry screen?
-	
-	return dict(title=title,modules=modules,options=options,layers=layers,google=google,google_key=google_key,projection=projection)
+    layers=db(db.gis_layer.enabled==True).select(db.gis_layer.ALL,orderby=db.gis_layer.priority)
+
+    # Check for enabled Google layers
+    google=0
+    google_key=""
+    for row in layers:
+        if row.type=='google':
+            google=1
+    if google==1:
+        # Check for Google Key
+        _google_key=db(db.gis_key.service=='google').select(db.gis_key.key)
+        if len(_google_key):
+            google_key=_google_key[0].key
+        else:
+            response.flash=T('Please enter a Google Key if you wish to use Google Layers')
+            google=0
+            # Redirect to Key entry screen?
+
+    return dict(title=title,modules=modules,options=options,layers=layers,google=google,google_key=google_key,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)
 
 #def map_viewing_client_ext():
     # Get enabled Layers

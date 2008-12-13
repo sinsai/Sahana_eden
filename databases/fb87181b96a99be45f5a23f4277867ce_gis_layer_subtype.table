@@ -1,11 +1,11 @@
 (dp1
-S'modified_on'
+S'description'
 p2
-S'TIMESTAMP'
+S'CHAR(256)'
 p3
-sS'author'
+sS'type'
 p4
-S'REFERENCES user(id) ON DELETE CASCADE'
+S'REFERENCES gis_layer_type(id) ON DELETE CASCADE'
 p5
 sS'id'
 p6

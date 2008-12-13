@@ -950,3 +950,23 @@ CREATE TABLE person_to_group(
 	person_group REFERENCES person_group(id) ON DELETE CASCADE
 );
 success!
+timestamp: 2008-12-10T08:20:55.343000
+CREATE TABLE gis_layer_subtype(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	type REFERENCES gis_layer_type(id) ON DELETE CASCADE,
+	name CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-11T08:27:31.125000
+CREATE TABLE gis_layer_google_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-12-11T08:27:31.359000
+CREATE TABLE gis_layer_openstreetmap_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!

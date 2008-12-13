@@ -7,7 +7,8 @@
 <script src="{{=URL(r=request,c='static',f='scripts/fancyzoom.min.js')}}" type="text/javascript" charset="utf-8"></script>
 <link href="{{=URL(r=request,c='static',f='styles/rating.css')}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <script src="{{=URL(r=request,c='static',f='scripts/rating.js')}}" type="text/javascript" charset="utf-8"></script>
-<script type="text/javascript"><!--
+<script src="{{=URL(r=request,c='static',f='scripts/labels.js')}}" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">//<![CDATA[
 function popup(url) {
   newwindow=window.open(url,'name','height=400,width=600');
   if (window.focus) newwindow.focus();
@@ -55,4 +56,4 @@ try { $('.sf-menu').superfish({
      animation: {height:'show'}, delay:1200
 }); } catch(e) {};
 });
---></script>
+//]]></script>

@@ -11,9 +11,9 @@
 <script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/ext/adapter/jquery/ext-jquery-adapter.js')}}"></script>
 <!-- Change to ext-all.js for Production installs -->
 <script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/ext/ext-all-debug.js')}}"></script>
-<script language="javascript"><!--
+<script language="javascript">//<![CDATA[
 // make available for easy debugging
-var map, toolbar
+var map, toolbar;
 //var treeModel;
 //var currentFeature, currentPopup;
 var markersLayer, featuresLayer, vectorLayer;
@@ -27,13 +27,13 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
 // Set Proxy Host
 OpenLayers.ProxyHost = '{{=URL(r=request,c='static',f='proxy.py?url=')}}';
 
-var lat = {{=db(db.gis_config.setting=='lat').select(db.gis_config.value)[0].value}};
-var lon = {{=db(db.gis_config.setting=='lon').select(db.gis_config.value)[0].value}};
-var zoom = {{=db(db.gis_config.setting=='zoom').select(db.gis_config.value)[0].value}};
+var lat = {{=lat}};
+var lon = {{=lon}};
+var zoom = {{=zoom}};
 var centered = false;
 
 // See - http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
-var proj4326 = new OpenLayers.Projection("EPSG:4326");
+var proj4326 = new OpenLayers.Projection('EPSG:4326');
 var projection_current = new OpenLayers.Projection('EPSG:{{=projection}}');
 var point = new OpenLayers.LonLat(lon, lat);
 
@@ -41,9 +41,9 @@ var point = new OpenLayers.LonLat(lon, lat);
 var options = {
 	displayProjection: proj4326,
 	projection: projection_current,
-	units: "{{=db(db.gis_projection.epsg==projection).select()[0].units}}",
-	maxResolution: {{=db(db.gis_projection.epsg==projection).select()[0].maxResolution}},
-	maxExtent: new OpenLayers.Bounds({{=db(db.gis_projection.epsg==projection).select()[0].maxExtent}})
+	units: "{{=units}}",
+	maxResolution: {{=maxResolution}},
+	maxExtent: new OpenLayers.Bounds({{=maxExtent}})
 };
 	
 function centerMap() {
@@ -55,34 +55,33 @@ function centerMap() {
 }
 
 function addLayers(map) {
-	// OpenStreetMap listed 1st - promote Open Data!
-	// - would have to do for layer in layers_osm
-    {{for layer in layers:}}
-	  {{if layer.type=='openstreetmap':}}
-		{{osm=db(db.gis_layer_openstreetmap.layer==layer.id).select()[0].type}}
-		{{if osm=='Mapnik':}}
-			var mapnik = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openstreetmap.org/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true } );
+	{{for layer in layers:}}
+	  {{if layer.type=='1':}}
+        {{osm=db(db.gis_layer_openstreetmap.layer==layer.id).select()[0].type}}
+		{{if osm=='1':}}
+        	var mapnik = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openstreetmap.org/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true } );
 			map.addLayer(mapnik);
-		{{elif osm=='Osmarender':}}
-			var osmarender = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tah.openstreetmap.org/Tiles/tile.php/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true } );
+		{{elif osm=='2':}}
+        	var osmarender = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tah.openstreetmap.org/Tiles/tile.php/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true } );
 			map.addLayer(osmarender);
 	    {{pass}}
-	  {{elif layer.type=='google':}}
-		{{googl=db(db.gis_layer_google.layer==layer.id).select()[0].type}}
-		{{if googl=='Hybrid':}}
-			var googlehybrid = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
-			map.addLayer(googlehybrid);
-		{{elif googl=='Satellite':}}
-			var googlesat = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+	  {{elif layer.type=='2':}}
+        {{googl=db(db.gis_layer_google.layer==layer.id).select()[0].type}}
+        {{if googl=='1':}}
+            var googlesat = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
             map.addLayer(googlesat);
-		{{elif googl=='Maps':}}
+        {{elif googl=='2':}}
 			var googlemaps = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
             map.addLayer(googlemaps);
-		{{elif googl=='Terrain':}}
+        {{elif googl=='3':}}
+			var googlehybrid = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+			map.addLayer(googlehybrid);
+        {{elif googl=='4':}}
 			var googleterrain = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
             map.addLayer(googleterrain);
 		{{pass}}
-	  {{elif layer.type=='wms':}}
+      {{elif layer.type==3:}}
+        // WMS
 	  {{pass}}
 	{{pass}}
 }
@@ -258,7 +257,7 @@ function osm_getTileURL(bounds) {
 
 Ext.onReady(function() {
 	var map_viewing_client = Ext.get('map');
-	map = new OpenLayers.Map("map");
+	map = new OpenLayers.Map('map',options);
 	
 	addLayers(map);
 	
@@ -345,7 +344,7 @@ Ext.onReady(function() {
 	initToolbarContent(toolbar);
 
 });
-//--></script>
+//]]></script>
 <script language="javascript" src="{{=URL(r=request,c='static',f='scripts/examples.js')}}"></script>
 <script type="text/javascript"><!--
 	// Because of a bug in Firefox 2 we need to specify the MapFish base path.

@@ -9,13 +9,21 @@
 {{except:}}
 <div class="t2-display">
 <table>
-<tr><td><label>{{=T("Name:")}}</label></td>
+<tr><td><label>{{=T("Name")}}</label></td>
 <td>{{=layer.name}}</td></tr>
-<tr><td><label>{{=T("Description:")}}</label></td>
-<td>{{=layer.description}}</td></tr>
-<tr><td><label>{{=T("Type:")}}</label></td>
-<td>{{=type_nice}}</td></tr>
-<tr><td><label>{{=T("Enabled:")}}</label></td>
+<tr><td><label>{{=T("Description")}}</label></td>
+<td>{{=T(layer.description)}}</td></tr>
+<tr><td><label>{{=T("Type")}}</label></td>
+<td>{{=type}}</td></tr>
+{{if subtype != 0:}}
+<tr><td><label>{{=T("SubType")}}</label></td>
+<td>{{=subtype}}</td></tr>
+{{pass}}
+{{if key != 0:}}
+<tr><td><label>{{=T("Key")}}</label></td>
+<td>{{=key}}</td></tr>
+{{pass}}
+<tr><td><label>{{=T("Enabled")}}</label></td>
 <td>{{=layer.enabled}}</td></tr>
 </table>
 </div>

@@ -12,12 +12,12 @@ import datetime; now=datetime.datetime.today()
 
 # Use T2 plugin for AAA & CRUD
 # At top of file rather than usual bottom as we refer to it within our tables
-from applications.sahana.modules.t2 import T2
-t2=T2(request,response,session,cache,T,db)
+#from applications.sahana.modules.t2 import T2
+#t2=T2(request,response,session,cache,T,db)
 
-# Custom classess
-#from applications.sahana.modules.gis import T2GIS
-#t2=T2GIS(request,response,session,cache,T,db)
+# Custom classes
+from applications.sahana.modules.gis import T2GIS
+t2=T2GIS(request,response,session,cache,T,db)
 
 # Custom validators
 from applications.sahana.modules.validators import *
@@ -247,8 +247,8 @@ db.define_table('gis_projection',
 
 db.gis_projection.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
 db.gis_projection.epsg.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-db.gis_projection.maxExtent.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-db.gis_projection.maxResolution.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db.gis_projection.maxExtent.requires=IS_NOT_EMPTY()
+db.gis_projection.maxResolution.requires=IS_NOT_EMPTY()
 db.gis_projection.units.requires=IS_IN_SET(['m','degrees'])
 db.gis_projection.displays=['name','epsg']
 
@@ -338,7 +338,7 @@ db.gis_key.key.requires=IS_NOT_EMPTY()
 db.gis_key.displays=['service','key','description']
 db.gis_key.represent=lambda gis_key: A(gis_key.service,_href=t2.action('display_key',gis_key.id))
 
-# GIS Layers
+# GIS Layer Types
 #IS_IN_SET(['internal_features','georss','kml','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo'])
 db.define_table('gis_layer_type',
 				SQLField('name'),
@@ -346,6 +346,7 @@ db.define_table('gis_layer_type',
 
 db.gis_layer_type.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer_type.name')]
 
+# GIS Layers
 db.define_table('gis_layer',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
                 SQLField('name'),
@@ -374,13 +375,18 @@ db.gis_layer_georss.icon.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
 db.gis_layer_georss.projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
 
 # Layer: Google
+db.define_table('gis_layer_google_type',
+				SQLField('name'))
+
+db.gis_layer_google_type.name.requires=IS_IN_SET(['Satellite','Maps','Hybrid','Terrain'])
+
 db.define_table('gis_layer_google',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
 				SQLField('layer',db.gis_layer),
-				SQLField('type',default='Satellite'))
+				SQLField('type',db.gis_layer_google_type))
 
 db.gis_layer_google.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
-db.gis_layer_google.type.requires=IS_IN_SET(['Satellite','Maps','Hybrid','Terrain'])
+db.gis_layer_google.type.requires=IS_IN_DB(db,'gis_layer_google_type.id','gis_layer_google_type.name')
 
 # Layer: Internal Features
 db.define_table('gis_layer_features',
@@ -392,13 +398,18 @@ db.gis_layer_features.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name'
 db.gis_layer_features.feature_group.requires=IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')
 
 # Layer: OpenStreetMap
+db.define_table('gis_layer_openstreetmap_type',
+				SQLField('name'))
+
+db.gis_layer_openstreetmap_type.name.requires=IS_IN_SET(['Mapnik','Osmarender'])
+
 db.define_table('gis_layer_openstreetmap',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
 				SQLField('layer',db.gis_layer),
-				SQLField('type',default='Mapnik'))
+				SQLField('type',db.gis_layer_openstreetmap_type))
 
 db.gis_layer_openstreetmap.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
-db.gis_layer_openstreetmap.type.requires=IS_IN_SET(['Mapnik','Osmarender'])
+db.gis_layer_openstreetmap.type.requires=IS_IN_DB(db,'gis_layer_openstreetmap_type.id','gis_layer_openstreetmap_type.name')
 
 # Layer: Shapefiles (via UMN MapServer)
 db.define_table('gis_layer_shapefile',

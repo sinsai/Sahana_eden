@@ -123,7 +123,7 @@ def map_service_catalogue():
 
 def keys():
 	# Page Title
-	title=T('GIS Keys')
+	title=T("GIS Keys")
 	# List Modules (from which to build Menu of Modules)
 	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
 	# List Options (from which to build Menu for this Module)
@@ -299,12 +299,15 @@ def update_layer():
 def map_viewing_client():
     # Page Title
     title=T('Map Viewing Client')
+    response.title=title
     # List Modules (from which to build Menu of Modules)
     modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
     # List Options (from which to build Menu for this Module)
     options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
 
     # Get Config
+    width=db(db.gis_config.setting=='map_width').select(db.gis_config.value)[0].value
+    height=db(db.gis_config.setting=='map_height').select(db.gis_config.value)[0].value
     projection=db(db.gis_config.setting=='projection').select(db.gis_config.value)[0].value
     lat=db(db.gis_config.setting=='lat').select(db.gis_config.value)[0].value
     lon=db(db.gis_config.setting=='lon').select(db.gis_config.value)[0].value
@@ -320,7 +323,7 @@ def map_viewing_client():
     google=0
     google_key=""
     for row in layers:
-        if row.type=='google':
+        if row.type=="1":
             google=1
     if google==1:
         # Check for Google Key
@@ -332,26 +335,4 @@ def map_viewing_client():
             google=0
             # Redirect to Key entry screen?
 
-    return dict(title=title,modules=modules,options=options,layers=layers,google=google,google_key=google_key,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)
-
-#def map_viewing_client_ext():
-    # Get enabled Layers
-#	layers=db((db.gis_layer.enabled==True)).select(db.gis_layer.ALL,orderby=db.gis_layer.name)
-    
-	# Check for enabled Google layers
-#	google=0
-#	google_key=""
-#	for row in base_layers:
-#		if row.type=='google':
-#			google=1
-#	if google==1:
-		# Check for Google Key
-#		_google_key=db(db.gis_key.service=='google').select(db.gis_key.key)
-#		if len(_google_key):
-#			google_key=_google_key[0].key
-#		else:
-#			response.flash=T('Please enter a Google Key if you wish to use Google Layers')
-#			google=0
-			# Redirect to Key entry screen?
-	
-#	return dict(google=google,google_key=google_key)
+    return dict(title=title,modules=modules,options=options,layers=layers,google=google,google_key=google_key,width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)

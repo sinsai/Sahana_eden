@@ -1,8 +1,9 @@
 {{extend 'layout.html'}}
 
 <link rel="stylesheet" type="text/css" href="{{=URL(r=request,c='static',f='mfbase/ext/resources/css/ext-all.css')}}" />
-<!-- Comment-out for Production installs -->
+<!-- Only needed when developing/testing with IE
 <script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/openlayers/lib/Firebug/firebug.js')}}"></script>
+-->
 <script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/openlayers/lib/OpenLayers.js')}}"></script>
 <!-- Change to proj4js-compressed.js for Production installs -->
 <!--
@@ -203,10 +204,8 @@ function initToolbarContent(toolbar) {
 				// Convert back to LonLat for saving
 				//var proj4326 = new OpenLayers.Projection("EPSG:4326");
 				lonlat.transform(map.getProjectionObject(), proj4326);
-				alert("{{=T("Latitude")}}: " + lat);
-				//db(db.gis_config.setting=='lat').update(value=lat)
-				//db(db.gis_config.setting=='lon').update(value=lon)
-				//db(db.gis_config.setting=='zoom').update(value=zoom)
+				//alert("{{=T("Latitude")}}: " + lat);
+                // Use AJAX to send back
 			}
 		})
 	toolbar.add(
@@ -256,8 +255,7 @@ function osm_getTileURL(bounds) {
 }
 
 Ext.onReady(function() {
-	var map_viewing_client = Ext.get('map');
-	map = new OpenLayers.Map('map',options);
+    map = new OpenLayers.Map('center',options);
 	
 	addLayers(map);
 	
@@ -270,13 +268,13 @@ Ext.onReady(function() {
 	toolbar = createToolbar(map);
 
 	var win = new Ext.Window({
-		title    : 'Map Viewing Client',
+		//title    : 'Map Viewing Client',
 		closable : true,
 		collapsible : true,
 		maximizable : true,
 		titleCollapse : true,
-		width    : {{=db(db.gis_config.setting=='map_width').select(db.gis_config.value)[0].value}},
-		height   : {{=db(db.gis_config.setting=='map_height').select(db.gis_config.value)[0].value}},
+		width    : {{=width}},
+		height   : {{=height}},
 		plain    : true,
 		layout   : 'border',
 		listeners: {
@@ -317,7 +315,7 @@ Ext.onReady(function() {
                 }, {
                     region: "center",
                     id: "map",
-                    title: "Map",
+                    //title: "Map",
                     layout: "fit",
                     split: true,
                     xtype: "mapcomponent",
@@ -340,7 +338,7 @@ Ext.onReady(function() {
                 }]
 	});
 
-	win.show(map_viewing_client);
+	win.show();
 	initToolbarContent(toolbar);
 
 });
@@ -372,8 +370,9 @@ Ext.onReady(function() {
 </td></tr>
 </table>
 
-<div id="map"></div>
-
+<div id="center"></div>
+<!-- Area for Status reports -->
+<div id="south">
 <table>
 <tr><td style="border: 0px none ;" valign="top">
 <div id="status_osm"></div>
@@ -383,3 +382,4 @@ Ext.onReady(function() {
 <div id="status_files"></div>
 </td></tr>
 </table>
+</div>

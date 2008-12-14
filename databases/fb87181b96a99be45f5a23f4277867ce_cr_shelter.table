@@ -7,32 +7,48 @@ sS'description'
 p4
 S'CHAR(256)'
 p5
-sS'contact'
+sS'area'
 p6
-S'REFERENCES contact(id) ON DELETE CASCADE'
-p7
-sS'location'
-p8
-S'REFERENCES gis_feature(id) ON DELETE CASCADE'
-p9
-sS'shelters'
-p10
-S'INTEGER'
-p11
-sS'address'
-p12
-S'CHAR(256)'
-p13
-sS'modified_on'
-p14
-S'TIMESTAMP'
-p15
-sS'id'
-p16
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p17
-sS'name'
-p18
 S'CHAR(32)'
+p7
+sS'persons_per_dwelling'
+p8
+S'INTEGER'
+p9
+sS'contact'
+p10
+S'REFERENCES contact(id) ON DELETE CASCADE'
+p11
+sS'location'
+p12
+S'REFERENCES gis_feature(id) ON DELETE CASCADE'
+p13
+sS'shelters'
+p14
+S'INTEGER'
+p15
+sS'address'
+p16
+S'CHAR(256)'
+p17
+sS'modified_on'
+p18
+S'TIMESTAMP'
 p19
+sS'personsPerDwelling'
+p20
+S'INTEGER'
+p21
+sS'id'
+p22
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p23
+sS'dwellings'
+p24
+S'INTEGER'
+p25
+sS'name'
+p26
+S'CHAR(32)'
+p27
 s.

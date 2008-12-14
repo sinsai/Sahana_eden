@@ -7,19 +7,19 @@ sS'projection'
 p4
 S'CHAR(32)'
 p5
-sS'subtype'
+sS'visible'
 p6
-S'CHAR(32)'
+S'CHAR(1)'
 p7
 sS'url'
 p8
 S'CHAR(32)'
 p9
-sS'enabled'
+sS'description'
 p10
-S'CHAR(32)'
+S'CHAR(256)'
 p11
-sS'name'
+sS'enabled'
 p12
 S'CHAR(32)'
 p13
@@ -27,9 +27,9 @@ sS'priority'
 p14
 S'INTEGER'
 p15
-sS'visible'
+sS'subtype'
 p16
-S'CHAR(1)'
+S'CHAR(32)'
 p17
 sS'base'
 p18
@@ -55,8 +55,8 @@ sS'id'
 p28
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p29
-sS'description'
+sS'name'
 p30
-S'CHAR(256)'
+S'CHAR(32)'
 p31
 s.

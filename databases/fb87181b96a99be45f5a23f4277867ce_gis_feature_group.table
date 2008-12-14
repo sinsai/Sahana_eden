@@ -3,16 +3,16 @@ S'modified_on'
 p2
 S'TIMESTAMP'
 p3
-sS'id'
-p4
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p5
-sS'name'
-p6
-S'CHAR(32)'
-p7
 sS'author'
-p8
+p4
 S'REFERENCES user(id) ON DELETE CASCADE'
+p5
+sS'id'
+p6
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p7
+sS'name'
+p8
+S'CHAR(32)'
 p9
 s.

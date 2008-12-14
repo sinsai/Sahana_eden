@@ -998,3 +998,15 @@ CREATE TABLE gis_layer_yahoo(
 	type REFERENCES gis_layer_yahoo_type(id) ON DELETE CASCADE
 );
 success!
+timestamp: 2008-12-14T14:19:44.968000
+ALTER TABLE cr_shelter ADD area CHAR(32);
+success!
+timestamp: 2008-12-14T14:19:45.078000
+ALTER TABLE cr_shelter ADD personsPerDwelling INTEGER;
+success!
+timestamp: 2008-12-14T14:19:45.203000
+ALTER TABLE cr_shelter ADD dwellings INTEGER;
+success!
+timestamp: 2008-12-14T14:20:02.468000
+ALTER TABLE cr_shelter ADD persons_per_dwelling INTEGER;
+success!

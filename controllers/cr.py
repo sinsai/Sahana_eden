@@ -71,6 +71,6 @@ def update_shelter():
 	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
     # List Options (from which to build Menu for this Module)
 	options=db(db.cr_menu_option.enabled=='True').select(db.cr_menu_option.ALL,orderby=db.cr_menu_option.priority)
-	item=t2.update(db.cr_shelter)
-	return dict(modules=modules,options=options,item=item)
+	form=t2.update(db.cr_shelter)
+	return dict(modules=modules,options=options,form=form)
 

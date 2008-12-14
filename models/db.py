@@ -375,18 +375,13 @@ db.gis_layer_georss.icon.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
 db.gis_layer_georss.projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
 
 # Layer: Google
-db.define_table('gis_layer_google_type',
-				SQLField('name'))
-
-db.gis_layer_google_type.name.requires=IS_IN_SET(['Satellite','Maps','Hybrid','Terrain'])
-
 db.define_table('gis_layer_google',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
 				SQLField('layer',db.gis_layer),
-				SQLField('type',db.gis_layer_google_type))
+				SQLField('type'))
 
 db.gis_layer_google.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
-db.gis_layer_google.type.requires=IS_IN_DB(db,'gis_layer_google_type.id','gis_layer_google_type.name')
+db.gis_layer_google.type.requires=IS_IN_SET(['Satellite','Maps','Hybrid','Terrain'])
 
 # Layer: Internal Features
 db.define_table('gis_layer_features',
@@ -398,18 +393,13 @@ db.gis_layer_features.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name'
 db.gis_layer_features.feature_group.requires=IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')
 
 # Layer: OpenStreetMap
-db.define_table('gis_layer_openstreetmap_type',
-				SQLField('name'))
-
-db.gis_layer_openstreetmap_type.name.requires=IS_IN_SET(['Mapnik','Osmarender','Aerial'])
-
 db.define_table('gis_layer_openstreetmap',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
 				SQLField('layer',db.gis_layer),
-				SQLField('type',db.gis_layer_openstreetmap_type))
+				SQLField('type'))
 
 db.gis_layer_openstreetmap.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
-db.gis_layer_openstreetmap.type.requires=IS_IN_DB(db,'gis_layer_openstreetmap_type.id','gis_layer_openstreetmap_type.name')
+db.gis_layer_openstreetmap.type.requires=IS_IN_SET(['Mapnik','Osmarender','Aerial'])
 
 # Layer: Shapefiles (via UMN MapServer)
 db.define_table('gis_layer_shapefile',
@@ -422,32 +412,22 @@ db.gis_layer_shapefile.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name
 db.gis_layer_shapefile.projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
 
 # Layer: Virtual Earth
-db.define_table('gis_layer_virtualearth_type',
-				SQLField('name'))
-
-db.gis_layer_virtualearth_type.name.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
-
 db.define_table('gis_layer_virtualearth',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
 				SQLField('layer',db.gis_layer),
-				SQLField('type',db.gis_layer_virtualearth_type))
+				SQLField('type'))
 
 db.gis_layer_virtualearth.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
-db.gis_layer_virtualearth.type.requires=IS_IN_DB(db,'gis_layer_virtualearth_type.id','gis_layer_virtualearth_type.name')
+db.gis_layer_virtualearth.type.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
 
 # Layer: Yahoo
-db.define_table('gis_layer_yahoo_type',
-				SQLField('name'))
-
-db.gis_layer_yahoo_type.name.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
-
 db.define_table('gis_layer_yahoo',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
 				SQLField('layer',db.gis_layer),
-				SQLField('type',db.gis_layer_yahoo_type))
+				SQLField('type'))
 
 db.gis_layer_yahoo.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
-db.gis_layer_yahoo.type.requires=IS_IN_DB(db,'gis_layer_yahoo_type.id','gis_layer_yahoo_type.name')
+db.gis_layer_yahoo.type.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
 
 # Layer: WMS
 db.define_table('gis_layer_wms',

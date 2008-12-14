@@ -2,7 +2,7 @@
 // Used in GIS:
 // map_service_catalogue.html, update_layer.html
 $(function() {
-    // Hide fields irrelevant for the type
+    // What is the initial type?
     var type = $("select[@name=type]").val();
     // OpenStreetMap
     if (type==1) {
@@ -17,11 +17,12 @@ $(function() {
     } else if (type==4) {
         var fields_hide=[];
     }
+    // Hide fields irrelevant for the type
     for (var i = 0; i < fields_hide.length; i++) {
         var selector = "#"+fields_hide[i]
         $(selector).hide();
     }
-
+    
     // When the type changes:
 	$("select[@name=type]").change(function() {
 		// What is the new type?
@@ -30,22 +31,22 @@ $(function() {
         if (type==1) {
             var fields_hide=["key"];
             var fields_show=["subtype"];
-            var options_subtype={1:"Mapnik", 2:"Osmarender", 3:"Aerial"};
+            var options_subtype=["Mapnik", "Osmarender", "Aerial"];
         // Google
         } else if (type==2) {
             var fields_hide=[];
             var fields_show=["subtype","key"];
-            var options_subtype={1:"Satellite", 2:"Maps", 3:"Hybrid", 4:"Terrain"};
+            var options_subtype=["Satellite", "Maps", "Hybrid", "Terrain"];
         // Virtual Earth
         } else if (type==3) {
             var fields_hide=["key"];
             var fields_show=["subtype"];
-            var options_subtype={1:"Satellite", 2:"Maps", 3:"Hybrid"};
+            var options_subtype=["Satellite", "Maps", "Hybrid"];
         // Yahoo
         } else if (type==4) {
             var fields_hide=[];
             var fields_show=["subtype","key"];
-            var options_subtype={1:"Satellite", 2:"Maps", 3:"Hybrid"};
+            var options_subtype=["Satellite", "Maps", "Hybrid"];
         }
         // Hide fields no longer relevant for the new type
         for (var i = 0; i < fields_hide.length; i++) {
@@ -63,7 +64,7 @@ $(function() {
 		var options = '';
         //for (var i = 0; i < options_subtype.length; i++) {
         for(key in options_subtype) {
-            options += '<option value="' + key + '">' + options_subtype[key] + '</option>';
+            options += '<option value="' + options_subtype[key] + '">' + options_subtype[key] + '</option>';
         }
         $("select[@name=subtype]").html(options);
         // ToDo: Provide option to update the Key field from DB using AJAX/JSON

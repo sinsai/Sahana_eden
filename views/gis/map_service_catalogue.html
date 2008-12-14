@@ -3,7 +3,7 @@
 <script src="{{=URL(r=request,c='static',f='scripts/gis_layers.js')}}" type="text/javascript" charset="utf-8"></script>
 
 {{try:}}
- {{=H2(T(title))}}
+ {{=H2(title)}}
 {{except:}}
 {{pass}}
 <table>
@@ -55,10 +55,10 @@ value="{{=row.id}}">{{=row.name}}</option>
 <td><select name="subtype" type="select">
 {{for row in options_subtype:}}
 <option
-{{if row.id==int(subtype):}}
+{{if row==subtype:}}
 selected="selected"
 {{pass}}
-value="{{=row.id}}">{{=row.name}}</option>
+value="{{=row}}">{{=row}}</option>
 {{pass}}
 </select>
 <!-- FIXME: Allow non-JS browsers to be able to load subtypes list manually -->

@@ -47,12 +47,12 @@ def map_service_catalogue():
 
     # Default to OpenStreetMap - promote Open Data!
     type="openstreetmap"
-    subtype="1" # Mapnik
+    subtype="Mapnik"
+    options_subtype=["Mapnik","Osmarender","Aerial"]
     key="ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw" # Google Key for 127.0.0.1
     
     # Pull out options for dropdowns
     options_type = db().select(db.gis_layer_type.ALL)
-    options_subtype = db().select(db['gis_layer_%s_type' % type].ALL)
     # 0-99, take away all used priorities
     options_priority = range(100)
     options_used = db().select(db.gis_layer.priority)
@@ -206,20 +206,16 @@ def display_layer():
     layer=db(db.gis_layer.id==t2.id).select()[0]
     type=db(db.gis_layer_type.id==layer.type).select(db.gis_layer_type.ALL)[0].name
     if type=="openstreetmap":
-        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         key=0
     elif type=="google":
-        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
     elif type=="virtualearth":
-        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         key=0
     elif type=="yahoo":
-        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
     else:
         subtype=0
@@ -241,23 +237,28 @@ def update_layer():
     type=db(db.gis_layer_type.id==layer.type).select()[0].name
     if type=="openstreetmap":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        # Need here as well as gis_layers.js to populate the initial 'selected'
+        options_subtype = ["Mapnik","Osmarender","Aerial"]
         key=0
     elif type=="google":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        options_subtype = ["Satellite", "Maps", "Hybrid", "Terrain"]
         key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
     elif type=="virtualearth":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        options_subtype = ["Satellite", "Maps", "Hybrid"]
         key=0
     elif type=="yahoo":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        options_subtype = ["Satellite", "Maps", "Hybrid"]
         key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
     else:
         subtype=0
+        options_subtype = [""]
         key=0
 
     # Pull out options for dropdowns
     options_type = db().select(db.gis_layer_type.ALL)
-    options_subtype = db().select(db['gis_layer_%s_type' % type].ALL)
     # 0-99, take away all used priorities, add back the current priority
     options_priority = range(100)
     options_used = db().select(db.gis_layer.priority)

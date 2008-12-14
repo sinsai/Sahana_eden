@@ -7,16 +7,16 @@ sS'enabled'
 p4
 S'CHAR(32)'
 p5
-sS'id'
+sS'description'
 p6
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(256)'
 p7
 sS'name'
 p8
 S'CHAR(32)'
 p9
-sS'description'
+sS'id'
 p10
-S'CHAR(256)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p11
 s.

@@ -401,7 +401,7 @@ db.gis_layer_features.feature_group.requires=IS_IN_DB(db,'gis_feature_group.id',
 db.define_table('gis_layer_openstreetmap_type',
 				SQLField('name'))
 
-db.gis_layer_openstreetmap_type.name.requires=IS_IN_SET(['Mapnik','Osmarender'])
+db.gis_layer_openstreetmap_type.name.requires=IS_IN_SET(['Mapnik','Osmarender','Aerial'])
 
 db.define_table('gis_layer_openstreetmap',
 				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
@@ -420,6 +420,34 @@ db.define_table('gis_layer_shapefile',
 db.gis_layer_shapefile.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
 # We should be able to auto-detect this value (but still want to be able to over-ride)
 db.gis_layer_shapefile.projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
+
+# Layer: Virtual Earth
+db.define_table('gis_layer_virtualearth_type',
+				SQLField('name'))
+
+db.gis_layer_virtualearth_type.name.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
+
+db.define_table('gis_layer_virtualearth',
+				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
+				SQLField('layer',db.gis_layer),
+				SQLField('type',db.gis_layer_virtualearth_type))
+
+db.gis_layer_virtualearth.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
+db.gis_layer_virtualearth.type.requires=IS_IN_DB(db,'gis_layer_virtualearth_type.id','gis_layer_virtualearth_type.name')
+
+# Layer: Yahoo
+db.define_table('gis_layer_yahoo_type',
+				SQLField('name'))
+
+db.gis_layer_yahoo_type.name.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
+
+db.define_table('gis_layer_yahoo',
+				SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
+				SQLField('layer',db.gis_layer),
+				SQLField('type',db.gis_layer_yahoo_type))
+
+db.gis_layer_yahoo.layer.requires=IS_IN_DB(db,'gis_layer.id','gis_layer.name')
+db.gis_layer_yahoo.type.requires=IS_IN_DB(db,'gis_layer_yahoo_type.id','gis_layer_yahoo_type.name')
 
 # Layer: WMS
 db.define_table('gis_layer_wms',

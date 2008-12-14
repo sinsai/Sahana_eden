@@ -10,6 +10,12 @@ $(function() {
     // Google
     } else if (type==2) {
         var fields_hide=[];
+    // Virtual Earth
+    } else if (type==3) {
+        var fields_hide=["key"];
+    // Yahoo
+    } else if (type==4) {
+        var fields_hide=[];
     }
     for (var i = 0; i < fields_hide.length; i++) {
         var selector = "#"+fields_hide[i]
@@ -24,12 +30,22 @@ $(function() {
         if (type==1) {
             var fields_hide=["key"];
             var fields_show=["subtype"];
-            var options_subtype={1:"Mapnik", 2:"Osmarender"};
+            var options_subtype={1:"Mapnik", 2:"Osmarender", 3:"Aerial"};
         // Google
         } else if (type==2) {
             var fields_hide=[];
             var fields_show=["subtype","key"];
             var options_subtype={1:"Satellite", 2:"Maps", 3:"Hybrid", 4:"Terrain"};
+        // Virtual Earth
+        } else if (type==3) {
+            var fields_hide=["key"];
+            var fields_show=["subtype"];
+            var options_subtype={1:"Satellite", 2:"Maps", 3:"Hybrid"};
+        // Yahoo
+        } else if (type==4) {
+            var fields_hide=[];
+            var fields_show=["subtype","key"];
+            var options_subtype={1:"Satellite", 2:"Maps", 3:"Hybrid"};
         }
         // Hide fields no longer relevant for the new type
         for (var i = 0; i < fields_hide.length; i++) {

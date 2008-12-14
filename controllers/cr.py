@@ -11,8 +11,7 @@ def profile(): t2.profile()
 def index():
     # Page Title
 	title=db(db.module.name=='cr').select()[0].name_nice
-	#title=T('Shelter Registry')
-    # List Modules (from which to build Menu of Modules)
+	# List Modules (from which to build Menu of Modules)
 	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
     # List Options (from which to build Menu for this Module)
 	options=db(db.cr_menu_option.enabled=='Yes').select(db.cr_menu_option.ALL,orderby=db.cr_menu_option.priority)
@@ -29,6 +28,7 @@ def open():
     option=_option.lower()
     redirect(URL(r=request,f=option))
 
+# NB No login required: unidentified users can Read/Create layers (although they need to login to Update/Delete layers)
 def add_shelter():
 	# Page Title
 	title=T('Add Shelter')
@@ -42,6 +42,19 @@ def add_shelter():
 		shelters="No Shelters currently registered."
 	form=t2.create(db.cr_shelter)
 	return dict(title=title,modules=modules,options=options,shelters=shelters,form=form)
+
+def list_shelters():
+	# Page Title
+	title=T('List Shelters')
+	# List Modules (from which to build Menu of Modules)
+	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+	# List Options (from which to build Menu for this Module)
+	options=db(db.cr_menu_option.enabled=='True').select(db.cr_menu_option.ALL,orderby=db.cr_menu_option.priority)
+    
+	shelters=t2.itemize(db.cr_shelter)
+	if shelters=="No data":
+		shelters="No Shelters currently registered."
+	return dict(title=title,modules=modules,options=options,shelters=shelters)
 
 # Actions called by representations in Model
 def display_shelter():

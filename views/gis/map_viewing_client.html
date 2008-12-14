@@ -60,11 +60,14 @@ function addLayers(map) {
 	  {{if layer.type=='1':}}
         {{osm=db(db.gis_layer_openstreetmap.layer==layer.id).select()[0].type}}
 		{{if osm=='1':}}
-        	var mapnik = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openstreetmap.org/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true } );
+        	var mapnik = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openstreetmap.org/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
 			map.addLayer(mapnik);
 		{{elif osm=='2':}}
-        	var osmarender = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tah.openstreetmap.org/Tiles/tile.php/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true } );
+        	var osmarender = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tah.openstreetmap.org/Tiles/tile/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
 			map.addLayer(osmarender);
+	    {{elif osm=='3':}}
+        	var oam = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/", {type: 'png', getURL: osm_getTileURL } );
+			map.addLayer(oam);
 	    {{pass}}
 	  {{elif layer.type=='2':}}
         {{googl=db(db.gis_layer_google.layer==layer.id).select()[0].type}}
@@ -81,10 +84,32 @@ function addLayers(map) {
 			var googleterrain = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
             map.addLayer(googleterrain);
 		{{pass}}
-      {{elif layer.type==3:}}
-        // WMS
+      {{elif layer.type=='3':}}
+        {{ve=db(db.gis_layer_virtualearth.layer==layer.id).select()[0].type}}
+        {{if ve==1:}}
+            var vesat = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
+            map.addLayer(vesat);
+        {{elif ve==2:}}
+			var vemaps = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Road, 'sphericalMercator': true } );
+            map.addLayer(vemaps);
+        {{elif ve==3:}}
+			var vehybrid = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
+			map.addLayer(vehybrid);
+		{{pass}}
+	  {{elif layer.type=='4':}}
+        {{yhoo=db(db.gis_layer_yahoo.layer==layer.id).select()[0].type}}
+        {{if yhoo==1:}}
+            var yahoosat = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
+            map.addLayer(yahoosat);
+        {{elif yhoo==2:}}
+			var yahoomaps = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {'sphericalMercator': true } );
+            map.addLayer(yahoomaps);
+        {{elif yhoo==3:}}
+			var yahoohybrid = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
+			map.addLayer(yahoohybrid);
+		{{pass}}
 	  {{pass}}
-	{{pass}}
+    {{pass}}
 }
 
 OpenLayers.Map.prototype.registerEvents = function(layer) {
@@ -270,7 +295,14 @@ Ext.onReady(function() {
 	//treeModel = createTreeModel();
 	toolbar = createToolbar(map);
 
-	var win = new Ext.Window({
+    // No need to duplicate this fucntionality - done nicer by MapFish
+	//map.addControl(new OpenLayers.Control.LayerSwitcher());
+    // Doesn't work in our app :/
+    //map.addControl(new OpenLayers.Control.Permalink());
+    map.addControl(new OpenLayers.Control.ScaleLine());
+    map.addControl(new OpenLayers.Control.MousePosition());
+    map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+    var win = new Ext.Window({
 		//title    : 'Map Viewing Client',
 		closable : true,
 		collapsible : true,
@@ -290,6 +322,7 @@ Ext.onReady(function() {
                     title: "Tools",
                     border: true,
                     width: 250,
+                    collapsible: true,
                     split: true,
                     items: [{
                         id: "tree",
@@ -330,6 +363,7 @@ Ext.onReady(function() {
                     //id: "search_grid",
                     //title: "Search results",
                     //split: true,
+                    //collapsible: true,
                     //height: 200,
                     // 8.1
                     //xtype: "grid",
@@ -354,8 +388,14 @@ Ext.onReady(function() {
 	var gMfLocation = "/sahana/static/mfbase/mapfish/";
 //--></script>
 <script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/mapfish/MapFish.js')}}"></script>
+{{if virtualearth:}}
+<script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.1"></script>
+{{pass}}
 {{if google:}}
 <script src="http://maps.google.com/maps?file=api&v=2&key={{=google_key}}"></script>
+{{pass}}
+{{if yahoo:}}
+<script src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo_key}}"></script>
 {{pass}}
 
 <table>

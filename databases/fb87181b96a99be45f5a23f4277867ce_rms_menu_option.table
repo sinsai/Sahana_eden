@@ -3,20 +3,20 @@ S'priority'
 p2
 S'INTEGER'
 p3
-sS'id'
-p4
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p5
 sS'enabled'
+p4
+S'CHAR(32)'
+p5
+sS'id'
 p6
-S'CHAR(32)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p7
-sS'description'
-p8
-S'CHAR(256)'
-p9
 sS'name'
-p10
+p8
 S'CHAR(32)'
+p9
+sS'description'
+p10
+S'CHAR(256)'
 p11
 s.

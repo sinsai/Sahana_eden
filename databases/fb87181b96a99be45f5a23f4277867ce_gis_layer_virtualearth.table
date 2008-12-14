@@ -1,0 +1,18 @@
+(dp1
+S'modified_on'
+p2
+S'TIMESTAMP'
+p3
+sS'layer'
+p4
+S'REFERENCES gis_layer(id) ON DELETE CASCADE'
+p5
+sS'type'
+p6
+S'REFERENCES gis_layer_virtualearth_type(id) ON DELETE CASCADE'
+p7
+sS'id'
+p8
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p9
+s.

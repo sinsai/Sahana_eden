@@ -970,3 +970,31 @@ CREATE TABLE gis_layer_openstreetmap_type(
 	name CHAR(32)
 );
 success!
+timestamp: 2008-12-14T00:26:45.453000
+CREATE TABLE gis_layer_virtualearth_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-12-14T00:30:48.968000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE,
+	type REFERENCES gis_layer_virtualearth_type(id) ON DELETE CASCADE
+);
+success!
+timestamp: 2008-12-14T00:30:49.078000
+CREATE TABLE gis_layer_yahoo_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-12-14T00:30:49.234000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	layer REFERENCES gis_layer(id) ON DELETE CASCADE,
+	type REFERENCES gis_layer_yahoo_type(id) ON DELETE CASCADE
+);
+success!

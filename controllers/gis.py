@@ -111,6 +111,28 @@ def map_service_catalogue():
                     service=type_new,
                     key=form.vars.key
                 )
+        elif type_new=="virtualearth":
+            db['gis_layer_%s' % type_new].insert(
+                layer=id,
+                type=form.vars.subtype
+            )
+        elif type_new=="yahoo":
+            db['gis_layer_%s' % type_new].insert(
+                layer=id,
+                type=form.vars.subtype
+            )
+            # Check to see whether a Key already exists for this service
+            if len(db(db.gis_key.service==type_new).select()):
+                # Update
+                db(db.gis_key.service==type_new).select()[0].update_record(
+                    key=form.vars.key
+                )
+            else:
+                # Insert
+                db.gis_key.insert(
+                    service=type_new,
+                    key=form.vars.key
+                )
         # FIXME: Refresh Layers list
         # Notify user :)
         response.confirmation=T("Layer updated")
@@ -179,16 +201,23 @@ def display_layer():
     #main=t2.display(db.gis_layer)
 
     # We want more control than T2 allows us (& we also want proper MVC separation)
-    # - sub-tables
+    # - multiple tables
     # - names not numbers for type/subtype
-    # - Req fields
     layer=db(db.gis_layer.id==t2.id).select()[0]
     type=db(db.gis_layer_type.id==layer.type).select(db.gis_layer_type.ALL)[0].name
     if type=="openstreetmap":
         _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
         key=0
-    if type=="google":
+    elif type=="google":
+        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
+    elif type=="virtualearth":
+        _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
+        key=0
+    elif type=="yahoo":
         _subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         subtype=db(db['gis_layer_%s_type' % type].id==_subtype).select(db['gis_layer_%s_type' % type].ALL)[0].name
         key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
@@ -214,6 +243,12 @@ def update_layer():
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         key=0
     elif type=="google":
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
+    elif type=="virtualearth":
+        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        key=0
+    elif type=="yahoo":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
     else:
@@ -286,6 +321,17 @@ def update_layer():
     		db(db.gis_key.service==type_new).select()[0].update_record(
     			key=form.vars.key
     		)
+    	elif type_new=="virtualearth":
+    		db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
+    			type=form.vars.subtype
+    		)
+    	elif type_new=="yahoo":
+    		db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
+    			type=form.vars.subtype
+    		)
+    		db(db.gis_key.service==type_new).select()[0].update_record(
+    			key=form.vars.key
+    		)
     	# Notify user :)
         response.confirmation=T("Layer updated")
     elif form.errors: 
@@ -323,7 +369,7 @@ def map_viewing_client():
     google=0
     google_key=""
     for row in layers:
-        if row.type=="1":
+        if row.type=="2":
             google=1
     if google==1:
         # Check for Google Key
@@ -335,4 +381,26 @@ def map_viewing_client():
             google=0
             # Redirect to Key entry screen?
 
-    return dict(title=title,modules=modules,options=options,layers=layers,google=google,google_key=google_key,width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)
+    # Check for enabled Virtual Earth layers
+    virtualearth=0
+    for row in layers:
+        if row.type=="3":
+            virtualearth=1
+
+    # Check for enabled Yahoo layers
+    yahoo=0
+    yahoo_key=""
+    for row in layers:
+        if row.type=="4":
+            yahoo=1
+    if yahoo==1:
+        # Check for Yahoo Key
+        _yahoo_key=db(db.gis_key.service=='yahoo').select(db.gis_key.key)
+        if len(_yahoo_key):
+            yahoo_key=_yahoo_key[0].key
+        else:
+            response.flash=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
+            google=0
+            # Redirect to Key entry screen?
+
+    return dict(title=title,modules=modules,options=options,layers=layers,google=google,google_key=google_key,virtualearth=virtualearth,yahoo=yahoo,yahoo_key=yahoo_key,width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)

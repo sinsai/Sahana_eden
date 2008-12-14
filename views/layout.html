@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>{{=title}}</title>
+<title>{{try:}}{{=title}}{{except:}}{{pass}}</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <meta name="keywords" content="{{=response.keywords}}" />
 <meta name="description" content="{{=response.description}}" />
@@ -30,7 +30,7 @@
    <p id="skip">Jump to: <a href="#content">Content</a> | <a href="#modulemenu">Module Menu</a></p>
   <div id="modmenuwrap">
    {{try:}}
-    {{=H2(T(title))}}
+    {{=H2(title)}}
    {{except:}}
    {{pass}}
    <ul id="modmenu">

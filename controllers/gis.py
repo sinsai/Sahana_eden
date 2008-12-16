@@ -423,6 +423,35 @@ def update_layer():
 
     return dict(modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
 
+@t2.requires_login('login')
+def delete_layer():
+    # List Modules (from which to build Menu of Modules)
+    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+    # List Options (from which to build Menu for this Module)
+    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
+
+    layer=db(db.gis_layer.id==t2.id).select()[0]
+    type=db(db.gis_layer_type.id==layer.type).select()[0].name
+
+    #if type=="wms":
+    #    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+    #    db(db['gis_layer_wms_%s' % subtype].layer==t2.id).delete{}
+    
+    # Delete Sub-Record:
+    db(db['gis_layer_%s' % type].layer==t2.id).delete()
+    
+    # Delete Master Record
+    db(db.gis_layer.id==t2.id).delete()
+    
+    # Notify user :)
+    response.confirmation=T("Layer deleted")
+
+    list=t2.itemize(db.gis_layer)
+    if list=="No data":
+        list="No Layers currently defined."
+
+    return dict(modules=modules,options=options,list=list)
+
 # Map Service Catalogue
 # NB No login required: unidentified users can Read/Create layers (although they need to login to Update/Delete layers)
 def map_service_catalogue():

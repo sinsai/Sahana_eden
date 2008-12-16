@@ -23,24 +23,36 @@ sS'author'
 p12
 S'REFERENCES user(id) ON DELETE CASCADE'
 p13
-sS'feature'
+sS'url'
 p14
-S'REFERENCES gis_feature(id) ON DELETE CASCADE'
-p15
-sS'created_on'
-p16
-S'TIMESTAMP'
-p17
-sS'modified_on'
-p18
-S'TIMESTAMP'
-p19
-sS'id'
-p20
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p21
-sS'name'
-p22
 S'CHAR(32)'
+p15
+sS'image'
+p16
+S'CHAR(128)'
+p17
+sS'feature'
+p18
+S'REFERENCES gis_feature(id) ON DELETE CASCADE'
+p19
+sS'created_by'
+p20
+S'REFERENCES t2_person(id) ON DELETE CASCADE'
+p21
+sS'created_on'
+p22
+S'TIMESTAMP'
 p23
+sS'modified_on'
+p24
+S'TIMESTAMP'
+p25
+sS'id'
+p26
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p27
+sS'name'
+p28
+S'CHAR(32)'
+p29
 s.

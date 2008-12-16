@@ -1,6 +1,16 @@
 {{extend 'layout.html'}}
 
 <script src="{{=URL(r=request,c='static',f='scripts/gis_layers.js')}}" type="text/javascript" charset="utf-8"></script>
+<!--
+<script language="javascript">//<![CDATA[
+$(function() {
+    // When the Keys button is clicked
+    $("#keys-btn").click(function() {
+        //$(this).hide();
+    });
+});
+//]]></script>
+-->
 
 {{try:}}
  {{=H2(title)}}
@@ -8,15 +18,29 @@
 {{pass}}
 <table>
 <tr><td id='btn-panel'>
-<input type="button" id="defaults-btn" value="{{=T("Defaults")}}" />
+<a href="{{=URL(r=request,c='gis',f='configs')}}">
+<input type="button" id="configs-btn" value="{{=T("Configs")}}" />
+</a>
 </td><td id='btn-panel'>
-<input type="button" id="files-btn" value="{{=T("Files")}}" />
+<a href="{{=URL(r=request,c='gis',f='features')}}">
+<input type="button" id="features-btn" value="{{=T("Features")}}" />
+</a>
 </td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='import')}}">
+<input type="button" id="import-btn" value="{{=T("Import")}}" />
+</a>
+</td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='keys')}}">
 <input type="button" id="keys-btn" value="{{=T("Keys")}}" />
+</a>
 </td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='markers')}}">
 <input type="button" id="markers-btn" value="{{=T("Markers")}}" />
+</a>
 </td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='projections')}}">
 <input type="button" id="projections-btn" value="{{=T("Projections")}}" />
+</a>
 </td></tr>
 </table>
 <p>&nbsp;</p>
@@ -30,6 +54,7 @@
 
 <strong>{{=T("Add New Layer")}}:</strong>
 
+<div class="label">
 <form action="" enctype="multipart/form-data" method="post">
 <table>
 <tr><td><label>{{=T("Name")}}</label></td>
@@ -95,6 +120,7 @@ Detail:
 {{pass}}
 {{=form.hidden_fields()}}
 </form>
+</div>
 <p><b>Key:</b><b class='red'> * </b> - Fields tagged with a star &#040;<span class='red'> * </span>&#041; are mandatory and must be filled.</p>
 <p>&nbsp;</p>
 </div>

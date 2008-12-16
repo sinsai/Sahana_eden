@@ -1,54 +1,25 @@
 {{extend 'layout.html'}}
 
-<link rel="stylesheet" type="text/css" href="{{=URL(r=request,c='static',f='mfbase/ext/resources/css/ext-all.css')}}" />
-<!-- Only needed when developing/testing with IE
-<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/openlayers/lib/Firebug/firebug.js')}}"></script>
--->
-<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/openlayers/lib/OpenLayers.js')}}"></script>
-<!-- Change to proj4js-compressed.js for Production installs -->
 <!--
-<script type="text/javascript" src="{{=URL(r=request,c='static',f='proj4js/lib/proj4js.js')}}"></script>
+    ol_js_loaders.html <- done
+    ol_toolbar2.html <- replaced by MapFish toolbar: mf_toolbar.html
+    ol_start_vars.js
+    ol_layers_all.js
+    ol_show_features_markers.js
+    ol_controls.js <- done
+    ol_controls_add_edit.js
+    // Called to end the onload function
+    ol_onload_fin.js
+    ol_generate_add_feature_with_popup.js
+    ol_functions.js <- done
+    ol_status.html <- done
 -->
-<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/ext/adapter/jquery/ext-jquery-adapter.js')}}"></script>
-<!-- Change to ext-all.js for Production installs -->
-<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/ext/ext-all-debug.js')}}"></script>
-<script language="javascript">//<![CDATA[
-// make available for easy debugging
-var map, toolbar;
-//var treeModel;
-//var currentFeature, currentPopup;
-var markersLayer, featuresLayer, vectorLayer;
-//var selectControl, dragControl, pointControl, lineControl, polygonControl
-var layersMarkup;
 
-// avoid pink tiles
-OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
-OpenLayers.Util.onImageLoadErrorColor = "transparent";
+{{include 'gis/ol_js_loaders.html'}}
 
-// Set Proxy Host
-OpenLayers.ProxyHost = '{{=URL(r=request,c='static',f='proxy.py?url=')}}';
+{{include 'gis/ol_start_vars.js'}}
 
-var lat = {{=lat}};
-var lon = {{=lon}};
-var zoom = {{=zoom}};
-var centered = false;
-
-// See - http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
-var proj4326 = new OpenLayers.Projection('EPSG:4326');
-var projection_current = new OpenLayers.Projection('EPSG:{{=projection}}');
-var point = new OpenLayers.LonLat(lon, lat);
-
-// Map Options
-var options = {
-	displayProjection: proj4326,
-	projection: projection_current,
-	units: "{{=units}}",
-	maxResolution: {{=maxResolution}},
-	maxExtent: new OpenLayers.Bounds({{=maxExtent}})
-};
-	
 function centerMap() {
-	//alert("Centered: " + centered);
 	if (!centered) {
 		this.setCenter(point.transform(proj4326, this.getProjectionObject()), zoom);
 		centered = true;
@@ -56,254 +27,31 @@ function centerMap() {
 }
 
 function addLayers(map) {
-	{{for layer in layers:}}
-	  {{if layer.type=='1':}}
-        {{osm=db(db.gis_layer_openstreetmap.layer==layer.id).select()[0].type}}
-		{{if osm=='Mapnik':}}
-        	var mapnik = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openstreetmap.org/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-			map.addLayer(mapnik);
-		{{elif osm=='Osmarender':}}
-        	var osmarender = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tah.openstreetmap.org/Tiles/tile/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-			map.addLayer(osmarender);
-	    {{elif osm=='Aerial':}}
-        	var oam = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/", {type: 'png', getURL: osm_getTileURL } );
-			map.addLayer(oam);
-	    {{pass}}
-	  {{elif layer.type=='2':}}
-        {{googl=db(db.gis_layer_google.layer==layer.id).select()[0].type}}
-        {{if googl=='Satellite':}}
-            var googlesat = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
-            map.addLayer(googlesat);
-        {{elif googl=='Maps':}}
-			var googlemaps = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
-            map.addLayer(googlemaps);
-        {{elif googl=='Hybrid':}}
-			var googlehybrid = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
-			map.addLayer(googlehybrid);
-        {{elif googl=='Terrain':}}
-			var googleterrain = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
-            map.addLayer(googleterrain);
-		{{pass}}
-      {{elif layer.type=='3':}}
-        {{ve=db(db.gis_layer_virtualearth.layer==layer.id).select()[0].type}}
-        {{if ve=='Satellite':}}
-            var vesat = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
-            map.addLayer(vesat);
-        {{elif ve=='Maps':}}
-			var vemaps = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Road, 'sphericalMercator': true } );
-            map.addLayer(vemaps);
-        {{elif ve=='Hybrid':}}
-			var vehybrid = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
-			map.addLayer(vehybrid);
-		{{pass}}
-	  {{elif layer.type=='4':}}
-        {{yhoo=db(db.gis_layer_yahoo.layer==layer.id).select()[0].type}}
-        {{if yhoo=='Satellite':}}
-            var yahoosat = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
-            map.addLayer(yahoosat);
-        {{elif yhoo=='Maps':}}
-			var yahoomaps = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {'sphericalMercator': true } );
-            map.addLayer(yahoomaps);
-        {{elif yhoo=='Hybrid':}}
-			var yahoohybrid = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
-			map.addLayer(yahoohybrid);
-		{{pass}}
-	  {{pass}}
-    {{pass}}
+    {{include 'gis/ol_layers_all.js'}}
 }
 
-OpenLayers.Map.prototype.registerEvents = function(layer) {
-	layer.events.register("loadstart", layer, function() {
-		document.body.style.cursor = 'wait';
-	});
-	layer.events.register("loadend", layer, function() {
-		document.body.style.cursor = 'auto';
-	});
-	this.addLayer(layer);
-}
+{{include 'gis/mf_toolbar.js'}}
 
-// These should be retrieved from the database (can be static via Web2Py, not dynamic via AJAX)
-// Also need to be transformed for the current projection
-//latlon.transform(map.getProjectionObject(), proj4326);
-function createShortcutsStore() {
-    return new Ext.data.SimpleStore({
-		fields: ["value", "text", "bbox"],
-		data: [['OC', 'Oceania', new OpenLayers.Bounds(56.0234375, -72.53125, 214.2265625, 32.9375)],
-			['NA', 'North America', new OpenLayers.Bounds(-186.37890625, -2.21875, -28.17578125, 103.25)],
-			['SA', 'South America', new OpenLayers.Bounds(-146.828125, -71.828125, 11.375, 33.640625)],
-			['AF', 'Africa', new OpenLayers.Bounds(-58.9375, -51.7890625, 99.265625, 53.6796875)],
-			['EU', 'Europe', new OpenLayers.Bounds(-23.078125, 26.2578125, 56.0234375, 78.9921875)],
-			['AS', 'Asia', new OpenLayers.Bounds(15.59375, -21.90625, 173.796875, 83.5625)]]
-	});
-}
-
-function createToolbar(map) {
-	return new mapfish.widgets.toolbar.Toolbar({map: map});
-}
-
-function initToolbarContent(toolbar) {
-	function addSeparator(toolbar){
-		toolbar.add(new Ext.Toolbar.Spacer());
-		toolbar.add(new Ext.Toolbar.Separator());
-		toolbar.add(new Ext.Toolbar.Spacer());
-	} 
-
-	toolbar.addControl(
-		new OpenLayers.Control.ZoomToMaxExtent({map: map}), {
-			iconCls: "zoomfull", 
-			tooltip: '{{=T("Zoom Out Full")}}', 
-			toggleGroup: "map"
-		}
-	);
-	addSeparator(toolbar);
-	toolbar.addControl(
-		new OpenLayers.Control.ZoomBox(), {
-			iconCls: 'zoomin', 
-			tooltip: '{{=T("Zoom In")}}', 
-			toggleGroup: 'map'
-		}
-	);
-	toolbar.addControl(
-		new OpenLayers.Control.ZoomBox({
-			out: true
-		}), {
-			iconCls: 'zoomout', 
-			tooltip: '{{=T("Zoom Out")}}', 
-			toggleGroup: 'map'
-		}
-	);
-	toolbar.addControl(
-		new OpenLayers.Control.DragPan({
-			isDefault: true
-		}), {
-			iconCls: 'pan', 
-			tooltip: '{{=T("Drag")}}', 
-			toggleGroup: 'map'
-		}
-	);
-	addSeparator(toolbar);
-	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(vectorLayer, OpenLayers.Handler.Point), {
-			iconCls: 'drawpoint', 
-			tooltip: '{{=T("Add Point")}}', 
-			toggleGroup: 'map'
-		}
-	);
-	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(vectorLayer, OpenLayers.Handler.Path), {
-			iconCls: 'drawline', 
-			tooltip: '{{=T("Add Line")}}', 
-			toggleGroup: 'map'
-		}
-	);
-	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(vectorLayer, OpenLayers.Handler.Polygon), {
-			iconCls: 'drawpolygon', 
-			tooltip: '{{=T("Add Area")}}', 
-			toggleGroup: 'map'
-		}
-	);
-	addSeparator(toolbar);
-	var nav = new OpenLayers.Control.NavigationHistory();
-	map.addControl(nav);
-	nav.activate();
-	toolbar.add(
-		new Ext.Toolbar.Button({
-			iconCls: 'back',
-			tooltip: '{{=T("Previous View")}}', 
-			handler: nav.previous.trigger
-		})
-	);
-	toolbar.add(
-		new Ext.Toolbar.Button({
-			iconCls: 'next',
-			tooltip: '{{=T("Next View")}}', 
-			handler: nav.next.trigger
-		})
-	);
-	addSeparator(toolbar);
-	var saveButton = new Ext.Toolbar.Button({
-			iconCls: 'save',
-			tooltip: '{{=T("Save Viewport")}}', 
-			handler: function saveViewport(map) {
-				// Read current settings from map
-				var lonlat = map.getCenter();
-				var zoom_current = map.getZoom();
-				// Convert back to LonLat for saving
-				//var proj4326 = new OpenLayers.Projection("EPSG:4326");
-				lonlat.transform(map.getProjectionObject(), proj4326);
-				//alert("{{=T("Latitude")}}: " + lat);
-                // Use AJAX to send back
-			}
-		})
-	toolbar.add(
-		saveButton
-	);
-	addSeparator(toolbar);
-	toolbar.activate();
-}
-
-// Report Errors to a DIV
-function ReportErrors(div,text) {
-	 $(div).innerHTML = text;
-}
-// For KML layers
-function onFeatureUnselect(feature) {
-	map.removePopup(feature.popup);
-	feature.popup.destroy();
-	feature.popup = null;
-}
-// For OSM File layers
-function on_feature_hover(feature) {
-	var text ="<ul>";
-	var type ="way";
-	if (feature.geometry.CLASS_NAME == "OpenLayers.Geometry.Point") {
-		type = "node";
-	}    
-	text += "<li>" + feature.osm_id + ": <a href='http://www.openstreetmap.org/api/0.5/"+type + "/" + feature.osm_id + "'>API</a></li>";
-	for (var key in feature.attributes) {
-		text += "<li>" + key + ": " + feature.attributes[key] + "</li>";
-	}
-	text += "</ul>";
-	$("status_osm").innerHTML = text;
-}
-// For OSM Base layer
-function osm_getTileURL(bounds) {
-	var res = this.map.getResolution();
-	var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
-	var y = Math.round((this.maxExtent.top - bounds.top) / (res * this.tileSize.h));
-	var z = this.map.getZoom();
-	var limit = Math.pow(2, z);
-	if (y < 0 || y >= limit) {
-		return OpenLayers.Util.getImagesLocation() + "404.png";
-	} else {
-		x = ((x % limit) + limit) % limit;
-		return this.url + z + "/" + x + "/" + y + "." + this.type;
-	}
-}
+{{include 'gis/ol_functions2.js'}}
 
 Ext.onReady(function() {
+
     map = new OpenLayers.Map('center',options);
-	
 	addLayers(map);
-	
+	{{include 'gis/ol_controls.js'}}
+    toolbar = createToolbar(map);
+
+    // 'Scribble' mode layer
 	vectorLayer = new OpenLayers.Layer.Vector("vector", { 
 		displayInLayerSwitcher: false
 	});
 	map.registerEvents(vectorLayer);
 	
-	//treeModel = createTreeModel();
-	toolbar = createToolbar(map);
-
-    // No need to duplicate this fucntionality - done nicer by MapFish
-	//map.addControl(new OpenLayers.Control.LayerSwitcher());
-    // Doesn't work in our app :/
-    //map.addControl(new OpenLayers.Control.Permalink());
-    map.addControl(new OpenLayers.Control.ScaleLine());
-    map.addControl(new OpenLayers.Control.MousePosition());
-    map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+	// For making a custom LayerTree
+    //treeModel = createTreeModel();
+	
     var win = new Ext.Window({
-		//title    : 'Map Viewing Client',
+		//title    : 'Sahana Map Viewing Client',
 		closable : true,
 		collapsible : true,
 		maximizable : true,
@@ -319,14 +67,14 @@ Ext.onReady(function() {
 		items    : [{
                     region: "west",
                     id: "tools",
-                    title: "Tools",
+                    title: "{{=T("Tools")}}",
                     border: true,
                     width: 250,
                     collapsible: true,
                     split: true,
                     items: [{
                         id: "tree",
-                        title: "Layer Tree",
+                        title: "{{=T("Layer Tree")}}",
                         xtype: "layertree",
                         map: map,
                         height: 200,
@@ -352,7 +100,6 @@ Ext.onReady(function() {
                 }, {
                     region: "center",
                     id: "map",
-                    //title: "Map",
                     layout: "fit",
                     split: true,
                     xtype: "mapcomponent",
@@ -361,7 +108,7 @@ Ext.onReady(function() {
                 }, {
                     //region: "south",
                     //id: "search_grid",
-                    //title: "Search results",
+                    //title: "{{=T("Search results")}}",
                     //split: true,
                     //collapsible: true,
                     //height: 200,
@@ -381,49 +128,40 @@ Ext.onReady(function() {
 
 });
 //]]></script>
-<script language="javascript" src="{{=URL(r=request,c='static',f='scripts/examples.js')}}"></script>
-<script type="text/javascript"><!--
-	// Because of a bug in Firefox 2 we need to specify the MapFish base path.
-	// See https://bugzilla.mozilla.org/show_bug.cgi?id=351282
-	var gMfLocation = "/sahana/static/mfbase/mapfish/";
-//--></script>
-<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/mapfish/MapFish.js')}}"></script>
-{{if virtualearth:}}
-<script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.1"></script>
-{{pass}}
-{{if google:}}
-<script src="http://maps.google.com/maps?file=api&v=2&key={{=google_key}}"></script>
-{{pass}}
-{{if yahoo:}}
-<script src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo_key}}"></script>
-{{pass}}
 
 <table>
 <tr><td id='btn-panel'>
-<input type="button" id="defaults-btn" value="{{=T("Defaults")}}" />
+<a href="{{=URL(r=request,c='gis',f='configs')}}">
+<input type="button" id="configs-btn" value="{{=T("Configs")}}" />
+</a>
 </td><td id='btn-panel'>
-<input type="button" id="files-btn" value="{{=T("Files")}}" />
+<a href="{{=URL(r=request,c='gis',f='features')}}">
+<input type="button" id="features-btn" value="{{=T("Features")}}" />
+</a>
 </td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='import')}}">
+<input type="button" id="import-btn" value="{{=T("Import")}}" />
+</a>
+</td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='keys')}}">
 <input type="button" id="keys-btn" value="{{=T("Keys")}}" />
+</a>
 </td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='layers')}}">
 <input type="button" id="layers-btn" value="{{=T("Layers")}}" />
+</a>
 </td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='markers')}}">
 <input type="button" id="markers-btn" value="{{=T("Markers")}}" />
+</a>
 </td><td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='projections')}}">
 <input type="button" id="projections-btn" value="{{=T("Projections")}}" />
+</a>
 </td></tr>
 </table>
 
 <div id="center"></div>
-<!-- Area for Status reports -->
 <div id="south">
-<table>
-<tr><td style="border: 0px none ;" valign="top">
-<div id="status_osm"></div>
-</td><td style="border: 0px none ;" valign="top">
-<div id="status_georss"></div>
-<div id="status_kml"></div>
-<div id="status_files"></div>
-</td></tr>
-</table>
+{{include 'gis/ol_status.html'}}
 </div>

@@ -4,7 +4,7 @@
 
 <div class='form-container'>
 <h2>{{=T("Edit Layer")}}</h2>
-
+<div class='label'>
 <form action="" enctype="multipart/form-data" method="post">
 <table>
 <tr><td><label>{{=T("Name")}}</label></td>
@@ -81,6 +81,7 @@ Detail:
 <input type="hidden" name="modified_on__original" value="{{=layer.modified_on}}" />
 {{=form.hidden_fields()}}
 </form>
+</div>
 <p><b>Key:</b><b class='red'> * </b> - Fields tagged with a star &#040;<span class='red'> * </span>&#041; are mandatory and must be filled.</p>
 <p>&nbsp;</p>
 </div>

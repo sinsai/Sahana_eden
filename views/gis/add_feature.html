@@ -1,0 +1,13 @@
+{{extend 'layout.html'}}
+
+{{=H2(T("Add Feature"))}}
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{=A(T("List Features"),_href=t2.action('list_features'))}}
+<!-- Could convert to a dynamic call to add data to this div -->
+<div id='list'></div>

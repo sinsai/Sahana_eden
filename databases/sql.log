@@ -1010,3 +1010,18 @@ success!
 timestamp: 2008-12-14T14:20:02.468000
 ALTER TABLE cr_shelter ADD persons_per_dwelling INTEGER;
 success!
+timestamp: 2008-12-14T14:41:35.250000
+ALTER TABLE gis_feature_metadata ADD url CHAR(32);
+success!
+timestamp: 2008-12-14T14:41:35.375000
+ALTER TABLE gis_feature_metadata ADD image CHAR(128);
+success!
+timestamp: 2008-12-14T14:41:35.546000
+ALTER TABLE gis_feature_metadata ADD created_by REFERENCES t2_person(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-14T15:03:45.875000
+ALTER TABLE gis_marker ADD height INTEGER;
+success!
+timestamp: 2008-12-14T15:03:46
+ALTER TABLE gis_marker ADD width INTEGER;
+success!

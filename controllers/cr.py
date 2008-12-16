@@ -28,7 +28,7 @@ def open():
     option=_option.lower()
     redirect(URL(r=request,f=option))
 
-# NB No login required: unidentified users can Read/Create layers (although they need to login to Update/Delete layers)
+# NB No login required: unidentified users can Read/Create shelters (although they need to login to Update/Delete)
 def add_shelter():
 	# Page Title
 	title=T('Add Shelter')
@@ -37,11 +37,8 @@ def add_shelter():
 	# List Options (from which to build Menu for this Module)
 	options=db(db.cr_menu_option.enabled=='True').select(db.cr_menu_option.ALL,orderby=db.cr_menu_option.priority)
     
-	shelters=t2.itemize(db.cr_shelter)
-	if shelters=="No data":
-		shelters="No Shelters currently registered."
 	form=t2.create(db.cr_shelter)
-	return dict(title=title,modules=modules,options=options,shelters=shelters,form=form)
+	return dict(title=title,modules=modules,options=options,form=form)
 
 def list_shelters():
 	# Page Title
@@ -51,10 +48,10 @@ def list_shelters():
 	# List Options (from which to build Menu for this Module)
 	options=db(db.cr_menu_option.enabled=='True').select(db.cr_menu_option.ALL,orderby=db.cr_menu_option.priority)
     
-	shelters=t2.itemize(db.cr_shelter)
-	if shelters=="No data":
-		shelters="No Shelters currently registered."
-	return dict(title=title,modules=modules,options=options,shelters=shelters)
+	list=t2.itemize(db.cr_shelter)
+	if list=="No data":
+		list="No Shelters currently registered."
+	return dict(title=title,modules=modules,options=options,list=list)
 
 # Actions called by representations in Model
 def display_shelter():
@@ -62,15 +59,17 @@ def display_shelter():
 	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
     # List Options (from which to build Menu for this Module)
 	options=db(db.cr_menu_option.enabled=='True').select(db.cr_menu_option.ALL,orderby=db.cr_menu_option.priority)
+
 	item=t2.display(db.cr_shelter)
 	return dict(modules=modules,options=options,item=item)
 
-@t2.requires_login('../login')
+@t2.requires_login('login')
 def update_shelter():
 	# List Modules (from which to build Menu of Modules)
 	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
     # List Options (from which to build Menu for this Module)
 	options=db(db.cr_menu_option.enabled=='True').select(db.cr_menu_option.ALL,orderby=db.cr_menu_option.priority)
+
 	form=t2.update(db.cr_shelter)
 	return dict(modules=modules,options=options,form=form)
 

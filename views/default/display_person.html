@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+
+<div class='form-container'>
+<h2>{{=T("Person Details")}}</h2>
+{{=A(T("Edit"),_href=t2.action('update_person',t2.id))}}
+<p>&nbsp;</p>
+{{=item}}
+<p>&nbsp;</p>
+</div>
+{{=A(T("List People"),_href=t2.action('list_persons'))}}

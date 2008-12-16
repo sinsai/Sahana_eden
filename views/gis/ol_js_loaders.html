@@ -1,0 +1,42 @@
+﻿<!-- Only needed when developing/testing with IE
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/openlayers/lib/Firebug/firebug.js')}}"></script>
+-->
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/openlayers/lib/OpenLayers.js')}}"></script>
+<!-- Needed for OSM Files support, so could make optional? -->
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='scripts/osm_styles.js')}}"></script>
+<!-- Needed for Files support, so could make optional? -->
+<link rel="stylesheet" type="text/css" href="{{=URL(r=request,c='static',f='mfbase/openlayers/theme/default/framedCloud.css')}}" />
+
+
+<!-- Change to proj4js-compressed.js for Production installs -->
+<!--
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='proj4js/lib/proj4js.js')}}"></script>
+-->
+
+<link rel="stylesheet" type="text/css" href="{{=URL(r=request,c='static',f='mfbase/ext/resources/css/ext-all.css')}}" />
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/ext/adapter/jquery/ext-jquery-adapter.js')}}"></script>
+<!-- Change to ext-all.js for Production installs -->
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/ext/ext-all-debug.js')}}"></script>
+<script  type="text/javascript src="{{=URL(r=request,c='static',f='scripts/examples.js')}}"></script>
+
+<script type="text/javascript"><!--
+	// Because of a bug in Firefox 2 we need to specify the MapFish base path.
+	// See https://bugzilla.mozilla.org/show_bug.cgi?id=351282
+	var gMfLocation = "/sahana/static/mfbase/mapfish/";
+//--></script>
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='mfbase/mapfish/MapFish.js')}}"></script>
+
+{{if projection=="900913":}}
+{{if virtualearth:}}
+<script type="text/javascript" src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.1"></script>
+{{pass}}
+{{if google:}}
+<script type="text/javascript" src="http://maps.google.com/maps?file=api&v=2&key={{=google_key}}"></script>
+{{pass}}
+{{if yahoo:}}
+<script type="text/javascript" src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo_key}}"></script>
+{{pass}}
+{{else:}}
+<!-- Disable other base layers if using a non-sphericalMercator WMS projection -->
+{{pass}}
+

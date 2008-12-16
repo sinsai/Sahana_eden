@@ -4,17 +4,19 @@
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-<div class='form-container'>
-<h3>{{=T("Layers")}}:</h3>
 {{try:}}
- {{=layers}}
+ {{=list}}
 {{except:}}
 {{pass}}
 <p>&nbsp;</p>
+<!-- Wait until this functionality is static before copying to another location!
 <strong>{{=T("Add New Layer")}}:</strong>
+-->
 {{try:}}
+<div class='form-container'>
  {{=form}}
+</div>
 {{except:}}
 {{pass}}
 <p>&nbsp;</p>
-</div>
+{{=A(T("Add New Layer"),_href=t2.action('map_service_catalogue'))}}

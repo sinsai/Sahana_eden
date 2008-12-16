@@ -8,6 +8,10 @@
 <link href="{{=URL(r=request,c='static',f='styles/rating.css')}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <script src="{{=URL(r=request,c='static',f='scripts/rating.js')}}" type="text/javascript" charset="utf-8"></script>
 <script src="{{=URL(r=request,c='static',f='scripts/labels.js')}}" type="text/javascript" charset="utf-8"></script>
+<!-- Change to jquery.dimensions.pack.js for Production installs -->
+<script src="{{=URL(r=request,c='static',f='scripts/jquery.dimensions.js')}}" type="text/javascript" charset="utf-8"></script>
+<script src="{{=URL(r=request,c='static',f='scripts/jquery.cluetip.js')}}" type="text/javascript" charset="utf-8"></script>
+<link href="{{=URL(r=request,c='static',f='styles/jquery.cluetip.css')}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <script type="text/javascript">//<![CDATA[
 function popup(url) {
   newwindow=window.open(url,'name','height=400,width=600');
@@ -37,6 +41,7 @@ $('.information').hide().slideDown('slow')
 $('.information').click(function() { $(this).fadeOut('slow'); return false; });
 $('.confirmation').hide().slideDown('slow')
 $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
+$('#tooltip').cluetip({activation: 'click',splitTitle: '|',closePosition: 'bottom'});
 $('input.string').attr('size',50);
 $('textarea.text').attr('cols',50).attr('rows',10);
 $('input.integer').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});

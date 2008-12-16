@@ -297,9 +297,9 @@ db.gis_feature.feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.
 db.gis_feature.metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
 db.gis_feature.type.requires=IS_IN_SET(['point','line','polygon'])
 db.gis_feature.lat.requires=IS_LAT()
-db.gis_feature.lat.label="Latitude"
+db.gis_feature.lat.label=T("Latitude")
 db.gis_feature.lon.requires=IS_LON()
-db.gis_feature.lon.label="Longitude"
+db.gis_feature.lon.label=T("Longitude")
 
 # Feature Groups
 # Used to select a set of Features for either Display or Export
@@ -480,6 +480,8 @@ db.define_table('cr_shelter',
                 SQLField('location',db.gis_feature))
 db.cr_shelter.represent=lambda cr_shelter: A(cr_shelter.name,_href=t2.action('display_shelter',cr_shelter.id))
 db.cr_shelter.name.requires=IS_NOT_EMPTY()
+db.cr_shelter.name.label=T("Shelter Name")
+db.cr_shelter.name.comment=SPAN("*",_class="req")
 # Doesn't allow db entry:
 #db.cr_shelter.name.widget=lambda self,value: DIV(INPUT(_type='text'),SPAN(_class='req'))
 #db.cr_shelter.name.widget=lambda self,value: DIV(INPUT(_type='text', _id=field_id,_class=field.type,_name=fieldname,value=str(default),requires=field.requires),SPAN(_class='req'))
@@ -490,7 +492,9 @@ db.cr_shelter.name.requires=IS_NOT_EMPTY()
 #db.cr_shelter.name.widget=lambda self,value: t2.input_required_widget(self,value)
 #db.cr_shelter.name.widget=lambda self,value: t2.input_required_widget(value)
 db.cr_shelter.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.id','person.full_name'))
+db.cr_shelter.contact.label=T("Contact Person")
 db.cr_shelter.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
+db.cr_shelter.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title="Location|The GIS Feature associated with this Shelter.")
 
 #
 # Disaster Victim Registry

@@ -58,8 +58,10 @@ a:hover { color: #C00; text-decoration: none; background-color: #FFC; }
 a img { border:none; }
 
 table { border-collapse: collapse }
+/* These seem a lot better off
 thead td { text-align:center; padding:.25em .25em .25em .25em; background: #555; color:#fff; font-size:100%; }
 th,td { padding:5px 5px 0 5px; border:1px solid #ccc; }
+*/
 /* hack for calender table on ie */
 table#scw td{ border:none;}
 
@@ -187,17 +189,17 @@ div#container { }
             }
             #gis_map_icon_select { float: left; width: 24px; height: 22px; background: transparent url(../mfbase/openlayers/theme/default/img/move_feature_off.png) no-repeat scroll 0% 0%;  
             }
-            #gis_map_icon_drag { float: left; width: 24px; height: 22px; margin-left: 5px;                background: transparent url(../mfbase/openlayers/theme/default/img/pan_off.png) no-repeat scroll 0% 0%;
+            #gis_map_icon_drag { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/pan_off.png) no-repeat scroll 0% 0%;
             }
             #gis_map_icon_addpoint { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_point_off.png) no-repeat scroll 0% 0%;
             }
-            #gis_map_icon_addline { float: left; width: 24px; height: 22px; margin-left: 5px;              background: transparent url(../mfbase/openlayers/theme/default/img/draw_line_off.png) no-repeat scroll 0% 0%;
+            #gis_map_icon_addline { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_line_off.png) no-repeat scroll 0% 0%;
             }
-            #gis_map_icon_addpolygon { float: left; width: 24px; height: 22px; margin-left: 5px;                 background: transparent url(../mfbase/openlayers/theme/default/img/draw_polygon_off.png) no-repeat scroll 0% 0%;
+            #gis_map_icon_addpolygon { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_polygon_off.png) no-repeat scroll 0% 0%;
             }
-            #gis_map_icon_freehand { float: left; width: 24px; height: 22px; margin-left: 5px;                 background: transparent url(../mfbase/openlayers/theme/default/img/freehand_off.png) no-repeat scroll 0% 0%;
+            #gis_map_icon_freehand { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/freehand_off.png) no-repeat scroll 0% 0%;
             }
-            #gis_map_icon_descripion { float: left; height: 22px; width: 140px; margin-left: 10px;        margin-top: 3px; color: orange; font-weight: bold; }
+            #gis_map_icon_descripion { float: left; height: 22px; width: 140px; margin-left: 10px; margin-top: 3px; color: orange; font-weight: bold; }
             .olControlMousePosition { font-size: 10px; }
             .gis_openlayers_popupbox { padding: 10px; }
                 .gis_openlayers_popupbox_header{}

@@ -31,7 +31,7 @@ def open():
 # NB No login required: unidentified users can Read/Create shelters (although they need to login to Update/Delete)
 def add_shelter():
 	# Page Title
-	title=T('Add Shelter')
+	title=T('Register New Shelter')
 	# List Modules (from which to build Menu of Modules)
 	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
 	# List Options (from which to build Menu for this Module)

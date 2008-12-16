@@ -494,7 +494,7 @@ db.cr_shelter.name.comment=SPAN("*",_class="req")
 db.cr_shelter.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.id','person.full_name'))
 db.cr_shelter.contact.label=T("Contact Person")
 db.cr_shelter.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
-db.cr_shelter.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title="Location|The GIS Feature associated with this Shelter.")
+db.cr_shelter.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
 
 #
 # Disaster Victim Registry

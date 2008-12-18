@@ -445,6 +445,9 @@ def delete_layer():
     
     # Notify user :)
     response.confirmation=T("Layer deleted")
+    
+    # No need for a dedicated view, we can re-use
+    response.view="gis/layers.html"
 
     list=t2.itemize(db.gis_layer)
     if list=="No data":

@@ -38,13 +38,15 @@ db.module.name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name_nice')
 db.module.menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.menu_priority')]
 
 # Home Menu Options
-db.define_table('home_menu_option',
+db.define_table('default_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db.home_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'home_menu_option.name')]
-db.home_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'home_menu_option.priority')]
+db.default_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.name')]
+db.default_menu_option.function.requires=IS_NOT_EMPTY()
+db.default_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.priority')]
 
 # Field options meta table
 # Give a custom list of options for each field in this schema 
@@ -214,10 +216,12 @@ db.person_to_group.person_group.requires=IS_IN_DB(db,'person_group.id')
 # GIS Menu Options
 db.define_table('gis_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default=True))
 db.gis_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_menu_option.name')]
+db.gis_menu_option.name.requires=IS_NOT_EMPTY()
 db.gis_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_menu_option.priority')]
 
 # GIS Projections
@@ -277,10 +281,17 @@ db.define_table('gis_feature_metadata',
                 SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
                 SQLField('modified_by',db.t2_person), # Auto-stamped by T2
                 SQLField('description',length=256),
+                SQLField('contact',db.person),
+                SQLField('source'),
+                SQLField('accuracy'),       # Drop-down on a IS_IN_SET[]?
+                SQLField('sensitivity'),    # Should be turned into a drop-down by referring to AAA's sensitivity table
                 SQLField('event_time','datetime'),
+                SQLField('expiry_time','datetime'),
                 SQLField('url'),
                 SQLField('image','upload'))
+db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.id','person.full_name'))
 db.gis_feature_metadata.event_time.requires=IS_DATETIME()
+db.gis_feature_metadata.expiry_time.requires=IS_DATETIME()
 db.gis_feature_metadata.url.requires=IS_URL()
 
 db.define_table('gis_feature',
@@ -460,10 +471,12 @@ db.gis_webmapcontext.user.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
 # CR Menu Options
 db.define_table('cr_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db.cr_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'cr_menu_option.name')]
+db.cr_menu_option.name.requires=IS_NOT_EMPTY()
 db.cr_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'cr_menu_option.priority')]
 
 # CR Shelters
@@ -471,7 +484,7 @@ db.define_table('cr_shelter',
                 SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
                 SQLField('name'),
                 SQLField('description',length=256),
-                SQLField('address',length=256),
+                SQLField('address','text'),
                 SQLField('capacity','integer'),
                 SQLField('dwellings','integer'),
                 SQLField('area'),
@@ -503,10 +516,12 @@ db.cr_shelter.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip"
 # DVR Menu Options
 db.define_table('dvr_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db.dvr_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'dvr_menu_option.name')]
+db.dvr_menu_option.name.requires=IS_NOT_EMPTY()
 db.dvr_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'dvr_menu_option.priority')]
 
 #
@@ -516,10 +531,12 @@ db.dvr_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'dvr_menu_o
 # IMS Menu Options
 db.define_table('ims_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db.ims_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'ims_menu_option.name')]
+db.ims_menu_option.name.requires=IS_NOT_EMPTY()
 db.ims_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'ims_menu_option.priority')]
 
 #
@@ -529,10 +546,12 @@ db.ims_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'ims_menu_o
 # MPR Menu Options
 db.define_table('mpr_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db.mpr_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'mpr_menu_option.name')]
+db.mpr_menu_option.name.requires=IS_NOT_EMPTY()
 db.mpr_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'mpr_menu_option.priority')]
 
 #
@@ -542,28 +561,44 @@ db.mpr_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'mpr_menu_o
 # OR Menu Options
 db.define_table('or_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db.or_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_menu_option.name')]
+db.or_menu_option.name.requires=IS_NOT_EMPTY()
 db.or_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_menu_option.priority')]
+
+# OR Organisation Types
+db.define_table('or_organisation_type',
+				SQLField('name'),
+				SQLField('description',length=256))
+
+db.or_organisation_type.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation_type.name')]
 
 # OR Organisations
 db.define_table('or_organisation',
                 SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
                 SQLField('name'),
                 #SQLField('parent',db.organisation),
-                SQLField('opt_org_type'),
+                SQLField('type', db.or_organisation_type),
                 SQLField('registration'),	# Registration Number
                 SQLField('manpower'),
                 SQLField('equipment'),
                 SQLField('privacy','integer',default=0),
                 SQLField('archived','boolean',default=False),
-                SQLField('address',length=256),
-                SQLField('contact',db.person))
+                SQLField('address','text'),
+                SQLField('contact',db.person),
+                SQLField('location',db.gis_feature))
+db.or_organisation.represent=lambda or_organisation: A(or_organisation.name,_href=t2.action('display_organisation',or_organisation.id))
 db.or_organisation.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation.name')]
+db.or_organisation.name.comment=SPAN("*",_class="req")
+db.or_organisation.type.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation_type.id','or_organisation_type.name'))
 #db.or_organisation.parent.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.id','or_organisation.name'))
 db.or_organisation.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.id','person.full_name'))
+db.or_organisation.contact.label=T("Contact Person")
+db.or_organisation.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
+db.or_organisation.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
 
 #
 # Request Management System
@@ -572,10 +607,12 @@ db.or_organisation.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.id','person.f
 # RMS Menu Options
 db.define_table('rms_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db.rms_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'rms_menu_option.name')]
+db.rms_menu_option.name.requires=IS_NOT_EMPTY()
 db.rms_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'rms_menu_option.priority')]
 
 #
@@ -585,8 +622,10 @@ db.rms_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'rms_menu_o
 # VOL Menu Options
 db.define_table('vol_menu_option',
                 SQLField('name'),
+                SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db.vol_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'vol_menu_option.name')]
+db.vol_menu_option.name.requires=IS_NOT_EMPTY()
 db.vol_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'vol_menu_option.priority')]

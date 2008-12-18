@@ -1,22 +1,26 @@
 (dp1
-S'priority'
+S'function'
 p2
 S'CHAR(32)'
 p3
-sS'id'
+sS'description'
 p4
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(256)'
 p5
 sS'enabled'
 p6
 S'CHAR(32)'
 p7
-sS'description'
+sS'priority'
 p8
-S'CHAR(256)'
-p9
-sS'name'
-p10
 S'CHAR(32)'
+p9
+sS'id'
+p10
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p11
+sS'name'
+p12
+S'CHAR(32)'
+p13
 s.

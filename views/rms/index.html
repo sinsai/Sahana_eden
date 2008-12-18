@@ -1,9 +1,9 @@
 {{extend 'layout.html'}}
 
 <div id="home">
-{{=H2(T(title))}}
+{{=H2(T(module_name))}}
 <p>
-{{=T("The")}} {{=T(title)}} {{=T("System is a central online repository where all relief organizations, relief workers, government agents and camp sites for displaced personnels can coordinate the supply of the aids with their demand. It allows users to allocate the available resources to fulfill the demands effectively and efficiently.")}} 
+{{=T("The")}} {{=T(module_name)}} {{=T("System is a central online repository where all relief organizations, relief workers, government agents and camp sites for displaced personnels can coordinate the supply of the aids with their demand. It allows users to allocate the available resources to fulfill the demands effectively and efficiently.")}} 
 </p>
 <h3>{{=T("Features Include")}}:</h3>
 <ul>
@@ -15,7 +15,10 @@
 <strong>{{=T("Description of Actions")}}:</strong><br/>
 <ul>
 {{for option in options:}}
+{{if option.function=="index":}}
+{{else:}}
 <li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+{{pass}}
 {{pass}}
 </ul>
 </div>

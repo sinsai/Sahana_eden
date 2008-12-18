@@ -1,3 +1,11 @@
+module='gis'
+# Current Module (for sidebar title)
+module_name=db(db.module.name==module).select()[0].name_nice
+# List Modules (from which to build Menu of Modules)
+modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+# List Options (from which to build Menu for this Module)
+options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
+
 # Login
 def login():
 	response.view='login.html'
@@ -11,273 +19,146 @@ def profile(): t2.profile()
 def download(): return t2.download()
 
 def index():
-    # Page Title
-    title=db(db.module.name=='gis').select()[0].name_nice
-	#title=T('Situation Awareness')
-    # List Modules (from which to build Menu of Modules)
-    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    return dict(title=title,modules=modules,options=options)
+    return dict(module_name=module_name,modules=modules,options=options)
 
 # Select Option
 def open():
     id=request.vars.id
-    options=db(db.gis_menu_option.id==id).select()
+    options=db(db['%s_menu_option' % module].id==id).select()
     if not len(options):
         redirect(URL(r=request,f='index'))
-    option=options[0].name
-    _option=option.replace(' ','_')
-    option=_option.lower()
+    option=options[0].function
     redirect(URL(r=request,f=option))
 
+# CRUD: Configs
 def configs():
-	# Page Title
-	title=T("GIS Configs")
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	list=t2.itemize(db.gis_config)
-	if list=="No data":
-		list="No Configs currently defined."
-	form=t2.create(db.gis_config)
-	return dict(title=title,modules=modules,options=options,list=list,form=form)
+    title=T("GIS Configs")
+    list=t2.itemize(db.gis_config)
+    if list=="No data":
+        list="No Configs currently defined."
+    form=t2.create(db.gis_config)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
-# Actions called by representations in Model
 def display_config():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	item=t2.display(db.gis_config)
-	return dict(modules=modules,options=options,item=item)
+    item=t2.display(db.gis_config)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
 def update_config():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	form=t2.update(db.gis_config)
-	return dict(modules=modules,options=options,form=form)
+    form=t2.update(db.gis_config)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
+# CRUD: Features
 def features():
-	# Page Title
-	title=T("GIS Features")
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	list=t2.itemize(db.gis_feature)
-	if list=="No data":
-		list="No Features currently defined."
-	form=t2.create(db.gis_feature)
-	return dict(title=title,modules=modules,options=options,list=list,form=form)
+    title=T("GIS Features")
+    list=t2.itemize(db.gis_feature)
+    if list=="No data":
+        list="No Features currently defined."
+    form=t2.create(db.gis_feature)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
-# Actions called by representations in Model
 def add_feature():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	form=t2.create(db.gis_feature)
-	return dict(modules=modules,options=options,form=form)
+    form=t2.create(db.gis_feature)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
 def display_feature():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	item=t2.display(db.gis_feature)
-	return dict(modules=modules,options=options,item=item)
+    item=t2.display(db.gis_feature)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 def list_features():
-	# Page Title
-	title=T("GIS Features")
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	list=t2.itemize(db.gis_feature)
-	if list=="No data":
-		list="No Features currently defined."
-	return dict(title=title,modules=modules,options=options,list=list)
+    title=T("GIS Features")
+    list=t2.itemize(db.gis_feature)
+    if list=="No data":
+        list="No Features currently defined."
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 
 @t2.requires_login('login')
 def update_feature():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	form=t2.update(db.gis_feature)
-	return dict(modules=modules,options=options,form=form)
+    form=t2.update(db.gis_feature)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
-def feature_classes():
-	# Page Title
-	title=T("GIS Feature Classes")
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	list=t2.itemize(db.gis_feature_class)
-	if list=="No data":
-		list="No Feature Classes currently defined."
-	form=t2.create(db.gis_feature_class)
-	return dict(title=title,modules=modules,options=options,list=list,form=form)
+# CRUD: Feature Classes
+def list_feature_classes():
+    title=T("GIS Feature Classes")
+    list=t2.itemize(db.gis_feature_class)
+    if list=="No data":
+        list="No Feature Classes currently defined."
+    form=t2.create(db.gis_feature_class)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
-# Actions called by representations in Model
 def display_feature_class():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	item=t2.display(db.gis_feature_class)
-	return dict(modules=modules,options=options,item=item)
+    item=t2.display(db.gis_feature_class)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
 def update_feature_class():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	form=t2.update(db.gis_feature_class)
-	return dict(modules=modules,options=options,form=form)
+    form=t2.update(db.gis_feature_class)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
-def keys():
-	# Page Title
-	title=T("GIS Keys")
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	list=t2.itemize(db.gis_key)
-	if list=="No data":
-		list="No Keys currently defined."
-	form=t2.create(db.gis_key)
-	return dict(title=title,modules=modules,options=options,list=list,form=form)
+# CRUD: Key
+def list_keys():
+    title=T("GIS Keys")
+    list=t2.itemize(db.gis_key)
+    if list=="No data":
+        list="No Keys currently defined."
+    form=t2.create(db.gis_key)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
-# Actions called by representations in Model
 def display_key():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	item=t2.display(db.gis_key)
-	return dict(modules=modules,options=options,item=item)
+    item=t2.display(db.gis_key)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
 def update_key():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	form=t2.update(db.gis_key)
-	return dict(modules=modules,options=options,form=form)
+    form=t2.update(db.gis_key)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
-def markers():
-	# Page Title
-	title=T("GIS Markers")
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	list=t2.itemize(db.gis_marker)
-	if list=="No data":
-		list="No Markers currently defined."
-	form=t2.create(db.gis_marker)
-	return dict(title=title,modules=modules,options=options,list=list,form=form)
+# CRUD: Markers
+def list_markers():
+    title=T("GIS Markers")
+    list=t2.itemize(db.gis_marker)
+    if list=="No data":
+        list="No Markers currently defined."
+    form=t2.create(db.gis_marker)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
-# Actions called by representations in Model
 def display_marker():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	item=t2.display(db.gis_marker)
-	return dict(modules=modules,options=options,item=item)
+    item=t2.display(db.gis_marker)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
 def update_marker():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	form=t2.update(db.gis_marker)
-	return dict(modules=modules,options=options,form=form)
+    form=t2.update(db.gis_marker)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
-def projections():
-	# Page Title
-	title=T("GIS Projections")
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-	# List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-    
-	list=t2.itemize(db.gis_projection)
-	if list=="No data":
-		list="No Projections currently defined."
-	form=t2.create(db.gis_projection)
-	return dict(title=title,modules=modules,options=options,list=list,form=form)
+# CRUD: Projections
+def list_projections():
+    title=T("GIS Projections")
+    list=t2.itemize(db.gis_projection)
+    if list=="No data":
+        list="No Projections currently defined."
+    form=t2.create(db.gis_projection)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
-# Actions called by representations in Model
 def display_projection():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	item=t2.display(db.gis_projection)
-	return dict(modules=modules,options=options,item=item)
+    item=t2.display(db.gis_projection)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
 def update_projection():
-	# List Modules (from which to build Menu of Modules)
-	modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-	options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-	
-	form=t2.update(db.gis_projection)
-	return dict(modules=modules,options=options,form=form)
+    form=t2.update(db.gis_projection)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
-def layers():
-    # Page Title
+# CRUD: Layers
+def list_layers():
     title=T('GIS Layers')
-    # List Modules (from which to build Menu of Modules)
-    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-
     list=t2.itemize(db.gis_layer)
     if list=="No data":
         list="No Layers currently defined."
-
-    return dict(title=title,modules=modules,options=options,list=list)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 	
 # Actions called by representations in Model
 def display_layer():
-    # List Modules (from which to build Menu of Modules)
-    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-
     #db.gis_layer.displays=['name','description','type','enabled']
     #main=t2.display(db.gis_layer)
 
@@ -302,15 +183,10 @@ def display_layer():
         subtype=0
         key=0
 
-    return dict(modules=modules,options=options,layer=layer,type=type,subtype=subtype,key=key)
+    return dict(module_name=module_name,modules=modules,options=options,layer=layer,type=type,subtype=subtype,key=key)
 
 @t2.requires_login('login')
 def update_layer():
-    # List Modules (from which to build Menu of Modules)
-    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-
     # Get a pointer to the Layer record (for getting default values out & saving updated values back)
     layer=db(db.gis_layer.id==t2.id).select()[0]
     
@@ -421,15 +297,10 @@ def update_layer():
     else: 
     	response.notification=T("Please fill the form")
 
-    return dict(modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
+    return dict(module_name=module_name,modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
 
 @t2.requires_login('login')
 def delete_layer():
-    # List Modules (from which to build Menu of Modules)
-    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
-
     layer=db(db.gis_layer.id==t2.id).select()[0]
     type=db(db.gis_layer_type.id==layer.type).select()[0].name
 
@@ -445,25 +316,19 @@ def delete_layer():
     
     # Notify user :)
     response.confirmation=T("Layer deleted")
-    
     # No need for a dedicated view, we can re-use
-    response.view="gis/layers.html"
+    response.view="gis/list_layers.html"
 
     list=t2.itemize(db.gis_layer)
     if list=="No data":
         list="No Layers currently defined."
 
-    return dict(modules=modules,options=options,list=list)
+    return dict(module_name=module_name,modules=modules,options=options,list=list)
 
 # Map Service Catalogue
-# NB No login required: unidentified users can Read/Create layers (although they need to login to Update/Delete layers)
+# NB No login required: unidentified users can Read/Create (although they need to login to Update/Delete layers)
 def map_service_catalogue():
-    # Page Title
     title=T('Map Service Catalogue')
-    # List Modules (from which to build Menu of Modules)
-    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
 
     # Default to OpenStreetMap - promote Open Data!
     type="openstreetmap"
@@ -565,17 +430,12 @@ def map_service_catalogue():
     if layers=="No data":
         layers="No Layers currently defined."
 
-    return dict(title=title,modules=modules,options=options,layers=layers,form=form,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,form=form,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
 
 # Map Viewing Client
 def map_viewing_client():
-    # Page Title
     title=T('Map Viewing Client')
     response.title=title
-    # List Modules (from which to build Menu of Modules)
-    modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
-    # List Options (from which to build Menu for this Module)
-    options=db(db.gis_menu_option.enabled=='True').select(db.gis_menu_option.ALL,orderby=db.gis_menu_option.priority)
 
     # Get Config
     width=db(db.gis_config.setting=='map_width').select(db.gis_config.value)[0].value
@@ -629,4 +489,4 @@ def map_viewing_client():
             google=0
             # Redirect to Key entry screen?
 
-    return dict(title=title,modules=modules,options=options,layers=layers,google=google,google_key=google_key,virtualearth=virtualearth,yahoo=yahoo,yahoo_key=yahoo_key,width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,google=google,google_key=google_key,virtualearth=virtualearth,yahoo=yahoo,yahoo_key=yahoo_key,width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)

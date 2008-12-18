@@ -1,9 +1,9 @@
 {{extend 'layout.html'}}
 
 <div id="home">
-{{=H2(T(title))}}
+{{=H2(T(module_name))}}
 <p>
-{{=T("The")}} {{=T(title)}} {{=T("is a central online repository where information on all the disaster victims and families, especially identified casualties, evacuees and displaced people can be stored. Information like name, age, contact number, identity card number, displaced location, and other details are captured. Picture and finger print details of the people can be uploaded to the system. People can also be captured by group for efficiency and convenience.")}}
+{{=T("The")}} {{=T(module_name)}} {{=T("is a central online repository where information on all the disaster victims and families, especially identified casualties, evacuees and displaced people can be stored. Information like name, age, contact number, identity card number, displaced location, and other details are captured. Picture and finger print details of the people can be uploaded to the system. People can also be captured by group for efficiency and convenience.")}}
 </p>
 <h3>{{=T("Features Include")}}:</h3>
 <ul>
@@ -17,7 +17,10 @@
 <strong>{{=T("Description of Actions")}}:</strong><br/>
 <ul>
 {{for option in options:}}
+{{if option.function=="index":}}
+{{else:}}
 <li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+{{pass}}
 {{pass}}
 </ul>
 </div>

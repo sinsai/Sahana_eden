@@ -39,20 +39,40 @@ sS'created_by'
 p20
 S'REFERENCES t2_person(id) ON DELETE CASCADE'
 p21
-sS'created_on'
+sS'source'
 p22
-S'TIMESTAMP'
+S'CHAR(32)'
 p23
-sS'modified_on'
+sS'created_on'
 p24
 S'TIMESTAMP'
 p25
-sS'id'
+sS'contact'
 p26
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'REFERENCES person(id) ON DELETE CASCADE'
 p27
-sS'name'
+sS'sensitivity'
 p28
 S'CHAR(32)'
 p29
+sS'modified_on'
+p30
+S'TIMESTAMP'
+p31
+sS'expiry_time'
+p32
+S'TIMESTAMP'
+p33
+sS'accuracy'
+p34
+S'CHAR(32)'
+p35
+sS'id'
+p36
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p37
+sS'name'
+p38
+S'CHAR(32)'
+p39
 s.

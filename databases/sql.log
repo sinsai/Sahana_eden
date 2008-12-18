@@ -1025,3 +1025,67 @@ success!
 timestamp: 2008-12-14T15:03:46
 ALTER TABLE gis_marker ADD width INTEGER;
 success!
+timestamp: 2008-12-18T21:04:00.355000
+ALTER TABLE gis_feature_metadata ADD sensitivity CHAR(32);
+success!
+timestamp: 2008-12-18T21:04:00.480000
+ALTER TABLE gis_feature_metadata ADD source CHAR(32);
+success!
+timestamp: 2008-12-18T21:04:00.590000
+ALTER TABLE gis_feature_metadata ADD contact REFERENCES person(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-18T21:04:00.715000
+ALTER TABLE gis_feature_metadata ADD expiry_time TIMESTAMP;
+success!
+timestamp: 2008-12-18T21:04:00.824000
+ALTER TABLE gis_feature_metadata ADD accuracy CHAR(32);
+success!
+timestamp: 2008-12-18T21:34:20.012000
+CREATE TABLE or_organisation_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-18T21:34:20.121000
+ALTER TABLE or_organisation ADD type REFERENCES or_organisation_type(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-18T21:38:31.043000
+ALTER TABLE or_organisation ADD location REFERENCES gis_feature(id) ON DELETE CASCADE;
+success!
+timestamp: 2008-12-18T22:31:00.949000
+ALTER TABLE gis_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T22:31:01.090000
+ALTER TABLE cr_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T22:31:01.215000
+ALTER TABLE dvr_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T22:31:01.340000
+ALTER TABLE ims_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T22:31:01.433000
+ALTER TABLE mpr_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T22:31:01.543000
+ALTER TABLE or_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T22:31:01.652000
+ALTER TABLE rms_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T22:31:01.777000
+ALTER TABLE vol_menu_option ADD function CHAR(32);
+success!
+timestamp: 2008-12-18T23:34:36.246000
+CREATE TABLE default_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2008-12-18T23:52:21.933000
+ALTER TABLE default_menu_option ADD function CHAR(32);
+success!

@@ -1,0 +1,17 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+<h3>{{=T("Organisations")}}:</h3>
+{{try:}}
+ {{=list}}
+{{except:}}
+{{pass}}
+<p>&nbsp;</p>
+</div>
+{{=A(T("Add Organisation"),_href=t2.action('add_organisation'))}}
+<!-- Could convert to a dynamic call to add data to this div -->
+<div id='add'></div>

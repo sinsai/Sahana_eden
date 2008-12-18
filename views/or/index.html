@@ -1,12 +1,12 @@
 {{extend 'layout.html'}}
 
 <div id="home">
-{{=H2(T(title))}}
+{{=H2(T(module_name))}}
 <p>
-<strong><i>"{{=T("who is doing what and where")}}"</i></strong>
+<strong><i>"{{=T("Who is doing what and where")}}"</i></strong>
 </p>
 <p>
-{{=T("The")}} {{=T(title)}} {{=T("keeps track of all the relief organizations working in the disaster region. It captures not only the places where they are active, but also captures information on the range of services they are providing in each area.")}}</p>
+{{=T("The")}} {{=T(module_name)}} {{=T("keeps track of all the relief organizations working in the disaster region. It captures not only the places where they are active, but also captures information on the range of services they are providing in each area.")}}</p>
 <h3>{{=T("Features Include")}}:</h3>
 <ul>
 <li>{{=T("Capturing organizational information of a relief organization and all the activities they have in the region")}}</li>
@@ -17,7 +17,10 @@
 <strong>{{=T("Description of Actions")}}:</strong><br/>
 <ul>
 {{for option in options:}}
+{{if option.function=="index":}}
+{{else:}}
 <li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+{{pass}}
 {{pass}}
 </ul>
 </div>

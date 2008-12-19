@@ -67,7 +67,7 @@ table#scw td{ border:none;}
 
 /* Now to layout elements... */
 div#container { }
-	div#header { border-bottom: #069 1px solid; padding: 0 1em; height: 70px; position: relative; background: url(../img/sahana_logo.png) #369 no-repeat left top; }
+	div#header { border-bottom: #069 1px solid; padding: 0 1em; height: 70px; position: relative; background: url(../img/sahana3_logo.png) #369 no-repeat left top; }
 		div#header h1 { display:none; }
 
 		form.head { position:absolute; background:#369; color: white; right: 0; font-size:11px; }

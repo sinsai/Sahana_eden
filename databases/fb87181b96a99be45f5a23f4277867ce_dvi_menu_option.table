@@ -1,0 +1,30 @@
+(dp1
+S'function'
+p2
+S'CHAR(32)'
+p3
+sS'description'
+p4
+S'CHAR(256)'
+p5
+sS'enabled'
+p6
+S'CHAR(1)'
+p7
+sS'priority'
+p8
+S'INTEGER'
+p9
+sS'contact'
+p10
+S'REFERENCES person(id) ON DELETE CASCADE'
+p11
+sS'id'
+p12
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p13
+sS'name'
+p14
+S'CHAR(32)'
+p15
+s.

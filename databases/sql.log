@@ -1089,3 +1089,70 @@ success!
 timestamp: 2008-12-18T23:52:21.933000
 ALTER TABLE default_menu_option ADD function CHAR(32);
 success!
+timestamp: 2008-12-19T08:15:15.421000
+CREATE TABLE subset_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	function CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2008-12-19T08:17:35.140000
+CREATE TABLE subset_organisation_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-19T08:32:22.312000
+CREATE TABLE menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	function CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2008-12-19T08:32:22.437000
+CREATE TABLE organisation_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-19T08:33:08.281000
+CREATE TABLE organisation(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	type REFERENCES organisation_type(id) ON DELETE CASCADE,
+	registration CHAR(32),
+	manpower CHAR(32),
+	equipment CHAR(32),
+	privacy INTEGER,
+	archived CHAR(1),
+	address TEXT
+);
+success!
+timestamp: 2008-12-19T18:27:07.328000
+CREATE TABLE organisation_type(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	contact REFERENCES person(id) ON DELETE CASCADE,
+	description CHAR(256)
+);
+success!
+timestamp: 2008-12-19T18:30:10.468000
+CREATE TABLE dvi_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	function CHAR(32),
+	description CHAR(256),
+	contact REFERENCES person(id) ON DELETE CASCADE,
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!

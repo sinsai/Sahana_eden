@@ -11,48 +11,52 @@ sS'description'
 p6
 S'CHAR(256)'
 p7
-sS'manpower'
+sS'parent'
 p8
 S'CHAR(32)'
 p9
-sS'privacy'
+sS'manpower'
 p10
-S'INTEGER'
+S'CHAR(32)'
 p11
-sS'equipment'
+sS'privacy'
 p12
-S'CHAR(32)'
+S'INTEGER'
 p13
-sS'contact'
+sS'equipment'
 p14
-S'REFERENCES contact(id) ON DELETE CASCADE'
+S'CHAR(32)'
 p15
-sS'location'
+sS'contact'
 p16
-S'REFERENCES gis_feature(id) ON DELETE CASCADE'
+S'REFERENCES contact(id) ON DELETE CASCADE'
 p17
-sS'registration'
+sS'location'
 p18
-S'CHAR(32)'
+S'REFERENCES gis_feature(id) ON DELETE CASCADE'
 p19
-sS'modified_on'
+sS'registration'
 p20
-S'TIMESTAMP'
-p21
-sS'type'
-p22
-S'REFERENCES or_organisation_type(id) ON DELETE CASCADE'
-p23
-sS'id'
-p24
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p25
-sS'address'
-p26
-S'CHAR(256)'
-p27
-sS'name'
-p28
 S'CHAR(32)'
+p21
+sS'modified_on'
+p22
+S'TIMESTAMP'
+p23
+sS'type'
+p24
+S'REFERENCES or_organisation_type(id) ON DELETE CASCADE'
+p25
+sS'id'
+p26
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p27
+sS'address'
+p28
+S'CHAR(256)'
 p29
+sS'name'
+p30
+S'CHAR(32)'
+p31
 s.

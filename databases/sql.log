@@ -1156,3 +1156,6 @@ CREATE TABLE dvi_menu_option(
 	enabled CHAR(1)
 );
 success!
+timestamp: 2008-12-19T21:32:50.531000
+ALTER TABLE or_organisation ADD parent CHAR(32);
+success!

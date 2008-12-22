@@ -74,19 +74,17 @@ div#container { }
 		form.head select { background:#369; color:white; border: 1px inset #369; }
 		form.head label { font-weight:bold; font-style:italic; }
 
-		/* language selector  */
-		form#language { top:25px; }
-
-		/* insident changer select box in the top */
-		form#incident_changer { position:fixed; float:right; padding:2px 0px 2px 2px; z-index:1; }
-
 		/* T2 menu elements placed in correct location */
 		#menu { width: 418px; height: 50px; 	margin: 0 auto;	background: #369; }
 		#menu ul { margin: 0;	margin-right: 30px;	padding: 0;	list-style: none; line-height: normal; }
 		#menu li { float: left; }
-		#menu a { padding: 5px 20px 5px 20px; text-decoration: none;	font-family: Helvetica, sans-serif;	font-size: 14px; font-weight: normal; color: #FFFFFF; }
+		#menu a { padding: 5px 20px 5px 20px; text-decoration: none; font-family: Helvetica, sans-serif;	font-size: 14px; font-weight: normal; color: #FFFFFF; }
 		#menu a:hover, #menu .current_page_item a { background: #566316; color: #FFFFFF; }
-		 
+
+        /*User Information*/
+        #logged { width:100%; height:14px; color: black; font-size: 0.75em; text-align: right; display:block; margin-top: 0.5em; }
+        #logged p { text-align: right; margin-right: 5.0em; font-family: Helvetica, sans-serif;	font-size: 12px; font-weight: normal; color: #AAAAAA; }
+        
 	div#wrapper { background: url(../img/wrapper_bk.png) #FFF repeat-y left top; }
 		div#wrapper_menu {}	
 			p#skip { display: none; }
@@ -185,20 +183,13 @@ div#container { }
             #gis_map_toolbar { float: left; margin: 10px 10px 10px 0; }
             #gis_map_toolbar_default { float: left; }
             #gis_map_toolbar_manipulate { float: left; margin-left: 50px; }
-            #gis_map_icon_expand { float: left; width: 24px; height: 22px; background: transparent url(../mfbase/openlayers/theme/default/img/map_resize_out_c.png) no-repeat scroll 0% 0%;
-            }
-            #gis_map_icon_select { float: left; width: 24px; height: 22px; background: transparent url(../mfbase/openlayers/theme/default/img/move_feature_off.png) no-repeat scroll 0% 0%;  
-            }
-            #gis_map_icon_drag { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/pan_off.png) no-repeat scroll 0% 0%;
-            }
-            #gis_map_icon_addpoint { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_point_off.png) no-repeat scroll 0% 0%;
-            }
-            #gis_map_icon_addline { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_line_off.png) no-repeat scroll 0% 0%;
-            }
-            #gis_map_icon_addpolygon { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_polygon_off.png) no-repeat scroll 0% 0%;
-            }
-            #gis_map_icon_freehand { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/freehand_off.png) no-repeat scroll 0% 0%;
-            }
+            #gis_map_icon_expand { float: left; width: 24px; height: 22px; background: transparent url(../mfbase/openlayers/theme/default/img/map_resize_out_c.png) no-repeat scroll 0% 0%; }
+            #gis_map_icon_select { float: left; width: 24px; height: 22px; background: transparent url(../mfbase/openlayers/theme/default/img/move_feature_off.png) no-repeat scroll 0% 0%; }
+            #gis_map_icon_drag { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/pan_off.png) no-repeat scroll 0% 0%; }
+            #gis_map_icon_addpoint { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_point_off.png) no-repeat scroll 0% 0%; }
+            #gis_map_icon_addline { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_line_off.png) no-repeat scroll 0% 0%; }
+            #gis_map_icon_addpolygon { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/draw_polygon_off.png) no-repeat scroll 0% 0%; }
+            #gis_map_icon_freehand { float: left; width: 24px; height: 22px; margin-left: 5px; background: transparent url(../mfbase/openlayers/theme/default/img/freehand_off.png) no-repeat scroll 0% 0%; }
             #gis_map_icon_descripion { float: left; height: 22px; width: 140px; margin-left: 10px; margin-top: 3px; color: orange; font-weight: bold; }
             .olControlMousePosition { font-size: 10px; }
             .gis_openlayers_popupbox { padding: 10px; }

@@ -23,7 +23,7 @@ db.or_organisation_type.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organi
 db.define_table('or_organisation',
                 SQLField('modified_on','datetime'), # Used by T2 to do edit conflict-detection
                 SQLField('name'),
-                #SQLField('parent',db.organisation),
+                SQLField('parent'), # No need for 'db.or_organisation' here as this is only used for cascading deletions (if you delete the table it's referring it to it will delete all the corresponding records)
                 SQLField('type', db.or_organisation_type),
                 SQLField('registration'),	# Registration Number
                 SQLField('manpower'),
@@ -37,7 +37,7 @@ db.or_organisation.represent=lambda or_organisation: A(or_organisation.name,_hre
 db.or_organisation.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation.name')]
 db.or_organisation.name.comment=SPAN("*",_class="req")
 db.or_organisation.type.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation_type.id','or_organisation_type.name'))
-#db.or_organisation.parent.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.id','or_organisation.name'))
+db.or_organisation.parent.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.id','or_organisation.name'))
 db.or_organisation.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.id','person.full_name'))
 db.or_organisation.contact.label=T("Contact Person")
 db.or_organisation.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))

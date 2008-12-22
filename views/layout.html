@@ -23,6 +23,11 @@
     {{=A(T('Register'),_href=t2.action('register'))}}
   {{pass}}
   </div>
+  <div id="logged">
+  {{if t2.logged_in:}}
+    <p>Logged in as: {{=session.t2.person_name}}</p>
+  {{pass}}
+  </div> 
 </div>
 </div>
 <div id="wrapper" class="clearfix">
@@ -105,6 +110,5 @@
     </p>
   </div>
  </div>
-<!-- </div> -->
 </body>
 </html>

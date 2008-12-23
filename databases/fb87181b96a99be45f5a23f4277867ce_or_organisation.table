@@ -23,40 +23,44 @@ sS'privacy'
 p12
 S'INTEGER'
 p13
-sS'equipment'
+sS'name'
 p14
 S'CHAR(32)'
 p15
-sS'contact'
+sS'equipment'
 p16
-S'REFERENCES contact(id) ON DELETE CASCADE'
+S'CHAR(32)'
 p17
-sS'location'
+sS'contact'
 p18
-S'REFERENCES gis_feature(id) ON DELETE CASCADE'
+S'REFERENCES contact(id) ON DELETE CASCADE'
 p19
-sS'registration'
+sS'location'
 p20
-S'CHAR(32)'
+S'REFERENCES gis_feature(id) ON DELETE CASCADE'
 p21
-sS'modified_on'
+sS'registration'
 p22
-S'TIMESTAMP'
-p23
-sS'type'
-p24
-S'REFERENCES or_organisation_type(id) ON DELETE CASCADE'
-p25
-sS'id'
-p26
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p27
-sS'address'
-p28
-S'CHAR(256)'
-p29
-sS'name'
-p30
 S'CHAR(32)'
+p23
+sS'modified_on'
+p24
+S'TIMESTAMP'
+p25
+sS'type'
+p26
+S'REFERENCES or_organisation_type(id) ON DELETE CASCADE'
+p27
+sS'id'
+p28
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p29
+sS'address'
+p30
+S'CHAR(256)'
 p31
+sS'uuid'
+p32
+S'CHAR(64)'
+p33
 s.

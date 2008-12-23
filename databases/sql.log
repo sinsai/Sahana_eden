@@ -1159,3 +1159,39 @@ success!
 timestamp: 2008-12-19T21:32:50.531000
 ALTER TABLE or_organisation ADD parent CHAR(32);
 success!
+timestamp: 2008-12-23T13:59:38.921000
+ALTER TABLE person ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:39.156000
+ALTER TABLE person_group ADD name CHAR(32);
+success!
+timestamp: 2008-12-23T13:59:39.250000
+ALTER TABLE person_group ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:39.390000
+ALTER TABLE gis_projection ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:39.515000
+ALTER TABLE gis_marker ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:39.734000
+ALTER TABLE gis_feature_class ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:39.843000
+ALTER TABLE gis_feature_metadata ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:39.937000
+ALTER TABLE gis_feature ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:40.156000
+ALTER TABLE gis_feature_group ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:40.328000
+ALTER TABLE gis_layer ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:40.593000
+ALTER TABLE cr_shelter ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-23T13:59:40.812000
+ALTER TABLE or_organisation ADD uuid CHAR(64);
+success!

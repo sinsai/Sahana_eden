@@ -1,22 +1,26 @@
 (dp1
-S'modified_on'
+S'family_name'
 p2
-S'TIMESTAMP'
-p3
-sS'family_name'
-p4
 S'CHAR(32)'
+p3
+sS'uuid'
+p4
+S'CHAR(64)'
 p5
-sS'id'
+sS'l10_name'
 p6
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(32)'
 p7
 sS'full_name'
 p8
 S'CHAR(32)'
 p9
-sS'l10_name'
+sS'modified_on'
 p10
-S'CHAR(32)'
+S'TIMESTAMP'
 p11
+sS'id'
+p12
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p13
 s.

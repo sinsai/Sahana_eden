@@ -19,16 +19,20 @@ sS'modified_on'
 p10
 S'TIMESTAMP'
 p11
-sS'type'
+sS'metadata'
 p12
 S'CHAR(32)'
 p13
-sS'id'
+sS'type'
 p14
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p15
-sS'metadata'
-p16
 S'CHAR(32)'
+p15
+sS'id'
+p16
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p17
+sS'uuid'
+p18
+S'CHAR(64)'
+p19
 s.

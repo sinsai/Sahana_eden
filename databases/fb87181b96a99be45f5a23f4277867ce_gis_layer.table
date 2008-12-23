@@ -19,44 +19,48 @@ sS'enabled'
 p10
 S'CHAR(32)'
 p11
-sS'name'
+sS'uuid'
 p12
-S'CHAR(32)'
+S'CHAR(64)'
 p13
-sS'priority'
+sS'name'
 p14
-S'INTEGER'
+S'CHAR(32)'
 p15
-sS'visible'
+sS'priority'
 p16
-S'CHAR(1)'
+S'INTEGER'
 p17
-sS'base'
+sS'visible'
 p18
 S'CHAR(1)'
 p19
-sS'key'
+sS'base'
 p20
-S'REFERENCES gis_key(id) ON DELETE CASCADE'
+S'CHAR(1)'
 p21
-sS'modified_on'
+sS'key'
 p22
-S'TIMESTAMP'
+S'REFERENCES gis_key(id) ON DELETE CASCADE'
 p23
-sS'feature_group_id'
+sS'modified_on'
 p24
-S'REFERENCES gis_feature_group(id) ON DELETE CASCADE'
+S'TIMESTAMP'
 p25
-sS'type'
+sS'feature_group_id'
 p26
-S'CHAR(32)'
+S'REFERENCES gis_feature_group(id) ON DELETE CASCADE'
 p27
-sS'id'
+sS'type'
 p28
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(32)'
 p29
-sS'description'
+sS'id'
 p30
-S'CHAR(256)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p31
+sS'description'
+p32
+S'CHAR(256)'
+p33
 s.

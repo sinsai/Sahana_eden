@@ -7,12 +7,16 @@ sS'marker'
 p4
 S'CHAR(32)'
 p5
-sS'id'
+sS'uuid'
 p6
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(64)'
 p7
-sS'name'
+sS'id'
 p8
-S'CHAR(32)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p9
+sS'name'
+p10
+S'CHAR(32)'
+p11
 s.

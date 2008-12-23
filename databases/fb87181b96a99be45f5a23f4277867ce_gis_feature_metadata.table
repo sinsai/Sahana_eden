@@ -67,12 +67,16 @@ sS'accuracy'
 p34
 S'CHAR(32)'
 p35
-sS'id'
+sS'uuid'
 p36
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(64)'
 p37
-sS'name'
+sS'id'
 p38
-S'CHAR(32)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p39
+sS'name'
+p40
+S'CHAR(32)'
+p41
 s.

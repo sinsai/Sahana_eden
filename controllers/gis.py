@@ -367,6 +367,7 @@ def map_service_catalogue():
             enabled=False
         # Update Database
         id=db.gis_layer.insert(
+            uuid=uuid.uuid4(),
             name=form.vars.name,
             description=form.vars.description,
             type=form.vars.type,

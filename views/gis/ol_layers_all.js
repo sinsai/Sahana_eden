@@ -1,7 +1,7 @@
 ﻿{{for layer in layers:}}
     // Disable other base layers if using a non-sphericalMercator WMS projection
     {{if projection=="900913":}}
-        {{if layer.type=='1':}}
+        {{if layer.type=="openstreetmap":}}
             {{osm=db(db.gis_layer_openstreetmap.layer==layer.id).select()[0].type}}
             {{if osm=='Mapnik':}}
                 var mapnik = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openstreetmap.org/", {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
@@ -13,7 +13,7 @@
                 var oam = new OpenLayers.Layer.TMS( "{{=layer.name}}", "http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/", {type: 'png', getURL: osm_getTileURL } );
                 map.addLayer(oam);
         {{pass}}
-        {{elif layer.type=='2':}}
+        {{elif layer.type=="google":}}
             {{googl=db(db.gis_layer_google.layer==layer.id).select()[0].type}}
             {{if googl=='Satellite':}}
                 var googlesat = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
@@ -28,7 +28,7 @@
                 var googleterrain = new OpenLayers.Layer.Google( "{{=layer.name}}" , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
                 map.addLayer(googleterrain);
         {{pass}}
-        {{elif layer.type=='3':}}
+        {{elif layer.type=="virtualearth":}}
             {{ve=db(db.gis_layer_virtualearth.layer==layer.id).select()[0].type}}
             {{if ve=='Satellite':}}
                 var vesat = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
@@ -40,7 +40,7 @@
                 var vehybrid = new OpenLayers.Layer.VirtualEarth( "{{=layer.name}}" , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
                 map.addLayer(vehybrid);
         {{pass}}
-        {{elif layer.type=='4':}}
+        {{elif layer.type=="yahoo":}}
             {{yhoo=db(db.gis_layer_yahoo.layer==layer.id).select()[0].type}}
             {{if yhoo=='Satellite':}}
                 var yahoosat = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );

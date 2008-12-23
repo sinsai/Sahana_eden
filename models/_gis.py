@@ -33,6 +33,7 @@ db.gis_projection.maxResolution.label="maxResolution"
 db.gis_projection.units.requires=IS_IN_SET(['m','degrees'])
 
 # GIS Config
+# Change into 1 record per-config?
 db.define_table('gis_config',
 				SQLField('setting'), # lat, lon, zoom, projection, marker, map_height, map_width
 				SQLField('description',length=256),
@@ -41,9 +42,9 @@ db.gis_config.represent=lambda gis_config: A(gis_config.setting,_href=t2.action(
 # We don't want a THIS_NOT_IN_DB here as it makes it easier for Rapid Customisation in Field 
 db.gis_config.setting.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_config.setting')]
 # Projection should have value only from available options:
-#db.gis_config.setting==projection,db.gis_config.value.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
+#db.gis_config.setting==projection,db.gis_config.value.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
 # Marker should have value only from available options:
-#db.gis_config.setting==marker,db.gis_config.value.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
+#db.gis_config.setting==marker,db.gis_config.value.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
 
 # GIS Markers (Icons)
 db.define_table('gis_marker',
@@ -128,27 +129,21 @@ db.gis_key.service.requires=IS_IN_SET(['google','multimap','yahoo'])
 db.gis_key.key.requires=IS_NOT_EMPTY()
 db.gis_key.displays=['service','key','description']
 
-# GIS Layer Types
-#IS_IN_SET(['internal_features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo'])
-db.define_table('gis_layer_type',
-				SQLField('name'),
-				SQLField('description',length=256))
-
-db.gis_layer_type.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer_type.name')]
-
 # GIS Layers
+#gis_layer_types=['internal_features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
+gis_layer_types=['openstreetmap','google','yahoo','virtualearth']
 db.define_table('gis_layer',
 				SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
 				SQLField('description',length=256),
-				SQLField('type',db.gis_layer_type),
+				SQLField('type'),
 				SQLField('priority','integer'),
                 SQLField('enabled','boolean',default=True))
 # Want: [if gis_layer.enabled: 'Enabled']
 db.gis_layer.represent=lambda gis_layer: TR(TD(A(gis_layer.name,_href=t2.action('display_layer',gis_layer.id))),TD(gis_layer.enabled))
 db.gis_layer.name.requires=IS_NOT_EMPTY()
-db.gis_layer.type.requires=IS_IN_DB(db,'gis_layer_type.id','gis_layer_type.name')
+db.gis_layer.type.requires=IS_IN_SET(gis_layer_types)
 db.gis_layer.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]
 
 # Layer: GeoRSS

@@ -166,7 +166,7 @@ def display_layer():
     # - multiple tables
     # - names not numbers for type/subtype
     layer=db(db.gis_layer.id==t2.id).select()[0]
-    type=db(db.gis_layer_type.id==layer.type).select(db.gis_layer_type.ALL)[0].name
+    type=layer.type
     if type=="openstreetmap":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         key=0
@@ -191,7 +191,7 @@ def update_layer():
     layer=db(db.gis_layer.id==t2.id).select()[0]
     
     # Pull out current settings to pre-populate form with
-    type=db(db.gis_layer_type.id==layer.type).select()[0].name
+    type=layer.type
     if type=="openstreetmap":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         # Need here as well as gis_layers.js to populate the initial 'selected'
@@ -215,7 +215,6 @@ def update_layer():
         key=0
 
     # Pull out options for dropdowns
-    options_type = db().select(db.gis_layer_type.ALL)
     # 0-99, take away all used priorities, add back the current priority
     options_priority = range(100)
     options_used = db().select(db.gis_layer.priority)
@@ -267,7 +266,7 @@ def update_layer():
     		priority=form.vars.priority,
     		enabled=enabled
     	)
-    	type_new=db(db.gis_layer_type.id==form.vars.type).select()[0].name
+    	type_new=form.vars.type
     	if type_new=="openstreetmap":
     		db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
     			type=form.vars.subtype
@@ -297,12 +296,12 @@ def update_layer():
     else: 
     	response.notification=T("Please fill the form")
 
-    return dict(module_name=module_name,modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
+    return dict(module_name=module_name,modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority)
 
 @t2.requires_login('login')
 def delete_layer():
     layer=db(db.gis_layer.id==t2.id).select()[0]
-    type=db(db.gis_layer_type.id==layer.type).select()[0].name
+    type=layer.type
 
     #if type=="wms":
     #    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
@@ -337,7 +336,6 @@ def map_service_catalogue():
     key="ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw" # Google Key for 127.0.0.1
     
     # Pull out options for dropdowns
-    options_type = db().select(db.gis_layer_type.ALL)
     # 0-99, take away all used priorities
     options_priority = range(100)
     options_used = db().select(db.gis_layer.priority)
@@ -374,7 +372,7 @@ def map_service_catalogue():
             priority=form.vars.priority,
             enabled=enabled
         )
-        type_new=db(db.gis_layer_type.id==form.vars.type).select()[0].name
+        type_new=form.vars.type
         if type_new=="openstreetmap":
             db['gis_layer_%s' % type_new].insert(
                 layer=id,
@@ -431,7 +429,7 @@ def map_service_catalogue():
     if layers=="No data":
         layers="No Layers currently defined."
 
-    return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,form=form,type=type,subtype=subtype,key=key,options_type=options_type,options_subtype=options_subtype,options_priority=options_priority)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,form=form,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority)
 
 # Map Viewing Client
 def map_viewing_client():
@@ -456,7 +454,7 @@ def map_viewing_client():
     google=0
     google_key=""
     for row in layers:
-        if row.type=="2":
+        if row.type=="google":
             google=1
     if google==1:
         # Check for Google Key
@@ -471,14 +469,14 @@ def map_viewing_client():
     # Check for enabled Virtual Earth layers
     virtualearth=0
     for row in layers:
-        if row.type=="3":
+        if row.type=="virtualearth":
             virtualearth=1
 
     # Check for enabled Yahoo layers
     yahoo=0
     yahoo_key=""
     for row in layers:
-        if row.type=="4":
+        if row.type=="yahoo":
             yahoo=1
     if yahoo==1:
         # Check for Yahoo Key
@@ -487,7 +485,7 @@ def map_viewing_client():
             yahoo_key=_yahoo_key[0].key
         else:
             response.flash=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
-            google=0
+            yahoo=0
             # Redirect to Key entry screen?
 
     return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,google=google,google_key=google_key,virtualearth=virtualearth,yahoo=yahoo,yahoo_key=yahoo_key,width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)

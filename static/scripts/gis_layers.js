@@ -4,17 +4,13 @@
 $(function() {
     // What is the initial type?
     var type = $("select[@name=type]").val();
-    // OpenStreetMap
-    if (type==1) {
+    if (type=="openstreetmap") {
         var fields_hide=["key"];
-    // Google
-    } else if (type==2) {
+    } else if (type=="google") {
         var fields_hide=[];
-    // Virtual Earth
-    } else if (type==3) {
+    } else if (type=="virtualearth") {
         var fields_hide=["key"];
-    // Yahoo
-    } else if (type==4) {
+    } else if (type=="yahoo") {
         var fields_hide=[];
     }
     // Hide fields irrelevant for the type
@@ -27,23 +23,19 @@ $(function() {
 	$("select[@name=type]").change(function() {
 		// What is the new type?
         type=$(this).val();
-        // OpenStreetMap
-        if (type==1) {
+        if (type=="openstreetmap") {
             var fields_hide=["key"];
             var fields_show=["subtype"];
             var options_subtype=["Mapnik", "Osmarender", "Aerial"];
-        // Google
-        } else if (type==2) {
+        } else if (type=="google") {
             var fields_hide=[];
             var fields_show=["subtype","key"];
             var options_subtype=["Satellite", "Maps", "Hybrid", "Terrain"];
-        // Virtual Earth
-        } else if (type==3) {
+        } else if (type=="virtualearth") {
             var fields_hide=["key"];
             var fields_show=["subtype"];
             var options_subtype=["Satellite", "Maps", "Hybrid"];
-        // Yahoo
-        } else if (type==4) {
+        } else if (type=="yahoo") {
             var fields_hide=[];
             var fields_show=["subtype","key"];
             var options_subtype=["Satellite", "Maps", "Hybrid"];

@@ -18,10 +18,10 @@
 <td><select name="type" type="select">
 {{for row in options_type:}}
 <option
-{{if row.name==type:}}
+{{if row==type:}}
 selected="selected"
 {{pass}}
-value="{{=row.id}}">{{=row.name}}</option>
+value="{{=row}}">{{=row}}</option>
 {{pass}}
 </select>
 {{if form.errors.type:}}<div class="error">{{=form.errors.type}}</div>{{pass}}</td></tr>

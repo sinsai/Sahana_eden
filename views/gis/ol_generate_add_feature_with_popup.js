@@ -36,7 +36,6 @@ function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconU
     var fc_closeBox = true;
     var fc_closeBoxCallback = onPopupClose;
     var framedCloud = new OpenLayers.Popup.FramedCloud(fc_id, fc_lonlat, fc_size, fc_contentHTML, fc_anchor, fc_closeBox, fc_closeBoxCallback);
-    // framedCloud = OpenLayers.Class(new OpenLayers.Popup.FramedCloud, {'autoSize': true});
     framedCloud.autoSize = true;
     framedCloud.minSize = new OpenLayers.Size(460,270);
     // Add Popup

@@ -31,23 +31,29 @@ def open():
     redirect(URL(r=request,f=option))
 
 # CRUD: Configs
-def configs():
+def display_config():
+    item=t2.display(db.gis_config)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
+
+def list_configs():
     title=T("GIS Configs")
     list=t2.itemize(db.gis_config)
     if list=="No data":
         list="No Configs currently defined."
     form=t2.create(db.gis_config)
     return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
-	
-def display_config():
-    item=t2.display(db.gis_config)
-    return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
 def update_config():
     form=t2.update(db.gis_config)
     return dict(module_name=module_name,modules=modules,options=options,form=form)
 
+@t2.requires_login('login')
+def defaults():
+    title=T("GIS Defaults")
+    form=t2.update(db.gis_config,deletable=False)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
+	
 # CRUD: Features
 def features():
     title=T("GIS Features")
@@ -437,12 +443,13 @@ def map_viewing_client():
     response.title=title
 
     # Get Config
-    width=db(db.gis_config.setting=='map_width').select(db.gis_config.value)[0].value
-    height=db(db.gis_config.setting=='map_height').select(db.gis_config.value)[0].value
-    projection=db(db.gis_config.setting=='projection').select(db.gis_config.value)[0].value
-    lat=db(db.gis_config.setting=='lat').select(db.gis_config.value)[0].value
-    lon=db(db.gis_config.setting=='lon').select(db.gis_config.value)[0].value
-    zoom=db(db.gis_config.setting=='zoom').select(db.gis_config.value)[0].value
+    width=db(db.gis_config.id==1).select()[0].map_width
+    height=db(db.gis_config.id==1).select()[0].map_height
+    _projection=db(db.gis_config.id==1).select()[0].projection
+    projection=db(db.gis_projection.uuid==_projection).select()[0].epsg
+    lat=db(db.gis_config.id==1).select()[0].lat
+    lon=db(db.gis_config.id==1).select()[0].lon
+    zoom=db(db.gis_config.id==1).select()[0].zoom
     units=db(db.gis_projection.epsg==projection).select()[0].units
     maxResolution=db(db.gis_projection.epsg==projection).select()[0].maxResolution
     maxExtent=db(db.gis_projection.epsg==projection).select()[0].maxExtent

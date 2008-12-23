@@ -1,14 +1,20 @@
 {{extend 'layout.html'}}
 
-<div class='form-container'>
 {{try:}}
  {{=H2(title)}}
 {{except:}}
-<h2>{{=T("Edit Config")}}</h2>
 {{pass}}
-{{=form}}
+{{try:}}
+ {{=list}}
+{{except:}}
+{{pass}}
 <p>&nbsp;</p>
+<strong>{{=T("Add New Config")}}:</strong>
+{{try:}}
+<div class='form-container'>
+ {{=form}}
 </div>
-{{=A(T("Configs"),_href=t2.action('list_configs'))}}
+{{except:}}
+{{pass}}
 <p>&nbsp;</p>
 {{=A(T("Map Service Catalogue"),_href=t2.action('map_service_catalogue'))}}

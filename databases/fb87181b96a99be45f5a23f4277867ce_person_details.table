@@ -15,9 +15,9 @@ sS'opt_age_group'
 p8
 S'CHAR(32)'
 p9
-sS'opt_race'
+sS'id'
 p10
-S'CHAR(32)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p11
 sS'person'
 p12
@@ -39,9 +39,9 @@ sS'modified_on'
 p20
 S'TIMESTAMP'
 p21
-sS'id'
+sS'opt_race'
 p22
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(32)'
 p23
 sS'opt_gender'
 p24

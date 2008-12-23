@@ -1195,3 +1195,24 @@ success!
 timestamp: 2008-12-23T13:59:40.812000
 ALTER TABLE or_organisation ADD uuid CHAR(64);
 success!
+timestamp: 2008-12-23T20:33:44.781000
+ALTER TABLE gis_config ADD projection CHAR(64);
+success!
+timestamp: 2008-12-23T20:33:44.921000
+ALTER TABLE gis_config ADD map_height CHAR(32);
+success!
+timestamp: 2008-12-23T20:33:45.078000
+ALTER TABLE gis_config ADD map_width CHAR(32);
+success!
+timestamp: 2008-12-23T20:33:45.187000
+ALTER TABLE gis_config ADD lon CHAR(32);
+success!
+timestamp: 2008-12-23T20:33:45.312000
+ALTER TABLE gis_config ADD zoom CHAR(32);
+success!
+timestamp: 2008-12-23T20:33:45.453000
+ALTER TABLE gis_config ADD marker CHAR(64);
+success!
+timestamp: 2008-12-23T20:33:45.578000
+ALTER TABLE gis_config ADD lat CHAR(32);
+success!

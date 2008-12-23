@@ -18,30 +18,32 @@ $(function() {
 {{pass}}
 <table>
 <tr><td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='configs')}}">
-<input type="button" id="configs-btn" value="{{=T("Configs")}}" />
+<a href="{{=URL(r=request,c='gis',f='defaults',args='1')}}">
+<input type="button" id="configs-btn" value="{{=T("Defaults")}}" />
 </a>
 </td><td id='btn-panel'>
 <a href="{{=URL(r=request,c='gis',f='features')}}">
 <input type="button" id="features-btn" value="{{=T("Features")}}" />
-</a>
-</td><td id='btn-panel'>
+</a></td>
+<!--
+<td id='btn-panel'>
 <a href="{{=URL(r=request,c='gis',f='import')}}">
 <input type="button" id="import-btn" value="{{=T("Import")}}" />
-</a>
-</td><td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='keys')}}">
+</a></td>
+-->
+<td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='list_keys')}}">
 <input type="button" id="keys-btn" value="{{=T("Keys")}}" />
-</a>
-</td><td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='markers')}}">
+</a></td>
+<td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='list_markers')}}">
 <input type="button" id="markers-btn" value="{{=T("Markers")}}" />
-</a>
-</td><td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='projections')}}">
+</a></td>
+<td id='btn-panel'>
+<a href="{{=URL(r=request,c='gis',f='list_projections')}}">
 <input type="button" id="projections-btn" value="{{=T("Projections")}}" />
-</a>
-</td></tr>
+</a></td>
+</tr>
 </table>
 <p>&nbsp;</p>
 <div class='form-container'>

@@ -33,18 +33,23 @@ db.gis_projection.maxResolution.label="maxResolution"
 db.gis_projection.units.requires=IS_IN_SET(['m','degrees'])
 
 # GIS Config
-# Change into 1 record per-config?
+# id=1 = Default settings
+# ToDo Extend for per-user Profiles
 db.define_table('gis_config',
-				SQLField('setting'), # lat, lon, zoom, projection, marker, map_height, map_width
-				SQLField('description',length=256),
-				SQLField('value'))
-db.gis_config.represent=lambda gis_config: A(gis_config.setting,_href=t2.action('display_config',gis_config.id))
-# We don't want a THIS_NOT_IN_DB here as it makes it easier for Rapid Customisation in Field 
-db.gis_config.setting.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_config.setting')]
-# Projection should have value only from available options:
-#db.gis_config.setting==projection,db.gis_config.value.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
-# Marker should have value only from available options:
-#db.gis_config.setting==marker,db.gis_config.value.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
+				SQLField('lat'),
+				SQLField('lon'),
+				SQLField('zoom'),
+				SQLField('projection',length=64),
+				SQLField('marker',length=64),
+				SQLField('map_height'),
+				SQLField('map_width'))
+db.gis_config.lat.requires=IS_LAT()
+db.gis_config.lon.requires=IS_LON()
+db.gis_config.zoom.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db.gis_config.projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
+db.gis_config.marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
+db.gis_config.map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db.gis_config.map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 
 # GIS Markers (Icons)
 db.define_table('gis_marker',

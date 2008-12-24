@@ -25,12 +25,16 @@ db.gis_projection.exposes=['name','epsg','maxExtent','maxResolution','units']
 db.gis_projection.displays=['name','epsg','maxExtent','maxResolution','units']
 db.gis_projection.represent=lambda gis_projection: TR(TD(A(gis_projection.name,_href=t2.action('display_projection',gis_projection.id))),TD(gis_projection.epsg))
 db.gis_projection.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
+db.gis_projection.name.comment=SPAN("*",_class="req")
 db.gis_projection.epsg.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db.gis_projection.epsg.label="EPSG"
+db.gis_projection.epsg.comment=SPAN("*",_class="req")
 db.gis_projection.maxExtent.requires=IS_NOT_EMPTY()
 db.gis_projection.maxExtent.label="maxExtent"
+db.gis_projection.maxExtent.comment=SPAN("*",_class="req")
 db.gis_projection.maxResolution.requires=IS_NOT_EMPTY()
 db.gis_projection.maxResolution.label="maxResolution"
+db.gis_projection.maxResolution.comment=SPAN("*",_class="req")
 db.gis_projection.units.requires=IS_IN_SET(['m','degrees'])
 
 # GIS Config
@@ -41,7 +45,7 @@ db.define_table('gis_config',
 				SQLField('lon'),
 				SQLField('zoom'),
 				SQLField('projection',length=64),
-				SQLField('marker',length=64),
+				SQLField('marker',length=64,default='e2848160-cad4-4b8e-91cf-d1b4828bf805'),
 				SQLField('map_height'),
 				SQLField('map_width'))
 db.gis_config.lat.requires=IS_LAT()
@@ -49,6 +53,7 @@ db.gis_config.lon.requires=IS_LON()
 db.gis_config.zoom.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db.gis_config.projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
 db.gis_config.marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
+db.gis_config.marker.display=lambda uuid: db(db.gis_marker.uuid==uuid).select()[0].image
 db.gis_config.map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db.gis_config.map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 
@@ -64,18 +69,22 @@ db.gis_marker.exposes=['name','height','width','image']
 db.gis_marker.displays=['name','height','width','image']
 db.gis_marker.represent=lambda gis_marker: A(gis_marker.name,_href=t2.action('display_marker',gis_marker.id))
 db.gis_marker.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_marker.name')]
+db.gis_marker.name.comment=SPAN("*",_class="req")
 
 # GIS Features
 db.define_table('gis_feature_class',
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
-                SQLField('marker'))
+                SQLField('marker',length=64))
 db.gis_feature_class.exposes=['name','marker']
 db.gis_feature_class.displays=['name','marker']
 db.gis_feature_class.represent=lambda gis_feature_class: A(gis_feature_class.name,_href=t2.action('display_feature_class',gis_feature_class.id))
 db.gis_feature_class.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
-db.gis_feature_class.marker.requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name'))
+db.gis_feature_class.name.comment=SPAN("*",_class="req")
+db.gis_feature_class.marker.requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.uuid','gis_marker.name'))
+# Only works for mandatory fields
+#db.gis_feature_class.marker.display=lambda uuid: db(db.gis_marker.uuid==uuid).select()[0].image
 
 db.define_table('gis_feature_metadata',
                 SQLField('created_on','datetime',default=now), # Auto-stamped by T2
@@ -95,6 +104,8 @@ db.define_table('gis_feature_metadata',
 db.gis_feature_metadata.exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db.gis_feature_metadata.displays=['created_on','created_by','modified_on','modified_by','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.uuid','person.full_name'))
+# Only works for non-optional fields
+#db.gis_feature_metadata.contact.display=lambda uuid: db(db.person.uuid==uuid).select()[0].full_name
 db.gis_feature_metadata.event_time.requires=IS_DATETIME()
 db.gis_feature_metadata.expiry_time.requires=IS_DATETIME()
 db.gis_feature_metadata.url.requires=IS_URL()
@@ -105,20 +116,27 @@ db.define_table('gis_feature',
                 SQLField('name'),
                 SQLField('feature_class',length=64),
                 SQLField('metadata',length=64),
-                SQLField('type'),
+                SQLField('type',default='point'),
                 SQLField('lat'),
                 SQLField('lon'))
 db.gis_feature.exposes=['name','feature_class','metadata','type','lat','lon']
 db.gis_feature.displays=['name','feature_class','metadata','type','lat','lon']
 db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))
 db.gis_feature.name.requires=IS_NOT_EMPTY()
+db.gis_feature.name.comment=SPAN("*",_class="req")
 db.gis_feature.feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.uuid','gis_feature_class.name'))
+# Only works for non-optional fields
+#db.gis_feature.feature_class.display=lambda uuid: db(db.gis_feature_class.uuid==uuid).select()[0].name
 db.gis_feature.metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.uuid'))
+# Only works for non-optional fields
+#db.gis_feature.metadata.display=lambda uuid: db(db.gis_feature_metadata.uuid==uuid).select()[0].description
 db.gis_feature.type.requires=IS_IN_SET(['point','line','polygon'])
 db.gis_feature.lat.requires=IS_LAT()
 db.gis_feature.lat.label=T("Latitude")
+db.gis_feature.lat.comment=SPAN("*",_class="req")
 db.gis_feature.lon.requires=IS_LON()
 db.gis_feature.lon.label=T("Longitude")
+db.gis_feature.lon.comment=SPAN("*",_class="req")
 
 # Feature Groups
 # Used to select a set of Features for either Display or Export
@@ -139,12 +157,12 @@ db.define_table('gis_key',
                 SQLField('service'),
                 SQLField('key'),
 				SQLField('description',length=256))
+db.gis_key.displays=['service','key','description']
 db.gis_key.represent=lambda gis_key: TR(TD(A(gis_key.service,_href=t2.action('display_key',gis_key.id))),TD(gis_key.key))
 # We want a THIS_NOT_IN_DB here:
 db.gis_key.service.requires=IS_IN_SET(['google','multimap','yahoo']) 
 #db.gis_key.key.requires=THIS_NOT_IN_DB(db(db.gis_key.service==request.vars.service),'gis_key.service',request.vars.service,'service already in use')
 db.gis_key.key.requires=IS_NOT_EMPTY()
-db.gis_key.displays=['service','key','description']
 
 # GIS Layers
 #gis_layer_types=['internal_features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']

@@ -32,6 +32,10 @@ db.cr_shelter.name.requires=IS_NOT_EMPTY()
 db.cr_shelter.name.label=T("Shelter Name")
 db.cr_shelter.name.comment=SPAN("*",_class="req")
 db.cr_shelter.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.uuid','person.full_name'))
+# Only works for non-optional fields
+#db.cr_shelter.contact.display=lambda uuid: db(db.person.uuid==uuid).select()[0].full_name
 db.cr_shelter.contact.label=T("Contact Person")
 db.cr_shelter.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
+# Only works for non-optional fields
+#db.cr_shelter.location.display=lambda uuid: db(db.gis_feature.uuid==uuid).select()[0].name
 db.cr_shelter.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))

@@ -7,19 +7,19 @@ sS'epsg'
 p4
 S'CHAR(32)'
 p5
-sS'uuid'
+sS'modified_on'
 p6
-S'CHAR(64)'
+S'TIMESTAMP'
 p7
 sS'units'
 p8
 S'CHAR(32)'
 p9
-sS'modified_on'
-p10
-S'TIMESTAMP'
-p11
 sS'maxResolution'
+p10
+S'CHAR(32)'
+p11
+sS'maxExtent'
 p12
 S'CHAR(32)'
 p13
@@ -27,8 +27,8 @@ sS'id'
 p14
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p15
-sS'maxExtent'
+sS'uuid'
 p16
-S'CHAR(32)'
+S'CHAR(64)'
 p17
 s.

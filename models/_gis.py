@@ -21,6 +21,7 @@ db.define_table('gis_projection',
                 SQLField('maxExtent',length=256),
                 SQLField('maxResolution'),
                 SQLField('units'))
+db.gis_projection.exposes=['name','epsg','maxExtent','maxResolution','units']
 db.gis_projection.displays=['name','epsg','maxExtent','maxResolution','units']
 db.gis_projection.represent=lambda gis_projection: TR(TD(A(gis_projection.name,_href=t2.action('display_projection',gis_projection.id))),TD(gis_projection.epsg))
 db.gis_projection.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
@@ -59,6 +60,8 @@ db.define_table('gis_marker',
                 SQLField('height','integer'), # In Pixels, for display purposes
                 SQLField('width','integer'),
                 SQLField('image','upload'))
+db.gis_marker.exposes=['name','height','width','image']
+db.gis_marker.displays=['name','height','width','image']
 db.gis_marker.represent=lambda gis_marker: A(gis_marker.name,_href=t2.action('display_marker',gis_marker.id))
 db.gis_marker.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_marker.name')]
 
@@ -68,6 +71,8 @@ db.define_table('gis_feature_class',
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
                 SQLField('marker'))
+db.gis_feature_class.exposes=['name','marker']
+db.gis_feature_class.displays=['name','marker']
 db.gis_feature_class.represent=lambda gis_feature_class: A(gis_feature_class.name,_href=t2.action('display_feature_class',gis_feature_class.id))
 db.gis_feature_class.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
 db.gis_feature_class.marker.requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name'))
@@ -87,6 +92,8 @@ db.define_table('gis_feature_metadata',
                 SQLField('expiry_time','datetime'),
                 SQLField('url'),
                 SQLField('image','upload'))
+db.gis_feature_metadata.exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
+db.gis_feature_metadata.displays=['created_on','created_by','modified_on','modified_by','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.uuid','person.full_name'))
 db.gis_feature_metadata.event_time.requires=IS_DATETIME()
 db.gis_feature_metadata.expiry_time.requires=IS_DATETIME()
@@ -101,6 +108,8 @@ db.define_table('gis_feature',
                 SQLField('type'),
                 SQLField('lat'),
                 SQLField('lon'))
+db.gis_feature.exposes=['name','feature_class','metadata','type','lat','lon']
+db.gis_feature.displays=['name','feature_class','metadata','type','lat','lon']
 db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))
 db.gis_feature.name.requires=IS_NOT_EMPTY()
 db.gis_feature.feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.uuid','gis_feature_class.name'))
@@ -117,7 +126,10 @@ db.define_table('gis_feature_group',
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
+                SQLField('description',length=256),
                 SQLField('author',db.t2_person))
+db.gis_feature_group.exposes=['name','description','author']
+db.gis_feature_group.displays=['name','description','author']
 db.gis_feature_group.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_group.name')]
 db.gis_feature_group.author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
 
@@ -138,12 +150,12 @@ db.gis_key.displays=['service','key','description']
 #gis_layer_types=['internal_features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
 gis_layer_types=['openstreetmap','google','yahoo','virtualearth']
 db.define_table('gis_layer',
-				SQLField('modified_on','datetime',default=now),
+                SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
-				SQLField('description',length=256),
-				SQLField('type'),
-				SQLField('priority','integer'),
+                SQLField('description',length=256),
+                SQLField('type'),
+                SQLField('priority','integer'),
                 SQLField('enabled','boolean',default=True))
 # Want: [if gis_layer.enabled: 'Enabled']
 db.gis_layer.represent=lambda gis_layer: TR(TD(A(gis_layer.name,_href=t2.action('display_layer',gis_layer.id))),TD(gis_layer.enabled))

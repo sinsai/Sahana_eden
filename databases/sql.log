@@ -1216,3 +1216,6 @@ success!
 timestamp: 2008-12-23T20:33:45.578000
 ALTER TABLE gis_config ADD lat CHAR(32);
 success!
+timestamp: 2008-12-24T12:16:10.296000
+ALTER TABLE gis_feature_group ADD description CHAR(256);
+success!

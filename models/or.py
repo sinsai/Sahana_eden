@@ -34,6 +34,8 @@ db.define_table('or_organisation',
                 SQLField('address','text'),
                 SQLField('contact',length=64),
                 SQLField('location',length=64))
+db.or_organisation.exposes=['name','parent','type','registration','manpower','equipment','address','contact','location']
+db.or_organisation.displays=['name','parent','type','registration','manpower','equipment','address','contact','location']
 db.or_organisation.represent=lambda or_organisation: A(or_organisation.name,_href=t2.action('display_organisation',or_organisation.id))
 db.or_organisation.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation.name')]
 db.or_organisation.name.comment=SPAN("*",_class="req")

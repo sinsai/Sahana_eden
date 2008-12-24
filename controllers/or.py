@@ -41,15 +41,14 @@ def list_organisations():
 		list="No Organisations currently registered."
 	return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 
-# Actions called by representations in Model
 def display_organisation():
 	item=t2.display(db.or_organisation)
 	return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
 def update_organisation():
-	form=t2.update(db.or_organisation)
-	return dict(module_name=module_name,modules=modules,options=options,form=form)
+    form=t2.update(db.or_organisation)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
 
 @t2.requires_login('login')
 def delete_organisation():

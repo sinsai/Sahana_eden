@@ -42,7 +42,7 @@
    <ul id="modmenu">
    {{try:}}
     {{for option in options:}}
-	<li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+	<li>{{=A(T(option.name),_href=URL(r=request,f='open_option?id=%s'%option.id))}}</li>
 	{{pass}}
    {{except:}}
    {{pass}}
@@ -53,7 +53,7 @@
    <ul id="menu">
    {{try:}}
     {{for module in modules:}}
-	<li>{{=A(T(module.name_nice),_href=URL(r=request,f='../default/open_mod?id=%s'%module.id))}}</li>
+	<li>{{=A(T(module.name_nice),_href=URL(r=request,f='../default/open_module?id=%s'%module.id))}}</li>
 	{{pass}}
    {{except:}}
    {{pass}}

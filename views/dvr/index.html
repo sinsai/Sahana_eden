@@ -19,7 +19,7 @@
 {{for option in options:}}
 {{if option.function=="index":}}
 {{else:}}
-<li>{{=A(T(option.name),_href=URL(r=request,f='open?id=%s'%option.id))}}</li>
+<li>{{=A(T(option.name),_href=URL(r=request,f='open_option?id=%s'%option.id))}}</li>
 {{pass}}
 {{pass}}
 </ul>

@@ -22,7 +22,7 @@ def index():
     return dict(module_name=module_name,modules=modules,options=options)
 
 # Select Option
-def open():
+def open_option():
     id=request.vars.id
     options=db(db['%s_menu_option' % module].id==id).select()
     if not len(options):

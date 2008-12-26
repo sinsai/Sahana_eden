@@ -27,7 +27,7 @@ def index():
     return dict(module_name=module_name,modules=modules,options=options)
 
 # Open Module
-def open_mod():
+def open_module():
 	id=request.vars.id
 	modules=db(db.module.id==id).select()
 	if not len(modules):
@@ -36,7 +36,7 @@ def open_mod():
 	redirect(URL(r=request,c=module,f='index'))
 
 # Select Option
-def open():
+def open_option():
     id=request.vars.id
     options=db(db['%s_menu_option' % module].id==id).select()
     if not len(options):
@@ -59,10 +59,8 @@ def apath(path=''):
 def about_sahana():
     import sys
     python_version=sys.version
-    #web2py_version=open(apath('../VERSION'),'r').read()
-    #TypeError: open() takes no arguments (2 given)
-    web2py_version=1.54
-    sahana_version=db(db.system_config.setting=="version").select()[0].value
+    web2py_version=open(apath('../VERSION'),'r').read()
+    sahana_version=open(apath('sahana/VERSION'),'r').read()
     return dict(module_name=module_name,modules=modules,options=options,python_version=python_version,sahana_version=sahana_version,web2py_version=web2py_version)
 
 # NB No login required: unidentified users can Read/Create people (although they need to login to Update/Delete)

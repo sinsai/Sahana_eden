@@ -7,9 +7,13 @@ modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
 # Login
-def login(): return dict(form=t2.login())
+def login():
+    response.view='login.html'
+    return dict(form=t2.login())
 def logout(): t2.logout(next='login')
-def register(): return dict(form=t2.register())
+def register():
+    response.view='register.html'
+    return dict(form=t2.register())
 def profile(): t2.profile()
 
 def index():
@@ -44,9 +48,22 @@ def open():
     redirect(URL(r=request,f=option))
 
 # About Sahana
+def apath(path=''):
+    import os
+    from gluon.fileutils import up
+    opath=up(request.folder)
+    #TODO: This path manipulation is very OS specific.
+    while path[:3]=='../': opath,path=up(opath),path[3:]
+    return os.path.join(opath,path).replace('\\','/')
+
 def about_sahana():
-	title=T('About Sahana')
-	return dict(title=title,module_name=module_name,modules=modules,options=options)
+    import sys
+    python_version=sys.version
+    #web2py_version=open(apath('../VERSION'),'r').read()
+    #TypeError: open() takes no arguments (2 given)
+    web2py_version=1.54
+    sahana_version=db(db.system_config.setting=="version").select()[0].value
+    return dict(module_name=module_name,modules=modules,options=options,python_version=python_version,sahana_version=sahana_version,web2py_version=web2py_version)
 
 # NB No login required: unidentified users can Read/Create people (although they need to login to Update/Delete)
 def add_person():

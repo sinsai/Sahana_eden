@@ -83,8 +83,7 @@ db.gis_feature_class.represent=lambda gis_feature_class: A(gis_feature_class.nam
 db.gis_feature_class.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
 db.gis_feature_class.name.comment=SPAN("*",_class="req")
 db.gis_feature_class.marker.requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.uuid','gis_marker.name'))
-# Only works for mandatory fields
-#db.gis_feature_class.marker.display=lambda uuid: db(db.gis_marker.uuid==uuid).select()[0].image
+db.gis_feature_class.marker.display=lambda uuid: (uuid and [db(db.gis_marker.uuid==uuid).select()[0].name] or ["None"])[0]
 
 db.define_table('gis_feature_metadata',
                 SQLField('created_on','datetime',default=now), # Auto-stamped by T2
@@ -104,8 +103,7 @@ db.define_table('gis_feature_metadata',
 db.gis_feature_metadata.exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db.gis_feature_metadata.displays=['created_on','created_by','modified_on','modified_by','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.uuid','person.full_name'))
-# Only works for non-optional fields
-#db.gis_feature_metadata.contact.display=lambda uuid: db(db.person.uuid==uuid).select()[0].full_name
+db.gis_feature_metadata.contact.display=lambda uuid: (uuid and [db(db.person.uuid==uuid).select()[0].full_name] or ["None"])[0]
 db.gis_feature_metadata.event_time.requires=IS_DATETIME()
 db.gis_feature_metadata.expiry_time.requires=IS_DATETIME()
 db.gis_feature_metadata.url.requires=IS_URL()
@@ -125,11 +123,9 @@ db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action(
 db.gis_feature.name.requires=IS_NOT_EMPTY()
 db.gis_feature.name.comment=SPAN("*",_class="req")
 db.gis_feature.feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.uuid','gis_feature_class.name'))
-# Only works for non-optional fields
-#db.gis_feature.feature_class.display=lambda uuid: db(db.gis_feature_class.uuid==uuid).select()[0].name
+db.gis_feature.feature_class.display=lambda uuid: (uuid and [db(db.gis_feature_class.uuid==uuid).select()[0].name] or ["None"])[0]
 db.gis_feature.metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.uuid'))
-# Only works for non-optional fields
-#db.gis_feature.metadata.display=lambda uuid: db(db.gis_feature_metadata.uuid==uuid).select()[0].description
+db.gis_feature.metadata.display=lambda uuid: (uuid and [db(db.gis_feature_metadata.uuid==uuid).select()[0].description] or ["None"])[0]
 db.gis_feature.type.requires=IS_IN_SET(['point','line','polygon'])
 db.gis_feature.lat.requires=IS_LAT()
 db.gis_feature.lat.label=T("Latitude")

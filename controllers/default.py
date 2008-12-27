@@ -76,7 +76,6 @@ def list_persons():
 		list="No People currently registered."
 	return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 
-# Actions called by representations in Model
 def display_person():
 	item=t2.display(db.person)
 	return dict(module_name=module_name,modules=modules,options=options,item=item)
@@ -85,3 +84,8 @@ def display_person():
 def update_person():
 	form=t2.update(db.person)
 	return dict(module_name=module_name,modules=modules,options=options,form=form)
+
+def add_contact():
+	title=T('Add Contact')
+	form=t2.create(db.person)
+	return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)

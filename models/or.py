@@ -41,12 +41,11 @@ db.or_organisation.name.requires=IS_NOT_EMPTY()
 db.or_organisation.name.comment=SPAN("*",_class="req")
 db.or_organisation.type.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation_type.id','or_organisation_type.name'))
 db.or_organisation.parent.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.uuid','or_organisation.name'))
+db.or_organisation.parent.display=lambda uuid: (uuid and [db(db.or_organisation.uuid==uuid).select()[0].name] or ["None"])[0]
 db.or_organisation.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.uuid','person.full_name'))
-# Only works for non-optional fields
-#db.or_organisation.contact.display=lambda uuid: db(db.person.uuid==uuid).select()[0].full_name
+db.or_organisation.contact.display=lambda uuid: (uuid and [db(db.person.uuid==uuid).select()[0].full_name] or ["None"])[0]
 db.or_organisation.contact.label=T("Contact Person")
 db.or_organisation.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
-# Only works for non-optional fields
-#db.or_organisation.location.display=lambda uuid: db(db.gis_feature.uuid==uuid).select()[0].name
+db.or_organisation.location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]
 db.or_organisation.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
 

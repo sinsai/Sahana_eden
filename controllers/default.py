@@ -62,30 +62,3 @@ def about_sahana():
     web2py_version=open(apath('../VERSION'),'r').read()[8:]
     sahana_version=open(apath('sahana/VERSION'),'r').read()
     return dict(module_name=module_name,modules=modules,options=options,python_version=python_version,sahana_version=sahana_version,web2py_version=web2py_version)
-
-# NB No login required: unidentified users can Read/Create people (although they need to login to Update/Delete)
-def add_person():
-	title=T('Add Person')
-	form=t2.create(db.person)
-	return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
-
-def list_persons():
-	title=T('List People')
-	list=t2.itemize(db.person)
-	if list=="No data":
-		list="No People currently registered."
-	return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
-
-def display_person():
-	item=t2.display(db.person)
-	return dict(module_name=module_name,modules=modules,options=options,item=item)
-
-@t2.requires_login('login')
-def update_person():
-	form=t2.update(db.person)
-	return dict(module_name=module_name,modules=modules,options=options,form=form)
-
-def add_contact():
-	title=T('Add Contact')
-	form=t2.create(db.person)
-	return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)

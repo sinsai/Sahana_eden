@@ -1219,3 +1219,13 @@ success!
 timestamp: 2008-12-24T12:16:10.296000
 ALTER TABLE gis_feature_group ADD description CHAR(256);
 success!
+timestamp: 2008-12-28T16:21:20.453000
+CREATE TABLE pr_menu_option(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	function CHAR(32),
+	description CHAR(256),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!

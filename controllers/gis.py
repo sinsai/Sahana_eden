@@ -153,6 +153,35 @@ def update_feature_group():
     form=t2.update(db.gis_feature_group)
     return dict(module_name=module_name,modules=modules,options=options,form=form)
 
+# CRUD: Feature Metadata
+def list_feature_metadata():
+    title=T("GIS Feature Metadata")
+    list=t2.itemize(db.gis_feature_metadata)
+    if list=="No data":
+        list="No Feature Metadata currently defined."
+    response.view='gis/list.html'
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
+	
+def display_feature_metadata():
+    item=t2.display(db.gis_feature_metadata)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
+
+@t2.requires_login('login')
+def feature_metadata():
+    title=T("GIS Feature Metadata")
+    subtitle=T("Add New Feature Metadata")
+    list=t2.itemize(db.gis_feature_metadata)
+    if list=="No data":
+        list="No Feature Metadata currently defined."
+    form=t2.create(db.gis_feature_metadata)
+    response.view='gis/list_add.html'
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
+	
+@t2.requires_login('login')
+def update_feature_metadata():
+    form=t2.update(db.gis_feature_metadata)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
+
 # CRUD: Key
 def list_keys():
     title=T("GIS Keys")

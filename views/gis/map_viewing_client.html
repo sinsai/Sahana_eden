@@ -3,8 +3,8 @@
 <!--
     ol_js_loaders.html <- done
     ol_toolbar2.html <- replaced by MapFish toolbar: mf_toolbar.html
-    ol_start_vars.js
-    ol_layers_all.js
+    ol_start_vars.js <- done
+    ol_layers_all.js <- done
     ol_show_features_markers.js
     ol_controls.js <- done
     ol_controls_add_edit.js
@@ -30,6 +30,8 @@ function addLayers(map) {
     {{include 'gis/ol_layers_all.js'}}
 }
 
+{{include 'gis/ol_vector_registerEvents.js'}}
+
 {{include 'gis/mf_toolbar.js'}}
 
 {{include 'gis/ol_functions2.js'}}
@@ -42,10 +44,10 @@ Ext.onReady(function() {
     toolbar = createToolbar(map);
 
     // 'Scribble' mode layer
-	vectorLayer = new OpenLayers.Layer.Vector("vector", { 
-		displayInLayerSwitcher: false
-	});
-	map.registerEvents(vectorLayer);
+	//vectorLayer = new OpenLayers.Layer.Vector("vector", { 
+	//	displayInLayerSwitcher: false
+	//});
+	//map.registerEvents(vectorLayer);
 	
 	// For making a custom LayerTree
     //treeModel = createTreeModel();

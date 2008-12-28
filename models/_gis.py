@@ -52,8 +52,9 @@ db.gis_config.lat.requires=IS_LAT()
 db.gis_config.lon.requires=IS_LON()
 db.gis_config.zoom.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db.gis_config.projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
+db.gis_config.projection.display=lambda uuid: db(db.gis_projection.uuid==uuid).select()[0].name
 db.gis_config.marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
-db.gis_config.marker.display=lambda uuid: db(db.gis_marker.uuid==uuid).select()[0].image
+db.gis_config.marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % uuid,_class='hidden'))
 db.gis_config.map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db.gis_config.map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 
@@ -76,14 +77,14 @@ db.define_table('gis_feature_class',
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
-                SQLField('marker',length=64))
+                SQLField('marker',length=64,default='e2848160-cad4-4b8e-91cf-d1b4828bf805'))
 db.gis_feature_class.exposes=['name','marker']
 db.gis_feature_class.displays=['name','marker']
 db.gis_feature_class.represent=lambda gis_feature_class: A(gis_feature_class.name,_href=t2.action('display_feature_class',gis_feature_class.id))
 db.gis_feature_class.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
 db.gis_feature_class.name.comment=SPAN("*",_class="req")
-db.gis_feature_class.marker.requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.uuid','gis_marker.name'))
-db.gis_feature_class.marker.display=lambda uuid: (uuid and [db(db.gis_marker.uuid==uuid).select()[0].name] or ["None"])[0]
+db.gis_feature_class.marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
+db.gis_feature_class.marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
 
 db.define_table('gis_feature_metadata',
                 SQLField('created_on','datetime',default=now), # Auto-stamped by T2
@@ -142,8 +143,9 @@ db.define_table('gis_feature_group',
                 SQLField('name'),
                 SQLField('description',length=256),
                 SQLField('author',db.t2_person))
-db.gis_feature_group.exposes=['name','description','author']
+db.gis_feature_group.exposes=['name','description']
 db.gis_feature_group.displays=['name','description','author']
+db.gis_feature_group.represent=lambda gis_feature_group: A(gis_feature_group.name,_href=t2.action('display_feature_group',gis_feature_group.id))
 db.gis_feature_group.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_group.name')]
 db.gis_feature_group.author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
 

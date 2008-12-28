@@ -1,16 +1,9 @@
 {{extend 'layout.html'}}
 
+{{if t2.logged_in:}}
 <script src="{{=URL(r=request,c='static',f='scripts/gis_layers.js')}}" type="text/javascript" charset="utf-8"></script>
-<!--
-<script language="javascript">//<![CDATA[
-$(function() {
-    // When the Keys button is clicked
-    $("#keys-btn").click(function() {
-        //$(this).hide();
-    });
-});
-//]]></script>
--->
+{{else:}}
+{{pass}}
 
 {{try:}}
  {{=H2(title)}}
@@ -18,11 +11,19 @@ $(function() {
 {{pass}}
 <table>
 <tr><td id='btn-panel'>
+{{if t2.logged_in:}}
 <a href="{{=URL(r=request,c='gis',f='defaults',args='1')}}">
+{{else:}}
+<a href="{{=URL(r=request,c='gis',f='display_config',args='1')}}">
+{{pass}}
 <input type="button" id="configs-btn" value="{{=T("Defaults")}}" />
-</a>
-</td><td id='btn-panel'>
+</a></td>
+<td id='btn-panel'>
+{{if t2.logged_in:}}
 <a href="{{=URL(r=request,c='gis',f='features')}}">
+{{else:}}
+<a href="{{=URL(r=request,c='gis',f='list_features')}}">
+{{pass}}
 <input type="button" id="features-btn" value="{{=T("Features")}}" />
 </a></td>
 <!--
@@ -32,15 +33,27 @@ $(function() {
 </a></td>
 -->
 <td id='btn-panel'>
+{{if t2.logged_in:}}
+<a href="{{=URL(r=request,c='gis',f='keys')}}">
+{{else:}}
 <a href="{{=URL(r=request,c='gis',f='list_keys')}}">
+{{pass}}
 <input type="button" id="keys-btn" value="{{=T("Keys")}}" />
 </a></td>
 <td id='btn-panel'>
+{{if t2.logged_in:}}
+<a href="{{=URL(r=request,c='gis',f='markers')}}">
+{{else:}}
 <a href="{{=URL(r=request,c='gis',f='list_markers')}}">
+{{pass}}
 <input type="button" id="markers-btn" value="{{=T("Markers")}}" />
 </a></td>
 <td id='btn-panel'>
+{{if t2.logged_in:}}
+<a href="{{=URL(r=request,c='gis',f='projections')}}">
+{{else:}}
 <a href="{{=URL(r=request,c='gis',f='list_projections')}}">
+{{pass}}
 <input type="button" id="projections-btn" value="{{=T("Projections")}}" />
 </a></td>
 </tr>
@@ -54,6 +67,7 @@ $(function() {
 {{pass}}
 <p>&nbsp;</p>
 
+{{if t2.logged_in:}}
 <strong>{{=T("Add New Layer")}}:</strong>
 
 <div class="label">
@@ -124,5 +138,7 @@ Detail:
 </form>
 </div>
 <p><b>Key:</b><b class='red'> * </b> - Fields tagged with a star &#040;<span class='red'> * </span>&#041; are mandatory and must be filled.</p>
+{{else:}}
+{{pass}}
 <p>&nbsp;</p>
 </div>

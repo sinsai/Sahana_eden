@@ -75,7 +75,7 @@ div#container { }
 		form.head label { font-weight:bold; font-style:italic; }
 
 		/* T2 menu elements placed in correct location */
-		#menu { width: 418px; height: 50px; 	margin: 0 auto;	background: #369; }
+		#menu { width: 200px; height: 50px; margin: 0 auto;	background: #369; }
 		#menu ul { margin: 0;	margin-right: 30px;	padding: 0;	list-style: none; line-height: normal; }
 		#menu li { float: left; }
 		#menu a { padding: 5px 20px 5px 20px; text-decoration: none; font-family: Helvetica, sans-serif;	font-size: 14px; font-weight: normal; color: #FFFFFF; }

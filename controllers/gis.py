@@ -40,8 +40,19 @@ def list_configs():
     list=t2.itemize(db.gis_config)
     if list=="No data":
         list="No Configs currently defined."
+    response.view='gis/list.html'
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
+
+@t2.requires_login('login')
+def configs():
+    title=T("GIS Configs")
+    subtitle=T("Add New Config")
+    list=t2.itemize(db.gis_config)
+    if list=="No data":
+        list="No Configs currently defined."
     form=t2.create(db.gis_config)
-    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
+    response.view='gis/list_add.html'
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
 
 @t2.requires_login('login')
 def update_config():
@@ -76,6 +87,7 @@ def list_features():
     list=t2.itemize(db.gis_feature)
     if list=="No data":
         list="No Features currently defined."
+    response.view='gis/list.html'
     return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 
 @t2.requires_login('login')
@@ -89,16 +101,56 @@ def list_feature_classes():
     list=t2.itemize(db.gis_feature_class)
     if list=="No data":
         list="No Feature Classes currently defined."
-    form=t2.create(db.gis_feature_class)
-    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
+    response.view='gis/list.html'
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 	
 def display_feature_class():
     item=t2.display(db.gis_feature_class)
     return dict(module_name=module_name,modules=modules,options=options,item=item)
 
 @t2.requires_login('login')
+def feature_classes():
+    title=T("GIS Feature Classes")
+    subtitle=T("Add New Feature Class")
+    list=t2.itemize(db.gis_feature_class)
+    if list=="No data":
+        list="No Feature Classes currently defined."
+    form=t2.create(db.gis_feature_class)
+    response.view='gis/list_add.html'
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
+	
+@t2.requires_login('login')
 def update_feature_class():
     form=t2.update(db.gis_feature_class)
+    return dict(module_name=module_name,modules=modules,options=options,form=form)
+
+# CRUD: Feature Groups
+def list_feature_groups():
+    title=T("GIS Feature Groups")
+    list=t2.itemize(db.gis_feature_group)
+    if list=="No data":
+        list="No Feature Groups currently defined."
+    response.view='gis/list.html'
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
+	
+def display_feature_group():
+    item=t2.display(db.gis_feature_group)
+    return dict(module_name=module_name,modules=modules,options=options,item=item)
+
+@t2.requires_login('login')
+def feature_groups():
+    title=T("GIS Feature Groups")
+    subtitle=T("Add New Feature Group")
+    list=t2.itemize(db.gis_feature_group)
+    if list=="No data":
+        list="No Feature Groups currently defined."
+    form=t2.create(db.gis_feature_group)
+    response.view='gis/list_add.html'
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
+	
+@t2.requires_login('login')
+def update_feature_group():
+    form=t2.update(db.gis_feature_group)
     return dict(module_name=module_name,modules=modules,options=options,form=form)
 
 # CRUD: Key
@@ -107,13 +159,24 @@ def list_keys():
     list=t2.itemize(db.gis_key)
     if list=="No data":
         list="No Keys currently defined."
-    form=t2.create(db.gis_key)
-    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
+    response.view='gis/list.html'
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 	
 def display_key():
     item=t2.display(db.gis_key)
     return dict(module_name=module_name,modules=modules,options=options,item=item)
 
+@t2.requires_login('login')
+def keys():
+    title=T("GIS Keys")
+    subtitle=T("Add New Key")
+    list=t2.itemize(db.gis_key)
+    if list=="No data":
+        list="No Keys currently defined."
+    form=t2.create(db.gis_key)
+    response.view='gis/list_add.html'
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
+	
 @t2.requires_login('login')
 def update_key():
     form=t2.update(db.gis_key)
@@ -125,13 +188,24 @@ def list_markers():
     list=t2.itemize(db.gis_marker)
     if list=="No data":
         list="No Markers currently defined."
-    form=t2.create(db.gis_marker)
-    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
+    response.view='gis/list.html'
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 	
 def display_marker():
     item=t2.display(db.gis_marker)
     return dict(module_name=module_name,modules=modules,options=options,item=item)
 
+@t2.requires_login('login')
+def markers():
+    title=T("GIS Markers")
+    subtitle=T("Add New Marker")
+    list=t2.itemize(db.gis_marker)
+    if list=="No data":
+        list="No Markers currently defined."
+    form=t2.create(db.gis_marker)
+    response.view='gis/list_add.html'
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
+	
 @t2.requires_login('login')
 def update_marker():
     form=t2.update(db.gis_marker)
@@ -143,13 +217,24 @@ def list_projections():
     list=t2.itemize(db.gis_projection)
     if list=="No data":
         list="No Projections currently defined."
-    form=t2.create(db.gis_projection)
-    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
+    response.view='gis/list.html'
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 	
 def display_projection():
     item=t2.display(db.gis_projection)
     return dict(module_name=module_name,modules=modules,options=options,item=item)
 
+@t2.requires_login('login')
+def projections():
+    title=T("GIS Projections")
+    subtitle=T("Add New Projection")
+    list=t2.itemize(db.gis_projection)
+    if list=="No data":
+        list="No Projections currently defined."
+    form=t2.create(db.gis_projection)
+    response.view='gis/list_add.html'
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
+	
 @t2.requires_login('login')
 def update_projection():
     form=t2.update(db.gis_projection)
@@ -161,6 +246,7 @@ def list_layers():
     list=t2.itemize(db.gis_layer)
     if list=="No data":
         list="No Layers currently defined."
+    response.view='gis/list.html'
     return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 	
 # Actions called by representations in Model

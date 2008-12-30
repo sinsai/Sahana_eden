@@ -1,6 +1,6 @@
 ﻿// General functions usable by all Layers
 
-// returns string type of a feature
+// Return string type of a feature
 // return point if not line or poly ....danger....
 function featureTypeStr(feature){
     var type = 'point';
@@ -12,7 +12,7 @@ function featureTypeStr(feature){
     }
     return type;
 }
-// create geometries from point coords.
+// Create geometries from point coords.
 function coordToGeom(coords, type){
     var geom = coords[0]
     if(type == 'point'){
@@ -62,11 +62,3 @@ function osm_getTileURL(bounds) {
         return this.url + z + "/" + x + "/" + y + "." + this.type;
     }
 }
-
-// Add Control Functions
-{{include 'gis/ol_generate_control_fns.js'}}
-// Add Popup button_fns
-{{include 'gis/ol_generate_popup_fns.js'}}
-// Generate AJAX for popup boxes
-// ToDo: Replace with a jQuery version (framework should mean less code & being able to cope better with future browsers)
-{{include 'gis/ol_generate_popup_ajax.js'}}

@@ -8,7 +8,6 @@ function initToolbarContent(toolbar) {
 		toolbar.add(new Ext.Toolbar.Separator());
 		toolbar.add(new Ext.Toolbar.Spacer());
 	} 
-
 	toolbar.addControl(
 		new OpenLayers.Control.ZoomToMaxExtent({map: map}), {
 			iconCls: "zoomfull", 
@@ -44,21 +43,21 @@ function initToolbarContent(toolbar) {
 	);
 	addSeparator(toolbar);
 	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(vectorLayer, OpenLayers.Handler.Point), {
+		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point), {
 			iconCls: 'drawpoint', 
 			tooltip: '{{=T("Add Point")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(vectorLayer, OpenLayers.Handler.Path), {
+		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path), {
 			iconCls: 'drawline', 
 			tooltip: '{{=T("Add Line")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(vectorLayer, OpenLayers.Handler.Polygon), {
+		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon), {
 			iconCls: 'drawpolygon', 
 			tooltip: '{{=T("Add Area")}}', 
 			toggleGroup: 'map'

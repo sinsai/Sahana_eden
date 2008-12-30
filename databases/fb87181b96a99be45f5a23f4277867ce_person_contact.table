@@ -7,15 +7,15 @@ sS'person'
 p4
 S'REFERENCES person(id) ON DELETE CASCADE'
 p5
-sS'id'
-p6
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p7
-sS'opt_contact_type'
-p8
-S'CHAR(32)'
-p9
 sS'contact_value'
+p6
+S'CHAR(32)'
+p7
+sS'id'
+p8
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p9
+sS'opt_contact_type'
 p10
 S'CHAR(32)'
 p11

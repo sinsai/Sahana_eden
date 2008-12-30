@@ -4,7 +4,7 @@
 var map, toolbar;
 //var treeModel;
 var currentFeature, currentPopup;
-var markersLayer, featuresLayer, vectorLayer;
+var markersLayer, featuresLayer;
 var selectControl, dragControl, pointControl, lineControl, polygonControl
 
 // avoid pink tiles

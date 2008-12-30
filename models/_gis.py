@@ -120,7 +120,8 @@ db.define_table('gis_feature',
                 SQLField('lon'))
 db.gis_feature.exposes=['name','feature_class','metadata','type','lat','lon']
 db.gis_feature.displays=['name','feature_class','metadata','type','lat','lon']
-db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))
+# Define in Controller as want diff functions to have diff representations & we cannot redefine later once defined at top-level
+#db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))
 db.gis_feature.name.requires=IS_NOT_EMPTY()
 db.gis_feature.name.comment=SPAN("*",_class="req")
 db.gis_feature.feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.uuid','gis_feature_class.name'))
@@ -147,7 +148,17 @@ db.gis_feature_group.exposes=['name','description']
 db.gis_feature_group.displays=['name','description','author']
 db.gis_feature_group.represent=lambda gis_feature_group: A(gis_feature_group.name,_href=t2.action('display_feature_group',gis_feature_group.id))
 db.gis_feature_group.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_group.name')]
+db.gis_feature_group.name.comment=SPAN("*",_class="req")
 db.gis_feature_group.author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
+
+# Many-to-Many table
+db.define_table('gis_feature_group_to_feature',
+                SQLField('modified_on','datetime',default=now),
+                SQLField('feature_group',length=64),
+                SQLField('feature',length=64))
+db.gis_feature_group_to_feature.feature_group.requires=IS_IN_DB(db,'gis_feature_group.uuid','gis_feature_group.name')
+db.gis_feature_group_to_feature.feature.requires=IS_IN_DB(db,'gis_feature.uuid','gis_feature.name')
+                
 
 # GIS Keys - needed for commercial mapping services
 db.define_table('gis_key',
@@ -163,8 +174,8 @@ db.gis_key.service.requires=IS_IN_SET(['google','multimap','yahoo'])
 db.gis_key.key.requires=IS_NOT_EMPTY()
 
 # GIS Layers
-#gis_layer_types=['internal_features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
-gis_layer_types=['openstreetmap','google','yahoo','virtualearth']
+#gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
+gis_layer_types=['features','openstreetmap','google','yahoo','virtualearth']
 db.define_table('gis_layer',
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),

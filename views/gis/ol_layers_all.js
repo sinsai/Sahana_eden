@@ -52,6 +52,10 @@
                 var yahoohybrid = new OpenLayers.Layer.Yahoo( "{{=layer.name}}" , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
                 map.addLayer(yahoohybrid);
         {{pass}}
+        {{elif layer.type=="features":}}
+            {{fgroup=db(db.gis_layer_features.layer==layer.id).select()[0].feature_group}}
+            // Build up overall list of Features to be added to single FeaturesLayer later
+        {{pass}}
         {{pass}}
     {{pass}}
 {{pass}}

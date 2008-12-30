@@ -5,13 +5,15 @@ $(function() {
     // What is the initial type?
     var type = $("select[@name=type]").val();
     if (type=="openstreetmap") {
-        var fields_hide=["key"];
+        var fields_hide=["key","feature_group"];
     } else if (type=="google") {
-        var fields_hide=[];
+        var fields_hide=["feature_group"];
     } else if (type=="virtualearth") {
-        var fields_hide=["key"];
+        var fields_hide=["key","feature_group"];
     } else if (type=="yahoo") {
-        var fields_hide=[];
+        var fields_hide=["feature_group"];
+    } else if (type=="features") {
+        var fields_hide=["subtype","key"];
     }
     // Hide fields irrelevant for the type
     for (var i = 0; i < fields_hide.length; i++) {
@@ -24,21 +26,25 @@ $(function() {
 		// What is the new type?
         type=$(this).val();
         if (type=="openstreetmap") {
-            var fields_hide=["key"];
+            var fields_hide=["key","feature_group"];
             var fields_show=["subtype"];
             var options_subtype=["Mapnik", "Osmarender", "Aerial"];
         } else if (type=="google") {
-            var fields_hide=[];
+            var fields_hide=["feature_group"];
             var fields_show=["subtype","key"];
             var options_subtype=["Satellite", "Maps", "Hybrid", "Terrain"];
         } else if (type=="virtualearth") {
-            var fields_hide=["key"];
+            var fields_hide=["key","feature_group"];
             var fields_show=["subtype"];
             var options_subtype=["Satellite", "Maps", "Hybrid"];
         } else if (type=="yahoo") {
-            var fields_hide=[];
+            var fields_hide=["feature_group"];
             var fields_show=["subtype","key"];
             var options_subtype=["Satellite", "Maps", "Hybrid"];
+        } else if (type=="features") {
+            var fields_hide=["subtype","key"];
+            var fields_show=["feature_group"];
+            var options_subtype=[];
         }
         // Hide fields no longer relevant for the new type
         for (var i = 0; i < fields_hide.length; i++) {

@@ -2,16 +2,17 @@
 
 <!--
     ol_js_loaders.html <- done
-    ol_toolbar2.html <- replaced by MapFish toolbar: mf_toolbar.html
+    ol_toolbar2.html <- replaced by MapFish toolbar: mf_toolbar.js, but need to merge in functions from ol_generate_control_fns.js
     ol_start_vars.js <- done
     ol_layers_all.js <- done
     ol_show_features_markers.js
     ol_controls.js <- done
+    // Need to merge with mf_toolbar.js (ol_controls_add.js is alt for add_feature_map.html)
     ol_controls_add_edit.js
     // Called to end the onload function
     ol_onload_fin.js
     ol_generate_add_feature_with_popup.js
-    ol_functions.js <- done
+    ol_functions.js <- done (still have ol_functions2.js to go)
     ol_status.html <- done
 -->
 
@@ -32,9 +33,10 @@ function addLayers(map) {
 
 {{include 'gis/ol_vector_registerEvents.js'}}
 
+// Rewrite to use vars defined in ol_controls_add_edit.js: selectControl, dragControl, pointControl, lineControl, polygonControl
 {{include 'gis/mf_toolbar.js'}}
 
-{{include 'gis/ol_functions2.js'}}
+{{include 'gis/ol_functions.js'}}
 
 Ext.onReady(function() {
 
@@ -43,11 +45,10 @@ Ext.onReady(function() {
 	{{include 'gis/ol_controls.js'}}
     toolbar = createToolbar(map);
 
-    // 'Scribble' mode layer
-	//vectorLayer = new OpenLayers.Layer.Vector("vector", { 
-	//	displayInLayerSwitcher: false
-	//});
-	//map.registerEvents(vectorLayer);
+    featuresLayer = new OpenLayers.Layer.Vector("vector", { 
+		displayInLayerSwitcher: false
+	});
+	map.registerEvents(featuresLayer);
 	
 	// For making a custom LayerTree
     //treeModel = createTreeModel();
@@ -133,11 +134,19 @@ Ext.onReady(function() {
 
 <table>
 <tr><td id='btn-panel'>
+{{if t2.logged_in:}}
 <a href="{{=URL(r=request,c='gis',f='defaults',args='1')}}">
+{{else:}}
+<a href="{{=URL(r=request,c='gis',f='display_config',args='1')}}">
+{{pass}}
 <input type="button" id="configs-btn" value="{{=T("Defaults")}}" />
-</a>
-</td><td id='btn-panel'>
+</a></td>
+<td id='btn-panel'>
+{{if t2.logged_in:}}
 <a href="{{=URL(r=request,c='gis',f='features')}}">
+{{else:}}
+<a href="{{=URL(r=request,c='gis',f='list_features')}}">
+{{pass}}
 <input type="button" id="features-btn" value="{{=T("Features")}}" />
 </a></td>
 <!--
@@ -147,15 +156,27 @@ Ext.onReady(function() {
 </a></td>
 -->
 <td id='btn-panel'>
+{{if t2.logged_in:}}
+<a href="{{=URL(r=request,c='gis',f='keys')}}">
+{{else:}}
 <a href="{{=URL(r=request,c='gis',f='list_keys')}}">
+{{pass}}
 <input type="button" id="keys-btn" value="{{=T("Keys")}}" />
 </a></td>
 <td id='btn-panel'>
+{{if t2.logged_in:}}
+<a href="{{=URL(r=request,c='gis',f='markers')}}">
+{{else:}}
 <a href="{{=URL(r=request,c='gis',f='list_markers')}}">
+{{pass}}
 <input type="button" id="markers-btn" value="{{=T("Markers")}}" />
 </a></td>
 <td id='btn-panel'>
+{{if t2.logged_in:}}
+<a href="{{=URL(r=request,c='gis',f='projections')}}">
+{{else:}}
 <a href="{{=URL(r=request,c='gis',f='list_projections')}}">
+{{pass}}
 <input type="button" id="projections-btn" value="{{=T("Projections")}}" />
 </a></td>
 </tr>

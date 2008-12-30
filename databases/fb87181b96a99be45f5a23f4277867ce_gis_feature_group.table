@@ -11,16 +11,20 @@ sS'name'
 p6
 S'CHAR(32)'
 p7
-sS'modified_on'
+sS'features'
 p8
-S'TIMESTAMP'
+S'CHAR(32)'
 p9
-sS'id'
+sS'modified_on'
 p10
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'TIMESTAMP'
 p11
-sS'uuid'
+sS'id'
 p12
-S'CHAR(64)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p13
+sS'uuid'
+p14
+S'CHAR(64)'
+p15
 s.

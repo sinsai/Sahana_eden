@@ -1229,3 +1229,14 @@ CREATE TABLE pr_menu_option(
 	enabled CHAR(1)
 );
 success!
+timestamp: 2008-12-28T22:57:15.453000
+ALTER TABLE gis_feature_group ADD features CHAR(32);
+success!
+timestamp: 2008-12-29T13:58:31.328000
+CREATE TABLE gis_feature_group_to_feature(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	feature_group CHAR(64),
+	feature CHAR(64)
+);
+success!

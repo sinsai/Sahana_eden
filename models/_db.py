@@ -19,8 +19,8 @@ import uuid
 #from applications.sahana.modules.t2 import T2
 #t2=T2(request,response,session,cache,T,db)
 
-# Custom classes which extend default T2
-from applications.sahana.modules.sahana import T2SAHANA
+# Custom classes which extend default Gluon & T2
+from applications.sahana.modules.sahana import *
 t2=T2SAHANA(request,response,session,cache,T,db)
 
 # Custom validators

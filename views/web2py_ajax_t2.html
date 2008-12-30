@@ -47,6 +47,9 @@ $('textarea.text').attr('cols',50).attr('rows',10);
 $('input.integer').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
 $('input.double').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/g,'').reverse();});
 $('input.delete').attr('onclick','if(this.checked) if(!confirm("{{=T("Sure you want to delete this object?")}}")) this.checked=false;');
+$('input.delete_row').click(function(){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
+    $.ajax({ url: "{{=URL2(r=request)}}/"+$(this).attr("name")+"/"+$(this).attr("id"), async: false });
+    $.ajax({ url: "{{=URL2(r=request)}}"+"/list_features_plain",  cache: false,  success: function(html){ $("div#list-container").html(html); }}); return false; });
 try {$("input.date").focus( function() {Calendar.setup({
      inputField:this.id, ifFormat:"{{=T("%Y-%m-%d")}}", showsTime:false
 }); }); } catch(e) {};

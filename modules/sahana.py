@@ -14,6 +14,37 @@ except ImportError: from gluon.sql import SQLTable
 
 from applications.sahana.modules.t2 import T2
 
+# Modified version of URL from gluon/html.py
+# we just need a simplified version for our jquery delete_row function
+def URL2(a=None,c=None,r=None):
+    """
+    example:
+
+    >>> URL(a='a',c='c')
+    '/a/c'
+
+    generates a url "/a/c" corresponding to application a & controller c 
+    If r=request is passed, a & c are set, respectively,
+    to r.application, r.controller
+
+    The more typical usage is:
+    
+    URL(r=request) that generates a base url with the present application and controller.
+    
+    The function (& optionally args/vars) are expected to be added via jquery based on attributes of the item.
+    """
+    application=controller=None
+    if r:
+        application=r.application
+        controller=r.controller
+    if a: application=a    
+    if c: controller=c
+    if not (application and controller):
+        raise SyntaxError, 'not enough information to build the url'
+    other=''
+    url='/%s/%s' % (application, controller)
+    return url
+
 class T2SAHANA(T2):
 
     def input_required_widget(field,value):

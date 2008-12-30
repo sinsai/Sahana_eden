@@ -1,12 +1,12 @@
 {{extend 'layout.html'}}
 
 <div class='form-container'>
-<h2>{{=T("Feature Class Details")}}</h2>
-{{=A(T("Edit"),_href=t2.action('update_feature_class',t2.id))}}
+<h2>{{=T("Feature Group Details")}}</h2>
+{{=A(T("Edit"),_href=t2.action('update_feature_group',t2.id))}}
 <p>&nbsp;</p>
 {{=item}}
 <p>&nbsp;</p>
 </div>
-{{=A(T("Feature Classes"),_href=t2.action('list_feature_classes'))}}
+{{=A(T("Feature Groups"),_href=t2.action('list_feature_groups'))}}
 <p>&nbsp;</p>
 {{=A(T("Map Service Catalogue"),_href=t2.action('map_service_catalogue'))}}

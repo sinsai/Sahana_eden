@@ -39,7 +39,7 @@ def list_configs():
     title=T("GIS Configs")
     list=t2.itemize(db.gis_config)
     if list=="No data":
-        list="No Configs currently defined."
+        list=T("No Configs currently defined.")
     response.view='gis/list.html'
     return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 
@@ -49,7 +49,7 @@ def configs():
     subtitle=T("Add New Config")
     list=t2.itemize(db.gis_config)
     if list=="No data":
-        list="No Configs currently defined."
+        list=T("No Configs currently defined.")
     form=t2.create(db.gis_config)
     response.view='gis/list_add.html'
     return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
@@ -66,14 +66,6 @@ def defaults():
     return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
 	
 # CRUD: Features
-def features():
-    title=T("GIS Features")
-    list=t2.itemize(db.gis_feature)
-    if list=="No data":
-        list="No Features currently defined."
-    form=t2.create(db.gis_feature)
-    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
-	
 def add_feature():
     form=t2.create(db.gis_feature)
     return dict(module_name=module_name,modules=modules,options=options,form=form)
@@ -84,16 +76,53 @@ def display_feature():
 
 def list_features():
     title=T("GIS Features")
+    if t2.logged_in:
+        db.gis_feature.represent=lambda gis_feature: TR(TD(A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))),TD(INPUT(_type='checkbox',_class='delete_row',_name='delete_feature',_id='%i' % gis_feature.id)))
+    else:
+        db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))
     list=t2.itemize(db.gis_feature)
     if list=="No data":
         list="No Features currently defined."
+    if t2.logged_in:
+        if isinstance(list,TABLE):
+            list.insert(0,TR('',B('Delete?')))
     response.view='gis/list.html'
     return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 
+def list_features_plain():
+    if t2.logged_in:
+        db.gis_feature.represent=lambda gis_feature: TR(TD(A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))),TD(INPUT(_type='checkbox',_class='delete_row',_name='delete_feature',_id='%i' % gis_feature.id)))
+    else:
+        db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))
+    list=t2.itemize(db.gis_feature)
+    if list=="No data":
+        list="No Features currently defined."
+    if isinstance(list,TABLE):
+        list.insert(0,TR('',B('Delete?')))
+    response.view='list_plain.html'
+    return dict(list=list)
+
+@t2.requires_login('login')
+def features():
+    title=T("GIS Features")
+    db.gis_feature.represent=lambda gis_feature: TR(TD(A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))),TD(INPUT(_type='checkbox',_class='delete_row',_name='delete_feature',_id='%i' % gis_feature.id)))
+    list=t2.itemize(db.gis_feature)
+    if list=="No data":
+        list="No Features currently defined."
+    if isinstance(list,TABLE):
+        list.insert(0,TR('',B('Delete?')))
+    form=t2.create(db.gis_feature)
+    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list,form=form)
+	
 @t2.requires_login('login')
 def update_feature():
     form=t2.update(db.gis_feature)
     return dict(module_name=module_name,modules=modules,options=options,form=form)
+
+@t2.requires_login('login')
+def delete_feature():
+    t2.delete(db.gis_feature,next='features')
+    return dict(module_name=module_name,modules=modules,options=options)
 
 # CRUD: Feature Classes
 def list_feature_classes():
@@ -150,8 +179,10 @@ def feature_groups():
 	
 @t2.requires_login('login')
 def update_feature_group():
+    #form=SQLFORM(db.gis_feature_group)
     form=t2.update(db.gis_feature_group)
-    return dict(module_name=module_name,modules=modules,options=options,form=form)
+    search=t2.search(db.gis_feature)
+    return dict(module_name=module_name,modules=modules,options=options,form=form,search=search)
 
 # CRUD: Feature Metadata
 def list_feature_metadata():
@@ -275,6 +306,8 @@ def list_layers():
     list=t2.itemize(db.gis_layer)
     if list=="No data":
         list="No Layers currently defined."
+    if isinstance(list,TABLE):
+        list.insert(0,TR('',B('Enabled?'))) 
     response.view='gis/list.html'
     return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
 	
@@ -330,12 +363,18 @@ def update_layer():
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         options_subtype = ["Satellite", "Maps", "Hybrid"]
         key=db(db.gis_key.service==type).select(db.gis_key.ALL)[0].key
+    elif type=="features":
+        feature_group=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].feature_group
+        subtype=0
+        options_subtype = [""]
+        key=0
     else:
         subtype=0
         options_subtype = [""]
         key=0
 
     # Pull out options for dropdowns
+    options_feature_group=db().select(db.gis_feature_group.ALL,orderby=db.gis_feature_group.name)
     # 0-99, take away all used priorities, add back the current priority
     options_priority = range(100)
     options_used = db().select(db.gis_layer.priority)
@@ -359,6 +398,7 @@ def update_layer():
             SELECT(_name="type",requires=IS_NOT_EMPTY()),
             #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % type].ALL)])
             SELECT(_name="subtype",requires=IS_NOT_EMPTY()),
+            SELECT(_name="feature_group"),
             INPUT(_name="key",requires=IS_NOT_EMPTY()),
             # Should develop an IS_THIS_OR_IS_NOT_IN_DB(this,table) validator (so as to not rely on View)
             #INPUT(_name="priority",requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]),
@@ -410,6 +450,10 @@ def update_layer():
     		db(db.gis_key.service==type_new).select()[0].update_record(
     			key=form.vars.key
     		)
+    	elif type_new=="features":
+    		db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
+    			feature_group=form.vars.feature_group
+    		)
     	# Notify user :)
         response.confirmation=T("Layer updated")
     elif form.errors: 
@@ -417,7 +461,7 @@ def update_layer():
     else: 
     	response.notification=T("Please fill the form")
 
-    return dict(module_name=module_name,modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority)
+    return dict(module_name=module_name,modules=modules,options=options,form=form,layer=layer,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group,feature_group=feature_group)
 
 @t2.requires_login('login')
 def delete_layer():
@@ -457,6 +501,7 @@ def map_service_catalogue():
     key="ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw" # Google Key for 127.0.0.1
     
     # Pull out options for dropdowns
+    options_feature_group=db().select(db.gis_feature_group.ALL,orderby=db.gis_feature_group.name)
     # 0-99, take away all used priorities
     options_priority = range(100)
     options_used = db().select(db.gis_layer.priority)
@@ -474,6 +519,7 @@ def map_service_catalogue():
             #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % type].ALL)])
             SELECT(_name="subtype"),
             INPUT(_name="key",requires=IS_NOT_EMPTY()),
+            SELECT(_name="feature_group"),
             INPUT(_name="priority",requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]),
             INPUT(_name="enabled"),
             INPUT(_type="submit"))
@@ -538,6 +584,11 @@ def map_service_catalogue():
                     service=type_new,
                     key=form.vars.key
                 )
+        elif type_new=="features":
+            db['gis_layer_%s' % type_new].insert(
+                layer=id,
+                feature_group=form.vars.feature_group
+            )
         # Notify user :)
         response.confirmation=T("Layer updated")
     elif form.errors: 
@@ -549,8 +600,10 @@ def map_service_catalogue():
     layers=t2.itemize(db.gis_layer,orderby=db.gis_layer.priority)
     if layers=="No data":
         layers="No Layers currently defined."
-
-    return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,form=form,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority)
+    if isinstance(layers,TABLE):
+        layers.insert(0,TR('',B('Enabled?'))) 
+    
+    return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,form=form,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group)
 
 # Map Viewing Client
 def map_viewing_client():

@@ -13,6 +13,7 @@ def login():
 def logout(): t2.logout(next='login')
 def register():
     response.view='register.html'
+    t2.messages.record_created=T("You have been successfully registered")
     return dict(form=t2.register())
 def profile(): t2.profile()
 

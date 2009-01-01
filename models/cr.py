@@ -37,3 +37,16 @@ db.cr_shelter.contact.label=T("Contact Person")
 db.cr_shelter.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
 db.cr_shelter.location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]
 db.cr_shelter.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
+
+crud_strings_shelter=Storage(title_create=T('Add Shelter'),
+            title_display=T('Organisation Details'),
+            title_list=T('List Shelters'),
+            title_update=T('Edit Shelter'),
+            subtitle_list=T('Shelters'),
+            subtitle_create=T('Add New Shelter'),
+            label_list_button=T('List Shelters'),
+            label_create_button=T('Add Shelter'),
+            msg_record_created=T('Shelter added'),
+            msg_record_modified=T('Shelter updated'),
+            msg_record_deleted=T('Shelter deleted'),
+            msg_list_empty=T('No Shelters currently registered'))

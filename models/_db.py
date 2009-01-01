@@ -81,48 +81,7 @@ db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
 
 def shn_crud_strings_lookup(resource):
     "Look up CRUD strings for a given resource."
-    if resource=='organisation':
-        return Storage(title_create=T('Add Organisation'),
-            title_display=T('Organisation Details'),
-            title_list=T('List Organisations'),
-            title_update=T('Edit Organisation'),
-            subtitle_list=T('Organisations'),
-            subtitle_create=T('Add New Organisation'),
-            label_list_button=T('List Organisations'),
-            label_create_button=T('Add Organisation'),
-            msg_record_created=T('Organisation added'),
-            msg_record_modified=T('Organisation updated'),
-            msg_record_deleted=T('Organisation deleted'),
-            msg_list_empty=T('No Organisations currently registered'))
-    elif resource=='shelter':
-        return Storage(title_create=T('Add Shelter'),
-            title_display=T('Organisation Details'),
-            title_list=T('List Shelters'),
-            title_update=T('Edit Shelter'),
-            subtitle_list=T('Shelters'),
-            subtitle_create=T('Add New Shelter'),
-            label_list_button=T('List Shelters'),
-            label_create_button=T('Add Shelter'),
-            msg_record_created=T('Shelter added'),
-            msg_record_modified=T('Shelter updated'),
-            msg_record_deleted=T('Shelter deleted'),
-            msg_list_empty=T('No Shelters currently registered'))
-    elif resource=='person':
-        return Storage(title_create=T('Add Person'),
-            title_display=T('Person Details'),
-            title_list=T('List People'),
-            title_update=T('Edit Person'),
-            subtitle_list=T('People'),
-            subtitle_create=T('Add New Person'),
-            label_list_button=T('List People'),
-            label_create_button=T('Add Person'),
-            msg_record_created=T('Person added'),
-            msg_record_modified=T('Person updated'),
-            msg_record_deleted=T('Person deleted'),
-            msg_list_empty=T('No People currently registered'))
-    else:
-        # Undefined Resource!
-        return
+    return eval('crud_strings_%s' % resource)
 
 def shn_rest_controller(module,resource):
     """

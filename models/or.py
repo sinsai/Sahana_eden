@@ -48,3 +48,15 @@ db.or_organisation.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','
 db.or_organisation.location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]
 db.or_organisation.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
 
+crud_strings_organisation=Storage(title_create=T('Add Organisation'),
+            title_display=T('Organisation Details'),
+            title_list=T('List Organisations'),
+            title_update=T('Edit Organisation'),
+            subtitle_list=T('Organisations'),
+            subtitle_create=T('Add New Organisation'),
+            label_list_button=T('List Organisations'),
+            label_create_button=T('Add Organisation'),
+            msg_record_created=T('Organisation added'),
+            msg_record_modified=T('Organisation updated'),
+            msg_record_deleted=T('Organisation deleted'),
+            msg_list_empty=T('No Organisations currently registered'))

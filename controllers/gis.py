@@ -6,7 +6,7 @@ modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
-# Login
+# T2 framework functions
 def login():
 	response.view='login.html'
 	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
@@ -16,14 +16,16 @@ def register():
 	t2.messages.record_created=T("You have been successfully registered")
 	return dict(form=t2.register())
 def profile(): t2.profile()
-# Enable downloading of Markers & other Files
-def download(): return t2.download()
+def download():
+    "Enable downloading of Markers & other Files."
+    return t2.download()
 
+# S3 framework functions
 def index():
+    "Module's Home Page"
     return dict(module_name=module_name,modules=modules,options=options)
-
-# Select Option
 def open_option():
+    "Select Option from Module Menu"
     id=request.vars.id
     options=db(db['%s_menu_option' % module].id==id).select()
     if not len(options):
@@ -34,10 +36,10 @@ def open_option():
 #
 # Configs
 #
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
 def config():
+    """RESTful controller function.
+    Anonymous users can Read.
+    Authentication required for Create/Update/Delete."""
     table=db.gis_config
     if request.args:
         method=request.args[0]
@@ -100,9 +102,11 @@ def config():
             response.view='list.html'
             return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
 
-# Defaults are a special case of Configs - the 1st entry
 @t2.requires_login('login')
 def defaults():
+    """Defaults are a special case of Configs - the 1st entry.
+    Don't want to be able to delete these!
+    """
     title=T("GIS Defaults")
     form=t2.update(db.gis_config,deletable=False) # NB deletable=False
     return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
@@ -183,13 +187,13 @@ def feature():
             return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
 
 @t2.requires_login('login')
-# Designed to be called via AJAX to return the results into a list-container div
 def delete_feature_ajax():
+    "Designed to be called via AJAX to return the results into a list-container div."
     t2.delete(db.gis_feature,next='list_features_plain')
     return
 
-# Designed to be called via AJAX to refresh a list-container div
 def list_features_plain():
+    "Designed to be called via AJAX to refresh a list-container div"
     if t2.logged_in:
         db.gis_feature.represent=lambda table:shn_list_item(table,resource='feature',action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='delete_feature_ajax',_id='%i' % table.id)")
     else:
@@ -341,8 +345,8 @@ def feature_group():
             response.view='list.html'
             return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
 
-# Designed to be called via AJAX to be processed within JS client
 def display_feature_group_features_json():
+    "Designed to be called via AJAX to be processed within JS client."
     list=db(db.gis_feature_group.id==t2.id).select(db.gis_feature_group.features).json()
     response.view='list_plain.html'
     return dict(list=list)
@@ -673,7 +677,7 @@ def projection():
 #
 # Layers
 #
-# RESTful controller function for Multiple Tables
+# RESTful controller function for **** Multiple Tables ****
 # Anonymous users can Read
 # Authentication required for Create/Update/Delete
 def layer():
@@ -746,7 +750,12 @@ def layer():
                 # Invalid!
                 return
     else:
-        # No arguments => default to list
+        # No arguments => default to list (or list_create if logged_in)
+        if t2.logged_in:
+            # Create Form before List to allow List to refresh after submission
+            # Need to handle Multiple Tables, so go down a level of abstraction from T2
+            # Function split-out to make code more readable & reusable (DRY)
+            output=shn_gis_create_layer()
         list=t2.itemize(table)
         if list=="No data":
             list="No Layers currently defined."
@@ -755,24 +764,24 @@ def layer():
         title=T('List Layers')
         subtitle=T('Layers')
         if t2.logged_in:
-            # Need to handle Multiple Tables, so go down a level of abstraction from T2
-            # Function split-out to make code more readable & reusable (DRY)
-            # just need to add a little extra context
-            output=shn_gis_create_layer()
+            # Add a little extra context for the Form created earlier
             response.view='gis/list_create_layer.html'
             addtitle=T('Add New Layer')
             output.update(dict(list=list,title=title,subtitle=subtitle,addtitle=addtitle))
             return output
         else:
-            add_btn=A(T("Add Layer"),_href=t2.action('layer','create'))
             response.view='list.html'
+            add_btn=A(T("Add Layer"),_href=t2.action('layer','create'))
             return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
 
-# Designed to be called as a function from within the above RESTful controller
-# This breaks it apart for easier comprehension
-# It also allow re-use: DRY
 @t2.requires_login('login')
 def shn_gis_create_layer():
+    """
+    Create Layer records across Multiple Tables
+    Designed to be called as a function from within the 'layer' RESTful controller.
+    This breaks it apart for easier comprehension.
+    It also allow re-use: DRY.
+    """
 
     # Default to OpenStreetMap - promote Open Data!
     type="openstreetmap"
@@ -891,10 +900,14 @@ def shn_gis_create_layer():
     return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group)
 
 
-# Designed to be called as a function from within the above RESTful controller
-# This breaks it apart for easier comprehension
 @t2.requires_login('login')
 def shn_gis_update_layer():
+    """
+    Update Layer records across Multiple Tables.
+    Designed to be called as a function from within the 'layer' RESTful controller.
+    This breaks it apart for easier comprehension.
+    """
+    
     # Provide defaults for fields which only appear for some types
     subtype=0
     options_subtype = [""]
@@ -1020,9 +1033,10 @@ def shn_gis_update_layer():
     list_btn=A(T("List Layers"),_href=t2.action('layer'))
     return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn,layer=layer,type=type,subtype=subtype,key=key,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group,feature_group=feature_group)
 
-# Map Service Catalogue
-# extends list_create_layer for real user UI
 def map_service_catalogue():
+    """Map Service Catalogue.
+    Extends layer/list_create for improved user UI."""
+
     output=shn_gis_create_layer()
     # Layers listed after Form so they get refreshed after submission
     list=t2.itemize(db.gis_layer)
@@ -1038,8 +1052,10 @@ def map_service_catalogue():
     output.update(dict(list=list,title=title,subtitle=subtitle,addtitle=addtitle))
     return output
 
-# Map Viewing Client
 def map_viewing_client():
+    """Map Viewing Client.
+    Main user UI for viewing the Maps."""
+    
     title=T('Map Viewing Client')
     response.title=title
 

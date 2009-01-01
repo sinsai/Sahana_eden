@@ -6,22 +6,23 @@ modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
-# Login
+# T2 framework functions
 def login():
 	response.view='login.html'
 	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register():
-	response.view='register.html'
+    response.view='register.html'
     t2.messages.record_created=T("You have been successfully registered")
-	return dict(form=t2.register())
+    return dict(form=t2.register())
 def profile(): t2.profile()
 
+# S3 framework functions
 def index():
-	return dict(module_name=module_name,modules=modules,options=options)
-
-# Select Option
+	"Module's Home Page"
+    return dict(module_name=module_name,modules=modules,options=options)
 def open_option():
+    "Select Option from Module Menu"
     id=request.vars.id
     options=db(db['%s_menu_option' % module].id==id).select()
     if not len(options):
@@ -29,16 +30,17 @@ def open_option():
     option=options[0].function
     redirect(URL(r=request,f=option))
 
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
 def organisation():
+    """RESTful controller function.
+    Anonymous users can Read.
+    Authentication required for Create/Update/Delete."""
     resource='organisation'
     table=db['%s_%s' % (module,resource)]
     if request.args:
         method=request.args[0]
         try:
-            # 1st argument is ID not method => display
+            # 1st argument is ID not method => display.
+            # Default format (representation) is full HTML page
             id = int(method)
             item=t2.display(table)
             response.view='display.html'
@@ -80,7 +82,7 @@ def organisation():
                 # Invalid!
                 return
     else:
-        # No arguments => default to list
+        # No arguments => default to list (or list_create if logged_in)
         list=t2.itemize(table)
         if list=="No data":
             list="No Organisations currently registered."

@@ -6,7 +6,7 @@ modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
-# Login
+# T2 framework functions
 def login():
 	response.view='login.html'
 	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
@@ -17,11 +17,12 @@ def register():
 	return dict(form=t2.register())
 def profile(): t2.profile()
 
+# S3 framework functions
 def index():
+    "Module's Home Page"
     return dict(module_name=module_name,modules=modules,options=options)
-
-# Select Option
 def open_option():
+    "Select Option from Module Menu"
     id=request.vars.id
     options=db(db['%s_menu_option' % module].id==id).select()
     if not len(options):
@@ -29,10 +30,10 @@ def open_option():
     option=options[0].function
     redirect(URL(r=request,f=option))
 
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
 def shelter():
+    """RESTful controller function.
+    Anonymous users can Read.
+    Authentication required for Create/Update/Delete."""
     resource='shelter'
     table=db['%s_%s' % (module,resource)]
     if request.args:

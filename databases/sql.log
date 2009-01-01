@@ -1278,3 +1278,138 @@ CREATE TABLE shelter(
 	location CHAR(64)
 );
 success!
+timestamp: 2009-01-01T17:46:35.015000
+CREATE TABLE pr_person(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	full_name CHAR(32),
+	family_name CHAR(32),
+	l10_name CHAR(32)
+);
+success!
+timestamp: 2009-01-01T17:46:35.156000
+CREATE TABLE pr_person_contact(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	opt_contact_type CHAR(32),
+	contact_value CHAR(32)
+);
+success!
+timestamp: 2009-01-01T17:46:35.250000
+CREATE TABLE pr_person_identity(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	opt_id_type CHAR(32),
+	id_value CHAR(32)
+);
+success!
+timestamp: 2009-01-01T17:46:35.359000
+CREATE TABLE pr_person_details(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	next_kin CHAR(64),
+	birth_date DATE,
+	opt_age_group CHAR(32),
+	relation CHAR(32),
+	opt_country CHAR(32),
+	opt_race CHAR(32),
+	opt_religion CHAR(32),
+	opt_marital_status CHAR(32),
+	opt_gender CHAR(32),
+	occupation CHAR(32)
+);
+success!
+timestamp: 2009-01-01T17:46:35.453000
+CREATE TABLE pr_person_status(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	isReliefWorker CHAR(1),
+	isVictim CHAR(1),
+	opt_status CHAR(32),
+	id_value CHAR(32)
+);
+success!
+timestamp: 2009-01-01T17:46:35.593000
+CREATE TABLE pr_person_physical(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	height CHAR(32),
+	weight CHAR(32),
+	opt_blood_type CHAR(32),
+	opt_eye_color CHAR(32),
+	opt_skin_color CHAR(32),
+	opt_hair_color CHAR(32),
+	injuries CHAR(32),
+	comments CHAR(256)
+);
+success!
+timestamp: 2009-01-01T17:46:35.703000
+CREATE TABLE pr_person_missing(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	last_seen CHAR(32),
+	last_clothing CHAR(32),
+	comments CHAR(256)
+);
+success!
+timestamp: 2009-01-01T17:46:35.812000
+CREATE TABLE pr_person_deceased(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	details CHAR(32),
+	date_of_death DATE,
+	place_of_death CHAR(32),
+	comments CHAR(256)
+);
+success!
+timestamp: 2009-01-01T17:46:35.890000
+CREATE TABLE pr_person_report(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	reporter CHAR(64),
+	relation CHAR(32)
+);
+success!
+timestamp: 2009-01-01T17:46:36.015000
+CREATE TABLE pr_person_group(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	opt_group_type CHAR(32)
+);
+success!
+timestamp: 2009-01-01T17:46:36.125000
+CREATE TABLE pr_person_group_details(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person_group CHAR(64),
+	head CHAR(64),
+	no_of_adult_males INTEGER,
+	no_of_adult_females INTEGER,
+	no_of_children INTEGER,
+	no_displaced INTEGER,
+	no_missing INTEGER,
+	no_dead INTEGER,
+	no_rehabilitated INTEGER,
+	checklist CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2009-01-01T17:46:36.281000
+CREATE TABLE pr_person_to_group(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	pr_person CHAR(64),
+	pr_person_group CHAR(64)
+);
+success!

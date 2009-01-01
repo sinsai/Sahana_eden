@@ -19,7 +19,7 @@ def profile(): t2.profile()
 
 # S3 framework functions
 def index():
-	"Module's Home Page"
+    "Module's Home Page"
     return dict(module_name=module_name,modules=modules,options=options)
 def open_option():
     "Select Option from Module Menu"
@@ -31,69 +31,5 @@ def open_option():
     redirect(URL(r=request,f=option))
 
 def organisation():
-    """RESTful controller function.
-    Anonymous users can Read.
-    Authentication required for Create/Update/Delete."""
-    resource='organisation'
-    table=db['%s_%s' % (module,resource)]
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display.
-            # Default format (representation) is full HTML page
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Organisation Details')
-            edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
-            list_btn=A(T("List Organisations"),_href=t2.action(resource))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Organisation added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Organisation')
-                    list_btn=A(T("List Organisations"),_href=t2.action(resource))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'%s/create' % resource})
-            elif method=="display":
-                t2.redirect(resource,args=t2.id)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Organisation updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Organisation')
-                    list_btn=A(T("List Organisations"),_href=t2.action(resource))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Organisation deleted")
-                    t2.delete(table,next=resource)
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list (or list_create if logged_in)
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Organisations currently registered."
-        title=T('List Organisations')
-        subtitle=T('Organisations')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Organisation')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Organisation"),_href=t2.action(resource,'create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+    "RESTful CRUD controller"
+    return shn_rest_controller(module,'organisation')

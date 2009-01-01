@@ -31,8 +31,8 @@ db.cr_shelter.represent=lambda table:shn_list_item(table,resource='shelter',acti
 db.cr_shelter.name.requires=IS_NOT_EMPTY()
 db.cr_shelter.name.label=T("Shelter Name")
 db.cr_shelter.name.comment=SPAN("*",_class="req")
-db.cr_shelter.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.uuid','person.full_name'))
-db.cr_shelter.contact.display=lambda uuid: (uuid and [db(db.person.uuid==uuid).select()[0].full_name] or ["None"])[0]
+db.cr_shelter.contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
+db.cr_shelter.contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
 db.cr_shelter.contact.label=T("Contact Person")
 db.cr_shelter.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
 db.cr_shelter.location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]

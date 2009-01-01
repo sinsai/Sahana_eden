@@ -103,10 +103,8 @@ db.define_table('gis_feature_metadata',
                 SQLField('image','upload'))
 db.gis_feature_metadata.exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db.gis_feature_metadata.displays=['created_on','created_by','modified_on','modified_by','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
-db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'person.uuid','person.full_name'))
-db.gis_feature_metadata.contact.display=lambda uuid: (uuid and [db(db.person.uuid==uuid).select()[0].full_name] or ["None"])[0]
-db.gis_feature_metadata.event_time.requires=IS_DATETIME()
-db.gis_feature_metadata.expiry_time.requires=IS_DATETIME()
+db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
+db.gis_feature_metadata.contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
 db.gis_feature_metadata.url.requires=IS_URL()
 
 db.define_table('gis_feature',

@@ -1,17 +1,17 @@
 (dp1
-S'features'
+S'isVictim'
 p2
-S'CHAR(32)'
+S'CHAR(1)'
 p3
-sS'author'
+sS'isReliefWorker'
 p4
-S'REFERENCES user(id) ON DELETE CASCADE'
+S'CHAR(1)'
 p5
-sS'uuid'
+sS'pr_person'
 p6
 S'CHAR(64)'
 p7
-sS'name'
+sS'id_value'
 p8
 S'CHAR(32)'
 p9
@@ -23,8 +23,8 @@ sS'id'
 p12
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p13
-sS'description'
+sS'opt_status'
 p14
-S'CHAR(256)'
+S'CHAR(32)'
 p15
 s.

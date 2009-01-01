@@ -3,20 +3,20 @@ S'modified_on'
 p2
 S'TIMESTAMP'
 p3
-sS'person'
+sS'opt_group_type'
 p4
-S'REFERENCES person(id) ON DELETE CASCADE'
+S'CHAR(32)'
 p5
 sS'id'
 p6
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p7
-sS'opt_contact_type'
+sS'name'
 p8
 S'CHAR(32)'
 p9
-sS'contact_value'
+sS'uuid'
 p10
-S'CHAR(32)'
+S'CHAR(64)'
 p11
 s.

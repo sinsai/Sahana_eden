@@ -1,0 +1,18 @@
+(dp1
+S'modified_on'
+p2
+S'TIMESTAMP'
+p3
+sS'pr_person_group'
+p4
+S'CHAR(64)'
+p5
+sS'pr_person'
+p6
+S'CHAR(64)'
+p7
+sS'id'
+p8
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p9
+s.

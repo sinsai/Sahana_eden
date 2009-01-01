@@ -34,8 +34,8 @@ from applications.sahana.modules.validators import *
 # designed to be called via table.represent to make t2.itemize() output useful
 #
 
-# Display nice names with clickable links & optional extra info
 def shn_list_item(table,resource,action,display='table.name',extra=None):
+    "Display nice names with clickable links & optional extra info"
     if extra:
         items=DIV(TR(TD(A(eval(display),_href=t2.action(resource,[action,table.id]))),TD(eval(extra))))
     else:
@@ -46,9 +46,10 @@ def shn_list_item(table,resource,action,display='table.name',extra=None):
 # Widgets
 #
 
-# Many-to-Many widget
-# currently this is just a renamed copy of t2.tag_widget
 def shn_m2m_widget(self,value,options=[]):
+    """Many-to-Many widget
+    Currently this is just a renamed copy of t2.tag_widget"""
+    
     script=SCRIPT("""
     function web2py_m2m(self,other,option) {
        var o=document.getElementById(other)
@@ -76,7 +77,132 @@ db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
 #db.dog.owner.display=lambda x: ', '.join([db(db.owner.id==id).select()[0].name for id in x[1:-1].split('|')])
 #db.dog.owner.display=lambda x: map(db(db.owner.id==id).select()[0].name,x[1:-1].split('|'))
 db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
+
+
+def shn_crud_strings_lookup(resource):
+    "Look up CRUD strings for a given resource."
+    if resource=='organisation':
+        return Storage(title_create=T('Add Organisation'),
+            title_display=T('Organisation Details'),
+            title_list=T('List Organisations'),
+            title_update=T('Edit Organisation'),
+            subtitle_list=T('Organisations'),
+            subtitle_create=T('Add New Organisation'),
+            label_list_button=T('List Organisations'),
+            label_create_button=T('Add Organisation'),
+            msg_record_created=T('Organisation added'),
+            msg_record_modified=T('Organisation updated'),
+            msg_record_deleted=T('Organisation deleted'),
+            msg_list_empty=T('No Organisations currently registered'))
+    elif resource=='shelter':
+        return Storage(title_create=T('Add Shelter'),
+            title_display=T('Organisation Details'),
+            title_list=T('List Shelters'),
+            title_update=T('Edit Shelter'),
+            subtitle_list=T('Shelters'),
+            subtitle_create=T('Add New Shelter'),
+            label_list_button=T('List Shelters'),
+            label_create_button=T('Add Shelter'),
+            msg_record_created=T('Shelter added'),
+            msg_record_modified=T('Shelter updated'),
+            msg_record_deleted=T('Shelter deleted'),
+            msg_list_empty=T('No Shelters currently registered'))
+    elif resource=='person':
+        return Storage(title_create=T('Add Person'),
+            title_display=T('Person Details'),
+            title_list=T('List People'),
+            title_update=T('Edit Person'),
+            subtitle_list=T('People'),
+            subtitle_create=T('Add New Person'),
+            label_list_button=T('List People'),
+            label_create_button=T('Add Person'),
+            msg_record_created=T('Person added'),
+            msg_record_modified=T('Person updated'),
+            msg_record_deleted=T('Person deleted'),
+            msg_list_empty=T('No People currently registered'))
+    else:
+        # Undefined Resource!
+        return
+
+def shn_rest_controller(module,resource):
+    """
+    RESTful controller function.
     
+    Anonymous users can Read.
+    Authentication required for Create/Update/Delete.
+    
+    ToDo:
+        Alternate Representations
+        Search method
+        Customisable Security Policy
+    """
+    
+    table=db['%s_%s' % (module,resource)]
+    
+    crud_strings=shn_crud_strings_lookup(resource)
+
+    if len(request.args)==0:
+        # No arguments => default to list (or list_create if logged_in)
+        list=t2.itemize(table)
+        if list=="No data":
+            list=crud_strings.msg_list_empty
+        title=crud_strings.title_list
+        subtitle=crud_strings.subtitle_list
+        if t2.logged_in:
+            form=t2.create(table)
+            response.view='list_create.html'
+            addtitle=crud_strings.subtitle_create
+            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
+        else:
+            add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'))
+            response.view='list.html'
+            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+            
+    else:
+        method=request.args[0]
+        if request.args[0].isdigit():
+            # 1st argument is ID not method => display.
+            # Default format (representation) is full HTML page
+            item=t2.display(table)
+            response.view='display.html'
+            title=crud_strings.title_display
+            edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
+            list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
+        else:
+            if method=="create":
+                if t2.logged_in:
+                    t2.messages.record_created=crud_strings.msg_record_created
+                    form=t2.create(table)
+                    response.view='create.html'
+                    title=crud_strings.title_create
+                    list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/create' % resource})
+            elif method=="display":
+                t2.redirect(resource,args=t2.id)
+            elif method=="update":
+                if t2.logged_in:
+                    t2.messages.record_modified=crud_strings.msg_record_modified
+                    form=t2.update(table)
+                    response.view='update.html'
+                    title=crud_strings.title_update
+                    list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
+            elif method=="delete":
+                if t2.logged_in:
+                    t2.messages.record_deleted=crud_strings.msg_record_deleted
+                    t2.delete(table,next=resource)
+                    return
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
+            else:
+                # Unsupported method!
+                t2.redirect(resource)
+
 # Modules
 db.define_table('module',
                 SQLField('name'),

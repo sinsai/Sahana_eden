@@ -1,17 +1,17 @@
 (dp1
 S'head'
 p2
-S'REFERENCES person(id) ON DELETE CASCADE'
+S'CHAR(64)'
 p3
 sS'description'
 p4
 S'CHAR(256)'
 p5
-sS'person_group'
+sS'pr_person_group'
 p6
-S'REFERENCES person_group(id) ON DELETE CASCADE'
+S'CHAR(64)'
 p7
-sS'no_of_children'
+sS'no_displaced'
 p8
 S'INTEGER'
 p9
@@ -31,7 +31,7 @@ sS'no_of_adult_females'
 p16
 S'INTEGER'
 p17
-sS'no_displaced'
+sS'no_of_children'
 p18
 S'INTEGER'
 p19

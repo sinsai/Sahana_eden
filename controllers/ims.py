@@ -9,7 +9,7 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 # Login
 def login():
 	response.view='login.html'
-	return dict(form=t2.login())
+	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register():
 	response.view='register.html'

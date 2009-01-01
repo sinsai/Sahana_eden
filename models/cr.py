@@ -7,27 +7,27 @@ db.define_table('%s_menu_option' % module,
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s_menu_option' % module].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.name' % module)]
+db['%s_menu_option' % module].name.requires=IS_NOT_IN_DB(db,'%s_menu_option.name' % module)
 db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
 db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
 
 
-# CR Shelters
+# Shelters
 db.define_table('cr_shelter',
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
                 SQLField('description',length=256),
                 SQLField('address','text'),
-                SQLField('capacity','integer'),
-                SQLField('dwellings','integer'),
+                SQLField('capacity','integer',default=0),
+                SQLField('dwellings','integer',default=0),
                 SQLField('area'),
-                SQLField('persons_per_dwelling','integer'),
+                SQLField('persons_per_dwelling','integer',default=0),
                 SQLField('contact',length=64),
                 SQLField('location',length=64))
 db.cr_shelter.exposes=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']
 db.cr_shelter.displays=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']
-db.cr_shelter.represent=lambda cr_shelter: A(cr_shelter.name,_href=t2.action('display_shelter',cr_shelter.id))
+db.cr_shelter.represent=lambda table:shn_list_item(table,resource='shelter',action='display')
 db.cr_shelter.name.requires=IS_NOT_EMPTY()
 db.cr_shelter.name.label=T("Shelter Name")
 db.cr_shelter.name.comment=SPAN("*",_class="req")

@@ -9,7 +9,7 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 # Login
 def login():
 	response.view='login.html'
-	return dict(form=t2.login())
+	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register():
 	response.view='register.html'
@@ -28,30 +28,68 @@ def open_option():
     option=options[0].function
     redirect(URL(r=request,f=option))
 
-# NB No login required: unidentified users can Read/Create people (although they need to login to Update/Delete)
-def add_person():
-	title=T('Add Person')
-	form=t2.create(db.person)
-	return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
-
-def list_persons():
-	title=T('List People')
-	list=t2.itemize(db.person)
-	if list=="No data":
-		list="No People currently registered."
-	return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
-
-def display_person():
-	item=t2.display(db.person)
-	return dict(module_name=module_name,modules=modules,options=options,item=item)
-
-@t2.requires_login('login')
-def update_person():
-	form=t2.update(db.person)
-	return dict(module_name=module_name,modules=modules,options=options,form=form)
-
-def add_contact():
-	title=T('Add Contact')
-    # This needs to be amended to include the Contact table fields...
-	form=t2.create(db.person)
-	return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
+# RESTful controller function
+# Anonymous users can Read
+# Authentication required for Create/Update/Delete
+def person():
+    resource='person'
+    table=db['%s' % resource]
+    if request.args:
+        method=request.args[0]
+        try:
+            # 1st argument is ID not method => display
+            id = int(method)
+            item=t2.display(table)
+            response.view='display.html'
+            title=T('Person Details')
+            edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
+            list_btn=A(T("List People"),_href=t2.action(resource))
+            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
+        except:
+            if method=="create":
+                if t2.logged_in:
+                    t2.messages.record_created=T("Person added")
+                    form=t2.create(table)
+                    response.view='create.html'
+                    title=T('Add Person')
+                    list_btn=A(T("List People"),_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/create' % resource})
+            elif method=="display":
+                t2.redirect(resource,args=t2.id)
+            elif method=="update":
+                if t2.logged_in:
+                    t2.messages.record_modified=T("Person updated")
+                    form=t2.update(table)
+                    response.view='update.html'
+                    title=T('Edit Person')
+                    list_btn=A(T("List People"),_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
+            elif method=="delete":
+                if t2.logged_in:
+                    t2.messages.record_deleted=T("Person deleted")
+                    t2.delete(table,next=resource)
+                    return
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
+            else:
+                # Invalid!
+                return
+    else:
+        # No arguments => default to list
+        list=t2.itemize(table)
+        if list=="No data":
+            list="No People currently registered."
+        title=T('List People')
+        subtitle=T('People')
+        if t2.logged_in:
+            form=t2.create(table)
+            response.view='list_create.html'
+            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle)
+        else:
+            add_btn=A(T("Add New Person"),_href=t2.action(resource,'create'))
+            response.view='list.html'
+            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)

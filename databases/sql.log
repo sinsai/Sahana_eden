@@ -1240,3 +1240,41 @@ CREATE TABLE gis_feature_group_to_feature(
 	feature CHAR(64)
 );
 success!
+timestamp: 2008-12-31T00:20:06.078000
+ALTER TABLE person ADD name CHAR(32);
+success!
+timestamp: 2008-12-31T00:20:06.171000
+CREATE TABLE dog(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32),
+	person TEXT
+);
+success!
+timestamp: 2008-12-31T00:20:56.296000
+CREATE TABLE owner(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2008-12-31T00:20:56.390000
+ALTER TABLE dog ADD owner TEXT;
+success!
+timestamp: 2008-12-31T00:24:30.890000
+ALTER TABLE owner ADD uuid CHAR(64);
+success!
+timestamp: 2008-12-31T11:35:00.203000
+CREATE TABLE shelter(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	description CHAR(256),
+	address TEXT,
+	capacity INTEGER,
+	dwellings INTEGER,
+	area CHAR(32),
+	persons_per_dwelling INTEGER,
+	contact CHAR(64),
+	location CHAR(64)
+);
+success!

@@ -9,7 +9,7 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 # Login
 def login():
     response.view='login.html'
-    return dict(form=t2.login())
+    return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register():
     response.view='register.html'
@@ -62,3 +62,29 @@ def about_sahana():
     web2py_version=open(apath('../VERSION'),'r').read()[8:]
     sahana_version=open(apath('sahana/VERSION'),'r').read()
     return dict(module_name=module_name,modules=modules,options=options,python_version=python_version,sahana_version=sahana_version,web2py_version=web2py_version)
+
+# M2M Tests
+def list_dogs():
+    list=t2.itemize(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def display_dog():
+    list=t2.display(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def update_dog():
+    list=t2.update(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def delete_dog():
+    list=t2.delete(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def delete_owner():
+    list=t2.delete(db.owner)
+    response.view='list_plain.html'
+    return dict(list=list)

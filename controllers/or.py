@@ -9,7 +9,7 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 # Login
 def login():
 	response.view='login.html'
-	return dict(form=t2.login())
+	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register():
 	response.view='register.html'
@@ -28,39 +28,69 @@ def open_option():
     option=options[0].function
     redirect(URL(r=request,f=option))
 
-# NB No login required: unidentified users can Read/Create (although they need to login to Update/Delete)
-def add_organisation():
-	title=T('Register New Organisation')
-	form=t2.create(db.or_organisation)
-	return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
-
-def list_organisations():
-	title=T('List Organisations')
-	list=t2.itemize(db.or_organisation)
-	if list=="No data":
-		list="No Organisations currently registered."
-	return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
-
-def display_organisation():
-	item=t2.display(db.or_organisation)
-	return dict(module_name=module_name,modules=modules,options=options,item=item)
-
-@t2.requires_login('login')
-def update_organisation():
-    form=t2.update(db.or_organisation)
-    return dict(module_name=module_name,modules=modules,options=options,form=form)
-
-@t2.requires_login('login')
-def delete_organisation():
-    # Delete Record from Database
-    db(db.or_organisation.id==t2.id).delete()
-    # Notify user :)
-    response.confirmation=T("Organisation deleted")
-    # No need for a dedicated view, we can re-use
-    response.view="or/list_organisations.html"
-
-    list=t2.itemize(db.or_organisation.id)
-    if list=="No data":
-        list="No Organisations currently defined."
-
-    return dict(module_name=module_name,modules=modules,options=options,list=list)
+# RESTful controller function
+# Anonymous users can Read
+# Authentication required for Create/Update/Delete
+def organisation():
+    resource='organisation'
+    table=db['%s_%s' % (module,resource)]
+    if request.args:
+        method=request.args[0]
+        try:
+            # 1st argument is ID not method => display
+            id = int(method)
+            item=t2.display(table)
+            response.view='display.html'
+            title=T('Organisation Details')
+            edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
+            list_btn=A(T("List Organisations"),_href=t2.action(resource))
+            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
+        except:
+            if method=="create":
+                if t2.logged_in:
+                    t2.messages.record_created=T("Organisation added")
+                    form=t2.create(table)
+                    response.view='create.html'
+                    title=T('Add Organisation')
+                    list_btn=A(T("List Organisations"),_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/create' % resource})
+            elif method=="display":
+                t2.redirect(resource,args=t2.id)
+            elif method=="update":
+                if t2.logged_in:
+                    t2.messages.record_modified=T("Organisation updated")
+                    form=t2.update(table)
+                    response.view='update.html'
+                    title=T('Edit Organisation')
+                    list_btn=A(T("List Organisations"),_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
+            elif method=="delete":
+                if t2.logged_in:
+                    t2.messages.record_deleted=T("Organisation deleted")
+                    t2.delete(table,next=resource)
+                    return
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
+            else:
+                # Invalid!
+                return
+    else:
+        # No arguments => default to list
+        list=t2.itemize(table)
+        if list=="No data":
+            list="No Organisations currently registered."
+        title=T('List Organisations')
+        subtitle=T('Organisations')
+        if t2.logged_in:
+            form=t2.create(table)
+            response.view='list_create.html'
+            addtitle=T('Add New Organisation')
+            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
+        else:
+            add_btn=A(T("Add Organisation"),_href=t2.action(resource,'create'))
+            response.view='list.html'
+            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)

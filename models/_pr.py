@@ -20,7 +20,7 @@ db.define_table('person',
                 SQLField('full_name'),
                 SQLField('family_name'),
                 SQLField('l10_name'))
-db.person.represent=lambda person: A(person.full_name,_href=t2.action('display_person',person.id))
+db.person.represent=lambda table:shn_list_item(table,resource='person',action='display',display='table.full_name')
 db.person.exposes=['full_name','family_name','l10_name']
 db.person.displays=['full_name','family_name','l10_name']
 db.person.full_name.requires=IS_NOT_EMPTY()

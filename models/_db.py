@@ -11,8 +11,11 @@ db=SQLDB('sqlite://storage.db')         # if not, use SQLite or other DB
 # 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
 import datetime; now=datetime.datetime.today()
 
-# We need UUIds for database synchronization
+# We need UUIDs for database synchronization
 import uuid
+
+# We want to allow JS clients to access data in JSON format
+#import gluon.contrib.simplejson as sj 
 
 # Use T2 plugin for AAA & CRUD
 # At top of file rather than usual bottom as we refer to it within our tables
@@ -27,9 +30,53 @@ t2=T2SAHANA(request,response,session,cache,T,db)
 from applications.sahana.modules.validators import *
 
 #
-# Core Framework
+# Representations
+# designed to be called via table.represent to make t2.itemize() output useful
 #
 
+# Display nice names with clickable links & optional extra info
+def shn_list_item(table,resource,action,display='table.name',extra=None):
+    if extra:
+        items=DIV(TR(TD(A(eval(display),_href=t2.action(resource,[action,table.id]))),TD(eval(extra))))
+    else:
+        items=DIV(A(eval(display),_href=t2.action(resource,[action,table.id])))
+    return DIV(*items)
+
+#
+# Widgets
+#
+
+# Many-to-Many widget
+# currently this is just a renamed copy of t2.tag_widget
+def shn_m2m_widget(self,value,options=[]):
+    script=SCRIPT("""
+    function web2py_m2m(self,other,option) {
+       var o=document.getElementById(other)
+       if(self.className=='option_selected') {
+          self.setAttribute('class','option_deselected');
+          o.value=o.value.replace('['+option+']','');
+       }
+       else if(self.className=='option_deselected') {
+          self.setAttribute('class','option_selected');
+          o.value=o.value+'['+option+']';
+       }
+    }
+    """)
+    id=self._tablename+'_'+self.name
+    def onclick(x):
+        return "web2py_m2m(this,'%s','%s');"%(id,x.lower())
+    buttons=[SPAN(A(x,_class='option_selected' if value and '[%s]'%x.lower() in value else 'option_deselected',_onclick=onclick(x)),' ') for x in options]
+    return DIV(script,INPUT(_type='hidden',_id=id,_name=self.name,_value=value),*buttons) 
+
+# M2M test
+db.define_table('owner',SQLField('name'),SQLField('uuid',length=64,default=uuid.uuid4()))
+db.define_table('dog',SQLField('name'),SQLField('owner','text'))
+#db.dog.owner.requires=IS_IN_DB(db,'owner.uuid','owner.name',multiple=True)
+db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
+#db.dog.owner.display=lambda x: ', '.join([db(db.owner.id==id).select()[0].name for id in x[1:-1].split('|')])
+#db.dog.owner.display=lambda x: map(db(db.owner.id==id).select()[0].name,x[1:-1].split('|'))
+db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
+    
 # Modules
 db.define_table('module',
                 SQLField('name'),

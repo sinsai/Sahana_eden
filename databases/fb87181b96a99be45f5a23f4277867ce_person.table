@@ -23,4 +23,8 @@ sS'id'
 p12
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p13
+sS'name'
+p14
+S'CHAR(32)'
+p15
 s.

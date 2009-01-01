@@ -132,55 +132,7 @@ Ext.onReady(function() {
 });
 //]]></script>
 
-<table>
-<tr><td id='btn-panel'>
-{{if t2.logged_in:}}
-<a href="{{=URL(r=request,c='gis',f='defaults',args='1')}}">
-{{else:}}
-<a href="{{=URL(r=request,c='gis',f='display_config',args='1')}}">
-{{pass}}
-<input type="button" id="configs-btn" value="{{=T("Defaults")}}" />
-</a></td>
-<td id='btn-panel'>
-{{if t2.logged_in:}}
-<a href="{{=URL(r=request,c='gis',f='features')}}">
-{{else:}}
-<a href="{{=URL(r=request,c='gis',f='list_features')}}">
-{{pass}}
-<input type="button" id="features-btn" value="{{=T("Features")}}" />
-</a></td>
-<!--
-<td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='import')}}">
-<input type="button" id="import-btn" value="{{=T("Import")}}" />
-</a></td>
--->
-<td id='btn-panel'>
-{{if t2.logged_in:}}
-<a href="{{=URL(r=request,c='gis',f='keys')}}">
-{{else:}}
-<a href="{{=URL(r=request,c='gis',f='list_keys')}}">
-{{pass}}
-<input type="button" id="keys-btn" value="{{=T("Keys")}}" />
-</a></td>
-<td id='btn-panel'>
-{{if t2.logged_in:}}
-<a href="{{=URL(r=request,c='gis',f='markers')}}">
-{{else:}}
-<a href="{{=URL(r=request,c='gis',f='list_markers')}}">
-{{pass}}
-<input type="button" id="markers-btn" value="{{=T("Markers")}}" />
-</a></td>
-<td id='btn-panel'>
-{{if t2.logged_in:}}
-<a href="{{=URL(r=request,c='gis',f='projections')}}">
-{{else:}}
-<a href="{{=URL(r=request,c='gis',f='list_projections')}}">
-{{pass}}
-<input type="button" id="projections-btn" value="{{=T("Projections")}}" />
-</a></td>
-</tr>
-</table>
+{{include 'gis/catalogue_toolbar.html'}}
 
 <div id="center"></div>
 <div id="south">

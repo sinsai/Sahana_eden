@@ -23,7 +23,7 @@ db.define_table('gis_projection',
                 SQLField('units'))
 db.gis_projection.exposes=['name','epsg','maxExtent','maxResolution','units']
 db.gis_projection.displays=['name','epsg','maxExtent','maxResolution','units']
-db.gis_projection.represent=lambda gis_projection: TR(TD(A(gis_projection.name,_href=t2.action('display_projection',gis_projection.id))),TD(gis_projection.epsg))
+db.gis_projection.represent=lambda table:shn_list_item(table,resource='projection',action='display',extra='table.epsg')
 db.gis_projection.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
 db.gis_projection.name.comment=SPAN("*",_class="req")
 db.gis_projection.epsg.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
@@ -68,7 +68,7 @@ db.define_table('gis_marker',
                 SQLField('image','upload'))
 db.gis_marker.exposes=['name','height','width','image']
 db.gis_marker.displays=['name','height','width','image']
-db.gis_marker.represent=lambda gis_marker: A(gis_marker.name,_href=t2.action('display_marker',gis_marker.id))
+db.gis_marker.represent=lambda table:shn_list_item(table,resource='marker',action='display')
 db.gis_marker.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_marker.name')]
 db.gis_marker.name.comment=SPAN("*",_class="req")
 
@@ -80,7 +80,7 @@ db.define_table('gis_feature_class',
                 SQLField('marker',length=64,default='e2848160-cad4-4b8e-91cf-d1b4828bf805'))
 db.gis_feature_class.exposes=['name','marker']
 db.gis_feature_class.displays=['name','marker']
-db.gis_feature_class.represent=lambda gis_feature_class: A(gis_feature_class.name,_href=t2.action('display_feature_class',gis_feature_class.id))
+db.gis_feature_class.represent=lambda table:shn_list_item(table,resource='feature_class',action='display')
 db.gis_feature_class.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
 db.gis_feature_class.name.comment=SPAN("*",_class="req")
 db.gis_feature_class.marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
@@ -121,7 +121,7 @@ db.define_table('gis_feature',
 db.gis_feature.exposes=['name','feature_class','metadata','type','lat','lon']
 db.gis_feature.displays=['name','feature_class','metadata','type','lat','lon']
 # Define in Controller as want diff functions to have diff representations & we cannot redefine later once defined at top-level
-#db.gis_feature.represent=lambda gis_feature: A(gis_feature.name,_href=t2.action('display_feature',gis_feature.id))
+#db.gis_feature.represent=lambda table:shn_list_item(table,resource='feature',action='display')
 db.gis_feature.name.requires=IS_NOT_EMPTY()
 db.gis_feature.name.comment=SPAN("*",_class="req")
 db.gis_feature.feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.uuid','gis_feature_class.name'))
@@ -143,12 +143,14 @@ db.define_table('gis_feature_group',
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
                 SQLField('description',length=256),
+                SQLField('features','text'), # List of features (to be replaced by many-to-many table)
                 SQLField('author',db.t2_person))
-db.gis_feature_group.exposes=['name','description']
-db.gis_feature_group.displays=['name','description','author']
-db.gis_feature_group.represent=lambda gis_feature_group: A(gis_feature_group.name,_href=t2.action('display_feature_group',gis_feature_group.id))
+db.gis_feature_group.exposes=['name','description','features']
+db.gis_feature_group.displays=['name','description','author','features']
+db.gis_feature_group.represent=lambda table:shn_list_item(table,resource='feature_group',action='display')
 db.gis_feature_group.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_group.name')]
 db.gis_feature_group.name.comment=SPAN("*",_class="req")
+db.gis_feature_group.features.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 db.gis_feature_group.author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
 
 # Many-to-Many table
@@ -167,7 +169,7 @@ db.define_table('gis_key',
                 SQLField('key'),
 				SQLField('description',length=256))
 db.gis_key.displays=['service','key','description']
-db.gis_key.represent=lambda gis_key: TR(TD(A(gis_key.service,_href=t2.action('display_key',gis_key.id))),TD(gis_key.key))
+db.gis_key.represent=lambda table:shn_list_item(table,resource='key',action='display',display='table.service',extra='table.key')
 # We want a THIS_NOT_IN_DB here:
 db.gis_key.service.requires=IS_IN_SET(['google','multimap','yahoo']) 
 #db.gis_key.key.requires=THIS_NOT_IN_DB(db(db.gis_key.service==request.vars.service),'gis_key.service',request.vars.service,'service already in use')
@@ -184,8 +186,8 @@ db.define_table('gis_layer',
                 SQLField('type'),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default=True))
-# Want: [if gis_layer.enabled: 'Enabled']
-db.gis_layer.represent=lambda gis_layer: TR(TD(A(gis_layer.name,_href=t2.action('display_layer',gis_layer.id))),TD(gis_layer.enabled))
+#db.gis_layer.represent=lambda table:shn_list_item(table,resource='layer',action='display',extra=table.enabled)
+db.gis_layer.represent=lambda table:shn_list_item(table,resource='layer',action='display')
 db.gis_layer.name.requires=IS_NOT_EMPTY()
 db.gis_layer.type.requires=IS_IN_SET(gis_layer_types)
 db.gis_layer.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]

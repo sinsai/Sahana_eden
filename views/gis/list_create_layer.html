@@ -6,19 +6,34 @@
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-{{include 'key.html'}}
+
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+<div id='list-container'>
+{{try:}}
+ {{=list}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=H3(addtitle)}}
+{{except:}}
+{{pass}}
 <div class='form-container'>
 
 
-<div class='label'>
+<div class="label">
 <form action="" enctype="multipart/form-data" method="post">
 <table>
 <tr><td><label>{{=T("Name")}}</label></td>
-<td><input name="name" type="text" value="{{=layer.name}}" />
+<td><input name="name" type="text" value="" />
 <span class='req'>*</span>
 {{if form.errors.name:}}<div class="error">{{=form.errors.name}}</div>{{pass}}</td></tr>
 <tr><td><label>{{=T("Description")}}</label></td>
-<td><input name="description" type="text" value="{{=layer.description}}" />
+<td><input name="description" type="text" value="" />
 {{if form.errors.description:}}<div class="error">{{=form.errors.description}}</div>{{pass}}</td></tr>
 <tr><td><label>{{=T("Type")}}</label></td>
 <td><select name="type" type="select">
@@ -54,33 +69,20 @@ value="{{=row}}">{{=row}}</option>
 <tr id="feature_group"><td><label>{{=T("Feature Group")}}</label></td>
 <td><select name="feature_group" type="select">
 {{for row in options_feature_group:}}
-<option
-{{if row.uuid==feature_group:}}
-selected="selected"
-{{pass}}
-value="{{=row.uuid}}">{{=row.name}}</option>
+<option value="{{=row.uuid}}">{{=row.name}}</option>
 {{pass}}
 </select>
 <!-- FIXME: Allow non-JS browsers to be able to load feature groups list manually -->
 <noscript><input type="submit" name="action" value="Load Feature Groups" /></noscript>
 {{if form.errors.feature_group:}}<div class="error">{{=form.errors.feature_group}}</div>{{pass}}</td></tr>
 <tr><td><label>{{=T("Enabled")}}</label></td>
-<td><input name="enabled" type="checkbox"
-{{if layer.enabled:}}
-checked="checked" value="on"
-{{pass}}
-/></td></tr>
+<td><input name="enabled" type="checkbox" checked="checked" value="on" /></td></tr>
 <tr><td><label>{{=T("Priority")}}</label></td>
 <td><select name="priority" type="select">
 {{for row in options_priority:}}
-<option
-{{if row==layer.priority:}}
-selected="selected"
+<option value="{{=row}}">{{=row}}</option>
 {{pass}}
-value="{{=row}}">{{=row}}</option>
-{{pass}}
-</select>
-{{if form.errors.priority:}}<div class="error">{{=form.errors.priority}}</div>{{pass}}</td></tr>
+</select>{{if form.errors.priority:}}<div class="error">{{=form.errors.priority}}</div>{{pass}}</td></tr>
 <tr><td></td>
 <td><input type="submit" value="{{=T("Save")}}" /></td></tr>
 </table>
@@ -97,16 +99,10 @@ Detail:
 {{pass}}
 </div>
 {{pass}}
-<input type="hidden" name="id" value="{{=layer.id}}" />
-<input type="hidden" name="modified_on__original" value="{{=layer.modified_on}}" />
 {{=form.hidden_fields()}}
 </form>
 </div>
 
 
 </div>
-<p>&nbsp;</p>
-{{try:}}
- {{=list_btn}}
-{{except:}}
-{{pass}}
+{{include 'key.html'}}

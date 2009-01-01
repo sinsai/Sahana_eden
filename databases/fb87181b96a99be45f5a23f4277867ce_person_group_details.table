@@ -15,13 +15,13 @@ sS'no_of_children'
 p8
 S'INTEGER'
 p9
-sS'no_displaced'
+sS'checklist'
 p10
-S'INTEGER'
+S'CHAR(32)'
 p11
-sS'id'
+sS'no_dead'
 p12
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'INTEGER'
 p13
 sS'no_rehabilitated'
 p14
@@ -31,9 +31,9 @@ sS'no_of_adult_females'
 p16
 S'INTEGER'
 p17
-sS'checklist'
+sS'no_displaced'
 p18
-S'CHAR(32)'
+S'INTEGER'
 p19
 sS'modified_on'
 p20
@@ -47,8 +47,8 @@ sS'no_of_adult_males'
 p24
 S'INTEGER'
 p25
-sS'no_dead'
+sS'id'
 p26
-S'INTEGER'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p27
 s.

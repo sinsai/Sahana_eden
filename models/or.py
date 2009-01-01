@@ -16,7 +16,6 @@ db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,
 db.define_table('or_organisation_type',
 				SQLField('name'),
 				SQLField('description',length=256))
-
 db.or_organisation_type.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation_type.name')]
 
 # OR Organisations
@@ -36,7 +35,7 @@ db.define_table('or_organisation',
                 SQLField('location',length=64))
 db.or_organisation.exposes=['name','parent','type','registration','manpower','equipment','address','contact','location']
 db.or_organisation.displays=['name','parent','type','registration','manpower','equipment','address','contact','location']
-db.or_organisation.represent=lambda or_organisation: A(or_organisation.name,_href=t2.action('display_organisation',or_organisation.id))
+db.or_organisation.represent=lambda table:shn_list_item(table,resource='organisation',action='display')
 db.or_organisation.name.requires=IS_NOT_EMPTY()
 db.or_organisation.name.comment=SPAN("*",_class="req")
 db.or_organisation.type.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation_type.id','or_organisation_type.name'))

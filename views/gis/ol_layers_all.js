@@ -54,7 +54,9 @@
         {{pass}}
         {{elif layer.type=="features":}}
             {{fgroup=db(db.gis_layer_features.layer==layer.id).select()[0].feature_group}}
+            {{_features=db(db.gis_feature_group.uuid==fgroup).select()[0].features}}
             // Build up overall list of Features to be added to single FeaturesLayer later
+            features.concat("{{=_features}}");
         {{pass}}
         {{pass}}
     {{pass}}

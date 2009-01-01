@@ -9,7 +9,7 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 # Login
 def login():
 	response.view='login.html'
-	return dict(form=t2.login())
+	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register():
 	response.view='register.html'
@@ -28,39 +28,69 @@ def open_option():
     option=options[0].function
     redirect(URL(r=request,f=option))
 
-# NB No login required: unidentified users can Read/Create (although they need to login to Update/Delete)
-def add_shelter():
-    title=T('Register New Shelter')
-    form=t2.create(db.cr_shelter)
-    return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
-
-def list_shelters():
-    title=T('List Shelters')
-    list=t2.itemize(db.cr_shelter)
-    if list=="No data":
-        list="No Shelters currently registered."
-    return dict(title=title,module_name=module_name,modules=modules,options=options,list=list)
-
-def display_shelter():
-    item=t2.display(db.cr_shelter)
-    return dict(module_name=module_name,modules=modules,options=options,item=item)
-
-@t2.requires_login('login')
-def update_shelter():
-    form=t2.update(db.cr_shelter)
-    return dict(module_name=module_name,modules=modules,options=options,form=form)
-
-@t2.requires_login('login')
-def delete_shelter():
-    # Delete Record from Database
-    db(db.cr_shelter.id==t2.id).delete()
-    # Notify user :)
-    response.confirmation=T("Shelter deleted")
-    # No need for a dedicated view, we can re-use
-    response.view="cr/list_shelters.html"
-
-    list=t2.itemize(db.cr_shelter.id)
-    if list=="No data":
-        list="No Shelters currently defined."
-
-    return dict(module_name=module_name,modules=modules,options=options,list=list)
+# RESTful controller function
+# Anonymous users can Read
+# Authentication required for Create/Update/Delete
+def shelter():
+    resource='shelter'
+    table=db['%s_%s' % (module,resource)]
+    if request.args:
+        method=request.args[0]
+        try:
+            # 1st argument is ID not method => display
+            id = int(method)
+            item=t2.display(table)
+            response.view='display.html'
+            title=T('Shelter Details')
+            edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
+            list_btn=A(T("List Shelters"),_href=t2.action(resource))
+            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
+        except:
+            if method=="create":
+                if t2.logged_in:
+                    t2.messages.record_created=T("Shelter added")
+                    form=t2.create(table)
+                    response.view='create.html'
+                    title=T('Add Shelter')
+                    list_btn=A(T("List Shelters"),_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/create' % resource})
+            elif method=="display":
+                t2.redirect(resource,args=t2.id)
+            elif method=="update":
+                if t2.logged_in:
+                    t2.messages.record_modified=T("Shelter updated")
+                    form=t2.update(table)
+                    response.view='update.html'
+                    title=T('Edit Shelter')
+                    list_btn=A(T("List Shelters"),_href=t2.action(resource))
+                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
+            elif method=="delete":
+                if t2.logged_in:
+                    t2.messages.record_deleted=T("Shelter deleted")
+                    t2.delete(table,next=resource)
+                    return
+                else:
+                    t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
+            else:
+                # Invalid!
+                return
+    else:
+        # No arguments => default to list
+        list=t2.itemize(table)
+        if list=="No data":
+            list="No Shelters currently registered."
+        title=T('List Shelters')
+        subtitle=T('Shelters')
+        if t2.logged_in:
+            form=t2.create(table)
+            response.view='list_create.html'
+            addtitle=T('Add New Shelter')
+            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
+        else:
+            add_btn=A(T("Add Shelter"),_href=t2.action(resource,'create'))
+            response.view='list.html'
+            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)

@@ -1,0 +1,28 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+<div id='list-container'>
+{{try:}}
+ {{=list}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=H3(addtitle)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+</div>
+{{include 'key.html'}}

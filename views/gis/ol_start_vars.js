@@ -3,6 +3,7 @@
 // make map available for easy debugging
 var map, toolbar;
 //var treeModel;
+var features = new Array();
 var currentFeature, currentPopup;
 var markersLayer, featuresLayer;
 var selectControl, dragControl, pointControl, lineControl, polygonControl

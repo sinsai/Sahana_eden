@@ -1,3 +1,5 @@
+import os, traceback, datetime
+
 # This scaffolding model makes your app work on Google App Engine too   #
 #try:
 #    from gluon.contrib.gql import *         # if running on Google App Engine
@@ -9,17 +11,14 @@ db=SQLDB('sqlite://storage.db')         # if not, use SQLite or other DB
 
 # Define 'now'
 # 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
-import datetime; now=datetime.datetime.today()
+now=datetime.datetime.today()
 
 # We need UUIDs for database synchronization
 import uuid
 
-# We want to allow JS clients to access data in JSON format
-#import gluon.contrib.simplejson as sj 
-
 # Use T2 plugin for AAA & CRUD
 # At top of file rather than usual bottom as we refer to it within our tables
-#from applications.sahana.modules.t2 import T2
+#from applications.t3.modules.t2 import T2
 #t2=T2(request,response,session,cache,T,db)
 
 # Custom classes which extend default Gluon & T2
@@ -28,6 +27,8 @@ t2=T2SAHANA(request,response,session,cache,T,db)
 
 # Custom validators
 from applications.sahana.modules.validators import *
+
+from gluon.storage import Storage
 
 #
 # Representations

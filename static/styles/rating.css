@@ -21,10 +21,10 @@
 	cursor: pointer;
 }
 .cancel,
-.cancel a {background: url(../img/web2py/delete.gif) no-repeat 0 -16px;}
+.cancel a {background: url(../media/delete.gif) no-repeat 0 -16px;}
 
 .star,
-.star a {background: url(../img/web2py/ratings.gif) no-repeat 0 0px;}
+.star a {background: url(../media/ratings.gif) no-repeat 0 0px;}
 	
 .cancel a,
 .star a {

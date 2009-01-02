@@ -1,0 +1,22 @@
+{{import os}}
+<script src="/{{=request.application}}/static/scripts/labels.js" type="text/javascript" charset="utf-8"></script>
+<!-- Change to jquery.dimensions.pack.js for Production installs -->
+<script src="/{{=request.application}}/static/scripts/jquery.dimensions.js" type="text/javascript" charset="utf-8"></script>
+<script src="/{{=request.application}}/static/scripts/jquery.cluetip.js" type="text/javascript" charset="utf-8"></script>
+<link href="/{{=request.application}}/static/styles/jquery.cluetip.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function() {
+$('.error').hide().slideDown('slow')
+$('.error').click(function() { $(this).fadeOut('slow'); return false; });
+$('.warning').hide().slideDown('slow')
+$('.warning').click(function() { $(this).fadeOut('slow'); return false; });
+$('.information').hide().slideDown('slow')
+$('.information').click(function() { $(this).fadeOut('slow'); return false; });
+$('.confirmation').hide().slideDown('slow')
+$('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
+$('#tooltip').cluetip({activation: 'click',splitTitle: '|',closePosition: 'bottom'});
+$('input.delete_row').click(function(){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
+    $.ajax({ url: "{{=URL2(r=request)}}/"+$(this).attr("name")+"/"+$(this).attr("id"),  cache: false,  success: function(html){ $("div#list-container").html(html); }});
+    return false; });
+});
+//]]></script>

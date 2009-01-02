@@ -17,18 +17,20 @@ from gluon.sqlhtml import *
 from gluon.contrib.markdown import WIKI
 try: from gluon.contrib.gql import SQLTable
 except ImportError: from gluon.sql import SQLTable
+import traceback
 
 def t3_execute(text,environment,_class='error',is_admin=True):
     regex=re.compile('\{\{(?P<comm>.+?)\}\}',re.DOTALL|re.MULTILINE)
     errors=False
     k=0
+    text_done=''
     while True:
         s=regex.search(text)
         if not s: break
-        c=s.group('comm')
+        c=s.group('comm').replace('&amp;','&').replace('&lt;','<').replace('&gt;','>')
         request=environment['request']
         session=environment['session']
-        report=DIV(H1('traceback'),'',H1('code'),CODE(c),
+        report=DIV(H1('traceback'),'',H1('code'),CODE(c,language='web2py'),
                    H1('request'),BEAUTIFY(request),
                    H1('session'),BEAUTIFY(session))
         try:
@@ -41,13 +43,14 @@ def t3_execute(text,environment,_class='error',is_admin=True):
         except Exception, e:
             errors=True
             if is_admin:
-                report[1]=e
+                report[1]=CODE(traceback.format_exc(),language='web2py')
                 p='<div class="%s">Internal Error [<a class="zoom" href="#zoom-%i">open</a>]</div><div class="hidden" id="zoom-%i">%s</div>' % (_class,k,k,report.xml())
                 k+=1
             else:
                 p='<div class="%s">Internal Error</div>'
-        text=text[:s.start()]+p+text[s.end():]
-    return text,errors
+        text_done=text_done+text[:s.start()]+p
+        text=text[s.end():]
+    return text_done+text,errors
 
 class T2:
     IMAGE_EXT=['.jpg','.gif','.png']
@@ -100,15 +103,15 @@ class T2:
             self.my_groups_id=[g.group_id for g in self.memberships]
             session.t2.my_groups_id=self.my_groups_id
         response.files=[
-          '/sahana/static/scripts/jquery.js',
-          '/sahana/static/styles/calendar.css',
-          '/sahana/static/scripts/calendar.js',
-          '/sahana/static/styles/sfmenu.css',
-          '/sahana/static/scripts/sfmenu.js',
-          '/sahana/static/scripts/fancyzoom.min.js',
-          '/sahana/static/styles/rating.css',
-          '/sahana/static/scripts/rating.js',
-          '/sahana/static/scripts/web2py.js',
+          '/plugin_t2/static/t2/scripts/jquery.js',
+          '/plugin_t2/static/t2/styles/calendar.css',
+          '/plugin_t2/static/t2/scripts/calendar.js',
+          '/plugin_t2/static/t2/styles/sfmenu.css',
+          '/plugin_t2/static/t2/scripts/sfmenu.js',
+          '/plugin_t2/static/t2/scripts/fancyzoom.min.js',
+          '/plugin_t2/static/t2/styles/rating.css',
+          '/plugin_t2/static/t2/scripts/rating.js',
+          '/plugin_t2/static/t2/scripts/web2py.js',
         ]
 
     def onerror(self): ### FIX - PASS MORE PARAMETERS
@@ -220,7 +223,7 @@ class T2:
         self.messages.record_modified="Record Modified"
         self.messages.record_deleted="Record(s) Deleted"
         self.messages.record_was_altered="Record Could Not Be Saved Because It Has Changed"
-        self.messages.invalid_value="Invalid Entry"
+        self.messages.invalid_value="Invalid Enrty"
         self.messages.attachment_posted="Attchment Posted"
         self.messages.no_comments="No Comments"
         self.messages.no_visible_comments="No Visible Comments"
@@ -401,7 +404,7 @@ class T2:
         """
         t2.create(db.table,next='index',flash='done',vars={},onaccept=None)
         makes a SQLFORM and processing logic for table. Upon success it 
-        redirects to "next" and flashes "flash". 
+        redrects to "next" and flashes "flash". 
         vars are additional variables that should be placed in the form.
         onaccept=lambda form: pass is a callback executed after form accepted
         """
@@ -427,7 +430,7 @@ class T2:
         t2.update(db.table,query,next='index',flash='done',vars={},onaccept=None,ondelete=None)
         makes a SQLFORM and processing logic for table and the record 
         identified by the query. If no query: query=table.id==t2.id
-        Upon success it redirects to "next" and flashes "flash". 
+        Upon success it redrects to "next" and flashes "flash". 
         vars are additional variables that should be placed in the form.
         onaccept=lambda form: pass is a callback executed after form accepted
         """
@@ -454,16 +457,11 @@ class T2:
            request.vars.modified_on__original!=hidden['modified_on__original']:
             session.flash=self.messages.record_was_altered
             redirect(self.action(args=request.args))
-        if form.accepts(request.vars,session):
+        if form.accepts(request.vars,session,delete_uploads=True):
             form.old=record
             session.flash=self.messages.record_modified
             if request.vars.delete_this_record:
                 session.flash=self.messages.record_modified
-                for f in table.fields:
-                    if table[f].type=='upload' and \
-                       table[f].uploadfield is True:
-                        name=os.path.join(request.folder,'uploads',record[f])
-                        if os.path.exists(name): os.unlink(name)
                 if ondelete:                    
                     ondelete(form)
             elif onaccept:                
@@ -487,7 +485,7 @@ class T2:
 
     def read(self,table,query=None,limitby=None,orderby=None):
         """
-        Selects all fields of table for query. No query implies all records.
+        Selects fall fields of table for query. No query imples all records.
         """
         import uuid
         request,response,session,cache,T,db=self._globals()
@@ -501,7 +499,7 @@ class T2:
 
     def display(self,table,query=None):
         """
-        Shows one record of table for query
+        Shows oe record of table for query
         """
         rows=self.read(table,query)
         request,response,session,cache,T,db=self._globals()
@@ -678,7 +676,8 @@ class T2:
 
     def wiki_menu(self,action='wiki'):
         request,response,session,cache,T,db=self._globals()
-        rows=db(db.t2_wiki.menu==True).select(orderby=db.t2_wiki.title)
+        rows=db(db.t2_wiki.menu==True).select()        
+        rows=sorted(rows,lambda x,y: +1 if y.title<x.title else -1)
         menu=[]
         keys={}
         for row in rows:
@@ -695,35 +694,38 @@ class T2:
                 menu.append(x)
         return menu
 
-    def wiki(self,query=None,writable=True,deletable=True,mode='html',onaccept=None):
+    def wiki(self,query=None,writable=True,deletable=True,mode='html',
+             onaccept=None,env={}):
         request,response,session,cache,T,db=self._globals()
         if query: rows=db(query).select()
         if request.args: rows=db(db.t2_wiki.name==request.args[0]).select()
         else: rows=[]
         fields=self._filter_fields(db.t2_wiki.get('exposes',db.t2_wiki.fields))
-        if not rows and writable and request.vars.edit:
+        editmode=(request.args[1:2]==['edit'])
+        if not rows and writable and editmode:
             form=SQLFORM(db.t2_wiki,fields=fields)
             if form.accepts(request.vars,session):
                 session.flash=self.messages.page_created
                 if onaccept: onaccept(form)
                 redirect(URL(r=request,args=[form.vars.name]))
             return form
-        elif rows and writable and request.vars.edit:
-            if rows[0].name=='main': fields,deletable=['body'],False
-            form=SQLFORM(db.t2_wiki,rows[0],fields=fields,showid=False,deletable=deletable)
+        elif rows and writable and editmode:
+            if rows[0].name=='main': fields,deletable=['title','body'],False
+            form=SQLFORM(db.t2_wiki,rows[0],fields=fields,
+                         showid=False,deletable=deletable)
             if form.accepts(request.vars,session):
                 session.flash=self.messages.page_modified
                 if onaccept: onaccept(form)
-                redirect(URL(r=request,args=request.args))
+                redirect(URL(r=request,args=[form.vars.name or 'main']))
             return form
-        elif rows and (not request.vars.edit or not writable):
+        elif rows and (not editmode or not writable):
             if not self.logged_in and not rows[0].public: self._error()
-            if writable and self.logged_in: edit=DIV(A('edit',_href=URL(r=request,args=request.args,vars=dict(edit=True))),_style='text-align: right')
+            if writable and self.logged_in:
+                edit=DIV(A('edit',_href=URL(r=request,
+                  args=request.args[:1]+['edit'])),_style='text-align: right')
             else: edit=''
             if mode=='smart':
-                environment=dict(self=self,db=self.db,request=self.request,session=self.session,response=self.response,cache=self.cache,T=self.T)
-                exec('from gluon.html import *',{},environment)
-                text,errors=t3_execute(rows[0].body,environment,is_admin=writable)
+                text,errors=t3_execute(rows[0].body,env,is_admin=writable)
                 if errors: response.flash=self.messages.errors_in_code
                 return DIV(edit,DIV(XML(text)),_class='t2-wiki')
             elif mode=='html':
@@ -731,6 +733,8 @@ class T2:
             elif mode=='markdown':
                 import gluon.contrib.markdown as md
                 return DIV(edit,DIV(md.WIKI(rows[0].body)),_class='t2-wiki')
+            else:
+                return DIV(edit,DIV(mode(rows[0].body)),_class='t2-wiki')
         else: self._error()
 
     def attachments(self,table=None,readable=True,writable=True,deletable=False):
@@ -841,7 +845,7 @@ class T2:
                (ctable.record_id==id).select()
         form=SQLFORM(ctable,rows[0] if rows else None,
                      fields=ctable.exposes,labels=labels,showid=False)  
-        self._stamp(ctable,form,create=rows)
+        self._stamp(ctable,form,create=True if not rows else False)
         form.vars.table_name=table_name
         form.vars.record_id=id
         form.vars.status=status
@@ -873,20 +877,32 @@ class T2:
         import os
         import gluon.contenttype as c
         request,response,session,cache,T,db=self._globals()
-        if not request.args: self._error()
+        if not request.args: self._error()     
         name=request.args[-1]
         items=re.compile('(?P<table>.*?)\.(?P<field>.*?)\..*').match(name)
         if not items: self._error()
         t,f=items.group('table'),items.group('field')
+        auth=db[t].get('authorization',False)
+        if auth and not self.logged_in: return HTTP(404)
+        rows=None
+        if auth and isinstance(auth,lambda:0):
+            rows=db(db[t][f]==name).select()
+            if not rows: return HTTP(404)
+            if not auth(db[t],rows[0].id): return HTTP(404)
         uploadfield=db[t][f].uploadfield
         if isinstance(uploadfield,str):
-            rows=db(db[t][f]==name).select()
-            if not rows: _error()
+            if not rows: rows=db(db[t][f]==name).select()
+            if not rows: return HTTP(404)
             response.headers['Content-Type']=c.contenttype(name)
             return rows[0][uploadfield]
         else:
             filename=os.path.join(request.folder,'uploads',name or self._error())
             return response.stream(filename)
+
+    def play(self,filename,player=None,width=450,height=300):
+        if not player:
+           player=URL(r=self.request,c='static',f='scripts/mediaplayer.swf')
+        return XML('<embed  src="%s" width="%s" height="%s" allowscriptaccess="always" allowfullscreen="true" flashvars="file=%s" />' % (player,width,height,filename))
 
     def register(self,verification=False,sender='',next='login',onaccept=None):
         """

@@ -11,8 +11,11 @@ from gluon.sqlhtml import *
 from gluon.contrib.markdown import WIKI
 try: from gluon.contrib.gql import SQLTable
 except ImportError: from gluon.sql import SQLTable
+import traceback
 
+#from applications.t3.modules.t2 import T2
 from applications.sahana.modules.t2 import T2
+
 
 # Modified version of URL from gluon/html.py
 # we just need a simplified version for our jquery delete_row function

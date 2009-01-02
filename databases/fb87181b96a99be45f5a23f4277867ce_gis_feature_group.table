@@ -1,17 +1,17 @@
 (dp1
-S'features'
+S'description'
 p2
-S'CHAR(32)'
+S'CHAR(256)'
 p3
 sS'author'
 p4
 S'REFERENCES user(id) ON DELETE CASCADE'
 p5
-sS'uuid'
-p6
-S'CHAR(64)'
-p7
 sS'name'
+p6
+S'CHAR(32)'
+p7
+sS'features'
 p8
 S'CHAR(32)'
 p9
@@ -23,8 +23,8 @@ sS'id'
 p12
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p13
-sS'description'
+sS'uuid'
 p14
-S'CHAR(256)'
+S'CHAR(64)'
 p15
 s.

@@ -27,55 +27,55 @@ sS'url'
 p14
 S'CHAR(32)'
 p15
-sS'image'
+sS'name'
 p16
-S'CHAR(128)'
+S'CHAR(32)'
 p17
-sS'feature'
+sS'image'
 p18
-S'REFERENCES gis_feature(id) ON DELETE CASCADE'
+S'CHAR(128)'
 p19
-sS'created_by'
+sS'feature'
 p20
-S'REFERENCES t2_person(id) ON DELETE CASCADE'
+S'REFERENCES gis_feature(id) ON DELETE CASCADE'
 p21
-sS'source'
+sS'created_by'
 p22
-S'CHAR(32)'
+S'REFERENCES t2_person(id) ON DELETE CASCADE'
 p23
-sS'created_on'
+sS'id'
 p24
-S'TIMESTAMP'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p25
-sS'contact'
+sS'source'
 p26
-S'REFERENCES person(id) ON DELETE CASCADE'
-p27
-sS'sensitivity'
-p28
 S'CHAR(32)'
-p29
-sS'modified_on'
-p30
+p27
+sS'created_on'
+p28
 S'TIMESTAMP'
+p29
+sS'contact'
+p30
+S'REFERENCES person(id) ON DELETE CASCADE'
 p31
-sS'expiry_time'
+sS'modified_on'
 p32
 S'TIMESTAMP'
 p33
-sS'accuracy'
+sS'expiry_time'
 p34
-S'CHAR(32)'
+S'TIMESTAMP'
 p35
 sS'uuid'
 p36
 S'CHAR(64)'
 p37
-sS'id'
+sS'sensitivity'
 p38
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(32)'
 p39
-sS'name'
+sS'accuracy'
 p40
 S'CHAR(32)'
 p41

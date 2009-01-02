@@ -11,15 +11,15 @@ sS'lon'
 p6
 S'CHAR(32)'
 p7
-sS'lat'
+sS'uuid'
 p8
-S'CHAR(32)'
+S'CHAR(64)'
 p9
 sS'modified_on'
 p10
 S'TIMESTAMP'
 p11
-sS'metadata'
+sS'lat'
 p12
 S'CHAR(32)'
 p13
@@ -31,8 +31,8 @@ sS'id'
 p16
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p17
-sS'uuid'
+sS'metadata'
 p18
-S'CHAR(64)'
+S'CHAR(32)'
 p19
 s.

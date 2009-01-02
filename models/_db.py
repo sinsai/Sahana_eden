@@ -78,7 +78,17 @@ db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
 #db.dog.owner.display=lambda x: map(db(db.owner.id==id).select()[0].name,x[1:-1].split('|'))
 db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
 
-
+def myprocessor(f):
+   "Extend session to support multiple flash classes"
+   response.error=session.error
+   response.confirmation=session.confirmation
+   response.warning=session.warning
+   session.error=[]
+   session.confirmation=[]
+   session.warning=[]
+   return f()
+response._caller=lambda f: myprocessor(f)
+   
 def shn_crud_strings_lookup(resource):
     "Look up CRUD strings for a given resource based on the definitions in models/module.py."
     return eval('crud_strings_%s' % resource)
@@ -142,7 +152,7 @@ def shn_rest_controller(module,resource):
             response.view='plain.html'
             return dict(item=list)
         else:
-            response.error=T("Unsupported format!")
+            session.error=T("Unsupported format!")
             redirect(URL(r=request,f=resource))
     else:
         method=str.lower(request.args[0])
@@ -164,7 +174,7 @@ def shn_rest_controller(module,resource):
                 response.view='plain.html'
                 return dict(item=item)
             else:
-                response.error=T("Unsupported format!")
+                session.error=T("Unsupported format!")
                 redirect(URL(r=request,f=resource))
         else:
             if method=="create":
@@ -186,7 +196,7 @@ def shn_rest_controller(module,resource):
                         response.view='plain.html'
                         return dict(item=item)
                     else:
-                        response.error=T("Unsupported format!")
+                        session.error=T("Unsupported format!")
                         redirect(URL(r=request,f=resource))
                 else:
                     t2.redirect('login',vars={'_destination':'%s/create' % resource})
@@ -211,7 +221,7 @@ def shn_rest_controller(module,resource):
                         response.view='plain.html'
                         return dict(item=item)
                     else:
-                        response.error=T("Unsupported format!")
+                        session.error=T("Unsupported format!")
                         redirect(URL(r=request,f=resource))
                 else:
                     t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
@@ -222,7 +232,7 @@ def shn_rest_controller(module,resource):
                 else:
                     t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
             else:
-                response.error=T("Unsupported method!")
+                session.error=T("Unsupported method!")
                 redirect(URL(r=request,f=resource))
 
 # Modules

@@ -32,75 +32,26 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
-
-#
-# Configs
-#
 def config():
-    """RESTful controller function.
-    Anonymous users can Read.
-    Authentication required for Create/Update/Delete."""
-    table=db.gis_config
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Config Details')
-            edit=A(T("Edit"),_href=t2.action('config',['update',t2.id]))
-            list_btn=A(T("List Configs"),_href=t2.action('config'))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Config added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Config')
-                    list_btn=A(T("List Configs"),_href=t2.action('config'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'config/create'})
-            elif method=="display":
-                t2.redirect('config',args=t2.id)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Config updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Config')
-                    list_btn=A(T("List Configs"),_href=t2.action('config'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'config/update/%i' % t2.id})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Config deleted")
-                    t2.delete(table,next='config')
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'config/delete/%i' % t2.id})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Configs currently defined."
-        title=T('List Configs')
-        subtitle=T('Configs')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Config')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Config"),_href=t2.action('config','create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'config')
+def feature_class():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'feature_class')
+def feature_metadata():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'feature_metadata')
+def key():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'key')
+def marker():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'marker')
+def projection():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'projection')
+
+# Module-specific functions
 
 @t2.requires_login('login')
 def defaults():
@@ -114,9 +65,9 @@ def defaults():
 #
 # Features
 #
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
+# RESTful controller function **Non-Std**
+#if isinstance(list,TABLE):
+#                list.insert(0,TR('',B('Delete?')))
 def feature():
     table=db.gis_feature
     if request.args:
@@ -204,152 +155,21 @@ def list_features_plain():
     if t2.logged_in:
         if isinstance(list,TABLE):
             list.insert(0,TR('',B('Delete?')))
-    response.view='list_plain.html'
-    return dict(list=list)
-
-#
-# Feature Classes
-#
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
-def feature_class():
-    table=db.gis_feature_class
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Feature Class Details')
-            edit=A(T("Edit"),_href=t2.action('feature_class',['update',t2.id]))
-            list_btn=A(T("List Feature Classes"),_href=t2.action('feature_class'))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Feature Class added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Feature Class')
-                    list_btn=A(T("List Feature Classes"),_href=t2.action('feature_class'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_class/create'})
-            elif method=="display":
-                t2.redirect('feature_class',args=t2.id)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Feature Class updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Feature Class')
-                    list_btn=A(T("List Feature Classes"),_href=t2.action('feature_class'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_class/update/%i' % t2.id})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Feature Class deleted")
-                    t2.delete(table,next='feature_class')
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_class/delete/%i' % t2.id})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Feature Classes currently defined."
-        title=T('List Feature Classes')
-        subtitle=T('Feature Classes')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Feature Class')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Feature Class"),_href=t2.action('feature_class','create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+    response.view='plain.html'
+    return dict(item=list)
 
 #
 # Feature Groups
 #
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
 def feature_group():
-    table=db.gis_feature_group
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Feature Class Details')
-            edit=A(T("Edit"),_href=t2.action('feature_group',['update',t2.id]))
-            list_btn=A(T("List Feature Groups"),_href=t2.action('feature_group'))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Feature Group added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Feature Group')
-                    list_btn=A(T("List Feature Groups"),_href=t2.action('feature_group'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_group/create'})
-            elif method=="display":
-                t2.redirect('feature_group',args=t2.id)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Feature Group updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Feature Group')
-                    list_btn=A(T("List Feature Groups"),_href=t2.action('feature_group'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_group/update/%i' % t2.id})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Feature Group deleted")
-                    t2.delete(table,next='feature_group')
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_group/delete/%i' % t2.id})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Feature Groups currently defined."
-        title=T('List Feature Groups')
-        subtitle=T('Feature Groups')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Feature Group')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Feature Group"),_href=t2.action('feature_group','create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'feature_group')
 
 def display_feature_group_features_json():
     "Designed to be called via AJAX to be processed within JS client."
     list=db(db.gis_feature_group.id==t2.id).select(db.gis_feature_group.features).json()
-    response.view='list_plain.html'
-    return dict(list=list)
+    response.view='plain.html'
+    return dict(item=list)
 
 # Many-to-Many experiments
 # currently using t2.tag_widget()
@@ -386,293 +206,6 @@ def update_feature_group():
     db.gis_feature.represent=lambda table:shn_list_item(table,action='display')
     search=t2.search(db.gis_feature)
     return dict(module_name=module_name,modules=modules,options=options,form=form,search=search)
-
-#
-# Feature Metadata
-#
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
-def feature_metadata():
-    table=db.gis_feature_metadata
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Feature Metadata Details')
-            edit=A(T("Edit"),_href=t2.action('feature_metadata',['update',t2.id]))
-            list_btn=A(T("List Feature Metadata"),_href=t2.action('feature_metadata'))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Feature Metadata added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Feature Metadata')
-                    list_btn=A(T("List Feature Metadata"),_href=t2.action('feature_metadata'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_metadata/create'})
-            elif method=="display":
-                t2.redirect('feature_metadata',args=t2.id)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Feature Metadata updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Feature Metadata')
-                    list_btn=A(T("List Feature Metadata"),_href=t2.action('feature_metadata'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_metadata/update/%i' % t2.id})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Feature Metadata deleted")
-                    t2.delete(table,next='feature_metadata')
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'feature_metadata/delete/%i' % t2.id})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Feature Metadata currently defined."
-        title=T('List Feature Metadata')
-        subtitle=T('Feature Metadata')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Feature Metadata')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Feature Metadata"),_href=t2.action('feature_metadata','create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
-
-
-#
-# Keys
-#
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
-def key():
-    table=db.gis_key
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Key Details')
-            edit=A(T("Edit"),_href=t2.action('key',['update',t2.id]))
-            list_btn=A(T("List Keys"),_href=t2.action('key'))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Key added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Key')
-                    list_btn=A(T("List Keys"),_href=t2.action('key'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'key/create'})
-            elif method=="display":
-                item=t2.display(table)
-                response.view='display.html'
-                title=T('Key Details')
-                edit=A(T("Edit"),_href=t2.action('key',['update',t2.id]))
-                list_btn=A(T("List Keys"),_href=t2.action('key'))
-                return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Key updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Key')
-                    list_btn=A(T("List Keys"),_href=t2.action('key'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'key/update/%i' % t2.id})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Key deleted")
-                    t2.delete(table,next='key')
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'key/delete/%i' % t2.id})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Keys currently defined."
-        title=T('List Keys')
-        subtitle=T('Keys')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Key')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Key"),_href=t2.action('key','create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
-
-#
-# Markers
-#
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
-def marker():
-    table=db.gis_marker
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Marker Details')
-            edit=A(T("Edit"),_href=t2.action('marker',['update',t2.id]))
-            list_btn=A(T("List Markers"),_href=t2.action('marker'))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Marker added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Marker')
-                    list_btn=A(T("List Markers"),_href=t2.action('marker'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'marker/create'})
-            elif method=="display":
-                t2.redirect('marker',args=t2.id)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Marker updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Marker')
-                    list_btn=A(T("List Markers"),_href=t2.action('marker'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'marker/update/%i' % t2.id})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Marker deleted")
-                    t2.delete(table,next='marker')
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'marker/delete/%i' % t2.id})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Markers currently defined."
-        title=T('List Markers')
-        subtitle=T('Markers')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Marker')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Marker"),_href=t2.action('marker','create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
-
-#
-# Projections
-#
-# RESTful controller function
-# Anonymous users can Read
-# Authentication required for Create/Update/Delete
-def projection():
-    table=db.gis_projection
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            item=t2.display(table)
-            response.view='display.html'
-            title=T('Projection Details')
-            edit=A(T("Edit"),_href=t2.action('projection',['update',t2.id]))
-            list_btn=A(T("List Projections"),_href=t2.action('projection'))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-        except:
-            if method=="create":
-                if t2.logged_in:
-                    t2.messages.record_created=T("Projection added")
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=T('Add Projection')
-                    list_btn=A(T("List Projections"),_href=t2.action('projection'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'projection/create'})
-            elif method=="display":
-                item=t2.display(table)
-                response.view='display.html'
-                title=T('Projection Details')
-                edit=A(T("Edit"),_href=t2.action('projection',['update',t2.id]))
-                list_btn=A(T("List Projections"),_href=t2.action('projection'))
-                return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
-            elif method=="update":
-                if t2.logged_in:
-                    t2.messages.record_modified=T("Projection updated")
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=T('Edit Projection')
-                    list_btn=A(T("List Projections"),_href=t2.action('projection'))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                else:
-                    t2.redirect('login',vars={'_destination':'projection/update/%i' % t2.id})
-            elif method=="delete":
-                if t2.logged_in:
-                    t2.messages.record_deleted=T("Projection deleted")
-                    t2.delete(table,next='projection')
-                    return
-                else:
-                    t2.redirect('login',vars={'_destination':'projection/delete/%i' % t2.id})
-            else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Projections currently defined."
-        title=T('List Projections')
-        subtitle=T('Projections')
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=T('Add New Projection')
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
-        else:
-            add_btn=A(T("Add Projection"),_href=t2.action('projection','create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
 
 #
 # Layers
@@ -1045,7 +578,7 @@ def map_service_catalogue():
     if isinstance(list,TABLE):
         list.insert(0,TR('',B('Enabled?'))) 
     
-    response.view='gis/map_service_catalogue.html'
+    response.view='gis/list_create_layer.html'
     title=T('Map Service Catalogue')
     subtitle=T('Layers')
     addtitle=T('Add New Layer')

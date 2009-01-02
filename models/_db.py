@@ -80,87 +80,150 @@ db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
 
 
 def shn_crud_strings_lookup(resource):
-    "Look up CRUD strings for a given resource."
+    "Look up CRUD strings for a given resource based on the definitions in models/module.py."
     return eval('crud_strings_%s' % resource)
 
 def shn_rest_controller(module,resource):
     """
-    RESTful controller function.
+    RESTlike controller function.
     
     Anonymous users can Read.
     Authentication required for Create/Update/Delete.
     
+    Supported Representations:
+        HTML is the default (including full Layout)
+        PLAIN is HTML with no layout
+         - can be inserted into DIVs via AJAX calls
+         - can be useful for clients on low-bandwidth or small screen sizes
+        JSON
+         - read-only for now
+
     ToDo:
         Alternate Representations
+            JSON create/update
+            SMS,CSV,XML,PDF
         Search method
         Customisable Security Policy
     """
     
     table=db['%s_%s' % (module,resource)]
-    
     crud_strings=shn_crud_strings_lookup(resource)
-
+    
+    # Which representation should output be in?
+    if request.vars.format:
+        representation=str.lower(request.vars.format)
+    else:
+        # Default to HTML
+        representation="html"
+    
     if len(request.args)==0:
         # No arguments => default to list (or list_create if logged_in)
-        list=t2.itemize(table)
-        if list=="No data":
-            list=crud_strings.msg_list_empty
-        title=crud_strings.title_list
-        subtitle=crud_strings.subtitle_list
-        if t2.logged_in:
-            form=t2.create(table)
-            response.view='list_create.html'
-            addtitle=crud_strings.subtitle_create
-            return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
+        if representation=="html":
+            list=t2.itemize(table)
+            if list=="No data":
+                list=crud_strings.msg_list_empty
+            title=crud_strings.title_list
+            subtitle=crud_strings.subtitle_list
+            if t2.logged_in:
+                form=t2.create(table)
+                response.view='list_create.html'
+                addtitle=crud_strings.subtitle_create
+                return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
+            else:
+                add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'))
+                response.view='list.html'
+                return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+        elif representation=="plain":
+            list=t2.itemize(table)
+            response.view='plain.html'
+            return dict(item=list)
+        elif representation=="json":
+            list=db().select(table.ALL).json()
+            response.view='plain.html'
+            return dict(item=list)
         else:
-            add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'))
-            response.view='list.html'
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
-            
+            response.error=T("Unsupported format!")
+            redirect(URL(r=request,f=resource))
     else:
-        method=request.args[0]
+        method=str.lower(request.args[0])
         if request.args[0].isdigit():
             # 1st argument is ID not method => display.
-            # Default format (representation) is full HTML page
-            item=t2.display(table)
-            response.view='display.html'
-            title=crud_strings.title_display
-            edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
-            list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
-            return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
+            if representation=="html":
+                item=t2.display(table)
+                response.view='display.html'
+                title=crud_strings.title_display
+                edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
+                list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
+            elif representation=="plain":
+                item=t2.display(table)
+                response.view='plain.html'
+                return dict(item=item)
+            elif representation=="json":
+                item=db(table.id==t2.id).select(table.ALL).json()
+                response.view='plain.html'
+                return dict(item=item)
+            else:
+                response.error=T("Unsupported format!")
+                redirect(URL(r=request,f=resource))
         else:
             if method=="create":
                 if t2.logged_in:
-                    t2.messages.record_created=crud_strings.msg_record_created
-                    form=t2.create(table)
-                    response.view='create.html'
-                    title=crud_strings.title_create
-                    list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                    if representation=="html":
+                        t2.messages.record_created=crud_strings.msg_record_created
+                        form=t2.create(table)
+                        response.view='create.html'
+                        title=crud_strings.title_create
+                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                        return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                    elif representation=="plain":
+                        form=t2.create(table)
+                        response.view='plain.html'
+                        return dict(item=form)
+                    elif representation=="json":
+                        # ToDo
+                        item='{"Status":"failed","Error":{"StatusCode":501,"Message":"JSON creates not yet supported!"}}'
+                        response.view='plain.html'
+                        return dict(item=item)
+                    else:
+                        response.error=T("Unsupported format!")
+                        redirect(URL(r=request,f=resource))
                 else:
                     t2.redirect('login',vars={'_destination':'%s/create' % resource})
             elif method=="display":
                 t2.redirect(resource,args=t2.id)
             elif method=="update":
                 if t2.logged_in:
-                    t2.messages.record_modified=crud_strings.msg_record_modified
-                    form=t2.update(table)
-                    response.view='update.html'
-                    title=crud_strings.title_update
-                    list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
-                    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                    if representation=="html":
+                        t2.messages.record_modified=crud_strings.msg_record_modified
+                        form=t2.update(table)
+                        response.view='update.html'
+                        title=crud_strings.title_update
+                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                        return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                    elif representation=="plain":
+                        form=t2.update(table)
+                        response.view='plain.html'
+                        return dict(item=form)
+                    elif representation=="json":
+                        # ToDo
+                        item='{"Status":"failed","Error":{"StatusCode":501,"Message":"JSON updates not yet supported!"}}'
+                        response.view='plain.html'
+                        return dict(item=item)
+                    else:
+                        response.error=T("Unsupported format!")
+                        redirect(URL(r=request,f=resource))
                 else:
                     t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
             elif method=="delete":
                 if t2.logged_in:
                     t2.messages.record_deleted=crud_strings.msg_record_deleted
                     t2.delete(table,next=resource)
-                    return
                 else:
                     t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
             else:
-                # Unsupported method!
-                t2.redirect(resource)
+                response.error=T("Unsupported method!")
+                redirect(URL(r=request,f=resource))
 
 # Modules
 db.define_table('module',

@@ -36,6 +36,18 @@ db.gis_projection.maxResolution.requires=IS_NOT_EMPTY()
 db.gis_projection.maxResolution.label="maxResolution"
 db.gis_projection.maxResolution.comment=SPAN("*",_class="req")
 db.gis_projection.units.requires=IS_IN_SET(['m','degrees'])
+crud_strings_projection=Storage(title_create=T('Add Projection'),
+            title_display=T('Projection Details'),
+            title_list=T('List Projections'),
+            title_update=T('Edit Projection'),
+            subtitle_list=T('Projections'),
+            subtitle_create=T('Add New Projection'),
+            label_list_button=T('List Projections'),
+            label_create_button=T('Add Projection'),
+            msg_record_created=T('Projection added'),
+            msg_record_modified=T('Projection updated'),
+            msg_record_deleted=T('Projection deleted'),
+            msg_list_empty=T('No Projections currently defined'))
 
 # GIS Config
 # id=1 = Default settings
@@ -57,7 +69,19 @@ db.gis_config.marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
 db.gis_config.marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % uuid,_class='hidden'))
 db.gis_config.map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db.gis_config.map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-
+crud_strings_config=Storage(title_create=T('Add Config'),
+            title_display=T('Config Details'),
+            title_list=T('List Configs'),
+            title_update=T('Edit Config'),
+            subtitle_list=T('Configs'),
+            subtitle_create=T('Add New Config'),
+            label_list_button=T('List Configs'),
+            label_create_button=T('Add Config'),
+            msg_record_created=T('Config added'),
+            msg_record_modified=T('Config updated'),
+            msg_record_deleted=T('Config deleted'),
+            msg_list_empty=T('No Configs currently defined'))
+            
 # GIS Markers (Icons)
 db.define_table('gis_marker',
                 SQLField('modified_on','datetime',default=now),
@@ -71,7 +95,19 @@ db.gis_marker.displays=['name','height','width','image']
 db.gis_marker.represent=lambda table:shn_list_item(table,resource='marker',action='display')
 db.gis_marker.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_marker.name')]
 db.gis_marker.name.comment=SPAN("*",_class="req")
-
+crud_strings_marker=Storage(title_create=T('Add Marker'),
+            title_display=T('Marker Details'),
+            title_list=T('List Markers'),
+            title_update=T('Edit Marker'),
+            subtitle_list=T('Markers'),
+            subtitle_create=T('Add New Marker'),
+            label_list_button=T('List Markers'),
+            label_create_button=T('Add Marker'),
+            msg_record_created=T('Marker added'),
+            msg_record_modified=T('Marker updated'),
+            msg_record_deleted=T('Marker deleted'),
+            msg_list_empty=T('No Markers currently available'))
+            
 # GIS Features
 db.define_table('gis_feature_class',
                 SQLField('modified_on','datetime',default=now),
@@ -85,6 +121,18 @@ db.gis_feature_class.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_
 db.gis_feature_class.name.comment=SPAN("*",_class="req")
 db.gis_feature_class.marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
 db.gis_feature_class.marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
+crud_strings_feature_class=Storage(title_create=T('Add Feature Class'),
+            title_display=T('Feature Class Details'),
+            title_list=T('List Feature Classes'),
+            title_update=T('Edit Feature Class'),
+            subtitle_list=T('Feature Classes'),
+            subtitle_create=T('Add New Feature Class'),
+            label_list_button=T('List Feature Classes'),
+            label_create_button=T('Add Feature Class'),
+            msg_record_created=T('Feature Class added'),
+            msg_record_modified=T('Feature Class updated'),
+            msg_record_deleted=T('Feature Class deleted'),
+            msg_list_empty=T('No Feature Classes currently defined'))
 
 db.define_table('gis_feature_metadata',
                 SQLField('created_on','datetime',default=now), # Auto-stamped by T2
@@ -106,7 +154,19 @@ db.gis_feature_metadata.displays=['created_on','created_by','modified_on','modif
 db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
 db.gis_feature_metadata.contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
 db.gis_feature_metadata.url.requires=IS_URL()
-
+crud_strings_feature_metadata=Storage(title_create=T('Add Feature Metadata'),
+            title_display=T('Feature Metadata Details'),
+            title_list=T('List Feature Metadata'),
+            title_update=T('Edit Feature Metadata'),
+            subtitle_list=T('Feature Metadata'),
+            subtitle_create=T('Add New Feature Metadata'),
+            label_list_button=T('List Feature Metadata'),
+            label_create_button=T('Add Feature Metadata'),
+            msg_record_created=T('Feature Metadata added'),
+            msg_record_modified=T('Feature Metadata updated'),
+            msg_record_deleted=T('Feature Metadata deleted'),
+            msg_list_empty=T('No Feature Metadata currently defined'))
+            
 db.define_table('gis_feature',
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
@@ -133,7 +193,19 @@ db.gis_feature.lat.comment=SPAN("*",_class="req")
 db.gis_feature.lon.requires=IS_LON()
 db.gis_feature.lon.label=T("Longitude")
 db.gis_feature.lon.comment=SPAN("*",_class="req")
-
+crud_strings_feature=Storage(title_create=T('Add Feature'),
+            title_display=T('Feature Details'),
+            title_list=T('List Features'),
+            title_update=T('Edit Feature'),
+            subtitle_list=T('Features'),
+            subtitle_create=T('Add New Feature'),
+            label_list_button=T('List Features'),
+            label_create_button=T('Add Feature'),
+            msg_record_created=T('Feature added'),
+            msg_record_modified=T('Feature updated'),
+            msg_record_deleted=T('Feature deleted'),
+            msg_list_empty=T('No Features currently defined'))
+            
 # Feature Groups
 # Used to select a set of Features for either Display or Export
 db.define_table('gis_feature_group',
@@ -150,7 +222,19 @@ db.gis_feature_group.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_
 db.gis_feature_group.name.comment=SPAN("*",_class="req")
 db.gis_feature_group.features.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 db.gis_feature_group.author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
-
+crud_strings_feature_group=Storage(title_create=T('Add Feature Group'),
+            title_display=T('Feature Group Details'),
+            title_list=T('List Feature Groups'),
+            title_update=T('Edit Feature Group'),
+            subtitle_list=T('Feature Groups'),
+            subtitle_create=T('Add New Feature Group'),
+            label_list_button=T('List Feature Groups'),
+            label_create_button=T('Add Feature Group'),
+            msg_record_created=T('Feature Group added'),
+            msg_record_modified=T('Feature Group updated'),
+            msg_record_deleted=T('Feature Group deleted'),
+            msg_list_empty=T('No Feature Groups currently defined'))
+            
 # Many-to-Many table
 db.define_table('gis_feature_group_to_feature',
                 SQLField('modified_on','datetime',default=now),
@@ -172,7 +256,19 @@ db.gis_key.represent=lambda table:shn_list_item(table,resource='key',action='dis
 db.gis_key.service.requires=IS_IN_SET(['google','multimap','yahoo']) 
 #db.gis_key.key.requires=THIS_NOT_IN_DB(db(db.gis_key.service==request.vars.service),'gis_key.service',request.vars.service,'service already in use')
 db.gis_key.key.requires=IS_NOT_EMPTY()
-
+crud_strings_key=Storage(title_create=T('Add Key'),
+            title_display=T('Key Details'),
+            title_list=T('List Keys'),
+            title_update=T('Edit Key'),
+            subtitle_list=T('Keys'),
+            subtitle_create=T('Add New Key'),
+            label_list_button=T('List Keys'),
+            label_create_button=T('Add Key'),
+            msg_record_created=T('Key added'),
+            msg_record_modified=T('Key updated'),
+            msg_record_deleted=T('Key deleted'),
+            msg_list_empty=T('No Keys currently defined'))
+            
 # GIS Layers
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
 gis_layer_types=['features','openstreetmap','google','yahoo','virtualearth']
@@ -189,7 +285,19 @@ db.gis_layer.represent=lambda table:shn_list_item(table,resource='layer',action=
 db.gis_layer.name.requires=IS_NOT_EMPTY()
 db.gis_layer.type.requires=IS_IN_SET(gis_layer_types)
 db.gis_layer.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]
-
+crud_strings_layer=Storage(title_create=T('Add Layer'),
+            title_display=T('Layer Details'),
+            title_list=T('List Layers'),
+            title_update=T('Edit Layer'),
+            subtitle_list=T('Layers'),
+            subtitle_create=T('Add New Layer'),
+            label_list_button=T('List Layers'),
+            label_create_button=T('Add Layer'),
+            msg_record_created=T('Layer added'),
+            msg_record_modified=T('Layer updated'),
+            msg_record_deleted=T('Layer deleted'),
+            msg_list_empty=T('No Layers currently defined'))
+            
 # Layer: GeoRSS
 db.define_table('gis_layer_georss',
 				SQLField('modified_on','datetime',default=now),

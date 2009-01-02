@@ -29,7 +29,6 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
-
 def person():
-    "RESTful CRUD controller"
+    "RESTlike CRUD controller"
     return shn_rest_controller(module,'person')

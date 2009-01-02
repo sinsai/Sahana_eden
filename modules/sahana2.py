@@ -1,5 +1,8 @@
 """
 This file was developed by Fran Boon as a web2py extension.
+
+UNUSED
+
 This file is released under the BSD license (you can include it in bytecode compiled web2py apps as long as you acknowledge the author). web2py (required to run this file) is released under the GPLv2 license.
 """
 

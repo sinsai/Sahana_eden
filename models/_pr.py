@@ -12,7 +12,7 @@ db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
 db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
 
 
-# Persons
+# People
 # Modules: cr,dvr,mpr
 db.define_table('pr_person',
                 SQLField('modified_on','datetime',default=now),
@@ -24,7 +24,19 @@ db.pr_person.represent=lambda table:shn_list_item(table,resource='person',action
 db.pr_person.exposes=['full_name','family_name','l10_name']
 db.pr_person.displays=['full_name','family_name','l10_name']
 db.pr_person.full_name.requires=IS_NOT_EMPTY()
-
+crud_strings_person=Storage(title_create=T('Add Person'),
+            title_display=T('Person Details'),
+            title_list=T('List People'),
+            title_update=T('Edit Person'),
+            subtitle_list=T('People'),
+            subtitle_create=T('Add New Person'),
+            label_list_button=T('List People'),
+            label_create_button=T('Add Person'),
+            msg_record_created=T('Person added'),
+            msg_record_modified=T('Person updated'),
+            msg_record_deleted=T('Person deleted'),
+            msg_list_empty=T('No People currently registered'))
+            
 # Person Contacts
 # Modules: cr,dvr,mpr
 db.define_table('pr_person_contact',

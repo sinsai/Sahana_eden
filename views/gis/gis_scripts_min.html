@@ -1,0 +1,18 @@
+<!--When in Production mode we want fewer compressed scripts to download-->
+
+<!--Proj4js
+  <script type="text/javascript" src="{{=request.application}}/static/proj4js/lib/proj4js-compressed.js"></script>
+-->
+  
+<!--Ext-->
+<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/adapter/jquery/ext-jquery-adapter.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/ext-all.js"></script>
+<!--
+<script  type="text/javascript src="/{{=request.application}}/static/scripts/gis/examples.js"></script>
+-->
+
+<!--MapFish-->
+<script type="text/javascript">//<![CDATA[
+	var gMfLocation = "/{{=request.application}}/static/mfbase/mapfish/";
+//--></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/MapFish.min.js"></script>

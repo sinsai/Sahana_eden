@@ -64,6 +64,7 @@ class T2SAHANA(T2):
           '/sahana/static/scripts/rating.js',
           '/sahana/static/scripts/web2py.js',
         ]
+        self.debug=True
     
     # Modified version of _stamp
     # we need to support multiple tables

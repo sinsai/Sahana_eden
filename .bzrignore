@@ -5,6 +5,7 @@ sessions/*
 static/.mfexamples/*
 static/mfbase/ext/.examples/*
 static/mfbase/openlayers/.examples/*
+static/mfbase/openlayers/.tests/*
 static/*/.svn/*
 static/*test*
 errors/*

@@ -284,21 +284,21 @@ db.gis_feature_group_to_feature.feature.requires=IS_IN_DB(db,'gis_feature.uuid',
                 
 
 # GIS Keys - needed for commercial mapping services
-resource='key'
+resource='apikey' # Can't use 'key' as this has other meanings for dicts!
 table=module+'_'+resource
-single=resource.capitalize()
+single='Key'
 plural=single+'s'
 db.define_table(table,
                 SQLField('modified_on','datetime',default=now),
                 SQLField('service'),
-                SQLField('key'),
+                SQLField('apikey'),
 				SQLField('description',length=256))
-db['%s' % table].displays=['service','key','description']
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='key',action='display',display='table.service',extra='table.key')
+db['%s' % table].displays=['service','apikey','description']
+db['%s' % table].represent=lambda table:shn_list_item(table,resource='apikey',action='display',display='table.service',extra='table.apikey')
 # We want a THIS_NOT_IN_DB here:
 db['%s' % table].service.requires=IS_IN_SET(['google','multimap','yahoo']) 
-#db['%s' % table].key.requires=THIS_NOT_IN_DB(db(db['%s' % table].service==request.vars.service),'gis_key.service',request.vars.service,'service already in use')
-db['%s' % table].key.requires=IS_NOT_EMPTY()
+#db['%s' % table].apikey.requires=THIS_NOT_IN_DB(db(db['%s' % table].service==request.vars.service),'gis_apikey.service',request.vars.service,'service already in use')
+db['%s' % table].apikey.requires=IS_NOT_EMPTY()
 title_create=T('Add %s' % single)
 title_display=T('%s Details' % single)
 title_list=T('List %s' % plural)

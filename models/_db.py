@@ -29,11 +29,14 @@ t2=T2SAHANA(request,response,session,cache,T,db)
 from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
+crud_strings=Storage
 
 # Default Configuration options
-shn_settings=Storage()
-shn_settings.debug='True'
+# currently using t2.debug set in modules/sahana.py
+#shn_settings=Storage()
+#shn_settings.debug='False'
 
+module='default'
 resource='configuration'
 table=module+'_'+resource
 single=resource.capitalize()
@@ -124,7 +127,6 @@ def shn_sessions(f):
    return f()
 response._caller=lambda f: shn_sessions(f)
 
-crud_strings=Storage
 def shn_crud_strings_lookup(resource):
     "Look up CRUD strings for a given resource based on the definitions in models/module.py."
     return getattr(crud_strings,'%s' % resource)

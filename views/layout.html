@@ -4,11 +4,13 @@
 <title>{{try:}}{{=title}}{{except:}}{{pass}}</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 {{if response.refresh:}}{{=refresh}}{{pass}}
-<link href="/{{=request.application}}/static/styles/sahana.css" rel="stylesheet" type="text/css" charset="utf-8" />
-<link href="/{{=request.application}}/static/styles/t2.css" rel="stylesheet" type="text/css" charset="utf-8" />
-{{include 'web2py_ajax.html'}}
-{{include 'web2py_t2_ajax.html'}}
-{{include 'sahana_ajax.html'}}
+{{if t2.debug:}}
+  {{include 'sahana_scripts_debug.html'}}
+  {{include 'sahana_styles_debug.html'}}
+{{else:}}
+  {{include 'sahana_scripts_min.html'}}
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+{{pass}}
 </head>
 <body>
 <div id="container">

@@ -1,35 +1,12 @@
-﻿<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/sahana_gis.css" />
-
-<!-- Change to proj4js-compressed.js for Production installs -->
-<!--
-<script type="text/javascript" src="{{=request.application}}/static/proj4js/lib/proj4js.js"></script>
--->
-
-<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/mfbase/ext/resources/css/ext-all.css" />
-<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/adapter/jquery/ext-jquery-adapter.js"></script>
-<!-- Change to ext-all-debug.js for Production installs -->
-<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/ext-all.js"></script>
-<script  type="text/javascript src="/{{=request.application}}/static/scripts/examples.js"></script>
-
-<!-- Only needed when developing/testing with IE
-<script type="text/javascript" src="/{{=request.application}}/static/mfbase/openlayers/lib/Firebug/firebug.js"></script>
--->
-<!-- Included within mfbase/release/mapfish/MapFish.js for Production installs -->
-<script type="text/javascript" src="/{{=request.application}}/static/mfbase/openlayers/lib/OpenLayers.js"></script>
-
-<!-- Needed for OSM Files support, so could make optional? -->
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/osm_styles.js"></script>
-<!-- Needed for Files support, so could make optional? -->
-<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/mfbase/openlayers/theme/default/framedCloud.css" />
-
-<script type="text/javascript"><!--
-	// Because of a bug in Firefox 2 we need to specify the MapFish base path.
-	// See https://bugzilla.mozilla.org/show_bug.cgi?id=351282
-	var gMfLocation = "/{{=request.application}}/static/mfbase/mapfish/";
-//--></script>
-<!-- Change to mfbase/release/mapfish/MapFish.js for Production installs -->
-<script type="text/javascript" src="/{{=request.application}}/static/mfbase/mapfish/MapFish.js"></script>
-
+﻿{{if t2.debug:}}
+  {{include 'gis/gis_scripts_debug.html'}}
+  {{include 'gis/gis_styles_debug.html'}}
+{{else:}}
+  {{include 'gis/gis_scripts_min.html'}}
+  <!--Ext Stylesheet would need it's images moving if compressed up & relocated-->
+  <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/mfbase/ext/resources/css/ext-all.css" />
+  <link href="/{{=request.application}}/static/styles/gis/gis.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+{{pass}}
 
 
 {{if projection=="900913":}}

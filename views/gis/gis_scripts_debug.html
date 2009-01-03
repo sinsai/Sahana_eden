@@ -1,0 +1,28 @@
+<!--When in Debug mode we want each script to download separately & to use the uncompressed versions-->
+
+<!--Proj4js
+<script type="text/javascript" src="{{=request.application}}/static/proj4js/lib/proj4js.js"></script>
+-->
+
+<!--Ext-->
+<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/adapter/jquery/ext-jquery-adapter.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/ext-all-debug.js"></script>
+<!--
+<script  type="text/javascript src="/{{=request.application}}/static/scripts/gis/examples.js"></script>
+-->
+
+<!--OpenLayers-->
+<!-- Only needed when developing/testing with IE
+<script type="text/javascript" src="/{{=request.application}}/static/mfbase/openlayers/lib/Firebug/firebug.js"></script>
+-->
+<script type="text/javascript" src="/{{=request.application}}/static/mfbase/openlayers/lib/OpenLayers.js"></script>
+<!-- Needed for OSM Files support-->
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/osm_styles.js"></script>
+
+<!--MapFish-->
+<script type="text/javascript">//<![CDATA[
+	// Because of a bug in Firefox 2 we need to specify the MapFish base path.
+	// See https://bugzilla.mozilla.org/show_bug.cgi?id=351282
+	var gMfLocation = "/{{=request.application}}/static/mfbase/mapfish/";
+//--></script>
+<script type="text/javascript" src="/{{=request.application}}/static/mfbase/mapfish/MapFish.js"></script>

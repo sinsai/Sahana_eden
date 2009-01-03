@@ -1,6 +1,6 @@
 {{extend 'layout.html'}}
 
-<script src="{{=URL(r=request,c='static',f='scripts/gis_layers.js')}}" type="text/javascript" charset="utf-8"></script>
+<script src="/{{=request.application}}/static/scripts/gis/gis_layers.js" type="text/javascript" charset="utf-8"></script>
 
 {{try:}}
  {{=H2(title)}}
@@ -45,11 +45,7 @@ value="{{=row}}">{{=row}}</option>
 <!-- FIXME: Allow non-JS browsers to be able to load subtypes list manually -->
 <noscript><input type="submit" name="action" value="Load Subtypes" /></noscript>
 {{if form.errors.subtype:}}<div class="error">{{=form.errors.subtype}}</div>{{pass}}</td></tr>
-<!-- Key field required for Google, Multimap & Yahoo layers -->
-<tr id="key"><td><label>{{=T("Key")}}</label></td>
-<td><input name="key" type="text" size=108 value="{{=key}}" />
-<span class='req'>*</span>
-{{if form.errors.key:}}<div class="error">{{=form.errors.key}}</div>{{pass}}</td></tr>
+{{include 'gis/form_apikey.html'}}
 <!-- Feature Group field required for Internal Features layers -->
 <tr id="feature_group"><td><label>{{=T("Feature Group")}}</label></td>
 <td><select name="feature_group" type="select">

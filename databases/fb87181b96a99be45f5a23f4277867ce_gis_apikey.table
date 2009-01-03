@@ -1,17 +1,17 @@
 (dp1
-S'description'
+S'apikey'
 p2
-S'CHAR(256)'
+S'CHAR(32)'
 p3
-sS'author'
+sS'description'
 p4
-S'REFERENCES user(id) ON DELETE CASCADE'
+S'CHAR(256)'
 p5
-sS'name'
+sS'service'
 p6
 S'CHAR(32)'
 p7
-sS'features'
+sS'key'
 p8
 S'CHAR(32)'
 p9
@@ -23,8 +23,4 @@ sS'id'
 p12
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p13
-sS'uuid'
-p14
-S'CHAR(64)'
-p15
 s.

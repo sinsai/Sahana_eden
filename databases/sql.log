@@ -1434,3 +1434,15 @@ CREATE TABLE table(
 	contact CHAR(64),
 	location CHAR(64)
 );
+timestamp: 2009-01-03T20:26:01.656000
+CREATE TABLE gis_apikey(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	service CHAR(32),
+	key CHAR(32),
+	description CHAR(256)
+);
+success!
+timestamp: 2009-01-03T20:41:07.109000
+ALTER TABLE gis_apikey ADD apikey CHAR(32);
+success!

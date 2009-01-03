@@ -11,12 +11,12 @@ sS'uuid'
 p6
 S'CHAR(64)'
 p7
-sS'name'
-p8
-S'CHAR(32)'
-p9
 sS'id'
-p10
+p8
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p9
+sS'name'
+p10
+S'CHAR(32)'
 p11
 s.

@@ -20,12 +20,6 @@ def profile(): t2.profile()
 # S3 framework functions
 def index():
     "Module's Home Page"
-    # Tab list at top-right
-    #app=request.application
-    #response.menu=[
-    #  [T('Home'),request.function=='index','/%s/default/index'%app],
-    #  [T('Admin'),request.function=='index','/%s/default/admin'%app]]
-    
     response.title=T('Sahana FOSS Disaster Management System')
     return dict(module_name=module_name,modules=modules,options=options)
 def open_module():
@@ -43,11 +37,12 @@ def open_option():
     if not len(options):
         redirect(URL(r=request,f='index'))
     option=options[0].function
-    #option=options[0].name
-    #_option=option.replace(' ','_')
-    #option=_option.lower()
     redirect(URL(r=request,f=option))
+def configuration():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'configuration')
 
+    
 # About Sahana
 def apath(path=''):
     import os

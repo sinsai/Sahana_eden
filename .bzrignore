@@ -1,7 +1,7 @@
 databases/sqlite3.exe
 errors/*
 sessions/*
-.raw_sahana/*
+.raw/*
 static/.mfexamples/*
 static/mfbase/ext/.examples/*
 static/mfbase/openlayers/.examples/*

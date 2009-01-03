@@ -3,7 +3,7 @@ Sahana - Default Theme - Stylesheet
 -----------------------------------------------------------------------------------
 designer : Prabhath Sirisena - prabhath@vesess.com - http://nidahas.com
 updated : Priyanga Fonseka  - jo@opensource.lk
-updated for sahana 3 : Fran Boon  - flavour@partyvibe.com
+updated for Sahana 3 : Fran Boon  - flavour@partyvibe.com
  
 Selectors are listed in their order of appearance in the html, where applicable.
 ---------------------------------------------------------------------------------- 
@@ -51,6 +51,11 @@ input, select, textarea { font-size: 100%; }
 .hide { display: none;  }
 .mini { font-size: 80%; }
 .wide { width:100%; }
+
+/* Input fields should give visual feedback when focussed */
+input:focus { background-color:#FFC; }
+select:focus { background-color:#FFC; }
+textarea:focus { background-color:#FFC; }
 
 /* Links should ALWAYS be unvisited */
 a { color: #039; text-decoration: underline; }
@@ -123,7 +128,9 @@ div#container { }
 			table.layout { border-collapse: collapse; width:100%; }
 			table.layout thead td { text-align:center; padding:0px; background: #555; color:#fff; font-size:100%; }
 			table.layout td { padding: 0px 0px 0 0px; border: 0px solid #ccc; }
-
+            
+            #btn-panel { padding: 3px; }
+            
     div#footer { margin: 0; padding: 10px; clear: both; color: #666; background-color: #369; border-top: #058 1px solid; }
         a.help, a:link.help { color: #fff; text-decoration: none; }
         a:hover.help { background-color: #369; text-decoration: underline; }

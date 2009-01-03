@@ -1413,3 +1413,24 @@ CREATE TABLE pr_person_to_group(
 	pr_person_group CHAR(64)
 );
 success!
+timestamp: 2009-01-03T06:28:44.625000
+CREATE TABLE default_configuration(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	debug CHAR(1)
+);
+success!
+timestamp: 2009-01-03T08:09:08
+CREATE TABLE table(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	description CHAR(256),
+	address TEXT,
+	capacity INTEGER,
+	dwellings INTEGER,
+	area CHAR(32),
+	persons_per_dwelling INTEGER,
+	contact CHAR(64),
+	location CHAR(64)
+);

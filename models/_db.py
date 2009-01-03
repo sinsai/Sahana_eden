@@ -30,6 +30,37 @@ from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
 
+# Default Configuration options
+shn_settings=Storage()
+shn_settings.debug='True'
+
+db.define_table('default_configuration',
+                SQLField('debug','boolean'))
+if not len(db().select(db.default_configuration.debug)): 
+   db.default_configuration.insert(debug=shn_settings.debug)
+single='Configuration'
+plural='Configurations'
+crud_strings_configuration=Storage(title_create=T('Add %s' % single),
+            title_display=T('%s Details' % single),
+            title_list=T('List %s' % plural),
+            title_update=T('Edit %s' % single),
+            subtitle_list=T('%s' % plural),
+            subtitle_create=T('Add New %s' % single),
+            label_list_button=T('List %s' % plural),
+            label_create_button=T('Add %s' % single),
+            msg_record_created=T('%s added' % single),
+            msg_record_modified=T('%s updated' % single),
+            msg_record_deleted=T('%s deleted' % single),
+            msg_list_empty=T('No %s currently registered' % plural))
+   
+# T3 stores in the DB like this:
+#db.define_table('default_configuration',
+#   db.Field('settings','text'))
+#if not db(db.default_configuration.id>0).count(): 
+#   db.default_configuration.insert(settings="""
+#    settings.debug=1
+#    """)
+
 #
 # Representations
 # designed to be called via table.represent to make t2.itemize() output useful
@@ -79,7 +110,7 @@ db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
 #db.dog.owner.display=lambda x: map(db(db.owner.id==id).select()[0].name,x[1:-1].split('|'))
 db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
 
-def myprocessor(f):
+def shn_sessions(f):
    "Extend session to support multiple flash classes"
    response.error=session.error
    response.confirmation=session.confirmation
@@ -88,11 +119,12 @@ def myprocessor(f):
    session.confirmation=[]
    session.warning=[]
    return f()
-response._caller=lambda f: myprocessor(f)
-   
+response._caller=lambda f: shn_sessions(f)
+
+crud_strings=Storage
 def shn_crud_strings_lookup(resource):
     "Look up CRUD strings for a given resource based on the definitions in models/module.py."
-    return eval('crud_strings_%s' % resource)
+    return getattr(crud_strings,'%s' % resource)
 
 def shn_rest_controller(module,resource):
     """
@@ -258,6 +290,14 @@ db.default_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_me
 db.default_menu_option.function.requires=IS_NOT_EMPTY()
 db.default_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.priority')]
 
+# System Config
+db.define_table('system_config',
+				SQLField('setting'),
+				SQLField('description',length=256),
+				SQLField('value'))
+# We want a THIS_NOT_IN_DB here: admin_name, admin_email, admin_tel
+db.system_config.setting.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'system_config.setting')]
+
 # Field options meta table
 # Give a custom list of options for each field in this schema 
 # prefixed with opt_. This is customizable then at deployment
@@ -271,11 +311,3 @@ db.default_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'defaul
 #db.field_option.field_name.requires=IS_NOT_EMPTY()
 #db.field_option.option_code.requires=IS_NOT_EMPTY()
 #db.field_option.option_description.requires=IS_NOT_EMPTY()
-
-# System Config
-db.define_table('system_config',
-				SQLField('setting'),
-				SQLField('description',length=256),
-				SQLField('value'))
-# We want a THIS_NOT_IN_DB here: admin_name, admin_email, admin_tel
-db.system_config.setting.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'system_config.setting')]

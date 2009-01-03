@@ -13,13 +13,21 @@ db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,
 
 
 # OR Organisation Types
-db.define_table('or_organisation_type',
+# How do we deal with syncs? Don't want dupes, yet want to be able to add local.
+# => Master refs must have same uuids?
+table='or_organisation_type'
+db.define_table(table,
 				SQLField('name'),
 				SQLField('description',length=256))
-db.or_organisation_type.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation_type.name')]
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation_type.name')]
 
 # OR Organisations
-db.define_table('or_organisation',
+resource='organisation'
+table=module+'_'+resource
+single=resource.capitalize()
+# NB May need manual fixing!
+plural=single+'s'
+db.define_table(table,
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
@@ -33,30 +41,33 @@ db.define_table('or_organisation',
                 SQLField('address','text'),
                 SQLField('contact',length=64),
                 SQLField('location',length=64))
-db.or_organisation.exposes=['name','parent','type','registration','manpower','equipment','address','contact','location']
-db.or_organisation.displays=['name','parent','type','registration','manpower','equipment','address','contact','location']
-db.or_organisation.represent=lambda table:shn_list_item(table,resource='organisation',action='display')
-db.or_organisation.name.requires=IS_NOT_EMPTY()
-db.or_organisation.name.comment=SPAN("*",_class="req")
-db.or_organisation.type.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation_type.id','or_organisation_type.name'))
-db.or_organisation.parent.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.uuid','or_organisation.name'))
-db.or_organisation.parent.display=lambda uuid: (uuid and [db(db.or_organisation.uuid==uuid).select()[0].name] or ["None"])[0]
-db.or_organisation.contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
-db.or_organisation.contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
-db.or_organisation.contact.label=T("Contact Person")
-db.or_organisation.location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
-db.or_organisation.location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]
-db.or_organisation.location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
-
-crud_strings_organisation=Storage(title_create=T('Add Organisation'),
-            title_display=T('Organisation Details'),
-            title_list=T('List Organisations'),
-            title_update=T('Edit Organisation'),
-            subtitle_list=T('Organisations'),
-            subtitle_create=T('Add New Organisation'),
-            label_list_button=T('List Organisations'),
-            label_create_button=T('Add Organisation'),
-            msg_record_created=T('Organisation added'),
-            msg_record_modified=T('Organisation updated'),
-            msg_record_deleted=T('Organisation deleted'),
-            msg_list_empty=T('No Organisations currently registered'))
+db['%s' % table].exposes=['name','parent','type','registration','manpower','equipment','address','contact','location']
+db['%s' % table].displays=['name','parent','type','registration','manpower','equipment','address','contact','location']
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+db['%s' % table].represent=lambda table:shn_list_item(table,resource='organisation',action='display')
+db['%s' % table].name.requires=IS_NOT_EMPTY()
+db['%s' % table].name.comment=SPAN("*",_class="req")
+db['%s' % table].type.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation_type.id','or_organisation_type.name'))
+db['%s' % table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.uuid','or_organisation.name'))
+db['%s' % table].parent.display=lambda uuid: (uuid and [db(db.or_organisation.uuid==uuid).select()[0].name] or ["None"])[0]
+db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
+db['%s' % table].contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
+db['%s' % table].contact.label=T("Contact Person")
+db['%s' % table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
+db['%s' % table].location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]
+db['%s' % table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
+# Slightly nicer for i18n but still not good
+#title_create=str(T('Add '))+ '%s' % single
+title_create=T('Add %s' % single)
+title_display=T('%s Details' % single)
+title_list=T('List %s' % plural)
+title_update=T('Edit %s' % single)
+subtitle_create=T('Add New %s' % single)
+subtitle_list=T('%s' % plural)
+label_list_button=T('List %s' % plural)
+label_create_button=T('Add %s' % single)
+msg_record_created=T('%s added' % single)
+msg_record_modified=T('%s updated' % single)
+msg_record_deleted=T('%s deleted' % single)
+msg_list_empty=T('No %s currently registered' % plural)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)

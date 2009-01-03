@@ -64,6 +64,8 @@ class T2SAHANA(T2):
           '/sahana/static/scripts/rating.js',
           '/sahana/static/scripts/web2py.js',
         ]
+        # Development mode => ALl JS/CSS files loaded independently
+        # NB Plan to move this elsewhere as changes require a full restart of Web2Py :/
         self.debug=True
     
     # Modified version of _stamp

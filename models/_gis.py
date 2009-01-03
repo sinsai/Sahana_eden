@@ -330,8 +330,8 @@ db.define_table(table,
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default=True))
 #eval(extra) doesn't play nicely when extra=True/False
-#db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer',action='display',extra=table.enabled)
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer',action='display')
+db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer',action='display',extra=str(table.enabled))
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer',action='display')
 db['%s' % table].name.requires=IS_NOT_EMPTY()
 db['%s' % table].type.requires=IS_IN_SET(gis_layer_types)
 db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]

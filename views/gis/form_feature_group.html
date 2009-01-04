@@ -1,0 +1,14 @@
+﻿<!-- Feature Group field required for Internal Features layers -->
+<tr id="feature_group">
+<td><label>{{=T("Feature Group")}}</label></td>
+<td><select name="feature_group" type="select">
+{{for row in options_feature_group:}}
+<option value="{{=row.uuid}}">{{=row.name}}</option>
+{{pass}}
+</select>
+<!-- FIXME: Allow non-JS browsers to be able to load feature groups list manually -->
+<noscript><input type="submit" name="action" value="Load Feature Groups" /></noscript>
+{{if customform.errors.feature_group:}}
+  <div class="error" id="feature_group__error">{{=customform.errors.feature_group}}</div>
+{{pass}}
+</td></tr>

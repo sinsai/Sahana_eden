@@ -1,9 +1,9 @@
 ﻿<!-- Key field required for Google, Multimap & Yahoo layers -->
 <tr id="apikey">
 <td><label>{{=T("Key")}}</label></td>
-<td><input name="apikey" type="text" size=108 value="{{=apikey}}" />
+<td><input name="apikey" type="text" size=108 value="{{try:}}{{=apikey}}{{except:}}{{pass}}" />
 <span class='req'>*</span>
-{{if form.errors.apikey:}}
-    <div class="error">{{=form.errors.apikey}}</div>
+{{if customform.errors.apikey:}}
+    <div class="error" id="apikey__error">{{=customform.errors.apikey}}</div>
 {{pass}}
 </td></tr>

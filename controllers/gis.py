@@ -214,54 +214,135 @@ def update_feature_group():
 # Anonymous users can Read
 # Authentication required for Create/Update/Delete
 def layer():
-    table=db.gis_layer
-    if request.args:
-        method=request.args[0]
-        try:
-            # 1st argument is ID not method => display
-            id = int(method)
-            # We want more control than T2 allows us (& we also want proper MVC separation)
-            # - multiple tables
-            # - names not numbers for type/subtype
-            layer=db(table.id==t2.id).select()[0]
-            type=layer.type
-            if type=="openstreetmap":
-                subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-                apikey=0
-            elif type=="google":
-                subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-                apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
-            elif type=="virtualearth":
-                subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-                apikey=0
-            elif type=="yahoo":
-                subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-                apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
+    resource='layer'
+    table=db['%s_%s' % (module,resource)]
+    crud_strings=shn_crud_strings_lookup(resource)
+    
+    # Which representation should output be in?
+    if request.vars.format:
+        representation=str.lower(request.vars.format)
+    else:
+        # Default to HTML
+        representation="html"
+    
+    if len(request.args)==0:
+        # No arguments => default to list (or list_create if logged_in)
+        if representation=="html":
+            if t2.logged_in:
+                # Create Form before List to allow List to refresh after submission
+                # Need to handle Multiple Tables, so go down a level of abstraction from T2
+                # Function split-out to make code more readable & reusable (DRY)
+                output=shn_gis_create_layer()
+            list=t2.itemize(table)
+            if list=="No data":
+                list=crud_strings.msg_list_empty
+            if isinstance(list,TABLE):
+                list.insert(0,TR('',B('Enabled?'))) 
+            title=crud_strings.title_list
+            subtitle=crud_strings.subtitle_list
+            if t2.logged_in:
+                # Add a little extra context for the Form created earlier
+                response.view='gis/list_create_layer.html'
+                addtitle=crud_strings.subtitle_create
+                output.update(dict(list=list,title=title,subtitle=subtitle,addtitle=addtitle))
+                return output
             else:
-                subtype=0
-                apikey=0
-            response.view='gis/display_layer.html'
-            title=T('Layer Details')
-            edit=A(T("Edit"),_href=t2.action('layer',['update',t2.id]))
-            list_btn=A(T("List Layers"),_href=t2.action('layer'))
-            return dict(module_name=module_name,modules=modules,options=options,title=title,edit=edit,list_btn=list_btn,layer=layer,type=type,subtype=subtype,apikey=apikey)
-        except:
+                add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'))
+                response.view='list.html'
+                return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+        elif representation=="plain":
+            list=t2.itemize(table)
+            response.view='plain.html'
+            return dict(item=list)
+        elif representation=="json":
+            # ToDo supplementary tables
+            list=db().select(table.ALL).json()
+            response.view='plain.html'
+            return dict(item=list)
+        else:
+            session.error=T("Unsupported format!")
+            redirect(URL(r=request,f=resource))
+    else:
+        method=str.lower(request.args[0])
+        if request.args[0].isdigit():
+            # 1st argument is ID not method => display.
+            if representation=="html":
+                # We want more control than T2 allows us (& we also want proper MVC separation)
+                # - multiple tables
+                # - names not numbers for type/subtype
+                resource=db(table.id==t2.id).select()[0]
+                type=resource.type
+                if type=="openstreetmap":
+                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+                    apikey=0
+                elif type=="google":
+                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+                    apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
+                elif type=="virtualearth":
+                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+                    apikey=0
+                elif type=="yahoo":
+                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+                    apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
+                else:
+                    subtype=0
+                    apikey=0
+
+                response.view='gis/display_layer.html'
+                title=crud_strings.title_display
+                edit=A(T("Edit"),_href=t2.action('layer',['update',t2.id]))
+                delete=A(T("Delete"),_href=t2.action('layer',['delete',t2.id]))
+                list_btn=A(crud_strings.label_list_button,_href=t2.action('layer'))
+                return dict(module_name=module_name,modules=modules,options=options,title=title,edit=edit,delete=delete,list_btn=list_btn,resource=resource,type=type,subtype=subtype,apikey=apikey)
+            #ToDo
+            #elif representation=="plain":
+            elif representation=="json":
+                # ToDo supplementary tables
+                item=db(table.id==t2.id).select(table.ALL).json()
+                response.view='plain.html'
+                return dict(item=item)
+            else:
+                session.error=T("Unsupported format!")
+                redirect(URL(r=request,f=resource))
+        else:
             if method=="create":
                 if t2.logged_in:
-                    # Need to handle Multiple Tables, so go down a level of abstraction from T2
-                    # Function split-out to make code more readable & reusable (DRY)
-                    return shn_gis_create_layer()
+                    if representation=="html":
+                        # Need to handle Multiple Tables, so go down a level of abstraction from T2
+                        # Function split-out to make code more readable & reusable (DRY)
+                        return shn_gis_create_layer()
+                    # ToDo
+                    #elif representation=="plain":
+                    elif representation=="json":
+                        # ToDo
+                        item='{"Status":"failed","Error":{"StatusCode":501,"Message":"JSON creates not yet supported!"}}'
+                        response.view='plain.html'
+                        return dict(item=item)
+                    else:
+                        session.error=T("Unsupported format!")
+                        redirect(URL(r=request,f=resource))
                 else:
-                    t2.redirect('login',vars={'_destination':'layer/create'})
+                    t2.redirect('login',vars={'_destination':'%s/create' % resource})
             elif method=="display":
-                t2.redirect('layer',args=t2.id)
+                t2.redirect(resource,args=t2.id)
             elif method=="update":
                 if t2.logged_in:
-                    # Need to handle Multiple Tables, so go down a level of abstraction from T2
-                    # Function split-out to make code more readable
-                    return shn_gis_update_layer()
+                    if representation=="html":
+                        # Need to handle Multiple Tables, so go down a level of abstraction from T2
+                        # Function split-out to make code more readable
+                        return shn_gis_update_layer()
+                    # ToDo
+                    #elif representation=="plain":
+                    elif representation=="json":
+                        # ToDo
+                        item='{"Status":"failed","Error":{"StatusCode":501,"Message":"JSON updates not yet supported!"}}'
+                        response.view='plain.html'
+                        return dict(item=item)
+                    else:
+                        session.error=T("Unsupported format!")
+                        redirect(URL(r=request,f=resource))
                 else:
-                    t2.redirect('login',vars={'_destination':'layer/update/%i' % t2.id})
+                    t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
             elif method=="delete":
                 if t2.logged_in:
                     # Need to handle Multiple Tables, so go down a level of abstraction from T2
@@ -275,37 +356,13 @@ def layer():
                     
                     # Delete Master Record
                     db(table.id==t2.id).delete()
-                    
-                    t2.redirect('layer',flash=T("Layer deleted"))
+                    t2.redirect(resource,flash=crud_strings.msg_record_deleted)
                 else:
-                    t2.redirect('login',vars={'_destination':'layer/delete/%i' % t2.id})
+                    t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
             else:
-                # Invalid!
-                return
-    else:
-        # No arguments => default to list (or list_create if logged_in)
-        if t2.logged_in:
-            # Create Form before List to allow List to refresh after submission
-            # Need to handle Multiple Tables, so go down a level of abstraction from T2
-            # Function split-out to make code more readable & reusable (DRY)
-            output=shn_gis_create_layer()
-        list=t2.itemize(table)
-        if list=="No data":
-            list="No Layers currently defined."
-        if isinstance(list,TABLE):
-            list.insert(0,TR('',B('Enabled?'))) 
-        title=T('List Layers')
-        subtitle=T('Layers')
-        if t2.logged_in:
-            # Add a little extra context for the Form created earlier
-            response.view='gis/list_create_layer.html'
-            addtitle=T('Add New Layer')
-            output.update(dict(list=list,title=title,subtitle=subtitle,addtitle=addtitle))
-            return output
-        else:
-            response.view='list.html'
-            add_btn=A(T("Add Layer"),_href=t2.action('layer','create'))
-            return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+                session.error=T("Unsupported method!")
+                redirect(URL(r=request,f=resource))
+
 
 @t2.requires_login('login')
 def shn_gis_create_layer():
@@ -336,86 +393,87 @@ def shn_gis_create_layer():
     # HTML is built manually in the view...this provides a hook for processing
     # we need to add validation here because this form doesn't know about the database
     # (We could make the main table a SQLFORM to be auto-validating & auto-processing leaving us to just do other tables manually)
-    form=FORM(INPUT(_name="name",requires=IS_NOT_EMPTY()),
+    customform=FORM(INPUT(_name="name",requires=IS_NOT_EMPTY()),
             INPUT(_name="description"),
             SELECT(_name="type",requires=IS_NOT_EMPTY()),
             #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % type].ALL)])
             SELECT(_name="subtype"),
-            INPUT(_name="apikey",requires=IS_NOT_EMPTY()),
+            #INPUT(_name="apikey",requires=IS_NOT_EMPTY()),
+            INPUT(_name="apikey"),
             SELECT(_name="feature_group"),
             INPUT(_name="priority",requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]),
             INPUT(_name="enabled"),
             INPUT(_type="submit"))
 
     # Process form
-    if form.accepts(request.vars,session,keepvalues=True):
-        if form.vars.enabled=="on":
+    if customform.accepts(request.vars,session,keepvalues=True):
+        if customform.vars.enabled=="on":
             enabled=True
         else:
             enabled=False
         # Insert Master Record
         id=db.gis_layer.insert(
             uuid=uuid.uuid4(),
-            name=form.vars.name,
-            description=form.vars.description,
-            type=form.vars.type,
-            priority=form.vars.priority,
+            name=customform.vars.name,
+            description=customform.vars.description,
+            type=customform.vars.type,
+            priority=customform.vars.priority,
             enabled=enabled
         )
-        type_new=form.vars.type
+        type_new=customform.vars.type
         # Insert Sub-Record(s):
         if type_new=="openstreetmap":
             db['gis_layer_%s' % type_new].insert(
                 layer=id,
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
         elif type_new=="google":
             db['gis_layer_%s' % type_new].insert(
                 layer=id,
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
             # Check to see whether a Key already exists for this service
             if len(db(db.gis_apikey.service==type_new).select()):
                 # Update
                 db(db.gis_apikey.service==type_new).select()[0].update_record(
-                    apikey=form.vars.apikey
+                    apikey=customform.vars.apikey
                 )
             else:
                 # Insert
                 db.gis_apikey.insert(
                     service=type_new,
-                    apikey=form.vars.apikey
+                    apikey=customform.vars.apikey
                 )
         elif type_new=="virtualearth":
             db['gis_layer_%s' % type_new].insert(
                 layer=id,
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
         elif type_new=="yahoo":
             db['gis_layer_%s' % type_new].insert(
                 layer=id,
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
             # Check to see whether a Key already exists for this service
             if len(db(db.gis_apikey.service==type_new).select()):
                 # Update
                 db(db.gis_apikey.service==type_new).select()[0].update_record(
-                    apikey=form.vars.apikey
+                    apikey=customform.vars.apikey
                 )
             else:
                 # Insert
                 db.gis_apikey.insert(
                     service=type_new,
-                    apikey=form.vars.apikey
+                    apikey=customform.vars.apikey
                 )
         elif type_new=="features":
             db['gis_layer_%s' % type_new].insert(
                 layer=id,
-                feature_group=form.vars.feature_group
+                feature_group=customform.vars.feature_group
             )
         # Notify user :)
         response.confirmation=T("Layer updated")
-    elif form.errors: 
+    elif customform.errors: 
         response.error=T("Form is invalid")
     else: 
         response.notification=T("Please fill the form")
@@ -430,7 +488,7 @@ def shn_gis_create_layer():
     response.view='gis/create_layer.html'
     title=T('Add Layer')
     list_btn=A(T("List Layers"),_href=t2.action('layer'))
-    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn,type=type,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group)
+    return dict(module_name=module_name,modules=modules,options=options,customform=customform,title=title,list_btn=list_btn,type=type,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group)
 
 
 @t2.requires_login('login')
@@ -448,10 +506,10 @@ def shn_gis_update_layer():
     apikey=0
 
     # Get a pointer to the Layer record (for getting default values out & saving updated values back)
-    layer=db(db.gis_layer.id==t2.id).select()[0]
+    resource=db(db.gis_layer.id==t2.id).select()[0]
     
     # Pull out current settings to pre-populate form with
-    type=layer.type
+    type=resource.type
     if type=="openstreetmap":
         subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
         # Need here as well as gis_layers.js to populate the initial 'selected'
@@ -480,7 +538,7 @@ def shn_gis_update_layer():
     options_used = db().select(db.gis_layer.priority)
     for row in options_used:
         options_priority.remove(row.priority)
-    priority=layer.priority
+    priority=resource.priority
     options_priority.insert(0,priority)
     
     # Build form
@@ -489,7 +547,7 @@ def shn_gis_update_layer():
     # HTML is built manually in the view...this provides a hook for processing
     # we need to add validation here because this form doesn't know about the database
     # (We could make the main table a SQLFORM to be auto-validating & auto-processing leaving us to just do other tables manually)
-    form=FORM(INPUT(_name="id",requires=IS_NOT_EMPTY()),
+    customform=FORM(INPUT(_name="id",requires=IS_NOT_EMPTY()),
             INPUT(_name="modified_on"),
             INPUT(_name="name",requires=IS_NOT_EMPTY()),
             INPUT(_name="description"),
@@ -506,57 +564,57 @@ def shn_gis_update_layer():
     
     # use T2 for conflict detection
     # This mod needs testing!
-    t2._stamp_many([db.gis_layer,db['gis_layer_%s' % type]],form)
-    hidden={'modified_on__original':str(layer.get('modified_on',None))}
+    t2._stamp_many([db.gis_layer,db['gis_layer_%s' % type]],customform)
+    hidden={'modified_on__original':str(resource.get('modified_on',None))}
     if request.vars.modified_on__original and request.vars.modified_on__original!=hidden['modified_on__original']:
             session.flash=self.messages.record_was_altered
             redirect(self.action(args=request.args))
     
     # Process form
-    if form.accepts(request.vars,session,keepvalues=True):
-        if form.vars.enabled=="on":
+    if customform.accepts(request.vars,session,keepvalues=True):
+        if customform.vars.enabled=="on":
             enabled=True
         else:
             enabled=False
         # Update Master Record
-        layer.update_record(
-            name=form.vars.name,
-            description=form.vars.description,
-            type=form.vars.type,
-            priority=form.vars.priority,
+        resource.update_record(
+            name=customform.vars.name,
+            description=customform.vars.description,
+            type=customform.vars.type,
+            priority=customform.vars.priority,
             enabled=enabled
         )
-        type_new=form.vars.type
+        type_new=customform.vars.type
         # Update Sub-Record(s):
         if type_new=="openstreetmap":
             db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
         elif type_new=="google":
             db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
             db(db.gis_apikey.service==type_new).select()[0].update_record(
-                apikey=form.vars.apikey
+                apikey=customform.vars.apikey
             )
         elif type_new=="virtualearth":
             db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
         elif type_new=="yahoo":
             db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
-                type=form.vars.subtype
+                type=customform.vars.subtype
             )
             db(db.gis_apikey.service==type_new).select()[0].update_record(
-                apikey=form.vars.apikey
+                apikey=customform.vars.apikey
             )
         elif type_new=="features":
             db(db['gis_layer_%s' % type_new].layer==t2.id).select()[0].update_record(
-                feature_group=form.vars.feature_group
+                feature_group=customform.vars.feature_group
             )
         # Notify user :)
         response.confirmation=T("Layer updated")
-    elif form.errors: 
+    elif customform.errors: 
         response.error=T("Form is invalid")
     else: 
         response.notification=T("Please fill the form")
@@ -564,7 +622,7 @@ def shn_gis_update_layer():
     response.view='gis/update_layer.html'
     title=T('Edit Layer')
     list_btn=A(T("List Layers"),_href=t2.action('layer'))
-    return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn,layer=layer,type=type,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group,feature_group=feature_group)
+    return dict(module_name=module_name,modules=modules,options=options,customform=customform,title=title,list_btn=list_btn,resource=resource,type=type,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group,feature_group=feature_group)
 
 def map_service_catalogue():
     """Map Service Catalogue.
@@ -619,7 +677,7 @@ def map_viewing_client():
         if len(_google_key):
             google_key=_google_key[0].apikey
         else:
-            response.flash=T('Please enter a Google Key if you wish to use Google Layers')
+            response.warning=T('Please enter a Google Key if you wish to use Google Layers')
             google=0
             # Redirect to Key entry screen?
 
@@ -641,7 +699,7 @@ def map_viewing_client():
         if len(_yahoo_key):
             yahoo_key=_yahoo_key[0].apikey
         else:
-            response.flash=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
+            response.warning=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
             yahoo=0
             # Redirect to Key entry screen?
 

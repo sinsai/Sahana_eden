@@ -1,37 +1,29 @@
-{{extend 'layout.html'}}
+{{extend 'display.html'}}
 
-{{try:}}
- {{=H2(title)}}
-{{except:}}
-{{pass}}
-{{try:}}
- {{=edit}}
-{{except:}}
-{{pass}}
-<div class='item-container'>
-    <div class="t2-display">
-    <table>
+<div class="t2-display">
+  <table>
+  
     <tr><td><label>{{=T("Name")}}</label></td>
-    <td>{{=layer.name}}</td></tr>
+    <td>{{=resource.name}}</td></tr>
+    
     <tr><td><label>{{=T("Description")}}</label></td>
-    <td>{{=T(layer.description)}}</td></tr>
+    <td>{{=T(resource.description)}}</td></tr>
+    
     <tr><td><label>{{=T("Type")}}</label></td>
     <td>{{=type}}</td></tr>
+    
     {{if subtype != 0:}}
-    <tr><td><label>{{=T("SubType")}}</label></td>
-    <td>{{=subtype}}</td></tr>
+      <tr><td><label>{{=T("SubType")}}</label></td>
+      <td>{{=subtype}}</td></tr>
     {{pass}}
-    {{if key != 0:}}
-    <tr><td><label>{{=T("Key")}}</label></td>
-    <td>{{=key}}</td></tr>
+    
+    {{if apikey != 0:}}
+      <tr><td><label>{{=T("Key")}}</label></td>
+      <td>{{=apikey}}</td></tr>
     {{pass}}
+    
     <tr><td><label>{{=T("Enabled")}}</label></td>
-    <td>{{=layer.enabled}}</td></tr>
-    </table>
-    </div>
+    <td>{{=resource.enabled}}</td></tr>
+    
+  </table>
 </div>
-<p>&nbsp;</p>
-{{try:}}
- {{=list_btn}}
-{{except:}}
-{{pass}}

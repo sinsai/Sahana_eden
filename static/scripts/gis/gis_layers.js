@@ -1,6 +1,6 @@
 ﻿//<![CDATA[
 // Used in GIS:
-// map_service_catalogue.html, update_layer.html
+// map_service_catalogue.html, create_layer.html, update_layer.html
 $(function() {
     // What is the initial type?
     var type = $("select[@name=type]").val();

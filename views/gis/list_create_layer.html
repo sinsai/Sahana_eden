@@ -28,79 +28,31 @@
 <div class='form-container'>
 
 
-<div class="label">
 <form action="" enctype="multipart/form-data" method="post">
-<table>
-<tr><td><label>{{=T("Name")}}</label></td>
-<td><input name="name" type="text" value="" />
-<span class='req'>*</span>
-{{if form.errors.name:}}<div class="error">{{=form.errors.name}}</div>{{pass}}</td></tr>
-<tr><td><label>{{=T("Description")}}</label></td>
-<td><input name="description" type="text" value="" />
-{{if form.errors.description:}}<div class="error">{{=form.errors.description}}</div>{{pass}}</td></tr>
-<tr><td><label>{{=T("Type")}}</label></td>
-<td><select name="type" type="select">
-{{for row in options_type:}}
-<option
-{{if row==type:}}
-selected="selected"
-{{pass}}
-value="{{=row}}">{{=row}}</option>
-{{pass}}
-</select>
-{{if form.errors.type:}}<div class="error">{{=form.errors.type}}</div>{{pass}}</td></tr>
-<!-- Subtype field required for OpenStreetMap, Google, VirtualEarth & Yahoo layers -->
-<tr id="subtype"><td><label>{{=T("SubType")}}</label></td>
-<td><select name="subtype" type="select">
-{{for row in options_subtype:}}
-<option
-{{if row==subtype:}}
-selected="selected"
-{{pass}}
-value="{{=row}}">{{=row}}</option>
-{{pass}}
-</select>
-<!-- FIXME: Allow non-JS browsers to be able to load subtypes list manually -->
-<noscript><input type="submit" name="action" value="Load Subtypes" /></noscript>
-{{if form.errors.subtype:}}<div class="error">{{=form.errors.subtype}}</div>{{pass}}</td></tr>
-{{include 'gis/form_apikey.html'}}
-<!-- Feature Group field required for Internal Features layers -->
-<tr id="feature_group"><td><label>{{=T("Feature Group")}}</label></td>
-<td><select name="feature_group" type="select">
-{{for row in options_feature_group:}}
-<option value="{{=row.uuid}}">{{=row.name}}</option>
-{{pass}}
-</select>
-<!-- FIXME: Allow non-JS browsers to be able to load feature groups list manually -->
-<noscript><input type="submit" name="action" value="Load Feature Groups" /></noscript>
-{{if form.errors.feature_group:}}<div class="error">{{=form.errors.feature_group}}</div>{{pass}}</td></tr>
-<tr><td><label>{{=T("Enabled")}}</label></td>
-<td><input name="enabled" type="checkbox" checked="checked" value="on" /></td></tr>
-<tr><td><label>{{=T("Priority")}}</label></td>
-<td><select name="priority" type="select">
-{{for row in options_priority:}}
-<option value="{{=row}}">{{=row}}</option>
-{{pass}}
-</select>{{if form.errors.priority:}}<div class="error">{{=form.errors.priority}}</div>{{pass}}</td></tr>
-<tr><td></td>
-<td><input type="submit" value="{{=T("Save")}}" /></td></tr>
-</table>
-<!-- Gather all errors (some may not be associated with visible fields) -->
-{{if form.errors:}}
-<div class="error">
-{{for error in form.errors:}}
-Error in field:
-{{=error}}
-<br>
-Detail:
-{{=eval('form.errors.%s' % error)}}
-<br>
-{{pass}}
-</div>
-{{pass}}
-{{=form.hidden_fields()}}
+  <table>
+    {{include 'form_name.html'}}
+    {{include 'form_description.html'}}
+    {{include 'gis/form_type.html'}}
+    {{include 'gis/form_subtype.html'}}
+    {{include 'gis/form_apikey.html'}}
+    {{include 'gis/form_feature_group.html'}}
+    {{include 'form_enabled.html'}}
+    {{include 'form_priority.html'}}
+    <tr><td></td><td><input type="submit" value="{{=T('Save')}}" /></td></tr>
+  </table>
+  {{=customform.hidden_fields()}}
+  <!-- Gather all errors (some may not be associated with visible fields) -->
+  {{if customform.errors:}}
+    <div class="error">
+    {{for error in customform.errors:}}
+        Error in field: {{=error}}
+        <br>
+        Detail: {{=eval('customform.errors.%s' % error)}}
+        <br>
+    {{pass}}
+    </div>
+  {{pass}}
 </form>
-</div>
 
 
 </div>

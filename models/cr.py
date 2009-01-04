@@ -24,10 +24,10 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('description',length=256),
                 SQLField('address','text'),
-                SQLField('capacity','integer',default=0),
-                SQLField('dwellings','integer',default=0),
+                SQLField('capacity','integer'),
+                SQLField('dwellings','integer'),
+                SQLField('persons_per_dwelling','integer'),
                 SQLField('area'),
-                SQLField('persons_per_dwelling','integer',default=0),
                 SQLField('contact',length=64),
                 SQLField('location',length=64))
 db['%s' % table].exposes=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']
@@ -37,6 +37,9 @@ db['%s' % table].represent=lambda table:shn_list_item(table,resource='shelter',a
 db['%s' % table].name.requires=IS_NOT_EMPTY()
 db['%s' % table].name.label=T("Shelter Name")
 db['%s' % table].name.comment=SPAN("*",_class="req")
+db['%s' % table].capacity.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999999))
+db['%s' % table].dwellings.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
+db['%s' % table].persons_per_dwelling.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999))
 db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
 db['%s' % table].contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
 db['%s' % table].contact.label=T("Contact Person")

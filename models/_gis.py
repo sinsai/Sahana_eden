@@ -286,8 +286,6 @@ db.gis_feature_group_to_feature.feature.requires=IS_IN_DB(db,'gis_feature.uuid',
 # GIS Keys - needed for commercial mapping services
 resource='apikey' # Can't use 'key' as this has other meanings for dicts!
 table=module+'_'+resource
-single='Key'
-plural=single+'s'
 db.define_table(table,
                 SQLField('modified_on','datetime',default=now),
                 SQLField('service'),
@@ -299,20 +297,20 @@ db['%s' % table].represent=lambda table:shn_list_item(table,resource='apikey',ac
 db['%s' % table].service.requires=IS_IN_SET(['google','multimap','yahoo']) 
 #db['%s' % table].apikey.requires=THIS_NOT_IN_DB(db(db['%s' % table].service==request.vars.service),'gis_apikey.service',request.vars.service,'service already in use')
 db['%s' % table].apikey.requires=IS_NOT_EMPTY()
-title_create=T('Add %s' % single)
-title_display=T('%s Details' % single)
-title_list=T('List %s' % plural)
-title_update=T('Edit %s' % single)
-subtitle_create=T('Add New %s' % single)
-subtitle_list=T('%s' % plural)
-label_list_button=T('List %s' % plural)
-label_create_button=T('Add %s' % single)
-msg_record_created=T('%s added' % single)
-msg_record_modified=T('%s updated' % single)
-msg_record_deleted=T('%s deleted' % single)
-msg_list_empty=T('No %s currently defined' % plural)
+db['%s' % table].apikey.label=T("Key")
+title_create=T('Add Key')
+title_display=T('Key Details')
+title_list=T('List Keys')
+title_update=T('Edit Key')
+subtitle_create=T('Add New Key')
+subtitle_list=T('Keys')
+label_list_button=T('List Keys')
+label_create_button=T('Add Key')
+msg_record_created=T('Key added')
+msg_record_modified=T('Key updated')
+msg_record_deleted=T('Key deleted')
+msg_list_empty=T('No Keys currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
-
             
 # GIS Layers
 resource='layer'

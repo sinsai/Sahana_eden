@@ -1,0 +1,15 @@
+﻿<tr id="type">
+<td><label>{{=T("Type")}}</label></td>
+<td><select name="type" type="select">
+{{for row in options_type:}}
+<option
+{{if row==type:}}
+selected="selected"
+{{pass}}
+value="{{=row}}">{{=row}}</option>
+{{pass}}
+</select>
+{{if customform.errors.type:}}
+  <div class="error" id="type__error">{{=customform.errors.type}}</div>
+{{pass}}
+</td></tr>

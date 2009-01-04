@@ -1446,3 +1446,21 @@ success!
 timestamp: 2009-01-03T20:41:07.109000
 ALTER TABLE gis_apikey ADD apikey CHAR(32);
 success!
+timestamp: 2009-01-04T17:26:37.687000
+CREATE TABLE test(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name CHAR(32)
+);
+success!
+timestamp: 2009-01-04T17:27:55.687000
+CREATE TABLE test2(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name2 CHAR(32)
+);
+success!
+timestamp: 2009-01-04T17:31:17.734000
+CREATE TABLE apikey(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	apikey CHAR(32)
+);
+success!

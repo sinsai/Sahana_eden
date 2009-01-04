@@ -29,7 +29,7 @@ t2=T2SAHANA(request,response,session,cache,T,db)
 from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
-crud_strings=Storage
+crud_strings=Storage()
 
 # Default Configuration options
 # currently using t2.debug set in modules/sahana.py
@@ -201,8 +201,9 @@ def shn_rest_controller(module,resource):
                 response.view='display.html'
                 title=crud_strings.title_display
                 edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
+                delete=A(T("Delete"),_href=t2.action(resource,['delete',t2.id]))
                 list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
-                return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,list_btn=list_btn)
+                return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,delete=delete,list_btn=list_btn)
             elif representation=="plain":
                 item=t2.display(table)
                 response.view='plain.html'
@@ -244,13 +245,13 @@ def shn_rest_controller(module,resource):
                 if t2.logged_in:
                     if representation=="html":
                         t2.messages.record_modified=crud_strings.msg_record_modified
-                        form=t2.update(table)
+                        form=t2.update(table,deletable=False)
                         response.view='update.html'
                         title=crud_strings.title_update
                         list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
-                        form=t2.update(table)
+                        form=t2.update(table,deletable=False)
                         response.view='plain.html'
                         return dict(item=form)
                     elif representation=="json":

@@ -1,0 +1,18 @@
+﻿<!-- Subtype field required for OpenStreetMap, Google, VirtualEarth & Yahoo layers -->
+<tr id="subtype">
+<td><label>{{=T("SubType")}}</label></td>
+<td><select name="subtype" type="select">
+{{for row in options_subtype:}}
+<option
+{{if row==subtype:}}
+selected="selected"
+{{pass}}
+value="{{=row}}">{{=row}}</option>
+{{pass}}
+</select>
+<!-- FIXME: Allow non-JS browsers to be able to load subtypes list manually -->
+<noscript><input type="submit" name="action" value="Load Subtypes" /></noscript>
+{{if customform.errors.subtype:}}
+  <div class="error" id="subtype__error">{{=customform.errors.subtype}}</div>
+{{pass}}
+</td></tr>

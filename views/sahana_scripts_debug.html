@@ -43,5 +43,8 @@ $(document).ready(function() {
 $('input.delete_row').click(function(){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
     $.ajax({ url: "{{=URL2(r=request)}}/"+$(this).attr("name")+"/"+$(this).attr("id"),  cache: false,  success: function(html){ $("div#list-container").html(html); }});
     return false; });
+$('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
+    { event.default(); } else { event.preventDefault(); }
+    return false; });
 });
 //]]></script>

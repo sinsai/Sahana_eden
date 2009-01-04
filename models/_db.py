@@ -176,7 +176,7 @@ def shn_rest_controller(module,resource):
                 addtitle=crud_strings.subtitle_create
                 return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
-                add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'))
+                add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
                 response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="plain":
@@ -198,9 +198,9 @@ def shn_rest_controller(module,resource):
                 item=t2.display(table)
                 response.view='display.html'
                 title=crud_strings.title_display
-                edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]))
-                delete=A(T("Delete"),_href=t2.action(resource,['delete',t2.id]))
-                list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]),_id='edit-btn')
+                delete=A(T("Delete"),_href=t2.action(resource,['delete',t2.id]),_id='delete-btn')
+                list_btn=A(crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
                 return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,delete=delete,list_btn=list_btn)
             elif representation=="plain":
                 item=t2.display(table)
@@ -221,7 +221,7 @@ def shn_rest_controller(module,resource):
                         form=t2.create(table)
                         response.view='create.html'
                         title=crud_strings.title_create
-                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
                         form=t2.create(table)
@@ -246,7 +246,7 @@ def shn_rest_controller(module,resource):
                         form=t2.update(table,deletable=False)
                         response.view='update.html'
                         title=crud_strings.title_update
-                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource))
+                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
                         form=t2.update(table,deletable=False)

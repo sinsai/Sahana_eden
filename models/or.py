@@ -24,9 +24,6 @@ db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'or_organisation_
 # OR Organisations
 resource='organisation'
 table=module+'_'+resource
-single=resource.capitalize()
-# NB May need manual fixing!
-plural=single+'s'
 db.define_table(table,
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
@@ -56,18 +53,16 @@ db['%s' % table].contact.label=T("Contact Person")
 db['%s' % table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
 db['%s' % table].location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]
 db['%s' % table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
-# Slightly nicer for i18n but still not good
-#title_create=str(T('Add '))+ '%s' % single
-title_create=T('Add %s' % single)
-title_display=T('%s Details' % single)
-title_list=T('List %s' % plural)
-title_update=T('Edit %s' % single)
-subtitle_create=T('Add New %s' % single)
-subtitle_list=T('%s' % plural)
-label_list_button=T('List %s' % plural)
-label_create_button=T('Add %s' % single)
-msg_record_created=T('%s added' % single)
-msg_record_modified=T('%s updated' % single)
-msg_record_deleted=T('%s deleted' % single)
-msg_list_empty=T('No %s currently registered' % plural)
+title_create=T('Add Organisation')
+title_display=T('Organisation Details')
+title_list=T('List Organisations')
+title_update=T('Edit Organisation')
+subtitle_create=T('Add New Organisation')
+subtitle_list=T('Organisations')
+label_list_button=T('List Organisations')
+label_create_button=T('Add Organisation')
+msg_record_created=T('Organisation added')
+msg_record_modified=T('Organisation updated')
+msg_record_deleted=T('Organisation deleted')
+msg_list_empty=T('No Organisations currently registered')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)

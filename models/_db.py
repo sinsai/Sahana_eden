@@ -39,24 +39,22 @@ crud_strings=Storage()
 module='default'
 resource='configuration'
 table=module+'_'+resource
-single=resource.capitalize()
-plural=single+'s'
 db.define_table(table,
                 SQLField('debug','boolean'))
 if not len(db().select(db.default_configuration.debug)): 
    db.default_configuration.insert(debug=shn_settings.debug)
-title_create=T('Add %s' % single)
-title_display=T('%s Details' % single)
-title_list=T('List %s' % plural)
-title_update=T('Edit %s' % single)
-subtitle_create=T('Add New %s' % single)
-subtitle_list=T('%s' % plural)
-label_list_button=T('List %s' % plural)
-label_create_button=T('Add %s' % single)
-msg_record_created=T('%s added' % single)
-msg_record_modified=T('%s updated' % single)
-msg_record_deleted=T('%s deleted' % single)
-msg_list_empty=T('No %s currently defined' % plural)
+title_create=T('Add Configuration')
+title_display=T('Configuration Details')
+title_list=T('List Configurations')
+title_update=T('Edit Configuration')
+subtitle_create=T('Add New Configuration')
+subtitle_list=T('Configurations')
+label_list_button=T('List Configurations')
+label_create_button=T('Add Configuration')
+msg_record_created=T('Configuration added')
+msg_record_modified=T('Configuration updated')
+msg_record_deleted=T('Configuration deleted')
+msg_list_empty=T('No Configurations currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
    
 # T3 stores in the DB like this:

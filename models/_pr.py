@@ -16,9 +16,6 @@ db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,
 # Modules: cr,dvr,mpr
 resource='person'
 table=module+'_'+resource
-single=resource.capitalize()
-# NB Manually fixed!
-plural='People'
 db.define_table(table,
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
@@ -29,18 +26,18 @@ db['%s' % table].represent=lambda table:shn_list_item(table,resource='person',ac
 db['%s' % table].exposes=['full_name','family_name','l10_name']
 db['%s' % table].displays=['full_name','family_name','l10_name']
 db['%s' % table].full_name.requires=IS_NOT_EMPTY()
-title_create=T('Add %s' % single)
-title_display=T('%s Details' % single)
-title_list=T('List %s' % plural)
-title_update=T('Edit %s' % single)
-subtitle_create=T('Add New %s' % single)
-subtitle_list=T('%s' % plural)
-label_list_button=T('List %s' % plural)
-label_create_button=T('Add %s' % single)
-msg_record_created=T('%s added' % single)
-msg_record_modified=T('%s updated' % single)
-msg_record_deleted=T('%s deleted' % single)
-msg_list_empty=T('No %s currently registered' % plural)
+title_create=T('Add Person')
+title_display=T('Person Details')
+title_list=T('List People')
+title_update=T('Edit Person')
+subtitle_create=T('Add New Person')
+subtitle_list=T('People')
+label_list_button=T('List People')
+label_create_button=T('Add Person')
+msg_record_created=T('Person added')
+msg_record_modified=T('Person updated')
+msg_record_deleted=T('Person deleted')
+msg_list_empty=T('No People currently registered')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
             
 # Person Contacts

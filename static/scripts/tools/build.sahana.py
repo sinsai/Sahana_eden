@@ -115,19 +115,17 @@ listCSS = [
 
 listCSSGIS = [
     '../../styles/gis/mapfish.css',
-    #mfbase+'/ext/resources/css/ext-all.css', # can't find images if included
+    #mfbase+'/ext/resources/css/ext-all.css', # would need to copy images if included here
     mfbase+'/openlayers/theme/default/framedCloud.css'
 ]
 
-configFilename = "sahana.cfg"
+configFilename = "sahana.js.cfg"
 outputFilename = "S3.min.js"
-configFilenameGIS = "sahana_gis.cfg"
+configFilenameGIS = "sahana.js.gis.cfg"
 outputFilenameGIS = "MapFish.min.js"
 
-configFilenameCSS = "sahana_css.cfg"
 outputFilenameTmpCSS = "sahana.tmp.css"
 outputFilenameCSS = "sahana.min.css"
-configFilenameCSSGIS = "sahana_css_gis.cfg"
 outputFilenameCSSGIS = "gis.tmp.css"
 outputFilenameCSSGIS = "gis.min.css"
 
@@ -156,7 +154,7 @@ compressCSS(mergedCSSGIS,outputFilenameCSSGIS)
 # Add license
 print "Adding license file."
 minimized = file("license.txt").read() + minimized
-minimizedGIS = file("license_gis.txt").read() + minimizedGIS
+minimizedGIS = file("license.gis.txt").read() + minimizedGIS
 
 # Print to output files
 print "Writing to %s." % outputFilename

@@ -49,7 +49,7 @@ def URL2(a=None,c=None,r=None):
     return url
         
 # Extended version of T2 from modules/t2.py 
-class T2SAHANA(T2):
+class S3(T2):
 
     def __init__(self,request,response,session,cache,T,db,all_in_db=False):
         T2.__init__(self,request,response,session,cache,T,db,all_in_db=False)

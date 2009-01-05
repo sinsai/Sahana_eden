@@ -23,7 +23,7 @@ import uuid
 
 # Custom classes which extend default Gluon & T2
 from applications.sahana.modules.sahana import *
-t2=T2SAHANA(request,response,session,cache,T,db)
+t2=S3(request,response,session,cache,T,db)
 
 # Custom validators
 from applications.sahana.modules.validators import *

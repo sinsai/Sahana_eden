@@ -226,6 +226,7 @@ def update_feature_group():
 # Anonymous users can Read
 # Authentication required for Create/Update/Delete
 def layer():
+    "Deprecated as of r52"
     resource='layer'
     table=db['%s_%s' % (module,resource)]
     crud_strings=shn_crud_strings_lookup(resource)
@@ -376,6 +377,7 @@ def layer():
                 redirect(URL(r=request,f=resource))
 
 
+# Deprecated as of r52
 @t2.requires_login('login')
 def shn_gis_create_layer():
     """
@@ -502,7 +504,7 @@ def shn_gis_create_layer():
     list_btn=A(T("List Layers"),_href=t2.action('layer'))
     return dict(module_name=module_name,modules=modules,options=options,customform=customform,title=title,list_btn=list_btn,layertype=layertype,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group)
 
-
+# Deprecated as of r52
 @t2.requires_login('login')
 def shn_gis_update_layer():
     """

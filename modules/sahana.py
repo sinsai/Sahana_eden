@@ -22,10 +22,12 @@ def shn_db_clean(db):
     To be done before a release.
     All neccessary lookup tables will be recreated upon initialisation.
     """
-    #tables=['gis_layer_openstreetmap','gis_layer_google','gis_layer_yahoo','gis_layer_virtualearth']
     tables=['gis_layer_openstreetmap','gis_layer_google','gis_layer_yahoo','gis_layer_virtualearth','default_setting']
     for table in tables:
+        # Remove table completely
         db["%s" % table].drop()
+        # Clear all records (& reset IDs), but keep table
+        #db["%s" % table].truncate()
     db.commit()
 
 

@@ -297,8 +297,8 @@ msg_list_empty=T('No Keys currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
             
 # GIS Layers
-gis_layer_types=['openstreetmap','google','yahoo','virtualearth']
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
+gis_layer_types=['openstreetmap','google','yahoo','virtualearth']
 gis_layer_openstreetmap_subtypes=['Mapnik','Osmarender','Aerial']
 gis_layer_google_subtypes=['Satellite','Maps','Hybrid','Terrain']
 gis_layer_yahoo_subtypes=['Satellite','Maps','Hybrid']
@@ -312,7 +312,6 @@ gis_layer=SQLTable(db,'gis_layer',
             #db.Field('priority','integer'),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
             db.Field('enabled','boolean',default=True))
 gis_layer.name.requires=IS_NOT_EMPTY()
-#gis_layer.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]
 for layertype in gis_layer_types:
     resource='layer_'+layertype
     table=module+'_'+resource

@@ -9,7 +9,7 @@
 {{for module in modules:}}
 {{if module.name=="default":}}
 {{else:}}
-<li><strong>{{=A(module.name_nice,_href=URL(r=request,f='open_module?id=%s'%module.id))}}</strong> - {{=module.description}}.</li>
+<li><strong>{{=A(T(module.name_nice),_href=URL(r=request,c='default',f='open_module',vars=dict(id='%d'%module.id)))}}</strong> - {{=module.description}}.</li>
 {{pass}}
 {{pass}}
 </ul>

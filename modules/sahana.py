@@ -16,6 +16,18 @@ import traceback
 #from applications.t3.modules.t2 import T2
 from applications.sahana.modules.t2 import T2
 
+def shn_db_clean(db):
+    """
+    Drop tables to remove all data.
+    To be done before a release.
+    All neccessary lookup tables will be recreated upon initialisation.
+    """
+    #tables=['gis_layer_openstreetmap','gis_layer_google','gis_layer_yahoo','gis_layer_virtualearth']
+    tables=['gis_layer_openstreetmap','gis_layer_google','gis_layer_yahoo','gis_layer_virtualearth','default_setting']
+    for table in tables:
+        db["%s" % table].drop()
+    db.commit()
+
 
 # Modified version of URL from gluon/html.py
 # we just need a simplified version for our jquery delete_row function
@@ -53,20 +65,6 @@ class S3(T2):
 
     def __init__(self,request,response,session,cache,T,db,all_in_db=False):
         T2.__init__(self,request,response,session,cache,T,db,all_in_db=False)
-        response.files=[
-          '/sahana/static/scripts/jquery.js',
-          '/sahana/static/styles/calendar.css',
-          '/sahana/static/scripts/calendar.js',
-          '/sahana/static/styles/sfmenu.css',
-          '/sahana/static/scripts/sfmenu.js',
-          '/sahana/static/scripts/fancyzoom.min.js',
-          '/sahana/static/styles/rating.css',
-          '/sahana/static/scripts/rating.js',
-          '/sahana/static/scripts/web2py.js',
-        ]
-        # Development mode => ALl JS/CSS files loaded independently
-        # NB Plan to move this elsewhere as changes require a full restart of Web2Py :/
-        self.debug=True
     
     # Modified version of _stamp
     # we need to support multiple tables

@@ -1,30 +1,26 @@
 (dp1
-S'layer'
+S'description'
 p2
-S'REFERENCES gis_layer(id) ON DELETE CASCADE'
+S'CHAR(256)'
 p3
-sS'name'
+sS'enabled'
 p4
-S'REFERENCES gis_layer(id) ON DELETE CASCADE'
+S'CHAR(1)'
 p5
-sS'visible'
+sS'subtype'
 p6
 S'CHAR(32)'
 p7
-sS'key'
-p8
-S'REFERENCES gis_key(id) ON DELETE CASCADE'
-p9
 sS'modified_on'
-p10
+p8
 S'TIMESTAMP'
+p9
+sS'id'
+p10
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p11
-sS'type'
+sS'name'
 p12
 S'CHAR(32)'
 p13
-sS'id'
-p14
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p15
 s.

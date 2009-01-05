@@ -50,6 +50,18 @@ def marker():
 def projection():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'projection')
+def layer_openstreetmap():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'layer_openstreetmap')
+def layer_google():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'layer_google')
+def layer_yahoo():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'layer_yahoo')
+def layer_virtualearth():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'layer_virtualearth')
 
 # Module-specific functions
 
@@ -271,19 +283,19 @@ def layer():
                 # - multiple tables
                 # - names not numbers for type/subtype
                 resource=db(table.id==t2.id).select()[0]
-                type=resource.type
-                if type=="openstreetmap":
-                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+                layertype=resource.type
+                if layertype=="openstreetmap":
+                    subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
                     apikey=0
-                elif type=="google":
-                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-                    apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
-                elif type=="virtualearth":
-                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+                elif layertype=="google":
+                    subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
+                    apikey=db(db.gis_apikey.service==layertype).select(db.gis_apikey.ALL)[0].apikey
+                elif layertype=="virtualearth":
+                    subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
                     apikey=0
-                elif type=="yahoo":
-                    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
-                    apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
+                elif layertype=="yahoo":
+                    subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
+                    apikey=db(db.gis_apikey.service==layertype).select(db.gis_apikey.ALL)[0].apikey
                 else:
                     subtype=0
                     apikey=0
@@ -293,7 +305,7 @@ def layer():
                 edit=A(T("Edit"),_href=t2.action('layer',['update',t2.id]))
                 delete=A(T("Delete"),_href=t2.action('layer',['delete',t2.id]))
                 list_btn=A(crud_strings.label_list_button,_href=t2.action('layer'))
-                return dict(module_name=module_name,modules=modules,options=options,title=title,edit=edit,delete=delete,list_btn=list_btn,resource=resource,type=type,subtype=subtype,apikey=apikey)
+                return dict(module_name=module_name,modules=modules,options=options,title=title,edit=edit,delete=delete,list_btn=list_btn,resource=resource,layertype=layertype,subtype=subtype,apikey=apikey)
             #ToDo
             #elif representation=="plain":
             elif representation=="json":
@@ -347,11 +359,11 @@ def layer():
                 if t2.logged_in:
                     # Need to handle Multiple Tables, so go down a level of abstraction from T2
                     layer=db(table.id==t2.id).select()[0]
-                    type=layer.type
+                    layertype=layer.type
                     # Delete Sub-Record:
-                    db(db['gis_layer_%s' % type].layer==t2.id).delete()
-                    #if type=="wms":
-                    #    subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+                    db(db['gis_layer_%s' % layertype].layer==t2.id).delete()
+                    #if layertype=="wms":
+                    #    subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
                     #    db(db['gis_layer_wms_%s' % subtype].layer==t2.id).delete{}
                     
                     # Delete Master Record
@@ -374,7 +386,7 @@ def shn_gis_create_layer():
     """
 
     # Default to OpenStreetMap - promote Open Data!
-    type="openstreetmap"
+    layertype="openstreetmap"
     subtype="Mapnik"
     options_subtype=["Mapnik","Osmarender","Aerial"]
     apikey="ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw" # Google Key for 127.0.0.1
@@ -396,7 +408,7 @@ def shn_gis_create_layer():
     customform=FORM(INPUT(_name="name",requires=IS_NOT_EMPTY()),
             INPUT(_name="description"),
             SELECT(_name="type",requires=IS_NOT_EMPTY()),
-            #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % type].ALL)])
+            #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % layertype].ALL)])
             SELECT(_name="subtype"),
             #INPUT(_name="apikey",requires=IS_NOT_EMPTY()),
             INPUT(_name="apikey"),
@@ -488,7 +500,7 @@ def shn_gis_create_layer():
     response.view='gis/create_layer.html'
     title=T('Add Layer')
     list_btn=A(T("List Layers"),_href=t2.action('layer'))
-    return dict(module_name=module_name,modules=modules,options=options,customform=customform,title=title,list_btn=list_btn,type=type,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group)
+    return dict(module_name=module_name,modules=modules,options=options,customform=customform,title=title,list_btn=list_btn,layertype=layertype,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group)
 
 
 @t2.requires_login('login')
@@ -509,24 +521,24 @@ def shn_gis_update_layer():
     resource=db(db.gis_layer.id==t2.id).select()[0]
     
     # Pull out current settings to pre-populate form with
-    type=resource.type
-    if type=="openstreetmap":
-        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+    layertype=resource.type
+    if layertype=="openstreetmap":
+        subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
         # Need here as well as gis_layers.js to populate the initial 'selected'
         options_subtype = ["Mapnik","Osmarender","Aerial"]
-    elif type=="google":
-        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+    elif layertype=="google":
+        subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
         options_subtype = ["Satellite", "Maps", "Hybrid", "Terrain"]
-        apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
-    elif type=="virtualearth":
-        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+        apikey=db(db.gis_apikey.service==layertype).select(db.gis_apikey.ALL)[0].apikey
+    elif layertype=="virtualearth":
+        subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
         options_subtype = ["Satellite", "Maps", "Hybrid"]
-    elif type=="yahoo":
-        subtype=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].type
+    elif layertype=="yahoo":
+        subtype=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].type
         options_subtype = ["Satellite", "Maps", "Hybrid"]
-        apikey=db(db.gis_apikey.service==type).select(db.gis_apikey.ALL)[0].apikey
-    elif type=="features":
-        feature_group=db(db['gis_layer_%s' % type].layer==t2.id).select(db['gis_layer_%s' % type].ALL)[0].feature_group
+        apikey=db(db.gis_apikey.service==layertype).select(db.gis_apikey.ALL)[0].apikey
+    elif layertype=="features":
+        feature_group=db(db['gis_layer_%s' % layertype].layer==t2.id).select(db['gis_layer_%s' % layertype].ALL)[0].feature_group
     else:
         # Invalid! We should trap & give a nice error message (although Web2Py's Tracebacks are pretty good really)
         pass
@@ -552,7 +564,7 @@ def shn_gis_update_layer():
             INPUT(_name="name",requires=IS_NOT_EMPTY()),
             INPUT(_name="description"),
             SELECT(_name="type",requires=IS_NOT_EMPTY()),
-            #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % type].ALL)])
+            #SELECT(_type="select",_name="subtype",*[OPTION(x.name,_value=x.id)for x in db().select(db['gis_layer_%s_type' % layertype].ALL)])
             SELECT(_name="subtype",requires=IS_NOT_EMPTY()),
             SELECT(_name="feature_group"),
             INPUT(_name="apikey",requires=IS_NOT_EMPTY()),
@@ -564,7 +576,7 @@ def shn_gis_update_layer():
     
     # use T2 for conflict detection
     # This mod needs testing!
-    t2._stamp_many([db.gis_layer,db['gis_layer_%s' % type]],customform)
+    t2._stamp_many([db.gis_layer,db['gis_layer_%s' % layertype]],customform)
     hidden={'modified_on__original':str(resource.get('modified_on',None))}
     if request.vars.modified_on__original and request.vars.modified_on__original!=hidden['modified_on__original']:
             session.flash=self.messages.record_was_altered
@@ -622,26 +634,27 @@ def shn_gis_update_layer():
     response.view='gis/update_layer.html'
     title=T('Edit Layer')
     list_btn=A(T("List Layers"),_href=t2.action('layer'))
-    return dict(module_name=module_name,modules=modules,options=options,customform=customform,title=title,list_btn=list_btn,resource=resource,type=type,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group,feature_group=feature_group)
+    return dict(module_name=module_name,modules=modules,options=options,customform=customform,title=title,list_btn=list_btn,resource=resource,layertype=layertype,subtype=subtype,apikey=apikey,options_type=gis_layer_types,options_subtype=options_subtype,options_priority=options_priority,options_feature_group=options_feature_group,feature_group=feature_group)
 
 def map_service_catalogue():
     """Map Service Catalogue.
-    Extends layer/list_create for improved user UI."""
+    Allows selection of which Layers are active."""
 
-    output=shn_gis_create_layer()
-    # Layers listed after Form so they get refreshed after submission
-    list=t2.itemize(db.gis_layer)
-    if list=="No data":
-        list="No Layers currently defined."
-    if isinstance(list,TABLE):
-        list.insert(0,TR('',B('Enabled?'))) 
+    items=DIV()
+    for type in gis_layer_types:
+        resource='layer_'+type
+        table=db['%s_%s' % (module,resource)]
+        crud_strings=shn_crud_strings_lookup(resource)
+        list=t2.itemize(table)
+        if list=="No data":
+            list=crud_strings.msg_list_empty
+        if isinstance(list,TABLE):
+            list.insert(0,TR('',B('Enabled?'))) 
+        items=DIV(items,list)
     
-    response.view='gis/list_create_layer.html'
     title=T('Map Service Catalogue')
-    subtitle=T('Layers')
-    addtitle=T('Add New Layer')
-    output.update(dict(list=list,title=title,subtitle=subtitle,addtitle=addtitle))
-    return output
+    subtitle=T('List Layers')
+    return dict(module_name=module_name,modules=modules,options=options,title=title,subtitle=subtitle,item=items)
 
 def map_viewing_client():
     """Map Viewing Client.
@@ -650,7 +663,10 @@ def map_viewing_client():
     title=T('Map Viewing Client')
     response.title=title
 
-    # Get Config
+    # Start building the Return with the Framework
+    output=dict(title=title,module_name=module_name,modules=modules,options=options)
+    
+    # Config
     width=db(db.gis_config.id==1).select()[0].map_width
     height=db(db.gis_config.id==1).select()[0].map_height
     _projection=db(db.gis_config.id==1).select()[0].projection
@@ -662,45 +678,62 @@ def map_viewing_client():
     maxResolution=db(db.gis_projection.epsg==projection).select()[0].maxResolution
     maxExtent=db(db.gis_projection.epsg==projection).select()[0].maxExtent
     
-    # Get enabled Layers
-    layers=db(db.gis_layer.enabled==True).select(db.gis_layer.ALL,orderby=db.gis_layer.priority)
-
-    # Check for enabled Google layers
-    google=0
-    google_key=""
-    for row in layers:
-        if row.type=="google":
-            google=1
-    if google==1:
-        # Check for Google Key
-        _google_key=db(db.gis_apikey.service=='google').select(db.gis_apikey.apikey)
-        if len(_google_key):
-            google_key=_google_key[0].apikey
-        else:
-            response.warning=T('Please enter a Google Key if you wish to use Google Layers')
-            google=0
-            # Redirect to Key entry screen?
-
-    # Check for enabled Virtual Earth layers
-    virtualearth=0
-    for row in layers:
-        if row.type=="virtualearth":
-            virtualearth=1
-
-    # Check for enabled Yahoo layers
-    yahoo=0
-    yahoo_key=""
-    for row in layers:
-        if row.type=="yahoo":
-            yahoo=1
-    if yahoo==1:
-        # Check for Yahoo Key
-        _yahoo_key=db(db.gis_apikey.service=='yahoo').select(db.gis_apikey.apikey)
-        if len(_yahoo_key):
-            yahoo_key=_yahoo_key[0].apikey
-        else:
-            response.warning=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
-            yahoo=0
-            # Redirect to Key entry screen?
-
-    return dict(title=title,module_name=module_name,modules=modules,options=options,layers=layers,google=google,google_key=google_key,virtualearth=virtualearth,yahoo=yahoo,yahoo_key=yahoo_key,width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent)
+    # Add the Config to the Return
+    output.update(dict(width=width,height=height,projection=projection,lat=lat,lon=lon,zoom=zoom,units=units,maxResolution=maxResolution,maxExtent=maxExtent))
+    
+    #
+    # Layers
+    #
+    
+    # OpenStreetMap
+    openstreetmap=Storage()
+    layers_openstreetmap=db(db.gis_layer_openstreetmap.enabled==True).select(db.gis_layer_openstreetmap.ALL)
+    for layer in layers_openstreetmap:
+        for subtype in gis_layer_openstreetmap_subtypes:
+            if layer.subtype==subtype:
+                openstreetmap['%s' % subtype]=layer.name
+    
+    # Google
+    google=Storage()
+    # Check for Google Key
+    try:
+        google.key=db(db.gis_apikey.service=='google').select(db.gis_apikey.apikey)[0].apikey
+        layers_google=db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
+        for layer in layers_google:
+            for subtype in gis_layer_google_subtypes:
+                if layer.subtype==subtype:
+                    google['%s' % subtype]=layer.name
+                    google.enabled=1
+    except:
+        # Redirect to Key entry screen
+        session.warning=T('Please enter a Google Key if you wish to use Google Layers')
+        redirect(URL(r=request,f=apikey))
+            
+    # Yahoo
+    yahoo=Storage()
+    # Check for Yahoo Key
+    try:
+        yahoo.key=db(db.gis_apikey.service=='yahoo').select(db.gis_apikey.apikey)[0].apikey
+        layers_yahoo=db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
+        for layer in layers_yahoo:
+            for subtype in gis_layer_yahoo_subtypes:
+                if layer.subtype==subtype:
+                    yahoo['%s' % subtype]=layer.name
+                    yahoo.enabled=1
+    except:
+        # Redirect to Key entry screen
+        session.warning=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
+        redirect(URL(r=request,f=apikey))
+        
+    # Virtual Earth
+    virtualearth=Storage()
+    layers_virtualearth=db(db.gis_layer_virtualearth.enabled==True).select(db.gis_layer_virtualearth.ALL)
+    for layer in layers_virtualearth:
+        for subtype in gis_layer_virtualearth_subtypes:
+            if layer.subtype==subtype:
+                virtualearth['%s' % subtype]=layer.name
+    
+    # Add the Layers to the Return
+    output.update(dict(openstreetmap=openstreetmap,google=google,yahoo=yahoo,virtualearth=virtualearth))
+    
+    return output

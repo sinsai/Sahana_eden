@@ -20,8 +20,11 @@ def profile(): t2.profile()
 # S3 framework functions
 def index():
     "Module's Home Page"
+    admin_name=db().select(db.default_setting.admin_name)[0].admin_name
+    admin_email=db().select(db.default_setting.admin_email)[0].admin_email
+    admin_tel=db().select(db.default_setting.admin_tel)[0].admin_tel
     response.title=T('Sahana FOSS Disaster Management System')
-    return dict(module_name=module_name,modules=modules,options=options)
+    return dict(module_name=module_name,modules=modules,options=options,admin_name=admin_name,admin_email=admin_email,admin_tel=admin_tel)
 def open_module():
     "Select Module"
     id=request.vars.id
@@ -38,9 +41,11 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
-def configuration():
+# The settings should be protected by T2 AAA beyond just 'authenticated'
+#@t2.have_membership(1)
+def setting():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'configuration')
+    return shn_rest_controller(module,'setting')
 
     
 # About Sahana

@@ -1,6 +1,18 @@
-{{extend 'gis/list_create_layer.html'}}
+{{extend 'layout.html'}}
 
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
 {{include 'gis/catalogue_toolbar.html'}}
 <p>&nbsp;</p>
-{{include}}
-
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+<div id='list-container'>
+{{try:}}
+ {{=item}}
+{{except:}}
+{{pass}}
+</div>

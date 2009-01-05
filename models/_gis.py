@@ -297,131 +297,109 @@ msg_list_empty=T('No Keys currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
             
 # GIS Layers
-resource='layer'
-table=module+'_'+resource
+gis_layer_types=['openstreetmap','google','yahoo','virtualearth']
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
-gis_layer_types=['features','openstreetmap','google','yahoo','virtualearth']
-db.define_table(table,
-                SQLField('modified_on','datetime',default=now),
-                SQLField('uuid',length=64,default=uuid.uuid4()),
-                SQLField('name'),
-                SQLField('description',length=256),
-                SQLField('type'),
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default=True))
-#eval(extra) doesn't play nicely when extra=True/False
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer',action='display',extra=str(table.enabled))
-#db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer',action='display')
-db['%s' % table].name.requires=IS_NOT_EMPTY()
-db['%s' % table].type.requires=IS_IN_SET(gis_layer_types)
-db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]
-title_create=T('Add Layer')
-title_display=T('Layer Details')
-title_list=T('List Layers')
-title_update=T('Edit Layer')
-subtitle_create=T('Add New Layer')
-subtitle_list=T('Layers')
-label_list_button=T('List Layers')
-label_create_button=T('Add Layer')
-msg_record_created=T('Layer added')
-msg_record_modified=T('Layer updated')
-msg_record_deleted=T('Layer deleted')
-msg_list_empty=T('No Layers currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
-            
-# Layer: GeoRSS
-db.define_table('gis_layer_georss',
-				SQLField('modified_on','datetime',default=now),
-				SQLField('layer',length=64),
-				SQLField('url',default='http://host.domain.org/service'),
-				SQLField('icon',length=64),
-				SQLField('projection',length=64),
-				SQLField('visible','boolean',default=False))
-db.gis_layer_georss.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_georss.url.requires=IS_URL()
-db.gis_layer_georss.icon.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
-db.gis_layer_georss.projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
-
-# Layer: Google
-db.define_table('gis_layer_google',
-				SQLField('modified_on','datetime',default=now),
-				SQLField('layer',length=64),
-				SQLField('type'))
-db.gis_layer_google.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_google.type.requires=IS_IN_SET(['Satellite','Maps','Hybrid','Terrain'])
-
-# Layer: Internal Features
-db.define_table('gis_layer_features',
-				SQLField('modified_on','datetime',default=now),
-				SQLField('layer',length=64),
-				SQLField('feature_group',length=64))
-db.gis_layer_features.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_features.feature_group.requires=IS_IN_DB(db,'gis_feature_group.uuid','gis_feature_group.name')
-
-# Layer: OpenStreetMap
-db.define_table('gis_layer_openstreetmap',
-				SQLField('modified_on','datetime',default=now),
-				SQLField('layer',length=64),
-				SQLField('type'))
-db.gis_layer_openstreetmap.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_openstreetmap.type.requires=IS_IN_SET(['Mapnik','Osmarender','Aerial'])
-
-# Layer: Shapefiles (via UMN MapServer)
-db.define_table('gis_layer_shapefile',
-                SQLField('modified_on','datetime',default=now),
-				SQLField('layer',length=64),
-                SQLField('projection',length=64))
-db.gis_layer_shapefile.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-# We should be able to auto-detect this value (but still want to be able to over-ride)
-db.gis_layer_shapefile.projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
-
-# Layer: Virtual Earth
-db.define_table('gis_layer_virtualearth',
-				SQLField('modified_on','datetime',default=now),
-				SQLField('layer',length=64),
-				SQLField('type'))
-db.gis_layer_virtualearth.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_virtualearth.type.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
-
-# Layer: Yahoo
-db.define_table('gis_layer_yahoo',
-				SQLField('modified_on','datetime',default=now),
-				SQLField('layer',length=64),
-				SQLField('type'))
-db.gis_layer_yahoo.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_yahoo.type.requires=IS_IN_SET(['Satellite','Maps','Hybrid'])
-
-# Layer: WMS
-db.define_table('gis_layer_wms',
-                SQLField('modified_on','datetime',default=now),
-                SQLField('layer',length=64),
-                SQLField('layers'),
-                SQLField('type',default='Base'))
-db.gis_layer_wms.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_wms.type.requires=IS_IN_SET(['Base','Overlay'])
-# Ideally pull list from GetCapabilities & use to populate IS_IN_SET
-db.gis_layer_wms.layers.requires=IS_NOT_EMPTY()
-
-# WMS - Base
-db.define_table('gis_layer_wms_base',
-                SQLField('modified_on','datetime',default=now),
-                SQLField('layer',length=64),
-                SQLField('url',default='http://host.domain.org/service'),
-                SQLField('projection',length=64))
-db.gis_layer_wms_base.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_wms_base.url.requires=[IS_NOT_EMPTY(),IS_URL()]
-db.gis_layer_wms_base.projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
-
-# WMS - Overlay
-db.define_table('gis_layer_wms_overlay',
-                SQLField('modified_on','datetime',default=now),
-                SQLField('layer',length=64),
-                SQLField('url',default='http://host.domain.org/service'),
-                SQLField('projection',length=64),
-                SQLField('visible','boolean',default=True))
-db.gis_layer_wms_overlay.layer.requires=IS_IN_DB(db,'gis_layer.uuid','gis_layer.name')
-db.gis_layer_wms_overlay.url.requires=[IS_NOT_EMPTY(),IS_URL()]
-db.gis_layer_wms_overlay.projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
+gis_layer_openstreetmap_subtypes=['Mapnik','Osmarender','Aerial']
+gis_layer_google_subtypes=['Satellite','Maps','Hybrid','Terrain']
+gis_layer_yahoo_subtypes=['Satellite','Maps','Hybrid']
+gis_layer_virtualearth_subtypes=['Satellite','Maps','Hybrid']
+# Base table from which the rest inherit
+gis_layer=SQLTable(db,'gis_layer',
+            db.Field('modified_on','datetime',default=now),
+            #db.Field('uuid',length=64,default=uuid.uuid4()),   # Layers like OpenStreetMap, Google, etc shouldn't sync
+            db.Field('name'),
+            db.Field('description',length=256),
+            #db.Field('priority','integer'),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
+            db.Field('enabled','boolean',default=True))
+gis_layer.name.requires=IS_NOT_EMPTY()
+#gis_layer.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_layer.priority')]
+for layertype in gis_layer_types:
+    resource='layer_'+layertype
+    table=module+'_'+resource
+    title_create=T('Add Layer')
+    title_display=T('Layer Details')
+    title_list=T('List Layers')
+    title_update=T('Edit Layer')
+    subtitle_create=T('Add New Layer')
+    subtitle_list=T('Layers')
+    label_list_button=T('List Layers')
+    label_create_button=T('Add Layer')
+    msg_record_created=T('Layer added')
+    msg_record_modified=T('Layer updated')
+    msg_record_deleted=T('Layer deleted')
+    msg_list_empty=T('No Layers currently defined')
+    # Create Type-specific Layer tables
+    if layertype=="openstreetmap":
+        t=SQLTable(db,table,
+            db.Field('subtype'),
+            gis_layer)
+        t.subtype.requires=IS_IN_SET(gis_layer_openstreetmap_subtypes)
+        db.define_table(table,t)
+        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_openstreetmap',action='display',extra=str(table.enabled))
+        if not len(db().select(db['%s' % table].ALL)):
+            # Populate table
+            for subtype in gis_layer_openstreetmap_subtypes:
+                db['%s' % table].insert(
+                        name='OSM '+subtype,
+                        subtype=subtype
+                    )
+        # Customise CRUD strings if-desired
+        msg_list_empty=T('No OpenStreetMap Layers currently defined')
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+    if layertype=="google":
+        t=SQLTable(db,table,
+            db.Field('subtype'),
+            gis_layer)
+        t.subtype.requires=IS_IN_SET(gis_layer_google_subtypes)
+        db.define_table(table,t)
+        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_google',action='display',extra=str(table.enabled))
+        if not len(db().select(db['%s' % table].ALL)):
+            # Populate table
+            for subtype in gis_layer_google_subtypes:
+                db['%s' % table].insert(
+                        name='Google '+subtype,
+                        subtype=subtype,
+                        enabled=False
+                    )
+        # Customise CRUD strings if-desired
+        msg_list_empty=T('No Google Layers currently defined')
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+    if layertype=="yahoo":
+        t=SQLTable(db,table,
+            db.Field('subtype'),
+            gis_layer)
+        t.subtype.requires=IS_IN_SET(gis_layer_yahoo_subtypes)
+        db.define_table(table,t)
+        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_yahoo',action='display',extra=str(table.enabled))
+        if not len(db().select(db['%s' % table].ALL)):
+            # Populate table
+            for subtype in gis_layer_yahoo_subtypes:
+                db['%s' % table].insert(
+                        name='Yahoo '+subtype,
+                        subtype=subtype,
+                        enabled=False
+                    )
+        # Customise CRUD strings if-desired
+        msg_list_empty=T('No Yahoo Layers currently defined')
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+    if layertype=="virtualearth":
+        t=SQLTable(db,table,
+            db.Field('subtype'),
+            gis_layer)
+        t.subtype.requires=IS_IN_SET(gis_layer_virtualearth_subtypes)
+        db.define_table(table,t)
+        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_virtualearth',action='display',extra=str(table.enabled))
+        if not len(db().select(db['%s' % table].ALL)):
+            # Populate table
+            for subtype in gis_layer_virtualearth_subtypes:
+                db['%s' % table].insert(
+                        name='VE '+subtype,
+                        subtype=subtype,
+                        enabled=False
+                    )
+        # Customise CRUD strings if-desired
+        msg_list_empty=T('No Virtual Earth Layers currently defined')
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
 
 # GIS Styles: SLD
 db.define_table('gis_style',

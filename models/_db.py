@@ -31,39 +31,87 @@ from applications.sahana.modules.validators import *
 from gluon.storage import Storage
 crud_strings=Storage()
 
-# Default Configuration options
-# currently using t2.debug set in modules/sahana.py
-#shn_settings=Storage()
-#shn_settings.debug='False'
+# Modules
+db.define_table('module',
+                SQLField('name'),
+                SQLField('name_nice'),
+                SQLField('menu_priority','integer'),
+                SQLField('description',length=256),
+                SQLField('enabled','boolean',default='True'))
+db.module.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name')]
+db.module.name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name_nice')]
+db.module.menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.menu_priority')]
 
+# Home Menu Options
+db.define_table('default_menu_option',
+                SQLField('name'),
+                SQLField('function'),
+                SQLField('description',length=256),
+                SQLField('priority','integer'),
+                SQLField('enabled','boolean',default='True'))
+db.default_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.name')]
+db.default_menu_option.function.requires=IS_NOT_EMPTY()
+db.default_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.priority')]
+   
+#
+# Configuration options
+#
+
+# System Defaults
+shn_default=Storage()
+# Change to False for Stable branches (Deployments/Demos can change this live via appadmin)
+shn_default.debug=True
+shn_default.admin_name=T("Sahana Administrator")
+shn_default.admin_email=T("support@Not Set")
+shn_default.admin_tel=T("Not Set")
+
+# Database table for Settings of running instance
 module='default'
-resource='configuration'
+resource='setting'
 table=module+'_'+resource
 db.define_table(table,
+                SQLField('admin_name'),
+                SQLField('admin_email'),
+                SQLField('admin_tel'),
                 SQLField('debug','boolean'))
-if not len(db().select(db.default_configuration.debug)): 
-   db.default_configuration.insert(debug=shn_settings.debug)
-title_create=T('Add Configuration')
-title_display=T('Configuration Details')
-title_list=T('List Configurations')
-title_update=T('Edit Configuration')
-subtitle_create=T('Add New Configuration')
-subtitle_list=T('Configurations')
-label_list_button=T('List Configurations')
-label_create_button=T('Add Configuration')
-msg_record_created=T('Configuration added')
-msg_record_modified=T('Configuration updated')
-msg_record_deleted=T('Configuration deleted')
-msg_list_empty=T('No Configurations currently defined')
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        debug=shn_default.debug,
+        admin_name=shn_default.admin_name,
+        admin_email=shn_default.admin_email,
+        admin_tel=shn_default.admin_tel
+    )
+title_create=T('Add Setting')
+title_display=T('Setting Details')
+title_list=T('List Settings')
+title_update=T('Edit Setting')
+subtitle_create=T('Add New Setting')
+subtitle_list=T('Settings')
+label_list_button=T('List Settings')
+label_create_button=T('Add Setting')
+msg_record_created=T('Setting added')
+msg_record_modified=T('Setting updated')
+msg_record_deleted=T('Setting deleted')
+msg_list_empty=T('No Settings currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
-   
-# T3 stores in the DB like this:
-#db.define_table('default_configuration',
-#   db.Field('settings','text'))
-#if not db(db.default_configuration.id>0).count(): 
-#   db.default_configuration.insert(settings="""
-#    settings.debug=1
-#    """)
+
+def shn_sessions(f):
+   """
+   Extend session to support:
+        Multiple flash classes
+        Debug mode
+   """
+   response.error=session.error
+   response.confirmation=session.confirmation
+   response.warning=session.warning
+   session.error=[]
+   session.confirmation=[]
+   session.warning=[]
+   # Debug mode => Load all JS/CSS independently & uncompressed
+   response.debug=db().select(db.default_setting.debug)[0].debug
+   return f()
+response._caller=lambda f: shn_sessions(f)
 
 #
 # Representations
@@ -106,24 +154,17 @@ def shn_m2m_widget(self,value,options=[]):
     return DIV(script,INPUT(_type='hidden',_id=id,_name=self.name,_value=value),*buttons) 
 
 # M2M test
-db.define_table('owner',SQLField('name'),SQLField('uuid',length=64,default=uuid.uuid4()))
-db.define_table('dog',SQLField('name'),SQLField('owner','text'))
-#db.dog.owner.requires=IS_IN_DB(db,'owner.uuid','owner.name',multiple=True)
-db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
-#db.dog.owner.display=lambda x: ', '.join([db(db.owner.id==id).select()[0].name for id in x[1:-1].split('|')])
-#db.dog.owner.display=lambda x: map(db(db.owner.id==id).select()[0].name,x[1:-1].split('|'))
-db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
+#db.define_table('owner',SQLField('name'),SQLField('uuid',length=64,default=uuid.uuid4()))
+#db.define_table('dog',SQLField('name'),SQLField('owner','text'))
+##db.dog.owner.requires=IS_IN_DB(db,'owner.uuid','owner.name',multiple=True)
+#db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
+##db.dog.owner.display=lambda x: ', '.join([db(db.owner.id==id).select()[0].name for id in x[1:-1].split('|')])
+##db.dog.owner.display=lambda x: map(db(db.owner.id==id).select()[0].name,x[1:-1].split('|'))
+#db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
 
-def shn_sessions(f):
-   "Extend session to support multiple flash classes"
-   response.error=session.error
-   response.confirmation=session.confirmation
-   response.warning=session.warning
-   session.error=[]
-   session.confirmation=[]
-   session.warning=[]
-   return f()
-response._caller=lambda f: shn_sessions(f)
+#
+# RESTlike Controller
+#
 
 def shn_crud_strings_lookup(resource):
     "Look up CRUD strings for a given resource based on the definitions in models/module.py."
@@ -271,47 +312,3 @@ def shn_rest_controller(module,resource):
             else:
                 session.error=T("Unsupported method!")
                 redirect(URL(r=request,f=resource))
-
-# Modules
-db.define_table('module',
-                SQLField('name'),
-                SQLField('name_nice'),
-                SQLField('menu_priority','integer'),
-                SQLField('description',length=256),
-                SQLField('enabled','boolean',default='True'))
-db.module.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name')]
-db.module.name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name_nice')]
-db.module.menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.menu_priority')]
-
-# Home Menu Options
-db.define_table('default_menu_option',
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
-db.default_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.name')]
-db.default_menu_option.function.requires=IS_NOT_EMPTY()
-db.default_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.priority')]
-
-# System Config
-db.define_table('system_config',
-				SQLField('setting'),
-				SQLField('description',length=256),
-				SQLField('value'))
-# We want a THIS_NOT_IN_DB here: admin_name, admin_email, admin_tel
-db.system_config.setting.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'system_config.setting')]
-
-# Field options meta table
-# Give a custom list of options for each field in this schema 
-# prefixed with opt_. This is customizable then at deployment
-# See the field_options.py for default customizations
-# Modules: cr
-# Actually for S3 we have a per-module table for 'config'
-#db.define_table('field_option',
-#                SQLField('field_name'),
-#                SQLField('option_code',length=20),
-#                SQLField('option_description',length=50))
-#db.field_option.field_name.requires=IS_NOT_EMPTY()
-#db.field_option.option_code.requires=IS_NOT_EMPTY()
-#db.field_option.option_description.requires=IS_NOT_EMPTY()

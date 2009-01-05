@@ -4,7 +4,7 @@
 <title>{{try:}}{{=title}}{{except:}}{{pass}}</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 {{if response.refresh:}}{{=refresh}}{{pass}}
-{{if t2.debug:}}
+{{if response.debug:}}
   {{include 'sahana_scripts_debug.html'}}
   {{include 'sahana_styles_debug.html'}}
 {{else:}}

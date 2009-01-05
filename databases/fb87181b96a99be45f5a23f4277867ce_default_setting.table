@@ -1,0 +1,22 @@
+(dp1
+S'debug'
+p2
+S'CHAR(1)'
+p3
+sS'admin_name'
+p4
+S'CHAR(32)'
+p5
+sS'id'
+p6
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p7
+sS'admin_tel'
+p8
+S'CHAR(32)'
+p9
+sS'admin_email'
+p10
+S'CHAR(32)'
+p11
+s.

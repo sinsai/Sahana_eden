@@ -1,4 +1,4 @@
-﻿{{if t2.debug:}}
+﻿{{if response.debug:}}
   {{include 'gis/gis_scripts_debug.html'}}
   {{include 'gis/gis_styles_debug.html'}}
 {{else:}}
@@ -13,11 +13,11 @@
 {{if virtualearth:}}
 <script type="text/javascript" src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.1"></script>
 {{pass}}
-{{if google:}}
-<script type="text/javascript" src="http://maps.google.com/maps?file=api&v=2&key={{=google_key}}"></script>
+{{if google.enabled:}}
+<script type="text/javascript" src="http://maps.google.com/maps?file=api&v=2&key={{=google.key}}"></script>
 {{pass}}
-{{if yahoo:}}
-<script type="text/javascript" src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo_key}}"></script>
+{{if yahoo.enabled:}}
+<script type="text/javascript" src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo.key}}"></script>
 {{pass}}
 {{else:}}
 <!-- Disable other base layers if using a non-sphericalMercator WMS projection -->

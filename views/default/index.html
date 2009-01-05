@@ -19,8 +19,8 @@
 <br/>{{=T("To access Sahana documentation, go to")}} <a href="https://trac.sahana3.org/wiki">{{=T("Sahana 3 Wiki")}}</a>
 </p>
 <p>
-{{=T("Administrator")}}: {{=db(db.system_config.setting=='admin_name').select(db.system_config.value)[0].value}}.
-<br/>{{=T("Email")}} : {{=db(db.system_config.setting=='admin_email').select(db.system_config.value)[0].value}}
-<br/>{{=T("Telephone")}} : {{=db(db.system_config.setting=='admin_tel').select(db.system_config.value)[0].value}}
+{{=T("Administrator")}}: {{=admin_name}}
+<br/>{{=T("Email")}} : {{=admin_email}}
+<br/>{{=T("Telephone")}} : {{=admin_tel}}
 </p>
 </div>

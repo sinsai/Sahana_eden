@@ -1464,3 +1464,551 @@ CREATE TABLE apikey(
 	apikey CHAR(32)
 );
 success!
+timestamp: 2009-01-05T08:32:42.546000
+CREATE TABLE gis_gis_layer_features(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	description CHAR(256),
+	type CHAR(32),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T08:32:42.734000
+CREATE TABLE gis_gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	description CHAR(256),
+	type CHAR(32),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T08:32:43
+CREATE TABLE gis_gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	description CHAR(256),
+	type CHAR(32),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T08:32:43.140000
+CREATE TABLE gis_gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	description CHAR(256),
+	type CHAR(32),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T08:32:43.250000
+CREATE TABLE gis_gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	description CHAR(256),
+	type CHAR(32),
+	priority INTEGER,
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T09:25:08.078000
+ALTER TABLE gis_gis_layer_openstreetmap ADD subtype CHAR(32);
+success!
+timestamp: 2009-01-05T09:26:01.140000
+ALTER TABLE gis_layer_openstreetmap ADD description CHAR(256);
+success!
+timestamp: 2009-01-05T09:26:01.250000
+ALTER TABLE gis_layer_openstreetmap ADD enabled CHAR(1);
+success!
+timestamp: 2009-01-05T09:26:01.375000
+ALTER TABLE gis_layer_openstreetmap ADD uuid CHAR(64);
+success!
+timestamp: 2009-01-05T09:26:01.453000
+ALTER TABLE gis_layer_openstreetmap ADD priority INTEGER;
+success!
+timestamp: 2009-01-05T09:26:01.562000
+ALTER TABLE gis_layer_openstreetmap ADD subtype CHAR(32);
+success!
+timestamp: 2009-01-05T09:26:01.671000
+ALTER TABLE gis_layer_openstreetmap ADD name CHAR(32);
+success!
+timestamp: 2009-01-05T09:31:31.046000
+ALTER TABLE gis_layer_google ADD description CHAR(256);
+success!
+timestamp: 2009-01-05T09:31:31.140000
+ALTER TABLE gis_layer_google ADD enabled CHAR(1);
+success!
+timestamp: 2009-01-05T09:31:31.250000
+ALTER TABLE gis_layer_google ADD uuid CHAR(64);
+success!
+timestamp: 2009-01-05T09:31:31.343000
+ALTER TABLE gis_layer_google ADD priority INTEGER;
+success!
+timestamp: 2009-01-05T09:31:31.437000
+ALTER TABLE gis_layer_google ADD subtype CHAR(32);
+success!
+timestamp: 2009-01-05T09:31:31.515000
+ALTER TABLE gis_layer_yahoo ADD description CHAR(256);
+success!
+timestamp: 2009-01-05T09:31:31.609000
+ALTER TABLE gis_layer_yahoo ADD enabled CHAR(1);
+success!
+timestamp: 2009-01-05T09:31:31.687000
+ALTER TABLE gis_layer_yahoo ADD uuid CHAR(64);
+success!
+timestamp: 2009-01-05T09:31:31.781000
+ALTER TABLE gis_layer_yahoo ADD priority INTEGER;
+success!
+timestamp: 2009-01-05T09:31:31.859000
+ALTER TABLE gis_layer_yahoo ADD subtype CHAR(32);
+success!
+timestamp: 2009-01-05T09:31:31.953000
+ALTER TABLE gis_layer_yahoo ADD name CHAR(32);
+success!
+timestamp: 2009-01-05T09:31:32.046000
+ALTER TABLE gis_layer_virtualearth ADD description CHAR(256);
+success!
+timestamp: 2009-01-05T09:31:32.140000
+ALTER TABLE gis_layer_virtualearth ADD enabled CHAR(1);
+success!
+timestamp: 2009-01-05T09:31:32.234000
+ALTER TABLE gis_layer_virtualearth ADD uuid CHAR(64);
+success!
+timestamp: 2009-01-05T09:31:32.312000
+ALTER TABLE gis_layer_virtualearth ADD priority INTEGER;
+success!
+timestamp: 2009-01-05T09:31:32.390000
+ALTER TABLE gis_layer_virtualearth ADD subtype CHAR(32);
+success!
+timestamp: 2009-01-05T09:31:32.484000
+ALTER TABLE gis_layer_virtualearth ADD name CHAR(32);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+timestamp: 2009-01-05T12:06:36.546000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+timestamp: 2009-01-05T12:23:02.718000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+DROP TABLE gis_layer_google;
+success!
+DROP TABLE gis_layer_yahoo;
+success!
+DROP TABLE gis_layer_virtualearth;
+success!
+timestamp: 2009-01-05T12:32:40.968000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T12:32:41.109000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T12:32:41.296000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T12:32:41.546000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+DROP TABLE gis_layer_google;
+success!
+DROP TABLE gis_layer_yahoo;
+success!
+DROP TABLE gis_layer_virtualearth;
+success!
+timestamp: 2009-01-05T12:42:20.953000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T12:42:21.125000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T12:42:21.328000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T12:42:21.562000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:30:33.718000
+CREATE TABLE default_setting(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	debug CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+DROP TABLE gis_layer_google;
+success!
+DROP TABLE gis_layer_yahoo;
+success!
+DROP TABLE gis_layer_virtualearth;
+success!
+timestamp: 2009-01-05T13:42:39.703000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:42:39.906000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:42:40.156000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:42:40.375000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+DROP TABLE gis_layer_google;
+success!
+DROP TABLE gis_layer_yahoo;
+success!
+DROP TABLE gis_layer_virtualearth;
+success!
+DROP TABLE default_setting;
+success!
+timestamp: 2009-01-05T13:46:08.359000
+CREATE TABLE default_setting(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	debug CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:15.953000
+ALTER TABLE default_setting ADD admin_name CHAR(32);
+success!
+timestamp: 2009-01-05T13:47:16.046000
+ALTER TABLE default_setting ADD admin_tel CHAR(32);
+success!
+timestamp: 2009-01-05T13:47:16.140000
+ALTER TABLE default_setting ADD admin_email CHAR(32);
+success!
+timestamp: 2009-01-05T13:47:16.296000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:16.546000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:16.750000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:16.968000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+DROP TABLE gis_layer_google;
+success!
+DROP TABLE gis_layer_yahoo;
+success!
+DROP TABLE gis_layer_virtualearth;
+success!
+DROP TABLE default_setting;
+success!
+timestamp: 2009-01-05T13:47:48.359000
+CREATE TABLE default_setting(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	admin_name CHAR(32),
+	admin_email CHAR(32),
+	admin_tel CHAR(32),
+	debug CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:48.546000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:48.796000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:49.046000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T13:47:49.265000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+DROP TABLE gis_layer_google;
+success!
+DROP TABLE gis_layer_yahoo;
+success!
+DROP TABLE gis_layer_virtualearth;
+success!
+DROP TABLE default_setting;
+success!
+timestamp: 2009-01-05T14:23:05.640000
+CREATE TABLE default_setting(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	admin_name CHAR(32),
+	admin_email CHAR(32),
+	admin_tel CHAR(32),
+	debug CHAR(1)
+);
+success!
+timestamp: 2009-01-05T14:23:05.812000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T14:23:06.125000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T14:23:06.343000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T14:23:06.671000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+DROP TABLE gis_layer_openstreetmap;
+success!
+DROP TABLE gis_layer_google;
+success!
+DROP TABLE gis_layer_yahoo;
+success!
+DROP TABLE gis_layer_virtualearth;
+success!
+DROP TABLE default_setting;
+success!
+timestamp: 2009-01-05T15:12:47.906000
+CREATE TABLE default_setting(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	admin_name CHAR(32),
+	admin_email CHAR(32),
+	admin_tel CHAR(32),
+	debug CHAR(1)
+);
+success!
+timestamp: 2009-01-05T15:12:48.093000
+CREATE TABLE gis_layer_openstreetmap(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T15:12:48.359000
+CREATE TABLE gis_layer_google(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T15:12:48.625000
+CREATE TABLE gis_layer_yahoo(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!
+timestamp: 2009-01-05T15:12:48.843000
+CREATE TABLE gis_layer_virtualearth(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	subtype CHAR(32),
+	modified_on TIMESTAMP,
+	name CHAR(32),
+	description CHAR(256),
+	enabled CHAR(1)
+);
+success!

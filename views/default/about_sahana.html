@@ -20,10 +20,19 @@ Web2Py
 {{=web2py_version}}
 </td></tr>
 <tr><td>
+CherryPy
+</td><td>
+{{=request.env.server_software}}
+</td></tr>
+<tr><td>
 Python
 </td><td>
 {{=python_version}}
 </td></tr>
 </table>
-<p>&nbsp;</p>
 </div>
+<p>&nbsp;</p>
+{{if t2.logged_in:}}
+<!--Need to make this if t2.is_admin: when appadmin auth integrated with t2 AAA-->
+<strong>{{=A(T("Internal State"),_href=URL(r=request,c='appadmin',f='state'))}}</strong>: {{=T("Request, Response & Session")}}
+{{pass}}

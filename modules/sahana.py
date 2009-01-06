@@ -67,6 +67,8 @@ class S3(T2):
 
     def __init__(self,request,response,session,cache,T,db,all_in_db=False):
         T2.__init__(self,request,response,session,cache,T,db,all_in_db=False)
+        # Clear unused info from every Response
+        response.files=[]
     
     # Modified version of _stamp
     # we need to support multiple tables

@@ -584,3 +584,38 @@ CREATE TABLE vol_menu_option(
 	enabled CHAR(1)
 );
 success!
+DROP TABLE gis_marker;
+success!
+timestamp: 2009-01-07T21:23:56.500000
+CREATE TABLE gis_marker(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	height INTEGER,
+	width INTEGER,
+	image CHAR(128)
+);
+success!
+DROP TABLE gis_marker;
+success!
+timestamp: 2009-01-07T21:25:14.312000
+CREATE TABLE gis_marker(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	height INTEGER,
+	width INTEGER,
+	image CHAR(128)
+);
+success!
+DELETE FROM gis_marker;
+DELETE FROM sqlite_sequence WHERE name='gis_marker';
+success!
+DELETE FROM gis_marker;
+DELETE FROM sqlite_sequence WHERE name='gis_marker';
+success!
+DELETE FROM gis_marker;
+DELETE FROM sqlite_sequence WHERE name='gis_marker';
+success!

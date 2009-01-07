@@ -1,4 +1,4 @@
-﻿{{if projection=="900913":}}
+﻿{{if projection==900913:}}
     {{if openstreetmap:}}
         {{include 'gis/ol_layers_openstreetmap.js'}}
     {{pass}}

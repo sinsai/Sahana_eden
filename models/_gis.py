@@ -49,6 +49,22 @@ db['%s' % table].displays=['name','height','width','image']
 db['%s' % table].represent=lambda table:shn_list_item(table,resource='marker',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_marker.name')]
 db['%s' % table].name.comment=SPAN("*",_class="req")
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)):
+    # We want to start at ID 1
+    db['%s' % table].truncate() 
+    db['%s' % table].insert(
+        name="marker",
+        height=34,
+        width=20,
+        # This currently works in nowhere
+        #image="markers/marker.png"
+        # This currently works in appadmin, but not in the app
+        #image="marker.png"
+        image="gis_marker.image.fec98377-c848-4745-8ef5-f46f8946a95b.png"
+    )
+    # We should now read in the list of default markers from the filesystem & populate the DB 1 by 1
+    # - we need to get the size automatically
 title_create=T('Add Marker')
 title_display=T('Marker Details')
 title_list=T('List Markers')
@@ -91,6 +107,8 @@ db['%s' % table].maxResolution.comment=SPAN("*",_class="req")
 db['%s' % table].units.requires=IS_IN_SET(['m','degrees'])
 # Populate table with Default options
 if not len(db().select(db['%s' % table].ALL)): 
+   # We want to start at ID 1
+   db['%s' % table].truncate() 
    db['%s' % table].insert(
         name="Spherical Mercator",
         epsg=900913,
@@ -143,9 +161,11 @@ db['%s' % table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db['%s' % table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 # Populate table with Default options
 if not len(db().select(db['%s' % table].ALL)): 
+   # We want to start at ID 1
+   db['%s' % table].truncate() 
    db['%s' % table].insert(
         lat="6",
-        lon="1",
+        lon="79.4",
         zoom=7,
         projection=1,
         marker=1,

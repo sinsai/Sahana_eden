@@ -12,82 +12,6 @@ db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
 db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
 
 
-# GIS Projections
-resource='projection'
-table=module+'_'+resource
-db.define_table(table,
-                SQLField('modified_on','datetime',default=now),
-                SQLField('uuid',length=64,default=uuid.uuid4()),
-                SQLField('name'),
-                SQLField('epsg'),
-                SQLField('maxExtent',length=256),
-                SQLField('maxResolution'),
-                SQLField('units'))
-db['%s' % table].exposes=['name','epsg','maxExtent','maxResolution','units']
-db['%s' % table].displays=['name','epsg','maxExtent','maxResolution','units']
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='projection',action='display',extra='table.epsg')
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].epsg.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-db['%s' % table].epsg.label="EPSG"
-db['%s' % table].epsg.comment=SPAN("*",_class="req")
-db['%s' % table].maxExtent.requires=IS_NOT_EMPTY()
-db['%s' % table].maxExtent.label="maxExtent"
-db['%s' % table].maxExtent.comment=SPAN("*",_class="req")
-db['%s' % table].maxResolution.requires=IS_NOT_EMPTY()
-db['%s' % table].maxResolution.label="maxResolution"
-db['%s' % table].maxResolution.comment=SPAN("*",_class="req")
-db['%s' % table].units.requires=IS_IN_SET(['m','degrees'])
-title_create=T('Add Projection')
-title_display=T('Projection Details')
-title_list=T('List Projections')
-title_update=T('Edit Projection')
-subtitle_create=T('Add New Projection')
-subtitle_list=T('Projections')
-label_list_button=T('List Projections')
-label_create_button=T('Add Projection')
-msg_record_created=T('Projection added')
-msg_record_modified=T('Projection updated')
-msg_record_deleted=T('Projection deleted')
-msg_list_empty=T('No Projections currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
-
-# GIS Config
-# id=1 = Default settings
-# ToDo Extend for per-user Profiles
-resource='config'
-table=module+'_'+resource
-db.define_table(table,
-				SQLField('lat'),
-				SQLField('lon'),
-				SQLField('zoom'),
-				SQLField('projection',length=64),
-				SQLField('marker',length=64,default='e2848160-cad4-4b8e-91cf-d1b4828bf805'),
-				SQLField('map_height'),
-				SQLField('map_width'))
-db['%s' % table].lat.requires=IS_LAT()
-db['%s' % table].lon.requires=IS_LON()
-db['%s' % table].zoom.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-db['%s' % table].projection.requires=IS_IN_DB(db,'gis_projection.uuid','gis_projection.name')
-db['%s' % table].projection.display=lambda uuid: db(db.gis_projection.uuid==uuid).select()[0].name
-db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
-db['%s' % table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % uuid,_class='hidden'))
-db['%s' % table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-db['%s' % table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-title_create=T('Add Config')
-title_display=T('Config Details')
-title_list=T('List Configs')
-title_update=T('Edit Config')
-subtitle_create=T('Add New Config')
-subtitle_list=T('Configs')
-label_list_button=T('List Configs')
-label_create_button=T('Add Config')
-msg_record_created=T('Config added')
-msg_record_modified=T('Config updated')
-msg_record_deleted=T('Config deleted')
-msg_list_empty=T('No Configs currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
-            
 # GIS Markers (Icons)
 resource='marker'
 table=module+'_'+resource
@@ -115,6 +39,109 @@ msg_record_created=T('Marker added')
 msg_record_modified=T('Marker updated')
 msg_record_deleted=T('Marker deleted')
 msg_list_empty=T('No Markers currently available')
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+            
+# GIS Projections
+resource='projection'
+table=module+'_'+resource
+db.define_table(table,
+                SQLField('modified_on','datetime',default=now),
+                SQLField('uuid',length=64,default=uuid.uuid4()),
+                SQLField('name'),
+                SQLField('epsg','integer'),
+                SQLField('maxExtent'),
+                SQLField('maxResolution','double'),
+                SQLField('units'))
+db['%s' % table].exposes=['name','epsg','maxExtent','maxResolution','units']
+db['%s' % table].displays=['name','epsg','maxExtent','maxResolution','units']
+db['%s' % table].represent=lambda table:shn_list_item(table,resource='projection',action='display',extra='table.epsg')
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
+db['%s' % table].name.comment=SPAN("*",_class="req")
+db['%s' % table].epsg.requires=IS_NOT_EMPTY()
+db['%s' % table].epsg.label="EPSG"
+db['%s' % table].epsg.comment=SPAN("*",_class="req")
+db['%s' % table].maxExtent.requires=IS_NOT_EMPTY()
+db['%s' % table].maxExtent.label="maxExtent"
+db['%s' % table].maxExtent.comment=SPAN("*",_class="req")
+db['%s' % table].maxResolution.requires=IS_NOT_EMPTY()
+db['%s' % table].maxResolution.label="maxResolution"
+db['%s' % table].maxResolution.comment=SPAN("*",_class="req")
+db['%s' % table].units.requires=IS_IN_SET(['m','degrees'])
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        name="Spherical Mercator",
+        epsg=900913,
+        maxExtent="-20037508, -20037508, 20037508, 20037508.34",
+        maxResolution=156543.0339,
+        units="m"
+    )
+   db['%s' % table].insert(
+        name="WGS84",
+        epsg=4326,
+        maxExtent="-180,-90,180,90",
+        maxResolution=1.40625,
+        units="degrees"
+    )
+title_create=T('Add Projection')
+title_display=T('Projection Details')
+title_list=T('List Projections')
+title_update=T('Edit Projection')
+subtitle_create=T('Add New Projection')
+subtitle_list=T('Projections')
+label_list_button=T('List Projections')
+label_create_button=T('Add Projection')
+msg_record_created=T('Projection added')
+msg_record_modified=T('Projection updated')
+msg_record_deleted=T('Projection deleted')
+msg_list_empty=T('No Projections currently defined')
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+
+# GIS Config
+# id=1 = Default settings
+# ToDo Extend for per-user Profiles
+resource='config'
+table=module+'_'+resource
+db.define_table(table,
+				SQLField('lat'),
+				SQLField('lon'),
+				SQLField('zoom','integer'),
+				SQLField('projection',db.gis_projection),   # NB This can then have issues with sync unless going via CSV
+				SQLField('marker',db.gis_marker),           # NB This can then have issues with sync unless going via CSV
+				SQLField('map_height'),
+				SQLField('map_width'))
+db['%s' % table].lat.requires=IS_LAT()
+db['%s' % table].lon.requires=IS_LON()
+db['%s' % table].zoom.requires=IS_INT_IN_RANGE(0,19)
+db['%s' % table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
+db['%s' % table].projection.display=lambda uuid: db(db.gis_projection.uuid==uuid).select()[0].name
+db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
+db['%s' % table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % uuid,_class='hidden'))
+db['%s' % table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db['%s' % table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        lat="6",
+        lon="1",
+        zoom=7,
+        projection=1,
+        marker=1,
+        map_height=600,
+        map_width=800
+    )
+title_create=T('Add Config')
+title_display=T('Config Details')
+title_list=T('List Configs')
+title_update=T('Edit Config')
+subtitle_create=T('Add New Config')
+subtitle_list=T('Configs')
+label_list_button=T('List Configs')
+label_create_button=T('Add Config')
+msg_record_created=T('Config added')
+msg_record_modified=T('Config updated')
+msg_record_deleted=T('Config deleted')
+msg_list_empty=T('No Configs currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
             
 # GIS Features

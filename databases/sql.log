@@ -2012,3 +2012,45 @@ CREATE TABLE gis_layer_virtualearth(
 	enabled CHAR(1)
 );
 success!
+DROP TABLE gis_projection;
+success!
+timestamp: 2009-01-07T07:34:23.343000
+CREATE TABLE gis_projection(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	epsg INTEGER,
+	maxExtent CHAR(32),
+	maxResolution DOUBLE,
+	units CHAR(32)
+);
+success!
+DROP TABLE gis_projection;
+success!
+DROP TABLE gis_config;
+success!
+timestamp: 2009-01-07T08:13:50.531000
+CREATE TABLE gis_projection(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	modified_on TIMESTAMP,
+	uuid CHAR(64),
+	name CHAR(32),
+	epsg INTEGER,
+	maxExtent CHAR(32),
+	maxResolution DOUBLE,
+	units CHAR(32)
+);
+success!
+timestamp: 2009-01-07T08:13:50.656000
+CREATE TABLE gis_config(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	lat CHAR(32),
+	lon CHAR(32),
+	zoom INTEGER,
+	projection REFERENCES gis_projection(id) ON DELETE CASCADE,
+	marker REFERENCES gis_marker(id) ON DELETE CASCADE,
+	map_height CHAR(32),
+	map_width CHAR(32)
+);
+success!

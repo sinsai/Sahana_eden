@@ -1,13 +1,12 @@
 {{extend 'layout.html'}}
 
-<div class='form-container'>
 <h2>{{=T("About Sahana")}}</h2>
-<p>&nbsp;</p>
+<div class='item-container'>
 <table>
 <tr><td>
 <strong>Component</strong>
 </td><td>
-<strong>Version</strong>
+<strong>Details</strong>
 </td></tr>
 <tr><td>
 Sahana
@@ -15,14 +14,14 @@ Sahana
 {{=sahana_version}}
 </td></tr>
 <tr><td>
+Web Server
+</td><td>
+{{=request.env.server_software}}
+</td></tr>
+<tr><td>
 Web2Py
 </td><td>
 {{=web2py_version}}
-</td></tr>
-<tr><td>
-CherryPy
-</td><td>
-{{=request.env.server_software}}
 </td></tr>
 <tr><td>
 Python

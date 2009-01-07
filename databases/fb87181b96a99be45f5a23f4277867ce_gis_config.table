@@ -1,7 +1,7 @@
 (dp1
 S'projection'
 p2
-S'CHAR(64)'
+S'REFERENCES gis_projection(id) ON DELETE CASCADE'
 p3
 sS'map_height'
 p4
@@ -17,30 +17,18 @@ S'CHAR(32)'
 p9
 sS'zoom'
 p10
-S'CHAR(32)'
+S'INTEGER'
 p11
-sS'value'
+sS'marker'
 p12
-S'CHAR(32)'
+S'REFERENCES gis_marker(id) ON DELETE CASCADE'
 p13
 sS'lat'
 p14
 S'CHAR(32)'
 p15
-sS'setting'
-p16
-S'CHAR(32)'
-p17
-sS'marker'
-p18
-S'CHAR(64)'
-p19
 sS'id'
-p20
+p16
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p21
-sS'description'
-p22
-S'CHAR(256)'
-p23
+p17
 s.

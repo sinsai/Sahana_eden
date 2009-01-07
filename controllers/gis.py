@@ -672,7 +672,7 @@ def map_viewing_client():
     width=db(db.gis_config.id==1).select()[0].map_width
     height=db(db.gis_config.id==1).select()[0].map_height
     _projection=db(db.gis_config.id==1).select()[0].projection
-    projection=db(db.gis_projection.uuid==_projection).select()[0].epsg
+    projection=db(db.gis_projection.id==_projection).select()[0].epsg
     lat=db(db.gis_config.id==1).select()[0].lat
     lon=db(db.gis_config.id==1).select()[0].lon
     zoom=db(db.gis_config.id==1).select()[0].zoom

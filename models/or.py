@@ -10,7 +10,30 @@ db.define_table('%s_menu_option' % module,
 db['%s_menu_option' % module].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.name' % module)]
 db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
 db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
-
+if not len(db().select(db['%s_menu_option' % module].ALL)):
+	table='%s_menu_option' % module
+	
+	db['%s' % table].insert(
+        name="Home",
+	function="index",
+	priority=0,
+	description="Home",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Add Organization",
+	function="organisation/create",
+	priority=1,
+	description="Adds an Organisation's details to Sahana",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="List Organisations",
+	function="organisation",
+	priority=2,
+	description="View a list of registered organizations. Their details can be viewed / edited by clicking on the appropriate links",
+	enabled='True'
+	)
 
 # OR Organisation Types
 # How do we deal with syncs? Don't want dupes, yet want to be able to add local.

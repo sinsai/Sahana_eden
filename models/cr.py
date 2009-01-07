@@ -10,7 +10,30 @@ db.define_table('%s_menu_option' % module,
 db['%s_menu_option' % module].name.requires=IS_NOT_IN_DB(db,'%s_menu_option.name' % module)
 db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
 db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
-
+if not len(db().select(db['%s_menu_option' % module].ALL)):
+	table='%s_menu_option' % module
+	
+	db['%s' % table].insert(
+        name="Home",
+	function="index",
+	priority=0,
+	description="Home",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Add Shelter",
+	function="shelter/create",
+	priority=1,
+	description="Add a shelter to the database",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="List Shelters",
+	function="shelter",
+	priority=2,
+	description="List information of all shelters",
+	enabled='True'
+	)
 
 # Shelters
 resource='shelter'

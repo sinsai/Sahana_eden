@@ -10,7 +10,30 @@ db.define_table('%s_menu_option' % module,
 db['%s_menu_option' % module].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.name' % module)]
 db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
 db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
-
+if not len(db().select(db['%s_menu_option' % module].ALL)):
+	table='%s_menu_option' % module
+	
+	db['%s' % table].insert(
+        name="Home",
+	function="index",
+	priority=0,
+	description="Home",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Map Viewing Client",
+	function="map_viewing_client",
+	priority=1,
+	description="",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Map Service Catalogue",
+	function="map_service_catalogue",
+	priority=2,
+	description="",
+	enabled='True'
+	)
 
 # GIS Projections
 resource='projection'

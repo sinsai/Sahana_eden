@@ -41,7 +41,80 @@ db.define_table('module',
 db.module.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name')]
 db.module.name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name_nice')]
 db.module.menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.menu_priority')]
-
+# populate with defaults
+if not len(db().select(db['module'].ALL)):
+	table="module"
+	db['%s' % table].insert(
+        name="default",
+	name_nice="Sahana Home",
+	menu_priority=0,
+	description="",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="pr",
+	name_nice="Person Registry",
+	menu_priority=1,
+	description="Central point to record details on People",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="mpr",
+	name_nice="Missing Person Registry",
+	menu_priority=2,
+	description="Helps to report and search missing person",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="dvr",
+	name_nice="Disaster Victim Registry",
+	menu_priority=3,
+	description="Traces internally displaced people (IDPs) and their needs",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="or",
+	name_nice="Organization Registry",
+	menu_priority=4,
+	description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="cr",
+	name_nice="Shelter Registry",
+	menu_priority=5,
+	description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="gis",
+	name_nice="Situation Awareness",
+	menu_priority=6,
+	description="Mapping & Geospatial Analysis",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="vol",
+	name_nice="Volunteer Registry",
+	menu_priority=7,
+	description="Allows managing volunteers by capturing their skills, availability and allocation",
+	enabled='False'
+	)
+	db['%s' % table].insert(
+        name="ims",
+	name_nice="Inventory Management",
+	menu_priority=8,
+	description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="rms",
+	name_nice="Request Management",
+	menu_priority=8,
+	description="Tracks requests for aid and matches them against donors who have pledged aid",
+	enabled='False'
+	)
+	
 # Home Menu Options
 db.define_table('default_menu_option',
                 SQLField('name'),
@@ -52,7 +125,17 @@ db.define_table('default_menu_option',
 db.default_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.name')]
 db.default_menu_option.function.requires=IS_NOT_EMPTY()
 db.default_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.priority')]
-   
+# Populate table with Default options
+if not len(db().select(db['default_menu_option'].ALL)):
+	table="default_menu_option"
+	db['%s' % table].insert(
+        name="About Sahana",
+	function="about_sahana",
+	priority=0,
+	description="",
+	enabled='True'
+	)
+
 #
 # Configuration options
 #

@@ -19,16 +19,12 @@ sS'modified_on'
 p10
 S'TIMESTAMP'
 p11
-sS'size'
-p12
-S'CHAR(32)'
-p13
 sS'id'
-p14
+p12
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p15
+p13
 sS'uuid'
-p16
+p14
 S'CHAR(64)'
-p17
+p15
 s.

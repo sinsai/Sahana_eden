@@ -9,11 +9,11 @@ S'CHAR(256)'
 p5
 sS'enabled'
 p6
-S'CHAR(32)'
+S'CHAR(1)'
 p7
 sS'priority'
 p8
-S'CHAR(32)'
+S'INTEGER'
 p9
 sS'id'
 p10

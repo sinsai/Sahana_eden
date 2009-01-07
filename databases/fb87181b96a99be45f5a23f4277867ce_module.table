@@ -5,19 +5,19 @@ S'CHAR(256)'
 p3
 sS'enabled'
 p4
-S'CHAR(32)'
+S'CHAR(1)'
 p5
 sS'name_nice'
 p6
 S'CHAR(32)'
 p7
-sS'menu_priority'
-p8
-S'INTEGER'
-p9
 sS'id'
-p10
+p8
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
+p9
+sS'menu_priority'
+p10
+S'INTEGER'
 p11
 sS'name'
 p12

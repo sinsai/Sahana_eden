@@ -7,9 +7,9 @@ sS'modified_by'
 p4
 S'INTEGER'
 p5
-sS'name'
+sS'description'
 p6
-S'CHAR(32)'
+S'TEXT'
 p7
 sS'file_data'
 p8
@@ -59,8 +59,8 @@ sS'id'
 p30
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p31
-sS'description'
+sS'name'
 p32
-S'TEXT'
+S'CHAR(32)'
 p33
 s.

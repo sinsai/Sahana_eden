@@ -29,33 +29,13 @@ t2=S3(request,response,session,cache,T,db)
 from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
-crud_strings=Storage()
 
-# Modules
-db.define_table('module',
-                SQLField('name'),
-                SQLField('name_nice'),
-                SQLField('menu_priority','integer'),
-                SQLField('description',length=256),
-                SQLField('enabled','boolean',default='True'))
-db.module.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name')]
-db.module.name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.name_nice')]
-db.module.menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'module.menu_priority')]
+module='default'
 
-# Home Menu Options
-db.define_table('default_menu_option',
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
-db.default_menu_option.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.name')]
-db.default_menu_option.function.requires=IS_NOT_EMPTY()
-db.default_menu_option.priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'default_menu_option.priority')]
-   
 #
 # Configuration options
 #
+crud_strings=Storage()
 
 # System Defaults
 shn_default=Storage()
@@ -66,7 +46,6 @@ shn_default.admin_email=T("support@Not Set")
 shn_default.admin_tel=T("Not Set")
 
 # Database table for Settings of running instance
-module='default'
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
@@ -95,6 +74,111 @@ msg_record_modified=T('Setting updated')
 msg_record_deleted=T('Setting deleted')
 msg_list_empty=T('No Settings currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+
+# Modules
+table="module"
+db.define_table(table,
+                SQLField('name'),
+                SQLField('name_nice'),
+                SQLField('menu_priority','integer'),
+                SQLField('description',length=256),
+                SQLField('enabled','boolean',default='True'))
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db['%s' % table].name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name_nice' % table)]
+db['%s' % table].menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.menu_priority' % table)]
+# Populate table with Default modules
+if not len(db().select(db['%s' % table].ALL)):
+	db['%s' % table].insert(
+        name="default",
+	name_nice="Sahana Home",
+	menu_priority=0,
+	description="",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="pr",
+	name_nice="Person Registry",
+	menu_priority=1,
+	description="Central point to record details on People",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="mpr",
+	name_nice="Missing Person Registry",
+	menu_priority=2,
+	description="Helps to report and search missing person",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="dvr",
+	name_nice="Disaster Victim Registry",
+	menu_priority=3,
+	description="Traces internally displaced people (IDPs) and their needs",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="or",
+	name_nice="Organization Registry",
+	menu_priority=4,
+	description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="cr",
+	name_nice="Shelter Registry",
+	menu_priority=5,
+	description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="gis",
+	name_nice="Situation Awareness",
+	menu_priority=6,
+	description="Mapping & Geospatial Analysis",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="vol",
+	name_nice="Volunteer Registry",
+	menu_priority=7,
+	description="Allows managing volunteers by capturing their skills, availability and allocation",
+	enabled='False'
+	)
+	db['%s' % table].insert(
+        name="ims",
+	name_nice="Inventory Management",
+	menu_priority=8,
+	description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
+	enabled='False'
+	)
+	db['%s' % table].insert(
+        name="rms",
+	name_nice="Request Management",
+	menu_priority=9,
+	description="Tracks requests for aid and matches them against donors who have pledged aid",
+	enabled='False'
+	)
+	
+# Home Menu Options
+table='%s_menu_option' % module
+db.define_table(table,
+                SQLField('name'),
+                SQLField('function'),
+                SQLField('description',length=256),
+                SQLField('priority','integer'),
+                SQLField('enabled','boolean',default='True'))
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db['%s' % table].function.requires=IS_NOT_EMPTY()
+db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)):
+	db['%s' % table].insert(
+        name="About Sahana",
+	function="about_sahana",
+	priority=0,
+	description="",
+	enabled='True'
+	)
 
 def shn_sessions(f):
    """

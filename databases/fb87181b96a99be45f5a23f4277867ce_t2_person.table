@@ -19,9 +19,9 @@ sS'created_by'
 p10
 S'INTEGER'
 p11
-sS'email'
+sS'id'
 p12
-S'CHAR(32)'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p13
 sS'created_on'
 p14
@@ -43,8 +43,8 @@ sS'modified_signature'
 p22
 S'CHAR(32)'
 p23
-sS'id'
+sS'email'
 p24
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'CHAR(32)'
 p25
 s.

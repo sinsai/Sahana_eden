@@ -1,16 +1,38 @@
 module='gis'
 
 # Menu Options
-db.define_table('%s_menu_option' % module,
+table='%s_menu_option' % module
+db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s_menu_option' % module].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.name' % module)]
-db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
-db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
-
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db['%s' % table].name.requires=IS_NOT_EMPTY()
+db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+if not len(db().select(db['%s' % table].ALL)):
+	db['%s' % table].insert(
+        name="Home",
+	function="index",
+	priority=0,
+	description="Home",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Map Viewing Client",
+	function="map_viewing_client",
+	priority=1,
+	description="",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Map Service Catalogue",
+	function="map_service_catalogue",
+	priority=2,
+	description="",
+	enabled='True'
+	)
 
 # GIS Markers (Icons)
 resource='marker'
@@ -309,6 +331,23 @@ db['%s' % table].service.requires=IS_IN_SET(['google','multimap','yahoo'])
 #db['%s' % table].apikey.requires=THIS_NOT_IN_DB(db(db['%s' % table].service==request.vars.service),'gis_apikey.service',request.vars.service,'service already in use')
 db['%s' % table].apikey.requires=IS_NOT_EMPTY()
 db['%s' % table].apikey.label=T("Key")
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        service="google",
+        apikey="ABQIAAAAb-bE-ljr4-6Hsb4x92lWhRT2yXp_ZAY8_ufC3CFXhHIE1NvwkxQTjccCsxIjr0poUEEARUZJgolNfw",
+        description="localhost"
+    )
+   db['%s' % table].insert(
+        service="yahoo",
+        apikey="euzuro-openlayers",
+        description="To be replaced for Production use"
+    )
+   db['%s' % table].insert(
+        service="multimap",
+        apikey="metacarta_04",
+        description="trial"
+    )
 title_create=T('Add Key')
 title_display=T('Key Details')
 title_list=T('List Keys')

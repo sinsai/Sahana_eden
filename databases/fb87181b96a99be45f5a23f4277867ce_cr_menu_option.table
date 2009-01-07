@@ -9,7 +9,7 @@ S'CHAR(256)'
 p5
 sS'enabled'
 p6
-S'CHAR(32)'
+S'CHAR(1)'
 p7
 sS'priority'
 p8

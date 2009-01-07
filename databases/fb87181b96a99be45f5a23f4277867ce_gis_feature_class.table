@@ -5,18 +5,18 @@ S'TIMESTAMP'
 p3
 sS'marker'
 p4
-S'CHAR(32)'
-p5
-sS'uuid'
-p6
 S'CHAR(64)'
-p7
+p5
 sS'id'
-p8
+p6
 S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p9
+p7
 sS'name'
-p10
+p8
 S'CHAR(32)'
+p9
+sS'uuid'
+p10
+S'CHAR(64)'
 p11
 s.

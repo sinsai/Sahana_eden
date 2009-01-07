@@ -1,26 +1,22 @@
 (dp1
-S'apikey'
+S'modified_on'
 p2
-S'CHAR(32)'
+S'TIMESTAMP'
 p3
-sS'description'
+sS'apikey'
 p4
-S'CHAR(256)'
-p5
-sS'service'
-p6
 S'CHAR(32)'
+p5
+sS'id'
+p6
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p7
-sS'key'
+sS'service'
 p8
 S'CHAR(32)'
 p9
-sS'modified_on'
+sS'description'
 p10
-S'TIMESTAMP'
+S'CHAR(256)'
 p11
-sS'id'
-p12
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
-p13
 s.

@@ -7,9 +7,9 @@ sS'created_by_ip'
 p4
 S'CHAR(32)'
 p5
-sS'created_by'
+sS'access_type'
 p6
-S'INTEGER'
+S'CHAR(32)'
 p7
 sS'modified_on'
 p8
@@ -23,9 +23,9 @@ sS'table_name'
 p12
 S'CHAR(32)'
 p13
-sS'access_type'
+sS'created_by'
 p14
-S'CHAR(32)'
+S'INTEGER'
 p15
 sS'created_signature'
 p16

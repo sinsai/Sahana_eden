@@ -1,16 +1,38 @@
 module='pr'
 
 # Menu Options
-db.define_table('%s_menu_option' % module,
+table='%s_menu_option' % module
+db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s_menu_option' % module].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.name' % module)]
-db['%s_menu_option' % module].name.requires=IS_NOT_EMPTY()
-db['%s_menu_option' % module].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s_menu_option.priority' % module)]
-
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db['%s' % table].name.requires=IS_NOT_EMPTY()
+db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+if not len(db().select(db['%s' % table].ALL)):
+	db['%s' % table].insert(
+        name="Home",
+	function="index",
+	priority=0,
+	description="Home",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Add Person",
+	function="person/create",
+	priority=1,
+	description="",
+	enabled='True'
+	)
+	db['%s' % table].insert(
+        name="List People",
+	function="person",
+	priority=2,
+	description="",
+	enabled='True'
+	)
 
 # People
 # Modules: cr,dvr,mpr

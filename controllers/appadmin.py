@@ -10,14 +10,40 @@ import gluon.fileutils
 global_env=copy.copy(globals())
 global_env['datetime']=datetime
 
-http_host = request.env.http_host.split(':')[0]
-remote_addr = request.env.remote_addr
-try: hosts=(http_host, socket.gethostbyname(remote_addr))
-except: hosts=(http_host,)
-if remote_addr not in hosts:
-    raise HTTP(400)
-if not gluon.fileutils.check_credentials(request):
-    redirect('/admin')
+#
+# Native Web2Py Auth (localhost & site password)
+#
+#http_host = request.env.http_host.split(':')[0]
+#remote_addr = request.env.remote_addr
+#try: hosts=(http_host, socket.gethostbyname(remote_addr))
+#except: hosts=(http_host,)
+#if remote_addr not in hosts:
+#    raise HTTP(400)
+#if not gluon.fileutils.check_credentials(request):
+#    redirect('/admin')
+
+#
+# T3 Auth
+#
+#if not t2.is_admin:
+#    session.error=T('Not Authorised')
+#    redirect(URL(r=request,c='default',f='index'))
+
+#
+# S3 Auth
+#
+# Can't see t2_person.id in the controller :/
+#if not shn_has_role(t2_person.id,1):
+#    session.error=T('Not Authorised')
+#    redirect(URL(r=request,c='default',f='index'))
+
+#module='appadmin'
+# Current Module (for sidebar title)
+#module_name=db(db.default_module.name==module).select()[0].name_nice
+# List Modules (from which to build Menu of Modules)
+modules=db(db.default_module.enabled=='Yes').select(db.default_module.ALL,orderby=db.default_module.menu_priority)
+# List Options (from which to build Menu for this Module)
+#options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
 response.view='appadmin.html'
 response.menu=[[T('design'),False,URL('admin','default','design',
@@ -70,7 +96,7 @@ def get_query(request):
 ############################################################
 
 def index():
-    return dict(databases=databases)
+    return dict(databases=databases,modules=modules)
 
 ###########################################################
 ### insert a new record
@@ -206,4 +232,4 @@ def update():
 ### get global variables
 ############################################################
 
-def state(): return dict()
+def state(): return dict(modules=modules)

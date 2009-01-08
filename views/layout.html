@@ -34,10 +34,9 @@
 </div>
 </div>
 <div id="wrapper" class="clearfix">
-<!-- <div id="page"> -->
   <div id="wrapper_menu">
    <p id="skip">Jump to: <a href="#content">Content</a> | <a href="#modulemenu">Module Menu</a></p>
-  <div id="modmenuwrap">
+    <div id="modmenuwrap">
    {{try:}}
     {{=H2(module_name)}}
    {{except:}}
@@ -45,14 +44,16 @@
    <ul id="modmenu">
    {{try:}}
     {{for option in options:}}
-	<li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
+     {{if not option.access or (option.access in response.roles):}}
+	  <li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
+     {{pass}}
 	{{pass}}
    {{except:}}
    {{pass}}
    </ul>
   </div>
   <div id="menuwrap">
-   <h2>{{=T("Sahana Main")}}</h2>  
+   <h2>{{=T("Modules")}}</h2>  
    <ul id="menu">
    {{try:}}
     {{for module in modules:}}

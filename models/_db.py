@@ -30,6 +30,64 @@ from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
 
+# User Roles
+# for Authorization
+table='s3_role'
+db.define_table(table,
+                SQLField('name'),
+                SQLField('description',length=256))
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)):
+	# Default
+    #db['%s' % table].insert(
+    #    name="Anonymous User",
+	#)
+	db['%s' % table].insert(
+        name="Administrator",
+        description="System Administrator - can access & make changes to any data",
+	)
+    # t2.logged_in is an alternate way of checking for this role
+	db['%s' % table].insert(
+        name="Registered User",
+        description="A registered user in the system (e.g Volunteers, Family)"
+	)
+	db['%s' % table].insert(
+        name="Super User",
+        description="Head of Operations - can access & make changes to any data"
+	)
+	db['%s' % table].insert(
+        name="Trusted User",
+        description="An officially trusted and designated user of the system. Often member of a trusted supporting organization"
+	)
+	db['%s' % table].insert(
+        name="Organisation Admin",
+        description="Can make changes to an Organisation & it's assets"
+	)
+	db['%s' % table].insert(
+        name="Camp Admin",
+        description="Can make changes to a Camp"
+	)
+table='s3_roleholder'
+db.define_table(table,
+                SQLField('person_id',db.t2_person),
+                SQLField('role_id',db.s3_role))
+db['%s' % table].person_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.email')
+db['%s' % table].role_id.requires=IS_IN_DB(db,'s3_role.id','s3_role.name')
+
+def shn_has_role(person,role):
+    "Lookup to see whether a person has a role"
+    if not len(role):
+        # No role specified => anonymous allowed
+        return True
+    elif len(db((db.s3_roleholder.person_id==person)&(db.s3_roleholder.role_id==role)).select()):
+        # person does have the role
+        return True
+    else:
+        # person does not have the role
+        return False
+
+
 module='default'
 
 #
@@ -76,7 +134,7 @@ msg_list_empty=T('No Settings currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
 
 # Modules
-table="module"
+table="default_module"
 db.define_table(table,
                 SQLField('name'),
                 SQLField('name_nice'),
@@ -90,73 +148,73 @@ db['%s' % table].menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.menu
 if not len(db().select(db['%s' % table].ALL)):
 	db['%s' % table].insert(
         name="default",
-	name_nice="Sahana Home",
-	menu_priority=0,
-	description="",
-	enabled='True'
+        name_nice="Sahana Home",
+        menu_priority=0,
+        description="",
+        enabled='True'
 	)
 	db['%s' % table].insert(
         name="pr",
-	name_nice="Person Registry",
-	menu_priority=1,
-	description="Central point to record details on People",
-	enabled='True'
+        name_nice="Person Registry",
+        menu_priority=1,
+        description="Central point to record details on People",
+        enabled='True'
 	)
 	db['%s' % table].insert(
         name="mpr",
-	name_nice="Missing Person Registry",
-	menu_priority=2,
-	description="Helps to report and search missing person",
-	enabled='True'
+        name_nice="Missing Person Registry",
+        menu_priority=2,
+        description="Helps to report and search missing person",
+        enabled='True'
 	)
 	db['%s' % table].insert(
         name="dvr",
-	name_nice="Disaster Victim Registry",
-	menu_priority=3,
-	description="Traces internally displaced people (IDPs) and their needs",
-	enabled='True'
+        name_nice="Disaster Victim Registry",
+        menu_priority=3,
+        description="Traces internally displaced people (IDPs) and their needs",
+        enabled='True'
 	)
 	db['%s' % table].insert(
         name="or",
-	name_nice="Organization Registry",
-	menu_priority=4,
-	description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
-	enabled='True'
+        name_nice="Organization Registry",
+        menu_priority=4,
+        description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
+        enabled='True'
 	)
 	db['%s' % table].insert(
         name="cr",
-	name_nice="Shelter Registry",
-	menu_priority=5,
-	description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
-	enabled='True'
+        name_nice="Shelter Registry",
+        menu_priority=5,
+        description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
+        enabled='True'
 	)
 	db['%s' % table].insert(
         name="gis",
-	name_nice="Situation Awareness",
-	menu_priority=6,
-	description="Mapping & Geospatial Analysis",
-	enabled='True'
+        name_nice="Situation Awareness",
+        menu_priority=6,
+        description="Mapping & Geospatial Analysis",
+        enabled='True'
 	)
 	db['%s' % table].insert(
         name="vol",
-	name_nice="Volunteer Registry",
-	menu_priority=7,
-	description="Allows managing volunteers by capturing their skills, availability and allocation",
-	enabled='False'
+        name_nice="Volunteer Registry",
+        menu_priority=7,
+        description="Allows managing volunteers by capturing their skills, availability and allocation",
+        enabled='False'
 	)
 	db['%s' % table].insert(
         name="ims",
-	name_nice="Inventory Management",
-	menu_priority=8,
-	description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
-	enabled='False'
+        name_nice="Inventory Management",
+        menu_priority=8,
+        description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
+        enabled='False'
 	)
 	db['%s' % table].insert(
         name="rms",
-	name_nice="Request Management",
-	menu_priority=9,
-	description="Tracks requests for aid and matches them against donors who have pledged aid",
-	enabled='False'
+        name_nice="Request Management",
+        menu_priority=9,
+        description="Tracks requests for aid and matches them against donors who have pledged aid",
+        enabled='False'
 	)
 	
 # Home Menu Options
@@ -165,36 +223,53 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
+                SQLField('access',db.s3_role),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db['%s' % table].function.requires=IS_NOT_EMPTY()
+db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'s3_role.id','s3_role.name'))
 db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 # Populate table with Default options
 if not len(db().select(db['%s' % table].ALL)):
 	db['%s' % table].insert(
         name="About Sahana",
-	function="about_sahana",
-	priority=0,
-	description="",
-	enabled='True'
+        function="about_sahana",
+        priority=0,
+        enabled='True'
+	)
+	db['%s' % table].insert(
+        name="Admin",
+        function="admin",
+        access=1,   # Administrator role only
+        priority=1,
+        enabled='True'
 	)
 
 def shn_sessions(f):
-   """
-   Extend session to support:
-        Multiple flash classes
-        Debug mode
-   """
-   response.error=session.error
-   response.confirmation=session.confirmation
-   response.warning=session.warning
-   session.error=[]
-   session.confirmation=[]
-   session.warning=[]
-   # Debug mode => Load all JS/CSS independently & uncompressed
-   response.debug=db().select(db.default_setting.debug)[0].debug
-   return f()
+    """
+    Extend session to support:
+         Multiple flash classes
+         Debug mode
+         Roles held by a user
+    """
+    response.error=session.error
+    response.confirmation=session.confirmation
+    response.warning=session.warning
+    session.error=[]
+    session.confirmation=[]
+    session.warning=[]
+    # Debug mode => Load all JS/CSS independently & uncompressed
+    response.debug=db().select(db.default_setting.debug)[0].debug
+    # Which roles does a user have?
+    response.roles=[]
+    try:
+        roles=db(db.s3_roleholder.person_id==t2.person_id).select()
+        for role in roles:
+            response.roles.append(role.role_id)
+    except:
+        pass
+    return f()
 response._caller=lambda f: shn_sessions(f)
 
 #
@@ -288,7 +363,7 @@ def shn_rest_controller(module,resource):
         representation="html"
     
     if len(request.args)==0:
-        # No arguments => default to list (or list_create if logged_in)
+        # No arguments => default to List (or list_create if logged_in)
         if representation=="html":
             list=t2.itemize(table)
             if list=="No data":
@@ -318,7 +393,7 @@ def shn_rest_controller(module,resource):
     else:
         method=str.lower(request.args[0])
         if request.args[0].isdigit():
-            # 1st argument is ID not method => display.
+            # 1st argument is ID not method => Display.
             if representation=="html":
                 item=t2.display(table)
                 response.view='display.html'
@@ -335,6 +410,31 @@ def shn_rest_controller(module,resource):
                 item=db(table.id==t2.id).select(table.ALL).json()
                 response.view='plain.html'
                 return dict(item=item)
+            elif representation=="csv":
+                # ToDo
+                return
+            elif representation=="rss":
+                #if request.args and request.args[0] in settings.rss_procedures:
+                #   feed=eval('%s(*request.args[1:],**dict(request.vars))'%request.args[0])
+                #else:
+                #   t2._error()
+                #import gluon.contrib.rss2 as rss2
+                #rss = rss2.RSS2(
+                #   title=feed['title'],
+                #   link = feed['link'],
+                #   description = feed['description'],
+                #   lastBuildDate = feed['created_on'],
+                #   items = [
+                #      rss2.RSSItem(
+                #        title = entry['title'],
+                #        link = entry['link'],
+                #        description = entry['description'],
+                #        pubDate = entry['created_on']) for entry in feed['entries']]
+                #   )
+                #response.headers['Content-Type']='application/rss+xml'
+                #return rss2.dumps(rss)
+                response.view='plain.html'
+                return
             else:
                 session.error=T("Unsupported format!")
                 redirect(URL(r=request,f=resource))

@@ -1,8 +1,8 @@
 module='mpr'
 # Current Module (for sidebar title)
-module_name=db(db.module.name==module).select()[0].name_nice
+module_name=db(db.default_module.name==module).select()[0].name_nice
 # List Modules (from which to build Menu of Modules)
-modules=db(db.module.enabled=='Yes').select(db.module.ALL,orderby=db.module.menu_priority)
+modules=db(db.default_module.enabled=='Yes').select(db.default_module.ALL,orderby=db.default_module.menu_priority)
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 

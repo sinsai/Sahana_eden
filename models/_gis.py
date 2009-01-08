@@ -6,10 +6,12 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
+                SQLField('access',db.s3_role),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].name.requires=IS_NOT_EMPTY()
+db['%s' % table].function.requires=IS_NOT_EMPTY()
+db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'s3_role.id','s3_role.name'))
 db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 if not len(db().select(db['%s' % table].ALL)):
 	db['%s' % table].insert(
@@ -23,14 +25,12 @@ if not len(db().select(db['%s' % table].ALL)):
         name="Map Viewing Client",
 	function="map_viewing_client",
 	priority=1,
-	description="",
 	enabled='True'
 	)
 	db['%s' % table].insert(
         name="Map Service Catalogue",
 	function="map_service_catalogue",
 	priority=2,
-	description="",
 	enabled='True'
 	)
 
@@ -57,11 +57,9 @@ if not len(db().select(db['%s' % table].ALL)):
         name="marker",
         height=34,
         width=20,
-        # This currently works in nowhere
-        #image="markers/marker.png"
-        # This currently works in appadmin, but not in the app
-        #image="marker.png"
-        image="gis_marker.image.fec98377-c848-4745-8ef5-f46f8946a95b.png"
+        # Can't do sub-folders :/
+        # need to script a bulk copy & rename
+        image="gis_marker.image.default.png"
     )
     # We should now read in the list of default markers from the filesystem & populate the DB 1 by 1
     # - we need to get the size automatically

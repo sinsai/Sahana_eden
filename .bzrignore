@@ -1,4 +1,4 @@
-databases/sqlite3.exe
+databases/*
 errors/*
 sessions/*
 .raw/*

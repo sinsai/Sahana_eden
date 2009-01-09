@@ -51,6 +51,14 @@ response.menu=[[T('design'),False,URL('admin','default','design',
                [T('db'),False,URL(r=request,f='index')],
                [T('state'),False,URL(r=request,f='state')]]
 
+# T2 framework functions
+def login():
+	response.view='login.html'
+	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
+def logout(): t2.logout(next='login')
+def register(): redirect(URL(r=request,c='default',f='register'))
+def profile(): t2.profile()
+               
 ###########################################################
 ### auxiliary functions
 ############################################################

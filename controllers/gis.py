@@ -11,10 +11,7 @@ def login():
 	response.view='login.html'
 	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
-def register():
-	response.view='register.html'
-	t2.messages.record_created=T("You have been successfully registered")
-	return dict(form=t2.register())
+def register(): redirect(URL(r=request,c='default',f='register'))
 def profile(): t2.profile()
 def download():
     "Enable downloading of Markers & other Files."

@@ -59,9 +59,11 @@ db.define_table(table,
                 SQLField('full_name'),
                 SQLField('family_name'),
                 SQLField('l10_name'))
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='person',action='display',display='table.full_name')
-db['%s' % table].exposes=['full_name','family_name','l10_name']
-db['%s' % table].displays=['full_name','family_name','l10_name']
+exec("s3.fields.%s=['full_name','family_name','l10_name']" % table)
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='person',action='display',display='table.full_name')
 db['%s' % table].full_name.requires=IS_NOT_EMPTY()
 title_create=T('Add Person')
 title_display=T('Person Details')

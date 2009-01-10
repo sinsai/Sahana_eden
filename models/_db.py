@@ -30,6 +30,10 @@ t2=S3(request,response,session,cache,T,db)
 from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
+# Keep all S3 framework-level elements stored off here, so as to avoid oluuting global namespace & to make it clear which part of the framework is being interacted with
+s3=Storage()
+s3.crud_strings=Storage()
+s3.fields=Storage()
 
 module='s3'
 # Settings - systemwide
@@ -406,6 +410,7 @@ def shn_rest_controller(module,resource):
          - read-only for now
         CSV (useful for synchronization)
          - read-only for now
+        AJAX (designed to be run asynchronously to refresh page elements)
 
     ToDo:
         Alternate Representations
@@ -441,13 +446,21 @@ def shn_rest_controller(module,resource):
                 new_value=''
             )
         if representation=="html":
+            if t2.logged_in:
+                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+            else:
+                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
             if list=="No data":
                 list=crud_strings.msg_list_empty
             title=crud_strings.title_list
             subtitle=crud_strings.subtitle_list
             if t2.logged_in:
+                # Add extra column header to explain the checkboxes
+                if isinstance(list,TABLE):
+                    list.insert(0,TR('',B('Delete?')))
                 form=t2.create(table)
+                # Check for presence of Custom View
                 custom_view='%s_list_create.html' % resource
                 _custom_view=os.path.join(request.folder,'views',module,custom_view)
                 if os.path.exists(_custom_view):
@@ -458,6 +471,7 @@ def shn_rest_controller(module,resource):
                 return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
                 add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
+                # Check for presence of Custom View
                 custom_view='%s_list.html' % resource
                 _custom_view=os.path.join(request.folder,'views',module,custom_view)
                 if os.path.exists(_custom_view):
@@ -465,6 +479,16 @@ def shn_rest_controller(module,resource):
                 else:
                     response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+        elif representation=="ajax":
+            db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+            list=t2.itemize(table)
+            if list=="No data":
+                list=crud_strings.msg_list_empty
+            # Add extra column header to explain the checkboxes
+            if isinstance(list,TABLE):
+                list.insert(0,TR('',B('Delete?')))
+            response.view='plain.html'
+            return dict(item=list)
         elif representation=="plain":
             list=t2.itemize(table)
             response.view='plain.html'
@@ -498,7 +522,9 @@ def shn_rest_controller(module,resource):
                     new_value=''
                 )
             if representation=="html":
+                db['%s' % table].displays=s3.fields['%s' % table]
                 item=t2.display(table)
+                # Check for presence of Custom View
                 custom_view='%s_display.html' % resource
                 _custom_view=os.path.join(request.folder,'views',module,custom_view)
                 if os.path.exists(_custom_view):
@@ -566,6 +592,7 @@ def shn_rest_controller(module,resource):
                     if representation=="html":
                         t2.messages.record_created=crud_strings.msg_record_created
                         form=t2.create(table)
+                        # Check for presence of Custom View
                         custom_view='%s_create.html' % resource
                         _custom_view=os.path.join(request.folder,'views',module,custom_view)
                         if os.path.exists(_custom_view):
@@ -611,6 +638,7 @@ def shn_rest_controller(module,resource):
                     if representation=="html":
                         t2.messages.record_modified=crud_strings.msg_record_modified
                         form=t2.update(table,deletable=False)
+                        # Check for presence of Custom View
                         custom_view='%s_update.html' % resource
                         _custom_view=os.path.join(request.folder,'views',module,custom_view)
                         if os.path.exists(_custom_view):
@@ -652,7 +680,10 @@ def shn_rest_controller(module,resource):
                             new_value=''
                         )
                     t2.messages.record_deleted=crud_strings.msg_record_deleted
-                    t2.delete(table,next=resource)
+                    if representation=="ajax":
+                        t2.delete(table,next='%s?format=ajax' % resource)
+                    else:
+                        t2.delete(table,next=resource)
                 else:
                     t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
             else:

@@ -59,9 +59,12 @@ db.define_table(table,
                 SQLField('height','integer'), # In Pixels, for display purposes
                 SQLField('width','integer'),
                 SQLField('image','upload'))
-db['%s' % table].exposes=['name','height','width','image']
-db['%s' % table].displays=['name','height','width','image']
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='marker',action='display')
+exec("s3.fields.%s=['name','height','width','image']" % table)
+db['%s' % table].exposes=s3.fields['%s' % table]
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='marker',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_marker.name')]
 db['%s' % table].name.comment=SPAN("*",_class="req")
 # Populate table with Default options
@@ -103,9 +106,12 @@ db.define_table(table,
                 SQLField('maxExtent'),
                 SQLField('maxResolution','double'),
                 SQLField('units'))
-db['%s' % table].exposes=['name','epsg','maxExtent','maxResolution','units']
-db['%s' % table].displays=['name','epsg','maxExtent','maxResolution','units']
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='projection',action='display',extra='table.epsg')
+exec("s3.fields.%s=['name','epsg','maxExtent','maxResolution','units']" % table)
+db['%s' % table].exposes=s3.fields['%s' % table]
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='projection',action='display',extra='table.epsg')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
 db['%s' % table].name.comment=SPAN("*",_class="req")
 db['%s' % table].epsg.requires=IS_NOT_EMPTY()
@@ -208,9 +214,12 @@ db.define_table(table,
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
                 SQLField('marker',db.gis_marker))   # NB This can then have issues with sync unless going via CSV
-db['%s' % table].exposes=['name','marker']
-db['%s' % table].displays=['name','marker']
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='feature_class',action='display')
+exec("s3.fields.%s=['name','marker']" % table)
+db['%s' % table].exposes=s3.fields['%s' % table]
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='feature_class',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
 db['%s' % table].name.comment=SPAN("*",_class="req")
 db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
@@ -246,11 +255,16 @@ db.define_table(table,
                 SQLField('expiry_time','datetime'),
                 SQLField('url'),
                 SQLField('image','upload'))
-db.gis_feature_metadata.exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
-db.gis_feature_metadata.displays=['created_on','created_by','modified_on','modified_by','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
-db.gis_feature_metadata.contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
-db.gis_feature_metadata.contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
-db.gis_feature_metadata.url.requires=IS_URL()
+exec("s3.fields.%s=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']" % table)
+db['%s' % table].exposes=s3.fields['%s' % table]
+#exec("db.gis_feature_metadata.displays=s3.fields.%s.extend['created_on','created_by','modified_on']" % table)
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+#
+db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
+db['%s' % table].contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
+db['%s' % table].url.requires=IS_URL()
 title_create=T('Add Feature Metadata')
 title_display=T('Feature Metadata Details')
 title_list=T('List Feature Metadata')
@@ -276,9 +290,11 @@ db.define_table(table,
                 SQLField('type',default='point'),
                 SQLField('lat'),
                 SQLField('lon'))
-db['%s' % table].exposes=['name','feature_class','metadata','type','lat','lon']
-db['%s' % table].displays=['name','feature_class','metadata','type','lat','lon']
-# Define in Controller as want diff functions to have diff representations & we cannot redefine later once defined at top-level
+exec("s3.fields.%s=['name','feature_class','metadata','type','lat','lon']" % table)
+db['%s' % table].exposes=s3.fields['%s' % table]
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource=resource,action='display')
 db['%s' % table].name.requires=IS_NOT_EMPTY()
 db['%s' % table].name.comment=SPAN("*",_class="req")
@@ -318,9 +334,13 @@ db.define_table(table,
                 SQLField('description',length=256),
                 SQLField('features','text'), # List of features (to be replaced by many-to-many table)
                 SQLField('author',db.t2_person))
-db['%s' % table].exposes=['name','description','features']
-db['%s' % table].displays=['name','description','author','features']
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='feature_group',action='display')
+exec("s3.fields.%s=['name','description','features']" % table)
+db['%s' % table].exposes=s3.fields['%s' % table]
+#exec("db.gis_feature_metadata.displays=s3.fields.%s.extend['author']" % table)
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='feature_group',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_group.name')]
 db['%s' % table].name.comment=SPAN("*",_class="req")
 db['%s' % table].features.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
@@ -355,30 +375,35 @@ resource='apikey' # Can't use 'key' as this has other meanings for dicts!
 table=module+'_'+resource
 db.define_table(table,
                 SQLField('modified_on','datetime',default=now),
-                SQLField('service'),
+                SQLField('name'),
                 SQLField('apikey'),
 				SQLField('description',length=256))
-db['%s' % table].displays=['service','apikey','description']
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='apikey',action='display',display='table.service',extra='table.apikey')
+exec("s3.fields.%s=['name','apikey','description']" % table)
+db['%s' % table].exposes=s3.fields['%s' % table]
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
+# NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='apikey',action='display',display='table.name',extra='table.apikey')
 # We want a THIS_NOT_IN_DB here:
-db['%s' % table].service.requires=IS_IN_SET(['google','multimap','yahoo']) 
-#db['%s' % table].apikey.requires=THIS_NOT_IN_DB(db(db['%s' % table].service==request.vars.service),'gis_apikey.service',request.vars.service,'service already in use')
+db['%s' % table].name.requires=IS_IN_SET(['google','multimap','yahoo']) 
+db['%s' % table].name.label=T("Service")
+#db['%s' % table].apikey.requires=THIS_NOT_IN_DB(db(db['%s' % table].name==request.vars.name),'gis_apikey.name',request.vars.name,'Service already in use')
 db['%s' % table].apikey.requires=IS_NOT_EMPTY()
 db['%s' % table].apikey.label=T("Key")
 # Populate table with Default options
 if not len(db().select(db['%s' % table].ALL)): 
    db['%s' % table].insert(
-        service="google",
+        name="google",
         apikey="ABQIAAAAb-bE-ljr4-6Hsb4x92lWhRT2yXp_ZAY8_ufC3CFXhHIE1NvwkxQTjccCsxIjr0poUEEARUZJgolNfw",
         description="localhost"
     )
    db['%s' % table].insert(
-        service="yahoo",
+        name="yahoo",
         apikey="euzuro-openlayers",
         description="To be replaced for Production use"
     )
    db['%s' % table].insert(
-        service="multimap",
+        name="multimap",
         apikey="metacarta_04",
         description="trial"
     )

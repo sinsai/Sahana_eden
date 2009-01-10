@@ -66,10 +66,11 @@ db.define_table(table,
                 SQLField('area'),
                 SQLField('contact',length=64),
                 SQLField('location',length=64))
-db['%s' % table].exposes=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']
-db['%s' % table].displays=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']
+exec("s3.fields.%s=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']" % table)
+# Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+#db['%s' % table].displays=s3.fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
-db['%s' % table].represent=lambda table:shn_list_item(table,resource='shelter',action='display')
+#db['%s' % table].represent=lambda table:shn_list_item(table,resource='shelter',action='display')
 db['%s' % table].name.requires=IS_NOT_EMPTY()
 db['%s' % table].name.label=T("Shelter Name")
 db['%s' % table].name.comment=SPAN("*",_class="req")

@@ -448,16 +448,22 @@ def shn_rest_controller(module,resource):
             subtitle=crud_strings.subtitle_list
             if t2.logged_in:
                 form=t2.create(table)
-                custom_view=os.path.join(request.folder,'views',module,'%s_list_create.html' % resource)
-                if os.path.exists(custom_view):
-                    response.view=module+'/list_create.html'
+                custom_view='%s_list_create.html' % resource
+                _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                if os.path.exists(_custom_view):
+                    response.view=module+'/'+custom_view
                 else:
                     response.view='list_create.html'
                 addtitle=crud_strings.subtitle_create
                 return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
                 add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
-                response.view='list.html'
+                custom_view='%s_list.html' % resource
+                _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                if os.path.exists(_custom_view):
+                    response.view=module+'/'+custom_view
+                else:
+                    response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="plain":
             list=t2.itemize(table)
@@ -493,9 +499,10 @@ def shn_rest_controller(module,resource):
                 )
             if representation=="html":
                 item=t2.display(table)
-                custom_view=os.path.join(request.folder,'views',module,'%s_display.html' % resource)
-                if os.path.exists(custom_view):
-                    response.view=module+'/display.html'
+                custom_view='%s_display.html' % resource
+                _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                if os.path.exists(_custom_view):
+                    response.view=module+'/'+custom_view
                 else:
                     response.view='display.html'
                 title=crud_strings.title_display
@@ -559,9 +566,10 @@ def shn_rest_controller(module,resource):
                     if representation=="html":
                         t2.messages.record_created=crud_strings.msg_record_created
                         form=t2.create(table)
-                        custom_view=os.path.join(request.folder,'views',module,'%s_create.html' % resource)
-                        if os.path.exists(custom_view):
-                            response.view=module+'/create.html'
+                        custom_view='%s_create.html' % resource
+                        _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                        if os.path.exists(_custom_view):
+                            response.view=module+'/'+custom_view
                         else:
                             response.view='create.html'
                         title=crud_strings.title_create
@@ -603,9 +611,10 @@ def shn_rest_controller(module,resource):
                     if representation=="html":
                         t2.messages.record_modified=crud_strings.msg_record_modified
                         form=t2.update(table,deletable=False)
-                        custom_view=os.path.join(request.folder,'views',module,'%s_update.html' % resource)
-                        if os.path.exists(custom_view):
-                            response.view=module+'/update.html'
+                        custom_view='%s_update.html' % resource
+                        _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                        if os.path.exists(_custom_view):
+                            response.view=module+'/'+custom_view
                         else:
                             response.view='update.html'
                         title=crud_strings.title_update

@@ -161,7 +161,8 @@ if not len(db().select(db['%s' % table].ALL)):
 	
 # User Roles
 # for Authorization
-table='s3_role'
+resource='role'
+table=module+'_'+resource
 db.define_table(table,
                 SQLField('name'),
                 SQLField('description',length=256))
@@ -197,7 +198,8 @@ if not len(db().select(db['%s' % table].ALL)):
         name="Camp Admin",
         description="Can make changes to a Camp"
 	)
-table='s3_roleholder'
+resource='roleholder'
+table=module+'_'+resource
 db.define_table(table,
                 SQLField('person_id',db.t2_person),
                 SQLField('role_id',db.s3_role))
@@ -217,6 +219,21 @@ def shn_has_role(person,role):
     else:
         # person does not have the role
         return False
+
+# Auditing
+resource='audit'
+table=module+'_'+resource
+db.define_table(table,
+                SQLField('time','datetime',default=now),
+                SQLField('person',db.t2_person),
+                SQLField('operation'),
+                SQLField('representation'),
+                SQLField('module'),
+                SQLField('resource'),
+                SQLField('record','integer'),
+                SQLField('old_value'),
+                SQLField('new_value'))
+db['%s' % table].operation.requires=IS_IN_SET(['create','read','update','delete','list'])
 
 module='default'
 # Home Menu Options
@@ -397,7 +414,10 @@ def shn_rest_controller(module,resource):
     """
     
     table=db['%s_%s' % (module,resource)]
-    crud_strings=shn_crud_strings_lookup(resource)
+    if resource=='setting':
+        crud_strings=shn_crud_strings_lookup(resource)
+    else:
+        crud_strings=shn_crud_strings_lookup(table)
     
     # Which representation should output be in?
     if request.vars.format:
@@ -408,6 +428,15 @@ def shn_rest_controller(module,resource):
     
     if len(request.args)==0:
         # No arguments => default to List (or list_create if logged_in)
+        if session.s3.audit_read:
+            db.s3_audit.insert(
+                person=t2.person_id,
+                operation='list',
+                module=request.controller,
+                resource=resource,
+                old_value='',
+                new_value=''
+            )
         if representation=="html":
             list=t2.itemize(table)
             if list=="No data":
@@ -431,6 +460,9 @@ def shn_rest_controller(module,resource):
             list=db().select(table.ALL).json()
             response.view='plain.html'
             return dict(item=list)
+        elif representation=="csv":
+            # ToDo
+            return
         else:
             session.error=T("Unsupported format!")
             redirect(URL(r=request,f=resource))
@@ -438,6 +470,17 @@ def shn_rest_controller(module,resource):
         method=str.lower(request.args[0])
         if request.args[0].isdigit():
             # 1st argument is ID not method => Display.
+            if session.s3.audit_read:
+                db.s3_audit.insert(
+                    person=t2.person_id,
+                    operation='read',
+                    representation=representation,
+                    module=request.controller,
+                    resource=resource,
+                    record=t2.id,
+                    old_value='',
+                    new_value=''
+                )
             if representation=="html":
                 item=t2.display(table)
                 response.view='display.html'
@@ -485,6 +528,17 @@ def shn_rest_controller(module,resource):
         else:
             if method=="create":
                 if t2.logged_in:
+                    if session.s3.audit_write:
+                        audit_id=db.s3_audit.insert(
+                            person=t2.person_id,
+                            operation='create',
+                            representation=representation,
+                            module=request.controller,
+                            resource=resource,
+                            record=t2.id,
+                            old_value='',
+                            new_value=''
+                        )
                     if representation=="html":
                         t2.messages.record_created=crud_strings.msg_record_created
                         form=t2.create(table)
@@ -510,6 +564,21 @@ def shn_rest_controller(module,resource):
                 t2.redirect(resource,args=t2.id)
             elif method=="update":
                 if t2.logged_in:
+                    if session.s3.audit_write:
+                        old_value = []
+                        _old_value=db(db['%s' % table].id==t2.id).select()[0]
+                        for field in _old_value:
+                            old_value.append(field+':'+str(_old_value[field]))
+                        audit_id=db.s3_audit.insert(
+                            person=t2.person_id,
+                            operation='update',
+                            representation=representation,
+                            module=request.controller,
+                            resource=resource,
+                            record=t2.id,
+                            old_value=old_value,
+                            new_value=''
+                        )
                     if representation=="html":
                         t2.messages.record_modified=crud_strings.msg_record_modified
                         form=t2.update(table,deletable=False)
@@ -533,6 +602,21 @@ def shn_rest_controller(module,resource):
                     t2.redirect('login',vars={'_destination':'%s/update/%i' % (resource,t2.id)})
             elif method=="delete":
                 if t2.logged_in:
+                    if session.s3.audit_write:
+                        old_value = []
+                        _old_value=db(db['%s' % table].id==t2.id).select()[0]
+                        for field in _old_value:
+                            old_value.append(field+':'+str(_old_value[field]))
+                        db.s3_audit.insert(
+                            person=t2.person_id,
+                            operation='delete',
+                            representation=representation,
+                            module=request.controller,
+                            resource=resource,
+                            record=t2.id,
+                            old_value=old_value,
+                            new_value=''
+                        )
                     t2.messages.record_deleted=crud_strings.msg_record_deleted
                     t2.delete(table,next=resource)
                 else:

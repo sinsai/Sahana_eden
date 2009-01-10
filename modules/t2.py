@@ -424,7 +424,7 @@ class T2:
             self.redirect(f=next.replace('[id]',str(form.vars.id)))
         return form
 
-    def update(self,table,query=None,next=None,deletable=True,
+    def update(self,table,record=None,query=None,next=None,deletable=True,
                vars={},onaccept=None,ondelete=None):
         """
         t2.update(db.table,query,next='index',flash='done',vars={},onaccept=None,ondelete=None)
@@ -436,7 +436,9 @@ class T2:
         """
         request,response,session,cache,T,db=self._globals()
         if not next: next='%s/[id]'%request.function
-        if query:
+        if record is not None:
+           rows = [record]
+        elif query:
            rows=table._db(query).select(table.ALL,limitby=(0,1))
         else:
            id=self.id or self._error()
@@ -479,7 +481,7 @@ class T2:
         if not query:
            id=self.id or self._error()  
            query=table.id==id
-        table._db(query).delete()
+        table._db(query).delete(delete_uploads=True)
         if next: self.redirect(f=next,flash=self.messages.record_deleted)
         return True
 
@@ -530,6 +532,7 @@ class T2:
             items.append(TR(LABEL(label,':'),value))
         return DIV(TABLE(*items),_class='t2-display')
 
+    '''
     def itemize(self,*tables,**opts):
         """
         Lists all records from tables. 
@@ -563,6 +566,61 @@ class T2:
             return TABLE(_class='t2-itemize',
                          *nav+[TR(*[represent(table,row[table._tablename]) \
                                     for table in tables]) for row in rows]+nav)
+        '''
+
+    def itemize(self,*tables,**opts):
+        """
+        Lists all records from tables.
+        opts include: query, orderby, nitems, header where nitems is items per page;
+        """
+        ### FIX - ADD PAGINATION BUTTONS
+        import re
+        request,response,session,cache,T,db=self._globals()
+        if not len(tables): raise SyntaxError
+        query=opts.get('query',None)
+        orderby=opts.get('orderby',None)
+        nitems=opts.get('nitems',25)
+        g=re.compile('^(?P<min>\d+)$').match(request.vars.get('_page',''))
+        page=int(g.group('min')) if g else 0
+        limitby=opts.get('limitby',(page*nitems,page*nitems+nitems))
+        if not query:
+            query=tables[0].id>0
+        rows_count=tables[0]._db(query).count()
+        rows=tables[0]._db(query).select(orderby=orderby,limitby=limitby,
+                                         *[t.ALL for t in tables])
+        if not rows: return None # rather than 'No data'. Give caller a chance to do his i18n issue
+        def represent(t,r):
+          try: return t.represent(r)
+          except KeyError:
+            return (TR(*[r[f] for f in t.displays]) # Default depends on t.displays, if any
+              if 'displays' in t else TR('#%i'%r.id, str(r[t.fields[1]]))) # Fall back to TR(id,FirstField)
+        header=opts.get('header',# Input can be something like TR(TH('ID'),TH('STAMP'))
+          TR(*[TH(t[f].label) for f in t.displays]) if 'displays' in t else '') # Default depends on t.displays, if any
+        nav=[TR(TD( # Iceberg at 21cn dot com prefers this style of page navigation :-)
+          INPUT(_type='button',_value='|<',_onclick='javascript:location="%s"'
+            %self.action(args=request.args,vars={'_page':0})) if page else '',
+          INPUT(_type='button',_value='<',_onclick='javascript:location="%s"'
+            %self.action(args=request.args,vars={'_page':page-1})) if page else '',
+          SELECT(value=page,
+            _onchange='javascript:location="%s?_page="+this.value'
+              %self.action(args=request.args),
+            *[OPTION(i+1,_value=i) for i in xrange(rows_count/nitems+1)]
+            ) if nitems<rows_count else '',
+          INPUT(_type='button',_value='>',_onclick='javascript:location="%s"'
+            %self.action(args=request.args,vars={'_page':page+1})
+            ) if page*nitems+len(rows)<rows_count else '',
+          INPUT(_type='button',_value='>|',_onclick='javascript:location="%s"'
+            %self.action(args=request.args,vars={'_page':rows_count/nitems})
+            ) if page*nitems+len(rows)<rows_count else '',
+          _colspan=999,# To make sure the first column of table will not become unnecessarily large
+          _align='right'),_align='right')]# but somehow, align doesn't work :(
+        if len(tables)==1:
+          return TABLE(_class='sortable',#sorry, I don't know how to setup css to make _class='t2-itemize' looks cool, so I stick to "sortable"
+                       *nav+[header]+[TR(represent(tables[0],row)) for row in rows]+nav)
+        else:
+          return TABLE(_class='sortable',#see above
+                       *nav+[header]+[TR(*[represent(table,row[table._tablename])
+                                  for table in tables]) for row in rows]+nav)
 
     def search(self,*tables,**opts):    
         """

@@ -14,6 +14,7 @@ db=SQLDB('sqlite://storage.db')         # if not, use SQLite or other DB
 now=datetime.datetime.today()
 
 # We need UUIDs for database synchronization
+# although if going via CSV export routines, then we shouldn't (tbc)
 import uuid
 
 # Use T2 plugin for AAA & CRUD
@@ -97,8 +98,10 @@ crud_strings=Storage()
 
 # System Defaults
 shn_default=Storage()
-# Change to False for Stable branches (Deployments/Demos can change this live via appadmin)
+# Change to False for Stable branches (Deployments can change this live via appadmin)
 shn_default.debug=True
+# Change to False to disable Self-Registration (Deployments can change this live via appadmin)
+shn_default.self_registration=True
 shn_default.admin_name=T("Sahana Administrator")
 shn_default.admin_email=T("support@Not Set")
 shn_default.admin_tel=T("Not Set")
@@ -110,14 +113,16 @@ db.define_table(table,
                 SQLField('admin_name'),
                 SQLField('admin_email'),
                 SQLField('admin_tel'),
-                SQLField('debug','boolean'))
+                SQLField('debug','boolean'),
+                SQLField('self_registration','boolean'))
 # Populate table with Default options
 if not len(db().select(db['%s' % table].ALL)): 
    db['%s' % table].insert(
-        debug=shn_default.debug,
         admin_name=shn_default.admin_name,
         admin_email=shn_default.admin_email,
-        admin_tel=shn_default.admin_tel
+        admin_tel=shn_default.admin_tel,
+        debug=shn_default.debug,
+        self_registration=shn_default.self_registration,
     )
 title_create=T('Add Setting')
 title_display=T('Setting Details')
@@ -259,14 +264,17 @@ def shn_sessions(f):
     session.error=[]
     session.confirmation=[]
     session.warning=[]
+    # Keep all our configuration options in a single global variable
+    if not session.s3: session.s3=Storage()
+    session.s3.self_registration=db().select(db.default_setting.self_registration)[0].self_registration
     # Debug mode => Load all JS/CSS independently & uncompressed
-    response.debug=db().select(db.default_setting.debug)[0].debug
+    session.s3.debug=db().select(db.default_setting.debug)[0].debug
     # Which roles does a user have?
-    response.roles=[]
+    session.s3.roles=[]
     try:
         roles=db(db.s3_roleholder.person_id==t2.person_id).select()
         for role in roles:
-            response.roles.append(role.role_id)
+            session.s3.roles.append(role.role_id)
     except:
         pass
     return f()

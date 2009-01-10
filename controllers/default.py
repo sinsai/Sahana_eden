@@ -10,10 +10,13 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 def login():
     return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
-# Comment this function to disable self-registration
+# Self-registration can be disabled by amending the setting in the default_settings table
 def register():
-    t2.messages.record_created=T("You have been successfully registered")
-    return dict(form=t2.register(),module_name=module_name,modules=modules,options=options)
+    if session.s3.self_registration:
+        t2.messages.record_created=T("You have been successfully registered")
+        return dict(form=t2.register(),module_name=module_name,modules=modules,options=options)
+    else:
+        redirect(URL(r=request,c='default',f='index'))
 def profile(): return dict(form=t2.profile(),module_name=module_name,modules=modules,options=options)
 
 # S3 framework functions

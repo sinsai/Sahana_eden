@@ -404,11 +404,14 @@ def shn_rest_controller(module,resource):
          - can be useful for clients on low-bandwidth or small screen sizes
         JSON
          - read-only for now
+        CSV (useful for synchronization)
+         - read-only for now
 
     ToDo:
         Alternate Representations
             JSON create/update
-            SMS,CSV,XML,PDF
+            CSV create/update
+            SMS,XML,PDF
         Search method
         Customisable Security Policy
     """
@@ -461,8 +464,11 @@ def shn_rest_controller(module,resource):
             response.view='plain.html'
             return dict(item=list)
         elif representation=="csv":
-            # ToDo
-            return
+            import gluon.contenttype
+            response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
+            query=db['%s' % table].id>0
+            response.headers['Content-disposition']="attachment; filename=%s_%s_list.csv" % (request.env.server_name,resource)
+            return str(db(query).select())
         else:
             session.error=T("Unsupported format!")
             redirect(URL(r=request,f=resource))
@@ -498,8 +504,11 @@ def shn_rest_controller(module,resource):
                 response.view='plain.html'
                 return dict(item=item)
             elif representation=="csv":
-                # ToDo
-                return
+                import gluon.contenttype
+                response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
+                query=db['%s' % table].id==t2.id
+                response.headers['Content-disposition']="attachment; filename=%s_%s_%d.csv" % (request.env.server_name,resource,t2.id)
+                return str(db(query).select())
             elif representation=="rss":
                 #if request.args and request.args[0] in settings.rss_procedures:
                 #   feed=eval('%s(*request.args[1:],**dict(request.vars))'%request.args[0])

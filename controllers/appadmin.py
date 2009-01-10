@@ -45,19 +45,19 @@ modules=db(db.default_module.enabled=='Yes').select(db.default_module.ALL,orderb
 # List Options (from which to build Menu for this Module)
 #options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
-response.view='appadmin.html'
 response.menu=[[T('design'),False,URL('admin','default','design',
                 args=[request.application])],
                [T('db'),False,URL(r=request,f='index')],
                [T('state'),False,URL(r=request,f='state')]]
 
+response.view='default/appadmin.html'
 # T2 framework functions
 def login():
-	response.view='login.html'
-	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
+    response.view='default/login.html'
+    return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register(): redirect(URL(r=request,c='default',f='register'))
-def profile(): t2.profile()
+def profile(): redirect(URL(r=request,c='default',f='profile'))
                
 ###########################################################
 ### auxiliary functions

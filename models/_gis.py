@@ -152,9 +152,9 @@ db['%s' % table].lat.requires=IS_LAT()
 db['%s' % table].lon.requires=IS_LON()
 db['%s' % table].zoom.requires=IS_INT_IN_RANGE(0,19)
 db['%s' % table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
-db['%s' % table].projection.display=lambda uuid: db(db.gis_projection.uuid==uuid).select()[0].name
+db['%s' % table].projection.display=lambda id: db(db.gis_projection.id==id).select()[0].name
 db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
-db['%s' % table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % uuid,_class='hidden'))
+db['%s' % table].marker.display=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
 db['%s' % table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db['%s' % table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 # Populate table with Default options
@@ -191,14 +191,14 @@ db.define_table(table,
                 SQLField('modified_on','datetime',default=now),
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
-                SQLField('marker',length=64,default='e2848160-cad4-4b8e-91cf-d1b4828bf805'))
+                SQLField('marker',db.gis_marker))   # NB This can then have issues with sync unless going via CSV
 db['%s' % table].exposes=['name','marker']
 db['%s' % table].displays=['name','marker']
 db['%s' % table].represent=lambda table:shn_list_item(table,resource='feature_class',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
 db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.uuid','gis_marker.name')
-db['%s' % table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.uuid==uuid).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
+db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
+db['%s' % table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
 title_create=T('Add Feature Class')
 title_display=T('Feature Class Details')
 title_list=T('List Feature Classes')

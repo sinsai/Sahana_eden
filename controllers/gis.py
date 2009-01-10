@@ -8,11 +8,11 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 
 # T2 framework functions
 def login():
-	response.view='login.html'
-	return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
+    response.view='default/login.html'
+    return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 def register(): redirect(URL(r=request,c='default',f='register'))
-def profile(): t2.profile()
+def profile(): redirect(URL(r=request,c='default',f='profile'))
 def download():
     "Enable downloading of Markers & other Files."
     return t2.download()

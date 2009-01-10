@@ -8,15 +8,13 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 
 # T2 framework functions
 def login():
-    response.view='login.html'
     return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
 # Comment this function to disable self-registration
 def register():
-    response.view='register.html'
     t2.messages.record_created=T("You have been successfully registered")
-    return dict(form=t2.register())
-def profile(): t2.profile()
+    return dict(form=t2.register(),module_name=module_name,modules=modules,options=options)
+def profile(): return dict(form=t2.profile(),module_name=module_name,modules=modules,options=options)
 
 # S3 framework functions
 def index():

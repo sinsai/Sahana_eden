@@ -36,6 +36,21 @@ if not len(db().select(db['%s' % table].ALL)):
 	enabled='True'
 	)
 
+# Settings
+resource='setting'
+table=module+'_'+resource
+db.define_table(table,
+                SQLField('audit_read','boolean'),
+                SQLField('audit_write','boolean'))
+# Populate table with Default options
+# - deployments can change these live via appadmin
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        # If Disabled at the Global Level then can still Enable just for this Module here
+        audit_read=False,
+        audit_write=False
+    )
+
 # OR Organisation Types
 # How do we deal with syncs? Don't want dupes, yet want to be able to add local.
 # => Master refs must have same uuids?
@@ -89,4 +104,4 @@ msg_record_created=T('Organisation added')
 msg_record_modified=T('Organisation updated')
 msg_record_deleted=T('Organisation deleted')
 msg_list_empty=T('No Organisations currently registered')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)

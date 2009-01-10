@@ -15,8 +15,6 @@
 <body>
 <div id="container">
  <div id="header" class="clearfix">
-  <div id="menu">
-   {{=t2.menu(response.menu)}}
   <div id="menu" style="text-align: right">
   {{if t2.logged_in:}}
     {{=A(T('Profile'),_href=t2.action('profile'))}}
@@ -43,7 +41,8 @@
     {{=H2(module_name)}}
    {{except:}}
    {{pass}}
-   <ul id="modmenu">
+  {{=t2.menu(response.menu)}}
+  <ul id="modmenu">
    {{try:}}
     {{for option in options:}}
      {{if not option.access or (option.access in response.roles):}}
@@ -56,7 +55,7 @@
   </div>
   <div id="menuwrap">
    <h2>{{=T("Modules")}}</h2>  
-   <ul id="menu">
+   <ul id="optionsmenu">
    {{try:}}
     {{for module in modules:}}
 	<li>{{=A(T(module.name_nice),_href=URL(r=request,c='default',f='open_module',vars=dict(id='%d'%module.id)))}}</li>

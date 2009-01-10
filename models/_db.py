@@ -31,82 +31,8 @@ from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
 
-# User Roles
-# for Authorization
-table='s3_role'
-db.define_table(table,
-                SQLField('name'),
-                SQLField('description',length=256))
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-# Populate table with Default options
-if not len(db().select(db['%s' % table].ALL)):
-	# Default
-    #db['%s' % table].insert(
-    #    name="Anonymous User",
-	#)
-	db['%s' % table].insert(
-        name="Administrator",
-        description="System Administrator - can access & make changes to any data",
-	)
-    # t2.logged_in is an alternate way of checking for this role
-	db['%s' % table].insert(
-        name="Registered User",
-        description="A registered user in the system (e.g Volunteers, Family)"
-	)
-	db['%s' % table].insert(
-        name="Super User",
-        description="Head of Operations - can access & make changes to any data"
-	)
-	db['%s' % table].insert(
-        name="Trusted User",
-        description="An officially trusted and designated user of the system. Often member of a trusted supporting organization"
-	)
-	db['%s' % table].insert(
-        name="Organisation Admin",
-        description="Can make changes to an Organisation & it's assets"
-	)
-	db['%s' % table].insert(
-        name="Camp Admin",
-        description="Can make changes to a Camp"
-	)
-table='s3_roleholder'
-db.define_table(table,
-                SQLField('person_id',db.t2_person),
-                SQLField('role_id',db.s3_role))
-db['%s' % table].person_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.email')
-db['%s' % table].role_id.requires=IS_IN_DB(db,'s3_role.id','s3_role.name')
-
-def shn_has_role(person,role):
-    "Lookup to see whether a person has a role"
-    if not len(role):
-        # No role specified => anonymous allowed
-        return True
-    elif len(db((db.s3_roleholder.person_id==person)&(db.s3_roleholder.role_id==role)).select()):
-        # person does have the role
-        return True
-    else:
-        # person does not have the role
-        return False
-
-
-module='default'
-
-#
-# Configuration options
-#
-crud_strings=Storage()
-
-# System Defaults
-shn_default=Storage()
-# Change to False for Stable branches (Deployments can change this live via appadmin)
-shn_default.debug=True
-# Change to False to disable Self-Registration (Deployments can change this live via appadmin)
-shn_default.self_registration=True
-shn_default.admin_name=T("Sahana Administrator")
-shn_default.admin_email=T("support@Not Set")
-shn_default.admin_tel=T("Not Set")
-
-# Database table for Settings of running instance
+module='s3'
+# Settings - systemwide
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
@@ -114,16 +40,26 @@ db.define_table(table,
                 SQLField('admin_email'),
                 SQLField('admin_tel'),
                 SQLField('debug','boolean'),
-                SQLField('self_registration','boolean'))
+                SQLField('self_registration','boolean'),
+                SQLField('audit_read','boolean'),
+                SQLField('audit_write','boolean'))
 # Populate table with Default options
+# - deployments can change these live via appadmin
 if not len(db().select(db['%s' % table].ALL)): 
    db['%s' % table].insert(
-        admin_name=shn_default.admin_name,
-        admin_email=shn_default.admin_email,
-        admin_tel=shn_default.admin_tel,
-        debug=shn_default.debug,
-        self_registration=shn_default.self_registration,
+        admin_name=T("Sahana Administrator"),
+        admin_email=T("support@Not Set"),
+        admin_tel=T("Not Set"),
+        # Debug => Load all JS/CSS independently & uncompressed. Change to True for Production deployments (& hence stable branches)
+        debug=True,
+        # Change to False to disable Self-Registration
+        self_registration=True,
+        # Change to True to enable Auditing at the Global level (if False here, individual Modules can still enable it for them)
+        audit_read=False,
+        audit_write=False
     )
+# Define CRUD strings (NB These apply to all Modules' 'settings' too)
+crud_strings=Storage()
 title_create=T('Add Setting')
 title_display=T('Setting Details')
 title_list=T('List Settings')
@@ -139,7 +75,8 @@ msg_list_empty=T('No Settings currently defined')
 exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
 
 # Modules
-table="default_module"
+resource='module'
+table=module+'_'+resource
 db.define_table(table,
                 SQLField('name'),
                 SQLField('name_nice'),
@@ -222,6 +159,66 @@ if not len(db().select(db['%s' % table].ALL)):
         enabled='False'
 	)
 	
+# User Roles
+# for Authorization
+table='s3_role'
+db.define_table(table,
+                SQLField('name'),
+                SQLField('description',length=256))
+db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+# Populate table with Default options
+if not len(db().select(db['%s' % table].ALL)):
+	# Default
+    #db['%s' % table].insert(
+    #    name="Anonymous User",
+	#)
+	db['%s' % table].insert(
+        name="Administrator",
+        description="System Administrator - can access & make changes to any data",
+	)
+    # t2.logged_in is an alternate way of checking for this role
+	db['%s' % table].insert(
+        name="Registered User",
+        description="A registered user in the system (e.g Volunteers, Family)"
+	)
+	db['%s' % table].insert(
+        name="Super User",
+        description="Head of Operations - can access & make changes to any data"
+	)
+	db['%s' % table].insert(
+        name="Trusted User",
+        description="An officially trusted and designated user of the system. Often member of a trusted supporting organization"
+	)
+	db['%s' % table].insert(
+        name="Organisation Admin",
+        description="Can make changes to an Organisation & it's assets"
+	)
+	db['%s' % table].insert(
+        name="Camp Admin",
+        description="Can make changes to a Camp"
+	)
+table='s3_roleholder'
+db.define_table(table,
+                SQLField('person_id',db.t2_person),
+                SQLField('role_id',db.s3_role))
+db['%s' % table].person_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.email')
+db['%s' % table].role_id.requires=IS_IN_DB(db,'s3_role.id','s3_role.name')
+#Breaks dropdowns: http://groups.google.com/group/web2py/browse_thread/thread/7551b50ef3ca72a8/c48d7a410993daac?lnk=gst&q=IS_NOT_IN_DB#c48d7a410993daac
+#db['%s' % table].role_id.requires=IS_NOT_IN_DB(db(db['%s' % table].person_id==request.vars.person_id),'s3_role.name')
+
+def shn_has_role(person,role):
+    "Lookup to see whether a person has a role"
+    if not len(role):
+        # No role specified => anonymous allowed
+        return True
+    elif len(db((db.s3_roleholder.person_id==person)&(db.s3_roleholder.role_id==role)).select()):
+        # person does have the role
+        return True
+    else:
+        # person does not have the role
+        return False
+
+module='default'
 # Home Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
@@ -251,6 +248,37 @@ if not len(db().select(db['%s' % table].ALL)):
         enabled='True'
 	)
 
+# Settings - home
+resource='setting'
+table=module+'_'+resource
+db.define_table(table,
+                SQLField('audit_read','boolean'),
+                SQLField('audit_write','boolean'))
+# Populate table with Default options
+# - deployments can change these live via appadmin
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        # If Disabled at the Global Level then can still Enable just for this Module here
+        audit_read=False,
+        audit_write=False
+    )
+
+# Settings - appadmin
+module='appadmin'
+resource='setting'
+table=module+'_'+resource
+db.define_table(table,
+                SQLField('audit_read','boolean'),
+                SQLField('audit_write','boolean'))
+# Populate table with Default options
+# - deployments can change these live via appadmin
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        # If Disabled at the Global Level then can still Enable just for this Module here
+        audit_read=False,
+        audit_write=False
+    )
+
 def shn_sessions(f):
     """
     Extend session to support:
@@ -266,17 +294,25 @@ def shn_sessions(f):
     session.warning=[]
     # Keep all our configuration options in a single global variable
     if not session.s3: session.s3=Storage()
-    session.s3.self_registration=db().select(db.default_setting.self_registration)[0].self_registration
-    # Debug mode => Load all JS/CSS independently & uncompressed
-    session.s3.debug=db().select(db.default_setting.debug)[0].debug
-    # Which roles does a user have?
-    session.s3.roles=[]
+    session.s3.self_registration=db().select(db.s3_setting.self_registration)[0].self_registration
+    session.s3.debug=db().select(db.s3_setting.debug)[0].debug
+    # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
-        roles=db(db.s3_roleholder.person_id==t2.person_id).select()
-        for role in roles:
-            session.s3.roles.append(role.role_id)
+        session.s3.audit_read=db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
     except:
-        pass
+        session.s3.audit_read=db().select(db.s3_setting.audit_read)[0].audit_read
+    try:
+        session.s3.audit_write=db().select(db.s3_setting.audit_write)[0].audit_write or db().select(db['%s_setting' % request.controller].audit_write)[0].audit_write
+    except:
+        session.s3.audit_write=db().select(db.s3_setting.audit_write)[0].audit_write
+    # Which roles does a user have?
+    #session.s3.roles=[]
+    #try:
+    #    roles=db(db.s3_roleholder.person_id==t2.person_id).select()
+    #    for role in roles:
+    #        session.s3.roles.append(role.role_id)
+    #except:
+    #    pass
     return f()
 response._caller=lambda f: shn_sessions(f)
 

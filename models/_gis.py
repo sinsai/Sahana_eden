@@ -34,6 +34,21 @@ if not len(db().select(db['%s' % table].ALL)):
 	enabled='True'
 	)
 
+# Settings
+resource='setting'
+table=module+'_'+resource
+db.define_table(table,
+                SQLField('audit_read','boolean'),
+                SQLField('audit_write','boolean'))
+# Populate table with Default options
+# - deployments can change these live via appadmin
+if not len(db().select(db['%s' % table].ALL)): 
+   db['%s' % table].insert(
+        # If Disabled at the Global Level then can still Enable just for this Module here
+        audit_read=False,
+        audit_write=False
+    )
+
 # GIS Markers (Icons)
 resource='marker'
 table=module+'_'+resource
@@ -75,7 +90,7 @@ msg_record_created=T('Marker added')
 msg_record_modified=T('Marker updated')
 msg_record_deleted=T('Marker deleted')
 msg_list_empty=T('No Markers currently available')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # GIS Projections
 resource='projection'
@@ -133,10 +148,11 @@ msg_record_created=T('Projection added')
 msg_record_modified=T('Projection updated')
 msg_record_deleted=T('Projection deleted')
 msg_list_empty=T('No Projections currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
 # GIS Config
 # id=1 = Default settings
+# separated from Framework settings above
 # ToDo Extend for per-user Profiles
 resource='config'
 table=module+'_'+resource
@@ -182,7 +198,7 @@ msg_record_created=T('Config added')
 msg_record_modified=T('Config updated')
 msg_record_deleted=T('Config deleted')
 msg_list_empty=T('No Configs currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # GIS Features
 resource='feature_class'
@@ -211,7 +227,7 @@ msg_record_created=T('Feature Class added')
 msg_record_modified=T('Feature Class updated')
 msg_record_deleted=T('Feature Class deleted')
 msg_list_empty=T('No Feature Classes currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
 resource='feature_metadata'
 table=module+'_'+resource
@@ -247,7 +263,7 @@ msg_record_created=T('Feature Metadata added')
 msg_record_modified=T('Feature Metadata updated')
 msg_record_deleted=T('Feature Metadata deleted')
 msg_list_empty=T('No Feature Metadata currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 resource='feature'
 table=module+'_'+resource
@@ -289,7 +305,7 @@ msg_record_created=T('Feature added')
 msg_record_modified=T('Feature updated')
 msg_record_deleted=T('Feature deleted')
 msg_list_empty=T('No Features currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # Feature Groups
 # Used to select a set of Features for either Display or Export
@@ -321,7 +337,7 @@ msg_record_created=T('Feature Group added')
 msg_record_modified=T('Feature Group updated')
 msg_record_deleted=T('Feature Group deleted')
 msg_list_empty=T('No Feature Groups currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
             
 # Many-to-Many table
@@ -378,7 +394,7 @@ msg_record_created=T('Key added')
 msg_record_modified=T('Key updated')
 msg_record_deleted=T('Key deleted')
 msg_list_empty=T('No Keys currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # GIS Layers
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
@@ -429,7 +445,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List OpenStreetMap Layers')
         msg_list_empty=T('No OpenStreetMap Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
     if layertype=="google":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -448,7 +464,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Google Layers')
         msg_list_empty=T('No Google Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
     if layertype=="yahoo":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -467,7 +483,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Yahoo Layers')
         msg_list_empty=T('No Yahoo Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
     if layertype=="virtualearth":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -486,7 +502,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Virtual Earth Layers')
         msg_list_empty=T('No Virtual Earth Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
 # GIS Styles: SLD
 db.define_table('gis_style',

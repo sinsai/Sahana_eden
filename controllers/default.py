@@ -1,8 +1,8 @@
 module='default'
 # Current Module (for sidebar title)
-module_name=db(db.default_module.name==module).select()[0].name_nice
+module_name=db(db.s3_module.name==module).select()[0].name_nice
 # List Modules (from which to build Menu of Modules)
-modules=db(db.default_module.enabled=='Yes').select(db.default_module.ALL,orderby=db.default_module.menu_priority)
+modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.menu_priority)
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
@@ -10,7 +10,7 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 def login():
     return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
-# Self-registration can be disabled by amending the setting in the default_settings table
+# Self-registration can be disabled by amending the setting in the s3_settings table
 def register():
     if session.s3.self_registration:
         t2.messages.record_created=T("You have been successfully registered")
@@ -22,15 +22,15 @@ def profile(): return dict(form=t2.profile(),module_name=module_name,modules=mod
 # S3 framework functions
 def index():
     "Module's Home Page"
-    admin_name=db().select(db.default_setting.admin_name)[0].admin_name
-    admin_email=db().select(db.default_setting.admin_email)[0].admin_email
-    admin_tel=db().select(db.default_setting.admin_tel)[0].admin_tel
+    admin_name=db().select(db.s3_setting.admin_name)[0].admin_name
+    admin_email=db().select(db.s3_setting.admin_email)[0].admin_email
+    admin_tel=db().select(db.s3_setting.admin_tel)[0].admin_tel
     response.title=T('Sahana FOSS Disaster Management System')
     return dict(module_name=module_name,modules=modules,options=options,admin_name=admin_name,admin_email=admin_email,admin_tel=admin_tel)
 def open_module():
     "Select Module"
     id=request.vars.id
-    modules=db(db.default_module.id==id).select()
+    modules=db(db.s3_module.id==id).select()
     if not len(modules):
         redirect(URL(r=request,f='index'))
     module=modules[0].name

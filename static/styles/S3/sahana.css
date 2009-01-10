@@ -77,11 +77,11 @@ div#container { }
 		#menu { width: 200px; height: 50px; margin: 0 auto;	background: #369; }
 		#menu ul { margin: 0;	margin-right: 30px;	padding: 0;	list-style: none; line-height: normal; }
 		#menu li { float: left; }
-		#menu a { padding: 5px 20px 5px 20px; text-decoration: none; font-family: Helvetica, sans-serif;	font-size: 14px; font-weight: normal; color: #FFFFFF; }
+		#menu a { padding: 5px 16px 5px 16px; text-decoration: none; font-family: Helvetica, sans-serif; font-size: 14px; font-weight: normal; color: #FFFFFF; }
 		#menu a:hover, #menu .current_page_item a { background: #566316; color: #FFFFFF; }
 
         /* User Information */
-        #logged { width:100%; height:14px; color: black; font-size: 0.75em; text-align: right; display:block; margin-top: 0.5em; }
+        #logged { width: 600px; height: 14px; color: black; font-size: 0.75em; text-align: right; display:block; margin-top: 0.5em; }
         #logged p { text-align: right; margin-right: 5.0em; font-family: Helvetica, sans-serif;	font-size: 12px; font-weight: normal; color: #AAAAAA; }
         
 	div#wrapper { background: url(../../img/wrapper_bk.png) #FFF repeat-y left top; }

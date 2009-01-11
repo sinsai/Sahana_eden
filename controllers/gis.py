@@ -226,7 +226,7 @@ def layer():
     "Deprecated as of r52"
     resource='layer'
     table=db['%s_%s' % (module,resource)]
-    crud_strings=shn_crud_strings_lookup(resource)
+    s3.crud_strings=shn_crud_strings_lookup(resource)
     
     # Which representation should output be in?
     if request.vars.format:
@@ -245,19 +245,19 @@ def layer():
                 output=shn_gis_create_layer()
             list=t2.itemize(table)
             if list=="No data":
-                list=crud_strings.msg_list_empty
+                list=s3.crud_strings.msg_list_empty
             if isinstance(list,TABLE):
                 list.insert(0,TR('',B('Enabled?'))) 
-            title=crud_strings.title_list
-            subtitle=crud_strings.subtitle_list
+            title=s3.crud_strings.title_list
+            subtitle=s3.crud_strings.subtitle_list
             if t2.logged_in:
                 # Add a little extra context for the Form created earlier
                 response.view='gis/list_create_layer.html'
-                addtitle=crud_strings.subtitle_create
+                addtitle=s3.crud_strings.subtitle_create
                 output.update(dict(list=list,title=title,subtitle=subtitle,addtitle=addtitle))
                 return output
             else:
-                add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'))
+                add_btn=A(s3.crud_strings.label_create_button,_href=t2.action(resource,'create'))
                 response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="plain":
@@ -299,10 +299,10 @@ def layer():
                     apikey=0
 
                 response.view='gis/display_layer.html'
-                title=crud_strings.title_display
+                title=s3.crud_strings.title_display
                 edit=A(T("Edit"),_href=t2.action('layer',['update',t2.id]))
                 delete=A(T("Delete"),_href=t2.action('layer',['delete',t2.id]))
-                list_btn=A(crud_strings.label_list_button,_href=t2.action('layer'))
+                list_btn=A(s3.crud_strings.label_list_button,_href=t2.action('layer'))
                 return dict(module_name=module_name,modules=modules,options=options,title=title,edit=edit,delete=delete,list_btn=list_btn,resource=resource,layertype=layertype,subtype=subtype,apikey=apikey)
             #ToDo
             #elif representation=="plain":
@@ -366,7 +366,7 @@ def layer():
                     
                     # Delete Master Record
                     db(table.id==t2.id).delete()
-                    t2.redirect(resource,flash=crud_strings.msg_record_deleted)
+                    t2.redirect(resource,flash=s3.crud_strings.msg_record_deleted)
                 else:
                     t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
             else:
@@ -643,10 +643,10 @@ def map_service_catalogue():
     for type in gis_layer_types:
         resource='layer_'+type
         table=db['%s_%s' % (module,resource)]
-        crud_strings=shn_crud_strings_lookup(resource)
+        db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra=str(table.enabled))
         list=t2.itemize(table)
         if list=="No data":
-            list=crud_strings.msg_list_empty
+            list=s3.crud_strings['%s' % table].msg_list_empty
         if isinstance(list,TABLE):
             list.insert(0,TR('',B('Enabled?'))) 
         items=DIV(items,list)
@@ -696,7 +696,7 @@ def map_viewing_client():
     google=Storage()
     # Check for Google Key
     try:
-        google.key=db(db.gis_apikey.service=='google').select(db.gis_apikey.apikey)[0].apikey
+        google.key=db(db.gis_apikey.name=='google').select(db.gis_apikey.apikey)[0].apikey
         layers_google=db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
         for layer in layers_google:
             for subtype in gis_layer_google_subtypes:
@@ -712,7 +712,7 @@ def map_viewing_client():
     yahoo=Storage()
     # Check for Yahoo Key
     try:
-        yahoo.key=db(db.gis_apikey.service=='yahoo').select(db.gis_apikey.apikey)[0].apikey
+        yahoo.key=db(db.gis_apikey.name=='yahoo').select(db.gis_apikey.apikey)[0].apikey
         layers_yahoo=db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
         for layer in layers_yahoo:
             for subtype in gis_layer_yahoo_subtypes:

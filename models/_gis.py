@@ -93,7 +93,7 @@ msg_record_created=T('Marker added')
 msg_record_modified=T('Marker updated')
 msg_record_deleted=T('Marker deleted')
 msg_list_empty=T('No Markers currently available')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # GIS Projections
 resource='projection'
@@ -154,7 +154,7 @@ msg_record_created=T('Projection added')
 msg_record_modified=T('Projection updated')
 msg_record_deleted=T('Projection deleted')
 msg_list_empty=T('No Projections currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
 # GIS Config
 # id=1 = Default settings
@@ -204,7 +204,7 @@ msg_record_created=T('Config added')
 msg_record_modified=T('Config updated')
 msg_record_deleted=T('Config deleted')
 msg_list_empty=T('No Configs currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # GIS Features
 resource='feature_class'
@@ -236,7 +236,7 @@ msg_record_created=T('Feature Class added')
 msg_record_modified=T('Feature Class updated')
 msg_record_deleted=T('Feature Class deleted')
 msg_list_empty=T('No Feature Classes currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
 resource='feature_metadata'
 table=module+'_'+resource
@@ -262,8 +262,8 @@ db['%s' % table].exposes=s3.fields['%s' % table]
 #db['%s' % table].displays=s3.fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #
-db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.full_name'))
-db['%s' % table].contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].full_name] or ["None"])[0]
+db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.name'))
+db['%s' % table].contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].name] or ["None"])[0]
 db['%s' % table].url.requires=IS_URL()
 title_create=T('Add Feature Metadata')
 title_display=T('Feature Metadata Details')
@@ -277,7 +277,7 @@ msg_record_created=T('Feature Metadata added')
 msg_record_modified=T('Feature Metadata updated')
 msg_record_deleted=T('Feature Metadata deleted')
 msg_list_empty=T('No Feature Metadata currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 resource='feature'
 table=module+'_'+resource
@@ -321,7 +321,7 @@ msg_record_created=T('Feature added')
 msg_record_modified=T('Feature updated')
 msg_record_deleted=T('Feature deleted')
 msg_list_empty=T('No Features currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # Feature Groups
 # Used to select a set of Features for either Display or Export
@@ -357,7 +357,7 @@ msg_record_created=T('Feature Group added')
 msg_record_modified=T('Feature Group updated')
 msg_record_deleted=T('Feature Group deleted')
 msg_list_empty=T('No Feature Groups currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
             
 # Many-to-Many table
@@ -394,7 +394,7 @@ db['%s' % table].apikey.label=T("Key")
 if not len(db().select(db['%s' % table].ALL)): 
    db['%s' % table].insert(
         name="google",
-        apikey="ABQIAAAAb-bE-ljr4-6Hsb4x92lWhRT2yXp_ZAY8_ufC3CFXhHIE1NvwkxQTjccCsxIjr0poUEEARUZJgolNfw",
+        apikey="ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw",
         description="localhost"
     )
    db['%s' % table].insert(
@@ -419,7 +419,7 @@ msg_record_created=T('Key added')
 msg_record_modified=T('Key updated')
 msg_record_deleted=T('Key deleted')
 msg_list_empty=T('No Keys currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
             
 # GIS Layers
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
@@ -459,7 +459,8 @@ for layertype in gis_layer_types:
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_openstreetmap_subtypes)
         db.define_table(table,t)
-        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_openstreetmap',action='display',extra=str(table.enabled))
+        # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+        #db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_openstreetmap',action='display',extra=str(table.enabled))
         if not len(db().select(db['%s' % table].ALL)):
             # Populate table
             for subtype in gis_layer_openstreetmap_subtypes:
@@ -470,14 +471,15 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List OpenStreetMap Layers')
         msg_list_empty=T('No OpenStreetMap Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
     if layertype=="google":
         t=SQLTable(db,table,
             db.Field('subtype'),
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_google_subtypes)
         db.define_table(table,t)
-        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_google',action='display',extra=str(table.enabled))
+        # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+        #db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_google',action='display',extra=str(table.enabled))
         if not len(db().select(db['%s' % table].ALL)):
             # Populate table
             for subtype in gis_layer_google_subtypes:
@@ -489,14 +491,15 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Google Layers')
         msg_list_empty=T('No Google Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
     if layertype=="yahoo":
         t=SQLTable(db,table,
             db.Field('subtype'),
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_yahoo_subtypes)
         db.define_table(table,t)
-        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_yahoo',action='display',extra=str(table.enabled))
+        # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+        #db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_yahoo',action='display',extra=str(table.enabled))
         if not len(db().select(db['%s' % table].ALL)):
             # Populate table
             for subtype in gis_layer_yahoo_subtypes:
@@ -508,14 +511,15 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Yahoo Layers')
         msg_list_empty=T('No Yahoo Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
     if layertype=="virtualearth":
         t=SQLTable(db,table,
             db.Field('subtype'),
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_virtualearth_subtypes)
         db.define_table(table,t)
-        db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_virtualearth',action='display',extra=str(table.enabled))
+        # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
+        #db['%s' % table].represent=lambda table:shn_list_item(table,resource='layer_virtualearth',action='display',extra=str(table.enabled))
         if not len(db().select(db['%s' % table].ALL)):
             # Populate table
             for subtype in gis_layer_virtualearth_subtypes:
@@ -527,7 +531,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Virtual Earth Layers')
         msg_list_empty=T('No Virtual Earth Layers currently defined')
-        exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
 
 # GIS Styles: SLD
 db.define_table('gis_style',

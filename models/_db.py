@@ -63,7 +63,7 @@ if not len(db().select(db['%s' % table].ALL)):
         audit_write=False
     )
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
-crud_strings=Storage()
+s3.crud_strings=Storage()
 title_create=T('Add Setting')
 title_display=T('Setting Details')
 title_list=T('List Settings')
@@ -76,7 +76,7 @@ msg_record_created=T('Setting added')
 msg_record_modified=T('Setting updated')
 msg_record_deleted=T('Setting deleted')
 msg_list_empty=T('No Settings currently defined')
-exec('crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
+exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % resource)
 
 # Modules
 resource='module'
@@ -392,7 +392,7 @@ def shn_m2m_widget(self,value,options=[]):
 
 def shn_crud_strings_lookup(resource):
     "Look up CRUD strings for a given resource based on the definitions in models/module.py."
-    return getattr(crud_strings,'%s' % resource)
+    return getattr(s3.crud_strings,'%s' % resource)
 
 def shn_rest_controller(module,resource):
     """
@@ -423,9 +423,9 @@ def shn_rest_controller(module,resource):
     
     table=db['%s_%s' % (module,resource)]
     if resource=='setting':
-        crud_strings=shn_crud_strings_lookup(resource)
+        s3.crud_strings=shn_crud_strings_lookup(resource)
     else:
-        crud_strings=shn_crud_strings_lookup(table)
+        s3.crud_strings=shn_crud_strings_lookup(table)
     
     # Which representation should output be in?
     if request.vars.format:
@@ -452,9 +452,9 @@ def shn_rest_controller(module,resource):
                 db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
             if list=="No data":
-                list=crud_strings.msg_list_empty
-            title=crud_strings.title_list
-            subtitle=crud_strings.subtitle_list
+                list=s3.crud_strings.msg_list_empty
+            title=s3.crud_strings.title_list
+            subtitle=s3.crud_strings.subtitle_list
             if t2.logged_in:
                 # Add extra column header to explain the checkboxes
                 if isinstance(list,TABLE):
@@ -467,10 +467,10 @@ def shn_rest_controller(module,resource):
                     response.view=module+'/'+custom_view
                 else:
                     response.view='list_create.html'
-                addtitle=crud_strings.subtitle_create
+                addtitle=s3.crud_strings.subtitle_create
                 return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
-                add_btn=A(crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
+                add_btn=A(s3.crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
                 # Check for presence of Custom View
                 custom_view='%s_list.html' % resource
                 _custom_view=os.path.join(request.folder,'views',module,custom_view)
@@ -483,7 +483,7 @@ def shn_rest_controller(module,resource):
             db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
             list=t2.itemize(table)
             if list=="No data":
-                list=crud_strings.msg_list_empty
+                list=s3.crud_strings.msg_list_empty
             # Add extra column header to explain the checkboxes
             if isinstance(list,TABLE):
                 list.insert(0,TR('',B('Delete?')))
@@ -522,7 +522,10 @@ def shn_rest_controller(module,resource):
                     new_value=''
                 )
             if representation=="html":
-                db['%s' % table].displays=s3.fields['%s' % table]
+                try:
+                    db['%s' % table].displays=s3.fields['%s' % table]
+                except:
+                    pass
                 item=t2.display(table)
                 # Check for presence of Custom View
                 custom_view='%s_display.html' % resource
@@ -531,10 +534,10 @@ def shn_rest_controller(module,resource):
                     response.view=module+'/'+custom_view
                 else:
                     response.view='display.html'
-                title=crud_strings.title_display
+                title=s3.crud_strings.title_display
                 edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]),_id='edit-btn')
                 delete=A(T("Delete"),_href=t2.action(resource,['delete',t2.id]),_id='delete-btn')
-                list_btn=A(crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
+                list_btn=A(s3.crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
                 return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,delete=delete,list_btn=list_btn)
             elif representation=="plain":
                 item=t2.display(table)
@@ -590,7 +593,7 @@ def shn_rest_controller(module,resource):
                             new_value=''
                         )
                     if representation=="html":
-                        t2.messages.record_created=crud_strings.msg_record_created
+                        t2.messages.record_created=s3.crud_strings.msg_record_created
                         form=t2.create(table)
                         # Check for presence of Custom View
                         custom_view='%s_create.html' % resource
@@ -599,8 +602,8 @@ def shn_rest_controller(module,resource):
                             response.view=module+'/'+custom_view
                         else:
                             response.view='create.html'
-                        title=crud_strings.title_create
-                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
+                        title=s3.crud_strings.title_create
+                        list_btn=A(s3.crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
                         form=t2.create(table)
@@ -636,7 +639,7 @@ def shn_rest_controller(module,resource):
                             new_value=''
                         )
                     if representation=="html":
-                        t2.messages.record_modified=crud_strings.msg_record_modified
+                        t2.messages.record_modified=s3.crud_strings.msg_record_modified
                         form=t2.update(table,deletable=False)
                         # Check for presence of Custom View
                         custom_view='%s_update.html' % resource
@@ -645,8 +648,8 @@ def shn_rest_controller(module,resource):
                             response.view=module+'/'+custom_view
                         else:
                             response.view='update.html'
-                        title=crud_strings.title_update
-                        list_btn=A(crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
+                        title=s3.crud_strings.title_update
+                        list_btn=A(s3.crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
                         form=t2.update(table,deletable=False)
@@ -679,7 +682,7 @@ def shn_rest_controller(module,resource):
                             old_value=old_value,
                             new_value=''
                         )
-                    t2.messages.record_deleted=crud_strings.msg_record_deleted
+                    t2.messages.record_deleted=s3.crud_strings.msg_record_deleted
                     if representation=="ajax":
                         t2.delete(table,next='%s?format=ajax' % resource)
                     else:

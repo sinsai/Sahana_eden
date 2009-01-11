@@ -31,8 +31,8 @@ def shn_db_clean(db):
     db.commit()
 
 
-# Modified version of URL from gluon/html.py
-# we just need a simplified version for our jquery delete_row function
+# Modified versions of URL from gluon/html.py
+# we need simplified versions for our jquery functions
 def URL2(a=None,c=None,r=None):
     """
     example:
@@ -60,6 +60,34 @@ def URL2(a=None,c=None,r=None):
         raise SyntaxError, 'not enough information to build the url'
     other=''
     url='/%s/%s' % (application, controller)
+    return url
+        
+def URL3(a=None,r=None):
+    """
+    example:
+
+    >>> URL(a='a')
+    '/a'
+
+    generates a url "/a" corresponding to application a
+    If r=request is passed, a is set
+    to r.application
+
+    The more typical usage is:
+    
+    URL(r=request) that generates a base url with the present application.
+    
+    The controller & function (& optionally args/vars) are expected to be added via jquery based on attributes of the item.
+    """
+    application=controller=None
+    if r:
+        application=r.application
+        controller=r.controller
+    if a: application=a    
+    if not (application and controller):
+        raise SyntaxError, 'not enough information to build the url'
+    other=''
+    url='/%s' % application
     return url
         
 # Extended version of T2 from modules/t2.py 

@@ -112,6 +112,7 @@ db['%s' % table].exposes=s3.crud_fields['%s' % table]
 #db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource='projection',action='display',extra='table.epsg')
+db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'gis_projection.uuid')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
 db['%s' % table].name.comment=SPAN("*",_class="req")
 db['%s' % table].epsg.requires=IS_NOT_EMPTY()
@@ -129,6 +130,7 @@ if not len(db().select(db['%s' % table].ALL)):
    # We want to start at ID 1
    db['%s' % table].truncate() 
    db['%s' % table].insert(
+        uuid=uuid.uuid4(),
         name="Spherical Mercator",
         epsg=900913,
         maxExtent="-20037508, -20037508, 20037508, 20037508.34",
@@ -136,6 +138,7 @@ if not len(db().select(db['%s' % table].ALL)):
         units="m"
     )
    db['%s' % table].insert(
+        uuid=uuid.uuid4(),
         name="WGS84",
         epsg=4326,
         maxExtent="-180,-90,180,90",

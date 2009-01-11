@@ -270,6 +270,13 @@ if not len(db().select(db['%s' % table].ALL)):
         priority=1,
         enabled='True'
 	)
+	db['%s' % table].insert(
+        name="Import",
+        function="import_data",
+        access=1,   # Administrator role only
+        priority=2,
+        enabled='True'
+	)
 
 # Settings - home
 resource='setting'
@@ -396,6 +403,19 @@ def shn_crud_strings_lookup(resource):
     "Look up CRUD strings for a given resource based on the definitions in models/module.py."
     return getattr(s3.crud_strings,'%s' % resource)
 
+def import_csv(table,file):
+    "Import CSV file into Database. Comes from appadmin.py"
+    import csv
+    reader = csv.reader(file)
+    colnames=None
+    for line in reader:
+        if not colnames: 
+            colnames=[x[x.find('.')+1:] for x in line]
+            c=[i for i in range(len(line)) if colnames[i]!='id']            
+        else:
+            items=[(colnames[i],line[i]) for i in c]
+            table.insert(**dict(items))
+
 def shn_rest_controller(module,resource):
     """
     RESTlike controller function.
@@ -411,13 +431,13 @@ def shn_rest_controller(module,resource):
         JSON
          - read-only for now
         CSV (useful for synchronization)
-         - read-only for now
+         - List/Display/Create for now
         AJAX (designed to be run asynchronously to refresh page elements)
 
     ToDo:
         Alternate Representations
             JSON create/update
-            CSV create/update
+            CSV update
             SMS,XML,PDF
         Search method
         Customisable Security Policy
@@ -634,9 +654,21 @@ def shn_rest_controller(module,resource):
                         return dict(item=form)
                     elif representation=="json":
                         # ToDo
+                        # Read in POST
+                        #file=request.body.read()
+                        #import_json(table,file)
                         item='{"Status":"failed","Error":{"StatusCode":501,"Message":"JSON creates not yet supported!"}}'
                         response.view='plain.html'
                         return dict(item=item)
+                    elif representation=="csv":
+                        # Read in POST
+                        file=request.vars.filename.file
+                        try:
+                            import_csv(table,file)
+                            reply=T('Data uploaded')
+                        except: 
+                            reply=T('Unable to parse CSV file!')
+                        return reply
                     else:
                         session.error=T("Unsupported format!")
                         redirect(URL(r=request,f=resource))

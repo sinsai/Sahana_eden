@@ -996,7 +996,7 @@ class T2:
         s='abcdefghijkmnpqrstuvwxyz234569'
         return ''.join([s[random.randint(0,len(s)-1)] for i in range(length)])
 
-    def reset_password(self,sender='',next='login'):
+    def reset_password(self,sender='',next='login',email=None):
         """
         To use, create a controller:
         
@@ -1006,16 +1006,18 @@ class T2:
         form=FORM(INPUT(_name='email',
                         requires=[IS_IN_DB(db,'t2_person.email')]),
                   INPUT(_type='submit'))
-        if form.accepts(request.vars,session):
+        if email or form.accepts(request.vars,session):
             password=T2._random_password(5)
-            db(db.t2_person.email==form.vars.email)\
+            db(db.t2_person.email==email or form.vars.email)\
             .update(password=CRYPT()(password)[0],registration_key='')
             body=self.messages.password_email_body % dict(password=password)
             if not self.email(sender=sender,to=form.vars.email,\
                               subject=self.messages.password_email_subject,
                               message=body):
+                if email: return False
                 self.redirect(flash=self.messages.unable_to_send_email)
             else:       
+                if email: return True
                 self.redirect(next,flash=self.messages.email_sent)
         return form
 

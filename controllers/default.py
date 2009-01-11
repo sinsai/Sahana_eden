@@ -67,6 +67,12 @@ def about_sahana():
     sahana_version=open(apath('sahana/VERSION'),'r').read()
     return dict(module_name=module_name,modules=modules,options=options,python_version=python_version,sahana_version=sahana_version,web2py_version=web2py_version)
 
+# Import Data
+def import_data():
+    "Import data via POST upload to CRUD controller."
+    title=T('Import Data')
+    return dict(module_name=module_name,modules=modules,options=options,title=title)
+
 # M2M Tests
 def list_dogs():
     list=t2.itemize(db.dog)

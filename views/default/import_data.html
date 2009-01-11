@@ -1,0 +1,74 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // When the Module changes:
+	$("select#module").change(function() {
+		// What is the new type?
+        module=$(this).val();
+        if (module=="cr") {
+            var options_resource=["shelter"];
+        } else if (module=="or") {
+            var options_resource=["organisation"];
+        } else if (module=="gis") {
+            var options_resource=["projection"];
+        }
+        // Refresh the resource lookuplist
+        // ToDo: Pull from Database using AJAX/JSON:
+        // http://remysharp.com/2007/01/20/auto-populating-select-boxes-using-jquery-ajax/
+		var options = '';
+        //for (var i = 0; i < options_subtype.length; i++) {
+        for(key in options_resource) {
+            options += '<option value="' + options_resource[key] + '">' + options_resource[key] + '</option>';
+        }
+        $("select#resource").html(options);
+        // ToDo: Provide option to update the Key field from DB using AJAX/JSON
+	})
+    $("input#submit").click(function() {
+        // Set the Action URL
+        $("form#poster").attr("action","{{=URL3(r=request)}}/"+$("select#module").val()+"/"+$("select#resource").val()+"/create?format="+$("select#representation").val());
+        return True;
+    })
+});
+//]]></script>
+
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+<form id="poster" action="/sahana/module/resource/create?format=representation" method="POST" enctype="multipart/form-data">
+    <table>
+    <tr><td>Module:</td><td>
+    <select id="module" name="module">
+     <option value="or">Organisation Registry</option>
+     <option value="cr">Shelter Registry</option>
+     <option value="gis">Situation Awareness</option>
+    </select>
+    </td></tr>
+    <tr><td>Resource:</td><td>
+    <select id="resource" name="resource">
+     <option value="organisation">Organisation</option>
+    </select>
+    </td></tr>
+    <tr><td>Format:</td><td>
+    <select id="representation" name="representation">
+     <option value="csv">CSV</option>
+     <option value="json">JSON</option>
+    </select>
+    </td></tr>
+    <tr><td>File:</td><td>
+    <input id="filename" type="file" name="filename"/>
+    </td></tr>
+    <tr><td></td><td>
+    <input id="submit" type="submit" value="Upload"/>
+    </td></tr>
+    </table>
+</form>
+{{pass}}
+</div>
+<div id='results'></div>

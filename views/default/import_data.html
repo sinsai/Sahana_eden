@@ -7,16 +7,18 @@
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
+    // Hide the textarea
+    $("#textarea").hide();
     // When the Module changes:
 	$("select#module").change(function() {
-		// What is the new type?
+		// What is the new module?
         module=$(this).val();
         if (module=="cr") {
             var options_resource=["shelter"];
         } else if (module=="or") {
             var options_resource=["organisation"];
         } else if (module=="gis") {
-            var options_resource=["projection"];
+            var options_resource=["feature"];
         }
         // Refresh the resource lookuplist
         // ToDo: Pull from Database using AJAX/JSON:
@@ -29,6 +31,22 @@ $(function() {
         $("select#resource").html(options);
         // ToDo: Provide option to update the Key field from DB using AJAX/JSON
 	})
+    // When the Representation changes:
+	$("select#representation").change(function() {
+        // What is the new representation?
+        representation=$(this).val();
+        if (representation=="csv") {
+            // Hide the textarea
+            $("#textarea").hide();
+            // Show the file upload
+            $("#file").show();
+        } else if (representation=="json") {
+            // Hide the file upload
+            $("#file").hide();
+            // Show the textarea
+            $("#textarea").show();
+        }
+    })
     $("input#submit").click(function() {
         // Set the Action URL
         $("form#poster").attr("action","{{=URL3(r=request)}}/"+$("select#module").val()+"/"+$("select#resource").val()+"/create?format="+$("select#representation").val());
@@ -61,8 +79,11 @@ $(function() {
      <option value="json">JSON</option>
     </select>
     </td></tr>
-    <tr><td>File:</td><td>
-    <input id="filename" type="file" name="filename"/>
+    <tr id="file"><td>File:</td><td>
+    <input type="file" name="filename"/>
+    </td></tr>
+    <tr id="textarea"><td>Data:</td><td>
+    <textarea name="data" cols="100">paste text here...</textarea>
     </td></tr>
     <tr><td></td><td>
     <input id="submit" type="submit" value="Upload"/>

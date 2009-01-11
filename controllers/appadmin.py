@@ -32,10 +32,11 @@ global_env['datetime']=datetime
 #
 # S3 Auth
 #
-# Can't see t2_person.id in the controller :/
-#if not shn_has_role(t2_person.id,1):
-#    session.error=T('Not Authorised')
-#    redirect(URL(r=request,c='default',f='index'))
+if 1 in session.s3.roles:
+    pass
+else:
+    session.error=T('Not Authorised!')
+    redirect(URL(r=request,c='default',f='index'))
 
 #module='appadmin'
 # Current Module (for sidebar title)

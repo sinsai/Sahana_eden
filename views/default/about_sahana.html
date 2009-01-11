@@ -31,7 +31,6 @@ Python
 </table>
 </div>
 <p>&nbsp;</p>
-{{if t2.logged_in:}}
-<!--Need to make this if t2.is_admin: when appadmin auth integrated with t2 AAA-->
+{{if 1 in session.s3.roles:}}
 <strong>{{=A(T("Internal State"),_href=URL(r=request,c='appadmin',f='state'))}}</strong>: {{=T("Request, Response & Session")}}
 {{pass}}

@@ -45,7 +45,7 @@
   <ul id="modmenu">
    {{try:}}
     {{for option in options:}}
-     {{if not option.access or (option.access in response.roles):}}
+     {{if not option.access or (option.access in session.s3.roles):}}
 	  <li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
      {{pass}}
 	{{pass}}

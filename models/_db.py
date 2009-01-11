@@ -165,14 +165,10 @@ if not len(db().select(db['%s' % table].ALL)):
         enabled='False'
 	)
 	
+# Authorization
 # User Roles
-# for Authorization
-resource='role'
-table=module+'_'+resource
-db.define_table(table,
-                SQLField('name'),
-                SQLField('description',length=256))
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+# uses native T2 Groups
+table='t2_group'
 # Populate table with Default options
 if not len(db().select(db['%s' % table].ALL)):
 	# Default
@@ -204,27 +200,6 @@ if not len(db().select(db['%s' % table].ALL)):
         name="Camp Admin",
         description="Can make changes to a Camp"
 	)
-resource='roleholder'
-table=module+'_'+resource
-db.define_table(table,
-                SQLField('person_id',db.t2_person),
-                SQLField('role_id',db.s3_role))
-db['%s' % table].person_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.email')
-db['%s' % table].role_id.requires=IS_IN_DB(db,'s3_role.id','s3_role.name')
-#Breaks dropdowns: http://groups.google.com/group/web2py/browse_thread/thread/7551b50ef3ca72a8/c48d7a410993daac?lnk=gst&q=IS_NOT_IN_DB#c48d7a410993daac
-#db['%s' % table].role_id.requires=IS_NOT_IN_DB(db(db['%s' % table].person_id==request.vars.person_id),'s3_role.name')
-
-def shn_has_role(person,role):
-    "Lookup to see whether a person has a role"
-    if not len(role):
-        # No role specified => anonymous allowed
-        return True
-    elif len(db((db.s3_roleholder.person_id==person)&(db.s3_roleholder.role_id==role)).select()):
-        # person does have the role
-        return True
-    else:
-        # person does not have the role
-        return False
 
 # Auditing
 resource='audit'
@@ -248,12 +223,12 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
-                SQLField('access',db.s3_role),  # Hide menu options if users don't have the required access level
+                SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db['%s' % table].function.requires=IS_NOT_EMPTY()
-db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'s3_role.id','s3_role.name'))
+db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
 db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 # Populate table with Default options
 if not len(db().select(db['%s' % table].ALL)):
@@ -313,8 +288,10 @@ def shn_sessions(f):
     """
     Extend session to support:
          Multiple flash classes
-         Debug mode
-         Roles held by a user
+         Settings
+            Debug mode
+            Audit modes
+            Self-Registration
     """
     response.error=session.error
     response.confirmation=session.confirmation
@@ -323,7 +300,8 @@ def shn_sessions(f):
     session.confirmation=[]
     session.warning=[]
     # Keep all our configuration options in a single global variable
-    if not session.s3: session.s3=Storage()
+    if not session.s3:
+        session.s3=Storage()
     session.s3.self_registration=db().select(db.s3_setting.self_registration)[0].self_registration
     session.s3.debug=db().select(db.s3_setting.debug)[0].debug
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
@@ -336,13 +314,13 @@ def shn_sessions(f):
     except:
         session.s3.audit_write=db().select(db.s3_setting.audit_write)[0].audit_write
     # Which roles does a user have?
-    #session.s3.roles=[]
-    #try:
-    #    roles=db(db.s3_roleholder.person_id==t2.person_id).select()
-    #    for role in roles:
-    #        session.s3.roles.append(role.role_id)
-    #except:
-    #    pass
+    session.s3.roles=[]
+    try:
+        roles=db(db.t2_membership.person_id==t2.person_id).select(db.t2_membership.group_id)
+        for role in roles:
+            session.s3.roles.append(role.group_id)
+    except:
+        pass
     return f()
 response._caller=lambda f: shn_sessions(f)
 
@@ -416,6 +394,16 @@ def import_csv(table,file):
             items=[(colnames[i],line[i]) for i in c]
             table.insert(**dict(items))
 
+def import_json(table,file):
+    "Import JSON into Database."
+    import gluon.contrib.simplejson as sj
+    reader=sj.loads(file)
+    # ToDo
+    # Get column names
+    # Insert records
+    #table.insert(**dict(items))
+    return
+            
 def shn_rest_controller(module,resource):
     """
     RESTlike controller function.

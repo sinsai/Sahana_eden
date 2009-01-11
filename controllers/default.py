@@ -9,7 +9,8 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 # T2 framework functions
 def login():
     return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
-def logout(): t2.logout(next='login')
+def logout():
+    t2.logout(next='login')
 # Self-registration can be disabled by amending the setting in the s3_settings table
 def register():
     if session.s3.self_registration:
@@ -17,7 +18,8 @@ def register():
         return dict(form=t2.register(),module_name=module_name,modules=modules,options=options)
     else:
         redirect(URL(r=request,c='default',f='index'))
-def profile(): return dict(form=t2.profile(),module_name=module_name,modules=modules,options=options)
+def profile():
+    return dict(form=t2.profile(),module_name=module_name,modules=modules,options=options)
 
 # S3 framework functions
 def index():
@@ -43,15 +45,19 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
-# The settings should be protected by T2 AAA beyond just 'authenticated'
-#@t2.have_membership(1)
 def setting():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module,'setting')
+    """RESTlike CRUD controller
+    Access only permitted to admins.
+    """
+    if 1 in session.s3.roles:
+        return shn_rest_controller(module,'setting')
+    else:
+        redirect(URL(r=request,f='index'))
 
     
 # About Sahana
 def apath(path=''):
+    "Application path"
     import os
     from gluon.fileutils import up
     opath=up(request.folder)
@@ -67,6 +73,13 @@ def about_sahana():
     sahana_version=open(apath('sahana/VERSION'),'r').read()
     return dict(module_name=module_name,modules=modules,options=options,python_version=python_version,sahana_version=sahana_version,web2py_version=web2py_version)
 
+# Administration Page
+def admin():
+    """Administration Page.
+    For now just redirect to appadmin.
+    """
+    redirect(URL(r=request,a='admin',c='default',f='site'))
+    
 # Import Data
 def import_data():
     "Import data via POST upload to CRUD controller."
@@ -75,26 +88,31 @@ def import_data():
 
 # M2M Tests
 def list_dogs():
+    "Test for M2M widget"
     list=t2.itemize(db.dog)
     response.view='list_plain.html'
     return dict(list=list)
 
 def display_dog():
+    "Test for M2M widget"
     list=t2.display(db.dog)
     response.view='list_plain.html'
     return dict(list=list)
 
 def update_dog():
+    "Test for M2M widget"
     list=t2.update(db.dog)
     response.view='list_plain.html'
     return dict(list=list)
 
 def delete_dog():
+    "Test for M2M widget"
     list=t2.delete(db.dog)
     response.view='list_plain.html'
     return dict(list=list)
 
 def delete_owner():
+    "Test for M2M widget"
     list=t2.delete(db.owner)
     response.view='list_plain.html'
     return dict(list=list)

@@ -59,10 +59,10 @@ db.define_table(table,
                 SQLField('height','integer'), # In Pixels, for display purposes
                 SQLField('width','integer'),
                 SQLField('image','upload'))
-exec("s3.fields.%s=['name','height','width','image']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
+exec("s3.crud_fields.%s=['name','height','width','image']" % table)
+db['%s' % table].exposes=s3.crud_fields['%s' % table]
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource='marker',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_marker.name')]
@@ -106,10 +106,10 @@ db.define_table(table,
                 SQLField('maxExtent'),
                 SQLField('maxResolution','double'),
                 SQLField('units'))
-exec("s3.fields.%s=['name','epsg','maxExtent','maxResolution','units']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
+exec("s3.crud_fields.%s=['name','epsg','maxExtent','maxResolution','units']" % table)
+db['%s' % table].exposes=s3.crud_fields['%s' % table]
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource='projection',action='display',extra='table.epsg')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_projection.name')]
@@ -155,6 +155,7 @@ msg_record_modified=T('Projection updated')
 msg_record_deleted=T('Projection deleted')
 msg_list_empty=T('No Projections currently defined')
 exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+exec('s3.undeletable.%s=1' % table)
 
 # GIS Config
 # id=1 = Default settings
@@ -214,10 +215,10 @@ db.define_table(table,
                 SQLField('uuid',length=64,default=uuid.uuid4()),
                 SQLField('name'),
                 SQLField('marker',db.gis_marker))   # NB This can then have issues with sync unless going via CSV
-exec("s3.fields.%s=['name','marker']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
+exec("s3.crud_fields.%s=['name','marker']" % table)
+db['%s' % table].exposes=s3.crud_fields['%s' % table]
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource='feature_class',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_class.name')]
@@ -255,11 +256,10 @@ db.define_table(table,
                 SQLField('expiry_time','datetime'),
                 SQLField('url'),
                 SQLField('image','upload'))
-exec("s3.fields.%s=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
-#exec("db.gis_feature_metadata.displays=s3.fields.%s.extend['created_on','created_by','modified_on']" % table)
+exec("s3.crud_fields.%s=['created_on','created_by','modified_on','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']" % table)
+db['%s' % table].exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #
 db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.name'))
@@ -290,10 +290,10 @@ db.define_table(table,
                 SQLField('type',default='point'),
                 SQLField('lat'),
                 SQLField('lon'))
-exec("s3.fields.%s=['name','feature_class','metadata','type','lat','lon']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
+exec("s3.crud_fields.%s=['name','feature_class','metadata','type','lat','lon']" % table)
+db['%s' % table].exposes=s3.crud_fields['%s' % table]
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource=resource,action='display')
 db['%s' % table].name.requires=IS_NOT_EMPTY()
@@ -334,11 +334,10 @@ db.define_table(table,
                 SQLField('description',length=256),
                 SQLField('features','text'), # List of features (to be replaced by many-to-many table)
                 SQLField('author',db.t2_person))
-exec("s3.fields.%s=['name','description','features']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
-#exec("db.gis_feature_metadata.displays=s3.fields.%s.extend['author']" % table)
+exec("s3.crud_fields.%s=['author','name','description','features']" % table)
+db['%s' % table].exposes=['name','description','features']
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource='feature_group',action='display')
 db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_feature_group.name')]
@@ -378,10 +377,10 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('apikey'),
 				SQLField('description',length=256))
-exec("s3.fields.%s=['name','apikey','description']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
+exec("s3.crud_fields.%s=['name','apikey','description']" % table)
+db['%s' % table].exposes=s3.crud_fields['%s' % table]
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource='apikey',action='display',display='table.name',extra='table.apikey')
 # We want a THIS_NOT_IN_DB here:
@@ -420,7 +419,9 @@ msg_record_modified=T('Key updated')
 msg_record_deleted=T('Key deleted')
 msg_list_empty=T('No Keys currently defined')
 exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
-            
+exec('s3.listonly.%s=1' % table)
+exec('s3.undeletable.%s=1' % table)
+
 # GIS Layers
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
 gis_layer_types=['openstreetmap','google','yahoo','virtualearth']
@@ -472,6 +473,7 @@ for layertype in gis_layer_types:
         label_list_button=T('List OpenStreetMap Layers')
         msg_list_empty=T('No OpenStreetMap Layers currently defined')
         exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.undeletable.%s=1' % table)
     if layertype=="google":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -492,6 +494,7 @@ for layertype in gis_layer_types:
         label_list_button=T('List Google Layers')
         msg_list_empty=T('No Google Layers currently defined')
         exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.undeletable.%s=1' % table)
     if layertype=="yahoo":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -512,6 +515,7 @@ for layertype in gis_layer_types:
         label_list_button=T('List Yahoo Layers')
         msg_list_empty=T('No Yahoo Layers currently defined')
         exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.undeletable.%s=1' % table)
     if layertype=="virtualearth":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -532,6 +536,7 @@ for layertype in gis_layer_types:
         label_list_button=T('List Virtual Earth Layers')
         msg_list_empty=T('No Virtual Earth Layers currently defined')
         exec('s3.crud_strings.%s=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)' % table)
+        exec('s3.undeletable.%s=1' % table)
 
 # GIS Styles: SLD
 db.define_table('gis_style',

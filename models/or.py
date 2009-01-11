@@ -77,10 +77,10 @@ db.define_table(table,
                 SQLField('address','text'),
                 SQLField('contact',length=64),
                 SQLField('location',length=64))
-exec("s3.fields.%s=['name','parent','type','registration','manpower','equipment','address','contact','location']" % table)
-db['%s' % table].exposes=s3.fields['%s' % table]
+exec("s3.crud_fields.%s=['name','parent','type','registration','manpower','equipment','address','contact','location']" % table)
+db['%s' % table].exposes=s3.crud_fields['%s' % table]
 # Moved to Controller - allows us to redefine for different scenarios (& also better MVC separation)
-#db['%s' % table].displays=s3.fields['%s' % table]
+#db['%s' % table].displays=s3.crud_fields['%s' % table]
 # NB Beware of lambdas & %s substitution as they get evaluated when called, not when defined! 
 #db['%s' % table].represent=lambda table:shn_list_item(table,resource='organisation',action='display')
 db['%s' % table].name.requires=IS_NOT_EMPTY()

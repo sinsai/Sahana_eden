@@ -30,10 +30,12 @@ t2=S3(request,response,session,cache,T,db)
 from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
-# Keep all S3 framework-level elements stored off here, so as to avoid oluuting global namespace & to make it clear which part of the framework is being interacted with
+# Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 s3=Storage()
+s3.crud_fields=Storage()
 s3.crud_strings=Storage()
-s3.fields=Storage()
+s3.listonly=Storage()
+s3.undeletable=Storage()
 
 module='s3'
 # Settings - systemwide
@@ -426,6 +428,14 @@ def shn_rest_controller(module,resource):
         s3.crud_strings=shn_crud_strings_lookup(resource)
     else:
         s3.crud_strings=shn_crud_strings_lookup(table)
+    try:
+        s3.deletable=not s3.undeletable['%s' % table]
+    except:
+        s3.deletable=True
+    try:
+        s3.listadd=not s3.listonly['%s' % table]
+    except:
+        s3.listadd=True
     
     # Which representation should output be in?
     if request.vars.format:
@@ -446,7 +456,7 @@ def shn_rest_controller(module,resource):
                 new_value=''
             )
         if representation=="html":
-            if t2.logged_in:
+            if t2.logged_in and s3.deletable:
                 db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
             else:
                 db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
@@ -455,10 +465,12 @@ def shn_rest_controller(module,resource):
                 list=s3.crud_strings.msg_list_empty
             title=s3.crud_strings.title_list
             subtitle=s3.crud_strings.subtitle_list
-            if t2.logged_in:
-                # Add extra column header to explain the checkboxes
-                if isinstance(list,TABLE):
-                    list.insert(0,TR('',B('Delete?')))
+            if t2.logged_in and s3.listadd:
+                # Display the Add form below List
+                if s3.deletable:
+                    # Add extra column header to explain the checkboxes
+                    if isinstance(list,TABLE):
+                        list.insert(0,TR('',B('Delete?')))
                 form=t2.create(table)
                 # Check for presence of Custom View
                 custom_view='%s_list_create.html' % resource
@@ -470,7 +482,11 @@ def shn_rest_controller(module,resource):
                 addtitle=s3.crud_strings.subtitle_create
                 return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
-                add_btn=A(s3.crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
+                # List only
+                if s3.listadd:
+                    add_btn=A(s3.crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
+                else:
+                    add_btn=''
                 # Check for presence of Custom View
                 custom_view='%s_list.html' % resource
                 _custom_view=os.path.join(request.folder,'views',module,custom_view)
@@ -480,13 +496,17 @@ def shn_rest_controller(module,resource):
                     response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="ajax":
-            db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+            if t2.logged_in and s3.deletable:
+                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+            else:
+                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
             if list=="No data":
                 list=s3.crud_strings.msg_list_empty
-            # Add extra column header to explain the checkboxes
-            if isinstance(list,TABLE):
-                list.insert(0,TR('',B('Delete?')))
+            if s3.deletable:
+                # Add extra column header to explain the checkboxes
+                if isinstance(list,TABLE):
+                    list.insert(0,TR('',B('Delete?')))
             response.view='plain.html'
             return dict(item=list)
         elif representation=="plain":
@@ -523,7 +543,7 @@ def shn_rest_controller(module,resource):
                 )
             if representation=="html":
                 try:
-                    db['%s' % table].displays=s3.fields['%s' % table]
+                    db['%s' % table].displays=s3.crud_fields['%s' % table]
                 except:
                     pass
                 item=t2.display(table)
@@ -536,7 +556,10 @@ def shn_rest_controller(module,resource):
                     response.view='display.html'
                 title=s3.crud_strings.title_display
                 edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]),_id='edit-btn')
-                delete=A(T("Delete"),_href=t2.action(resource,['delete',t2.id]),_id='delete-btn')
+                if s3.deletable:
+                    delete=A(T("Delete"),_href=t2.action(resource,['delete',t2.id]),_id='delete-btn')
+                else:
+                    delete=''
                 list_btn=A(s3.crud_strings.label_list_button,_href=t2.action(resource),_id='list-btn')
                 return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,delete=delete,list_btn=list_btn)
             elif representation=="plain":

@@ -29,3 +29,6 @@ def open_option():
 def person():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'person')
+def contact():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'contact')

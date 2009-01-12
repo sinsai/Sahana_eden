@@ -590,13 +590,16 @@ class T2:
                                          *[t.ALL for t in tables])
         if not rows: return None # rather than 'No data'. Give caller a chance to do his i18n issue
         def represent(t,r):
-          try: return t.represent(r)
+          try: rep=t.represent(r) # Note: custom represent() should generate a string or a list, but NOT a TR(...) instance
           except KeyError:
-            return (TR(*[r[f] for f in t.displays]) # Default depends on t.displays, if any
-              if 'displays' in t else TR('#%i'%r.id, str(r[t.fields[1]]))) # Fall back to TR(id,FirstField)
+            rep=([r[f] for f in t.displays] # Default depends on t.displays, if any
+              if 'displays' in t else ['#%i'%r.id, str(r[t.fields[1]])]) # Fall back to TR(id,FirstField)
+          return rep if isinstance(rep,list) else [rep] # Ensure to return a list
         header=opts.get('header',# Input can be something like TR(TH('ID'),TH('STAMP'))
-          TR(*[TH(t[f].label) for f in t.displays]) if 'displays' in t else '') # Default depends on t.displays, if any
-        nav=[TR(TD( # Iceberg at 21cn dot com prefers this style of page navigation :-)
+          TR(*[TH(tables[0][f].label) for f in tables[0].displays])
+            if 'displays' in tables[0] else '') # Default depends on tables[0].displays, if any
+        headerList=[header] if header else []
+        nav=DIV( # Iceberg at 21cn dot com prefers this style of page navigation :-)
           INPUT(_type='button',_value='|<',_onclick='javascript:location="%s"'
             %self.action(args=request.args,vars={'_page':0})) if page else '',
           INPUT(_type='button',_value='<',_onclick='javascript:location="%s"'
@@ -612,15 +615,22 @@ class T2:
           INPUT(_type='button',_value='>|',_onclick='javascript:location="%s"'
             %self.action(args=request.args,vars={'_page':rows_count/nitems})
             ) if page*nitems+len(rows)<rows_count else '',
-          _colspan=999,# To make sure the first column of table will not become unnecessarily large
-          _align='right'),_align='right')]# but somehow, align doesn't work :(
+          ) if nitems<rows_count else None
         if len(tables)==1:
-          return TABLE(_class='sortable',#sorry, I don't know how to setup css to make _class='t2-itemize' looks cool, so I stick to "sortable"
-                       *nav+[header]+[TR(represent(tables[0],row)) for row in rows]+nav)
+          return DIV(
+            nav if nav else '', # It shouldn't be inside the table otherwise it is tricky to set the correct _colspan for IE7
+            TABLE(_class='sortable',#sorry, I don't know how to setup css to make _class='t2-itemize' looks cool, so I stick to "sortable"
+              *headerList+[TR(*represent(tables[0],row)) for row in rows]),
+            nav if nav else '') # See above
         else:
-          return TABLE(_class='sortable',#see above
-                       *nav+[header]+[TR(*[represent(table,row[table._tablename])
-                                  for table in tables]) for row in rows]+nav)
+          import itertools
+          return DIV(
+            nav if nav else '', # And don't try to make it "align=right", because the table might be too wide to show in the screen.
+            TABLE(_class='sortable',#see above
+              *headerList+[TR(*list(itertools.chain(
+                *[represent(table,row[table._tablename]) for table in tables])))
+                  for row in rows]),
+            nav if nav else '') # See above
 
     def search(self,*tables,**opts):    
         """

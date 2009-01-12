@@ -542,15 +542,15 @@ for layertype in gis_layer_types:
         exec('s3.undeletable.%s=1' % table)
 
 # GIS Styles: SLD
-db.define_table('gis_style',
-                SQLField('modified_on','datetime',default=now),
-                SQLField('name'))
-db.gis_style.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_style.name')]
+#db.define_table('gis_style',
+#                SQLField('modified_on','datetime',default=now),
+#                SQLField('name'))
+#db.gis_style.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_style.name')]
 
 # GIS WebMapContexts
 # (User preferences)
-db.define_table('gis_webmapcontext',
-                SQLField('modified_on','datetime',default=now),
-                SQLField('user',db.t2_person))
-db.gis_webmapcontext.user.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
+#db.define_table('gis_webmapcontext',
+#                SQLField('modified_on','datetime',default=now),
+#                SQLField('user',db.t2_person))
+#db.gis_webmapcontext.user.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
 

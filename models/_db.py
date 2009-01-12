@@ -200,7 +200,14 @@ if not len(db().select(db['%s' % table].ALL)):
         name="Camp Admin",
         description="Can make changes to a Camp"
 	)
-
+# 1st person created will be Admin
+table='t2_membership'
+if not len(db().select(db['%s' % table].ALL)):
+	db['%s' % table].insert(
+        person_id=1,
+        group_id=1
+	)
+    
 # Auditing
 resource='audit'
 table=module+'_'+resource
@@ -246,10 +253,17 @@ if not len(db().select(db['%s' % table].ALL)):
         enabled='True'
 	)
 	db['%s' % table].insert(
+        name="Database",
+        function="database",
+        access=1,   # Administrator role only
+        priority=2,
+        enabled='True'
+	)
+	db['%s' % table].insert(
         name="Import",
         function="import_data",
         access=1,   # Administrator role only
-        priority=2,
+        priority=3,
         enabled='True'
 	)
 

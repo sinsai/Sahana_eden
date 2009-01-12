@@ -76,9 +76,16 @@ def about_sahana():
 # Administration Page
 def admin():
     """Administration Page.
-    For now just redirect to appadmin.
+    For now just redirect to appadmin's site view.
     """
     redirect(URL(r=request,a='admin',c='default',f='site'))
+    
+# Database Page
+def database():
+    """Database Page.
+    Redirect to appadmin.
+    """
+    redirect(URL(r=request,c='appadmin',f='index'))
     
 # Import Data
 def import_data():

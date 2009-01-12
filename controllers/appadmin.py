@@ -32,11 +32,16 @@ global_env['datetime']=datetime
 #
 # S3 Auth
 #
-if 1 in session.s3.roles:
-    pass
-else:
+try:
+    if 1 in session.s3.roles:
+        pass
+    else:
+        session.error=T('Not Authorised!')
+        redirect(URL(r=request,c='default',f='login'))
+except:
     session.error=T('Not Authorised!')
-    redirect(URL(r=request,c='default',f='index'))
+    redirect(URL(r=request,c='default',f='login'))
+
 
 #module='appadmin'
 # Current Module (for sidebar title)

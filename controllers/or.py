@@ -29,3 +29,9 @@ def open_option():
 def organisation():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'organisation')
+def office():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'office')
+def contact():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'contact')

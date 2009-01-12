@@ -131,3 +131,47 @@ class S3(T2):
                 form.vars.modified_by=self.person_id
             if 'modified_signature' in table.fields:
                 form.vars.modified_signature=self.person_name
+
+    def register(self,verification=False,sender='',next='login',onaccept=None):
+        """
+        Overrides t2's register() to add new functionality:
+            * Whenever someone registers, it automatically adds their name to the Person Registry
+            * Registering automaticallu logs you in
+        
+        To use, create a controller:
+
+        def register(): return t2.register()
+        """
+        request,response,session,cache,T,db=self._globals()
+        def onaccept2(form):
+            db.t2_membership.insert(person_id=form.vars.id,group_id=db.t2_group.insert(name=form.vars.name),status='approved')
+            # S3: Add to Person Registry as well
+            # Check to see whether User already exists
+            if len(db(db.pr_person.email==form.vars.email).select()):
+                # Update
+                #db(db.pr_person.email==form.vars.email).select()[0].update_record(
+                #    name=form.vars.name
+                #)
+                pass
+            else:
+                # Insert
+                db.pr_person.insert(
+                    name=form.vars.name,
+                    email=form.vars.email
+                )
+            # S3: Login automatically upon registration
+            session.t2.person_id=form.vars.id
+            session.t2.person_name=form.vars.name
+            session.t2.person_email=form.vars.email
+            session.confirmation=self.messages.logged_in
+
+            if form.vars.registration_key:
+                body=self.messages.register_email_body % dict(form.vars)
+                if not self.email(sender=sender,to=form.vars.email,subject=self.messages.register_email_subject,message=body):
+                    self.redirect(flash=self.messages.unable_to_send_email)
+                session.flash=self.messages.email_sent
+            if onaccept:
+                onaccept(form)
+        vars={'registration_key':
+            str(uuid.uuid4()) if verification else ''}
+        return self.create(self.db.t2_person,vars=vars,onaccept=onaccept2,next=next)

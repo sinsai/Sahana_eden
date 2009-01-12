@@ -15,7 +15,8 @@ def logout():
 def register():
     if session.s3.self_registration:
         t2.messages.record_created=T("You have been successfully registered")
-        return dict(form=t2.register(),module_name=module_name,modules=modules,options=options)
+        # To enable email verification, set verification=True
+        return dict(form=t2.register(verification=False),module_name=module_name,modules=modules,options=options)
     else:
         redirect(URL(r=request,c='default',f='index'))
 def profile():

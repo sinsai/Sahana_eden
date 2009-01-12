@@ -19,8 +19,8 @@ from applications.sahana.modules.t2 import T2
 def shn_db_clean(db):
     """
     Drop tables to remove all data.
-    To be done before a release.
-    All neccessary lookup tables will be recreated upon initialisation.
+    To be done before a release. (Actually we can just delete the contents of databases/
+    All necessary lookup tables will be recreated upon initialisation.
     """
     tables=['gis_layer_openstreetmap','gis_layer_google','gis_layer_yahoo','gis_layer_virtualearth','default_setting']
     for table in tables:
@@ -97,6 +97,8 @@ class S3(T2):
         T2.__init__(self,request,response,session,cache,T,db,all_in_db=False)
         # Clear unused info from cluttering every Response
         response.files=[]
+        # Set email server's port?
+        #self.email_server='localhost:25'
     
     # Modified version of _stamp
     # we need to support multiple tables
@@ -160,10 +162,11 @@ class S3(T2):
                     email=form.vars.email
                 )
             # S3: Login automatically upon registration
-            session.t2.person_id=form.vars.id
-            session.t2.person_name=form.vars.name
-            session.t2.person_email=form.vars.email
-            session.confirmation=self.messages.logged_in
+            if not verification:
+                session.t2.person_id=form.vars.id
+                session.t2.person_name=form.vars.name
+                session.t2.person_email=form.vars.email
+                #session.confirmation=self.messages.logged_in
 
             if form.vars.registration_key:
                 body=self.messages.register_email_body % dict(form.vars)

@@ -9,14 +9,6 @@ db=SQLDB('sqlite://storage.db')         # if not, use SQLite or other DB
 #    db=GQLDB()                              # connect to Google BigTable
 #    session.connect(request,response,db=db) # and store sessions there
 
-# Define 'now'
-# 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
-now=datetime.datetime.today()
-
-# We need UUIDs for database synchronization
-# although if going via CSV export routines, then we shouldn't (tbc)
-import uuid
-
 # Use T2 plugin for AAA & CRUD
 # At top of file rather than usual bottom as we refer to it within our tables
 #from applications.t3.modules.t2 import T2
@@ -26,10 +18,31 @@ import uuid
 from applications.sahana.modules.sahana import *
 t2=S3(request,response,session,cache,T,db)
 
+# Define 'now'
+# 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
+now=datetime.datetime.today()
+
+# Reusable timestamp fields
+timestamp=SQLTable(None,'timestamp',
+            SQLField('created_on','datetime',
+                          writable=False,
+                          default=request.now),
+            SQLField('modified_on','datetime',
+                          writable=False,
+                          default=request.now,update=request.now)) 
+
+# We need UUIDs as part of database synchronization
+import uuid
+uuidstamp=SQLTable(None,'uuidstamp',
+            SQLField('uuid',length=64,
+                          writable=False,
+                          default=uuid.uuid4()))
+
 # Custom validators
 from applications.sahana.modules.validators import *
 
 from gluon.storage import Storage
+
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 s3=Storage()
 s3.crud_fields=Storage()
@@ -41,7 +54,7 @@ module='s3'
 # Settings - systemwide
 resource='setting'
 table=module+'_'+resource
-db.define_table(table,
+db.define_table(table,timestamp,
                 SQLField('admin_name'),
                 SQLField('admin_email'),
                 SQLField('admin_tel'),
@@ -70,6 +83,7 @@ title_create=T('Add Setting')
 title_display=T('Setting Details')
 title_list=T('List Settings')
 title_update=T('Edit Setting')
+title_search=T('Search Settings')
 subtitle_create=T('Add New Setting')
 subtitle_list=T('Settings')
 label_list_button=T('List Settings')
@@ -113,14 +127,14 @@ if not len(db().select(db['%s' % table].ALL)):
         name_nice="Missing Person Registry",
         menu_priority=2,
         description="Helps to report and search missing person",
-        enabled='True'
+        enabled='False'
 	)
 	db['%s' % table].insert(
         name="dvr",
         name_nice="Disaster Victim Registry",
         menu_priority=3,
         description="Traces internally displaced people (IDPs) and their needs",
-        enabled='True'
+        enabled='False'
 	)
 	db['%s' % table].insert(
         name="or",
@@ -179,28 +193,32 @@ if not len(db().select(db['%s' % table].ALL)):
         name="Administrator",
         description="System Administrator - can access & make changes to any data",
 	)
-    # t2.logged_in is an alternate way of checking for this role
-	db['%s' % table].insert(
-        name="Registered User",
-        description="A registered user in the system (e.g Volunteers, Family)"
-	)
-	db['%s' % table].insert(
-        name="Super User",
-        description="Head of Operations - can access & make changes to any data"
-	)
-	db['%s' % table].insert(
-        name="Trusted User",
-        description="An officially trusted and designated user of the system. Often member of a trusted supporting organization"
-	)
-	db['%s' % table].insert(
-        name="Organisation Admin",
-        description="Can make changes to an Organisation & it's assets"
-	)
-	db['%s' % table].insert(
-        name="Camp Admin",
-        description="Can make changes to a Camp"
-	)
-# 1st person created will be Admin
+    # t2.logged_in is the way to check for this role
+	#db['%s' % table].insert(
+    #    name="Registered User",
+    #    description="A registered user in the system (e.g Volunteers, Family)"
+	#)
+    # No different to System Administrator currently...is there really a need for this role?
+	#db['%s' % table].insert(
+    #    name="Super User",
+    #    description="Global Head of Operations - can access & make changes to any data"
+	#)
+    # Stored within gis_location_admin table
+	#db['%s' % table].insert(
+    #    name="Country Admin",
+    #    description="Can make changes to any data within a given Country"
+	#)
+    # Stored within or_organisation_admin table
+	#db['%s' % table].insert(
+    #    name="Organisation Admin",
+    #    description="Can make changes to an Organisation & it's assets"
+	#)
+	# Stored within cr_camp_admin table
+	#db['%s' % table].insert(
+    #    name="Camp Admin",
+    #    description="Can make changes to a Camp"
+	#)
+# 1st person created will be System Administrator (can be changed later)
 table='t2_membership'
 if not len(db().select(db['%s' % table].ALL)):
 	db['%s' % table].insert(
@@ -211,8 +229,7 @@ if not len(db().select(db['%s' % table].ALL)):
 # Auditing
 resource='audit'
 table=module+'_'+resource
-db.define_table(table,
-                SQLField('time','datetime',default=now),
+db.define_table(table,timestamp,
                 SQLField('person',db.t2_person),
                 SQLField('operation'),
                 SQLField('representation'),
@@ -355,37 +372,7 @@ def shn_list_item(table,resource,action,display='table.name',extra=None):
 # Widgets
 #
 
-def shn_m2m_widget(self,value,options=[]):
-    """Many-to-Many widget
-    Currently this is just a renamed copy of t2.tag_widget"""
-    
-    script=SCRIPT("""
-    function web2py_m2m(self,other,option) {
-       var o=document.getElementById(other)
-       if(self.className=='option_selected') {
-          self.setAttribute('class','option_deselected');
-          o.value=o.value.replace('['+option+']','');
-       }
-       else if(self.className=='option_deselected') {
-          self.setAttribute('class','option_selected');
-          o.value=o.value+'['+option+']';
-       }
-    }
-    """)
-    id=self._tablename+'_'+self.name
-    def onclick(x):
-        return "web2py_m2m(this,'%s','%s');"%(id,x.lower())
-    buttons=[SPAN(A(x,_class='option_selected' if value and '[%s]'%x.lower() in value else 'option_deselected',_onclick=onclick(x)),' ') for x in options]
-    return DIV(script,INPUT(_type='hidden',_id=id,_name=self.name,_value=value),*buttons) 
-
-# M2M test
-#db.define_table('owner',SQLField('name'),SQLField('uuid',length=64,default=uuid.uuid4()))
-#db.define_table('dog',SQLField('name'),SQLField('owner','text'))
-##db.dog.owner.requires=IS_IN_DB(db,'owner.uuid','owner.name',multiple=True)
-#db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
-##db.dog.owner.display=lambda x: ', '.join([db(db.owner.id==id).select()[0].name for id in x[1:-1].split('|')])
-##db.dog.owner.display=lambda x: map(db(db.owner.id==id).select()[0].name,x[1:-1].split('|'))
-#db.dog.represent=lambda dog: A(dog.name,_href=t2.action('display_dog',dog.id))
+# In test.py
 
 #
 # RESTlike Controller
@@ -746,6 +733,34 @@ def shn_rest_controller(module,resource):
                         t2.delete(table,next=resource)
                 else:
                     t2.redirect('login',vars={'_destination':'%s/delete/%i' % (resource,t2.id)})
+            elif method=="search":
+                if session.s3.audit_read:
+                    db.s3_audit.insert(
+                        person=t2.person_id,
+                        operation='search',
+                        module=request.controller,
+                        resource=resource,
+                        old_value='',
+                        new_value=''
+                    )
+                if representation=="html":
+                    if t2.logged_in and s3.deletable:
+                        db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+                    else:
+                        db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+                    search=t2.search(table)
+                    # Check for presence of Custom View
+                    custom_view='%s_search.html' % resource
+                    _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                    if os.path.exists(_custom_view):
+                        response.view=module+'/'+custom_view
+                    else:
+                        response.view='search.html'
+                    title=s3.crud_strings.title_search
+                    return dict(module_name=module_name,modules=modules,options=options,search=search,title=title)
+                else:
+                    session.error=T("Unsupported format!")
+                    redirect(URL(r=request,f=resource))
             else:
                 session.error=T("Unsupported method!")
                 redirect(URL(r=request,f=resource))

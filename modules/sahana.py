@@ -16,21 +16,6 @@ import traceback
 #from applications.t3.modules.t2 import T2
 from applications.sahana.modules.t2 import T2
 
-def shn_db_clean(db):
-    """
-    Drop tables to remove all data.
-    To be done before a release. (Actually we can just delete the contents of databases/
-    All necessary lookup tables will be recreated upon initialisation.
-    """
-    tables=['gis_layer_openstreetmap','gis_layer_google','gis_layer_yahoo','gis_layer_virtualearth','default_setting']
-    for table in tables:
-        # Remove table completely
-        db["%s" % table].drop()
-        # Clear all records (& reset IDs), but keep table
-        #db["%s" % table].truncate()
-    db.commit()
-
-
 # Modified versions of URL from gluon/html.py
 # we need simplified versions for our jquery functions
 def URL2(a=None,c=None,r=None):

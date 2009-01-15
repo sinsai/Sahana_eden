@@ -9,31 +9,31 @@ db.define_table(table,
                 SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].function.requires=IS_NOT_EMPTY()
-db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
-db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db['%s' % table].ALL)):
-	db['%s' % table].insert(
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].function.requires=IS_NOT_EMPTY()
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
         name="Home",
 	function="index",
 	priority=0,
 	description="Home",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Add Person",
 	function="person/create",
 	priority=1,
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="List People",
 	function="person",
 	priority=2,
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Search People",
 	function="person/search",
 	priority=3,
@@ -48,12 +48,12 @@ db.define_table(table,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
-        # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read=False,
-        audit_write=False
-    )
+#if not len(db().select(db[table].ALL)): 
+#   db[table].insert(
+#        # If Disabled at the Global Level then can still Enable just for this Module here
+#        audit_read=False,
+#        audit_write=False
+#    )
 
 # People
 resource='person'
@@ -69,16 +69,16 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('postcode'),
                 SQLField('website'))
 exec("s3.crud_fields.%s=['name','first_name','last_name','email','mobile','address','postcode','website']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=IS_NOT_EMPTY()   # People don't have to have unique names
-#db['%s' % table].name.label=T("Full Name")
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].last_name.label=T("Family Name")
-db['%s' % table].email.requires=IS_NOT_IN_DB(db,'%s.email' % table)     # Needs to be unique as used for AAA
-db['%s' % table].email.requires=IS_NULL_OR(IS_EMAIL())
-db['%s' % table].mobile.requires=IS_NOT_IN_DB(db,'%s.mobile' % table)   # Needs to be unique as used for AAA
-db['%s' % table].website.requires=IS_NULL_OR(IS_URL())
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=IS_NOT_EMPTY()   # People don't have to have unique names
+#db[table].name.label=T("Full Name")
+db[table].name.comment=SPAN("*",_class="req")
+db[table].last_name.label=T("Family Name")
+db[table].email.requires=IS_NOT_IN_DB(db,'%s.email' % table)     # Needs to be unique as used for AAA
+db[table].email.requires=IS_NULL_OR(IS_EMAIL())
+db[table].mobile.requires=IS_NOT_IN_DB(db,'%s.mobile' % table)   # Needs to be unique as used for AAA
+db[table].website.requires=IS_NULL_OR(IS_URL())
 title_create=T('Add Person')
 title_display=T('Person Details')
 title_list=T('List People')
@@ -100,9 +100,9 @@ table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),   # Contact type
                 SQLField('value'))
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=IS_IN_SET(['phone','fax','skype','msn','yahoo'])
-db['%s' % table].value.requires=IS_NOT_EMPTY()
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=IS_IN_SET(['phone','fax','skype','msn','yahoo'])
+db[table].value.requires=IS_NOT_EMPTY()
 title_create=T('Add Contact Detail')
 title_display=T('Contact Details')
 title_list=T('List Contact Details')
@@ -124,10 +124,10 @@ table=module+'_'+resource
 db.define_table(table,timestamp,
                 SQLField('contact_id',db.pr_contact),
                 SQLField('person_id',db.pr_person))
-db['%s' % table].contact_id.requires=IS_IN_DB(db,'pr_contact.id','pr_contact.name')
-db['%s' % table].contact_id.label='Contact'
-db['%s' % table].person_id.requires=IS_IN_DB(db,'pr_person.id','pr_person.name')
-db['%s' % table].person_id.label='Person'
+db[table].contact_id.requires=IS_IN_DB(db,'pr_contact.id','pr_contact.name')
+db[table].contact_id.label='Contact'
+db[table].person_id.requires=IS_IN_DB(db,'pr_person.id','pr_person.name')
+db[table].person_id.label='Person'
 
 
 
@@ -139,7 +139,7 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('pr_person',length=64),
 #                SQLField('opt_id_type'),		# ID card, Passport, Driving License, etc
 #                SQLField('id_value'))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Details
 # Modules: cr,dvr,mpr
@@ -157,9 +157,9 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('opt_marital_status'),
 #                SQLField('opt_gender'),
 #                SQLField('occupation'))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db['%s' % table].next_kin.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db['%s' % table].birth_date.requires=IS_DATE(T("%Y-%m-%d")) # Can use Translation to provide localised formatting
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].next_kin.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].birth_date.requires=IS_DATE(T("%Y-%m-%d")) # Can use Translation to provide localised formatting
 
 # Person Status
 # Modules: dvr,mpr
@@ -171,7 +171,7 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('isVictim','boolean',default=True),
 #                SQLField('opt_status'),	# missing, injured, etc. customizable
 #                SQLField('id_value'))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Physical
 # Modules: dvr,mpr
@@ -187,7 +187,7 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('opt_hair_color'),
 #                SQLField('injuries'),
 #                SQLField('comments',length=256))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Missing
 # Modules: dvr,mpr
@@ -198,7 +198,7 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('last_seen'),
 #                SQLField('last_clothing'),
 #                SQLField('comments',length=256))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Deceased
 # Modules: dvr,mpr
@@ -210,7 +210,7 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('date_of_death','date'),
 #                SQLField('place_of_death'),
 #                SQLField('comments',length=256))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Reporter
 # (The pr_person who reported about this pr_person)
@@ -221,8 +221,8 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('pr_person',length=64),
 #                SQLField('reporter',length=64),
 #                SQLField('relation'))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db['%s' % table].reporter.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].reporter.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Group
 # Modules: dvr,mpr
@@ -249,8 +249,8 @@ db['%s' % table].person_id.label='Person'
 #                SQLField('no_rehabilitated','integer'),
 #                SQLField('checklist'),
 #                SQLField('description',length=256))
-#db['%s' % table].pr_person_group.requires=IS_IN_DB(db,'pr_person_group.uuid')
-#db['%s' % table].head.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person_group.requires=IS_IN_DB(db,'pr_person_group.uuid')
+#db[table].head.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person to Group
 # (A pr_person can belong to multiple groups)
@@ -260,6 +260,6 @@ db['%s' % table].person_id.label='Person'
 #db.define_table(table,timestamp,
 #                SQLField('pr_person',length=64),
 #                SQLField('pr_person_group',length=64))
-#db['%s' % table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db['%s' % table].pr_person_group.requires=IS_IN_DB(db,'pr_person_group.uuid')
+#db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
+#db[table].pr_person_group.requires=IS_IN_DB(db,'pr_person_group.uuid')
 

@@ -9,33 +9,33 @@ db.define_table(table,
                 SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s' % table].name.requires=IS_NOT_IN_DB(db,'%s.name' % table)
-db['%s' % table].function.requires=IS_NOT_EMPTY()
-db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
-db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db['%s' % table].ALL)):
-	db['%s' % table].insert(
+db[table].name.requires=IS_NOT_IN_DB(db,'%s.name' % table)
+db[table].function.requires=IS_NOT_EMPTY()
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
         name="Home",
 	function="index",
 	priority=0,
 	description="Home",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Add Shelter",
 	function="shelter/create",
 	priority=1,
 	description="Add a shelter to the database",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="List Shelters",
 	function="shelter",
 	priority=2,
 	description="List information of all shelters",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Search Shelters",
 	function="shelter/search",
 	priority=3,
@@ -51,8 +51,8 @@ db.define_table(table,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
         # If Disabled at the Global Level then can still Enable just for this Module here
         audit_read=False,
         audit_write=False
@@ -64,28 +64,32 @@ table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 SQLField('description',length=256),
+                SQLField('location',db.gis_location),
+                SQLField('feature',db.gis_feature),
+                SQLField('contact',db.pr_person),
                 SQLField('address','text'),
                 SQLField('capacity','integer'),
                 SQLField('dwellings','integer'),
                 SQLField('persons_per_dwelling','integer'),
-                SQLField('area'),
-                SQLField('contact',length=64),
-                SQLField('location',length=64))
+                SQLField('area'))
 exec("s3.crud_fields.%s=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=IS_NOT_EMPTY()   # Shelters don't have to have unique names
-db['%s' % table].name.label=T("Shelter Name")
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].capacity.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999999))
-db['%s' % table].dwellings.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
-db['%s' % table].persons_per_dwelling.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999))
-db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.uuid','pr_person.name'))
-db['%s' % table].contact.display=lambda uuid: (uuid and [db(db.pr_person.uuid==uuid).select()[0].name] or ["None"])[0]
-db['%s' % table].contact.label=T("Contact Person")
-db['%s' % table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.uuid','gis_feature.name'))
-db['%s' % table].location.display=lambda uuid: (uuid and [db(db.gis_feature.uuid==uuid).select()[0].name] or ["None"])[0]
-db['%s' % table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Location|The GIS Feature associated with this Shelter."))
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=IS_NOT_EMPTY()   # Shelters don't have to have unique names
+db[table].name.label=T("Shelter Name")
+db[table].name.comment=SPAN("*",_class="req")
+db[table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
+db[table].location.display=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+db[table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip2",_title=T("Location|The General Location associated with this Office. For use in Reporting"))
+db[table].feature.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
+db[table].feature.display=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0]
+db[table].feature.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip3",_title=T("Feature|The Exact Coordinates to use to display this Office on a Map."))
+db[table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
+db[table].contact.display=lambda uuid: (uuid and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+db[table].contact.label=T("Contact Person")
+db[table].capacity.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999999))
+db[table].dwellings.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
+db[table].persons_per_dwelling.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999))
 title_create=T('Add Shelter')
 title_display=T('Shelter Details')
 title_list=T('List Shelters')

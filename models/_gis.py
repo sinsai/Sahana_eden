@@ -9,25 +9,25 @@ db.define_table(table,
                 SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].function.requires=IS_NOT_EMPTY()
-db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
-db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db['%s' % table].ALL)):
-	db['%s' % table].insert(
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].function.requires=IS_NOT_EMPTY()
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
         name="Home",
 	function="index",
 	priority=0,
 	description="Home",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Map Viewing Client",
 	function="map_viewing_client",
 	priority=1,
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Map Service Catalogue",
 	function="map_service_catalogue",
 	priority=2,
@@ -42,8 +42,8 @@ db.define_table(table,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
         # If Disabled at the Global Level then can still Enable just for this Module here
         audit_read=False,
         audit_write=False
@@ -61,16 +61,16 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('centre'),     # WKT Point
                 SQLField('boundaries')) # WKT Polygon
 exec("s3.crud_fields.%s=['name','sector','level','parent','boundaries']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
-db['%s' % table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
-db['%s' % table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District']))
-db['%s' % table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
+db[table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
+db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District']))
+db[table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
 # Need to write an IS_WKT validator
 # centre could be calculated automatically from Polygon
-#db['%s' % table].centre.requires=IS_NULL_OR(IS_WKT())
-#db['%s' % table].boundaries.requires=IS_NULL_OR(IS_WKT())
+#db[table].centre.requires=IS_NULL_OR(IS_WKT())
+#db[table].boundaries.requires=IS_NULL_OR(IS_WKT())
 title_create=T('Add Location')
 title_display=T('Location Details')
 title_list=T('List Locations')
@@ -95,15 +95,15 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('width','integer'),
                 SQLField('image','upload'))
 exec("s3.crud_fields.%s=['name','height','width','image']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].name.comment=SPAN("*",_class="req")
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name.comment=SPAN("*",_class="req")
 # Populate table with Default options
-if not len(db().select(db['%s' % table].ALL)):
+if not len(db().select(db[table].ALL)):
     # We want to start at ID 1
-    db['%s' % table].truncate() 
-    db['%s' % table].insert(
+    db[table].truncate() 
+    db[table].insert(
         name="marker",
         height=34,
         width=20,
@@ -138,25 +138,25 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('maxResolution','double'),
                 SQLField('units'))
 exec("s3.crud_fields.%s=['name','epsg','maxExtent','maxResolution','units']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].epsg.requires=IS_NOT_EMPTY()
-db['%s' % table].epsg.label="EPSG"
-db['%s' % table].epsg.comment=SPAN("*",_class="req")
-db['%s' % table].maxExtent.requires=IS_NOT_EMPTY()
-db['%s' % table].maxExtent.label="maxExtent"
-db['%s' % table].maxExtent.comment=SPAN("*",_class="req")
-db['%s' % table].maxResolution.requires=IS_NOT_EMPTY()
-db['%s' % table].maxResolution.label="maxResolution"
-db['%s' % table].maxResolution.comment=SPAN("*",_class="req")
-db['%s' % table].units.requires=IS_IN_SET(['m','degrees'])
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name.comment=SPAN("*",_class="req")
+db[table].epsg.requires=IS_NOT_EMPTY()
+db[table].epsg.label="EPSG"
+db[table].epsg.comment=SPAN("*",_class="req")
+db[table].maxExtent.requires=IS_NOT_EMPTY()
+db[table].maxExtent.label="maxExtent"
+db[table].maxExtent.comment=SPAN("*",_class="req")
+db[table].maxResolution.requires=IS_NOT_EMPTY()
+db[table].maxResolution.label="maxResolution"
+db[table].maxResolution.comment=SPAN("*",_class="req")
+db[table].units.requires=IS_IN_SET(['m','degrees'])
 # Populate table with Default options
-if not len(db().select(db['%s' % table].ALL)): 
+if not len(db().select(db[table].ALL)): 
    # We want to start at ID 1
-   db['%s' % table].truncate() 
-   db['%s' % table].insert(
+   db[table].truncate() 
+   db[table].insert(
         uuid=uuid.uuid4(),
         name="Spherical Mercator",
         epsg=900913,
@@ -164,7 +164,7 @@ if not len(db().select(db['%s' % table].ALL)):
         maxResolution=156543.0339,
         units="m"
     )
-   db['%s' % table].insert(
+   db[table].insert(
         uuid=uuid.uuid4(),
         name="WGS84",
         epsg=4326,
@@ -202,21 +202,21 @@ db.define_table(table,timestamp,uuidstamp,
 				SQLField('marker',db.gis_marker),           # NB This can have issues with sync unless going via CSV
 				SQLField('map_height'),
 				SQLField('map_width'))
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].lat.requires=IS_LAT()
-db['%s' % table].lon.requires=IS_LON()
-db['%s' % table].zoom.requires=IS_INT_IN_RANGE(0,19)
-db['%s' % table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
-db['%s' % table].projection.display=lambda id: db(db.gis_projection.id==id).select()[0].name
-db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
-db['%s' % table].marker.display=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
-db['%s' % table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
-db['%s' % table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].lat.requires=IS_LAT()
+db[table].lon.requires=IS_LON()
+db[table].zoom.requires=IS_INT_IN_RANGE(0,19)
+db[table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
+db[table].projection.display=lambda id: db(db.gis_projection.id==id).select()[0].name
+db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
+db[table].marker.display=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
+db[table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db[table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 # Populate table with Default options
-if not len(db().select(db['%s' % table].ALL)): 
+if not len(db().select(db[table].ALL)): 
    # We want to start at ID 1
-   db['%s' % table].truncate() 
-   db['%s' % table].insert(
+   db[table].truncate() 
+   db[table].insert(
         lat="6",
         lon="79.4",
         zoom=7,
@@ -247,12 +247,12 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 SQLField('marker',db.gis_marker))   # NB This can have issues with sync unless going via CSV
 exec("s3.crud_fields.%s=['name','marker']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
-db['%s' % table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name.comment=SPAN("*",_class="req")
+db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
+db[table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
 title_create=T('Add Feature Class')
 title_display=T('Feature Class Details')
 title_list=T('List Feature Classes')
@@ -283,11 +283,11 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('url'),
                 SQLField('image','upload'))
 exec("s3.crud_fields.%s=['created_on','created_by','modified_on','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']" % table)
-db['%s' % table].exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
-db['%s' % table].contact.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
-db['%s' % table].url.requires=IS_URL()
+db[table].exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
+db[table].contact.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+db[table].url.requires=IS_URL()
 title_create=T('Add Feature Metadata')
 title_display=T('Feature Metadata Details')
 title_list=T('List Feature Metadata')
@@ -313,21 +313,21 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('lat'),
                 SQLField('lon'))
 exec("s3.crud_fields.%s=['name','feature_class','metadata','type','lat','lon']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=IS_NOT_EMPTY()
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name'))
-db['%s' % table].feature_class.display=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0]
-db['%s' % table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
-db['%s' % table].metadata.display=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
-db['%s' % table].type.requires=IS_IN_SET(['point','line','polygon'])
-db['%s' % table].lat.requires=IS_LAT()
-db['%s' % table].lat.label=T("Latitude")
-db['%s' % table].lat.comment=SPAN("*",_class="req")
-db['%s' % table].lon.requires=IS_LON()
-db['%s' % table].lon.label=T("Longitude")
-db['%s' % table].lon.comment=SPAN("*",_class="req")
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=IS_NOT_EMPTY()
+db[table].name.comment=SPAN("*",_class="req")
+db[table].feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name'))
+db[table].feature_class.display=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0]
+db[table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
+db[table].metadata.display=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
+db[table].type.requires=IS_IN_SET(['point','line','polygon'])
+db[table].lat.requires=IS_LAT()
+db[table].lat.label=T("Latitude")
+db[table].lat.comment=SPAN("*",_class="req")
+db[table].lon.requires=IS_LON()
+db[table].lon.label=T("Longitude")
+db[table].lon.comment=SPAN("*",_class="req")
 title_create=T('Add Feature')
 title_display=T('Feature Details')
 title_list=T('List Features')
@@ -353,12 +353,12 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('features','text'), # List of features (to be replaced by many-to-many table)
                 SQLField('author',db.t2_person,writable=False))
 exec("s3.crud_fields.%s=['author','name','description','features']" % table)
-db['%s' % table].exposes=['name','description','features']
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].features.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-db['%s' % table].author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
+db[table].exposes=['name','description','features']
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name.comment=SPAN("*",_class="req")
+db[table].features.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+db[table].author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
 title_create=T('Add Feature Group')
 title_display=T('Feature Group Details')
 title_list=T('List Feature Groups')
@@ -382,8 +382,8 @@ table=module+'_'+resource
 db.define_table(table,timestamp,
                 SQLField('feature_group_id',db.gis_feature_group),
                 SQLField('feature_id',db.gis_feature))
-db['%s' % table].feature_group_id.requires=IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')
-db['%s' % table].feature_id.requires=IS_IN_DB(db,'gis_feature.id','gis_feature.name')
+db[table].feature_group_id.requires=IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')
+db[table].feature_id.requires=IS_IN_DB(db,'gis_feature.id','gis_feature.name')
                 
 
 # GIS Keys - needed for commercial mapping services
@@ -394,27 +394,27 @@ db.define_table(table,timestamp,
                 SQLField('apikey'),
 				SQLField('description',length=256))
 exec("s3.crud_fields.%s=['name','apikey','description']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
+db[table].exposes=s3.crud_fields[table]
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
-db['%s' % table].name.requires=IS_IN_SET(['google','multimap','yahoo']) 
-db['%s' % table].name.label=T("Service")
-#db['%s' % table].apikey.requires=THIS_NOT_IN_DB(db(db['%s' % table].name==request.vars.name),'gis_apikey.name',request.vars.name,'Service already in use')
-db['%s' % table].apikey.requires=IS_NOT_EMPTY()
-db['%s' % table].apikey.label=T("Key")
+db[table].name.requires=IS_IN_SET(['google','multimap','yahoo']) 
+db[table].name.label=T("Service")
+#db[table].apikey.requires=THIS_NOT_IN_DB(db(db[table].name==request.vars.name),'gis_apikey.name',request.vars.name,'Service already in use')
+db[table].apikey.requires=IS_NOT_EMPTY()
+db[table].apikey.label=T("Key")
 # Populate table with Default options
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
         name="google",
         apikey="ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw",
         description="localhost"
     )
-   db['%s' % table].insert(
+   db[table].insert(
         name="yahoo",
         apikey="euzuro-openlayers",
         description="To be replaced for Production use"
     )
-   db['%s' % table].insert(
+   db[table].insert(
         name="multimap",
         apikey="metacarta_04",
         description="trial"
@@ -474,10 +474,10 @@ for layertype in gis_layer_types:
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_openstreetmap_subtypes)
         db.define_table(table,t)
-        if not len(db().select(db['%s' % table].ALL)):
+        if not len(db().select(db[table].ALL)):
             # Populate table
             for subtype in gis_layer_openstreetmap_subtypes:
-                db['%s' % table].insert(
+                db[table].insert(
                         name='OSM '+subtype,
                         subtype=subtype
                     )
@@ -492,10 +492,10 @@ for layertype in gis_layer_types:
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_google_subtypes)
         db.define_table(table,t)
-        if not len(db().select(db['%s' % table].ALL)):
+        if not len(db().select(db[table].ALL)):
             # Populate table
             for subtype in gis_layer_google_subtypes:
-                db['%s' % table].insert(
+                db[table].insert(
                         name='Google '+subtype,
                         subtype=subtype,
                         enabled=False
@@ -511,10 +511,10 @@ for layertype in gis_layer_types:
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_yahoo_subtypes)
         db.define_table(table,t)
-        if not len(db().select(db['%s' % table].ALL)):
+        if not len(db().select(db[table].ALL)):
             # Populate table
             for subtype in gis_layer_yahoo_subtypes:
-                db['%s' % table].insert(
+                db[table].insert(
                         name='Yahoo '+subtype,
                         subtype=subtype,
                         enabled=False
@@ -530,10 +530,10 @@ for layertype in gis_layer_types:
             gis_layer)
         t.subtype.requires=IS_IN_SET(gis_layer_virtualearth_subtypes)
         db.define_table(table,t)
-        if not len(db().select(db['%s' % table].ALL)):
+        if not len(db().select(db[table].ALL)):
             # Populate table
             for subtype in gis_layer_virtualearth_subtypes:
-                db['%s' % table].insert(
+                db[table].insert(
                         name='VE '+subtype,
                         subtype=subtype,
                         enabled=False

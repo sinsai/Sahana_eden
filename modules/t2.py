@@ -607,7 +607,10 @@ class T2:
           SELECT(value=page,
             _onchange='javascript:location="%s?_page="+this.value'
               %self.action(args=request.args),
-            *[OPTION(i+1,_value=i) for i in xrange(rows_count/nitems+1)]
+            _title=query,#Intentionally "hide" it here for professional users. Cuz I doubt it is not intuitive enough for non-english common users.
+            *[OPTION('P%d (#%d~#%d)'%# I hope the marks here are universal therefore no need for i18n
+              (i+1,i*nitems+1,min(rows_count,(i+1)*nitems)),
+              _value=i) for i in xrange(rows_count/nitems+1)]
             ) if nitems<rows_count else '',
           INPUT(_type='button',_value='>',_onclick='javascript:location="%s"'
             %self.action(args=request.args,vars={'_page':page+1})
@@ -631,6 +634,86 @@ class T2:
                 *[represent(table,row[table._tablename]) for table in tables])))
                   for row in rows]),
             nav if nav else '') # See above
+
+    SEARCH_OP_PREFIX='_op_'
+    SEARCH_LOW_PREFIX,SEARCH_HIGH_PREFIX='_low_','_high_'#For date and datetime
+    def field_search_widget(self,field):
+      "Build a search widget for a db field"
+      requires=field.requires.other if isinstance(field.requires,IS_NULL_OR
+        ) else field.requires
+      if isinstance(requires,IS_IN_SET):
+        return DIV(
+          SELECT(OPTION('=',_value='is'),OPTION('!=',_value='isnot'),
+            _name='%s%s'%(self.SEARCH_OP_PREFIX,field.name)),
+          SELECT(_name=field.name,requires=IS_NULL_OR(requires),
+            *[OPTION('',_value='')]
+            +[OPTION(l,_value=v) for v,l in requires.options()]),)
+      if isinstance(requires,(IS_DATE,IS_DATETIME)):
+        lowName='%s%s'%(self.SEARCH_LOW_PREFIX,field.name)
+        highName='%s%s'%(self.SEARCH_HIGH_PREFIX,field.name)
+        return DIV(
+          INPUT(_class='date' if isinstance(requires,IS_DATE) else 'datetime',
+            _type='text',_name=lowName,_id=lowName,requires=IS_NULL_OR(requires)),
+          '<= X <=',
+          INPUT(_class='date' if isinstance(requires,IS_DATE) else 'datetime',
+            _type='text',_name=highName,_id=highName,requires=IS_NULL_OR(requires)),)
+      if field.name=='id':
+        return DIV(
+          '=',INPUT(_type='hidden',#we still need this to trigger the search anyway
+            _value='is',_name='%s%s'%(self.SEARCH_OP_PREFIX,field.name)),
+          INPUT(_class='integer',_name='id'))
+      if field.type in ('text','string'):#the last exit
+        return DIV(
+          SELECT(
+            OPTION(self.T('contains'),_value='contain'),
+            OPTION(self.T('does not contain'),_value='notcontain'),
+            _name='%s%s'%(self.SEARCH_OP_PREFIX,field.name)),
+          INPUT(#Use naive INPUT(...) to waive all validators, such as IS_URL()
+            _type='text',_name=field.name,_id=field.name))
+      import logging
+      logging.warn('Oops, this field is not yet supported. Please report it.')
+
+    def search1(self,table):#So far, this function only support search one table
+      "Makes a search widget to search records in ONE table"
+      request,response,session,cache,T,db=self._globals()
+      form=FORM(TABLE(
+        *[TR(table[f].label,self.field_search_widget(table[f]))
+          for f in (table.displays if table.displays else table.fields)]
+        +[TR(INPUT(_type='submit'))]))
+      if form.accepts(request.vars,formname='search',keepvalues=True):
+        conditions=[]
+        for key in request.vars:
+          if key.startswith(self.SEARCH_OP_PREFIX):
+            fieldName=key[len(self.SEARCH_OP_PREFIX):]
+            if request.vars[fieldName]:
+              if request.vars[key]=='is':
+                conditions.append(table[fieldName]==request.vars[fieldName])
+              if request.vars[key]=='isnot':
+                conditions.append(table[fieldName]!=request.vars[fieldName])
+              if request.vars[key] in ('contain','notcontain'):
+                cond=table[fieldName].lower().like(#case insensitive
+                  '%%%s%%'%request.vars[fieldName].replace('%','').lower())
+                conditions.append(cond if request.vars[key]=='contain' else ~cond)
+          if key.startswith(self.SEARCH_LOW_PREFIX):
+            fieldName=key[len(self.SEARCH_LOW_PREFIX):]
+            if request.vars[key]:
+              conditions.append(table[fieldName]>=request.vars[key])
+          if key.startswith(self.SEARCH_HIGH_PREFIX):
+            fieldName=key[len(self.SEARCH_HIGH_PREFIX):]
+            if request.vars[key]:
+              conditions.append(table[fieldName]<=request.vars[key])
+        if conditions:
+          query=conditions[0]
+          for c in conditions[1:]: query=(query) & (c)
+          session.t2.queryObj=query #So that itemize() can use it as default
+          request.vars['_page']=''#Reset the pagination to beginning!
+        else: session.t2.queryObj=None#submit an empty form means reset
+      return DIV(
+        form,
+        HR(),
+        self.itemize(table,query=session.t2.queryObj)#Use session to support pagination
+          if session.t2.queryObj else '',)
+
 
     def search(self,*tables,**opts):    
         """

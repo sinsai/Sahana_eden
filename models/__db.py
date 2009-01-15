@@ -64,8 +64,8 @@ db.define_table(table,timestamp,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
         admin_name=T("Sahana Administrator"),
         admin_email=T("support@Not Set"),
         admin_tel=T("Not Set"),
@@ -103,75 +103,75 @@ db.define_table(table,
                 SQLField('menu_priority','integer'),
                 SQLField('description',length=256),
                 SQLField('enabled','boolean',default='True'))
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name_nice' % table)]
-db['%s' % table].menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.menu_priority' % table)]
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name_nice' % table)]
+db[table].menu_priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.menu_priority' % table)]
 # Populate table with Default modules
-if not len(db().select(db['%s' % table].ALL)):
-	db['%s' % table].insert(
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
         name="default",
         name_nice="Sahana Home",
         menu_priority=0,
         description="",
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="pr",
         name_nice="Person Registry",
         menu_priority=1,
         description="Central point to record details on People",
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="mpr",
         name_nice="Missing Person Registry",
         menu_priority=2,
         description="Helps to report and search missing person",
         enabled='False'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="dvr",
         name_nice="Disaster Victim Registry",
         menu_priority=3,
         description="Traces internally displaced people (IDPs) and their needs",
         enabled='False'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="or",
         name_nice="Organization Registry",
         menu_priority=4,
         description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="cr",
         name_nice="Shelter Registry",
         menu_priority=5,
         description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="gis",
         name_nice="Situation Awareness",
         menu_priority=6,
         description="Mapping & Geospatial Analysis",
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="vol",
         name_nice="Volunteer Registry",
         menu_priority=7,
         description="Allows managing volunteers by capturing their skills, availability and allocation",
         enabled='False'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="ims",
         name_nice="Inventory Management",
         menu_priority=8,
         description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
         enabled='False'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="rms",
         name_nice="Request Management",
         menu_priority=9,
@@ -184,44 +184,44 @@ if not len(db().select(db['%s' % table].ALL)):
 # uses native T2 Groups
 table='t2_group'
 # Populate table with Default options
-if not len(db().select(db['%s' % table].ALL)):
+if not len(db().select(db[table].ALL)):
 	# Default
-    #db['%s' % table].insert(
+    #db[table].insert(
     #    name="Anonymous User",
 	#)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Administrator",
         description="System Administrator - can access & make changes to any data",
 	)
     # t2.logged_in is the way to check for this role
-	#db['%s' % table].insert(
+	#db[table].insert(
     #    name="Registered User",
     #    description="A registered user in the system (e.g Volunteers, Family)"
 	#)
     # No different to System Administrator currently...is there really a need for this role?
-	#db['%s' % table].insert(
+	#db[table].insert(
     #    name="Super User",
     #    description="Global Head of Operations - can access & make changes to any data"
 	#)
     # Stored within gis_location_admin table
-	#db['%s' % table].insert(
+	#db[table].insert(
     #    name="Country Admin",
     #    description="Can make changes to any data within a given Country"
 	#)
     # Stored within or_organisation_admin table
-	#db['%s' % table].insert(
+	#db[table].insert(
     #    name="Organisation Admin",
     #    description="Can make changes to an Organisation & it's assets"
 	#)
 	# Stored within cr_camp_admin table
-	#db['%s' % table].insert(
+	#db[table].insert(
     #    name="Camp Admin",
     #    description="Can make changes to a Camp"
 	#)
 # 1st person created will be System Administrator (can be changed later)
 table='t2_membership'
-if not len(db().select(db['%s' % table].ALL)):
-	db['%s' % table].insert(
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
         person_id=1,
         group_id=1
 	)
@@ -238,7 +238,7 @@ db.define_table(table,timestamp,
                 SQLField('record','integer'),
                 SQLField('old_value'),
                 SQLField('new_value'))
-db['%s' % table].operation.requires=IS_IN_SET(['create','read','update','delete','list'])
+db[table].operation.requires=IS_IN_SET(['create','read','update','delete','list'])
 
 module='default'
 # Home Menu Options
@@ -250,33 +250,33 @@ db.define_table(table,
                 SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].function.requires=IS_NOT_EMPTY()
-db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
-db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].function.requires=IS_NOT_EMPTY()
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 # Populate table with Default options
-if not len(db().select(db['%s' % table].ALL)):
-	db['%s' % table].insert(
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
         name="About Sahana",
         function="about_sahana",
         priority=0,
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Admin",
         function="admin",
         access=1,   # Administrator role only
         priority=1,
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Database",
         function="database",
         access=1,   # Administrator role only
         priority=2,
         enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Import",
         function="import_data",
         access=1,   # Administrator role only
@@ -292,8 +292,8 @@ db.define_table(table,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
         # If Disabled at the Global Level then can still Enable just for this Module here
         audit_read=False,
         audit_write=False
@@ -308,8 +308,8 @@ db.define_table(table,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
         # If Disabled at the Global Level then can still Enable just for this Module here
         audit_read=False,
         audit_write=False
@@ -438,11 +438,11 @@ def shn_rest_controller(module,resource):
     else:
         s3.crud_strings=shn_crud_strings_lookup(table)
     try:
-        s3.deletable=not s3.undeletable['%s' % table]
+        s3.deletable=not s3.undeletable[table]
     except:
         s3.deletable=True
     try:
-        s3.listadd=not s3.listonly['%s' % table]
+        s3.listadd=not s3.listonly[table]
     except:
         s3.listadd=True
     
@@ -466,9 +466,9 @@ def shn_rest_controller(module,resource):
             )
         if representation=="html":
             if t2.logged_in and s3.deletable:
-                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
             else:
-                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
             if list=="No data":
                 list=s3.crud_strings.msg_list_empty
@@ -506,9 +506,9 @@ def shn_rest_controller(module,resource):
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="ajax":
             if t2.logged_in and s3.deletable:
-                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
             else:
-                db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
             if list=="No data":
                 list=s3.crud_strings.msg_list_empty
@@ -529,7 +529,7 @@ def shn_rest_controller(module,resource):
         elif representation=="csv":
             import gluon.contenttype
             response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
-            query=db['%s' % table].id>0
+            query=db[table].id>0
             response.headers['Content-disposition']="attachment; filename=%s_%s_list.csv" % (request.env.server_name,resource)
             return str(db(query).select())
         else:
@@ -552,7 +552,7 @@ def shn_rest_controller(module,resource):
                 )
             if representation=="html":
                 try:
-                    db['%s' % table].displays=s3.crud_fields['%s' % table]
+                    db[table].displays=s3.crud_fields[table]
                 except:
                     pass
                 item=t2.display(table)
@@ -582,7 +582,7 @@ def shn_rest_controller(module,resource):
             elif representation=="csv":
                 import gluon.contenttype
                 response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
-                query=db['%s' % table].id==t2.id
+                query=db[table].id==t2.id
                 response.headers['Content-disposition']="attachment; filename=%s_%s_%d.csv" % (request.env.server_name,resource,t2.id)
                 return str(db(query).select())
             elif representation=="rss":
@@ -669,7 +669,7 @@ def shn_rest_controller(module,resource):
                 if t2.logged_in:
                     if session.s3.audit_write:
                         old_value = []
-                        _old_value=db(db['%s' % table].id==t2.id).select()[0]
+                        _old_value=db(db[table].id==t2.id).select()[0]
                         for field in _old_value:
                             old_value.append(field+':'+str(_old_value[field]))
                         audit_id=db.s3_audit.insert(
@@ -713,7 +713,7 @@ def shn_rest_controller(module,resource):
                 if t2.logged_in:
                     if session.s3.audit_write:
                         old_value = []
-                        _old_value=db(db['%s' % table].id==t2.id).select()[0]
+                        _old_value=db(db[table].id==t2.id).select()[0]
                         for field in _old_value:
                             old_value.append(field+':'+str(_old_value[field]))
                         db.s3_audit.insert(
@@ -745,9 +745,9 @@ def shn_rest_controller(module,resource):
                     )
                 if representation=="html":
                     if t2.logged_in and s3.deletable:
-                        db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+                        db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
                     else:
-                        db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+                        db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
                     search=t2.search(table)
                     # Check for presence of Custom View
                     custom_view='%s_search.html' % resource

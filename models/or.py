@@ -9,54 +9,54 @@ db.define_table(table,
                 SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].function.requires=IS_NOT_EMPTY()
-db['%s' % table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
-db['%s' % table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db['%s' % table].ALL)):
-	db['%s' % table].insert(
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].function.requires=IS_NOT_EMPTY()
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
         name="Home",
 	function="index",
 	priority=0,
 	description="Home",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Add Organisation",
 	function="organisation/create",
 	priority=1,
 	description="Add an Organisation's details to Sahana",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="List Organisations",
 	function="organisation",
 	priority=2,
 	description="View a list of registered organisations. Their details can be viewed / edited by clicking on the appropriate links",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Search Organisations",
 	function="organisation/search",
 	priority=3,
 	description="Search the list of registered organisations. Their details can be viewed / edited by clicking on the appropriate links",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Add Office",
 	function="office/create",
 	priority=4,
 	description="Add an Office's details to Sahana",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="List Offices",
 	function="office",
 	priority=5,
 	description="View a list of registered offices. Their details can be viewed / edited by clicking on the appropriate links",
 	enabled='True'
 	)
-	db['%s' % table].insert(
+	db[table].insert(
         name="Search Offices",
 	function="office/search",
 	priority=6,
@@ -72,8 +72,8 @@ db.define_table(table,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-if not len(db().select(db['%s' % table].ALL)): 
-   db['%s' % table].insert(
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
         # If Disabled at the Global Level then can still Enable just for this Module here
         audit_read=False,
         audit_write=False
@@ -92,16 +92,16 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('registration'),	# Registration Number
                 SQLField('website'))
 exec("s3.crud_fields.%s=['name','acronym','type','admin','registration','website']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].type.requires=IS_NULL_OR(IS_IN_SET(['Government','International Governmental Organization','International NGO','Misc','National Institution','National NGO','United Nations']))
-db['%s' % table].admin.requires=IS_NULL_OR(IS_IN_DB(db,'t2_person.id','t2_person.name',multiple=True))
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name.comment=SPAN("*",_class="req")
+db[table].type.requires=IS_NULL_OR(IS_IN_SET(['Government','International Governmental Organization','International NGO','Misc','National Institution','National NGO','United Nations']))
+db[table].admin.requires=IS_NULL_OR(IS_IN_DB(db,'t2_person.id','t2_person.name',multiple=True))
 # ~M2M tag decode: http://groups.google.com/group/web2py/browse_thread/thread/a234895207097f60
-#db['%s' % table].admin.display=lambda x: ', '.join([db(t2_person.id==id).select()[0].name for id in x[1:-1].split('|')]) 
-db['%s' % table].admin.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Admin|A Person who an edit all details within this Organisation."))
-db['%s' % table].website.requires=IS_NULL_OR(IS_URL())
+#db[table].admin.display=lambda x: ', '.join([db(t2_person.id==id).select()[0].name for id in x[1:-1].split('|')]) 
+db[table].admin.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Admin|A Person who an edit all details within this Organisation."))
+db[table].website.requires=IS_NULL_OR(IS_URL())
 title_create=T('Add Organisation')
 title_display=T('Organisation Details')
 title_list=T('List Organisations')
@@ -138,22 +138,22 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('vehicle_types'),
                 SQLField('equipment'))
 exec("s3.crud_fields.%s=['name','type','admin','location','feature','address','postcode','phone1','phone2','email','fax','national_staff','international_staff','number_of_vehicles','vehicle_types','equipment']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db['%s' % table].admin.requires=IS_NULL_OR(IS_IN_DB(db,'t2_person.id','t2_person.name',multiple=True))
-db['%s' % table].admin.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Admin|A Person who an edit all details within this Office."))
-db['%s' % table].name.requires=IS_NOT_EMPTY()   # Office names don't have to be unique
-db['%s' % table].name.comment=SPAN("*",_class="req")
-db['%s' % table].type.requires=IS_NULL_OR(IS_IN_SET(['Headquarters','Regional','Country','Satellite Office']))
-db['%s' % table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
-db['%s' % table].location.display=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
-db['%s' % table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip2",_title=T("Location|The General Location associated with this Office. For use in Reporting"))
-db['%s' % table].feature.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
-db['%s' % table].feature.display=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0]
-db['%s' % table].feature.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip3",_title=T("Feature|The Exact Coordinates to use to display this Office on a Map."))
-db['%s' % table].national_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
-db['%s' % table].international_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))
-db['%s' % table].number_of_vehicles.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].admin.requires=IS_NULL_OR(IS_IN_DB(db,'t2_person.id','t2_person.name',multiple=True))
+db[table].admin.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Admin|A Person who an edit all details within this Office."))
+db[table].name.requires=IS_NOT_EMPTY()   # Office names don't have to be unique
+db[table].name.comment=SPAN("*",_class="req")
+db[table].type.requires=IS_NULL_OR(IS_IN_SET(['Headquarters','Regional','Country','Satellite Office']))
+db[table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
+db[table].location.display=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+db[table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip2",_title=T("Location|The General Location associated with this Office. For use in Reporting"))
+db[table].feature.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
+db[table].feature.display=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0]
+db[table].feature.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip3",_title=T("Feature|The Exact Coordinates to use to display this Office on a Map."))
+db[table].national_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
+db[table].international_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))
+db[table].number_of_vehicles.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))
 title_create=T('Add Office')
 title_display=T('Office Details')
 title_list=T('List Offices')
@@ -178,12 +178,12 @@ db.define_table(table,timestamp,
                 SQLField('office_id',db.or_office),
                 SQLField('title'))
 exec("s3.crud_fields.%s=['person_id','office_id','title']" % table)
-db['%s' % table].exposes=s3.crud_fields['%s' % table]
-db['%s' % table].person_id.requires=IS_IN_DB(db,'pr_person.id','pr_person.name')
-db['%s' % table].person_id.label='Contact'
-db['%s' % table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
-db['%s' % table].office_id.label='Office'
-db['%s' % table].title.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Title|The Role this person plays within this Office."))
+db[table].exposes=s3.crud_fields[table]
+db[table].person_id.requires=IS_IN_DB(db,'pr_person.id','pr_person.name')
+db[table].person_id.label='Contact'
+db[table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
+db[table].office_id.label='Office'
+db[table].title.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Title|The Role this person plays within this Office."))
 title_create=T('Add Contact')
 title_display=T('Contact Details')
 title_list=T('List Contacts')
@@ -206,10 +206,10 @@ table=module+'_'+resource
 db.define_table(table,timestamp,
                 SQLField('office_id',db.or_office),
                 SQLField('organisation_id',db.or_organisation))
-db['%s' % table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
-db['%s' % table].office_id.label='Office'
-db['%s' % table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
-db['%s' % table].organisation_id.label='Organisation'
+db[table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
+db[table].office_id.label='Office'
+db[table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
+db[table].organisation_id.label='Organisation'
 
 # Contacts to Organisations
 # Do we want to allow contacts which are affiliated to an organisation but not to an office?
@@ -219,8 +219,8 @@ db['%s' % table].organisation_id.label='Organisation'
 #db.define_table(table,timestamp,
 #                SQLField('contact_id',db.or_contact),
 #                SQLField('organisation_id',db.or_organisation))
-#db['%s' % table].contact_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
-#db['%s' % table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
+#db[table].contact_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
+#db[table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
 
 # Office Admins
 # use a tagging-style field in main table instead since this is simpler & we don't expect many admins per Office
@@ -230,11 +230,11 @@ db['%s' % table].organisation_id.label='Organisation'
 #                SQLField('office_id',db.or_office),
 #                SQLField('admin_id',db.t2_person))
 #exec("s3.crud_fields.%s=['office_id','person_id']" % table)
-#db['%s' % table].exposes=s3.crud_fields['%s' % table]
-#db['%s' % table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
-#db['%s' % table].office_id.label='Office'
-#db['%s' % table].admin_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
-#db['%s' % table].admin_id.label='Admin'
+#db[table].exposes=s3.crud_fields[table]
+#db[table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
+#db[table].office_id.label='Office'
+#db[table].admin_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
+#db[table].admin_id.label='Admin'
 
 # Organisation Admins
 # use a tagging-style field in main table instead since this is simpler & we don't expect many admins per Organisation
@@ -244,8 +244,8 @@ db['%s' % table].organisation_id.label='Organisation'
 #                SQLField('organisation_id',db.or_organisation),
 #                SQLField('admin_id',db.t2_person))
 #exec("s3.crud_fields.%s=['office_id','person_id']" % table)
-#db['%s' % table].exposes=s3.crud_fields['%s' % table]
-#db['%s' % table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
-#db['%s' % table].organisation_id.label='Organisation'
-#db['%s' % table].admin_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
-#db['%s' % table].admin_id.label='Admin'
+#db[table].exposes=s3.crud_fields[table]
+#db[table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
+#db[table].organisation_id.label='Organisation'
+#db[table].admin_id.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
+#db[table].admin_id.label='Admin'

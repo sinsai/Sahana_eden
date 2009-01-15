@@ -52,12 +52,12 @@ modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_mo
 # List Options (from which to build Menu for this Module)
 #options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
+response.view='default/appadmin.html'
 response.menu=[[T('design'),False,URL('admin','default','design',
                 args=[request.application])],
                [T('db'),False,URL(r=request,f='index')],
                [T('state'),False,URL(r=request,f='state')]]
 
-response.view='default/appadmin.html'
 # T2 framework functions
 def login():
     response.view='default/login.html'
@@ -149,6 +149,7 @@ def download():
 def csv():
     import gluon.contenttype
     response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
+    db=get_database(request)
     query=get_query(request)
     if not query: return None
     response.headers['Content-disposition']="attachment; filename=%s_%s.csv"%\

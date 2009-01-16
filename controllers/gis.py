@@ -32,6 +32,9 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
+def apikey():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'apikey')
 def config():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'config')
@@ -47,9 +50,9 @@ def feature_group():
 def feature_metadata():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'feature_metadata')
-def apikey():
+def location():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'apikey')
+    return shn_rest_controller(module,'location')
 def marker():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'marker')

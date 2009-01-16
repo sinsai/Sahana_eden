@@ -49,43 +49,6 @@ if not len(db().select(db[table].ALL)):
         audit_write=False
     )
 
-# GIS Locations
-resource='location'
-table=module+'_'+resource
-db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
-                SQLField('sector'), # Government, Health
-                SQLField('level'), # Region, Country, District
-                #SQLField('parent',db.gis_location),    # Can't do hierarchical loops :/
-                SQLField('parent'),
-                SQLField('centre'),     # WKT Point
-                SQLField('boundaries')) # WKT Polygon
-exec("s3.crud_fields.%s=['name','sector','level','parent','boundaries']" % table)
-db[table].exposes=s3.crud_fields[table]
-db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
-db[table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
-db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District']))
-db[table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
-# Need to write an IS_WKT validator
-# centre could be calculated automatically from Polygon
-#db[table].centre.requires=IS_NULL_OR(IS_WKT())
-#db[table].boundaries.requires=IS_NULL_OR(IS_WKT())
-title_create=T('Add Location')
-title_display=T('Location Details')
-title_list=T('List Locations')
-title_update=T('Edit Location')
-title_search=T('Search Locations')
-subtitle_create=T('Add New Location')
-subtitle_list=T('Locations')
-label_list_button=T('List Locations')
-label_create_button=T('Add Location')
-msg_record_created=T('Location added')
-msg_record_modified=T('Location updated')
-msg_record_deleted=T('Location deleted')
-msg_list_empty=T('No Locations currently available')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-
 # GIS Markers (Icons)
 resource='marker'
 table=module+'_'+resource
@@ -127,7 +90,17 @@ msg_record_modified=T('Marker updated')
 msg_record_deleted=T('Marker deleted')
 msg_list_empty=T('No Markers currently available')
 exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-            
+# Reusable field for other tables to reference
+marker_id=SQLTable(None,'marker_id',
+            SQLField('marker',
+                db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
+                #represent=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
+                comment=''))
+# Unfortunately SQLTABLE can't yet handle:
+#represent
+# Unfortunately T2 can't yet handle:
+#comment
+   
 # GIS Projections
 resource='projection'
 table=module+'_'+resource
@@ -187,6 +160,16 @@ msg_record_deleted=T('Projection deleted')
 msg_list_empty=T('No Projections currently defined')
 exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
 exec('s3.undeletable.%s=1' % table)
+# Reusable field for other tables to reference
+projection_id=SQLTable(None,'projection_id',
+            SQLField('projection',
+                db.gis_projection,requires=IS_NULL_OR(IS_IN_DB(db,'gis_projection.id','gis_projection.name')),
+                #represent=lambda id: db(db.gis_projection.id==id).select()[0].name
+                comment=''))
+# Unfortunately SQLTABLE can't yet handle:
+#represent
+# Unfortunately T2 can't yet handle:
+#comment
 
 # GIS Config
 # id=1 = Default settings
@@ -198,17 +181,19 @@ db.define_table(table,timestamp,uuidstamp,
 				SQLField('lat'),
 				SQLField('lon'),
 				SQLField('zoom','integer'),
-				SQLField('projection',db.gis_projection),   # NB This can have issues with sync unless going via CSV
-				SQLField('marker',db.gis_marker),           # NB This can have issues with sync unless going via CSV
+				projection_id,
+				marker_id,
 				SQLField('map_height'),
 				SQLField('map_width'))
+exec("s3.crud_fields.%s=['lat','lon','zoom','projection','marker','map_height','map_width']" % table)
+db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].lat.requires=IS_LAT()
 db[table].lon.requires=IS_LON()
 db[table].zoom.requires=IS_INT_IN_RANGE(0,19)
-db[table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
+#db[table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
 db[table].projection.display=lambda id: db(db.gis_projection.id==id).select()[0].name
-db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
+#db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
 db[table].marker.display=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
 db[table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db[table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
@@ -245,13 +230,13 @@ resource='feature_class'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
-                SQLField('marker',db.gis_marker))   # NB This can have issues with sync unless going via CSV
+                marker_id)
 exec("s3.crud_fields.%s=['name','marker']" % table)
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
-db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
+#db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
 db[table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
 title_create=T('Add Feature Class')
 title_display=T('Feature Class Details')
@@ -267,6 +252,17 @@ msg_record_modified=T('Feature Class updated')
 msg_record_deleted=T('Feature Class deleted')
 msg_list_empty=T('No Feature Classes currently defined')
 exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+# Reusable field for other tables to reference
+feature_class_id=SQLTable(None,'feature_class_id',
+            SQLField('feature_class',
+                db.gis_feature_class,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name')),
+                #represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
+                comment=''
+                ))
+# Unfortunately SQLTABLE can't yet handle:
+#represent
+# Unfortunately T2 can't yet handle:
+#comment
 
 resource='feature_metadata'
 table=module+'_'+resource
@@ -274,7 +270,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('created_by',db.t2_person,writable=False), # Auto-stamped by T2
                 SQLField('modified_by',db.t2_person,writable=False), # Auto-stamped by T2
                 SQLField('description',length=256),
-                SQLField('contact',db.pr_person),   # NB This can have issues with sync unless going via CSV
+                person_id,
                 SQLField('source'),
                 SQLField('accuracy'),       # Drop-down on a IS_IN_SET[]?
                 SQLField('sensitivity'),    # Should be turned into a drop-down by referring to AAA's sensitivity table
@@ -283,10 +279,11 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('url'),
                 SQLField('image','upload'))
 exec("s3.crud_fields.%s=['created_on','created_by','modified_on','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']" % table)
-db[table].exposes=['description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
+db[table].exposes=['description','person','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
-db[table].contact.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+#db[table].person.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
+db[table].person.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+db[table].person.label=T("Contact")
 db[table].url.requires=IS_URL()
 title_create=T('Add Feature Metadata')
 title_display=T('Feature Metadata Details')
@@ -302,22 +299,23 @@ msg_record_modified=T('Feature Metadata updated')
 msg_record_deleted=T('Feature Metadata deleted')
 msg_list_empty=T('No Feature Metadata currently defined')
 exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-            
+
 resource='feature'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
-                SQLField('feature_class',db.gis_feature_class),    # NB This can have issues with sync unless going via CSV
+                feature_class_id,
                 SQLField('metadata',db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
                 SQLField('type',default='point'),
-                SQLField('lat'),
-                SQLField('lon'))
-exec("s3.crud_fields.%s=['name','feature_class','metadata','type','lat','lon']" % table)
+                SQLField('lat'),    # Only needed for Points
+                SQLField('lon'),    # Only needed for Points
+                SQLField('wkt'))    # WKT should be auto-calculated from lat/lon for Points (jQuery so that form accepts with mandatory fields filled)
+exec("s3.crud_fields.%s=['name','feature_class','metadata','type','lat','lon','wkt']" % table)
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
-db[table].feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name'))
+#db[table].feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name'))
 db[table].feature_class.display=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0]
 db[table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
 db[table].metadata.display=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
@@ -328,6 +326,10 @@ db[table].lat.comment=SPAN("*",_class="req")
 db[table].lon.requires=IS_LON()
 db[table].lon.label=T("Longitude")
 db[table].lon.comment=SPAN("*",_class="req")
+# Need to write an IS_WKT validator
+#db[table].wkt.requires=IS_WKT()
+db[table].wkt.label=T("Well-Known Text")
+db[table].wkt.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line."))
 title_create=T('Add Feature')
 title_display=T('Feature Details')
 title_list=T('List Features')
@@ -342,7 +344,18 @@ msg_record_modified=T('Feature updated')
 msg_record_deleted=T('Feature deleted')
 msg_list_empty=T('No Features currently defined')
 exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-            
+# Reusable field for other tables to reference
+feature_id=SQLTable(None,'feature_id',
+            SQLField('feature',
+                db.gis_feature,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name')),
+                #represent=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
+                comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon to used to display this Location on a Map."))
+                ))
+# Unfortunately SQLTABLE can't yet handle:
+#represent
+# Unfortunately T2 can't yet handle:
+#comment
+    
 # Feature Groups
 # Used to select a set of Features for either Display or Export
 resource='feature_group'
@@ -350,14 +363,16 @@ table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 SQLField('description',length=256),
-                SQLField('features','text'), # List of features (to be replaced by many-to-many table)
+                SQLField('features','text'),        # List of features (to be replaced by many-to-many table)
+                SQLField('feature_classes','text'), # List of feature classes (to be replaced by many-to-many table)
                 SQLField('author',db.t2_person,writable=False))
 exec("s3.crud_fields.%s=['author','name','description','features']" % table)
 db[table].exposes=['name','description','features']
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
-db[table].features.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+db[table].features.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+db[table].feature_classes.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 db[table].author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
 title_create=T('Add Feature Group')
 title_display=T('Feature Group Details')
@@ -373,18 +388,76 @@ msg_record_modified=T('Feature Group updated')
 msg_record_deleted=T('Feature Group deleted')
 msg_list_empty=T('No Feature Groups currently defined')
 exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+# Reusable field for other tables to reference
+feature_group_id=SQLTable(None,'feature_group_id',
+            SQLField('feature_group',
+                db.gis_feature_group,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')),
+                #represent=lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
+                comment=''
+                ))
+# Unfortunately SQLTABLE can't yet handle:
+#represent
+# Unfortunately T2 can't yet handle:
+#comment
 
             
-# Many-to-Many table
-# are we using this or a tag-like pseudo M2M?
+# Many-to-Many tables
+# are we using these or a tag-like pseudo M2M?
 resource='feature_to_feature_group'
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('feature_group_id',db.gis_feature_group),
-                SQLField('feature_id',db.gis_feature))
-db[table].feature_group_id.requires=IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')
-db[table].feature_id.requires=IS_IN_DB(db,'gis_feature.id','gis_feature.name')
+                feature_group_id,
+                feature_id)
                 
+resource='feature_class_to_feature_group'
+table=module+'_'+resource
+db.define_table(table,timestamp,
+                feature_group_id,
+                feature_class_id)
+
+# GIS Locations
+resource='location'
+table=module+'_'+resource
+db.define_table(table,timestamp,uuidstamp,
+                SQLField('name'),
+                feature_id,         # Either just a Point or a Polygon
+                SQLField('sector'), # Government, Health
+                SQLField('level'),  # Region, Country, District
+                #SQLField('parent',db.gis_location),    # Can't do hierarchical loops :/
+                SQLField('parent'))
+exec("s3.crud_fields.%s=['name','feature','sector','level','parent']" % table)
+db[table].exposes=s3.crud_fields[table]
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
+db[table].feature.label=T("GIS Feature")
+db[table].feature.comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon to used to display this Location on a Map.")))
+db[table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
+db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District']))
+db[table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
+title_create=T('Add Location')
+title_display=T('Location Details')
+title_list=T('List Locations')
+title_update=T('Edit Location')
+title_search=T('Search Locations')
+subtitle_create=T('Add New Location')
+subtitle_list=T('Locations')
+label_list_button=T('List Locations')
+label_create_button=T('Add Location')
+msg_record_created=T('Location added')
+msg_record_modified=T('Location updated')
+msg_record_deleted=T('Location deleted')
+msg_list_empty=T('No Locations currently available')
+exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+# Reusable field for other tables to reference
+location_id=SQLTable(None,'location_id',
+            SQLField('location',
+                db.gis_location,requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name')),
+                #represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
+                comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map)."))))
+# Unfortunately SQLTABLE can't yet handle:
+#represent
+# Unfortunately T2 can't yet handle:
+#comment
 
 # GIS Keys - needed for commercial mapping services
 resource='apikey' # Can't use 'key' as this has other meanings for dicts!

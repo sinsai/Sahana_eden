@@ -100,7 +100,7 @@ db[table].type.requires=IS_NULL_OR(IS_IN_SET(['Government','International Govern
 db[table].admin.requires=IS_NULL_OR(IS_IN_DB(db,'t2_person.id','t2_person.name',multiple=True))
 # ~M2M tag decode: http://groups.google.com/group/web2py/browse_thread/thread/a234895207097f60
 #db[table].admin.display=lambda x: ', '.join([db(t2_person.id==id).select()[0].name for id in x[1:-1].split('|')]) 
-db[table].admin.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Admin|A Person who an edit all details within this Organisation."))
+db[table].admin.comment=DIV(A(T('Add Administrator'),_href=URL(r=request,c='pr',f='person',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|A Person who can edit all details within this Organisation.")))
 db[table].website.requires=IS_NULL_OR(IS_URL())
 title_create=T('Add Organisation')
 title_display=T('Organisation Details')
@@ -124,8 +124,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 SQLField('type'),
                 SQLField('admin','text'),
-                SQLField('location',db.gis_location),
-                SQLField('feature',db.gis_feature),
+                location_id,
                 SQLField('address','text'),
                 SQLField('postcode'),
                 SQLField('phone1'),
@@ -137,20 +136,17 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('number_of_vehicles','integer'),
                 SQLField('vehicle_types'),
                 SQLField('equipment'))
-exec("s3.crud_fields.%s=['name','type','admin','location','feature','address','postcode','phone1','phone2','email','fax','national_staff','international_staff','number_of_vehicles','vehicle_types','equipment']" % table)
+exec("s3.crud_fields.%s=['name','type','admin','location','address','postcode','phone1','phone2','email','fax','national_staff','international_staff','number_of_vehicles','vehicle_types','equipment']" % table)
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].admin.requires=IS_NULL_OR(IS_IN_DB(db,'t2_person.id','t2_person.name',multiple=True))
-db[table].admin.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Admin|A Person who an edit all details within this Office."))
+db[table].admin.comment=DIV(A(T('Add Administrator'),_href=URL(r=request,c='pr',f='person',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|A Person who can edit all details within this Organisation.")))
 db[table].name.requires=IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.comment=SPAN("*",_class="req")
 db[table].type.requires=IS_NULL_OR(IS_IN_SET(['Headquarters','Regional','Country','Satellite Office']))
-db[table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
+#db[table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
 db[table].location.display=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
-db[table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip2",_title=T("Location|The General Location associated with this Office. For use in Reporting"))
-db[table].feature.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
-db[table].feature.display=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0]
-db[table].feature.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip3",_title=T("Feature|The Exact Coordinates to use to display this Office on a Map."))
+db[table].location.comment=DIV(A(T('Add Location'),_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))
 db[table].national_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
 db[table].international_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))
 db[table].number_of_vehicles.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))

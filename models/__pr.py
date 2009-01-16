@@ -48,12 +48,12 @@ db.define_table(table,
                 SQLField('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
-#if not len(db().select(db[table].ALL)): 
-#   db[table].insert(
-#        # If Disabled at the Global Level then can still Enable just for this Module here
-#        audit_read=False,
-#        audit_write=False
-#    )
+if not len(db().select(db[table].ALL)): 
+   db[table].insert(
+        # If Disabled at the Global Level then can still Enable just for this Module here
+        audit_read=False,
+        audit_write=False
+    )
 
 # People
 resource='person'
@@ -64,11 +64,11 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('last_name'),  # Family Name
                 #SQLField('l10_name'),
                 SQLField('email'),      # Needed for AAA
-                SQLField('mobile'),     # Needed for SMS
+                SQLField('mobile_phone'),     # Needed for SMS
                 SQLField('address','text'),
                 SQLField('postcode'),
                 SQLField('website'))
-exec("s3.crud_fields.%s=['name','first_name','last_name','email','mobile','address','postcode','website']" % table)
+exec("s3.crud_fields.%s=['name','first_name','last_name','email','mobile_phone','address','postcode','website']" % table)
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()   # People don't have to have unique names
@@ -77,7 +77,10 @@ db[table].name.comment=SPAN("*",_class="req")
 db[table].last_name.label=T("Family Name")
 db[table].email.requires=IS_NOT_IN_DB(db,'%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires=IS_NULL_OR(IS_EMAIL())
-db[table].mobile.requires=IS_NOT_IN_DB(db,'%s.mobile' % table)   # Needs to be unique as used for AAA
+db[table].email.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
+db[table].mobile_phone.requires=IS_NOT_IN_DB(db,'%s.mobile' % table)   # Needs to be unique as used for AAA
+db[table].mobile_phone.label=T("Mobile Phone #")
+db[table].mobile_phone.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
 db[table].website.requires=IS_NULL_OR(IS_URL())
 title_create=T('Add Person')
 title_display=T('Person Details')
@@ -93,6 +96,16 @@ msg_record_modified=T('Person updated')
 msg_record_deleted=T('Person deleted')
 msg_list_empty=T('No People currently registered')
 exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+# Reusable field for other tables to reference
+person_id=SQLTable(None,'person_id',
+            SQLField('person',
+                db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name')),
+                #represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0],
+                comment=''))
+# Unfortunately SQLTABLE can't yet handle:
+#represent
+# Unfortunately T2 can't yet handle:
+#comment
 
 # Contacts
 resource='contact'

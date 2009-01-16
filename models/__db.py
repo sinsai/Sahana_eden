@@ -428,7 +428,6 @@ def shn_rest_controller(module,resource):
             JSON create/update
             CSV update
             SMS,XML,PDF
-        Search method
         Customisable Security Policy
     """
     

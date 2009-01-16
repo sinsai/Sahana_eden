@@ -64,29 +64,25 @@ table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 SQLField('description',length=256),
-                SQLField('location',db.gis_location),
-                SQLField('feature',db.gis_feature),
-                SQLField('contact',db.pr_person),
+                location_id,
+                person_id,
                 SQLField('address','text'),
                 SQLField('capacity','integer'),
                 SQLField('dwellings','integer'),
                 SQLField('persons_per_dwelling','integer'),
                 SQLField('area'))
-exec("s3.crud_fields.%s=['name','description','address','capacity','dwellings','area','persons_per_dwelling','contact','location']" % table)
+exec("s3.crud_fields.%s=['name','description','location','person','address','capacity','dwellings','area','persons_per_dwelling']" % table)
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()   # Shelters don't have to have unique names
 db[table].name.label=T("Shelter Name")
 db[table].name.comment=SPAN("*",_class="req")
-db[table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
+#db[table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
 db[table].location.display=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
-db[table].location.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip2",_title=T("Location|The General Location associated with this Office. For use in Reporting"))
-db[table].feature.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name'))
-db[table].feature.display=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0]
-db[table].feature.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip3",_title=T("Feature|The Exact Coordinates to use to display this Office on a Map."))
-db[table].contact.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
-db[table].contact.display=lambda uuid: (uuid and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
-db[table].contact.label=T("Contact Person")
+db[table].location.comment=DIV(A(T('Add Location'),_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))
+#db[table].person.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
+db[table].person.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+db[table].person.label=T("Contact Person")
 db[table].capacity.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999999))
 db[table].dwellings.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
 db[table].persons_per_dwelling.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999))

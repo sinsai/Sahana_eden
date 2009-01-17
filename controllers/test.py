@@ -10,4 +10,34 @@ def index():
     form2=SQLFORM(db.person,person,readonly=True) ### NEW
     persons=db(db.person.id>0).select()
     return dict(form1=form1,form2=form2,persons=persons)
-    
+
+# M2M Tests
+def list_dogs():
+    "Test for M2M widget"
+    list=t2.itemize(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def display_dog():
+    "Test for M2M widget"
+    list=t2.display(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def update_dog():
+    "Test for M2M widget"
+    list=t2.update(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def delete_dog():
+    "Test for M2M widget"
+    list=t2.delete(db.dog)
+    response.view='list_plain.html'
+    return dict(list=list)
+
+def delete_owner():
+    "Test for M2M widget"
+    list=t2.delete(db.owner)
+    response.view='list_plain.html'
+    return dict(list=list)

@@ -283,6 +283,13 @@ if not len(db().select(db[table].ALL)):
         priority=3,
         enabled='True'
 	)
+	db[table].insert(
+        name="Export",
+        function="export_data",
+        access=1,   # Administrator role only
+        priority=4,
+        enabled='True'
+	)
 
 # Settings - home
 resource='setting'
@@ -411,6 +418,8 @@ def shn_rest_controller(module,resource):
     
     Anonymous users can Read.
     Authentication required for Create/Update/Delete.
+    
+    Auditing options for Read &/or Write.
     
     Supported Representations:
         HTML is the default (including full Layout)

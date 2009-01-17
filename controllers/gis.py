@@ -83,6 +83,14 @@ def defaults():
     form=t2.update(db.gis_config,deletable=False) # NB deletable=False
     return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
 
+def shn_latlon_to_wkt(lat,lon):
+    """Convert a LatLon to a WKT string
+    >>> shn_latlon_to_wkt(6,80)
+    'POINT(80 6)'
+    """
+    WKT='POINT(%d %d)' %(lon,lat)
+    return WKT
+    
 # Feature Groups
 # TODO: https://trac.sahanapy.org/wiki/BluePrintMany2Many
 @t2.requires_login('login')

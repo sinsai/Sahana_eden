@@ -94,33 +94,8 @@ def import_data():
     title=T('Import Data')
     return dict(module_name=module_name,modules=modules,options=options,title=title)
 
-# M2M Tests
-def list_dogs():
-    "Test for M2M widget"
-    list=t2.itemize(db.dog)
-    response.view='list_plain.html'
-    return dict(list=list)
-
-def display_dog():
-    "Test for M2M widget"
-    list=t2.display(db.dog)
-    response.view='list_plain.html'
-    return dict(list=list)
-
-def update_dog():
-    "Test for M2M widget"
-    list=t2.update(db.dog)
-    response.view='list_plain.html'
-    return dict(list=list)
-
-def delete_dog():
-    "Test for M2M widget"
-    list=t2.delete(db.dog)
-    response.view='list_plain.html'
-    return dict(list=list)
-
-def delete_owner():
-    "Test for M2M widget"
-    list=t2.delete(db.owner)
-    response.view='list_plain.html'
-    return dict(list=list)
+# Export Data
+def export_data():
+    "Export data via CRUD controller."
+    title=T('Export Data')
+    return dict(module_name=module_name,modules=modules,options=options,title=title)

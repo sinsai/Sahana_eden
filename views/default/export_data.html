@@ -1,0 +1,52 @@
+{{extend 'layout.html'}}
+
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+
+{{include 'default/resources.js'}}
+
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    $("input#submit").click(function() {
+        // Replace Action
+        top.location="{{=URL3(r=request)}}/"+$("select#module").val()+"/"+$("select#resource").val()+"?format="+$("select#representation").val()
+        return false;
+    })
+});
+//]]></script>
+
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+<form id="exporter" action="/sahana/module/resource?format=representation" method="GET">
+    <table>
+    <tr><td>Module:</td><td>
+    <select id="module" name="module">
+     <option value="or">Organisation Registry</option>
+     <option value="pr">Person Registry</option>
+     <option value="cr">Shelter Registry</option>
+     <option value="gis">Situation Awareness</option>
+    </select>
+    </td></tr>
+    <tr><td>Resource:</td><td>
+    <select id="resource" name="resource">
+     <option value="organisation">Organisation</option>
+    </select>
+    </td></tr>
+    <tr><td>Format:</td><td>
+    <select id="representation" name="representation">
+     <option value="csv">CSV</option>
+     <option value="json">JSON</option>
+    </select>
+    </td></tr>
+    <tr><td></td><td>
+    <input id="submit" type="submit" value="Download"/>
+    </td></tr>
+    </table>
+</form>
+{{pass}}
+</div>
+<div id='results'></div>

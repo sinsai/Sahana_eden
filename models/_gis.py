@@ -178,25 +178,32 @@ projection_id=SQLTable(None,'projection_id',
 resource='config'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-				SQLField('lat'),
-				SQLField('lon'),
+				SQLField('lat','double'),
+				SQLField('lon','double'),
 				SQLField('zoom','integer'),
 				projection_id,
 				marker_id,
-				SQLField('map_height'),
-				SQLField('map_width'))
+				SQLField('map_height','integer'),
+				SQLField('map_width','integer'))
 exec("s3.crud_fields.%s=['lat','lon','zoom','projection','marker','map_height','map_width']" % table)
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].lat.requires=IS_LAT()
+db[table].lat.label=T("Latitude")
+db[table].lat.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 db[table].lon.requires=IS_LON()
+db[table].lon.label=T("Longitude")
+db[table].lon.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 db[table].zoom.requires=IS_INT_IN_RANGE(0,19)
+db[table].zoom.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
 #db[table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
 db[table].projection.display=lambda id: db(db.gis_projection.id==id).select()[0].name
 #db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
 db[table].marker.display=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
 db[table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db[table].map_height.comment=SPAN("*",_class="req")
 db[table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
+db[table].map_width.comment=SPAN("*",_class="req")
 # Populate table with Default options
 if not len(db().select(db[table].ALL)): 
    # We want to start at ID 1
@@ -307,8 +314,8 @@ db.define_table(table,timestamp,uuidstamp,
                 feature_class_id,
                 SQLField('metadata',db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
                 SQLField('type',default='point'),
-                SQLField('lat'),    # Only needed for Points
-                SQLField('lon'),    # Only needed for Points
+                SQLField('lat','double'),    # Only needed for Points
+                SQLField('lon','double'),    # Only needed for Points
                 SQLField('wkt'))    # WKT should be auto-calculated from lat/lon for Points (jQuery so that form accepts with mandatory fields filled)
 exec("s3.crud_fields.%s=['name','feature_class','metadata','type','lat','lon','wkt']" % table)
 db[table].exposes=s3.crud_fields[table]
@@ -322,14 +329,14 @@ db[table].metadata.display=lambda id: (id and [db(db.gis_feature_metadata.id==id
 db[table].type.requires=IS_IN_SET(['point','line','polygon'])
 db[table].lat.requires=IS_LAT()
 db[table].lat.label=T("Latitude")
-db[table].lat.comment=SPAN("*",_class="req")
+db[table].lat.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 db[table].lon.requires=IS_LON()
 db[table].lon.label=T("Longitude")
-db[table].lon.comment=SPAN("*",_class="req")
+db[table].lon.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 # Need to write an IS_WKT validator
 #db[table].wkt.requires=IS_WKT()
 db[table].wkt.label=T("Well-Known Text")
-db[table].wkt.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line."))
+db[table].wkt.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 title_create=T('Add Feature')
 title_display=T('Feature Details')
 title_list=T('List Features')

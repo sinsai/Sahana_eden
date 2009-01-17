@@ -440,17 +440,18 @@ def shn_rest_controller(module,resource):
         Customisable Security Policy
     """
     
-    table=db['%s_%s' % (module,resource)]
+    _table='%s_%s' % (module,resource)
+    table=db[_table]
     if resource=='setting':
         s3.crud_strings=shn_crud_strings_lookup(resource)
     else:
         s3.crud_strings=shn_crud_strings_lookup(table)
     try:
-        s3.deletable=not s3.undeletable[table]
+        s3.deletable=not s3.undeletable[_table]
     except:
         s3.deletable=True
     try:
-        s3.listadd=not s3.listonly[table]
+        s3.listadd=not s3.listonly[_table]
     except:
         s3.listadd=True
     

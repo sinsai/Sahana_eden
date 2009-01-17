@@ -91,7 +91,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('admin','text'),
                 SQLField('registration'),	# Registration Number
                 SQLField('website'))
-exec("s3.crud_fields.%s=['name','acronym','type','admin','registration','website']" % table)
+s3.crud_fields[table]=['name','acronym','type','admin','registration','website']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -115,7 +115,7 @@ msg_record_created=T('Organisation added')
 msg_record_modified=T('Organisation updated')
 msg_record_deleted=T('Organisation deleted')
 msg_list_empty=T('No Organisations currently registered')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Offices
 resource='office'
@@ -136,7 +136,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('number_of_vehicles','integer'),
                 SQLField('vehicle_types'),
                 SQLField('equipment'))
-exec("s3.crud_fields.%s=['name','type','admin','location','address','postcode','phone1','phone2','email','fax','national_staff','international_staff','number_of_vehicles','vehicle_types','equipment']" % table)
+s3.crud_fields[table]=['name','type','admin','location','address','postcode','phone1','phone2','email','fax','national_staff','international_staff','number_of_vehicles','vehicle_types','equipment']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].admin.requires=IS_NULL_OR(IS_IN_DB(db,'t2_person.id','t2_person.name',multiple=True))
@@ -146,7 +146,7 @@ db[table].name.comment=SPAN("*",_class="req")
 db[table].type.requires=IS_NULL_OR(IS_IN_SET(['Headquarters','Regional','Country','Satellite Office']))
 #db[table].location.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
 db[table].location.display=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
-db[table].location.comment=DIV(A(T('Add Location'),_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))
+db[table].location.comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))
 db[table].national_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
 db[table].international_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))
 db[table].number_of_vehicles.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))
@@ -163,7 +163,7 @@ msg_record_created=T('Office added')
 msg_record_modified=T('Office updated')
 msg_record_deleted=T('Office deleted')
 msg_list_empty=T('No Offices currently registered')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Contacts
 # Many-to-Many Persons to Offices with also the Title that the person has 
@@ -173,7 +173,7 @@ db.define_table(table,timestamp,
                 SQLField('person_id',db.pr_person),
                 SQLField('office_id',db.or_office),
                 SQLField('title'))
-exec("s3.crud_fields.%s=['person_id','office_id','title']" % table)
+s3.crud_fields[table]=['person_id','office_id','title']
 db[table].exposes=s3.crud_fields[table]
 db[table].person_id.requires=IS_IN_DB(db,'pr_person.id','pr_person.name')
 db[table].person_id.label='Contact'
@@ -193,7 +193,7 @@ msg_record_created=T('Contact added')
 msg_record_modified=T('Contact updated')
 msg_record_deleted=T('Contact deleted')
 msg_list_empty=T('No Contacts currently registered')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Offices to Organisations
 #resource='organisation_offices'

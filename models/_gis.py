@@ -57,7 +57,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('height','integer'), # In Pixels, for display purposes
                 SQLField('width','integer'),
                 SQLField('image','upload'))
-exec("s3.crud_fields.%s=['name','height','width','image']" % table)
+s3.crud_fields[table]=['name','height','width','image']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -89,7 +89,7 @@ msg_record_created=T('Marker added')
 msg_record_modified=T('Marker updated')
 msg_record_deleted=T('Marker deleted')
 msg_list_empty=T('No Markers currently available')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 marker_id=SQLTable(None,'marker_id',
             SQLField('marker',
@@ -110,7 +110,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('maxExtent'),
                 SQLField('maxResolution','double'),
                 SQLField('units'))
-exec("s3.crud_fields.%s=['name','epsg','maxExtent','maxResolution','units']" % table)
+s3.crud_fields[table]=['name','epsg','maxExtent','maxResolution','units']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -158,8 +158,8 @@ msg_record_created=T('Projection added')
 msg_record_modified=T('Projection updated')
 msg_record_deleted=T('Projection deleted')
 msg_list_empty=T('No Projections currently defined')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-exec('s3.undeletable.%s=1' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.undeletable[table]=1
 # Reusable field for other tables to reference
 projection_id=SQLTable(None,'projection_id',
             SQLField('projection',
@@ -185,7 +185,7 @@ db.define_table(table,timestamp,uuidstamp,
 				marker_id,
 				SQLField('map_height','integer'),
 				SQLField('map_width','integer'))
-exec("s3.crud_fields.%s=['lat','lon','zoom','projection','marker','map_height','map_width']" % table)
+s3.crud_fields[table]=['lat','lon','zoom','projection','marker','map_height','map_width']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].lat.requires=IS_LAT()
@@ -230,7 +230,7 @@ msg_record_created=T('Config added')
 msg_record_modified=T('Config updated')
 msg_record_deleted=T('Config deleted')
 msg_list_empty=T('No Configs currently defined')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
             
 # GIS Features
 resource='feature_class'
@@ -238,7 +238,7 @@ table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 marker_id)
-exec("s3.crud_fields.%s=['name','marker']" % table)
+s3.crud_fields[table]=['name','marker']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -258,7 +258,7 @@ msg_record_created=T('Feature Class added')
 msg_record_modified=T('Feature Class updated')
 msg_record_deleted=T('Feature Class deleted')
 msg_list_empty=T('No Feature Classes currently defined')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_class_id=SQLTable(None,'feature_class_id',
             SQLField('feature_class',
@@ -285,7 +285,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('expiry_time','datetime'),
                 SQLField('url'),
                 SQLField('image','upload'))
-exec("s3.crud_fields.%s=['created_on','created_by','modified_on','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']" % table)
+s3.crud_fields[table]=['created_on','created_by','modified_on','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db[table].exposes=['description','person','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 #db[table].person.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
@@ -305,7 +305,7 @@ msg_record_created=T('Feature Metadata added')
 msg_record_modified=T('Feature Metadata updated')
 msg_record_deleted=T('Feature Metadata deleted')
 msg_list_empty=T('No Feature Metadata currently defined')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 resource='feature'
 table=module+'_'+resource
@@ -317,7 +317,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('lat','double'),    # Only needed for Points
                 SQLField('lon','double'),    # Only needed for Points
                 SQLField('wkt'))    # WKT should be auto-calculated from lat/lon for Points (jQuery so that form accepts with mandatory fields filled)
-exec("s3.crud_fields.%s=['name','feature_class','metadata','type','lat','lon','wkt']" % table)
+s3.crud_fields[table]=['name','feature_class','metadata','type','lat','lon','wkt']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
@@ -350,7 +350,7 @@ msg_record_created=T('Feature added')
 msg_record_modified=T('Feature updated')
 msg_record_deleted=T('Feature deleted')
 msg_list_empty=T('No Features currently defined')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_id=SQLTable(None,'feature_id',
             SQLField('feature',
@@ -373,7 +373,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('features','text'),        # List of features (to be replaced by many-to-many table)
                 SQLField('feature_classes','text'), # List of feature classes (to be replaced by many-to-many table)
                 SQLField('author',db.t2_person,writable=False))
-exec("s3.crud_fields.%s=['author','name','description','features']" % table)
+s3.crud_fields[table]=['author','name','description','features']
 db[table].exposes=['name','description','features']
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -394,7 +394,7 @@ msg_record_created=T('Feature Group added')
 msg_record_modified=T('Feature Group updated')
 msg_record_deleted=T('Feature Group deleted')
 msg_list_empty=T('No Feature Groups currently defined')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_group_id=SQLTable(None,'feature_group_id',
             SQLField('feature_group',
@@ -432,14 +432,14 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('level'),  # Region, Country, District
                 #SQLField('parent',db.gis_location),    # Can't do hierarchical loops :/
                 SQLField('parent'))
-exec("s3.crud_fields.%s=['name','feature','sector','level','parent']" % table)
+s3.crud_fields[table]=['name','feature','sector','level','parent']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
 db[table].feature.label=T("GIS Feature")
-db[table].feature.comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon to used to display this Location on a Map.")))
+db[table].feature.comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
 db[table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
-db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District']))
+db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District','Town']))
 db[table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
 title_create=T('Add Location')
 title_display=T('Location Details')
@@ -454,7 +454,7 @@ msg_record_created=T('Location added')
 msg_record_modified=T('Location updated')
 msg_record_deleted=T('Location deleted')
 msg_list_empty=T('No Locations currently available')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 location_id=SQLTable(None,'location_id',
             SQLField('location',
@@ -473,7 +473,7 @@ db.define_table(table,timestamp,
                 SQLField('name'),
                 SQLField('apikey'),
 				SQLField('description',length=256))
-exec("s3.crud_fields.%s=['name','apikey','description']" % table)
+s3.crud_fields[table]=['name','apikey','description']
 db[table].exposes=s3.crud_fields[table]
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
@@ -512,9 +512,9 @@ msg_record_created=T('Key added')
 msg_record_modified=T('Key updated')
 msg_record_deleted=T('Key deleted')
 msg_list_empty=T('No Keys currently defined')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-exec('s3.listonly.%s=1' % table)
-exec('s3.undeletable.%s=1' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.listonly[table]=1
+s3.undeletable[table]=1
 
 # GIS Layers
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
@@ -564,8 +564,8 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List OpenStreetMap Layers')
         msg_list_empty=T('No OpenStreetMap Layers currently defined')
-        exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-        exec('s3.undeletable.%s=1' % table)
+        s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.undeletable[table]=1
     if layertype=="google":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -583,8 +583,8 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Google Layers')
         msg_list_empty=T('No Google Layers currently defined')
-        exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-        exec('s3.undeletable.%s=1' % table)
+        s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.undeletable[table]=1
     if layertype=="yahoo":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -602,8 +602,8 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Yahoo Layers')
         msg_list_empty=T('No Yahoo Layers currently defined')
-        exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-        exec('s3.undeletable.%s=1' % table)
+        s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.undeletable[table]=1
     if layertype=="virtualearth":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -621,9 +621,9 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button=T('List Virtual Earth Layers')
         msg_list_empty=T('No Virtual Earth Layers currently defined')
-        exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
-        exec('s3.undeletable.%s=1' % table)
-
+        s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.undeletable[table]=1
+    
 # GIS Styles: SLD
 #db.define_table('gis_style',timestamp,
 #                SQLField('name'))

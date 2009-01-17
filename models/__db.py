@@ -478,7 +478,7 @@ def shn_rest_controller(module,resource):
             else:
                 db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
-            if list=="No data":
+            if list=="None":
                 list=s3.crud_strings.msg_list_empty
             title=s3.crud_strings.title_list
             subtitle=s3.crud_strings.subtitle_list

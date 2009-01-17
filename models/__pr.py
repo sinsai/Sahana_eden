@@ -68,7 +68,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('address','text'),
                 SQLField('postcode'),
                 SQLField('website'))
-exec("s3.crud_fields.%s=['name','first_name','last_name','email','mobile_phone','address','postcode','website']" % table)
+s3.crud_fields[table]=['name','first_name','last_name','email','mobile_phone','address','postcode','website']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()   # People don't have to have unique names
@@ -95,7 +95,7 @@ msg_record_created=T('Person added')
 msg_record_modified=T('Person updated')
 msg_record_deleted=T('Person deleted')
 msg_list_empty=T('No People currently registered')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 person_id=SQLTable(None,'person_id',
             SQLField('person',
@@ -129,7 +129,7 @@ msg_record_created=T('Contact Detail added')
 msg_record_modified=T('Contact Detail updated')
 msg_record_deleted=T('Contact Detail deleted')
 msg_list_empty=T('No Contact Details currently registered')
-exec('s3.crud_strings.%s=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)' % table)
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Contacts to People
 resource='contact_to_person'

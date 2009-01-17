@@ -137,21 +137,26 @@ def map_service_catalogue():
     """Map Service Catalogue.
     Allows selection of which Layers are active."""
 
-    items=DIV()
+    # Create a manual table to aggregate all layer types
+    items='<table><tr><td></td><td><b>Enabled?</b></td></tr>'
     for type in gis_layer_types:
         resource='layer_'+type
         table=db['%s_%s' % (module,resource)]
-        db['%s' % table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra=str(table.enabled))
-        list=t2.itemize(table)
-        if list=="No data":
-            list=s3.crud_strings['%s' % table].msg_list_empty
-        if isinstance(list,TABLE):
-            list.insert(0,TR('',B('Enabled?'))) 
-        items=DIV(items,list)
-    
+        for layer in db(table.id>0).select():
+            items+='<tr><td><a href="'
+            items+=URL(r=request,f=resource)
+            items+='/display/'
+            items+=str(layer.id)
+            items+='">'
+            items+=layer.name
+            items+='</a></td><td>'
+            items+=str(layer.enabled)
+            items+='</td></tr>'
+    items+='</table>'
+        
     title=T('Map Service Catalogue')
     subtitle=T('List Layers')
-    return dict(module_name=module_name,modules=modules,options=options,title=title,subtitle=subtitle,item=items)
+    return dict(module_name=module_name,modules=modules,options=options,title=title,subtitle=subtitle,item=XML(items))
 
 def map_viewing_client():
     """Map Viewing Client.

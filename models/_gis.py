@@ -50,6 +50,12 @@ if not len(db().select(db[table].ALL)):
     )
 
 # GIS Markers (Icons)
+def shn_imgsize_detect(filename):
+    "Determine the size of an Image file"
+    height=1
+    width=1
+    return dict(height=height,width=width)
+
 resource='marker'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
@@ -159,7 +165,6 @@ msg_record_modified=T('Projection updated')
 msg_record_deleted=T('Projection deleted')
 msg_list_empty=T('No Projections currently defined')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-s3.undeletable[table]=1
 # Reusable field for other tables to reference
 projection_id=SQLTable(None,'projection_id',
             SQLField('projection',
@@ -513,8 +518,6 @@ msg_record_modified=T('Key updated')
 msg_record_deleted=T('Key deleted')
 msg_list_empty=T('No Keys currently defined')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-s3.listonly[table]=1
-s3.undeletable[table]=1
 
 # GIS Layers
 #gis_layer_types=['features','georss','kml','gpx','shapefile','scan','google','openstreetmap','virtualearth','wms','yahoo']
@@ -565,7 +568,6 @@ for layertype in gis_layer_types:
         label_list_button=T('List OpenStreetMap Layers')
         msg_list_empty=T('No OpenStreetMap Layers currently defined')
         s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-        s3.undeletable[table]=1
     if layertype=="google":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -584,7 +586,6 @@ for layertype in gis_layer_types:
         label_list_button=T('List Google Layers')
         msg_list_empty=T('No Google Layers currently defined')
         s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-        s3.undeletable[table]=1
     if layertype=="yahoo":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -603,7 +604,6 @@ for layertype in gis_layer_types:
         label_list_button=T('List Yahoo Layers')
         msg_list_empty=T('No Yahoo Layers currently defined')
         s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-        s3.undeletable[table]=1
     if layertype=="virtualearth":
         t=SQLTable(db,table,
             db.Field('subtype'),
@@ -622,7 +622,6 @@ for layertype in gis_layer_types:
         label_list_button=T('List Virtual Earth Layers')
         msg_list_empty=T('No Virtual Earth Layers currently defined')
         s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-        s3.undeletable[table]=1
     
 # GIS Styles: SLD
 #db.define_table('gis_style',timestamp,

@@ -166,20 +166,25 @@ msg_list_empty=T('No Offices currently registered')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Contacts
-# Many-to-Many Persons to Offices with also the Title that the person has 
+# Many-to-Many Persons to Offices with also the Title & Manager that the person has in this context
+# ToDo: Build an Organigram out of this data?
 resource='contact'
 table=module+'_'+resource
 db.define_table(table,timestamp,
                 SQLField('person_id',db.pr_person),
                 SQLField('office_id',db.or_office),
-                SQLField('title'))
-s3.crud_fields[table]=['person_id','office_id','title']
+                SQLField('title'),
+                SQLField('manager_id',db.pr_person))
+s3.crud_fields[table]=['person_id','office_id','title','manager_id']
 db[table].exposes=s3.crud_fields[table]
 db[table].person_id.requires=IS_IN_DB(db,'pr_person.id','pr_person.name')
 db[table].person_id.label='Contact'
 db[table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
 db[table].office_id.label='Office'
 db[table].title.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Title|The Role this person plays within this Office."))
+db[table].manager_id.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
+db[table].manager_id.label='Manager'
+db[table].manager_id.comment=A(SPAN("[Help]"),_class="popupLink",_id="tooltip",_title=T("Manager|The person's manager within this Office."))
 title_create=T('Add Contact')
 title_display=T('Contact Details')
 title_list=T('List Contacts')

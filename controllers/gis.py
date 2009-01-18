@@ -34,7 +34,7 @@ def open_option():
     redirect(URL(r=request,f=option))
 def apikey():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'apikey')
+    return shn_rest_controller(module,'apikey',deletable=False,listadd=False)
 def config():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'config')
@@ -58,19 +58,19 @@ def marker():
     return shn_rest_controller(module,'marker')
 def projection():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'projection')
+    return shn_rest_controller(module,'projection',deletable=False,extra='epsg')
 def layer_openstreetmap():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'layer_openstreetmap')
+    return shn_rest_controller(module,'layer_openstreetmap',deletable=False)
 def layer_google():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'layer_google')
+    return shn_rest_controller(module,'layer_google',deletable=False)
 def layer_yahoo():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'layer_yahoo')
+    return shn_rest_controller(module,'layer_yahoo',deletable=False)
 def layer_virtualearth():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'layer_virtualearth')
+    return shn_rest_controller(module,'layer_virtualearth',deletable=False)
 
 # Module-specific functions
 

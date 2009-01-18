@@ -44,11 +44,10 @@ from applications.sahana.modules.validators import *
 from gluon.storage import Storage
 
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
+# Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
 s3=Storage()
 s3.crud_fields=Storage()
 s3.crud_strings=Storage()
-s3.listonly=Storage()
-s3.undeletable=Storage()
 
 module='s3'
 # Settings - systemwide
@@ -116,45 +115,45 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
 	)
 	db[table].insert(
+        name="gis",
+        name_nice="Mapping",
+        menu_priority=1,
+        description="Situation Awareness & Geospatial Analysis",
+        enabled='True'
+	)
+	db[table].insert(
         name="pr",
         name_nice="Person Registry",
-        menu_priority=1,
+        menu_priority=2,
         description="Central point to record details on People",
         enabled='True'
 	)
 	db[table].insert(
         name="mpr",
         name_nice="Missing Person Registry",
-        menu_priority=2,
+        menu_priority=3,
         description="Helps to report and search missing person",
         enabled='False'
 	)
 	db[table].insert(
         name="dvr",
         name_nice="Disaster Victim Registry",
-        menu_priority=3,
+        menu_priority=4,
         description="Traces internally displaced people (IDPs) and their needs",
         enabled='False'
 	)
 	db[table].insert(
         name="or",
         name_nice="Organization Registry",
-        menu_priority=4,
+        menu_priority=5,
         description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
         enabled='True'
 	)
 	db[table].insert(
         name="cr",
         name_nice="Shelter Registry",
-        menu_priority=5,
-        description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
-        enabled='True'
-	)
-	db[table].insert(
-        name="gis",
-        name_nice="Situation Awareness",
         menu_priority=6,
-        description="Mapping & Geospatial Analysis",
+        description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
         enabled='True'
 	)
 	db[table].insert(
@@ -379,10 +378,10 @@ def shn_list_item(table,resource,action,display='table.name',extra=None):
 # Widgets
 #
 
-# In test.py
+# See test.py
 
 #
-# RESTlike Controller
+# RESTlike CRUD Controller
 #
 
 def shn_crud_strings_lookup(resource):
@@ -412,9 +411,15 @@ def import_json(table,file):
     #table.insert(**dict(items))
     return
             
-def shn_rest_controller(module,resource):
+def shn_rest_controller(module,resource,deletable=True,listadd=True,extra=None):
     """
     RESTlike controller function.
+    
+    Provides CRUD operations for the given module/resource.
+    Optional parameters:
+    deletable=False: don't provide visible options for deletion
+    listadd=False: don't provide an add form in the list view
+    extra='field': extra field to display in the list view
     
     Anonymous users can Read.
     Authentication required for Create/Update/Delete.
@@ -436,7 +441,7 @@ def shn_rest_controller(module,resource):
         Alternate Representations
             JSON create/update
             CSV update
-            SMS,XML,PDF
+            SMS,XML,PDF,LDIF
         Customisable Security Policy
     """
     
@@ -446,14 +451,6 @@ def shn_rest_controller(module,resource):
         s3.crud_strings=shn_crud_strings_lookup(resource)
     else:
         s3.crud_strings=shn_crud_strings_lookup(table)
-    try:
-        s3.deletable=not s3.undeletable[_table]
-    except:
-        s3.deletable=True
-    try:
-        s3.listadd=not s3.listonly[_table]
-    except:
-        s3.listadd=True
     
     # Which representation should output be in?
     if request.vars.format:
@@ -474,18 +471,24 @@ def shn_rest_controller(module,resource):
                 new_value=''
             )
         if representation=="html":
-            if t2.logged_in and s3.deletable:
-                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+            if t2.logged_in and deletable:
+                if extra:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="TD(db(db.gis_projection.id==%i).select()[0].%s),TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (table.id,extra,resource,table.id))
+                else:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
             else:
-                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+                if extra:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="db(db.gis_projection.id==%i).select()[0].%s" % (table.id,extra))
+                else:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
-            if list=="None":
+            if not list:
                 list=s3.crud_strings.msg_list_empty
             title=s3.crud_strings.title_list
             subtitle=s3.crud_strings.subtitle_list
-            if t2.logged_in and s3.listadd:
+            if t2.logged_in and listadd:
                 # Display the Add form below List
-                if s3.deletable:
+                if deletable:
                     # Add extra column header to explain the checkboxes
                     if isinstance(list,TABLE):
                         list.insert(0,TR('',B('Delete?')))
@@ -501,7 +504,7 @@ def shn_rest_controller(module,resource):
                 return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
                 # List only
-                if s3.listadd:
+                if listadd:
                     add_btn=A(s3.crud_strings.label_create_button,_href=t2.action(resource,'create'),_id='add-btn')
                 else:
                     add_btn=''
@@ -514,14 +517,20 @@ def shn_rest_controller(module,resource):
                     response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="ajax":
-            if t2.logged_in and s3.deletable:
-                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+            if t2.logged_in and deletable:
+                if extra:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="TD(db(db.gis_projection.id==%i).select()[0].%s),TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (table.id,extra,resource,table.id))
+                else:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
             else:
-                db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+                if extra:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="db(db.gis_projection.id==%i).select()[0].%s" % (table.id,extra))
+                else:
+                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
             list=t2.itemize(table)
-            if list=="No data":
+            if not list:
                 list=s3.crud_strings.msg_list_empty
-            if s3.deletable:
+            if deletable:
                 # Add extra column header to explain the checkboxes
                 if isinstance(list,TABLE):
                     list.insert(0,TR('',B('Delete?')))
@@ -574,7 +583,7 @@ def shn_rest_controller(module,resource):
                     response.view='display.html'
                 title=s3.crud_strings.title_display
                 edit=A(T("Edit"),_href=t2.action(resource,['update',t2.id]),_id='edit-btn')
-                if s3.deletable:
+                if deletable:
                     delete=A(T("Delete"),_href=t2.action(resource,['delete',t2.id]),_id='delete-btn')
                 else:
                     delete=''
@@ -753,7 +762,7 @@ def shn_rest_controller(module,resource):
                         new_value=''
                     )
                 if representation=="html":
-                    if t2.logged_in and s3.deletable:
+                    if t2.logged_in and deletable:
                         db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
                     else:
                         db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')

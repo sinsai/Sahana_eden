@@ -8,6 +8,14 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 
 # T2 framework functions
 def login():
+    """ Login
+    >>> from applications.sahana.modules.s3_test import WSGI_Test
+    >>> test=WSGI_Test(db)
+    >>> '200 OK' in test.getPage('/sahana/%s/login' % module)
+    True
+    >>> test.assertHeader("Content-Type", "text/html")
+    >>> test.assertInBody('Login')
+    """
     response.view='default/login.html'
     return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout(): t2.logout(next='login')
@@ -28,7 +36,23 @@ def open_option():
     redirect(URL(r=request,f=option))
 def shelter():
     """ RESTlike CRUD controller
+    >>> resource='shelter'
     >>> from applications.sahana.modules.s3_test import WSGI_Test
-    >>>
+    >>> test=WSGI_Test(db)
+    >>> '200 OK' in test.getPage('/sahana/%s/%s' % (module,resource))
+    True
+    >>> test.assertHeader("Content-Type", "text/html")
+    >>> test.assertInBody('List Shelters')
+    >>> '200 OK' in test.getPage('/sahana/%s/%s/create' % (module,resource))    #doctest: +SKIP
+    True
+    >>> test.assertHeader("Content-Type", "text/html")                          #doctest: +SKIP
+    >>> test.assertInBody('Add Shelter')                                        #doctest: +SKIP
+    >>> '200 OK' in test.getPage('/sahana/%s/%s?format=json' % (module,resource))
+    True
+    >>> test.assertHeader("Content-Type", "text/html")
+    >>> test.assertInBody('[')
+    >>> '200 OK' in test.getPage('/sahana/%s/%s?format=csv' % (module,resource))
+    True
+    >>> test.assertHeader("Content-Type", "text/csv")
     """
     return shn_rest_controller(module,'shelter')

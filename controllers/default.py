@@ -8,6 +8,14 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 
 # T2 framework functions
 def login():
+    """ Login
+    >>> from applications.sahana.modules.s3_test import WSGI_Test
+    >>> test=WSGI_Test(db)
+    >>> '200 OK' in test.getPage('/sahana/%s/login' % module)
+    True
+    >>> test.assertHeader("Content-Type", "text/html")
+    >>> test.assertInBody('Login')
+    """
     return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout():
     t2.logout(next='login')

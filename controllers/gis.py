@@ -8,6 +8,14 @@ options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_opti
 
 # T2 framework functions
 def login():
+    """ Login
+    >>> from applications.sahana.modules.s3_test import WSGI_Test
+    >>> test=WSGI_Test(db)
+    >>> '200 OK' in test.getPage('/sahana/%s/login' % module)
+    True
+    >>> test.assertHeader("Content-Type", "text/html")
+    >>> test.assertInBody('Login')
+    """
     response.view='default/login.html'
     return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
 def logout():
@@ -138,6 +146,7 @@ def map_service_catalogue():
     Allows selection of which Layers are active."""
 
     # Create a manual table to aggregate all layer types
+    # Could look to rewrite using Helpers: http://groups.google.com/group/web2py/browse_thread/thread/ac045f3b1d3846d9
     items='<table><tr><td></td><td><b>Enabled?</b></td></tr>'
     for type in gis_layer_types:
         resource='layer_'+type

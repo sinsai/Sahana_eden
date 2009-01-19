@@ -8,6 +8,7 @@ static/mfbase/mapfish/.tests/*
 static/mfbase/openlayers/.examples/*
 static/mfbase/openlayers/.tests/*
 static/*/.svn/*
+static/.selenium/*
 static/*test*
 tests/.cherrypy/*
 errors/*

@@ -43,7 +43,7 @@ except:
     redirect(URL(r=request,c='default',f='login'))
 
 
-#module='appadmin'
+module='appadmin'
 # Current Module (for sidebar title)
 #module_name=db(db.s3_module.name==module).select()[0].name_nice
 module_name='App Admin'
@@ -60,6 +60,14 @@ response.menu=[[T('design'),False,URL('admin','default','design',
 
 # T2 framework functions
 def login():
+    """ Login
+    >>> from applications.sahana.modules.s3_test import WSGI_Test
+    >>> test=WSGI_Test(db)
+    >>> '200 OK' in test.getPage('/sahana/%s/login' % module)
+    True
+    >>> test.assertHeader("Content-Type", "text/html")
+    >>> test.assertInBody('Login')
+    """
     response.view='default/login.html'
     return dict(form=t2.login(),module_name=module_name,modules=modules)
 def logout(): t2.logout(next='login')

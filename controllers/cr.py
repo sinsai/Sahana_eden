@@ -27,5 +27,8 @@ def open_option():
     option=options[0].function
     redirect(URL(r=request,f=option))
 def shelter():
-    "RESTlike CRUD controller"
+    """ RESTlike CRUD controller
+    >>> from applications.sahana.modules.s3_test import WSGI_Test
+    >>>
+    """
     return shn_rest_controller(module,'shelter')

@@ -141,7 +141,7 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
 
         // Set default options 
         var options = {
-            depth: this.maxDepth,
+            depth: 0,
             styleBaseUrl: this.styleBaseUrl
         };
 
@@ -339,7 +339,12 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
                         var r = matches[4]; 
                         style["fillColor"] = "#" + r + g + b;
                     }
-                    
+                     // Check is fill is disabled
+                    var fill = this.parseProperty(styleTypeNode, "*", "fill");
+                    if (fill == "0") {
+                        style["fillColor"] = "none";
+                    }
+                   
                     break;
                 case "iconstyle":
                     // set scale

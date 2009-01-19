@@ -187,9 +187,10 @@ mapfish.Protocol.MapFish = OpenLayers.Class(OpenLayers.Protocol.HTTP, {
                 // appropriate comparison type from the parameter name.
 
                 if (params[filter.property]) {
-                    OpenLayers.Console.error('Filter contains multiple Comparison ' +
-                               'filters for the same property ' + filer.property);
-                        return false;
+                    OpenLayers.Console.error(
+                        'Filter contains multiple Comparison ' +
+                        'filters for the same property ' + filter.property);
+                    return false;
                 }
                 params[filter.property] = filter.value;
                 break;
@@ -235,8 +236,9 @@ mapfish.Protocol.MapFish = OpenLayers.Class(OpenLayers.Protocol.HTTP, {
         }
 
         var params = {};
-        if (this._filterToParams(options.filter, params))
+        if (this._filterToParams(options.filter, params)) {
             options.params = OpenLayers.Util.extend(options.params, params);
+        }
         delete options.filter;
     },
 

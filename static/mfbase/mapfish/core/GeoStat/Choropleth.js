@@ -192,11 +192,11 @@ mapfish.GeoStat.Choropleth = OpenLayers.Class(mapfish.GeoStat, {
             element.style.marginRight = "10px";
             this.legendDiv.appendChild(element);
 
-            var element = document.createElement("div");
+            element = document.createElement("div");
             element.innerHTML = this.classification.bins[i].label;
             this.legendDiv.appendChild(element);
 
-            var element = document.createElement("div");
+            element = document.createElement("div");
             element.style.clear = "left";
             this.legendDiv.appendChild(element);
         }

@@ -9,6 +9,7 @@
  * @requires OpenLayers/Filter/Logical.js
  * @requires OpenLayers/Filter/Comparison.js
  * @requires OpenLayers/Format/SLD.js
+ * @requires OpenLayers/Format/Filter/v1.js
  */
 
 /**
@@ -250,24 +251,21 @@ OpenLayers.Format.SLD.v1 = OpenLayers.Class(OpenLayers.Format.XML, {
                 graphic.graphicName = this.getChildValue(node);
             },
             "Opacity": function(node, obj) {
-                // No support for parsing of OGC expressions
-                var opacity = this.getChildValue(node);
+                var opacity = this.readOgcExpression(node);
                 // always string, could be empty string
                 if(opacity) {
                     obj.opacity = opacity;
                 }
             },
             "Size": function(node, obj) {
-                // No support for parsing of OGC expressions
-                var size = this.getChildValue(node);
+                var size = this.readOgcExpression(node);
                 // always string, could be empty string
                 if(size) {
                     obj.size = size;
                 }
             },
             "Rotation": function(node, obj) {
-                // No support for parsing of OGC expressions
-                var rotation = this.getChildValue(node);
+                var rotation = this.readOgcExpression(node);
                 // always string, could be empty string
                 if(rotation) {
                     obj.rotation = rotation;
@@ -685,7 +683,7 @@ OpenLayers.Format.SLD.v1 = OpenLayers.Class(OpenLayers.Format.XML, {
                         {symbolizer: symbolizer, key: "fillColor"}
                     );
                 }
-                if(symbolizer.fillOpacity) {
+                if(symbolizer.fillOpacity != null) {
                     this.writeNode(
                         node, "CssParameter",
                         {symbolizer: symbolizer, key: "fillOpacity"}
@@ -889,7 +887,7 @@ OpenLayers.Format.SLD.v1 = OpenLayers.Class(OpenLayers.Format.XML, {
         if(options.attributes) {
             this.setAttributes(node, options.attributes);
         }
-        if(options.value) {
+        if(options.value != null) {
             node.appendChild(this.createTextNode(options.value));
         }
         return node;

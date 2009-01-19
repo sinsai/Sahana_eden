@@ -35,6 +35,20 @@
  * configuration, this can be used as well if a layer's URL points to a
  * TileCache service to allow the print module to access the WMS service
  * directly.
+ *
+ * An override structure may look like this:
+ * (start code)
+ * {
+ *   'layerName1': { visibility: false },
+ *   'layerName2': {
+ *     visibility: false,
+ *     300: { visibility: true }
+ *   }
+ * }
+ * (end)
+ *
+ * In this example, the OL layer named "layerName1" is never printed. The OL
+ * layer "layerName2" is visible only when printed at 300DPI.
  */
 mapfish.PrintProtocol = OpenLayers.Class({
     /**
@@ -51,6 +65,13 @@ mapfish.PrintProtocol = OpenLayers.Class({
     spec: null,
 
     /**
+     * APIProperty: params
+     * {Object} Additional params to send in the print service Ajax calls. Can
+     *          be used to set the "locale" parameter.
+     */
+    params: null,
+
+    /**
      * Constructor: OpenLayers.Layer
      *
      * Parameters:
@@ -58,15 +79,15 @@ mapfish.PrintProtocol = OpenLayers.Class({
      * config - {Object} the configuration as returned by the MapPrinterServlet.
      * overrides - {Object} the map that specify the print module overrides for
      *                      each layers.
-     * dpi - {Integer} the DPI resolution  
+     * dpi - {Integer} the DPI resolution
+     * params - {Object} additional params to send in the Ajax calls
      */
-    initialize: function(map, config, overrides, dpi) {
+    initialize: function(map, config, overrides, dpi, params) {
         this.config = config;
         this.spec = {pages: []};
         this.addMapParams(overrides, map, dpi);
+        this.params = params;
     },
-
-    //TODO: we'll need some cleaner way to add pages and others to the spec.
 
     /**
      * APIMethod: getAllInOneUrl
@@ -76,11 +97,18 @@ mapfish.PrintProtocol = OpenLayers.Class({
      *
      * WARNING: this method has problems with accents and requests with lots of
      *          pages. But it has the advantage to work without proxy.
+     *
+     * Returns:
+     * {String} The URL
      */
     getAllInOneUrl: function() {
         var json = new OpenLayers.Format.JSON();
-        return this.config.printURL + "?spec=" +
-               json.write(this.encodeForURL(this.spec));
+        var result = this.config.printURL + "?spec=" +
+                     json.write(this.encodeForURL(this.spec));
+        if (this.params) {
+            result += "&" + OpenLayers.Util.getParameterString(this.params);
+        }
+        return result;
     },
 
     /**
@@ -88,10 +116,12 @@ mapfish.PrintProtocol = OpenLayers.Class({
      *
      * Uses AJAX to create the PDF on the server and then gets it from the
      * server. If it doesn't work (different URL and OpenLayers.ProxyHost not
-     * set), try the GET direct method.   
+     * set), try the GET direct method.
      *
      * Parameters:
      * success - {Function} The function to call in case of success.
+     * popup - {Function} The function to call in case of success, but when
+     *                    unable to load automatically the document.
      * failure - {Function} The function to call in case of failure. Gets the
      *                      request object in parameter. If getURL is defined,
      *                      the popup where blocked and the PDF can still be
@@ -99,7 +129,7 @@ mapfish.PrintProtocol = OpenLayers.Class({
      * context - {Object} The context to use to call the success of failure
      *                    method.
      */
-    createPDF: function(success, failure, context) {
+    createPDF: function(success, popup, failure, context) {
         var specTxt = new OpenLayers.Format.JSON().write(this.spec);
         OpenLayers.Console.info(specTxt);
 
@@ -107,12 +137,15 @@ mapfish.PrintProtocol = OpenLayers.Class({
             //The charset seems always to be UTF-8, regardless of the page's
             var charset = "UTF-8";
             /*+document.characterSet*/
+
+            var params = OpenLayers.Util.applyDefaults({
+                url: this.config.createURL
+            }, this.params);
+
             OpenLayers.Request.POST({
                 url: this.config.createURL,
                 data: specTxt,
-                params: {
-                    url: this.config.createURL
-                },
+                params: params,
                 headers: {
                     'CONTENT-TYPE': "application/json; charset=" + charset
                 },
@@ -121,7 +154,7 @@ mapfish.PrintProtocol = OpenLayers.Class({
                         var json = new OpenLayers.Format.JSON();
                         var answer = json.read(request.responseText);
                         if (answer && answer.getURL) {
-                            this.openPdf(answer, success, failure, context);
+                            this.openPdf(answer, success, popup, context);
                         } else {
                             failure.call(context, request);
                         }
@@ -147,39 +180,73 @@ mapfish.PrintProtocol = OpenLayers.Class({
      * Work around the browsers security "features" and open the given PDF
      * document.
      *
+     * Parameters:
      * answer - {Object} The answer for the AJAX call to the print service.
      * success - {Function} The function to call in case of success.
-     * failure - {Function} The function to call in case of failure. Gets the
-     *                      request object in parameter. If getURL is defined,
-     *                      the popup where blocked and the PDF can still be
-     *                      recovered using this URL.
+     * popup - {Function} The function to call in case of success, but when
+     *                    unable to load automatically the document.
      * context - {Object} The context to use to call the success of failure
      *                    method
      */
-    openPdf: function(answer, success, failure, context) {
+    openPdf: function(answer, success, popup, context) {
         OpenLayers.Console.info(answer.getURL);
-        var popup = window.open(answer.getURL, '_blank');
-        if (popup) {
-            // OK, we can at least open the popup
-            if (mapfish.Util.isIE7()) {
-                // IE7's anti-popup system tends to close the popup window
-                // afterwards. We have to check if it has not done that.
-                function checkWindowStillOpen() {
-                    if (!popup.closed) {
-                        success.call(context);
-                    } else {
-                        failure.call(context, answer);
-                    }
-                }
-                window.setTimeout(checkWindowStillOpen, 300);
-            } else {
-                // we can assume the user received his PDF
-                success.call(context);
-            }
+        if (Ext.isIE || Ext.isOpera) {
+            // OK, my friend IE on XP SP2 (or higher) tends to have this:
+            // http://support.microsoft.com/kb/883255
+
+            // For Opera, it tends to not respect the Content-disposition
+            // header and overwrite the current tab with the PDF
+
+            // I found no way to detect it, so we put a nice popup.
+            popup.call(context, answer);
+
         } else {
-            // we can say for sure that popups are blocked
-            failure.call(context, answer);
+            // FF2, FF3 or Safari: easier to deal with.
+            // This won't erase the current window since the URL returns with
+            // a "Content-disposition: attachment" header and thus will propose
+            // to save or open using the PDF reader.
+            window.location = answer.getURL;
+            success.call(context);
         }
+    },
+
+    /**
+     * Method: fixOverrides
+     *
+     * In the overrides, if one of the layers has the overview attribute set,
+     * set this attribute to false on all the layers where it's not set.
+     *
+     * Parameters:
+     * overrides - {Object} the map that specify the print module overrides for
+     *                      each layers.
+     * map - {<OpenLayers.Map>} The OL MAP.
+     *
+     * Returns:
+     * {object} The fixed overrides structure.
+     */
+    fixOverrides: function(overrides, map) {
+        overrides = OpenLayers.Util.extend({}, overrides);
+        var hasOverview = false;
+        var name;
+        for (var i = 0; i < map.layers.length; ++i) {
+            var olLayer = map.layers[i];
+            name = olLayer.name;
+            if (!overrides[name]) {
+                overrides[name] = {};
+            } else if (overrides[name].overview) {
+                hasOverview = true;
+            }
+        }
+
+        if (hasOverview) {
+            for (name in overrides) {
+                var cur = overrides[name];
+                if (!cur.overview) {
+                    cur.overview = false;
+                }
+            }
+        }
+        return overrides;
     },
 
     /**
@@ -187,6 +254,12 @@ mapfish.PrintProtocol = OpenLayers.Class({
      *
      * Takes an OpenLayers Map and build the configuration needed for
      * the print module.
+     *
+     * Parameters:
+     * overrides - {Object} the map that specify the print module overrides for
+     *                      each layers.
+     * map - {<OpenLayers.Map>} The OL MAP.
+     * dpi - {Integer} the DPI resolution
      */
     addMapParams: function(overrides, map, dpi) {
         var spec = this.spec;
@@ -194,6 +267,7 @@ mapfish.PrintProtocol = OpenLayers.Class({
         spec.units = map.baseLayer.units;
         spec.srs = map.baseLayer.projection.getCode();
         var layers = spec.layers = [];
+        overrides = this.fixOverrides(overrides, map);
         for (var i = 0; i < map.layers.length; ++i) {
             var olLayer = map.layers[i];
             var layerOverrides = OpenLayers.Util.extend({}, overrides[olLayer.name]);
@@ -201,7 +275,8 @@ mapfish.PrintProtocol = OpenLayers.Class({
             //allows to have some attributes overriden in fct of the resolution
             OpenLayers.Util.extend(layerOverrides, layerOverrides[dpi]);
 
-            if (olLayer.getVisibility() && layerOverrides.visibility != false) {
+            if ((olLayer.getVisibility() && layerOverrides.visibility !== false) ||
+                layerOverrides.visibility === true) {
                 var type = olLayer.CLASS_NAME;
                 var handler = mapfish.PrintProtocol.SUPPORTED_TYPES[type];
                 if (handler) {
@@ -229,15 +304,22 @@ mapfish.PrintProtocol = OpenLayers.Class({
      * Method: applyOverrides
      *
      * Change the layer config according to the overrides.
+     *
+     * Parameters:
+     * layer - {<Object>} A layer's print config
+     * overrides - {Object} the map that specify the print module overrides for
+     *                      one layer.
      */
     applyOverrides: function(layer, overrides) {
         for (var key in overrides) {
             if (isNaN(parseInt(key))) {
                 var value = overrides[key];
                 if (key == 'layers' || key == 'styles') {
-                    value = this.fixArray(value);
+                    value = mapfish.Util.fixArray(value);
                 }
-                if (layer[key] != null) {
+                if(key == "visibility") {
+                    //not sent
+                } else if (layer[key] != null || key == "overview") {
                     layer[key] = value;
                 } else {
                     layer.customParams[key] = value;
@@ -300,15 +382,61 @@ mapfish.PrintProtocol = OpenLayers.Class({
         var layer = OpenLayers.Util.extend(this.convertLayer(olLayer),
         {
             type: 'WMS',
-            layers: this.fixArray(olLayer.params.LAYERS),
+            layers: mapfish.Util.fixArray(olLayer.params.LAYERS),
             format: olLayer.params.FORMAT || olLayer.DEFAULT_PARAMS.format,
-            styles: this.fixArray(olLayer.params.STYLES ||
-                                  olLayer.DEFAULT_PARAMS.styles)
+            styles: mapfish.Util.fixArray(olLayer.params.STYLES ||
+                                          olLayer.DEFAULT_PARAMS.styles)
         });
         for (var paramName in olLayer.params) {
             var paramNameLow = paramName.toLowerCase();
             if (olLayer.DEFAULT_PARAMS[paramNameLow] == null &&
                 paramNameLow != 'layers' &&
+                paramNameLow != 'width' &&
+                paramNameLow != 'height' &&
+                paramNameLow != 'srs') {
+                layer.customParams[paramName] = olLayer.params[paramName];
+            }
+        }
+        return layer;
+    },
+    /**
+     * Method: convertMapServerLayer
+     *
+     * Builds the layer configuration from an {<OpenLayers.Layer.MapServer>} layer.
+     * The structure expected from the print module is:
+     * (start code)
+     * {
+     *   type: 'Mapserver'
+     *   baseURL: {String}
+     *   layers: [{String}]
+     *   styles: [{String}]
+     *   format: {String}
+     *   opacity: {Float}
+     *   singleTile: {boolean}
+     *   customParams: {
+     *     {String}: {String}
+     *   }
+     * }
+     * (end)
+     *
+     * Parameters:
+     * olLayer - {<OpenLayers.Layer.MapServer>} The OL layer.
+     *
+     * Returns:
+     * {Object} The config for this layer
+     */
+    convertMapServerLayer: function(olLayer) {
+        var layer = OpenLayers.Util.extend(this.convertLayer(olLayer),
+        {
+            type: 'MapServer',
+            layers: mapfish.Util.fixArray(olLayer.params.LAYERS || olLayer.params.layers),
+            format: olLayer.params.FORMAT || olLayer.params.format || olLayer.DEFAULT_PARAMS.format
+        });
+        for (var paramName in olLayer.params) {
+            var paramNameLow = paramName.toLowerCase();
+            if (olLayer.DEFAULT_PARAMS[paramNameLow] == null &&
+                paramNameLow != 'layers' &&
+                paramNameLow != 'format' &&
                 paramNameLow != 'width' &&
                 paramNameLow != 'height' &&
                 paramNameLow != 'srs') {
@@ -354,25 +482,120 @@ mapfish.PrintProtocol = OpenLayers.Class({
     },
 
     /**
-     * Method: fixArray
+     * Method: convertImageLayer
      *
-     * In some fields, OpenLayers allows to use a coma separated string instead
-     * of an array. This method make sure we end up with an array.
+     * Builds the layer configuration from an {<OpenLayers.Layer.TileCache>} layer.
+     * The structure expected from the print module is:
+     * (start code)
+     * {
+     * type: 'Image'
+     * baseURL: {String}
+     * opacity: {Float}
+     * extent: [minx, miny, maxX, maxY]
+     * pixelSize: [width, height]
+     * name: {String}
+     * }
+     * (end)
      *
      * Parameters:
-     * subs - {String/Array}
+     * olLayer - {<OpenLayers.Layer.Image>} The OL layer.
      *
      * Returns:
-     * {Array}
+     * {Object} The config for this layer
      */
-    fixArray: function(subs) {
-        if (subs == '' || subs == null) {
-            return [];
-        } else if (subs instanceof Array) {
-            return subs;
-        } else {
-            return subs.split(',');
+    convertImageLayer: function(olLayer) {
+        var url = olLayer.getURL(olLayer.extent);
+        return {
+            type: 'Image',
+            baseURL: mapfish.Util.relativeToAbsoluteURL(url),
+            opacity: (olLayer.opacity != null) ? olLayer.opacity : 1.0,
+            extent: olLayer.extent.toArray(),
+            pixelSize: [olLayer.size.w, olLayer.size.h],
+            name: olLayer.name
+        };
+    },
+
+    /**
+     * Method: convertVectorLayer
+     *
+     * Builds the layer configuration from an {OpenLayers.Layer.Vector} layer.
+     * The structure expected from the print module is:
+     * (start code)
+     * {
+     *   type: 'Vector'
+     *   styles: {Object}
+     *   styleProperty: {String}
+     *   geoJson: {Object}
+     *   opacity: {Float}
+     *   name: {String}
+     * }
+     * (end)
+     *
+     * Parameters:
+     * olLayer - {OpenLayers.Layer.Vector} The OL layer.
+     *
+     * Returns:
+     * {Object} The config for this layer
+     */
+    convertVectorLayer: function(olLayer) {
+        var olFeatures = olLayer.features;
+        var features = [];
+        var styles = {
+        };
+        var formatter = new OpenLayers.Format.GeoJSON();
+        var nextId = 1;
+        for (var i = 0; i < olFeatures.length; ++i) {
+            var feature = olFeatures[i];
+            var style = feature.style || olLayer.style ||
+                        olLayer.styleMap.createSymbolizer(feature, feature.renderIntent);
+            var styleName;
+            if (style._printId) {
+                //this style is already known
+                styleName = style._printId;
+            } else {
+                //new style
+                style._printId = styleName = nextId++;
+                styles[styleName] = style;
+
+                //Make the URLs absolute
+                if (style.externalGraphic) {
+                    style.externalGraphic = mapfish.Util.relativeToAbsoluteURL(style.externalGraphic);
+                }
+            }
+            var featureGeoJson = formatter.extract.feature.call(formatter, feature);
+
+            //OL just copy the reference to the properties. Since we don't want
+            //to modify the original dictionary, we make a copy.
+            featureGeoJson.properties = OpenLayers.Util.extend({
+                _style: styleName
+            }, featureGeoJson.properties);
+            for (var cur in featureGeoJson.properties) {
+                var curVal = featureGeoJson.properties[cur];
+                if (curVal instanceof Object && !(curVal instanceof String)) {
+                    //OL.Format.Json goes into an infinite recursion if we have too
+                    //complex objects. So we remove them.
+                    delete featureGeoJson.properties[cur];
+                }
+            }
+
+            features.push(featureGeoJson);
         }
+        for (var key in styles) {
+            delete styles[key]._printId;
+        }
+
+        var geoJson = {
+            "type": "FeatureCollection",
+            "features": features
+        };
+        return OpenLayers.Util.extend(this.convertLayer(olLayer), {
+            type: 'Vector',
+            styles: styles,
+            styleProperty: '_style',
+            geoJson: geoJson,
+            name: olLayer.name,
+            opacity:  (olLayer.opacity != null) ? olLayer.opacity : 1.0
+        });
     },
 
     /**
@@ -414,6 +637,7 @@ mapfish.PrintProtocol = OpenLayers.Class({
 });
 
 
+//TODO 2.0: pass a config object instead of those 5 params
 /**
  * APIFunction: getConfiguration
  *
@@ -425,15 +649,16 @@ mapfish.PrintProtocol = OpenLayers.Class({
  *           configuration object when/if its received.
  * failure - {Function} the function that is called in case of error.
  * context - {Object} The context to use when calling the callbacks.
+ * params -  {Object} additional params to send in the Ajax calls
  */
 mapfish.PrintProtocol.getConfiguration = function(url, success,
-                                                  failure, context) {
+                                                  failure, context, params) {
     try {
+        params = OpenLayers.Util.extend(params, { url: url });
+
         OpenLayers.Request.GET({
             url: url,
-            params: {
-                url: url
-            },
+            params: params,
             callback: function(request) {
                 if (request.status >= 200 && request.status < 300) {
                     var json = new OpenLayers.Format.JSON();
@@ -451,7 +676,7 @@ mapfish.PrintProtocol.getConfiguration = function(url, success,
     } catch(err) {
         failure.call(context, err);
     }
-}
+};
 
 
 mapfish.PrintProtocol.IGNORED = function() {
@@ -462,6 +687,12 @@ mapfish.PrintProtocol.SUPPORTED_TYPES = {
     'OpenLayers.Layer': mapfish.PrintProtocol.IGNORED,
     'OpenLayers.Layer.WMS': mapfish.PrintProtocol.prototype.convertWMSLayer,
     'OpenLayers.Layer.WMS.Untiled': mapfish.PrintProtocol.prototype.convertWMSLayer,
-    'OpenLayers.Layer.TileCache': mapfish.PrintProtocol.prototype.convertTileCacheLayer
+    'OpenLayers.Layer.TileCache': mapfish.PrintProtocol.prototype.convertTileCacheLayer,
+    'OpenLayers.Layer.Vector': mapfish.PrintProtocol.prototype.convertVectorLayer,
+    'OpenLayers.Layer.GML': mapfish.PrintProtocol.prototype.convertVectorLayer,
+    'OpenLayers.Layer.PointTrack': mapfish.PrintProtocol.prototype.convertVectorLayer,
+    'OpenLayers.Layer.MapServer': mapfish.PrintProtocol.prototype.convertMapServerLayer,
+    'OpenLayers.Layer.MapServer.Untiled': mapfish.PrintProtocol.prototype.convertMapServerLayer,
+    'OpenLayers.Layer.Image': mapfish.PrintProtocol.prototype.convertImageLayer
 };
 

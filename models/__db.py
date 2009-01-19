@@ -366,6 +366,19 @@ response._caller=lambda f: shn_sessions(f)
 # designed to be called via table.represent to make t2.itemize() output useful
 #
 
+def shn_represent(table,resource,deletable=True,extra=None):
+    if t2.logged_in and deletable:
+        if extra:
+            db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="TD(db(db.gis_projection.id==%i).select()[0].%s),TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (table.id,extra,resource,table.id))
+        else:
+            db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
+    else:
+        if extra:
+            db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="db(db.gis_projection.id==%i).select()[0].%s" % (table.id,extra))
+        else:
+            db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+    return
+
 def shn_list_item(table,resource,action,display='table.name',extra=None):
     "Display nice names with clickable links & optional extra info"
     if extra:
@@ -471,16 +484,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,extra=None):
                 new_value=''
             )
         if representation=="html":
-            if t2.logged_in and deletable:
-                if extra:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="TD(db(db.gis_projection.id==%i).select()[0].%s),TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (table.id,extra,resource,table.id))
-                else:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
-            else:
-                if extra:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="db(db.gis_projection.id==%i).select()[0].%s" % (table.id,extra))
-                else:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+            shn_represent(table,resource,deletable,extra)
             list=t2.itemize(table)
             if not list:
                 list=s3.crud_strings.msg_list_empty
@@ -517,16 +521,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,extra=None):
                     response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="ajax":
-            if t2.logged_in and deletable:
-                if extra:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="TD(db(db.gis_projection.id==%i).select()[0].%s),TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (table.id,extra,resource,table.id))
-                else:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
-            else:
-                if extra:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="db(db.gis_projection.id==%i).select()[0].%s" % (table.id,extra))
-                else:
-                    db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+            shn_represent(table,resource,deletable,extra)
             list=t2.itemize(table)
             if not list:
                 list=s3.crud_strings.msg_list_empty

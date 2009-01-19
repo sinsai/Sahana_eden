@@ -295,7 +295,7 @@ OpenLayers.Layer.Vector = OpenLayers.Class(OpenLayers.Layer, {
      * and assigns the first one whose "supported()" function returns true.
      */    
     assignRenderer: function()  {
-        for (var i=0, len=this.renderers.length; i<this.renderers.length; i++) {
+        for (var i=0, len=this.renderers.length; i<len; i++) {
             var rendererClass = OpenLayers.Renderer[this.renderers[i]];
             if (rendererClass && rendererClass.prototype.supported()) {
                 this.renderer = new rendererClass(this.div,
@@ -424,11 +424,7 @@ OpenLayers.Layer.Vector = OpenLayers.Class(OpenLayers.Layer, {
             this.drawn = true;
             var feature;
             for(var i=0, len=this.features.length; i<len; i++) {
-                if (i != (this.features.length - 1)) {
-                    this.renderer.locked = true;
-                } else {
-                    this.renderer.locked = false;
-                }    
+                this.renderer.locked = (i !== (len - 1));
                 feature = this.features[i];
                 this.drawFeature(feature);
             }
@@ -491,9 +487,7 @@ OpenLayers.Layer.Vector = OpenLayers.Class(OpenLayers.Layer, {
                 this.preFeatureInsert(feature);
             }
 
-            if (this.drawn) {
-                this.drawFeature(feature);
-            }
+            this.drawFeature(feature);
             
             if (notify) {
                 this.events.triggerEvent("featureadded", {
@@ -612,6 +606,12 @@ OpenLayers.Layer.Vector = OpenLayers.Class(OpenLayers.Layer, {
      * style - {Object} Symbolizer hash or {String} renderIntent
      */
     drawFeature: function(feature, style) {
+        // don't try to draw the feature with the renderer if the layer is not 
+        // drawn itself
+        if (!this.drawn) {
+            return
+        }
+        
         if (typeof style != "object") {
             var renderIntent = typeof style == "string" ?
                 style : feature.renderIntent;
@@ -732,9 +732,10 @@ OpenLayers.Layer.Vector = OpenLayers.Class(OpenLayers.Layer, {
      */
     getDataExtent: function () {
         var maxExtent = null;
-        if( this.features && (this.features.length > 0)){
-            var maxExtent = this.features[0].geometry.getBounds();
-            for(var i=0, len=this.features.length; i<len; i++){
+
+        if(this.features && (this.features.length > 0)) {
+            maxExtent = new OpenLayers.Bounds();
+            for(var i=0, len=this.features.length; i<len; i++) {
                 maxExtent.extend(this.features[i].geometry.getBounds());
             }
         }

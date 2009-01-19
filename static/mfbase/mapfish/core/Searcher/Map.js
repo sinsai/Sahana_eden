@@ -35,6 +35,24 @@
  * Use this class to create a Map searcher. A Map searcher sends search requests
  * as the user clicks, pauses or draws boxes on the map.
  *
+ * Typical usage:
+ * (start code)
+ *         var searcher = new mapfish.Searcher.Map({
+ *             mode: mapfish.Searcher.Map.HOVER,
+ *             protocol: new mapfish.Protocol.TriggerEventDecorator({
+ *                 protocol: new mapfish.Protocol.MapFish({
+ *                     url: "countries",
+ *                     params: {
+ *                         limit: 10
+ *                     }
+ *                 })
+ *             }),
+ *             displayDefaultPopup: true,
+ *             delay: 400
+ *         });
+ *         map.addControl(searcher);
+ *         searcher.activate();
+ * (end)
  *
  * Inherits from:
  * - mapfish.Searcher
@@ -65,7 +83,7 @@ mapfish.Searcher.Map = OpenLayers.Class(mapfish.Searcher, OpenLayers.Control, {
     searchTolerance: 3,
 
     /**
-     * APIProperty: searchTolerance
+     * APIProperty: searchToleranceUnits
      * {String} Tolerance units.
      *     Possible values are 'pixels' and 'geo'.
      *     The latter means that tolerance is given in the current
@@ -296,7 +314,6 @@ mapfish.Searcher.Map = OpenLayers.Class(mapfish.Searcher, OpenLayers.Control, {
      */
     handleMoveend: function() {
         this.position = this.map.getExtent();
-        this.popupLonLat = this.position.getCenterLonLat();
         this.triggerSearch();
     },
 
@@ -322,17 +339,8 @@ mapfish.Searcher.Map = OpenLayers.Class(mapfish.Searcher, OpenLayers.Control, {
      * evt - {<OpenLayers.Event>}
      */
     cancelSearch: function(evt) {
-        // FIXME really we should rely on the protocol itself to
-        // cancel the request, the Protocol class in OpenLayers
-        // 2.7 does not expose a cancel() method
-        if (this.response) {
-            var response = this.response;
-            if (response.priv &&
-                typeof response.priv.abort == "function") {
-                response.priv.abort();
-                this.response = null;
-            }
-        }
+        this.protocol.abort(this.response);
+        this.response = null;
         if (this.mode == mapfish.Searcher.Map.HOVER) {
             this.onMouseMove();
         }
@@ -402,6 +410,13 @@ mapfish.Searcher.Map = OpenLayers.Class(mapfish.Searcher, OpenLayers.Control, {
      */
     getFilter: function() {
         var filter = null;
+
+        // Because Extent mode doesn't really require a user action
+        // and getFilter can be called when merging filters,
+        // we need to ensure that position has a value
+        if (this.mode == mapfish.Searcher.Map.EXTENT && !this.position) {
+            this.position = this.map.getExtent();
+        }
         if (this.position) {
             if (this.position instanceof OpenLayers.Bounds) {
                 filter = new OpenLayers.Filter.Spatial({

@@ -47,6 +47,15 @@ OpenLayers.Feature.Vector = OpenLayers.Class(OpenLayers.Feature, {
      */
     attributes: null,
 
+    /**
+     * Property: bounds
+     * {<OpenLayers.Bounds>} The box bounding that feature's geometry, that
+     *     property can be set by an <OpenLayers.Format> object when
+     *     deserializing the feature, so in most cases it represents an
+     *     information set by the server. 
+     */
+    bounds: null,
+
     /** 
      * Property: state 
      * {String} 
@@ -297,7 +306,11 @@ OpenLayers.Feature.Vector = OpenLayers.Class(OpenLayers.Feature, {
 /**
  * Constant: OpenLayers.Feature.Vector.style
  * OpenLayers features can have a number of style attributes. The 'default' 
- *     style will typically be used if no other style is specified.
+ *     style will typically be used if no other style is specified. These
+ *     styles correspond for the most part, to the styling properties defined
+ *     by the SVG standard. 
+ *     Information on fill properties: http://www.w3.org/TR/SVG/painting.html#FillProperties
+ *     Information on stroke properties: http://www.w3.org/TR/SVG/painting.html#StrokeProperties
  *
  * Default style properties:
  *

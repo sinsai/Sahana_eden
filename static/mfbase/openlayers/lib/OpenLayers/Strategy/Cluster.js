@@ -16,12 +16,6 @@
 OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
     
     /**
-     * Property: layer
-     * {<OpenLayers.Layer.Vector>} The layer that this strategy is assigned to.
-     */
-    layer: null,
-    
-    /**
      * APIProperty: distance
      * {Integer} Pixel distance between features that should be considered a
      *     single cluster.  Default is 20 pixels.
@@ -76,9 +70,9 @@ OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
         if(activated) {
             this.layer.events.on({
                 "beforefeaturesadded": this.cacheFeatures,
+                "moveend": this.cluster,
                 scope: this
             });
-            this.layer.map.events.on({"zoomend": this.cluster, scope: this});
         }
         return activated;
     },
@@ -97,9 +91,9 @@ OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
             this.clearCache();
             this.layer.events.un({
                 "beforefeaturesadded": this.cacheFeatures,
+                "moveend": this.cluster,
                 scope: this
             });
-            this.layer.map.events.un({"zoomend": this.cluster, scope: this});
         }
         return deactivated;
     },
@@ -143,27 +137,33 @@ OpenLayers.Strategy.Cluster = OpenLayers.Class(OpenLayers.Strategy, {
     /**
      * Method: cluster
      * Cluster features based on some threshold distance.
+     *
+     * Parameters:
+     * event - {Object} The event received when cluster is called as a
+     *     result of a moveend event.
      */
-    cluster: function() {
-        if(this.features) {
-            var resolution = this.layer.getResolution();
+    cluster: function(event) {
+        if((!event || event.zoomChanged) && this.features) {
+            var resolution = this.layer.map.getResolution();
             if(resolution != this.resolution || !this.clustersExist()) {
                 this.resolution = resolution;
                 var clusters = [];
                 var feature, clustered, cluster;
                 for(var i=0; i<this.features.length; ++i) {
                     feature = this.features[i];
-                    clustered = false;
-                    for(var j=0; j<clusters.length; ++j) {
-                        cluster = clusters[j];
-                        if(this.shouldCluster(cluster, feature)) {
-                            this.addToCluster(cluster, feature);
-                            clustered = true;
-                            break;
+                    if(feature.geometry) {
+                        clustered = false;
+                        for(var j=0; j<clusters.length; ++j) {
+                            cluster = clusters[j];
+                            if(this.shouldCluster(cluster, feature)) {
+                                this.addToCluster(cluster, feature);
+                                clustered = true;
+                                break;
+                            }
                         }
-                    }
-                    if(!clustered) {
-                        clusters.push(this.createCluster(this.features[i]));
+                        if(!clustered) {
+                            clusters.push(this.createCluster(this.features[i]));
+                        }
                     }
                 }
                 this.layer.destroyFeatures();

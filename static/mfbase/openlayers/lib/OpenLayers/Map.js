@@ -1330,7 +1330,11 @@ OpenLayers.Map = OpenLayers.Class({
      * {<OpenLayers.LonLat>}
      */
     getCenter: function () {
-        return this.center;
+        var center = null;
+        if (this.center) {
+            center = this.center.clone();
+        }
+        return center;
     },
 
 
@@ -1558,6 +1562,13 @@ OpenLayers.Map = OpenLayers.Class({
             
             //send the move call to the baselayer and all the overlays    
             this.baseLayer.moveTo(bounds, zoomChanged, dragging);
+            if(dragging) {
+                this.baseLayer.events.triggerEvent("move");
+            } else {
+                this.baseLayer.events.triggerEvent("moveend",
+                    {"zoomChanged": zoomChanged}
+                );
+            }
             
             bounds = this.baseLayer.getExtent();
             
@@ -1580,9 +1591,13 @@ OpenLayers.Map = OpenLayers.Class({
                     }
                     if (inRange && layer.visibility) {
                         layer.moveTo(bounds, zoomChanged, dragging);
-                        layer.events.triggerEvent("moveend",
-                            {"zoomChanged": zoomChanged}
-                        );
+                        if(dragging) {
+                            layer.events.triggerEvent("move");
+                        } else {
+                            layer.events.triggerEvent("moveend",
+                                {"zoomChanged": zoomChanged}
+                            );
+                        }
                     }
                 }                
             }

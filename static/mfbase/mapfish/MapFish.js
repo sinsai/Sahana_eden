@@ -107,22 +107,32 @@
             "core/Protocol/MapFish.js",
             "core/Protocol/MergeFilterDecorator.js",
             "core/Protocol/TriggerEventDecorator.js",
+            "core/Strategy.js",
+            "core/Strategy/ProtocolListener.js",
             "widgets/MapComponent.js",
             "widgets/Shortcuts.js",
+            "widgets/ComboBoxFactory.js",
+            "widgets/recenter/Base.js",
+            "widgets/recenter/Coords.js",
             "widgets/data/FeatureReader.js",
+            "widgets/data/FeatureStore.js",
             "widgets/data/FeatureStoreMediator.js",
             "widgets/data/SearchStoreMediator.js",
             "widgets/data/LayerStoreMediator.js",
+            "widgets/data/GridRowFeatureMediator.js",
             "widgets/geostat/Choropleth.js",
             "widgets/geostat/ProportionalSymbol.js",
             "widgets/tree/LayerTree.js",
+            "widgets/tree/LayerTreeExtra.js",
             "widgets/toolbar/Toolbar.js",
             "widgets/toolbar/CheckItem.js",
             "widgets/toolbar/MenuItem.js",
             "widgets/editing/FeatureList.js",
             "widgets/print/Base.js",
+            "widgets/print/BaseWidget.js",
             "widgets/print/SimpleForm.js",
-            "widgets/print/MultiPage.js"
+            "widgets/print/MultiPage.js",
+            "widgets/print/PrintAction.js"
         ); // etc.
 
         var allScriptTags = "";

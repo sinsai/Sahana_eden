@@ -74,12 +74,14 @@ OpenLayers.Layer = OpenLayers.Class({
      *  - *loadend* Triggered when layer loading ends.
      *  - *loadcancel* Triggered when layer loading is canceled.
      *  - *visibilitychanged* Triggered when layer visibility is changed.
-     *  - *moveend* Triggered when layer is moved, object passed as
+     *  - *move* Triggered when layer moves (triggered with every mousemove
+     *      during a drag).
+     *  - *moveend* Triggered when layer is done moving, object passed as
      *      argument has a zoomChanged boolean property which tells that the
      *      zoom has changed.
      */
     EVENT_TYPES: ["loadstart", "loadend", "loadcancel", "visibilitychanged",
-                  "moveend"],
+                  "move", "moveend"],
         
     /**
      * APIProperty: events
@@ -950,7 +952,7 @@ OpenLayers.Layer = OpenLayers.Class({
         if(this.map.fractionalZoom) {
             var low = Math.floor(zoom);
             var high = Math.ceil(zoom);
-            resolution = this.resolutions[high] +
+            resolution = this.resolutions[low] -
                 ((zoom-low) * (this.resolutions[low]-this.resolutions[high]));
         } else {
             resolution = this.resolutions[Math.round(zoom)];
@@ -998,7 +1000,7 @@ OpenLayers.Layer = OpenLayers.Class({
             }
             var dRes = highRes - lowRes;
             if(dRes > 0) {
-                zoom = lowZoom + ((resolution - lowRes) / dRes);
+                zoom = lowZoom + ((highRes - resolution) / dRes);
             } else {
                 zoom = lowZoom;
             }

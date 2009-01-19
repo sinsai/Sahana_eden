@@ -209,6 +209,17 @@ mapfish.Protocol.TriggerEventDecorator = OpenLayers.Class(OpenLayers.Protocol, {
     },
 
     /**
+     * Method: abort
+     * Abort an ongoing request.
+     *
+     * Parameters:
+     * response - {<OpenLayers.Protocol.Response>}
+     */
+    abort: function(response) {
+        this.protocol.abort(response);
+    },
+
+    /**
      * Method: createCallback
      * Returns a function that applies the given public method with the
      * options argument.
@@ -234,7 +245,7 @@ mapfish.Protocol.TriggerEventDecorator = OpenLayers.Class(OpenLayers.Protocol, {
      *     from the underlying protocol.
      */
     handleCRUD: function(options, response) {
-        if (options.callback) {
+        if (options && options.callback) {
             options.callback.call(options.scope, response);
         }
         this.events.triggerEvent("crudfinished", response);

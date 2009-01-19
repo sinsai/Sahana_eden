@@ -83,7 +83,6 @@
             "OpenLayers/Tween.js",
             "Rico/Corner.js",
             "Rico/Color.js",
-            "Gears/gears_init.js",
             "OpenLayers/Ajax.js",
             "OpenLayers/Request.js",
             "OpenLayers/Request/XMLHttpRequest.js",
@@ -270,4 +269,4 @@
 /**
  * Constant: VERSION_NUMBER
  */
-OpenLayers.VERSION_NUMBER="$Revision: 8012 $";
+OpenLayers.VERSION_NUMBER="$Revision: 8089 $";

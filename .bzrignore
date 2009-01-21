@@ -1,6 +1,8 @@
+pylint.log
 databases/*
 errors/*
 sessions/*
+docs/*
 .raw/*
 static/.mfexamples/*
 static/mfbase/ext/.examples/*
@@ -8,7 +10,6 @@ static/mfbase/mapfish/.tests/*
 static/mfbase/openlayers/.examples/*
 static/mfbase/openlayers/.tests/*
 static/*/.svn/*
-static/.selenium/*
 static/*test*
 tests/.cherrypy/*
 errors/*

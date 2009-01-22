@@ -275,17 +275,24 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
 	)
 	db[table].insert(
+        name="Test",
+        function="test",
+        access=1,   # Administrator role only
+        priority=3,
+        enabled='True'
+	)
+	db[table].insert(
         name="Import",
         function="import_data",
         access=1,   # Administrator role only
-        priority=3,
+        priority=4,
         enabled='True'
 	)
 	db[table].insert(
         name="Export",
         function="export_data",
         access=1,   # Administrator role only
-        priority=4,
+        priority=5,
         enabled='True'
 	)
 

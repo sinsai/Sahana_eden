@@ -96,6 +96,13 @@ def database():
     """
     redirect(URL(r=request,c='appadmin',f='index'))
     
+# Test Page
+def test():
+    """Test Page.
+    Redirect to Selenium.
+    """
+    redirect(URL(r=request,c='static',f='selenium',args=['core','TestRunner.html'],vars=dict(test='../tests/TestSuite.html',auto='true')))
+    
 # Import Data
 def import_data():
     "Import data via POST upload to CRUD controller."

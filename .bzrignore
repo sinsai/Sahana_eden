@@ -1,4 +1,3 @@
-pylint.log
 databases/*
 errors/*
 sessions/*

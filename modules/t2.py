@@ -1101,8 +1101,9 @@ class T2:
                   INPUT(_type='submit'))
         if email or form.accepts(request.vars,session):
             password=T2._random_password(5)
-            db(db.t2_person.email==email or form.vars.email)\
-            .update(password=CRYPT()(password)[0],registration_key='')
+            if not db(db.t2_person.email==(email or form.vars.email))\
+                   .update(password=CRYPT()(password)[0],registration_key=''):
+                self.redirect(flash=self.messages.unable_to_send_email)
             body=self.messages.password_email_body % dict(password=password)
             if not self.email(sender=sender,to=form.vars.email,\
                               subject=self.messages.password_email_subject,

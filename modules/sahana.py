@@ -125,6 +125,50 @@ class S3(T2):
             if 'modified_signature' in table.fields:
                 form.vars.modified_signature = self.person_name
 
+    def redirect(self,f=None,args=[],vars={},flash=None,error=None):
+        """
+        Overrides t2's redirect() to allow error as well as flash
+        
+        self.redirect('name',[],{},'message') is a shortcut for
+
+            session.flash='message'
+            redirect(URL(r=request,f='name',args=[],vars={})
+        """
+        if flash: self.session.flash=flash
+        if error: self.session.error=error
+        redirect(self.action(f,args,vars))
+
+    def login(self,next='index',onlogin=None):
+        """
+        Overrides t2's login() to use .error & not .flash for invalid login
+        
+        To use, create a controller:
+        
+             def login(): return t2.login()
+        """
+        request,response,session,cache,T,db=self._globals()
+        db.t2_person.email.requires=IS_EMAIL()
+        form=SQLFORM(db.t2_person,fields=['email','password'],\
+                     hidden=dict(_destination=request.vars._destination),
+                     _class='t2-login')
+        if FORM.accepts(form,request.vars,session):
+             rows=db(db.t2_person.email==form.vars.email)\
+                    (db.t2_person.password==form.vars.password)\
+                    (db.t2_person.registration_key=='').select()
+             if rows:
+                 session.t2.person_id=rows[0].id
+                 session.t2.person_name=rows[0].name
+                 session.t2.person_email=rows[0].email
+                 session.confirmation=self.messages.logged_in
+                 if onlogin: onlogin(rows[0])
+                 if request.vars._destination:
+                     redirect(request.vars._destination)
+                 self.redirect(next)
+             else:
+                 session.error=self.messages.invalid_login
+                 self.redirect()
+        return form
+
     def register(self, verification=False, sender='', next='login', onaccept=None):
         """
         Overrides t2's register() to add new functionality:
@@ -162,8 +206,8 @@ class S3(T2):
             if form.vars.registration_key:
                 body = self.messages.register_email_body % dict(form.vars)
                 if not self.email(sender=sender, to=form.vars.email, subject=self.messages.register_email_subject, message=body):
-                    self.redirect(flash=self.messages.unable_to_send_email)
-                session.flash = self.messages.email_sent
+                    self.redirect(error=self.messages.unable_to_send_email)
+                session.confirmation = self.messages.email_sent
             if onaccept:
                 onaccept(form)
         vars = {'registration_key':

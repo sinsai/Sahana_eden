@@ -18,6 +18,18 @@ import traceback
 #from applications.t3.modules.t2 import T2
 from applications.sahana.modules.t2 import T2
 
+# From Selenium Plone Tool
+def getBrowserName(userAgent):
+    "Determine which browser is being used."
+    if userAgent.find('MSIE') > -1:
+        return 'IE'
+    elif userAgent.find('Firefox') > -1:
+        return 'Firefox'
+    elif userAgent.find('Gecko') > -1:
+        return 'Mozilla'
+    else:
+        return 'Unknown'
+
 # Modified versions of URL from gluon/html.py
 # we need simplified versions for our jquery functions
 def URL2(a=None, c=None, r=None):

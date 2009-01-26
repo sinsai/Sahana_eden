@@ -435,8 +435,7 @@ db.define_table(table,timestamp,uuidstamp,
                 feature_id,         # Either just a Point or a Polygon
                 SQLField('sector'), # Government, Health
                 SQLField('level'),  # Region, Country, District
-                #SQLField('parent',db.gis_location),    # Can't do hierarchical loops :/
-                SQLField('parent'))
+                SQLField('parent', 'reference gis_location'))   # This form of hierarchy may not work on all Databases
 s3.crud_fields[table]=['name','feature','sector','level','parent']
 db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)

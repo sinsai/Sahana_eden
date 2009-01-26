@@ -96,13 +96,6 @@ def database():
     """
     redirect(URL(r=request,c='appadmin',f='index'))
     
-# Test Page
-def test():
-    """Test Page.
-    Redirect to Selenium.
-    """
-    redirect(URL(r=request,c='static',f='selenium',args=['core','TestRunner.html'],vars=dict(test='../tests/TestSuite.html',auto='true')))
-    
 # Import Data
 def import_data():
     "Import data via POST upload to CRUD controller."
@@ -114,3 +107,82 @@ def export_data():
     "Export data via CRUD controller."
     title=T('Export Data')
     return dict(module_name=module_name,modules=modules,options=options,title=title)
+
+# Test Page
+def test():
+    """Test Page.
+    Redirect to Selenium TestRunner.
+    """
+    redirect(URL(r=request,c='static',f='selenium',args=['core','TestRunner.html'],vars=dict(test='../tests/TestSuite.html',auto='true',resultsUrl=URL(r=request,c='default',f='handleResults'))))
+    
+def handleResults():
+    """Process the POST data returned from Selenium TestRunner.
+    The data is written out to 2 files.  The overall results are written to 
+    result-browserName.txt as a list of key: value, one per line.  The 
+    suiteTable and testTables are written to output-browserName.html.
+    """
+    
+    if not request.vars.result:
+        # No results
+        return
+    
+    # Read in results
+    result = request.vars.result
+    totalTime = request.vars.totalTime
+    numberOfSuccesses = request.vars.numTestPasses
+    numberOfFailures = request.vars.numTestFailures
+    numberOfCommandSuccesses = request.vars.numCommandPasses
+    numberOfCommandFailures = request.vars.numCommandFailures
+    numberOfCommandErrors = request.vars.numCommandErrors
+
+    suiteTable = ''
+    if request.vars.suite:
+        suiteTable = request.vars.suite
+    
+    testTables = []
+    testTableNum = 1
+    while request.vars['testTable.%s' % testTableNum]:
+        testTable = request.vars['testTable.%s' % testTableNum]
+        testTables.append(testTable)
+        testTableNum += 1
+        try:
+            request.vars['testTable.%s' % testTableNum]
+            pass
+        except:
+            break
+    
+    # Unescape the HTML tables
+    import urllib
+    suiteTable = urllib.unquote(suiteTable)
+    testTables = map(urllib.unquote, testTables)
+
+    # We want to store results separately for each browser
+    browserName = getBrowserName(request.env.http_user_agent)
+    date=str(request.now)[:-16]
+    time=str(request.now)[11:-10]
+    time=time.replace(':','-')
+
+    # Write out results
+    outputDir = os.path.join(request.folder,'static','selenium','results')
+    metadataFile = '%s-%s-%s-metadata.txt' % (date,time,browserName)
+    dataFile = '%s-%s-%s-results.html' % (date,time,browserName)
+    
+    #xmlText = '<selenium result="' + result + '" totalTime="' + totalTime + '" successes="' + numberOfCommandSuccesses + '" failures="' + numberOfCommandFailures + '" errors="' + numberOfCommandErrors + '" />'
+    f = open(os.path.join(outputDir, metadataFile), 'w')
+    for key in request.vars.keys():
+        print >> f, '%s: %s' % (key, request.vars[key])
+    f.close()
+
+    f = open(os.path.join(outputDir, dataFile), 'w')
+    print >> f, suiteTable
+    for testTable in testTables:
+        print >> f, '<br/><br/>'
+        print >> f, testTable
+    f.close()
+    
+    message = DIV(P('Results have been successfully posted to the server here:'),
+        P(A(metadataFile,_href=URL(r=request,c='static',f='selenium',args=['results',metadataFile]))),
+        P(A(dataFile,_href=URL(r=request,c='static',f='selenium',args=['results',dataFile]))))
+    
+    return dict(message=message)
+    

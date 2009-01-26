@@ -118,8 +118,8 @@ def test():
 def handleResults():
     """Process the POST data returned from Selenium TestRunner.
     The data is written out to 2 files.  The overall results are written to 
-    result-browserName.txt as a list of key: value, one per line.  The 
-    suiteTable and testTables are written to output-browserName.html.
+    date-time-browserName-metadata.txt as a list of key: value, one per line.  The 
+    suiteTable and testTables are written to date-time-browserName-results.html.
     """
     
     if not request.vars.result:
@@ -170,7 +170,10 @@ def handleResults():
     #xmlText = '<selenium result="' + result + '" totalTime="' + totalTime + '" successes="' + numberOfCommandSuccesses + '" failures="' + numberOfCommandFailures + '" errors="' + numberOfCommandErrors + '" />'
     f = open(os.path.join(outputDir, metadataFile), 'w')
     for key in request.vars.keys():
-        print >> f, '%s: %s' % (key, request.vars[key])
+        if 'testTable' in key or key in ['log','suite']:
+            pass
+        else:
+            print >> f, '%s: %s' % (key, request.vars[key])
     f.close()
 
     f = open(os.path.join(outputDir, dataFile), 'w')

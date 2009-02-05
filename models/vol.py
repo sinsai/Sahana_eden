@@ -6,12 +6,12 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
-                SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
+                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.requires=IS_NOT_EMPTY()
-db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
 db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 
 # Settings

@@ -23,24 +23,17 @@ global_env['datetime']=datetime
 #    redirect('/admin')
 
 #
-# T3 Auth
-#
-#if not t2.is_admin:
-#    session.error=T('Not Authorised')
-#    redirect(URL(r=request,c='default',f='index'))
-
-#
 # S3 Auth
 #
 try:
-    if 1 in session.s3.roles:
+    if 'Administrator' in session.s3.roles:
         pass
     else:
         session.error=T('Not Authorised!')
-        redirect(URL(r=request,c='default',f='login'))
+        redirect(URL(r=request,c='default',f='user',args='login'))
 except:
     session.error=T('Not Authorised!')
-    redirect(URL(r=request,c='default',f='login'))
+    redirect(URL(r=request,c='default',f='user',args='login'))
 
 
 module='appadmin'
@@ -48,7 +41,7 @@ module='appadmin'
 #module_name=db(db.s3_module.name==module).select()[0].name_nice
 module_name='App Admin'
 # List Modules (from which to build Menu of Modules)
-modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.menu_priority)
+modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 # List Options (from which to build Menu for this Module)
 #options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
@@ -58,22 +51,6 @@ response.menu=[[T('design'),False,URL('admin','default','design',
                [T('db'),False,URL(r=request,f='index')],
                [T('state'),False,URL(r=request,f='state')]]
 
-# T2 framework functions
-def login():
-    """ Login
-    >>> from applications.sahana.modules.s3_test import WSGI_Test
-    >>> test=WSGI_Test(db)
-    >>> '200 OK' in test.getPage('/sahana/%s/login' % module)
-    True
-    >>> test.assertHeader("Content-Type", "text/html")
-    >>> test.assertInBody('Login')
-    """
-    response.view='default/login.html'
-    return dict(form=t2.login(),module_name=module_name,modules=modules)
-def logout(): t2.logout(next='login')
-def register(): redirect(URL(r=request,c='default',f='register'))
-def profile(): redirect(URL(r=request,c='default',f='profile'))
-               
 ###########################################################
 ### auxiliary functions
 ############################################################

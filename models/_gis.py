@@ -6,12 +6,12 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
-                SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
+                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].function.requires=IS_NOT_EMPTY()
-db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
 db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 if not len(db().select(db[table].ALL)):
 	db[table].insert(
@@ -51,7 +51,7 @@ if not len(db().select(db[table].ALL)):
 
 # GIS Markers (Icons)
 def shn_imgsize_detect(filename):
-    "Determine the size of an Image file"
+    "ToDo: Determine the size of an Image file"
     height=1
     width=1
     return dict(height=height,width=width)
@@ -63,11 +63,10 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('height','integer'), # In Pixels, for display purposes
                 SQLField('width','integer'),
                 SQLField('image','upload'))
-s3.crud_fields[table]=['name','height','width','image']
-db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
+db[table].image.autodelete=True 
 # Populate table with Default options
 if not len(db().select(db[table].ALL)):
     # We want to start at ID 1
@@ -116,8 +115,6 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('maxExtent'),
                 SQLField('maxResolution','double'),
                 SQLField('units'))
-s3.crud_fields[table]=['name','epsg','maxExtent','maxResolution','units']
-db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -190,8 +187,6 @@ db.define_table(table,timestamp,uuidstamp,
 				marker_id,
 				SQLField('map_height','integer'),
 				SQLField('map_width','integer'))
-s3.crud_fields[table]=['lat','lon','zoom','projection','marker','map_height','map_width']
-db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].lat.requires=IS_LAT()
 db[table].lat.label=T("Latitude")
@@ -243,8 +238,6 @@ table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 marker_id)
-s3.crud_fields[table]=['name','marker']
-db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -279,8 +272,8 @@ feature_class_id=SQLTable(None,'feature_class_id',
 resource='feature_metadata'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('created_by',db.t2_person,writable=False), # Auto-stamped by T2
-                SQLField('modified_by',db.t2_person,writable=False), # Auto-stamped by T2
+                SQLField('created_by',db.auth_user,writable=False), # Auto-stamped by T2
+                SQLField('modified_by',db.auth_user,writable=False), # Auto-stamped by T2
                 SQLField('description',length=256),
                 person_id,
                 SQLField('source'),
@@ -290,12 +283,9 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('expiry_time','datetime'),
                 SQLField('url'),
                 SQLField('image','upload'))
-s3.crud_fields[table]=['created_on','created_by','modified_on','description','contact','source','accuracy','sensitivity','event_time','expiry_time','url','image']
-db[table].exposes=['description','person','source','accuracy','sensitivity','event_time','expiry_time','url','image']
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-#db[table].person.requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name'))
-db[table].person.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
-db[table].person.label=T("Contact")
+db[table].person_id.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+db[table].person_id.label=T("Contact")
 db[table].url.requires=IS_URL()
 title_create=T('Add Feature Metadata')
 title_display=T('Feature Metadata Details')
@@ -322,8 +312,6 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('lat','double'),    # Only needed for Points
                 SQLField('lon','double'),    # Only needed for Points
                 SQLField('wkt'))    # WKT should be auto-calculated from lat/lon for Points (jQuery so that form accepts with mandatory fields filled)
-s3.crud_fields[table]=['name','feature_class','metadata','type','lat','lon','wkt']
-db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
@@ -373,19 +361,17 @@ feature_id=SQLTable(None,'feature_id',
 resource='feature_group'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
+                SQLField('author',db.auth_user,writable=False),
                 SQLField('name'),
                 SQLField('description',length=256),
                 SQLField('features','text'),        # List of features (to be replaced by many-to-many table)
-                SQLField('feature_classes','text'), # List of feature classes (to be replaced by many-to-many table)
-                SQLField('author',db.t2_person,writable=False))
-s3.crud_fields[table]=['author','name','description','features']
-db[table].exposes=['name','description','features']
+                SQLField('feature_classes','text')) # List of feature classes (to be replaced by many-to-many table)
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
 db[table].features.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 db[table].feature_classes.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-db[table].author.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
+db[table].author.requires=IS_IN_DB(db,'auth_user.id','auth_user.name')
 title_create=T('Add Feature Group')
 title_display=T('Feature Group Details')
 title_list=T('List Feature Groups')
@@ -435,15 +421,16 @@ db.define_table(table,timestamp,uuidstamp,
                 feature_id,         # Either just a Point or a Polygon
                 SQLField('sector'), # Government, Health
                 SQLField('level'),  # Region, Country, District
+                SQLField('admin',db.auth_group),
                 SQLField('parent', 'reference gis_location'))   # This form of hierarchy may not work on all Databases
-s3.crud_fields[table]=['name','feature','sector','level','parent']
-db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
 db[table].feature.label=T("GIS Feature")
 db[table].feature.comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
 db[table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
 db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District','Town']))
+db[table].admin.display=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0]
+db[table].admin.comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Location.")))
 db[table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
 title_create=T('Add Location')
 title_display=T('Location Details')
@@ -467,7 +454,7 @@ location_id=SQLTable(None,'location_id',
                 comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map)."))))
 # Unfortunately SQLTABLE can't yet handle:
 #represent
-# Unfortunately T2 can't yet handle:
+# Unfortunately Crud can't yet handle:
 #comment
 
 # GIS Keys - needed for commercial mapping services
@@ -477,8 +464,6 @@ db.define_table(table,timestamp,
                 SQLField('name'),
                 SQLField('apikey'),
 				SQLField('description',length=256))
-s3.crud_fields[table]=['name','apikey','description']
-db[table].exposes=s3.crud_fields[table]
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
 db[table].name.requires=IS_IN_SET(['google','multimap','yahoo']) 
@@ -631,6 +616,6 @@ for layertype in gis_layer_types:
 # (User preferences)
 # GIS Config's Defaults should just be the version for user=0?
 #db.define_table('gis_webmapcontext',timestamp,
-#                SQLField('user',db.t2_person))
-#db.gis_webmapcontext.user.requires=IS_IN_DB(db,'t2_person.id','t2_person.name')
+#                SQLField('user',db.auth_user))
+#db.gis_webmapcontext.user.requires=IS_IN_DB(db,'auth_user.id','auth_user.email')
 

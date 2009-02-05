@@ -16,19 +16,19 @@
 <div id="container">
  <div id="header" class="clearfix">
   <div id="menu" style="text-align: right">
-  {{if t2.logged_in:}}
-    {{=A(T('Profile'),_href=t2.action('profile'))}}
-    {{=A(T('Logout'),_href=t2.action('logout'))}}
+  {{if auth.user:}}
+    {{=A(T('Profile'),_href=URL(r=request,c='default',f='user',args=['profile']))}}
+    {{=A(T('Logout'),_href=URL(r=request,c='default',f='user',args=['logout']))}}
   {{else:}}
-    {{=A(T('Login'),_href=t2.action('login'))}}
+    {{=A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']))}}
     {{if session.s3.self_registration:}}
-      {{=A(T('Register'),_href=t2.action('register'))}}
+      {{=A(T('Register'),_href=URL(r=request,c='default',f='user',args=['register']))}}
     {{pass}}
   {{pass}}
   </div>
   <div id="logged">
-  {{if t2.logged_in:}}
-    <p>Logged in as: {{=session.t2.person_name}}</p>
+  {{if auth.user:}}
+    <p>Logged in as: {{=auth.user.first_name + ' ' + auth.user.last_name}}</p>
   {{pass}}
   </div> 
 </div>

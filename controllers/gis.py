@@ -2,31 +2,9 @@ module='gis'
 # Current Module (for sidebar title)
 module_name=db(db.s3_module.name==module).select()[0].name_nice
 # List Modules (from which to build Menu of Modules)
-modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.menu_priority)
+modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
-
-# T2 framework functions
-def login():
-    """ Login
-    >>> from applications.sahana.modules.s3_test import WSGI_Test
-    >>> test=WSGI_Test(db)
-    >>> '200 OK' in test.getPage('/sahana/%s/login' % module)
-    True
-    >>> test.assertHeader("Content-Type", "text/html")
-    >>> test.assertInBody('Login')
-    """
-    response.view='default/login.html'
-    return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
-def logout():
-    t2.logout(next='login')
-def register():
-    redirect(URL(r=request,c='default',f='register'))
-def profile():
-    redirect(URL(r=request,c='default',f='profile'))
-def download():
-    "Enable downloading of Markers & other Files."
-    return t2.download()
 
 # S3 framework functions
 def index():
@@ -82,7 +60,7 @@ def layer_virtualearth():
 
 # Module-specific functions
 
-@t2.requires_login('login')
+@auth.requires_membership(1)
 def defaults():
     """Defaults are a special case of Configs - the 1st entry.
     Don't want to be able to delete these!
@@ -101,7 +79,7 @@ def shn_latlon_to_wkt(lat,lon):
     
 # Feature Groups
 # TODO: https://trac.sahanapy.org/wiki/BluePrintMany2Many
-@t2.requires_login('login')
+@auth.requires_login()
 def feature_groups():
     """Many to Many experiment
     currently using t2.tag_widget()
@@ -124,7 +102,7 @@ def feature_groups():
     response.view='gis/list_add.html'
     return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
-@t2.requires_login('login')
+@auth.requires_login()
 def update_feature_group():
     """Many to Many experiment
     currently using t2.tag_widget()

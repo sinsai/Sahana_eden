@@ -6,12 +6,12 @@ db.define_table(table,
                 SQLField('name'),
                 SQLField('function'),
                 SQLField('description',length=256),
-                SQLField('access',db.t2_group),  # Hide menu options if users don't have the required access level
+                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
                 SQLField('priority','integer'),
                 SQLField('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].function.requires=IS_NOT_EMPTY()
-db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'t2_group.id','t2_group.name'))
+db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
 db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 if not len(db().select(db[table].ALL)):
 	db[table].insert(
@@ -59,7 +59,6 @@ if not len(db().select(db[table].ALL)):
 resource='person'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),       # Known As (could be Full Name)
                 SQLField('first_name'),
                 SQLField('last_name'),  # Family Name
                 #SQLField('l10_name'),
@@ -68,17 +67,14 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('address','text'),
                 SQLField('postcode'),
                 SQLField('website'))
-s3.crud_fields[table]=['name','first_name','last_name','email','mobile_phone','address','postcode','website']
-db[table].exposes=s3.crud_fields[table]
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires=IS_NOT_EMPTY()   # People don't have to have unique names
-#db[table].name.label=T("Full Name")
-db[table].name.comment=SPAN("*",_class="req")
+db[table].first_name.requires=IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
+db[table].first_name.comment=SPAN("*",_class="req")
 db[table].last_name.label=T("Family Name")
 db[table].email.requires=IS_NOT_IN_DB(db,'%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires=IS_NULL_OR(IS_EMAIL())
 db[table].email.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
-db[table].mobile_phone.requires=IS_NOT_IN_DB(db,'%s.mobile' % table)   # Needs to be unique as used for AAA
+db[table].mobile_phone.requires=IS_NULL_OR(IS_NOT_IN_DB(db,'%s.mobile_phone' % table))   # Needs to be unique as used for AAA
 db[table].mobile_phone.label=T("Mobile Phone #")
 db[table].mobile_phone.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
 db[table].website.requires=IS_NULL_OR(IS_URL())
@@ -98,13 +94,13 @@ msg_list_empty=T('No People currently registered')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 person_id=SQLTable(None,'person_id',
-            SQLField('person',
-                db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','pr_person.name')),
+            SQLField('person_id',
+                db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','%(id)s: %(first_name)s %(last_name)s')),
                 #represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0],
                 comment=''))
 # Unfortunately SQLTABLE can't yet handle:
 #represent
-# Unfortunately T2 can't yet handle:
+# Unfortunately Crud can't yet handle:
 #comment
 
 # Contacts

@@ -459,7 +459,7 @@ class T2:
            request.vars.modified_on__original!=hidden['modified_on__original']:
             session.flash=self.messages.record_was_altered
             redirect(self.action(args=request.args))
-        if form.accepts(request.vars,session,delete_uploads=True):
+        if form.accepts(request.vars,session):
             form.old=record
             session.flash=self.messages.record_modified
             if request.vars.delete_this_record:
@@ -481,7 +481,7 @@ class T2:
         if not query:
            id=self.id or self._error()  
            query=table.id==id
-        table._db(query).delete(delete_uploads=True)
+        table._db(query).delete()
         if next: self.redirect(f=next,flash=self.messages.record_deleted)
         return True
 
@@ -1403,9 +1403,9 @@ class T2:
             return urllib.urlopen(url).read()
     @staticmethod
     def coords_by_address(address):
-        import re
+        import re, urllib
         try: 
-            txt=T2.urlopen('http://maps.google.com/maps/geo?q=%s&output=xml'%address)
+            txt=T2.urlopen('http://maps.google.com/maps/geo?q=%s&output=xml'%urllib.quote(address))
             item=re.compile('\<coordinates\>(?P<la>[^,]*),(?P<lo>[^,]*).*?\</coordinates\>').search(txt)
             la,lo=float(item.group('la')),float(item.group('lo'))
             return la,lo

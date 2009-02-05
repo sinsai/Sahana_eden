@@ -1,0 +1,14 @@
+{{extend 'layout.html'}}
+
+<div class="frame">
+<h2>
+{{if request.args[0]=='login':}}
+Login
+{{elif request.args[0]=='register':}}
+Register
+{{elif request.args[0]=='profile':}}
+Profile
+{{pass}}
+</h2>
+{{=form}}
+</div>

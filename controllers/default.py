@@ -2,33 +2,21 @@ module='default'
 # Current Module (for sidebar title)
 module_name=db(db.s3_module.name==module).select()[0].name_nice
 # List Modules (from which to build Menu of Modules)
-modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.menu_priority)
+modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
-# T2 framework functions
-def login():
-    """ Login
-    >>> from applications.sahana.modules.s3_test import WSGI_Test
-    >>> test=WSGI_Test(db)
-    >>> '200 OK' in test.getPage('/sahana/%s/login' % module)
-    True
-    >>> test.assertHeader("Content-Type", "text/html")
-    >>> test.assertInBody('Login')
-    """
-    return dict(form=t2.login(),module_name=module_name,modules=modules,options=options)
-def logout():
-    t2.logout(next='login')
-# Self-registration can be disabled by amending the setting in the s3_settings table
-def register():
-    if session.s3.self_registration:
-        t2.messages.record_created=T("You have been successfully registered")
-        # To enable email verification, set verification=True
-        return dict(form=t2.register(verification=False),module_name=module_name,modules=modules,options=options)
-    else:
-        redirect(URL(r=request,c='default',f='index'))
-def profile():
-    return dict(form=t2.profile(),module_name=module_name,modules=modules,options=options)
+# Web2Py Tools functions
+# (replaces T2)
+def user():
+    "Auth functions based on arg. See gluon/tools.py"
+    return dict(form=auth(),module_name=module_name,modules=modules,options=options)
+def data():
+    "Crud functions based on arg. See gluon/tools.py"
+    return dict(form=crud(),module_name=module_name,modules=modules,options=options)
+def download():
+    "Download a file."
+    return response.download(request,db) 
 
 # S3 framework functions
 def index():
@@ -54,14 +42,14 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
+@auth.requires_membership('Administrator')
 def setting():
-    """RESTlike CRUD controller
-    Access only permitted to admins.
-    """
-    if 1 in session.s3.roles:
-        return shn_rest_controller(module,'setting')
-    else:
-        redirect(URL(r=request,f='index'))
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module,'setting')
+@auth.requires_membership('Administrator')
+def role():
+    "RESTlike CRUD controller"
+    return shn_rest_controller('auth','group')
 
     
 # About Sahana
@@ -97,18 +85,21 @@ def database():
     redirect(URL(r=request,c='appadmin',f='index'))
     
 # Import Data
+@auth.requires_membership('Administrator')
 def import_data():
     "Import data via POST upload to CRUD controller."
     title=T('Import Data')
     return dict(module_name=module_name,modules=modules,options=options,title=title)
 
 # Export Data
+@auth.requires_login()
 def export_data():
     "Export data via CRUD controller."
     title=T('Export Data')
     return dict(module_name=module_name,modules=modules,options=options,title=title)
 
 # Test Page
+@auth.requires_membership('Administrator')
 def test():
     """Test Page.
     Redirect to Selenium TestRunner.
@@ -187,5 +178,7 @@ def handleResults():
         P(A(metadataFile,_href=URL(r=request,c='static',f='selenium',args=['results',metadataFile]))),
         P(A(dataFile,_href=URL(r=request,c='static',f='selenium',args=['results',dataFile]))))
     
-    return dict(message=message)
+    response.view='display.html'
+    title=T('Test Results')
+    return dict(module_name=module_name,modules=modules,options=options,title=title,item=message)
     

@@ -7,5 +7,4 @@ $('.information').hide().slideDown('slow')
 $('.information').click(function() { $(this).fadeOut('slow'); return false; });
 $('.confirmation').hide().slideDown('slow')
 $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
-$('.tooltip').cluetip({activation: 'click',splitTitle: '|',closePosition: 'bottom'});
 });

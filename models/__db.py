@@ -222,6 +222,13 @@ if not len(db().select(db[table].ALL)):
         description="Tracks requests for aid and matches them against donors who have pledged aid",
         enabled='False'
 	)
+	db[table].insert(
+        name="dvi",
+        name_nice="Disaster Victim Identification",
+        priority=10,
+        description="Assists the management of fatalities and identification of the deceased",
+        enabled='True'
+	)
 	
 # Authorization
 # User Roles

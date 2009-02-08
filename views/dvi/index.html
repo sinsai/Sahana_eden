@@ -1,0 +1,21 @@
+{{extend 'layout.html'}}
+
+<div id="home">
+{{=H2(T(module_name))}}
+<p>
+{{=T("This module assists the management of fatalities and the identification of the deceased.")}}
+</p>
+<h3>{{=T("Features Include")}}:</h3>
+<ul>
+<li>...</li>
+</ul>
+<strong>{{=T("Description of Actions")}}:</strong><br/>
+<ul>
+{{for option in options:}}
+{{if option.function=="index":}}
+{{else:}}
+<li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
+{{pass}}
+{{pass}}
+</ul>
+</div>

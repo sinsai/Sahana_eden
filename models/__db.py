@@ -38,7 +38,7 @@ crud.auth=auth
 
 # Define 'now'
 # 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
-now=datetime.datetime.today()
+#now=datetime.datetime.today()
 
 # Reusable timestamp fields
 timestamp=SQLTable(None,'timestamp',
@@ -385,28 +385,30 @@ response._caller=lambda f: shn_sessions(f)
 
 #
 # Representations
-# designed to be called via table.represent to make t2.itemize() output useful
 #
 
 def shn_represent(table,module,resource,deletable=True,main='name',extra=None):
-    if auth.is_logged_in() and deletable:
-        if extra:
-            db[table].represent=lambda table:shn_list_item(table,resource,action='display',main=main,extra="TD(db(db.%s_%s.id==%i).select()[0].%s),TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (module,resource,table.id,extra,resource,table.id))
-        else:
-            db[table].represent=lambda table:shn_list_item(table,resource,action='display',main=main,extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
-    else:
-        if extra:
-            db[table].represent=lambda table:shn_list_item(table,resource,action='display',main=main,extra="db(db.%s_%s.id==%i).select()[0].%s" % (module,resource,table.id,extra))
-        else:
-            db[table].represent=lambda table:shn_list_item(table,resource,action='display',main=main)
+    "Designed to be called via table.represent to make t2.itemize() output useful"
+    db[table].represent=lambda table:shn_list_item(table,resource,action='display',main=main,extra=shn_represent_extra(table,module,resource,deletable,extra))
     return
+
+def shn_represent_extra(table,module,resource,deletable=True,extra=None):
+    "Display more than one extra field (separated by spaces)"
+    item_list=[]
+    if extra:
+        extra_list = extra.split()
+        for any_item in extra_list:
+            item_list.append("TD(db(db.%s_%s.id==%i).select()[0].%s)" % (module,resource,table.id,any_item))
+    if auth.is_logged_in() and deletable:
+        item_list.append("TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (resource,table.id))
+    return ','.join( item_list )
 
 def shn_list_item(table,resource,action,main='name',extra=None):
     "Display nice names with clickable links & optional extra info"
+    item_list = [TD(A(table[main],_href=URL(r=request,f=resource,args=[action,table.id])))]
     if extra:
-        items=DIV(TR(TD(A(table[main],_href=URL(r=request,f=resource,args=[action,table.id]))),TD(eval(extra))))
-    else:
-        items=DIV(A(table[main],_href=URL(r=request,f=resource,args=[action,table.id])))
+        item_list.extend(eval(extra))
+    items=DIV(TABLE(TR(item_list)))
     return DIV(*items)
 
 #

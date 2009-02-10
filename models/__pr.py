@@ -96,7 +96,7 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 person_id=SQLTable(None,'person_id',
             SQLField('person_id',
                 db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','%(id)s: %(first_name)s %(last_name)s')),
-                #represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0],
+                #represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
                 comment=''))
 # Unfortunately SQLTABLE can't yet handle:
 #represent

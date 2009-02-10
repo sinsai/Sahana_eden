@@ -197,9 +197,9 @@ db[table].lon.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="toolti
 db[table].zoom.requires=IS_INT_IN_RANGE(0,19)
 db[table].zoom.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
 #db[table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
-db[table].projection.display=lambda id: db(db.gis_projection.id==id).select()[0].name
+db[table].projection.represent=lambda id: db(db.gis_projection.id==id).select()[0].name
 #db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
-db[table].marker.display=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
+db[table].marker.represent=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
 db[table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db[table].map_height.comment=SPAN("*",_class="req")
 db[table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
@@ -242,7 +242,7 @@ db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
 #db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
-db[table].marker.display=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
+db[table].marker.represent=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
 title_create=T('Add Feature Class')
 title_display=T('Feature Class Details')
 title_list=T('List Feature Classes')
@@ -284,7 +284,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('url'),
                 SQLField('image','upload'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].person_id.display=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+db[table].person_id.represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
 db[table].person_id.label=T("Contact")
 db[table].url.requires=IS_URL()
 title_create=T('Add Feature Metadata')
@@ -316,9 +316,9 @@ db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
 #db[table].feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name'))
-db[table].feature_class.display=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0]
+db[table].feature_class.represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0]
 db[table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
-db[table].metadata.display=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
+db[table].metadata.represent=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
 db[table].type.requires=IS_IN_SET(['point','line','polygon'])
 db[table].lat.requires=IS_LAT()
 db[table].lat.label=T("Latitude")
@@ -421,7 +421,7 @@ db.define_table(table,timestamp,uuidstamp,
                 feature_id,         # Either just a Point or a Polygon
                 SQLField('sector'), # Government, Health
                 SQLField('level'),  # Region, Country, District
-                SQLField('admin',db.auth_group),
+                admin_id,
                 SQLField('parent', 'reference gis_location'))   # This form of hierarchy may not work on all Databases
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
@@ -429,9 +429,10 @@ db[table].feature.label=T("GIS Feature")
 db[table].feature.comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
 db[table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
 db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District','Town']))
-db[table].admin.display=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0]
+db[table].admin.represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0]
 db[table].admin.comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Location.")))
 db[table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
+db[table].parent.represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
 title_create=T('Add Location')
 title_display=T('Location Details')
 title_list=T('List Locations')
@@ -451,10 +452,10 @@ location_id=SQLTable(None,'location_id',
             SQLField('location',
                 db.gis_location,requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name')),
                 #represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
-                comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map)."))))
+                comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))))
 # Unfortunately SQLTABLE can't yet handle:
 #represent
-# Unfortunately Crud can't yet handle:
+# Unfortunately Crud can't yet see:
 #comment
 
 # GIS Keys - needed for commercial mapping services

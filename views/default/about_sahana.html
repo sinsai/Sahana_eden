@@ -31,6 +31,6 @@ Python
 </table>
 </div>
 <p>&nbsp;</p>
-{{if 1 in session.s3.roles:}}
+{{if 'Administrator' in session.s3.roles:}}
 <strong>{{=A(T("Internal State"),_href=URL(r=request,c='appadmin',f='state'))}}</strong>: {{=T("Request, Response & Session")}}
 {{pass}}

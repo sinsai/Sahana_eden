@@ -96,6 +96,7 @@ db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
 db[table].type.requires=IS_NULL_OR(IS_IN_SET(['Government','International Governmental Organization','International NGO','Misc','National Institution','National NGO','United Nations']))
 db[table].admin.comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Organisation.")))
+db[table].admin.represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0]
 db[table].website.requires=IS_NULL_OR(IS_URL())
 title_create=T('Add Organisation')
 title_display=T('Organisation Details')
@@ -117,6 +118,7 @@ resource='office'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
+                SQLField('organisation',db.or_organisation),
                 SQLField('type'),
                 admin_id,
                 location_id,
@@ -132,11 +134,15 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('vehicle_types'),
                 SQLField('equipment'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].admin.comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Office.")))
 db[table].name.requires=IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.comment=SPAN("*",_class="req")
+db[table].organisation.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
+db[table].organisation.represent=lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0]
+db[table].organisation.comment=DIV(A(s3.crud_strings.or_organisation.label_create_button,_href=URL(r=request,c='or',f='organisation',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Organisation|The Organisation this Office belongs to.")))
 db[table].type.requires=IS_NULL_OR(IS_IN_SET(['Headquarters','Regional','Country','Satellite Office']))
-db[table].location.display=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+db[table].admin.comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Office.")))
+db[table].admin.represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0]
+db[table].location.represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
 db[table].location.comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))
 db[table].national_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
 db[table].international_staff.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,9999))

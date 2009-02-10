@@ -23,7 +23,7 @@ def organisation():
     return shn_rest_controller(module,'organisation')
 def office():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'office')
+    return shn_rest_controller(module,'office',extra='organisation type')
 def contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'contact')

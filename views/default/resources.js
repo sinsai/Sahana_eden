@@ -10,11 +10,11 @@ $(function() {
         if (module=="cr") {
             var options_resource=["shelter"];
         } else if (module=="or") {
-            var options_resource=["organisation"];
+            var options_resource=["organisation","office"];
         } else if (module=="pr") {
             var options_resource=["person"];
         } else if (module=="gis") {
-            var options_resource=["feature"];
+            var options_resource=["feature","location"];
         }
         // Refresh the resource lookuplist
         // ToDo: Pull from Database using AJAX/JSON:

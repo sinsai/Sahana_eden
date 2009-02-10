@@ -426,17 +426,27 @@ def shn_crud_strings_lookup(resource):
     return getattr(s3.crud_strings,'%s' % resource)
 
 def import_csv(table,file):
-    "Import CSV file into Database. Comes from appadmin.py"
+    "Import CSV file into Database. Comes from appadmin.py. Modified to do Validation on UUIDs"
     import csv
     reader = csv.reader(file)
     colnames=None
     for line in reader:
         if not colnames: 
             colnames=[x[x.find('.')+1:] for x in line]
-            c=[i for i in range(len(line)) if colnames[i]!='id']            
+            c=[i for i in range(len(line)) if colnames[i]!='id']
         else:
             items=[(colnames[i],line[i]) for i in c]
-            table.insert(**dict(items))
+            if 'uuid' not in colnames:
+                table.insert(**dict(items))
+            else:
+                # Validation. Check for duplicate UUID &, if present, update instead of insert.
+                for i in c:
+                    if colnames[i]=='uuid':
+                        uuid=line[i]
+                if db(db[table].uuid==uuid).count():
+                    db(table.uuid==uuid).update(**dict(items))
+                else:
+                    table.insert(**dict(items))
 
 def import_json(table,file):
     "Import JSON into Database."

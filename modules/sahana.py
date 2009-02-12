@@ -203,8 +203,14 @@ class AuthS3(Auth):
             redirect(next)
         return form
 
-    def register(self,next=DEFAULT,onvalidation=DEFAULT,
-                      onaccept=DEFAULT,log=DEFAULT):
+
+    def register(
+        self,
+        next=DEFAULT,
+        onvalidation=DEFAULT,
+        onaccept=DEFAULT,
+        log=DEFAULT,
+        ):
         """
         Overrides Web2Py's register() to add new functionality:
             * Check that self-registration is allowed: session.s3.self_registration
@@ -214,26 +220,33 @@ class AuthS3(Auth):
         
         returns a registration form
         """
-        request=self.environment.request
-        session=self.environment.session
+        request = self.environment.request
+        session = self.environment.session
+        if self.is_logged_in():
+            redirect(self.settings.logged_url)
         if not request.vars._next:
-            request.vars._next=request.env.http_referer or ''
-        if next==DEFAULT:
-             next=request.vars._next or self.settings.register_next
-        if onvalidation==DEFAULT:
-             onvalidation=self.settings.register_onvalidation
-        if onaccept==DEFAULT:
-             onaccept=self.settings.register_onaccept
-        if log==DEFAULT:
-             log=self.settings.register_log
-        user=self.settings.table_user
-        form=SQLFORM(user,
-                     hidden=dict(_next=request.vars._next),
-                     showid=self.settings.showid,
-                     submit_button=self.settings.submit_button,
-                     delete_label=self.settings.delete_label)
-        key=str(uuid.uuid4())
-        if form.accepts(request.vars,session,onvalidation=onvalidation):
+            request.vars._next = request.env.http_referer or ''
+        if next == DEFAULT:
+            next = request.vars._next or self.settings.register_next
+        if onvalidation == DEFAULT:
+            onvalidation = self.settings.register_onvalidation
+        if onaccept == DEFAULT:
+            onaccept = self.settings.register_onaccept
+        if log == DEFAULT:
+            log = self.settings.register_log
+        user = self.settings.table_user
+        form = SQLFORM(user, hidden=dict(_next=request.vars._next),
+                       showid=self.settings.showid,
+                       submit_button=self.settings.submit_button,
+                       delete_label=self.settings.delete_label)
+        td = form.element(_id="%s_password__row" % user._tablename)[1]
+        td.append(BR())
+        td.append(INPUT(_name="password2",
+                        _type="password",
+                  requires=IS_EXPR('value==%s' % repr(request.vars.password))))
+        key = str(uuid.uuid4())
+        if form.accepts(request.vars, session,
+                        onvalidation=onvalidation):
             # S3: Add to Person Registry as well
             # Check to see whether User already exists
             if len(self.db(self.db.pr_person.email==form.vars.email).select()):
@@ -249,20 +262,23 @@ class AuthS3(Auth):
                     last_name = form.vars.last_name,
                     email = form.vars.email
                 )
-            description='group uniquely assigned to %(first_name)s %(last_name)s' % form.vars
-            group_id=self.add_group(form.vars.id,description)
-            self.add_membership(group_id,form.vars.id)
+            description = \
+                'group uniquely assigned to %(first_name)s %(last_name)s'\
+                 % form.vars
+            group_id = self.add_group("user_%s" % form.vars.id, description)
+            self.add_membership(group_id, form.vars.id)
             # S3: Control whether verification is required dynamically
             if session.s3.verification:
-                user[form.vars.id]=dict(registration_key=key)
+                user[form.vars.id] = dict(registration_key=key)
                 if not self.settings.mailer.send(to=form.vars.email,
-                     subject=self.messages.verify_email_subject,
-                     message=self.messages.verify_email % dict(key=key)):
-                    self.db.rollback()                     
-                    session.error=self.messages.invalid_email
+                        subject=self.messages.verify_email_subject,
+                        message=self.messages.verify_email
+                         % dict(key=key)):
+                    self.db.rollback()
+                    session.error = self.messages.invalid_email
                     return form
-                session.flash=self.messages.email_sent
-                log=self.settings.register_log
+                session.flash = self.messages.email_sent
+                log = self.settings.register_log
                 if log:
                     self.log_event(log % form.vars)
             else:
@@ -291,12 +307,13 @@ class AuthS3(Auth):
             if onaccept:
                 onaccept(form)
             if not next:
-                next=URL(r=request)
-            elif next and not next[0]=='/' and next[:4]!='http':
-                next=URL(r=request,f=next.replace('[id]',str(form.vars.id)))
+                next = URL(r=request)
+            elif next and not next[0] == '/' and next[:4] != 'http':
+                next = URL(r=request, f=next.replace('[id]',
+                           str(form.vars.id)))
             redirect(next)
         return form
-    
+
 class CrudS3(Crud):
     """Extended version of Crud from gluon/tools.py
     - Allow Internationalisation of strings (can't be done in gluon)

@@ -96,12 +96,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 person_id=SQLTable(None,'person_id',
             SQLField('person_id',
                 db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','%(id)s: %(first_name)s %(last_name)s')),
-                #represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
-                comment=''))
-# Unfortunately SQLTABLE can't yet handle:
-#represent
-# Unfortunately Crud can't yet handle:
-#comment
+                represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
+                comment=DIV(A(T('Add Contact'),_href=URL(r=request,c='pr',f='person',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Contact|The Person to contact for this.")))
+                ))
 
 # Contacts
 resource='contact'
@@ -131,13 +128,11 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='contact_to_person'
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('contact_id',db.pr_contact),
-                SQLField('person_id',db.pr_person))
-db[table].contact_id.requires=IS_IN_DB(db,'pr_contact.id','pr_contact.name')
-db[table].contact_id.label='Contact'
-db[table].person_id.requires=IS_IN_DB(db,'pr_person.id','pr_person.name')
+                SQLField('person_id',db.pr_person),
+                SQLField('contact_id',db.pr_contact))
 db[table].person_id.label='Person'
-
+db[table].contact_id.requires=IS_IN_DB(db,'pr_contact.id','pr_contact.name')
+db[table].contact_id.label='Contact Detail'
 
 
 # Person Identity

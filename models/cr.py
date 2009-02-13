@@ -76,11 +76,7 @@ db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()   # Shelters don't have to have unique names
 db[table].name.label=T("Shelter Name")
 db[table].name.comment=SPAN("*",_class="req")
-db[table].admin.represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0]
 db[table].admin.comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Camp.")))
-db[table].location.represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
-db[table].location.comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Camp, which can be general (for Reporting) or precise (for displaying on a Map).")))
-db[table].person_id.represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
 db[table].person_id.label=T("Contact Person")
 db[table].capacity.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,999999))
 db[table].dwellings.requires=IS_NULL_OR(IS_INT_IN_RANGE(0,99999))

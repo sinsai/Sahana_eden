@@ -63,9 +63,9 @@ uuidstamp=SQLTable(None,'uuidstamp',
 admin_id=SQLTable(None,'admin_id',
             SQLField('admin',
                 db.auth_group,requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role')),
-                comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='data',args=['create','auth_group']),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Object.")))))
-# Unfortunately Crud can't yet handle:
-#comment
+                represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
+                comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this.")))
+                ))
     
 # Custom validators
 from applications.sahana.modules.validators import *
@@ -428,34 +428,14 @@ def shn_crud_strings_lookup(resource):
 def import_csv(table,file):
     "Import CSV file into Database. Comes from appadmin.py. Modified to do Validation on UUIDs"
     table.import_from_csv_file(file)
-    #import csv
-    #reader = csv.reader(file)
-    #colnames=None
-    #for line in reader:
-    #    if not colnames: 
-    #        colnames=[x[x.find('.')+1:] for x in line]
-    #        c=[i for i in range(len(line)) if colnames[i]!='id']
-    #    else:
-    #        items=[(colnames[i],line[i]) for i in c]
-    #        if 'uuid' not in colnames:
-    #            table.insert(**dict(items))
-    #        else:
-    #            # Validation. Check for duplicate UUID &, if present, update instead of insert.
-    #            for i in c:
-    #                if colnames[i]=='uuid':
-    #                    uuid=line[i]
-    #            if db(db[table].uuid==uuid).count():
-    #                db(table.uuid==uuid).update(**dict(items))
-    #            else:
-    #                table.insert(**dict(items))
 
 def import_json(table,file):
     "Import JSON into Database."
     import gluon.contrib.simplejson as sj
     reader=sj.loads(file)
     # ToDo
-    # Get column names
-    # Insert records
+    # Get column names (like for SQLTable.import_from_csv_file() )
+    # Insert records (or Update if unique field duplicated)
     #table.insert(**dict(items))
     return
             

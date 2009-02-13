@@ -99,13 +99,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 marker_id=SQLTable(None,'marker_id',
             SQLField('marker',
                 db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
-                #represent=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
+                represent=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
                 comment=''))
-# Unfortunately SQLTABLE can't yet handle:
-#represent
-# Unfortunately T2 can't yet handle:
-#comment
-   
+
 # GIS Projections
 resource='projection'
 table=module+'_'+resource
@@ -166,12 +162,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 projection_id=SQLTable(None,'projection_id',
             SQLField('projection',
                 db.gis_projection,requires=IS_NULL_OR(IS_IN_DB(db,'gis_projection.id','gis_projection.name')),
-                #represent=lambda id: db(db.gis_projection.id==id).select()[0].name
-                comment=''))
-# Unfortunately SQLTABLE can't yet handle:
-#represent
-# Unfortunately T2 can't yet handle:
-#comment
+                represent=lambda id: db(db.gis_projection.id==id).select()[0].name,
+                comment=''
+                ))
 
 # GIS Config
 # id=1 = Default settings
@@ -196,10 +189,6 @@ db[table].lon.label=T("Longitude")
 db[table].lon.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 db[table].zoom.requires=IS_INT_IN_RANGE(0,19)
 db[table].zoom.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-#db[table].projection.requires=IS_IN_DB(db,'gis_projection.id','gis_projection.name')
-db[table].projection.represent=lambda id: db(db.gis_projection.id==id).select()[0].name
-#db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
-db[table].marker.represent=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden'))
 db[table].map_height.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
 db[table].map_height.comment=SPAN("*",_class="req")
 db[table].map_width.requires=[IS_NOT_EMPTY(),IS_ALPHANUMERIC()]
@@ -241,8 +230,6 @@ db.define_table(table,timestamp,uuidstamp,
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
-#db[table].marker.requires=IS_IN_DB(db,'gis_marker.id','gis_marker.name')
-db[table].marker.represent=lambda uuid: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_feature_class-marker-%s' % uuid),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_feature_class-marker-%s' % uuid,_class='hidden'))
 title_create=T('Add Feature Class')
 title_display=T('Feature Class Details')
 title_list=T('List Feature Classes')
@@ -261,13 +248,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 feature_class_id=SQLTable(None,'feature_class_id',
             SQLField('feature_class',
                 db.gis_feature_class,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name')),
-                #represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
+                represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
                 comment=''
                 ))
-# Unfortunately SQLTABLE can't yet handle:
-#represent
-# Unfortunately T2 can't yet handle:
-#comment
 
 resource='feature_metadata'
 table=module+'_'+resource
@@ -315,8 +298,6 @@ db.define_table(table,timestamp,uuidstamp,
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
-#db[table].feature_class.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name'))
-db[table].feature_class.represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0]
 db[table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
 db[table].metadata.represent=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
 db[table].type.requires=IS_IN_SET(['point','line','polygon'])
@@ -348,13 +329,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 feature_id=SQLTable(None,'feature_id',
             SQLField('feature',
                 db.gis_feature,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name')),
-                #represent=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
-                comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon to used to display this Location on a Map."))
+                represent=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
+                comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
                 ))
-# Unfortunately SQLTABLE can't yet handle:
-#represent
-# Unfortunately T2 can't yet handle:
-#comment
     
 # Feature Groups
 # Used to select a set of Features for either Display or Export
@@ -390,13 +367,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 feature_group_id=SQLTable(None,'feature_group_id',
             SQLField('feature_group',
                 db.gis_feature_group,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')),
-                #represent=lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
+                represent=lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 comment=''
                 ))
-# Unfortunately SQLTABLE can't yet handle:
-#represent
-# Unfortunately T2 can't yet handle:
-#comment
 
             
 # Many-to-Many tables
@@ -426,11 +399,8 @@ db.define_table(table,timestamp,uuidstamp,
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
 db[table].feature.label=T("GIS Feature")
-db[table].feature.comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
 db[table].sector.requires=IS_NULL_OR(IS_IN_SET(['Government','Health']))
 db[table].level.requires=IS_NULL_OR(IS_IN_SET(['Country','Region','District','Town']))
-db[table].admin.represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0]
-db[table].admin.comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this Location.")))
 db[table].parent.requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name'))
 db[table].parent.represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
 title_create=T('Add Location')
@@ -451,12 +421,8 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 location_id=SQLTable(None,'location_id',
             SQLField('location',
                 db.gis_location,requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name')),
-                #represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
+                represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
                 comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))))
-# Unfortunately SQLTABLE can't yet handle:
-#represent
-# Unfortunately Crud can't yet see:
-#comment
 
 # GIS Keys - needed for commercial mapping services
 resource='apikey' # Can't use 'key' as this has other meanings for dicts!

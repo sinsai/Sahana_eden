@@ -149,7 +149,7 @@ db.define_table(table,
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name_nice' % table)]
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
-db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.menu_priority' % table)]
+db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 # Populate table with Default modules
 if not len(db().select(db[table].ALL)):
 	db[table].insert(
@@ -178,7 +178,7 @@ if not len(db().select(db[table].ALL)):
         name_nice="Missing Person Registry",
         priority=3,
         description="Helps to report and search missing person",
-        enabled='False'
+        enabled='True'
 	)
 	db[table].insert(
         name="dvr",

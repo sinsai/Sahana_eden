@@ -46,9 +46,19 @@
    {{try:}}
     {{for option in options:}}
      {{if not option.access or (option.access in session.s3.roles):}}
-	  <li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
+       {{if option.function=='submenu':}}
+         <li>
+         <a class="smopen" href="#">{{=option.name}}</a>
+         <ul id="{{=option.name}}" style="display: none;">
+       {{elif option.function=='submenu/end':}}
+         </ul>
+         </li>
+       {{else:}}
+	     <li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
+       {{pass}}
      {{pass}}
 	{{pass}}
+      </ul>
    {{except:}}
    {{pass}}
    </ul>

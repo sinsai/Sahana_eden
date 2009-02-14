@@ -35,10 +35,18 @@ try { $('.zoom').fancyZoom({scaleImg:true, closeOnClick:true, directory:"/{{=req
 
 <!--S3 Layer-->
 <script type="text/javascript">//<![CDATA[
+function make_delete_row() {
+    $(document).ready(function() {
+    $('input.delete_row').click(function(){
+        if(confirm("{{=T("Sure you want to delete this object?")}}")) {
+          $.ajax({ url: "{{=URL2(r=request)}}/"+$(this).attr("name")+"/delete/"+$(this).attr("id")+"?format=ajax",  cache: false,  success: function(html){ $("div#list-container").html(html); make_delete_row(); }});
+        }
+        return false;
+    });
+  });
+}
+make_delete_row();
 $(document).ready(function() {
-$('input.delete_row').click(function(){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
-    $.ajax({ url: "{{=URL2(r=request)}}/"+$(this).attr("name")+"/delete/"+$(this).attr("id")+"?format=ajax",  cache: false,  success: function(html){ $("div#list-container").html(html); }});
-    return false; });
 $('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
     { event.default(); } else { event.preventDefault(); }
     return false; });

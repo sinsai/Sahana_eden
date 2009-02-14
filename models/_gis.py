@@ -81,6 +81,13 @@ if not len(db().select(db[table].ALL)):
     )
     # We should now read in the list of default markers from the filesystem & populate the DB 1 by 1
     # - we need to get the size automatically
+    # TEMP: Manual markers for some pre-defined Feature Classes
+    db[table].insert(
+        name="shelter",
+        height=40,
+        width=40,
+        image="gis_marker.image.shelter.png"
+    )
 title_create=T('Add Marker')
 title_display=T('Marker Details')
 title_list=T('List Markers')
@@ -99,7 +106,7 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 marker_id=SQLTable(None,'marker_id',
             SQLField('marker',
                 db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
-                represent=lambda id: DIV(A(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
+                represent=lambda id: DIV(A(IMG(_src=URL(r=request,c='default',f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,c='default',f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
                 comment=''))
 
 # GIS Projections
@@ -226,7 +233,10 @@ resource='feature_class'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
-                marker_id)
+                marker_id,
+                SQLField('module'),    # Used to build Edit URL
+                SQLField('resource')   # Used to build Edit URL & to provide Attributes to Display
+                )
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -249,8 +259,16 @@ feature_class_id=SQLTable(None,'feature_class_id',
             SQLField('feature_class',
                 db.gis_feature_class,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name')),
                 represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
-                comment=''
+                comment=DIV(A(T('Add Feature Class'),_href=URL(r=request,c='gis',f='feature_class',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup.")))
                 ))
+# Populate table with Default options
+if not len(db().select(db[table].ALL)):
+	db[table].insert(
+        name='Shelter',
+        marker=db(db.gis_marker.name=='shelter').select()[0].id,
+        module='cr',
+        resource='shelter'
+	)
 
 resource='feature_metadata'
 table=module+'_'+resource
@@ -300,6 +318,7 @@ db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
 db[table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
 db[table].metadata.represent=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
+db[table].metadata.comment=DIV(A(T('Add Metadata'),_href=URL(r=request,c='gis',f='feature_metadata',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Metadata|Additional attributes associated with this Feature.")))
 db[table].type.requires=IS_IN_SET(['point','line','polygon'])
 db[table].lat.requires=IS_LAT()
 db[table].lat.label=T("Latitude")

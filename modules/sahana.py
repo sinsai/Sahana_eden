@@ -100,27 +100,28 @@ class AuthS3(Auth):
     """Extended version of Auth from gluon/tools.py
     - Allow Internationalisation of strings (can't be done in gluon)
     """
-    def __init__(self,environment,T,db=None):
+    def __init__(self, environment, T, db=None):
         "Initialise parent class & make any necessary modifications"
         Auth.__init__(self,environment,db)
-        self.messages.access_denied=T("Insufficient privileges")
-        self.messages.logged_in=T("Logged in")
-        self.messages.email_sent=T("Email sent")
-        self.messages.email_verified=T("Email verified")
-        self.messages.logged_out=T("Logged out")
-        self.messages.registration_succesful=T("Registration successful")
-        self.messages.invalid_email=T("Invalid email")
-        self.messages.invalid_login=T("Invalid login")
-        self.messages.verify_email_subject=T("Password verify")
-        self.messages.username_sent=T("Your username was emailed to you")
-        self.messages.new_password_sent=T("A new password was emailed to you")
-        self.messages.invalid_email=T("Invalid email")
-        self.messages.password_changed=T("Password changed")
-        self.messages.retrieve_username=str(T("Your username is"))+": %(username)s"
-        self.messages.retrieve_username_subject="Username retrieve"
-        self.messages.retrieve_password=str(T("Your password is"))+": %(password)s"
-        self.messages.retrieve_password_subject=T("Password retrieve")
-        self.messages.profile_updated=T("Profile updated")
+        self.messages.access_denied = T("Insufficient privileges")
+        self.messages.logged_in = T("Logged in")
+        self.messages.email_sent = T("Email sent")
+        self.messages.email_verified = T("Email verified")
+        self.messages.logged_out = T("Logged out")
+        self.messages.registration_succesful = T("Registration successful")
+        self.messages.invalid_email = T("Invalid email")
+        self.messages.invalid_login = T("Invalid login")
+        #self.messages.mismatched_password = T("Password fields don't match")
+        self.messages.verify_email_subject = T("Password verify")
+        self.messages.username_sent = T("Your username was emailed to you")
+        self.messages.new_password_sent = T("A new password was emailed to you")
+        self.messages.invalid_email = T("Invalid email")
+        self.messages.password_changed = T("Password changed")
+        self.messages.retrieve_username = str(T("Your username is"))+": %(username)s"
+        self.messages.retrieve_username_subject = "Username retrieve"
+        self.messages.retrieve_password = str(T("Your password is"))+": %(password)s"
+        self.messages.retrieve_password_subject = T("Password retrieve")
+        self.messages.profile_updated = T("Profile updated")
                 
     def login(
         self,
@@ -243,6 +244,7 @@ class AuthS3(Auth):
         td.append(BR())
         td.append(INPUT(_name="password2",
                         _type="password",
+                  #requires=IS_EXPR('value==%s' % repr(request.vars.password),error_message=self.messages.mismatched_password)))
                   requires=IS_EXPR('value==%s' % repr(request.vars.password))))
         key = str(uuid.uuid4())
         if form.accepts(request.vars, session,

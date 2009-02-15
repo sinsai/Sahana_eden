@@ -111,7 +111,7 @@ class AuthS3(Auth):
         self.messages.registration_succesful = T("Registration successful")
         self.messages.invalid_email = T("Invalid email")
         self.messages.invalid_login = T("Invalid login")
-        #self.messages.mismatched_password = T("Password fields don't match")
+        self.messages.mismatched_password = T("Password fields don't match")
         self.messages.verify_email_subject = T("Password verify")
         self.messages.username_sent = T("Your username was emailed to you")
         self.messages.new_password_sent = T("A new password was emailed to you")
@@ -163,6 +163,7 @@ class AuthS3(Auth):
             delete_label=self.settings.delete_label,
             )
         if FORM.accepts(form, request.vars, session,
+                        formname='login',
                         onvalidation=onvalidation):
 
             # ## BEGIN
@@ -244,10 +245,9 @@ class AuthS3(Auth):
         td.append(BR())
         td.append(INPUT(_name="password2",
                         _type="password",
-                  #requires=IS_EXPR('value==%s' % repr(request.vars.password),error_message=self.messages.mismatched_password)))
-                  requires=IS_EXPR('value==%s' % repr(request.vars.password))))
+                  requires=IS_EXPR('value==%s' % repr(request.vars.password),error_message=self.messages.mismatched_password)))
         key = str(uuid.uuid4())
-        if form.accepts(request.vars, session,
+        if form.accepts(request.vars, session, formname='register',
                         onvalidation=onvalidation):
             # S3: Add to Person Registry as well
             # Check to see whether User already exists

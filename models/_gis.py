@@ -312,7 +312,7 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('type',default='point'),
                 SQLField('lat','double'),    # Only needed for Points
                 SQLField('lon','double'),    # Only needed for Points
-                SQLField('wkt'))    # WKT should be auto-calculated from lat/lon for Points (jQuery so that form accepts with mandatory fields filled)
+                SQLField('wkt',length=256))    # WKT is auto-calculated from lat/lon for Points
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
@@ -320,14 +320,14 @@ db[table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
 db[table].metadata.represent=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
 db[table].metadata.comment=DIV(A(T('Add Metadata'),_href=URL(r=request,c='gis',f='feature_metadata',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Metadata|Additional attributes associated with this Feature.")))
 db[table].type.requires=IS_IN_SET(['point','line','polygon'])
-db[table].lat.requires=IS_LAT()
+db[table].lat.requires=IS_NULL_OR(IS_LAT())
 db[table].lat.label=T("Latitude")
 db[table].lat.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-db[table].lon.requires=IS_LON()
+db[table].lon.requires=IS_NULL_OR(IS_LON())
 db[table].lon.label=T("Longitude")
 db[table].lon.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-# Need to write an IS_WKT validator
-#db[table].wkt.requires=IS_WKT()
+# WKT validation is done in the onvalidation callback
+#db[table].wkt.requires=IS_NULL_OR(IS_WKT())
 db[table].wkt.label=T("Well-Known Text")
 db[table].wkt.comment=DIV(SPAN("*",_class="req"),A(SPAN("[Help]"),_class="tooltip",_title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 title_create=T('Add Feature')

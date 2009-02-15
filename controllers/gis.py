@@ -26,7 +26,7 @@ def config():
     return shn_rest_controller(module,'config')
 def feature():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'feature')
+    return shn_rest_controller(module,'feature',onvalidation=lambda form: wkt_centroid(form))
 def feature_class():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'feature_class')

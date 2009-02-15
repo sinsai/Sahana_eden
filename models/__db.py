@@ -418,6 +418,49 @@ def shn_list_item(table,resource,action,main='name',extra=None):
 # See test.py
 
 #
+# Onvalidation callbacks
+#
+def wkt_centroid(form):
+    """GIS
+    If a Point has LonLat defined: calculate the WKT.
+    If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
+    Centroid calculation is done using Shapely, which wraps Geos.
+    A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+    """
+    if form.vars.type=='point':
+        form.vars.wkt = 'POINT(%(lon)d %(lat)d)' % form.vars
+    elif form.vars.type=='line':
+        try:
+            from shapely.wkt import loads
+            try:
+                line=loads(form.vars.wkt)
+            except:
+                form.errors['wkt'] = T("Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!")
+                return
+            centroid_point = line.centroid
+            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+        except:
+            #form.errors['type'] = str(A('Shapely',_href='http://pypi.python.org/pypi/Shapely/',_target='_blank'))+str(T(" library not found, so can't find centroid!"))
+            form.errors['type'] = T("Shapely library not found, so can't find centroid!")
+    elif form.vars.type=='polygon':
+        try:
+            from shapely.wkt import loads
+            try:
+                polygon=loads(form.vars.wkt)
+            except:
+                form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
+                return
+            centroid_point = polygon.centroid
+            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+        except:
+            form.errors['type'] = T("Shapely library not found, so can't find centroid!")
+    else:
+        form.errors['type'] = T('Unknown type!')
+    return
+
+#
 # RESTlike CRUD Controller
 #
 
@@ -439,7 +482,7 @@ def import_json(table,file):
     #table.insert(**dict(items))
     return
             
-def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',extra=None):
+def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',extra=None,onvalidation=None):
     """
     RESTlike controller function.
     
@@ -526,7 +569,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     # Add extra column header to explain the checkboxes
                     if isinstance(list,TABLE):
                         list.insert(0,TR('',B('Delete?')))
-                form=crud.create(table)
+                form=crud.create(table,onvalidation=onvalidation)
                 # Check for presence of Custom View
                 custom_view='%s_list_create.html' % resource
                 _custom_view=os.path.join(request.folder,'views',module,custom_view)
@@ -670,7 +713,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             new_value=''
                         )
                     if representation=="html":
-                        form=crud.create(table)
+                        form=crud.create(table,onvalidation=onvalidation)
                         # Check for presence of Custom View
                         custom_view='%s_create.html' % resource
                         _custom_view=os.path.join(request.folder,'views',module,custom_view)
@@ -682,7 +725,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         list_btn=A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
-                        form=crud.create(table)
+                        form=crud.create(table,onvalidation=onvalidation)
                         response.view='plain.html'
                         return dict(item=form)
                     elif representation=="json":
@@ -727,7 +770,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             new_value=''
                         )
                     if representation=="html":
-                        form=crud.update(table,s3.id)
+                        form=crud.update(table,s3.id,onvalidation=onvalidation)
                         # Check for presence of Custom View
                         custom_view='%s_update.html' % resource
                         _custom_view=os.path.join(request.folder,'views',module,custom_view)
@@ -739,7 +782,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         list_btn=A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
-                        form=crud.update(table,s3.id)
+                        form=crud.update(table,s3.id,onvalidation=onvalidation)
                         response.view='plain.html'
                         return dict(item=form)
                     elif representation=="json":

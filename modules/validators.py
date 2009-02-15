@@ -55,6 +55,7 @@ class IS_LON(object):
         return (value, self.error_message)
 
 class THIS_NOT_IN_DB(object):
+    "Unused currently since doesn't quite work. See: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540"
     def __init__(self,dbset,field,this,error_message='value already in database!'):
         if hasattr(dbset,'define_table'):
             self.dbset = dbset()

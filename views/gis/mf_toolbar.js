@@ -15,7 +15,6 @@ function initToolbarContent(toolbar) {
 			toggleGroup: "map"
 		}
 	);
-	addSeparator(toolbar);
 	toolbar.addControl(
 		new OpenLayers.Control.ZoomBox(), {
 			iconCls: 'zoomin', 
@@ -43,21 +42,21 @@ function initToolbarContent(toolbar) {
 	);
 	addSeparator(toolbar);
 	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point), {
+		pointControl, {
 			iconCls: 'drawpoint', 
 			tooltip: '{{=T("Add Point")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path), {
+		lineControl, {
 			iconCls: 'drawline', 
 			tooltip: '{{=T("Add Line")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	toolbar.addControl(
-		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon), {
+		polygonControl, {
 			iconCls: 'drawpolygon', 
 			tooltip: '{{=T("Add Area")}}', 
 			toggleGroup: 'map'

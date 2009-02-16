@@ -2,7 +2,7 @@
 
 <!--
     ol_js_loaders.html <- done
-    ol_toolbar2.html <- replaced by MapFish toolbar: mf_toolbar.js, but need to merge in functions from ol_generate_control_fns.js
+    ol_toolbar2.html <- replaced by MapFish toolbar: mf_toolbar.js, but need to merge in functions from ol_controls_switch.js
     ol_start_vars.js <- done
     ol_layers_all.js <- done
     ol_show_features_markers.js
@@ -33,7 +33,8 @@ function addLayers(map) {
 
 {{include 'gis/ol_vector_registerEvents.js'}}
 
-// Rewrite to use vars defined in ol_controls_add_edit.js: selectControl, dragControl, pointControl, lineControl, polygonControl
+{{include 'gis/ol_controls_add_edit.js'}}
+
 {{include 'gis/mf_toolbar.js'}}
 
 {{include 'gis/ol_functions.js'}}

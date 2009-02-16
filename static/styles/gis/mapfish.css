@@ -65,6 +65,9 @@ Mapfish Template for GIS module
     height:20px !important;
     width:20px !important;
 }
+.mf-print-action {
+  background-image:url(../../mfbase/mapfish/img/printer.png) !important;
+}
 .x-tree-node .x-tree-node-inline-icon {
     background:transparent none repeat scroll 0 0;
     height:23px;

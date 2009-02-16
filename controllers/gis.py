@@ -76,6 +76,68 @@ def shn_latlon_to_wkt(lat,lon):
     """
     WKT='POINT(%d %d)' %(lon,lat)
     return WKT
+
+# Features
+# - experimental!
+def feature_create_map():
+    title=T("Add GIS Feature")
+    form=crud.create('gis_feature',onvalidation=lambda form: wkt_centroid(form))
+    _projection=db(db.gis_config.id==1).select()[0].projection
+    projection=db(db.gis_projection.id==_projection).select()[0].epsg
+
+    #
+    # Layers
+    #
+    
+    # OpenStreetMap
+    openstreetmap=Storage()
+    layers_openstreetmap=db(db.gis_layer_openstreetmap.enabled==True).select(db.gis_layer_openstreetmap.ALL)
+    for layer in layers_openstreetmap:
+        for subtype in gis_layer_openstreetmap_subtypes:
+            if layer.subtype==subtype:
+                openstreetmap['%s' % subtype]=layer.name
+    
+    # Google
+    google=Storage()
+    # Check for Google Key
+    try:
+        google.key=db(db.gis_apikey.name=='google').select(db.gis_apikey.apikey)[0].apikey
+        layers_google=db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
+        for layer in layers_google:
+            for subtype in gis_layer_google_subtypes:
+                if layer.subtype==subtype:
+                    google['%s' % subtype]=layer.name
+                    google.enabled=1
+    except:
+        # Redirect to Key entry screen
+        session.warning=T('Please enter a Google Key if you wish to use Google Layers')
+        redirect(URL(r=request,f=apikey))
+            
+    # Yahoo
+    yahoo=Storage()
+    # Check for Yahoo Key
+    try:
+        yahoo.key=db(db.gis_apikey.name=='yahoo').select(db.gis_apikey.apikey)[0].apikey
+        layers_yahoo=db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
+        for layer in layers_yahoo:
+            for subtype in gis_layer_yahoo_subtypes:
+                if layer.subtype==subtype:
+                    yahoo['%s' % subtype]=layer.name
+                    yahoo.enabled=1
+    except:
+        # Redirect to Key entry screen
+        session.warning=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
+        redirect(URL(r=request,f=apikey))
+        
+    # Virtual Earth
+    virtualearth=Storage()
+    layers_virtualearth=db(db.gis_layer_virtualearth.enabled==True).select(db.gis_layer_virtualearth.ALL)
+    for layer in layers_virtualearth:
+        for subtype in gis_layer_virtualearth_subtypes:
+            if layer.subtype==subtype:
+                virtualearth['%s' % subtype]=layer.name
+
+    return dict(title=title,module_name=module_name,modules=modules,options=options,form=form,projection=projection,openstreetmap=openstreetmap,google=google,yahoo=yahoo,virtualearth=virtualearth)
     
 # Feature Groups
 # TODO: https://trac.sahanapy.org/wiki/BluePrintMany2Many
@@ -98,8 +160,9 @@ def feature_groups():
         items.append(_features[i].name)
         #items[_features[i].name]=_features[i].uuid
     db.gis_feature_group.features.widget=lambda s,v: t2.tag_widget(s,v,items)
-    form=t2.create(db.gis_feature_group)
-    response.view='gis/list_add.html'
+    #form=t2.create(db.gis_feature_group)
+    form=crud.create(db.gis_feature_group)
+    response.view='list_create.html'
     return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
 	
 @auth.requires_login()

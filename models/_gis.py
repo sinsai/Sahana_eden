@@ -357,17 +357,17 @@ feature_id=SQLTable(None,'feature_id',
 resource='feature_group'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('author',db.auth_user,writable=False),
+                SQLField('author',db.auth_user,writable=False), #,default=session.auth.user.id
                 SQLField('name'),
                 SQLField('description',length=256),
                 SQLField('features','text'),        # List of features (to be replaced by many-to-many table)
                 SQLField('feature_classes','text')) # List of feature classes (to be replaced by many-to-many table)
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].author.requires=IS_IN_DB(db,'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
 db[table].features.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 db[table].feature_classes.comment=A(SPAN("[Help]"),_class="tooltip",_title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-db[table].author.requires=IS_IN_DB(db,'auth_user.id','auth_user.name')
 title_create=T('Add Feature Group')
 title_display=T('Feature Group Details')
 title_list=T('List Feature Groups')

@@ -229,6 +229,13 @@ if not len(db().select(db[table].ALL)):
         description="Assists the management of fatalities and identification of the deceased",
         enabled='True'
 	)
+	db[table].insert(
+        name="msg",
+        name_nice="Messaging Module",
+        priority=11,
+        description="Sends & Receives Alerts via Email & SMS",
+        enabled='True'
+	)
 	
 # Authorization
 # User Roles

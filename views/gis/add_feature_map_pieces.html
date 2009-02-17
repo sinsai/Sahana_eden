@@ -7,11 +7,12 @@
     ol_layers_all.js <- done
     ol_layers_features();
     ol_controls.js
-    // Need to merge with mf_toolbar.js (ol_controls_add_edit.js is alt for map_viewing_client.html)
-    ol_controls_add.js
+    // Need to merge with mf_toolbar.js
+    ol_controls_features_geometry.js
     // Called to end the onload function
     ol_onload_fin.js
     ol_add_feature('Feature', $icon);
+    ol_popup_ajax.js
     _ol_generate_add_feature();
     ol_functions.js <- done
     ol_status.html <- done
@@ -37,6 +38,9 @@ function addLayers(map) {
 {{include 'gis/mf_toolbar.js'}}
 
 {{include 'gis/ol_functions.js'}}
+
+featuresLayer = new OpenLayers.Layer.Vector("Internal Features");
+map.addLayer(featuresLayer);
 
 <div id="center"></div>
 <div id="south">

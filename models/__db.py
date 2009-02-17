@@ -435,6 +435,12 @@ def wkt_centroid(form):
     A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
     """
     if form.vars.type=='point':
+        if form.vars.lon==None:
+            form.errors['lon'] = T("Invalid: Longitude can't be empty!")
+            return
+        if form.vars.lat==None:
+            form.errors['lat'] = T("Invalid: Latitude can't be empty!")
+            return
         form.vars.wkt = 'POINT(%(lon)d %(lat)d)' % form.vars
     elif form.vars.type=='line':
         try:

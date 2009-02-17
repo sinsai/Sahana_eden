@@ -5,7 +5,8 @@ var map, toolbar;
 //var treeModel;
 var features = new Array();
 var featuresLayer, currentFeature;
-var selectControl, dragControl, pointControl, lineControl, polygonControl;
+//var pointControl, lineControl, polygonControl;
+//var selectControl, dragControl
 
 // avoid pink tiles
 OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;

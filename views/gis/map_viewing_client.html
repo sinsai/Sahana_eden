@@ -5,14 +5,9 @@
     ol_toolbar2.html <- replaced by MapFish toolbar: mf_toolbar.js, but need to merge in functions from ol_controls_switch.js
     ol_start_vars.js <- done
     ol_layers_all.js <- done
-    ol_show_features_markers.js
+    ol_layers_features.js
     ol_controls.js <- done
-    // Need to merge with mf_toolbar.js (ol_controls_add.js is alt for add_feature_map.html)
-    ol_controls_add_edit.js
-    // Called to end the onload function
-    ol_onload_fin.js
-    ol_generate_add_feature_with_popup.js
-    ol_functions.js <- done (still have ol_functions2.js to go)
+    ol_functions.js <- done
     ol_status.html <- done
 -->
 
@@ -33,7 +28,7 @@ function addLayers(map) {
 
 {{include 'gis/ol_vector_registerEvents.js'}}
 
-{{include 'gis/ol_controls_add_edit.js'}}
+{{include 'gis/ol_controls_features.js'}}
 
 {{include 'gis/mf_toolbar.js'}}
 
@@ -46,11 +41,8 @@ Ext.onReady(function() {
 	{{include 'gis/ol_controls.js'}}
     toolbar = createToolbar(map);
 
-    featuresLayer = new OpenLayers.Layer.Vector("vector", { 
-		displayInLayerSwitcher: false
-	});
-	map.registerEvents(featuresLayer);
-	
+    {{include 'gis/ol_layers_features.js'}}
+    
 	// For making a custom LayerTree
     //treeModel = createTreeModel();
 	

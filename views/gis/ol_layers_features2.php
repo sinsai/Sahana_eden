@@ -1,5 +1,5 @@
-﻿featuresLayer = new OpenLayers.Layer.Vector("Internal Features");
-var proj_current = map.getProjectionObject();
+﻿<?
+// This needs to be converted to Python
 
 // Set id in case any features do not have uuids...
 $id = 0;
@@ -14,13 +14,13 @@ foreach($features as $feature){
     // Set Feature Type
     if(isset($feature['f_type'])){
         $type = $feature['f_type'];
-    } else{
+    } else {
         $type = 'point';
     }
     // Generate vars for html popup HTML content
     if(isset($feature['f_class'])){
         $feature_class = shn_gis_get_feature_class_uuid($feature['f_class']);
-    } else{
+    } else {
         $feature_class = shn_gis_get_feature_class_uuid($conf['gis_feature_type_default']);
     }
     // Set icon
@@ -52,6 +52,7 @@ foreach($features as $feature){
     echo $coords;
     // Popup
     $html =  "var popupContentHTML = \"";
+    // This is a PHP function in lib_gis_forms.inc!
     $html = $html . shn_gis_form_popupHTML_view($feature);
     $html = $html . "\";\n";
     echo $html;
@@ -59,5 +60,4 @@ foreach($features as $feature){
     var geom = coordToGeom(coords, \"$type\");
     add_Feature_with_popup(featuresLayer, '$feature_uuid', geom, popupContentHTML, '$icon');
 }
-// Add Feature layer
-map.addLayer(featuresLayer);
+?>

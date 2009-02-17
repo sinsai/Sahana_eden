@@ -2,24 +2,24 @@
 
 // Return string type of a feature
 // return point if not line or poly ....danger....
-function featureTypeStr(feature){
+function featureTypeStr(feature) {
     var type = 'point';
     var geotype = feature.geometry.CLASS_NAME;
-    if(geotype == 'OpenLayers.Geometry.LineString'){
+    if (geotype == 'OpenLayers.Geometry.LineString'){
         type = 'line';
-    } else if(geotype == 'OpenLayers.Geometry.Polygon'){
+    } else if (geotype == 'OpenLayers.Geometry.Polygon'){
         type = 'poly';
     }
     return type;
 }
 // Create geometries from point coords.
-function coordToGeom(coords, type){
+function coordToGeom(coords, type) {
     var geom = coords[0]
-    if(type == 'point'){
+    if (type == 'point'){
         geom = coords[0]; // =  Array(new OpenLayers.Geometry.Point(lon, lat));
-    } else if(type == 'line'){
+    } else if (type == 'line') {
         geom = new OpenLayers.Geometry.LineString(coords);
-    } else if(type == 'poly'){
+    } else if (type == 'poly') {
         geom = new OpenLayers.Geometry.Polygon(new Array(new OpenLayers.Geometry.LinearRing(coords)));
     } 
     return geom;

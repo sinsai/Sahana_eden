@@ -7,19 +7,13 @@ function initToolbarContent(toolbar) {
 		toolbar.add(new Ext.Toolbar.Spacer());
 		toolbar.add(new Ext.Toolbar.Separator());
 		toolbar.add(new Ext.Toolbar.Spacer());
-	} 
+	}
+    // Should we bother with these 4 controls or can people just use mouse wheel?
 	toolbar.addControl(
 		new OpenLayers.Control.ZoomToMaxExtent({map: map}), {
 			iconCls: "zoomfull", 
-			tooltip: '{{=T("Zoom Out Full")}}', 
+			tooltip: '{{=T("Zoom to maximum map extent")}}', 
 			toggleGroup: "map"
-		}
-	);
-	toolbar.addControl(
-		new OpenLayers.Control.ZoomBox(), {
-			iconCls: 'zoomin', 
-			tooltip: '{{=T("Zoom In")}}', 
-			toggleGroup: 'map'
 		}
 	);
 	toolbar.addControl(
@@ -27,7 +21,14 @@ function initToolbarContent(toolbar) {
 			out: true
 		}), {
 			iconCls: 'zoomout', 
-			tooltip: '{{=T("Zoom Out")}}', 
+			tooltip: '{{=T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")}}', 
+			toggleGroup: 'map'
+		}
+	);
+	toolbar.addControl(
+		new OpenLayers.Control.ZoomBox(), {
+			iconCls: 'zoomin', 
+			tooltip: '{{=T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")}}', 
 			toggleGroup: 'map'
 		}
 	);
@@ -36,27 +37,41 @@ function initToolbarContent(toolbar) {
 			isDefault: true
 		}), {
 			iconCls: 'pan', 
-			tooltip: '{{=T("Drag")}}', 
+			tooltip: '{{=T("Pan Map: keep the left mouse button pressed and drag the map")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	addSeparator(toolbar);
+	//toolbar.addControl(
+	//	selectControl, {
+	//		iconCls: 'select', 
+	//		tooltip: '{{=T("Select Feature")}}', 
+	//		toggleGroup: 'map'
+	//	}
+	//);
+	//toolbar.addControl(
+	//	dragControl, {
+	//		iconCls: 'pan', 
+	//		tooltip: '{{=T("Drag Feature")}}', 
+	//		toggleGroup: 'map'
+	//	}
+	//);
 	toolbar.addControl(
-		pointControl, {
+		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point), {
 			iconCls: 'drawpoint', 
 			tooltip: '{{=T("Add Point")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	toolbar.addControl(
-		lineControl, {
+		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path), {
 			iconCls: 'drawline', 
 			tooltip: '{{=T("Add Line")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	toolbar.addControl(
-		polygonControl, {
+		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon), {
 			iconCls: 'drawpolygon', 
 			tooltip: '{{=T("Add Area")}}', 
 			toggleGroup: 'map'
@@ -82,6 +97,7 @@ function initToolbarContent(toolbar) {
 	);
 	addSeparator(toolbar);
 	var saveButton = new Ext.Toolbar.Button({
+    // ToDo: Make work!
 			iconCls: 'save',
 			tooltip: '{{=T("Save Viewport")}}', 
 			handler: function saveViewport(map) {

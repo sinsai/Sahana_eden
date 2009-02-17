@@ -1,4 +1,24 @@
-﻿var xmlHttp
+﻿// Generate AJAX for popup boxes
+// ToDo: Replace with a jQuery version (framework should mean less code & being able to cope better with future browsers)
+var xmlHttp
+function GetXmlHttpObject(){
+    var xmlHttp=null;
+    try{
+        // Firefox, Opera 8.0+, Safari
+        xmlHttp=new XMLHttpRequest();
+    }
+    catch (e){
+        // Internet Explorer
+        try{
+            xmlHttp=new ActiveXObject("Msxml2.XMLHTTP");
+        }
+        catch (e){
+            xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+        }
+    }
+    return xmlHttp;
+}
+
 function shn_gis_popup_unable(){
     alert ("{{=T("The module that created this feature does not support this action here. Navigate to the module manually to perform this action.")}}");
 }
@@ -82,14 +102,6 @@ function shn_gis_popup_new_ok(id){
     xmlHttp.send(null);
 }
 // Called by link in popup box
-function shn_gis_popup_new_cancel(){
-    currentFeature.popup.hide();
-    featuresLayer.removeFeatures([currentFeature]);
-    currentFeature.popup.destroy(currentFeature.popup);
-    currentFeature.destroy();
-    currentFeature = null;
-}
-// Called by link in popup box
 function shn_gis_popup_refresh(id){
     xmlHttp = GetXmlHttpObject();
     if (xmlHttp == null){
@@ -119,35 +131,7 @@ function shn_gis_popup_delete(id){
         xmlHttp.send(null);
     }
 }
- // Called by dragControl after editing a Features position
-function shn_gis_popup_edit_position(feature, pixel){
-    xmlHttp = GetXmlHttpObject();
-    if (xmlHttp==null){
-        alert ("{{=T("Your browser does not support AJAX!")}}");
-        return;
-    }
-    currentFeature = feature;
-    // Move features popup to new location
-    feature.popup.lonlat = feature.geometry.getBounds().getCenterLonLat();
-    // Need id before clone
-    var id  = feature.fid.substring(6)
-    // Clone to stop any effects on the current feature.
-    var cfcopy = feature.clone();
-    // Transform for db.
-    var lonlat = cfcopy.geometry.getBounds().getCenterLonLat().clone();
-    var proj_current = map.getProjectionObject();
-    lonlat.transform(proj_current, proj4326);
-    var lat = lonlat.lat;
-    var lon = lonlat.lon;
-    var wkt = cfcopy.geometry.transform(proj_current, proj4326).toString();
-    // Send to db
-    var url='index.php?act=gis_popup_edit_position&mod=xst&stream=text&id=' + id;
-    url = url + "&center_lat=" + lat + "&center_lon=" + lon + "&wkt=" + wkt;
-    url = url +"&sid=" + Math.random();
-    //xmlHttp.onreadystatechange = shn_gis_popup_print;
-    xmlHttp.open("GET", url, true);
-    xmlHttp.send(null);
-}
+
 // Called by link in popup box
 function shn_gis_popup_edit_details(id){
     xmlHttp = GetXmlHttpObject();
@@ -179,21 +163,4 @@ function shn_gis_popup_edit_details_ok(id){
     xmlHttp.onreadystatechange = shn_gis_popup_print;
     xmlHttp.open("GET", url, true);
     xmlHttp.send(null);
-}
-function GetXmlHttpObject(){
-    var xmlHttp=null;
-    try{
-        // Firefox, Opera 8.0+, Safari
-        xmlHttp=new XMLHttpRequest();
-    }
-    catch (e){
-        // Internet Explorer
-        try{
-            xmlHttp=new ActiveXObject("Msxml2.XMLHTTP");
-        }
-        catch (e){
-            xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
-        }
-    }
-    return xmlHttp;
 }

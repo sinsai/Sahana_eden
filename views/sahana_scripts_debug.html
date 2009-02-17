@@ -59,13 +59,15 @@ function make_delete_row() {
 make_delete_row();
 
 $(document).ready(function() {
-    $('a.smopen').click(function(){
+    $('a.smopen, a.smclose').click(function(){
         $(this).toggleClass('smopen');
         $(this).toggleClass('smclose');
         if ($(this).next().css('display') == 'block') {
             $(this).next().css('display','none');
+            $.ajax({url: "{{=URL(r=request,c='default',f='menu_open')}}",data: "module_name={{=module_name}}&option_name=",cache: false});
         } else {
             $(this).next().css('display','block');
+            $.ajax({url: "{{=URL(r=request,c='default',f='menu_open')}}",data: "module_name={{=module_name}}&option_name="+$(this).attr('title'),cache: false,});
         }
         return false;
     });

@@ -42,6 +42,12 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
+def menu_open():
+    if not session.menu_open:
+        session.menu_open=Storage()
+    session.menu_open.module_name=request.vars.module_name
+    session.menu_open.option_name=request.vars.option_name
+    return dict(module_name=session.menu_open.module_name,option_name=session.menu_open.option_name)
 @auth.requires_membership('Administrator')
 def setting():
     "RESTlike CRUD controller"

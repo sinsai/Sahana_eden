@@ -48,8 +48,18 @@
      {{if not option.access or (option.access in session.s3.roles):}}
        {{if option.function=='submenu':}}
          <li>
-         <a class="smopen" href="#">{{=option.name}}</a>
-         <ul id="{{=option.name}}" style="display: none;">
+        {{try:}}
+          {{if ( session.menu_open.module_name == module_name ) and ( session.menu_open.option_name == option.name ):}}
+            <a class="smclose" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
+            <ul id="{{=option.name}}" style="display: block;">
+          {{else:}}
+            <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
+            <ul id="{{=option.name}}" style="display: none;">
+          {{pass}}
+        {{except:}}
+            <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
+            <ul id="{{=option.name}}" style="display: none;">
+        {{pass}}
        {{elif option.function=='submenu/end':}}
          </ul>
          </li>

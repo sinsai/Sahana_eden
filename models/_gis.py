@@ -52,6 +52,7 @@ if not len(db().select(db[table].ALL)):
 # GIS Markers (Icons)
 def shn_imgsize_detect(filename):
     "ToDo: Determine the size of an Image file"
+    # Is this needed? Javascript Image() class can be used to detect instead...
     height=1
     width=1
     return dict(height=height,width=width)
@@ -361,7 +362,8 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 SQLField('description',length=256),
                 SQLField('features','text'),        # List of features (to be replaced by many-to-many table)
-                SQLField('feature_classes','text')) # List of feature classes (to be replaced by many-to-many table)
+                SQLField('feature_classes','text'), # List of feature classes (to be replaced by many-to-many table)
+                SQLField('display','boolean',default='True'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].author.requires=IS_IN_DB(db,'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]

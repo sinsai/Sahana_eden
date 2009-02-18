@@ -3,6 +3,9 @@
   {{include 'gis/gis_styles_debug.html'}}
 {{else:}}
   {{include 'gis/gis_scripts_min.html'}}
+  <!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance
+  <link rel="stylesheet" type="text/css" href="http://extjs.cachefly.net/ext-2.2/resources/css/ext-all.css" />
+  -->
   <!--Ext Stylesheet would need it's images moving if compressed up & relocated-->
   <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/mfbase/ext/resources/css/ext-all.css" />
   <link href="/{{=request.application}}/static/styles/gis/gis.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />

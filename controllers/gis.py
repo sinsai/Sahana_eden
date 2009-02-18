@@ -285,7 +285,15 @@ def map_viewing_client():
             if layer.subtype==subtype:
                 virtualearth['%s' % subtype]=layer.name
     
+    # Internal Features
+    # ToDo: Only include those features which are are in enabled feature groups (either independently or through a feature class)
+    #feature_groups=db(db.gis_feature_group.enabled==True).select(db.gis_layer_feature_group.ALL)
+    # ToDo: include a limitby to prevent overloading the browser!
+    features = db(db.gis_feature.id>0).select(db.gis_feature.ALL)
+    marker = db(db.gis_config.id==1).select()[0].marker
+    features_marker = db(db.gis_marker.id==marker).select()[0].image
+    
     # Add the Layers to the Return
-    output.update(dict(openstreetmap=openstreetmap,google=google,yahoo=yahoo,virtualearth=virtualearth))
+    output.update(dict(openstreetmap=openstreetmap,google=google,yahoo=yahoo,virtualearth=virtualearth,features=features,features_marker=features_marker))
     
     return output

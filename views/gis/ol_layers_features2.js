@@ -1,5 +1,15 @@
-﻿// Need to port ol_layers_features2.php to provide lines like this per feature:
-//var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat(77.50839149540242, 8.70195705696625).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat(77.50839149540242, 8.70195705696625).transform(proj4326, proj_current)).lat));
-//var popupContentHTML = "<div class='gis_openlayers_popupbox' id='kylig-5'>   <div class='gis_openlayers_popupbox_header'>     <div class='gis_openlayers_popupbox_header_r'>       <div class='gis_openlayers_popupbox_author'><label for='gis_popup_author' >Author:</label> Anonymous</div>       <div class='gis_openlayers_popupbox_date'><label for='gis_popup_date' >Date:</label> 0000-00-00 00:00:00</div>     </div>     <div class='gis_openlayers_popupbox_header_l'>       <div class='gis_openlayers_popupbox_name'><span> </span> ()       </div>     </div>   </div>   <div class='gis_openlayers_popupbox_body'>     <span class='gis_openlayers_popupbox_text'>yreytjtyj</span>  </div>  <div class='gis_openlayers_popupbox_footer'>      <span><a onclick='shn_gis_popup_delete(&#39kylig-5&#39)' alt='delete'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>delete</span></a></span>      <span><a onclick='shn_gis_popup_edit_details(&#39kylig-5&#39)' alt='edit'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>edit</span></a></span>      <span class='gis_openlayers_popupbox_refreshs'><a onclick='shn_gis_popup_refresh(&#39kylig-5&#39)' alt='refresh'><div class='gis_openlayers_popupbox_refresh' style='width: 17px; height: 17px;'></div><span>refresh</span></a></span>  </div>  <div style='clear: both;'></div></div>";
-//var geom = coordToGeom(coords, "point");
-//add_Feature_with_popup(featuresLayer, 'outer_kylig-5', geom, popupContentHTML, '');
+﻿// Data provided by Controller (port underway in ol_layers_features2.py)
+{{for feature in features:}}
+    //only works for points!
+    var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lat));
+    //var coords = {{#=feature.coords}};
+    //var popupContentHTML = "{{#=feature.html}}";
+    var popupContentHTML = "";
+    var geom = coordToGeom(coords, '{{=feature.type}}');
+    {{#if feature.marker:}}
+        //var iconURL = '{{#=URL(r=request,c='default',f='download',args=[feature.marker])}}';
+    {{#else:}}
+        var iconURL = '{{=URL(r=request,c='default',f='download',args=[features_marker])}}';
+    {{#pass}}
+    add_Feature_with_popup(featuresLayer, '{{=feature.id}}', geom, popupContentHTML, iconURL);
+{{pass}}

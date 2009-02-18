@@ -1,4 +1,4 @@
-﻿module='mpr'
+module='mpr'
 
 # Menu Options
 table='%s_menu_option' % module
@@ -21,30 +21,40 @@ if not len(db().select(db[table].ALL)):
         description="Home",
         enabled='True')
     db[table].insert(
+        name="Search",
+        function="submenu",
+        priority=1,                                                                                                       description="various reports",
+        enabled='True')
+    db[table].insert(
         name="Search for a Person",
         function="person/search",
-        priority=1,
+        priority=2,
         description="search for a person",
+        enabled='True')
+    db[table].insert(
+        name="Search_end",
+        function="submenu/end",
+        priority=3,                                                                                                       description="various reports",
         enabled='True')
     db[table].insert(
         name="Reports",
         function="submenu",
-        priority=2,                                                                                                       description="various reports",
+        priority=4,                                                                                                       description="various reports",
         enabled='True')
     db[table].insert(
         name="Report a missing person",
         function="person/create",
-        priority=3,                                                                                                            description="report a missing person",
+        priority=5,                                                                                                            description="report a missing person",
         enabled='True')
     db[table].insert(
         name="Report a found person",
         function="person/update",
-        priority=4,                                                                                                             description="report a found person",
+        priority=6,                                                                                                             description="report a found person",
         enabled='True')
     db[table].insert(
         name="Reports_end",
         function="submenu/end",
-        priority=5,                                                                                                       description="various reports",
+        priority=7,                                                                                                       description="various reports",
         enabled='True')
 
 # Settings

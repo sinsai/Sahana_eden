@@ -49,7 +49,7 @@
        {{if option.function=='submenu':}}
          <li>
         {{try:}}
-          {{if ( session.menu_open.module_name == module_name ) and ( session.menu_open.option_name == option.name ):}}
+          {{if ( session.menu_open.module_name == module_name ) and ( option.name in session.menu_open.open_menus ):}}
             <a class="smclose" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
             <ul id="{{=option.name}}" style="display: block;">
           {{else:}}

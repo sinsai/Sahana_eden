@@ -45,9 +45,21 @@ def open_option():
 def menu_open():
     if not session.menu_open:
         session.menu_open=Storage()
-    session.menu_open.module_name=request.vars.module_name
-    session.menu_open.option_name=request.vars.option_name
-    return dict(module_name=session.menu_open.module_name,option_name=session.menu_open.option_name)
+        session.menu_open.open_menus=[]
+    if not (session.menu_open.module_name==request.vars.module_name):
+        session.menu_open.module_name=request.vars.module_name
+        session.menu_open.open_menus=[]
+    session.menu_open.open_menus.append(request.vars.option_name)
+    return dict(module_name=session.menu_open.module_name)
+def menu_close():
+    if session.menu_open:
+        if session.menu_open.module_name==request.vars.module_name:
+            try:
+                session.menu_open.open_menus.remove(request.vars.option_name)
+            except:
+                pass
+    response.view='default/menu_open.html'
+    return dict(module_name=session.menu_open.module_name)
 @auth.requires_membership('Administrator')
 def setting():
     "RESTlike CRUD controller"

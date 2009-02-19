@@ -292,17 +292,15 @@ def map_viewing_client():
     #for feature_group in feature_groups:
     # Limit to return only 200 features to prevent overloading the browser!
     features = db(db.gis_feature.id>0).select(db.gis_feature.ALL,limitby=(0,200))
+    features_classes=Storage()
     features_markers=Storage()
-    features_popup=Storage()
+    features_metadata=Storage()
     for feature in features:
         # 1st choice for a Marker is the Feature's
         marker = feature.marker
         try:
-            feature_metadata = db(db.gis_feature_metadata.id==feature.metadata).select()[0]
-        except:
-            feature_metadata = None
-        try:
             feature_class = db(db.gis_feature_class.id==feature.feature_class).select()[0]
+            
             if not marker:
                 # 2nd choice for a Marker is the Feature Class's
                 marker = feature_class.marker
@@ -311,53 +309,16 @@ def map_viewing_client():
         if not marker:
             # 3rd choice for a Marker is the default
             marker = features_marker
+        features_classes[feature.id] = feature_class
         features_markers[feature.id] = db(db.gis_marker.id==marker).select()[0].image
-        
-        features_popup[feature.id] = "<div class='gis_openlayers_popupbox' id='"+feature.uuid+"'>"
-        # Header (name, link, date, author, address)
-        features_popup[feature.id] += "   <div class='gis_openlayers_popupbox_header'>"
-        if feature_metadata:
-            features_popup[feature.id] += "     <div class='gis_openlayers_popupbox_header_r'>"
-            features_popup[feature.id] += "       <div class='gis_openlayers_popupbox_author'><label for='gis_popup_author' >" + str(T("Author")) + ":</label>"+feature_metadata.created_by+"</div>"
-            features_popup[feature.id] += "       <div class='gis_openlayers_popupbox_date'><label for='gis_popup_date' >" + str(T("Date")) + ":</label>"+feature_metadata.event_time+"</div>"
-            features_popup[feature.id] += "     </div>"
-        features_popup[feature.id] += "     <div class='gis_openlayers_popupbox_header_l'>"
-        features_popup[feature.id] += "       <div class='gis_openlayers_popupbox_name'><span>"+feature.name+"</span>"
-        if feature_class:
-            features_popup[feature.id] += " ("+feature_class.name+")"
-        #if(!(url === false)):
-        #    features_popup[feature.id] += "      <a href='url' target='_blank'><div class='gis_openlayers_popupbox_link' style='width: 17px; height: 17px;'></div></a>"
-        features_popup[feature.id] += "       </div>"
-        features_popup[feature.id] += "     </div>"
-        features_popup[feature.id] += "   </div>"
-        # Body (desc, img, vid)
-        if feature_metadata:
-            features_popup[feature.id] += "   <div class='gis_openlayers_popupbox_body'>"
-            features_popup[feature.id] += "     <span class='gis_openlayers_popupbox_text'>"+feature_metadata.description+"</span>"
-            features_popup[feature.id] += "   </div>"
-        # Footer (edit, view)
-        features_popup[feature.id] += "  <div class='gis_openlayers_popupbox_footer'>"
-        # Options will want to display these based on ACL privileges (also make sure resulting actions are ACLed)
-        #if(url_del === true):
-        #    features_popup[feature.id] += "      <span><a onclick='shn_gis_popup_delete(&#39feature_uuid&#39)' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"
-        #elif(!(url_del === false)):
-        #    features_popup[feature.id] += "      <span><a href='url_del' target='_blank' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"   
-        #else:
-        #    features_popup[feature.id] += "      <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"   
-        #if(url_edit === true):
-        #    features_popup[feature.id] += "      <span><a onclick='shn_gis_popup_edit_details(&#39feature_uuid&#39)' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span>"
-        #elif(!(url_edit === false)):
-        #    features_popup[feature.id] += "      <span><a href='url_edit' target='_blank' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span> "
-        #else:
-        #    features_popup[feature.id] += "      <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span> " 
-        #if(!(url_view === false)):
-        #    features_popup[feature.id] += "      <span><a href='url_view' target='_blank' alt='" + str(T("view")) + "'><div class='gis_openlayers_popupbox_view' style='width: 17px; height: 17px;'></div><span>" + str(T("view")) + "</span></a></span>"
-        #features_popup[feature.id] += "      <span class='gis_openlayers_popupbox_refreshs'><a onclick='shn_gis_popup_refresh(&#39feature_uuid&#39)' alt='" + str(T("refresh")) + "'><div class='gis_openlayers_popupbox_refresh' style='width: 17px; height: 17px;'></div><span>" + str(T("refresh")) + "</span></a></span>"
-        features_popup[feature.id] += "  </div>"
-        features_popup[feature.id] += "  <div style='clear: both;'></div>"
-        features_popup[feature.id] += "</div>"
-    
+                
+        try:
+            feature_metadata = db(db.gis_feature_metadata.id==feature.metadata).select()[0]
+        except:
+            feature_metadata = None
+        features_metadata[feature.id] = feature_metadata
+
     # Add the Layers to the Return
-    output.update(dict(openstreetmap=openstreetmap,google=google,yahoo=yahoo,virtualearth=virtualearth,features=features,features_markers=features_markers,features_popup=features_popup))
+    output.update(dict(openstreetmap=openstreetmap,google=google,yahoo=yahoo,virtualearth=virtualearth,features=features,features_classes=features_classes,features_markers=features_markers,features_metadata=features_metadata))
     
     return output

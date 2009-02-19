@@ -114,6 +114,7 @@ listCSS = [
 ]
 
 listCSSGIS = [
+    '../../styles/gis/gis.css',
     '../../styles/gis/mapfish.css',
     #mfbase+'/ext/resources/css/ext-all.css', # would need to copy images if included here
     mfbase+'/openlayers/theme/default/framedCloud.css'

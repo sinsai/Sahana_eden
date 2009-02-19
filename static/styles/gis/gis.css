@@ -1,0 +1,24 @@
+/*
+GIS module
+*/
+.olControlMousePosition { font-size: 10px; }
+.gis_openlayers_popupbox { padding: 10px; }
+    .gis_openlayers_popupbox_header{}
+    .gis_openlayers_popupbox_header_l{font-size: 0.8em;}
+    .gis_openlayers_popupbox_header_l label{float: left; margin-right: 2px; position: relative; top: 0.4em; width: 3em;}
+    .gis_openlayers_popupbox_name span{font-size: 1.8em; font-weight: bold;}
+    .gis_openlayers_popupbox_link{float: left; margin-left: 5px; width: 17px; height: 17px; background: transparent url(../../img/link.png) no-repeat scroll 0% 0%;}
+    .gis_openlayers_popupbox_url{margin-top:5px;}
+    .gis_openlayers_popupbox_header_r{float: right; font-size: 0.8em}
+    .gis_openlayers_popupbox_date{float: right; margin-top:5px;}
+    .gis_openlayers_popupbox_address{clear: both; margin-top:20px;}
+    .gis_openlayers_popupbox_body{clear: both; margin-top:10px; min-height: 105px }
+    .gis_openlayers_popupbox_footer{clear: both; margin-top:10px;}
+    .gis_openlayers_popupbox_footer span{float: left; cursor: pointer}
+    .gis_openlayers_popupbox_delete{float: left; width: 17px; height: 17px; background: transparent url(../../img/gis/page_white_delete.png) no-repeat scroll 0% 0%;}
+    .gis_openlayers_popupbox_edit{float: left; margin-left: 10px; width: 17px; height: 17px; background: transparent url(../../img/gis/page_white_edit.png) no-repeat scroll 0% 0%;}
+    .gis_openlayers_popupbox_view{float: left; margin-left: 10px; width: 17px; height: 17px; background: transparent url(../../img/gis/page_white_find.png) no-repeat scroll 0% 0%;}
+    .gis_openlayers_popupbox_refresh{float: left; margin-left: 10px; width: 17px; height: 17px; background: transparent url(../../img/gis/page_white_refresh.png) no-repeat scroll 0% 0%;}
+    span.gis_openlayers_popupbox_refreshs{float: right;}
+    .gis_openlayers_popupbox_edit_ok{float: left; margin-left: 15px; width: 17px; height: 17px; background: transparent url(../../img/tick.png) no-repeat scroll 0% 0%;}
+    .gis_openlayers_popupbox_edit_cancel{float: left; width: 17px; height: 17px; background: transparent url(../../img/cross2.png) no-repeat scroll 0% 0%;}

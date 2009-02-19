@@ -61,8 +61,8 @@ resource='marker'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
-                SQLField('height','integer'), # In Pixels, for display purposes
-                SQLField('width','integer'),
+                #SQLField('height','integer'), # In Pixels, for display purposes
+                #SQLField('width','integer'),  # Not needed since we get size client-side using Javascript's Image() class
                 SQLField('image','upload'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -74,8 +74,8 @@ if not len(db().select(db[table].ALL)):
     db[table].truncate() 
     db[table].insert(
         name="marker",
-        height=34,
-        width=20,
+        #height=34,
+        #width=20,
         # Can't do sub-folders :/
         # need to script a bulk copy & rename
         image="gis_marker.image.default.png"
@@ -85,8 +85,8 @@ if not len(db().select(db[table].ALL)):
     # TEMP: Manual markers for some pre-defined Feature Classes
     db[table].insert(
         name="shelter",
-        height=40,
-        width=40,
+        #height=40,
+        #width=40,
         image="gis_marker.image.shelter.png"
     )
 title_create=T('Add Marker')
@@ -107,7 +107,7 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 marker_id=SQLTable(None,'marker_id',
             SQLField('marker',
                 db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
-                represent=lambda id: DIV(A(IMG(_src=URL(r=request,c='default',f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,c='default',f='download',args=[db(db.gis_marker.id==id).select()[0].image]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
+                represent=lambda id: DIV(A(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
                 comment=''))
 
 # GIS Projections
@@ -288,7 +288,7 @@ db.define_table(table,timestamp,uuidstamp,
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].person_id.represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
 db[table].person_id.label=T("Contact")
-db[table].url.requires=IS_URL()
+db[table].url.requires=IS_NULL_OR(IS_URL())
 title_create=T('Add Feature Metadata')
 title_display=T('Feature Metadata Details')
 title_list=T('List Feature Metadata')
@@ -314,7 +314,8 @@ db.define_table(table,timestamp,uuidstamp,
                 SQLField('type',default='point'),
                 SQLField('lat','double'),    # Only needed for Points
                 SQLField('lon','double'),    # Only needed for Points
-                SQLField('wkt',length=256))    # WKT is auto-calculated from lat/lon for Points
+                SQLField('wkt',length=256),  # WKT is auto-calculated from lat/lon for Points
+                SQLField('resource_id','integer')) # Used to build Edit URL for Feature Class.
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
@@ -407,6 +408,36 @@ table=module+'_'+resource
 db.define_table(table,timestamp,
                 feature_group_id,
                 feature_class_id)
+
+resource='landmark'
+table=module+'_'+resource
+db.define_table(table,timestamp,uuidstamp,
+                SQLField('created_by',db.auth_user,writable=False), # Auto-stamped by T2
+                SQLField('modified_by',db.auth_user,writable=False), # Auto-stamped by T2
+                SQLField('name'),
+                SQLField('type'),
+                SQLField('description',length=256),
+                SQLField('url'),
+                SQLField('image','upload'))
+db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires=IS_NOT_EMPTY()
+db[table].name.comment=SPAN("*",_class="req")
+db[table].type.requires=IS_NULL_OR(IS_IN_SET(['church','school','hospital']))
+db[table].url.requires=IS_NULL_OR(IS_URL())
+title_create=T('Add Landmark')
+title_display=T('Landmark Details')
+title_list=T('List Landmarks')
+title_update=T('Edit Landmark')
+title_search=T('Search Landmarks')
+subtitle_create=T('Add New Landmark')
+subtitle_list=T('Landmarks')
+label_list_button=T('List Landmarks')
+label_create_button=T('Add Landmark')
+msg_record_created=T('Landmark added')
+msg_record_modified=T('Landmark updated')
+msg_record_deleted=T('Landmark deleted')
+msg_list_empty=T('No Landmarks currently defined')
+s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # GIS Locations
 resource='location'

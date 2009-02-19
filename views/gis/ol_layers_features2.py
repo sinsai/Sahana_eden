@@ -48,74 +48,6 @@ def shn_gis_coord_decode(coords):
     return output
    
    
-# Set id in case any features do not have uuids...
-id = 0
-# Place each feature
-foreach(features as feature):
-    
-    # Set Feature uuid
-    if(isset(feature['f_uuid'])):
-        feature_uuid = 'outer_' + feature['f_uuid']
-    else:
-        # :(
-        uuid = 'outer_popup_' + id++
-    
-    # Set Feature Type
-    if(isset(feature['f_type'])):
-        type = feature['f_type']
-    else:
-        type = 'point'
-    
-    # Generate vars for html popup HTML content
-    if(isset(feature['f_class'])):
-        feature_class = shn_gis_get_feature_class_uuid(feature['f_class'])
-    else:
-        feature_class = shn_gis_get_feature_class_uuid(conf['gis_feature_type_default'])
-    
-    # Set icon
-    if(isset(feature['icon'])):
-        icon = feature['icon']
-    else:
-        icon = feature_class['c_icon']
-    if(icon == ''):
-        fc = shn_gis_get_feature_class_uuid(conf['gis_feature_type_default'])
-        icon = fc['c_icon']
-    
-    # Bit of a hacky way to do it. Especially the transform...
-    coordinates = shn_gis_coord_decode(feature['f_coords'])
-    coords = ''
-    if(count(coordinates) == 1):
-         coords += "var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat));\n"; 
-    else:
-         coords += "var coords = new Array(";
-         ctot = count(coordinates) - 1;
-         for(i = 1; i < ctot; i++):
-             coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat), ";
-         if(ctot > 0):
-         coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat)";   
-         coords += ");\n"            
-        
-    # Popup
-    html =  "var popupContentHTML = \""
-    html += shn_gis_form_popupHTML_view(feature)
-    html += "\";\n"
-    
-    return dict(coords=coords, html=html)
-
-    
-def shn_gis_get_feature_class_uuid(fc_uuid):
-    "Given a Feature Class UUID, return the other fields"
-
-    record = db(db.gis_feature_class.uuid==fc_uuid).select(db.gis_feature_class.ALL)[0]
-    feature_class = {
-        'fc_name' : record.name,
-        'fc_uuid' : record.uuid,
-        'fc_module' : record.module,
-        'fc_resource' : record.resource,
-        'fc_icon' : record.marker
-        }
-    return feature_class
-   
 def shn_gis_form_popupHTML_view(feature):
     "Generate vars for popup HTML content"
         
@@ -182,7 +114,7 @@ def shn_gis_form_popupHTML_view(feature):
         # if is registered to a module but has no edit url, should not be editable.
         url_edit = false
     elif (!isset(feature['f_uuid']) || feature['f_uuid'] == ''):
-        # if there is no uuid to tie feature being edited too...
+        # if there is no uuid to tie feature being edited to...
         url_edit = false
     else:
         # if feature is not module related and has a uuid to tie changes to. (can edit)
@@ -196,57 +128,9 @@ def shn_gis_form_popupHTML_view(feature):
         # if is registered to a module but has no del url, should not be deletable.
         url_del = false
     elif(!isset(feature['f_uuid']) || feature['f_uuid'] == ''):
-        # if there is no uuid to tie feature being deleted too...
+        # if there is no uuid to tie feature being deleted to...
         url_del = false
     else:
         # if feature is not module related and has a uuid to tie changes to. (can del)
         url_del = true
-    
-    
-    # Popup HTML
-    html = ''
-    html += "<div class='gis_openlayers_popupbox' id='feature_uuid'>"
-    # Header (name, link, date, author, address)
-    html += "   <div class='gis_openlayers_popupbox_header'>"
-    html += "     <div class='gis_openlayers_popupbox_header_r'>"
-    html += "       <div class='gis_openlayers_popupbox_author'><label for='gis_popup_author' >" + str(T("Author:")) + "</label> author</div>"
-    html += "       <div class='gis_openlayers_popupbox_date'><label for='gis_popup_date' >" + str(T("Date:")) + "</label> event_date</div>"
-    html += "     </div>"
-    html += "     <div class='gis_openlayers_popupbox_header_l'>"
-    html += "       <div class='gis_openlayers_popupbox_name'><span> name</span> ({feature_class['c_name']})"
-    if(!(url === false)):
-        html += "      <a href='url' target='_blank'><div class='gis_openlayers_popupbox_link' style='width: 17px; height: 17px;'></div></a>"
-    html += "       </div>"
-    html += "     </div>"
-    if(!(address === false)):
-        html += "      <div class='gis_openlayers_popupbox_address'><b>" + str(T("Address:")) + "</b> address</div>"
-    html += "   </div>"
-    # Body (desc, img, vid)
-    html += "   <div class='gis_openlayers_popupbox_body'>"
-    html += "     <span class='gis_openlayers_popupbox_text'>description</span>"
-    #html +=  "    <span class='gis_openlayers_popupbox_img'><img src=image width=100 height=100></span>"   
-    #html +=  "    <span class='gis_openlayers_popupbox_vid'></span>"   
-    html += "  </div>"
-    # Footer (edit, view)
-    html += "  <div class='gis_openlayers_popupbox_footer'>"
-    # Options will want to display these based on ACL privileges (also make sure resulting actions are ACLed)
-    if(url_del === true):
-        html += "      <span><a onclick='shn_gis_popup_delete(&#39feature_uuid&#39)' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"
-    elif(!(url_del === false)):
-        html += "      <span><a href='url_del' target='_blank' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"   
-    else:
-        html += "      <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"   
-   if(url_edit === true):
-        html += "      <span><a onclick='shn_gis_popup_edit_details(&#39feature_uuid&#39)' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span>"
-    elif(!(url_edit === false)):
-        html += "      <span><a href='url_edit' target='_blank' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span> "
-    else:
-        html += "      <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span> " 
-    if(!(url_view === false)):
-        html += "      <span><a href='url_view' target='_blank' alt='" + str(T("view")) + "'><div class='gis_openlayers_popupbox_view' style='width: 17px; height: 17px;'></div><span>" + str(T("view")) + "</span></a></span>"
-    html += "      <span class='gis_openlayers_popupbox_refreshs'><a onclick='shn_gis_popup_refresh(&#39feature_uuid&#39)' alt='" + str(T("refresh")) + "'><div class='gis_openlayers_popupbox_refresh' style='width: 17px; height: 17px;'></div><span>" + str(T("refresh")) + "</span></a></span>"
-    html += "  </div>"
-    html += "  <div style='clear: both;'></div>"
-    html += "</div>"
-        
-    return html
+ 

@@ -1,24 +1,53 @@
-﻿#Python port of ol_layers_features2.php
-
-# Sample output:
-#var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat(77.50839149540242, 8.70195705696625).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat(77.50839149540242, 8.70195705696625).transform(proj4326, proj_current)).lat));
-#var popupContentHTML = "<div class='gis_openlayers_popupbox' id='kylig-5'>   <div class='gis_openlayers_popupbox_header'>     <div class='gis_openlayers_popupbox_header_r'>       <div class='gis_openlayers_popupbox_author'><label for='gis_popup_author' >Author:</label> Anonymous</div>       <div class='gis_openlayers_popupbox_date'><label for='gis_popup_date' >Date:</label> 0000-00-00 00:00:00</div>     </div>     <div class='gis_openlayers_popupbox_header_l'>       <div class='gis_openlayers_popupbox_name'><span> </span> ()       </div>     </div>   </div>   <div class='gis_openlayers_popupbox_body'>     <span class='gis_openlayers_popupbox_text'>yreytjtyj</span>  </div>  <div class='gis_openlayers_popupbox_footer'>      <span><a onclick='shn_gis_popup_delete(&#39kylig-5&#39)' alt='delete'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>delete</span></a></span>      <span><a onclick='shn_gis_popup_edit_details(&#39kylig-5&#39)' alt='edit'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>edit</span></a></span>      <span class='gis_openlayers_popupbox_refreshs'><a onclick='shn_gis_popup_refresh(&#39kylig-5&#39)' alt='refresh'><div class='gis_openlayers_popupbox_refresh' style='width: 17px; height: 17px;'></div><span>refresh</span></a></span>  </div>  <div style='clear: both;'></div></div>";
-#var geom = coordToGeom(coords, "point");
-#add_Feature_with_popup(featuresLayer, 'outer_kylig-5', geom, popupContentHTML, '');
-
-
-# Data model:
-#db.define_table(table,timestamp,uuidstamp,
-#                SQLField('name'),
-#                feature_class_id,
-#                SQLField('metadata',db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
-#                SQLField('type',default='point'),
-#                SQLField('lat','double'),    # Only needed for Points
-#                SQLField('lon','double'),    # Only needed for Points
-#                SQLField('wkt',length=256))
-
-
-
+﻿# Bit of a hacky way to do it. Especially the transform...
+    coordinates = shn_gis_coord_decode(feature['f_coords'])
+    coords = ''
+    if(count(coordinates) == 1):
+         coords += "var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat));\n"; 
+    else:
+         coords += "var coords = new Array(";
+         ctot = count(coordinates) - 1;
+         for(i = 1; i < ctot; i++):
+             coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat), ";
+         if(ctot > 0):
+         coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat)";   
+         coords += ");\n"            
+    
+def shn_gis_coord_decode(coords):
+    """ Takes the coord string stored in the db and decodes it into an array of:
+    [0 => center of obj][0 => x, 1 => y, 2 => z]
+    [1 => plot 1][0 => x, 1 => y, 2 => z]
+    [2 => plot 2][0 => x, 1 => y, 2 => z]
+    [3 => plot 3][0 => x, 1 => y, 2 => z]
+    In the case of a single point (eg 33.54,64.32,0,wkt{POINT Z (33.54 64.32 0)} ) the call would result in:
+    [0][0 => 33.54, 1 => 64.32, 2 => 0]
+    [1][0 => 33.54, 1 => 64.32, 2 => 0]
+    In a line or poly type (e.g. 2,3,0,wkt{POLYGON Z ((1 4 0,5 1 0,5 5 1))} )
+    [0][0 => 2, 1 => 3, 2 => 0]
+    [1][0 => 1, 1 => 4, 2 => 0]
+    [2][0 => 5, 1 => 1, 2 => 0]
+    [3][0 => 5, 1 => 5, 2 => 1]
+    """
+    output = array()
+    subcoords = explode(",", coords, 4)
+    #2,3,0,wkt{POLYGON Z ((1 4 0,5 1 0,5 5 1))}
+    array_push(output, array(subcoords[0], subcoords[1], subcoords[2]))
+    # [0][0 => 2, 1 => 3, 2 => 0]
+    wkt = subcoords[3]
+    # wkt{POLYGON Z ((1 4 0,5 1 0,5 5 1))}
+    wkt = ereg_replace("(wkt{|})", "", wkt)
+    # POLYGON Z ((1 4 0,5 1 0,5 5 1))
+    wkt = explode('(' , wkt, 2)
+    # 0 => POLYGON Z   1 => ((1 4 0,5 1 0,5 5 1))
+    # if polygons start having inner circles this will need to change
+    wkt = ereg_replace("(\(|\))", "", wkt[1])
+    # 1 4 0,5 1 0,5 5 1
+    wkt = explode(',' , wkt)
+    # 0 => 1 4 0   1 => 5 1 0   2 => 5 5 1
+    foreach(wkt as point):
+        array_push(output, explode(' ' , point, 3) )
+    return output
+   
+   
 # Set id in case any features do not have uuids...
 id = 0
 # Place each feature
@@ -86,42 +115,6 @@ def shn_gis_get_feature_class_uuid(fc_uuid):
         'fc_icon' : record.marker
         }
     return feature_class
-   
-def shn_gis_coord_decode(coords):
-    """ Takes the coord string stored in the db and decodes it into an array of:
-    [0 => center of obj][0 => x, 1 => y, 2 => z]
-    [1 => plot 1][0 => x, 1 => y, 2 => z]
-    [2 => plot 2][0 => x, 1 => y, 2 => z]
-    [3 => plot 3][0 => x, 1 => y, 2 => z]
-    In the case of a single point (eg 33.54,64.32,0,wkt{POINT Z (33.54 64.32 0)} ) the call would result in:
-    [0][0 => 33.54, 1 => 64.32, 2 => 0]
-    [1][0 => 33.54, 1 => 64.32, 2 => 0]
-    In a line or poly type (e.g. 2,3,0,wkt{POLYGON Z ((1 4 0,5 1 0,5 5 1))} )
-    [0][0 => 2, 1 => 3, 2 => 0]
-    [1][0 => 1, 1 => 4, 2 => 0]
-    [2][0 => 5, 1 => 1, 2 => 0]
-    [3][0 => 5, 1 => 5, 2 => 1]
-    """
-    output = array()
-    subcoords = explode(",", coords, 4)
-    #2,3,0,wkt{POLYGON Z ((1 4 0,5 1 0,5 5 1))}
-    array_push(output, array(subcoords[0], subcoords[1], subcoords[2]))
-    # [0][0 => 2, 1 => 3, 2 => 0]
-    wkt = subcoords[3]
-    # wkt{POLYGON Z ((1 4 0,5 1 0,5 5 1))}
-    wkt = ereg_replace("(wkt{|})", "", wkt)
-    # POLYGON Z ((1 4 0,5 1 0,5 5 1))
-    wkt = explode('(' , wkt, 2)
-    # 0 => POLYGON Z   1 => ((1 4 0,5 1 0,5 5 1))
-    # if polygons start having inner circles this will need to change
-    wkt = ereg_replace("(\(|\))", "", wkt[1])
-    # 1 4 0,5 1 0,5 5 1
-    wkt = explode(',' , wkt)
-    # 0 => 1 4 0   1 => 5 1 0   2 => 5 5 1
-    foreach(wkt as point):
-        array_push(output, explode(' ' , point, 3) )
-    return output
-   
    
 def shn_gis_form_popupHTML_view(feature):
     "Generate vars for popup HTML content"
@@ -221,14 +214,12 @@ def shn_gis_form_popupHTML_view(feature):
     html += "     </div>"
     html += "     <div class='gis_openlayers_popupbox_header_l'>"
     html += "       <div class='gis_openlayers_popupbox_name'><span> name</span> ({feature_class['c_name']})"
-    if(!(url === false)){
+    if(!(url === false)):
         html += "      <a href='url' target='_blank'><div class='gis_openlayers_popupbox_link' style='width: 17px; height: 17px;'></div></a>"
-    }
     html += "       </div>"
     html += "     </div>"
-    if(!(address === false)){
+    if(!(address === false)):
         html += "      <div class='gis_openlayers_popupbox_address'><b>" + str(T("Address:")) + "</b> address</div>"
-    }
     html += "   </div>"
     # Body (desc, img, vid)
     html += "   <div class='gis_openlayers_popupbox_body'>"
@@ -238,26 +229,21 @@ def shn_gis_form_popupHTML_view(feature):
     html += "  </div>"
     # Footer (edit, view)
     html += "  <div class='gis_openlayers_popupbox_footer'>"
-    #Options will want to display these based on ACL privileges (also make sure resulting actions are ACLed)
-    
+    # Options will want to display these based on ACL privileges (also make sure resulting actions are ACLed)
     if(url_del === true):
         html += "      <span><a onclick='shn_gis_popup_delete(&#39feature_uuid&#39)' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"
     elif(!(url_del === false)):
         html += "      <span><a href='url_del' target='_blank' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"   
     else:
         html += "      <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("delete")) + "'><div class='gis_openlayers_popupbox_delete' style='width: 17px; height: 17px;'></div><span>" + str(T("delete")) + "</span></a></span>"   
-    
-    
    if(url_edit === true):
         html += "      <span><a onclick='shn_gis_popup_edit_details(&#39feature_uuid&#39)' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span>"
     elif(!(url_edit === false)):
         html += "      <span><a href='url_edit' target='_blank' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span> "
     else:
         html += "      <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("edit")) + "'><div class='gis_openlayers_popupbox_edit' style='width: 17px; height: 17px;'></div><span>" + str(T("edit")) + "</span></a></span> " 
-    
     if(!(url_view === false)):
         html += "      <span><a href='url_view' target='_blank' alt='" + str(T("view")) + "'><div class='gis_openlayers_popupbox_view' style='width: 17px; height: 17px;'></div><span>" + str(T("view")) + "</span></a></span>"
-    
     html += "      <span class='gis_openlayers_popupbox_refreshs'><a onclick='shn_gis_popup_refresh(&#39feature_uuid&#39)' alt='" + str(T("refresh")) + "'><div class='gis_openlayers_popupbox_refresh' style='width: 17px; height: 17px;'></div><span>" + str(T("refresh")) + "</span></a></span>"
     html += "  </div>"
     html += "  <div style='clear: both;'></div>"

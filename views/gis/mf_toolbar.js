@@ -33,30 +33,36 @@ function initToolbarContent(toolbar) {
 		}
 	);
 	toolbar.addControl(
-		new OpenLayers.Control.DragPan({
-			isDefault: true
-		}), {
+		new OpenLayers.Control.DragPan(), {
 			iconCls: 'pan', 
 			tooltip: '{{=T("Pan Map: keep the left mouse button pressed and drag the map")}}', 
 			toggleGroup: 'map'
 		}
 	);
 	addSeparator(toolbar);
-	//toolbar.addControl(
-	//	selectControl, {
-	//		iconCls: 'select', 
-	//		tooltip: '{{=T("Select Feature")}}', 
-	//		toggleGroup: 'map'
-	//	}
-	//);
-	//toolbar.addControl(
+    selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
+        onSelect: onFeatureSelect_1,
+        onUnselect: onFeatureUnselect_1,
+        multiple: false,
+        clickout: true,
+        toggle: true,
+        isDefault: true
+    });
+	toolbar.addControl(
+		selectControl, {
+			iconCls: 'searchclick', 
+			tooltip: '{{=T("Query Feature")}}', 
+			toggleGroup: 'map'
+		}
+	);
+    //toolbar.addControl(
 	//	dragControl, {
 	//		iconCls: 'pan', 
 	//		tooltip: '{{=T("Drag Feature")}}', 
 	//		toggleGroup: 'map'
 	//	}
 	//);
-	toolbar.addControl(
+    toolbar.addControl(
 		new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point), {
 			iconCls: 'drawpoint', 
 			tooltip: '{{=T("Add Point")}}', 

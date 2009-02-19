@@ -1,19 +1,26 @@
-﻿featuresLayer = new OpenLayers.Layer.Vector("Internal Features", { 
-		displayInLayerSwitcher: false
-	});
+﻿featuresLayer = new OpenLayers.Layer.Vector("Internal Features");
 var proj_current = map.getProjectionObject();
-{{include 'gis/ol_layers_features2.js'}}
+
+{{for feature in features:}}
+    //ToDo: make work for more than just points!
+    var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lat));
+    var popupContentHTML = "{{=XML(features_popup[feature.id])}}";
+    var geom = coordToGeom(coords, '{{=feature.type}}');
+    var iconURL = '{{=URL(r=request,c='default',f='download',args=[features_markers[feature.id]])}}';
+    add_Feature_with_popup(featuresLayer, '{{=feature.uuid}}', geom, popupContentHTML, iconURL);
+{{pass}}
     
-// Add Feature layer
+// Add Features layer
 map.addLayer(featuresLayer);
 
-// We do this here instead of in ol_controls_features.js
-// otherwise we get this.layer undefined
 featuresLayer.events.register('featureadded', featuresLayer, function(){
-       shn_gis_map_create_feature; 
+       // ToDo: Support 2 Modes via if: else:
+       // Add a point with popup (for use from map_viewing_client)
+       shn_gis_map_create_feature;
+       // Add a point without popup (for use from add_feature during modue CRUD)
+       //shn_gis_map_add_geometry;
 });
 
 // Show Busy cursor whilst loading Features
-// - function defined in ol_vector_registerEvents.js
 map.registerEvents(featuresLayer);
 

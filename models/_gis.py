@@ -309,6 +309,7 @@ table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 SQLField('name'),
                 feature_class_id,
+                marker_id,
                 SQLField('metadata',db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
                 SQLField('type',default='point'),
                 SQLField('lat','double'),    # Only needed for Points

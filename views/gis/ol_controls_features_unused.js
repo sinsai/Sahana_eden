@@ -1,5 +1,21 @@
-﻿// Add control to select features (showing info popup).
-// unused currently
+﻿// We add the controls in mf_toolbar.js
+
+// Add control to add new points to the map.
+pointControl = new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point);
+pointControl.featureAdded = shn_gis_map_create_feature;
+map.addControl(pointControl);
+
+// Add control to add new lines to the map.
+lineControl = new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path);
+lineControl.featureAdded = shn_gis_map_create_feature;
+map.addControl(lineControl);
+
+// Add control to add new polygons to the map.
+polygonControl = new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon);
+polygonControl.featureAdded = shn_gis_map_create_feature;
+map.addControl(polygonControl);
+
+// Add control to select features (showing info popup).
 selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
     onSelect: onFeatureSelect_1,
     onUnselect: onFeatureUnselect_1,
@@ -7,7 +23,7 @@ selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
     clickout: true,
     toggle: true
 });
-//map.addControl(selectControl);
+map.addControl(selectControl);
 
 // Supports feature select control.
 function onFeatureSelect_1(feature){
@@ -75,5 +91,5 @@ function shn_gis_popup_edit_position(feature, pixel)
 //modifyControl.mode &= ~OpenLayers.Control.ModifyFeature.DRAG;
 
 // Start with select activated.
-// ol_controls_activation.js
+// unused_ol_controls_switch.js
 //shn_gis_map_control_select();

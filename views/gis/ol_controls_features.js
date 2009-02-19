@@ -1,24 +1,7 @@
-﻿// We add the controls in mf_toolbar.js
-
-// Add control to add new points to the map.
-//pointControl = new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point);
-//pointControl.featureAdded = shn_gis_map_create_feature;
-//map.addControl(pointControl);
-
-// Add control to add new lines to the map.
-//lineControl = new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path);
-//lineControl.featureAdded = shn_gis_map_create_feature;
-//map.addControl(lineControl);
-
-// Add control to add new polygons to the map.
-//polygonControl = new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon);
-//polygonControl.featureAdded = shn_gis_map_create_feature;
-//map.addControl(polygonControl);
-
-
+﻿// Supports feature create controls (Point, Line & Polygon)
 // On Creating a new feature, display a popup box to enter details.
 function shn_gis_map_create_feature(feature){
-    // If adding a new popup before an old one is completed kill old popup (current feature is set to null at end of process)
+    // If adding a new popup before an old one is completed, kill old popup (current feature is set to null at end of process)
     if(currentFeature != null){
         currentFeature.popup.hide();
         featuresLayer.removeFeatures([currentFeature]);
@@ -42,7 +25,7 @@ function shn_gis_map_create_feature(feature){
     feature.popup.show();
     currentFeature = feature;
 }
-// Called by link in popup box
+// Called by closeBox in Popup
 function shn_gis_popup_new_cancel(){
     currentFeature.popup.hide();
     featuresLayer.removeFeatures([currentFeature]);
@@ -51,7 +34,23 @@ function shn_gis_popup_new_cancel(){
     currentFeature = null;
 }
 
-// Add marker to map
+// Supports feature selectControl
+function onFeatureSelect_1(feature){
+    // Set global for back referencing
+    currentFeature = feature;
+    if (feature.popup.map == null) {
+        map.addPopup(feature.popup);
+        feature.popup.show();
+    } else {
+        feature.popup.toggle();
+    }
+}
+function onFeatureUnselect_1(feature) {
+    feature.popup.hide();
+}
+
+
+// Add marker to map (called by ol_layers_features.js)
 function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconURL) {
     // Set icon dims
     var icon_img = new Image();
@@ -77,10 +76,10 @@ function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconU
     style_marker.graphicYOffset = -height;
     style_marker.externalGraphic = iconURL;
     style_marker.graphicOpacity = 1;
-    // Create Feature Vector + Props
+    // Create Feature Vector
     var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
     featureVec.fid = feature_id;
-    // Generate Popup + Props
+    // Create Popup
     var fc_id = null;
     var fc_lonlat = featureVec.geometry.getBounds().getCenterLonLat();
     var fc_size = null;
@@ -93,10 +92,10 @@ function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconU
     framedCloud.minSize = new OpenLayers.Size(460,270);
     // Add Popup
     featureVec.popup = framedCloud;
-    // Add Feature.
+    // Add Feature
     layer.addFeatures([featureVec]);
 }
 // Supports add_Feature_with_popup()
 function onPopupClose(evt) {
-    onFeatureUnselect_1(currentFeature);
+    currentFeature.popup.hide();
 }

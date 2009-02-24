@@ -108,7 +108,7 @@ class AuthS3(Auth):
         self.messages.email_sent = T("Email sent")
         self.messages.email_verified = T("Email verified")
         self.messages.logged_out = T("Logged out")
-        self.messages.registration_succesful = T("Registration successful")
+        self.messages.registration_successful = T("Registration successful")
         self.messages.invalid_email = T("Invalid email")
         self.messages.invalid_login = T("Invalid login")
         self.messages.mismatched_password = T("Password fields don't match")

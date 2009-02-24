@@ -441,7 +441,7 @@ def wkt_centroid(form):
         if form.vars.lat==None:
             form.errors['lat'] = T("Invalid: Latitude can't be empty!")
             return
-        form.vars.wkt = 'POINT(%(lon)d %(lat)d)' % form.vars
+        form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
     elif form.vars.type=='line':
         try:
             from shapely.wkt import loads

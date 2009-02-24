@@ -1,4 +1,17 @@
-﻿# Bit of a hacky way to do it. Especially the transform...
+﻿ol_layers_features.js old:
+    {{if feature.type=='point':}}
+        var geom = new OpenLayers.Geometry.Point((new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lat));
+    //ToDo: make work for more than just points!
+    {{elif feature.type=='line':}}
+        coords = 
+        var geom = new OpenLayers.Geometry.LineString(coords);
+    {{elif feature.type=='polygon':}}
+        var geom = new OpenLayers.Geometry.Polygon(new Array(new OpenLayers.Geometry.LinearRing(coords)));
+    {{pass}}
+    
+    
+    
+    # Bit of a hacky way to do it. Especially the transform...
     coordinates = shn_gis_coord_decode(feature['f_coords'])
     coords = ''
     if(count(coordinates) == 1):
@@ -11,7 +24,8 @@
          if(ctot > 0):
          coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat)";   
          coords += ");\n"            
-    
+
+# Rewrite in JavaScript: http://javascript.about.com/library/bltut21.htm         
 def shn_gis_coord_decode(coords):
     """ Takes the coord string stored in the db and decodes it into an array of:
     [0 => center of obj][0 => x, 1 => y, 2 => z]

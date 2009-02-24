@@ -19,6 +19,19 @@ map.addControl(polygonControl);
 // ol_controls_switch.js
 shn_gis_map_control_navigate();
 
+// Return string type of a feature
+// return point if not line or poly ....danger....
+function featureTypeStr(feature) {
+    var type = 'point';
+    var geotype = feature.geometry.CLASS_NAME;
+    if (geotype == 'OpenLayers.Geometry.LineString'){
+        type = 'line';
+    } else if (geotype == 'OpenLayers.Geometry.Polygon'){
+        type = 'poly';
+    }
+    return type;
+}
+
 function shn_gis_map_add_geometry(feature){
     var fcopy = feature.clone();
     // need for later.

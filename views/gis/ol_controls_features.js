@@ -99,3 +99,4 @@ function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconU
 function onPopupClose(evt) {
     currentFeature.popup.hide();
 }
+

@@ -80,6 +80,7 @@ def shn_latlon_to_wkt(lat,lon):
 # Features
 # - experimental!
 def feature_create_map():
+    "Show a map to draw the feature"
     title=T("Add GIS Feature")
     form=crud.create('gis_feature',onvalidation=lambda form: wkt_centroid(form))
     _projection=db(db.gis_config.id==1).select()[0].projection
@@ -188,6 +189,7 @@ def map_service_catalogue():
 
     # Create a manual table to aggregate all layer types
     # Could look to rewrite using Helpers: http://groups.google.com/group/web2py/browse_thread/thread/ac045f3b1d3846d9
+    # We should also move to the View for better MVC!
     items='<table><tr><td></td><td><b>Enabled?</b></td></tr>'
     for type in gis_layer_types:
         resource='layer_'+type

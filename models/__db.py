@@ -51,6 +51,15 @@ timestamp=SQLTable(None,'timestamp',
                           writable=False,
                           default=request.now,update=request.now)) 
 
+# Reusable author fields
+authorstamp=SQLTable(None,'authorstamp',
+            SQLField('created_by',db.auth_user,
+                          default=session.auth.user.id if auth.is_logged_in() else 0,
+                          writable=False),
+            SQLField('modified_by',db.auth_user,
+                          default=session.auth.user.id if auth.is_logged_in() else 0,update=session.auth.user.id if auth.is_logged_in() else 0,
+                          writable=False)) 
+
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
 uuidstamp=SQLTable(None,'uuidstamp',
@@ -558,7 +567,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
         # No arguments => default to List (or list_create if logged_in)
         if session.s3.audit_read:
             db.s3_audit.insert(
-                person=auth.user.id,
+                person=auth.user.id if logged_in else 0,
                 operation='list',
                 module=request.controller,
                 resource=resource,
@@ -641,7 +650,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             s3.id=request.args[0]
             if session.s3.audit_read:
                 db.s3_audit.insert(
-                    person=auth.user.id,
+                    person=auth.user.id if logged_in else 0,
                     operation='read',
                     representation=representation,
                     module=request.controller,
@@ -835,7 +844,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             elif method=="search":
                 if session.s3.audit_read:
                     db.s3_audit.insert(
-                        person=auth.user.id,
+                        person=auth.user.id if logged_in else 0,
                         operation='search',
                         module=request.controller,
                         resource=resource,

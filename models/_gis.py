@@ -273,9 +273,7 @@ if not len(db().select(db[table].ALL)):
 
 resource='feature_metadata'
 table=module+'_'+resource
-db.define_table(table,timestamp,uuidstamp,
-                SQLField('created_by',db.auth_user,writable=False), # Auto-stamped by T2
-                SQLField('modified_by',db.auth_user,writable=False), # Auto-stamped by T2
+db.define_table(table,timestamp,uuidstamp,authorstamp,
                 SQLField('description',length=256),
                 person_id,
                 SQLField('source'),
@@ -288,7 +286,10 @@ db.define_table(table,timestamp,uuidstamp,
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].person_id.represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
 db[table].person_id.label=T("Contact")
+db[table].event_time.requires=IS_NULL_OR(IS_DATETIME())
+db[table].expiry_time.requires=IS_NULL_OR(IS_DATETIME())
 db[table].url.requires=IS_NULL_OR(IS_URL())
+db[table].url.label='URL'
 title_create=T('Add Feature Metadata')
 title_display=T('Feature Metadata Details')
 title_list=T('List Feature Metadata')
@@ -411,9 +412,7 @@ db.define_table(table,timestamp,
 
 resource='landmark'
 table=module+'_'+resource
-db.define_table(table,timestamp,uuidstamp,
-                SQLField('created_by',db.auth_user,writable=False), # Auto-stamped by T2
-                SQLField('modified_by',db.auth_user,writable=False), # Auto-stamped by T2
+db.define_table(table,timestamp,uuidstamp,authorstamp,
                 SQLField('name'),
                 SQLField('type'),
                 SQLField('description',length=256),

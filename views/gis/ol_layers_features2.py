@@ -9,8 +9,6 @@
         var geom = new OpenLayers.Geometry.Polygon(new Array(new OpenLayers.Geometry.LinearRing(coords)));
     {{pass}}
     
-    
-    
     # Bit of a hacky way to do it. Especially the transform...
     coordinates = shn_gis_coord_decode(feature['f_coords'])
     coords = ''

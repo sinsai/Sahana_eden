@@ -1,10 +1,8 @@
 ﻿<script type="text/javascript">//<![CDATA[
 // These are the resources available to import/export functions
 $(function() {
-    // Hide the textarea
-    $("#textarea").hide();
     // When the Module changes:
-	$("select#module").change(function() {
+	$("select[name='module']").change(function() {
 		// What is the new module?
         module=$(this).val();
         if (module=="cr") {
@@ -24,7 +22,7 @@ $(function() {
         for(key in options_resource) {
             options += '<option value="' + options_resource[key] + '">' + options_resource[key] + '</option>';
         }
-        $("select#resource").html(options);
+        $("select[name='resource']").html(options);
         // ToDo: Provide option to update the Key field from DB using AJAX/JSON
 	})
 });

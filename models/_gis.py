@@ -50,13 +50,6 @@ if not len(db().select(db[table].ALL)):
     )
 
 # GIS Markers (Icons)
-def shn_imgsize_detect(filename):
-    "ToDo: Determine the size of an Image file"
-    # Is this needed? Javascript Image() class can be used to detect instead...
-    height=1
-    width=1
-    return dict(height=height,width=width)
-
 resource='marker'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
@@ -74,8 +67,6 @@ if not len(db().select(db[table].ALL)):
     db[table].truncate() 
     db[table].insert(
         name="marker",
-        #height=34,
-        #width=20,
         # Can't do sub-folders :/
         # need to script a bulk copy & rename
         image="gis_marker.image.default.png"
@@ -85,8 +76,6 @@ if not len(db().select(db[table].ALL)):
     # TEMP: Manual markers for some pre-defined Feature Classes
     db[table].insert(
         name="shelter",
-        #height=40,
-        #width=40,
         image="gis_marker.image.shelter.png"
     )
 title_create=T('Add Marker')
@@ -108,7 +97,8 @@ marker_id=SQLTable(None,'marker_id',
             SQLField('marker',
                 db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
                 represent=lambda id: DIV(A(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
-                comment=''))
+                comment=DIV(A(T('Add Marker'),_href=URL(r=request,c='gis',f='marker',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Marker|Defines the icon used for display.")))
+                ))
 
 # GIS Projections
 resource='projection'
@@ -241,6 +231,8 @@ db.define_table(table,timestamp,uuidstamp,
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
+db[table].module.requires=IS_IN_DB(db((db.s3_module.enabled=='True') & (~db.s3_module.name.like('default'))),'s3_module.name','s3_module.name_nice')
+db[table].resource.requires=IS_NULL_OR(IS_IN_SET(['resource']))
 title_create=T('Add Feature Class')
 title_display=T('Feature Class Details')
 title_list=T('List Feature Classes')

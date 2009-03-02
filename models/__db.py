@@ -73,7 +73,7 @@ admin_id=SQLTable(None,'admin_id',
             SQLField('admin',
                 db.auth_group,requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role')),
                 represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
-                comment=DIV(A(T('Add Role'),_href=URL(r=request,c='default',f='role',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Admin|The Role whose members can edit all details within this.")))
+                comment=DIV(A(T('Add Role'),_class='popup',_href=URL(r=request,c='default',f='role',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Contact|The Person to contact for this.")))
                 ))
     
 # Custom validators
@@ -750,6 +750,10 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         form=crud.create(table,onvalidation=onvalidation)
                         response.view='plain.html'
                         return dict(item=form)
+                    elif representation=="popup":
+                        form=crud.create(table,onvalidation=onvalidation)
+                        response.view='popup.html'
+                        return dict(module_name=module_name,form=form,module=module,resource=resource,main=main,caller=request.vars.caller)
                     elif representation=="json":
                         # ToDo
                         # Read in POST
@@ -852,10 +856,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         new_value=''
                     )
                 if representation=="html":
-                    if logged_in and deletable:
-                        db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display',extra="INPUT(_type='checkbox',_class='delete_row',_name='%s' % resource,_id='%i' % table.id)")
-                    else:
-                        db[table].represent=lambda table:shn_list_item(table,resource='%s' % resource,action='display')
+                    shn_represent(table,module,resource,deletable,main,extra)
                     search=t2.search(table)
                     # Check for presence of Custom View
                     custom_view='%s_search.html' % resource
@@ -866,6 +867,19 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         response.view='search.html'
                     title=s3.crud_strings.title_search
                     return dict(module_name=module_name,modules=modules,options=options,search=search,title=title)
+                if representation=="json":
+                    if request.vars.field and request.vars.filter and request.vars.value:
+                        field=str.lower(request.vars.field)
+                        filter=str.lower(request.vars.filter)
+                        if filter == '=':
+                            query=(table['%s' % field]==request.vars.value)
+                            item = db(query).select().json()
+                        else:
+                            item='{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ="}}'
+                    else:
+                        item='{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
+                    response.view='plain.html'
+                    return dict(item=item)
                 else:
                     session.error=T("Unsupported format!")
                     redirect(URL(r=request))

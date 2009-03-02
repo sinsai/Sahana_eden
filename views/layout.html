@@ -43,35 +43,35 @@
    {{pass}}
   {{=t2.menu(response.menu)}}
   <ul id="modmenu">
-   {{try:}}
-    {{for option in options:}}
-     {{if not option.access or (option.access in session.s3.roles):}}
-       {{if option.function=='submenu':}}
-         <li>
-        {{try:}}
-          {{if ( session.menu_open.module_name == module_name ) and ( option.name in session.menu_open.open_menus ):}}
-            <a class="smclose" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
-            <ul id="{{=option.name}}" style="display: block;">
-          {{else:}}
-            <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
-            <ul id="{{=option.name}}" style="display: none;">
-          {{pass}}
-        {{except:}}
-            <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
-            <ul id="{{=option.name}}" style="display: none;">
-        {{pass}}
-       {{elif option.function=='submenu/end':}}
-         </ul>
-         </li>
-       {{else:}}
-	     <li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
-       {{pass}}
-     {{pass}}
-	{{pass}}
-      </ul>
-   {{except:}}
+ {{try:}}
+  {{for option in options:}}
+   {{if not option.access or (option.access in session.s3.roles):}}
+     {{if option.function=='submenu':}}
+    <li>
+  {{try:}}
+   {{if ( session.menu_open.module_name == module_name ) and ( option.name in session.menu_open.open_menus ):}}
+    <a class="smclose" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
+    <ul id="{{=option.name}}" style="display: block;">
+   {{else:}}
+    <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
+    <ul id="{{=option.name}}" style="display: none;">
    {{pass}}
-   </ul>
+  {{except:}}
+    <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
+    <ul id="{{=option.name}}" style="display: none;">
+  {{pass}}
+     {{elif option.function=='submenu/end':}}
+    </ul>
+    </li>
+     {{else:}}
+    <li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
+     {{pass}}
+    {{pass}}
+  {{pass}}
+    </ul>
+ {{except:}}
+ {{pass}}
+</ul>
   </div>
   <div id="menuwrap">
    <h2>{{=T("Modules")}}</h2>  

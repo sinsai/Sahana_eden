@@ -13,23 +13,23 @@
 <!--Web2Py Layer-->
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
-$('input.delete').attr('onclick','if(this.checked) if(!confirm("{{=T('Sure you want to delete this object?')}}")) this.checked=false;');
-try {$("input.date").focus( function() {Calendar.setup({
-     inputField:this.id, ifFormat:"{{=T('%Y-%m-%d')}}", showsTime:false
-}); }); } catch(e) {};
-try { $("input.datetime").focus( function() {Calendar.setup({
-     inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M:%S')}}", showsTime: true,timeFormat: "24"
-}); }); } catch(e) {};
-try { $("input.time").clockpick({
-     starthour:0, endhour:23, showminutes:true, military:true
-}); } catch(e) {};
+    $('input.delete').attr('onclick','if(this.checked) if(!confirm("{{=T('Sure you want to delete this object?')}}")) this.checked=false;');
+    try {$("input.date").focus( function() {Calendar.setup({
+         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d')}}", showsTime:false
+    }); }); } catch(e) {};
+    try { $("input.datetime").focus( function() {Calendar.setup({
+         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M:%S')}}", showsTime: true,timeFormat: "24"
+    }); }); } catch(e) {};
+    try { $("input.time").clockpick({
+         starthour:0, endhour:23, showminutes:true, military:true
+    }); } catch(e) {};
 });
 //]]></script>
 
 <!--T2 Layer-->
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function(){
-try { $('.zoom').fancyZoom({scaleImg:true, closeOnClick:true, directory:"/{{=request.application}}/static/media"}); } catch(e) {};
+    try { $('.zoom').fancyZoom({scaleImg:true, closeOnClick:true, directory:"/{{=request.application}}/static/media"}); } catch(e) {};
 });
 //]]></script>
 
@@ -60,12 +60,10 @@ $(document).ready(function() {
         }
         return false;
     });
-});
-
-$(document).ready(function() {
-$('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
-    { event.default(); } else { event.preventDefault(); }
-    return false; });
-$('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
+    $('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
+        { event.default(); } else { event.preventDefault(); }
+        return false; });
+    $('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
+    $('a.popup').cluetip({activation: 'click', sticky: true, width: '360px', closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />'});
 });
 //]]></script>

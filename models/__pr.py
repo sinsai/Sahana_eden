@@ -97,7 +97,7 @@ person_id=SQLTable(None,'person_id',
             SQLField('person_id',
                 db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','%(id)s: %(first_name)s %(last_name)s')),
                 represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
-                comment=DIV(A(T('Add Contact'),_href=URL(r=request,c='pr',f='person',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Contact|The Person to contact for this.")))
+                comment=DIV(A(T('Add Contact'),_class='popup',_href=URL(r=request,c='pr',f='person',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Contact|The Person to contact for this.")))
                 ))
 
 # Contacts

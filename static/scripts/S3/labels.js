@@ -6,3 +6,7 @@ $(document).ready(function(){
     // Doesn't work due to nested DIVs
     //$('div:not(".t2-display") label[id!="delete_record__label"]').append(":");
 });
+// Can replace with CSS: http://www.alistapart.com/articles/progressiveenhancementwithcss
+//label:after {
+//  content: ":";
+//}

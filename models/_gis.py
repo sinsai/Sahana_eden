@@ -97,7 +97,7 @@ marker_id=SQLTable(None,'marker_id',
             SQLField('marker',
                 db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
                 represent=lambda id: DIV(A(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
-                comment=DIV(A(T('Add Marker'),_href=URL(r=request,c='gis',f='marker',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Marker|Defines the icon used for display.")))
+                comment=DIV(A(T('Add Marker'),_class='popup',_href=URL(r=request,c='gis',f='marker',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Marker|Defines the icon used for display.")))
                 ))
 
 # GIS Projections
@@ -252,7 +252,7 @@ feature_class_id=SQLTable(None,'feature_class_id',
             SQLField('feature_class',
                 db.gis_feature_class,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name')),
                 represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
-                comment=DIV(A(T('Add Feature Class'),_href=URL(r=request,c='gis',f='feature_class',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup.")))
+                comment=DIV(A(T('Add Feature Class'),_class='popup',_href=URL(r=request,c='gis',f='feature_class',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup.")))
                 ))
 # Populate table with Default options
 if not len(db().select(db[table].ALL)):
@@ -314,7 +314,7 @@ db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
 db[table].metadata.requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_metadata.id'))
 db[table].metadata.represent=lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
-db[table].metadata.comment=DIV(A(T('Add Metadata'),_href=URL(r=request,c='gis',f='feature_metadata',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Metadata|Additional attributes associated with this Feature.")))
+db[table].metadata.comment=DIV(A(T('Add Metadata'),_class='popup',_href=URL(r=request,c='gis',f='feature_metadata',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Metadata|Additional attributes associated with this Feature.")))
 db[table].type.requires=IS_IN_SET(['point','line','polygon'])
 db[table].lat.requires=IS_NULL_OR(IS_LAT())
 db[table].lat.label=T("Latitude")
@@ -345,7 +345,7 @@ feature_id=SQLTable(None,'feature_id',
             SQLField('feature',
                 db.gis_feature,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name')),
                 represent=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
-                comment=DIV(A(T('Add Feature'),_href=URL(r=request,c='gis',f='feature',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
+                comment=DIV(A(T('Add Feature'),_class='popup',_href=URL(r=request,c='gis',f='feature',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
                 ))
     
 # Feature Groups
@@ -466,7 +466,8 @@ location_id=SQLTable(None,'location_id',
             SQLField('location',
                 db.gis_location,requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name')),
                 represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
-                comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_href=URL(r=request,c='gis',f='location',args='create'),_target='_blank'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))))
+                comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_class='popup',_href=URL(r=request,c='gis',f='location',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))
+                ))
 
 # GIS Keys - needed for commercial mapping services
 resource='apikey' # Can't use 'key' as this has other meanings for dicts!

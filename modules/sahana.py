@@ -122,6 +122,9 @@ class AuthS3(Auth):
         self.messages.retrieve_password = str(T("Your password is"))+": %(password)s"
         self.messages.retrieve_password_subject = T("Password retrieve")
         self.messages.profile_updated = T("Profile updated")
+        self.messages.new_password=T("New password")
+        self.messages.old_password=T("Old password")
+        
                 
     def login(
         self,

@@ -4,7 +4,12 @@ sessions/*
 docs/*
 .raw/*
 static/.mfexamples/*
+static/mfbase/ext/.build/*
+static/mfbase/ext/.docs/*
 static/mfbase/ext/.examples/*
+static/mfbase/ext/.source/*
+static/mfbase/ext/air/.samples/*
+static/mfbase/ext/air/.src/*
 static/mfbase/mapfish/.tests/*
 static/mfbase/openlayers/.examples/*
 static/mfbase/openlayers/.tests/*

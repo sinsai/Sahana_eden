@@ -18,6 +18,9 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
 def shelter():
     """ RESTlike CRUD controller
     >>> resource='shelter'

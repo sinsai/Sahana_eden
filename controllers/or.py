@@ -18,12 +18,21 @@ def open_option():
         redirect(URL(r=request,f='index'))
     option=options[0].function
     redirect(URL(r=request,f=option))
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
 def organisation():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'organisation')
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
 def office():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'office',extra='organisation type')
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
 def contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'contact')

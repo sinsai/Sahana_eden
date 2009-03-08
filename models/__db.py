@@ -36,6 +36,9 @@ crud=CrudS3(globals(),T,db)
 # Use Role-based Access Control for Crud
 crud.auth=auth
 
+from gluon.tools import Service
+service=Service(globals())
+
 # Define 'now'
 # 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
 #now=datetime.datetime.today()
@@ -525,17 +528,17 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
         PLAIN is HTML with no layout
          - can be inserted into DIVs via AJAX calls
          - can be useful for clients on low-bandwidth or small screen sizes
-        JSON
-         - read-only for now
+        JSON (designed to be accessed via JavaScript)
+         - responses in JSON format
+         - create/update/delete done via simple GET vars (no form displayed)
         CSV (useful for synchronization)
          - List/Display/Create for now
         AJAX (designed to be run asynchronously to refresh page elements)
-
+        POPUP
     ToDo:
         Alternate Representations
-            JSON create/update
             CSV update
-            SMS,XML,PDF,LDIF
+            RSS,SMS,XML,PDF,LDIF
         Customisable Security Policy
     """
     
@@ -641,6 +644,31 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             query=db[table].id>0
             response.headers['Content-disposition']="attachment; filename=%s_%s_list.csv" % (request.env.server_name,resource)
             return str(db(query).select())
+        elif representation=="rss":
+            #if request.args and request.args[0] in settings.rss_procedures:
+            #   feed=eval('%s(*request.args[1:],**dict(request.vars))'%request.args[0])
+            #else:
+            #   t2._error()
+            #import gluon.contrib.rss2 as rss2
+            #rss = rss2.RSS2(
+            #   title=feed['title'],
+            #   link = feed['link'],
+            #   description = feed['description'],
+            #   lastBuildDate = feed['created_on'],
+            #   items = [
+            #      rss2.RSSItem(
+            #        title = entry['title'],
+            #        link = entry['link'],
+            #        description = entry['description'],
+            #        pubDate = entry['created_on']) for entry in feed['entries']]
+            #   )
+            #response.headers['Content-Type']='application/rss+xml'
+            #return rss2.dumps(rss)
+            for i in db(table.id>0).count():
+                entries[i]=dict(title=table.name,link=URL(r=request,c='module',f='resource',args=[table.id]),description=table.description,created_on=table.created_on)
+            item=service.rss(entries=entries)
+            response.view='plain.html'
+            return dict(item=item)
         else:
             session.error=T("Unsupported format!")
             redirect(URL(r=request))
@@ -710,8 +738,10 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 #   )
                 #response.headers['Content-Type']='application/rss+xml'
                 #return rss2.dumps(rss)
+                entries[0]=dict(title=table.name,link=URL(r=request,c='module',f='resource',args=[table.id]),description=table.description,created_on=table.created_on)
+                item=service.rss(entries=entries)
                 response.view='plain.html'
-                return
+                return dict(item=item)
             else:
                 session.error=T("Unsupported format!")
                 redirect(URL(r=request))
@@ -755,11 +785,25 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         response.view='popup.html'
                         return dict(module_name=module_name,form=form,module=module,resource=resource,main=main,caller=request.vars.caller)
                     elif representation=="json":
-                        # ToDo
-                        # Read in POST
-                        #file=request.body.read()
-                        #import_json(table,file)
-                        item='{"Status":"failed","Error":{"StatusCode":501,"Message":"JSON creates not yet supported!"}}'
+                        record=Storage()
+                        for var in request.vars:
+                            if var=='format':
+                                pass
+                            else:
+                                record[var] = request.vars[var]
+                        item=''
+                        for var in record:
+                            # Validate request manually
+                            if table[var].requires(record[var])[1]:
+                                item+='{"Status":"failed","Error":{"StatusCode":403,"Message":"'+var+' invalid: '+table[var].requires(record[var])[1]+'"}}'
+                        if item:
+                            pass
+                        else:
+                            try:
+                                id=table.insert(**dict (record))
+                                item='{"Status":"success","Error":{"StatusCode":201,"Message":"Created as '+URL(r=request,c=module,f=resource,args=id)+'"}}'
+                            except:
+                                item='{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
                         response.view='plain.html'
                         return dict(item=item)
                     elif representation=="csv":
@@ -812,8 +856,34 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         response.view='plain.html'
                         return dict(item=form)
                     elif representation=="json":
-                        # ToDo
-                        item='{"Status":"failed","Error":{"StatusCode":501,"Message":"JSON updates not yet supported!"}}'
+                        record=Storage()
+                        uuid=0
+                        for var in request.vars:
+                            if var=='format':
+                                pass
+                            elif var=='uuid':
+                                uuid=1
+                            else:
+                                record[var] = request.vars[var]
+                        if uuid:
+                            item=''
+                            for var in record:
+                                # Validate request manually
+                                if table[var].requires(record[var])[1]:
+                                    item+='{"Status":"failed","Error":{"StatusCode":403,"Message":"'+var+' invalid: '+table[var].requires(record[var])[1]+'"}}'
+                            if item:
+                                pass
+                            else:
+                                try:
+                                    result=db(table.uuid==request.vars.uuid).update(**dict (record))
+                                    if result:
+                                        item='{"Status":"success","Error":{"StatusCode":200,"Message":"Record updated."}}'
+                                    else:
+                                        item='{"Status":"failed","Error":{"StatusCode":404,"Message":"Record '+request.vars.uuid+' does not exist."}}'
+                                except:
+                                    item='{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
+                        else:
+                            item='{"Status":"failed","Error":{"StatusCode":400,"Message":"UUID required!"}}'
                         response.view='plain.html'
                         return dict(item=item)
                     else:

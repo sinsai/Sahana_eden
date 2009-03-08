@@ -17,7 +17,10 @@ def data():
 def download():
     "Download a file."
     return response.download(request,db) 
-
+def call():
+    "Call an XMLRPC or JSONRPC service"
+    return service()
+    
 # S3 framework functions
 def index():
     "Module's Home Page"
@@ -199,4 +202,3 @@ def handleResults():
     response.view='display.html'
     title=T('Test Results')
     return dict(module_name=module_name,modules=modules,options=options,title=title,item=message)
-    

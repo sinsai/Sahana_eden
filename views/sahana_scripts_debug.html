@@ -65,10 +65,10 @@ $(document).ready(function() {
         $(this).toggleClass('smclose');
         if ($(this).next().css('display') == 'block') {
             $(this).next().css('display','none');
-            $.ajax({url: "{{=URL(r=request,c='default',f='menu_close')}}",data: "module_name={{=module_name}}&option_name="+$(this).attr('title'),cache: false});
+            $.ajax({url: "{{=URL(r=request,c='default',f='menu_close')}}",data: "module_name={{try:}}{{=module_name}}{{except:}}{{pass}}&option_name="+$(this).attr('title'),cache: false});
         } else {
             $(this).next().css('display','block');
-            $.ajax({url: "{{=URL(r=request,c='default',f='menu_open')}}",data: "module_name={{=module_name}}&option_name="+$(this).attr('title'),cache: false,});
+            $.ajax({url: "{{=URL(r=request,c='default',f='menu_open')}}",data: "module_name={{try:}}{{=module_name}}{{except:}}{{pass}}&option_name="+$(this).attr('title'),cache: false,});
         }
         return false;
     });

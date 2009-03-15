@@ -24,9 +24,6 @@ def f(a,b):
 def myfeed():
     return dict(title='title',link='link',description='description',created_on=request.now,entries=[dict(title='title',link='link',description='description',created_on=request.now)])
 
-def call():
-    return service()
-
 def jquery_upload():
     return dict()
 

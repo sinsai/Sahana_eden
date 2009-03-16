@@ -1,4 +1,5 @@
 # This file is used to test out various ideas or new Web2Py features
+module='test'
 
 def index():
     " http://groups.google.com/group/web2py/browse_thread/thread/9ce0253451ab63db "
@@ -12,6 +13,10 @@ def index():
     return dict(form1=form1,form2=form2,persons=persons)
 
 # http://groups.google.com/group/web2py/browse_thread/thread/53086d5f89ac3ae2
+def call():
+    "Call an XMLRPC, JSONRPC or RSS service"
+    return service()
+
 @service.run
 @service.json
 @service.jsonrpc
@@ -21,8 +26,19 @@ def f(a,b):
     return a+b
 
 @service.rss
-def myfeed():
-    return dict(title='title',link='link',description='description',created_on=request.now,entries=[dict(title='title',link='link',description='description',created_on=request.now)])
+def rss(resource):
+    " http://127.0.0.1:8000/sahana/test/call/rss/rss/resource "
+    table=module+'_'+resource
+    if request.env.remote_addr=='127.0.0.1':
+        server='http://127.0.0.1:' + request.env.server_port
+    else:
+        server='http://' + request.env.server_name + ':' + request.env.server_port
+    link='/%s/%s/%s' % (request.application,module,resource)
+    entries=[]
+    rows=db(db[table].id>0).select()
+    for row in rows:
+        entries.append(dict(title=row.name,link=server+link+'/%d' % row.id,description=row.description or '',created_on=row.created_on))
+    return dict(title=str(s3.crud_strings[table].subtitle_list),link=server+link,description='',created_on=request.now,entries=entries)
 
 def jquery_upload():
     return dict()

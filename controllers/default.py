@@ -18,7 +18,7 @@ def download():
     "Download a file."
     return response.download(request,db) 
 def call():
-    "Call an XMLRPC or JSONRPC service"
+    "Call an XMLRPC, JSONRPC or RSS service"
     return service()
     
 # S3 framework functions

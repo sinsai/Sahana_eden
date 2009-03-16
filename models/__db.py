@@ -9,6 +9,9 @@ db=SQLDB('sqlite://storage.db')         # if not, use SQLite or other DB
 #    db=GQLDB()                              # connect to Google BigTable
 #    session.connect(request,response,db=db) # and store sessions there
 
+# Default strings are in English
+T.current_languages=['en','en-en']
+
 # Use T2 plugin for AAA & CRUD
 # At top of file rather than usual bottom as we refer to it within our tables
 #from applications.t3.modules.t2 import T2
@@ -533,12 +536,13 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
          - create/update/delete done via simple GET vars (no form displayed)
         CSV (useful for synchronization)
          - List/Display/Create for now
+        RSS (list only)
         AJAX (designed to be run asynchronously to refresh page elements)
         POPUP
     ToDo:
         Alternate Representations
             CSV update
-            RSS,SMS,XML,PDF,LDIF
+            SMS,XML,PDF,LDIF
         Customisable Security Policy
     """
     
@@ -645,30 +649,20 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             response.headers['Content-disposition']="attachment; filename=%s_%s_list.csv" % (request.env.server_name,resource)
             return str(db(query).select())
         elif representation=="rss":
-            #if request.args and request.args[0] in settings.rss_procedures:
-            #   feed=eval('%s(*request.args[1:],**dict(request.vars))'%request.args[0])
-            #else:
-            #   t2._error()
-            #import gluon.contrib.rss2 as rss2
-            #rss = rss2.RSS2(
-            #   title=feed['title'],
-            #   link = feed['link'],
-            #   description = feed['description'],
-            #   lastBuildDate = feed['created_on'],
-            #   items = [
-            #      rss2.RSSItem(
-            #        title = entry['title'],
-            #        link = entry['link'],
-            #        description = entry['description'],
-            #        pubDate = entry['created_on']) for entry in feed['entries']]
-            #   )
-            #response.headers['Content-Type']='application/rss+xml'
-            #return rss2.dumps(rss)
-            for i in db(table.id>0).count():
-                entries[i]=dict(title=table.name,link=URL(r=request,c='module',f='resource',args=[table.id]),description=table.description,created_on=table.created_on)
-            item=service.rss(entries=entries)
-            response.view='plain.html'
-            return dict(item=item)
+            if request.env.remote_addr=='127.0.0.1':
+                server='http://127.0.0.1:' + request.env.server_port
+            else:
+                server='http://' + request.env.server_name + ':' + request.env.server_port
+            link='/%s/%s/%s' % (request.application,module,resource)
+            entries=[]
+            rows=db(table.id>0).select()
+            for row in rows:
+                entries.append(dict(title=row.name,link=server+link+'/%d' % row.id,description=row.description or '',created_on=row.created_on))
+            import gluon.contrib.rss2 as rss2
+            items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
+            rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server+link+'/%d' % row.id, description = '', lastBuildDate = request.now, items = items)
+            response.headers['Content-Type']='application/rss+xml'
+            return rss2.dumps(rss)
         else:
             session.error=T("Unsupported format!")
             redirect(URL(r=request))

@@ -537,12 +537,13 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
         CSV (useful for synchronization)
          - List/Display/Create for now
         RSS (list only)
+        XML (list/read only)
         AJAX (designed to be run asynchronously to refresh page elements)
         POPUP
     ToDo:
         Alternate Representations
             CSV update
-            SMS,XML,PDF,LDIF
+            SMS,PDF,LDIF
         Customisable Security Policy
     """
     
@@ -640,8 +641,12 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             return dict(item=list)
         elif representation=="json":
             list=db().select(table.ALL).json()
-            response.view='plain.html'
-            return dict(item=list)
+            response.headers['Content-Type']='text/x-json'
+            return list
+        elif representation=="xml":
+            list=db().select(table.ALL).as_list()
+            response.headers['Content-Type']='text/xml'
+            return str(service.xml_serializer(list))
         elif representation=="csv":
             import gluon.contenttype
             response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
@@ -706,6 +711,10 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 item=db(table.id==s3.id).select(table.ALL).json()
                 response.view='plain.html'
                 return dict(item=item)
+            elif representation=="xml":
+                item=db(table.id==s3.id).select(table.ALL).as_list()
+                response.headers['Content-Type']='text/xml'
+                return str(service.xml_serializer(item))
             elif representation=="csv":
                 import gluon.contenttype
                 response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')

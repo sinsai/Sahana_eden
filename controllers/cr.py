@@ -51,23 +51,31 @@ def shelter():
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
-def shelterrpc(method):
+def rpc(method,id=0):
     if method == 'list':
-        return db(db.cr_shelter.id>0).select()
+        return db().select(db.cr_shelter.ALL).as_list()
+    if method == 'read':
+        return db(db.cr_shelter.id==id).select().as_list()
+    if method == 'delete':
+        status=db(db.cr_shelter.id==id).delete()
+        if status:
+            return 'Success - record %d deleted!' % id
+        else:
+            return 'Failed - no record %d!' % id
     else:
-        return 'Method not implemented'
+        return 'Method not implemented!'
 
-@service.rss
-def rss(resource):
-    " http://127.0.0.1:8000/sahana/cr/call/rss/rss/resource "
-    table=module+'_'+resource
-    if request.env.remote_addr=='127.0.0.1':
-        server='http://127.0.0.1:' + request.env.server_port
+@service.xmlrpc
+def create(name):
+    # Need to do validation manually!
+    id=db.cr_shelter.insert(name=name)
+    return id
+
+@service.xmlrpc
+def update(id,name):
+    # Need to do validation manually!
+    status=db(db.cr_shelter.id==id).update(name=name)
+    if status:
+        return 'Success - record %d updated!' % id
     else:
-        server='http://' + request.env.server_name + ':' + request.env.server_port
-    link='/%s/%s/%s' % (request.application,module,resource)
-    entries=[]
-    rows=db(db[table].id>0).select()
-    for row in rows:
-        entries.append(dict(title=row.name,link=server+link+'/%d' % row.id,description=row.description or '',created_on=row.created_on))
-    return dict(title=str(s3.crud_strings[table].subtitle_list),link=server+link,description='',created_on=request.now,entries=entries)
+        return 'Failed - no record %d!' % id

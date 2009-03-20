@@ -34,10 +34,12 @@ auth.define_tables()
 auth.settings.mailer=mail
 # Require captcha verification for registration
 #auth.settings.captcha=RECAPTCHA(request,public_key='RECAPTCHA_PUBLIC_KEY',private_key='RECAPTCHA_PRIVATE_KEY')
+auth.settings.on_failed_authorization=URL(r=request,f='error')
 
 crud=CrudS3(globals(),T,db)
 # Use Role-based Access Control for Crud
-crud.auth=auth
+# NB Currently only for data() URLs
+crud.settings.auth=auth
 
 from gluon.tools import Service
 service=Service(globals())

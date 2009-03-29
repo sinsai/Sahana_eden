@@ -60,15 +60,6 @@ def layer_virtualearth():
 
 # Module-specific functions
 
-@auth.requires_membership(1)
-def defaults():
-    """Defaults are a special case of Configs - the 1st entry.
-    Don't want to be able to delete these!
-    """
-    title=T("GIS Defaults")
-    form=t2.update(db.gis_config,deletable=False) # NB deletable=False
-    return dict(title=title,module_name=module_name,modules=modules,options=options,form=form)
-
 def shn_latlon_to_wkt(lat,lon):
     """Convert a LatLon to a WKT string
     >>> shn_latlon_to_wkt(6,80)

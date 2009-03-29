@@ -253,6 +253,13 @@ if not len(db().select(db[table].ALL)):
         description="Sends & Receives Alerts via Email & SMS",
         enabled='True'
 	)
+	db[table].insert(
+        name="budget",
+        name_nice="Budgetting",
+        priority=12,
+        description="Allows a budget to be drawn up",
+        enabled='True'
+	)
 	
 # Authorization
 # User Roles
@@ -512,7 +519,7 @@ def import_json(table,file):
     #table.insert(**dict(items))
     return
             
-def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',extra=None,onvalidation=None):
+def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',extra=None,onvalidation=None,list=None):
     """
     RESTlike controller function.
     
@@ -585,19 +592,33 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 new_value=''
             )
         if representation=="html":
-            # Not yet a replacement for t2.itemize
-            #fields=['%s.id' % table,'%s.first_name' % table,'%s.last_name' % table]
-            #headers={'%s.id' % table:'ID','%s.first_name' % table:'First Name','%s.last_name' % table:'Last Name'}
-            #list=crud.select(table,fields=fields,headers=headers)
-            shn_represent(table,module,resource,deletable,main,extra)
-            list=t2.itemize(table)
+            # Default list format is a simple list, not tabular
+            tabular=0
+            if list=='table':
+                tabular=1
+                query = table.id > 0
+                fields = [f for f in table.fields if table[f].readable]
+                rows=db(query).select(*fields)
+                headers={}
+                # Length to strip from front of header
+                #length=len('%s.' % _table)
+                for field in rows.colnames:
+                    #field=colname[length:]
+                    # Use custom or prettified label
+                    label=table[field].label
+                    #headers['%s.%s' % (table,field)]=label
+                    headers[field]=label
+                list=crud.select(table,fields=fields,headers=headers)
+            else:
+                shn_represent(table,module,resource,deletable,main,extra)
+                list=t2.itemize(table)
             if not list:
                 list=s3.crud_strings.msg_list_empty
             title=s3.crud_strings.title_list
             subtitle=s3.crud_strings.subtitle_list
             if logged_in and listadd:
                 # Display the Add form below List
-                if deletable:
+                if deletable and not tabular:
                     # Add extra column header to explain the checkboxes
                     if isinstance(list,TABLE):
                         list.insert(0,TR('',B('Delete?')))
@@ -854,8 +875,11 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         else:
                             response.view='update.html'
                         title=s3.crud_strings.title_update
-                        list_btn=A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
-                        return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                        if s3.crud_strings.label_list_button:
+                            list_btn=A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
+                            return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
+                        else:
+                            return dict(module_name=module_name,modules=modules,options=options,form=form,title=title)
                     elif representation=="plain":
                         form=crud.update(table,s3.id,onvalidation=onvalidation)
                         response.view='plain.html'

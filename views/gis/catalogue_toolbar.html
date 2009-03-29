@@ -1,7 +1,7 @@
 <table>
 <tr><td id='btn-panel'>
-{{if t2.logged_in:}}
-<a href="{{=URL(r=request,c='gis',f='defaults',args='1')}}">
+{{if 'Administrator' in session.s3.roles:}}
+<a href="{{=URL(r=request,c='gis',f='config',args=['update','1'])}}">
 {{else:}}
 <a href="{{=URL(r=request,c='gis',f='config',args=['display','1'])}}">
 {{pass}}

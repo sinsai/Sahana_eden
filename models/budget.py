@@ -131,7 +131,7 @@ db.define_table(table,timestamp,uuidstamp,
                 )
 db[table].code.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.code' % table)]
 db[table].code.comment=SPAN("*",_class="req")
-db[table].category.requires=IS_IN_SET(['Consumable','Tools','Stationery','Miscellaneous','Vehicle Equipment','IT Equipment','Electrical Equipment','Telecomms Equipment','Running Cost'])
+db[table].category.requires=IS_IN_SET(['Consumable','Satellite','HF','VHF','Telephony','W-LAN','Network','Generator','Electrical','Vehicle','GPS','Tools','IT','ICT','TC','Stationery','Relief','Miscellaneous','Running Cost'])
 #db[table].sub_category.requires=IS_IN_SET(['Satellite','VHF','UHF','HF','Airband','Telephony','GPS'])
 db[table].cost_type.requires=IS_IN_SET(['One-time','Recurring'])
 title_create=T('Add Item')
@@ -186,8 +186,11 @@ table=module+'_'+resource
 db.define_table(table,timestamp,
                 SQLField('kit_id',db.budget_kit),
                 SQLField('item_id',db.budget_item))
-db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module)
-db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module)
+db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module,'%s_kit.code' % module)
+db[table].kit_id.label=T('Kit')
+db[table].kit_id.represent='%s_kit.code' % module
+db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.code' % module)
+db[table].item_id.label=T('Item')
 
 # Bundles
 resource='bundle'

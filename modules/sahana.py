@@ -91,6 +91,99 @@ def URL3(a=None, r=None):
     url = '/%s' % application
     return url
 
+# Modified version of SQLTABLE from gluon/sqlhtml.py
+# we need a different linkto construction for our CRUD controller
+class SQLTABLE2(TABLE):
+
+    """
+    given a SQLRows object, as returned by a db().select(), generates
+    an html table with the rows.
+
+    optional arguments:
+    linkto: URL to edit individual records
+    upload: URL to download uploaded files
+    orderby: Add an orderby link to column headers.
+    headers: dictionary of headers to headers redefinions
+    truncate: length at which to truncate text in table cells.
+              Defaults to 16 characters.
+    optional names attributes for passed to the <table> tag
+    """
+
+    def __init__(
+        self,
+        sqlrows,
+        linkto=None,
+        upload=None,
+        orderby=None,
+        headers={},
+        truncate=16,
+        **attributes
+        ):
+        TABLE.__init__(self, **attributes)
+        self.components = []
+        self.attributes = attributes
+        self.sqlrows = sqlrows
+        (components, row) = (self.components, [])
+        if not orderby:
+            for c in sqlrows.colnames:
+                row.append(TH(headers.get(c, c)))
+        else:
+            for c in sqlrows.colnames:
+                row.append(TH(A(headers.get(c, c), _href='?orderby='
+                            + c)))
+        components.append(THEAD(TR(*row)))
+        tbody = []
+        for (rc, record) in enumerate(sqlrows):
+            row = []
+            if rc % 2 == 0:
+                _class = 'even'
+            else:
+                _class = 'odd'
+            for colname in sqlrows.colnames:
+                if not table_field.match(colname):
+                    r = record._extra[colname]
+                    row.append(TD(r))
+                    continue
+                (tablename, fieldname) = colname.split('.')
+                field = sqlrows._db[tablename][fieldname]
+                if record.has_key(tablename) and isinstance(record,
+                        SQLStorage) and isinstance(record[tablename],
+                        SQLStorage):
+                    r = record[tablename][fieldname]
+                elif record.has_key(fieldname):
+                    r = record[fieldname]
+                else:
+                    raise SyntaxError, \
+                        'something wrong in SQLRows object'
+                if field.represent:
+                    r = field.represent(r)
+                    row.append(TD(r))
+                    continue
+                if field.type == 'blob' and r:
+                    row.append(TD('DATA'))
+                    continue
+                r = str(field.formatter(r))
+                if upload and field.type == 'upload' and r != None:
+                    if r:
+                        row.append(TD(A('file', _href='%s/%s'
+                                    % (upload, r))))
+                    else:
+                        row.append(TD())
+                    continue
+                ur = unicode(r, 'utf8')
+                if len(ur) > truncate:
+                    r = ur[:truncate - 3].encode('utf8') + '...'
+                if linkto and field.type == 'id':
+                    row.append(TD(A(r, _href='%s/%s' % (linkto,
+                               r))))
+                elif linkto and field.type[:9] == 'reference':
+                    row.append(TD(A(r, _href='%s/%s/%s' % (linkto,
+                               field.type[10:], r))))
+                else:
+                    row.append(TD(r))
+            tbody.append(TR(_class=_class, *row))
+        components.append(TBODY(*tbody))
+    
 import uuid, datetime
 from gluon.tools import *
 
@@ -322,6 +415,7 @@ class AuthS3(Auth):
 class CrudS3(Crud):
     """Extended version of Crud from gluon/tools.py
     - Allow Internationalisation of strings (can't be done in gluon)
+    - select() uses SQLTABLE2 (to allow different linkto construction)
     """
     def __init__(self,environment,T,db=None):
         "Initialise parent class & make any necessary modifications"
@@ -330,6 +424,34 @@ class CrudS3(Crud):
         self.settings.delete_label=T("Check to delete:")
         self.messages.record_created=T("Record Created")
         self.messages.record_updated=T("Record Updated")
+
+    def select(
+        self,
+        table,
+        query=None,
+        fields=None,
+        orderby=None,
+        limitby=None,
+        headers={},
+        **attr
+        ):
+        request = self.environment.request
+        if isinstance(table, str):
+            if not table in self.db.tables:
+                raise HTTP(404)
+            table = self.db[table]
+        if not query:
+            query = table.id > 0
+        if not fields:
+            fields = [table.ALL]
+        rows=self.db(query).select(*fields, **dict(orderby=orderby, limitby=limitby))
+        if not rows:
+            return None # Nicer than an empty table.
+        if not attr.has_key('linkto'):
+            attr['linkto'] = URL(r=request, args='read')
+        if not attr.has_key('upload'):
+            attr['upload'] = URL(r=request, f='download')
+        return SQLTABLE2(rows, headers=headers, **attr)
 
 class MailS3(Mail):
     """Extended version of Mail from gluon/tools.py
@@ -348,6 +470,8 @@ class S3(T2):
 
     IMAGE_EXT=['.jpg','.gif','.png']
     def __init__(self, request, response, session, cache, T, db, all_in_db=False):
+        self.messages=Storage()
+        self.messages.record_deleted=T("Record Deleted")
         self.error_action='error'
         self.request=request
         self.response=response
@@ -388,6 +512,19 @@ class S3(T2):
         if flash: self.session.flash=flash
         redirect(self.action(f,args,vars))
 
+    def delete(self,table,query=None,next=None):
+        """
+        Deletes the result of the query. If no query: query=table.id==t2.id
+        """
+        request,response,session,cache,T,db=self._globals()
+        if not next: next=request.function
+        if not query:
+           id=self.id or self._error()  
+           query=table.id==id
+        table._db(query).delete()
+        if next: self.redirect(f=next,flash=self.messages.record_deleted)
+        return True
+        
     def itemize(self,*tables,**opts):
         """
         Lists all records from tables.

@@ -13,6 +13,8 @@ $(function() {
             var options_resource=["person"];
         } else if (module=="gis") {
             var options_resource=["feature","location"];
+        } else if (module=="budget") {
+            var options_resource=["item","kit"];
         }
         // Refresh the resource lookuplist
         // ToDo: Pull from Database using AJAX/JSON:

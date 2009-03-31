@@ -600,22 +600,29 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 fields = [f for f in table.fields if table[f].readable]
                 rows=db(query).select(*fields)
                 headers={}
-                # Length to strip from front of header
-                #length=len('%s.' % _table)
                 for field in rows.colnames:
-                    #field=colname[length:]
                     # Use custom or prettified label
                     label=table[field].label
-                    #headers['%s.%s' % (table,field)]=label
                     headers[field]=label
                 list=crud.select(table,fields=fields,headers=headers)
+                # Tmp to bugfix id linkto
+                #list=crud.select(table,headers=headers)
             else:
                 shn_represent(table,module,resource,deletable,main,extra)
                 list=t2.itemize(table)
             if not list:
-                list=s3.crud_strings.msg_list_empty
-            title=s3.crud_strings.title_list
-            subtitle=s3.crud_strings.subtitle_list
+                try:
+                    list=s3.crud_strings.msg_list_empty
+                except:
+                    list=T('None')
+            try:
+                title=s3.crud_strings.title_list
+            except:
+                title=T('List')
+            try:
+                subtitle=s3.crud_strings.subtitle_list
+            except:
+                subtitle=''
             if logged_in and listadd:
                 # Display the Add form below List
                 if deletable and not tabular:
@@ -630,12 +637,19 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     response.view=module+'/'+custom_view
                 else:
                     response.view='list_create.html'
-                addtitle=s3.crud_strings.subtitle_create
+                try:
+                    addtitle=s3.crud_strings.subtitle_create
+                except:
+                    addtitle=T('Add New')
                 return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
                 # List only
                 if listadd:
-                    add_btn=A(s3.crud_strings.label_create_button,_href=URL(r=request,f=resource,args='create'),_id='add-btn')
+                    try:
+                        label_create_button=s3.crud_strings.label_create_button
+                    except:
+                        label_create_button=T('Add')
+                    add_btn=A(label_create_button,_href=URL(r=request,f=resource,args='create'),_id='add-btn')
                 else:
                     add_btn=''
                 # Check for presence of Custom View
@@ -651,7 +665,10 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             shn_represent(table,module,resource,deletable,main,extra)
             list=t2.itemize(table)
             if not list:
-                list=s3.crud_strings.msg_list_empty
+                try:
+                    list=s3.crud_strings.msg_list_empty
+                except:
+                    list=T('None')
             if deletable:
                 # Add extra column header to explain the checkboxes
                 if isinstance(list,TABLE):
@@ -718,13 +735,20 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     response.view=module+'/'+custom_view
                 else:
                     response.view='display.html'
-                title=s3.crud_strings.title_display
+                try:
+                    title=s3.crud_strings.title_display
+                except:
+                    title=T('Details')
                 edit=A(T("Edit"),_href=URL(r=request,f=resource,args=['update',s3.id]),_id='edit-btn')
                 if deletable:
                     delete=A(T("Delete"),_href=URL(r=request,f=resource,args=['delete',s3.id]),_id='delete-btn')
                 else:
                     delete=''
-                list_btn=A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
+                try:
+                    label_list_button=s3.crud_strings.label_list_button
+                except:
+                    label_list_button=T('List All')
+                list_btn=A(label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
                 return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,delete=delete,list_btn=list_btn)
             elif representation=="plain":
                 item=crud.read(table,s3.id)
@@ -799,8 +823,15 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             response.view=module+'/'+custom_view
                         else:
                             response.view='create.html'
-                        title=s3.crud_strings.title_create
-                        list_btn=A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
+                        try:
+                            title=s3.crud_strings.title_create
+                        except:
+                            title=T('Add')
+                        try:
+                            label_list_button=s3.crud_strings.label_list_button
+                        except:
+                            label_list_button=T('List All')
+                        list_btn=A(label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                     elif representation=="plain":
                         form=crud.create(table,onvalidation=onvalidation)

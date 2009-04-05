@@ -36,17 +36,16 @@ def kit_item2():
     "Many to Many CRUD Controller"
     if len(request.args)==0:
         session.error = T("Need to specify a kit!")
-        redirect(URL(r=request,f='index'))
+        redirect(URL(r=request,f='kit'))
     table=db['%s_kit_item' % module]
     kit=request.args[0]
     query = table.kit_id == kit
-    fields = [f for f in table.fields if table[f].readable]
+    fields = [table[f] for f in table.fields if table[f].readable]
     rows=db(query).select(*fields)
     headers={}
-    for field in rows.colnames:
+    for field in fields:
         # Use custom or prettified label
-        label=table[field].label
-        headers[field]=label
+        headers[str(field)]=field.label
     list=crud.select(table,fields=fields,headers=headers)
     if auth.is_logged_in():
         form=crud.create(table)

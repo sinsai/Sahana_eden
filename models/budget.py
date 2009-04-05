@@ -189,7 +189,7 @@ db.define_table(table,timestamp,
 db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module,'%s_kit.code' % module)
 db[table].kit_id.label=T('Kit')
 db[table].kit_id.represent='%s_kit.code' % module
-db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.code' % module)
+db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.description' % module)
 db[table].item_id.label=T('Item')
 
 # Bundles

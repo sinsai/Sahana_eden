@@ -529,6 +529,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
     listadd=False: don't provide an add form in the list view
     main='field': main field to display in the list view (defaults to 'name')
     extra='field': extra field to display in the list view
+    list='table': display list in tabular format
     
     Anonymous users can Read.
     Authentication required for Create/Update/Delete.
@@ -597,16 +598,13 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             if list=='table':
                 tabular=1
                 query = table.id > 0
-                fields = [f for f in table.fields if table[f].readable]
+                fields = [table[f] for f in table.fields if table[f].readable]
                 rows=db(query).select(*fields)
                 headers={}
-                for field in rows.colnames:
-                    # Use custom or prettified label
-                    label=table[field].label
-                    headers[field]=label
+                for field in fields:
+                   # Use custom or prettified label
+                   headers[str(field)]=field.label
                 list=crud.select(table,fields=fields,headers=headers)
-                # Tmp to bugfix id linkto
-                #list=crud.select(table,headers=headers)
             else:
                 shn_represent(table,module,resource,deletable,main,extra)
                 list=t2.itemize(table)

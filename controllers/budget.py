@@ -29,24 +29,23 @@ def item():
 def kit():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'kit',main='code',list='table')
+#def kit_item():
+#    "RESTlike CRUD controller"
+#    return shn_rest_controller(module,'kit_item',main='kit_id',list='table')
 def kit_item():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module,'kit_item',main='kit_id')
-def kit_item2():
     "Many to Many CRUD Controller"
     if len(request.args)==0:
         session.error = T("Need to specify a kit!")
         redirect(URL(r=request,f='kit'))
-    table=db['%s_kit_item' % module]
     kit=request.args[0]
-    query = table.kit_id == kit
+    table=db['%s_kit_item' % module]
     fields = [table[f] for f in table.fields if table[f].readable]
-    rows=db(query).select(*fields)
     headers={}
     for field in fields:
         # Use custom or prettified label
         headers[str(field)]=field.label
-    list=crud.select(table,fields=fields,headers=headers)
+    query = table.kit_id==kit
+    list=crud.select(table,query=query,fields=fields,headers=headers)
     if auth.is_logged_in():
         form=crud.create(table)
         response.view='list_create.html'

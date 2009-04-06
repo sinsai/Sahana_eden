@@ -597,9 +597,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             tabular=0
             if list=='table':
                 tabular=1
-                query = table.id > 0
                 fields = [table[f] for f in table.fields if table[f].readable]
-                rows=db(query).select(*fields)
                 headers={}
                 for field in fields:
                    # Use custom or prettified label

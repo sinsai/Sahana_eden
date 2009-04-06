@@ -188,9 +188,10 @@ db.define_table(table,timestamp,
                 SQLField('item_id',db.budget_item))
 db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module,'%s_kit.code' % module)
 db[table].kit_id.label=T('Kit')
-db[table].kit_id.represent='%s_kit.code' % module
+db[table].kit_id.represent=lambda kit_id: db(db['%s_kit' % module].id==kit_id).select()[0].code
 db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.description' % module)
 db[table].item_id.label=T('Item')
+db[table].item_id.represent=lambda item_id: db(db['%s_item' % module].id==item_id).select()[0].description
 
 # Bundles
 resource='bundle'

@@ -23,9 +23,9 @@ if not len(db().select(db[table].ALL)):
 	)
 	db[table].insert(
         name="Parameters",
-	function="parameter/update/1",
+	function="parameters",
 	priority=1,
-	description="Edit overall parameters",
+	description="Set overall parameters",
 	enabled='True'
 	)
 	db[table].insert(
@@ -185,13 +185,15 @@ resource='kit_item'
 table=module+'_'+resource
 db.define_table(table,timestamp,
                 SQLField('kit_id',db.budget_kit),
-                SQLField('item_id',db.budget_item))
+                SQLField('item_id',db.budget_item),
+                SQLField('quantity','integer',default=1))
 db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module,'%s_kit.code' % module)
 db[table].kit_id.label=T('Kit')
 db[table].kit_id.represent=lambda kit_id: db(db['%s_kit' % module].id==kit_id).select()[0].code
 db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.description' % module)
 db[table].item_id.label=T('Item')
 db[table].item_id.represent=lambda item_id: db(db['%s_item' % module].id==item_id).select()[0].description
+db[table].quantity.requires=IS_NOT_EMPTY()
 
 # Bundles
 resource='bundle'

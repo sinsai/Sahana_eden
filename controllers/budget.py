@@ -20,9 +20,15 @@ def open_option():
     option=options[0].function
     redirect(URL(r=request,f=option))
 
+def parameters():
+    "Select which page to go to depending on login status"
+    if auth.is_logged_in():
+        redirect (URL(r=request,f='parameter',args=['update',1]))
+    else:
+        redirect (URL(r=request,f='parameter',args=['read',1]))
 def parameter():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'parameter')
+    return shn_rest_controller(module,'parameter',deletable=False)
 def item():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'item',main='code',list='table')
@@ -45,13 +51,14 @@ def kit_item():
         # Use custom or prettified label
         headers[str(field)]=field.label
     query = table.kit_id==kit
+    #,linkto=
     list=crud.select(table,query=query,fields=fields,headers=headers)
     if auth.is_logged_in():
-        form=crud.create(table)
-        response.view='list_create.html'
+        form=crud.create(table,next=URL(r=request,args=[kit]))
+        response.view='%s/kit_item_list_create.html' % module
         return dict(module_name=module_name,modules=modules,options=options,list=list,form=form)
     else:
-        response.view='list.html'
+        response.view='%s/kit_item_list.html' % module
         return dict(module_name=module_name,modules=modules,options=options,list=list)
 def bundle():
     "RESTlike CRUD controller"

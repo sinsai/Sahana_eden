@@ -632,7 +632,10 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 if os.path.exists(_custom_view):
                     response.view=module+'/'+custom_view
                 else:
-                    response.view='list_create.html'
+                    if tabular:
+                        response.view='table_list_create.html'
+                    else:
+                        response.view='list_create.html'
                 try:
                     addtitle=s3.crud_strings.subtitle_create
                 except:
@@ -654,7 +657,10 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 if os.path.exists(_custom_view):
                     response.view=module+'/'+custom_view
                 else:
-                    response.view='list.html'
+                    if tabular:
+                        response.view='table_list.html'
+                    else:
+                        response.view='list.html'
                 return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="ajax":
             #list=crud.select(table,fields=fields,headers=headers)

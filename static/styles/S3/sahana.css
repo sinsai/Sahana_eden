@@ -161,6 +161,11 @@ div.form-container div.controlset input { display: inline; float: none; }
 div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
+/* Tabular data view */
+div#table-container th { border: 1px solid #ccc;background: #ddd; }
+div#table-container tr.even td { border: 1px solid #ccc;background: #fff; }
+div#table-container tr.odd td { border: 1px solid #ccc;background: #eee; }
+
 /* Required Field indicator */
 .req { color:red; font-weight:bold;  }
 /* For Key - ugly! */

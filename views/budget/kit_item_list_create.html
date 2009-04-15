@@ -1,11 +1,21 @@
 {{extend 'layout.html'}}
 
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Set the Crud Kit dropdown to the current Kit
+    var options = '<option value="' + {{=kit}} + '"></option>';
+    $("#budget_kit_item_kit_id").html(options);
+    // Hide the dropdown
+    $("#budget_kit_item_kit_id__row").hide();
+    });
+//]]></script>
+
 {{try:}}
  {{=H2(title)}}
 {{except:}}
 {{pass}}
 {{try:}}
- {{=H3(subtitle)}}
+ {{=P(description)}}
 {{except:}}
 {{pass}}
 <div id='table-container'>

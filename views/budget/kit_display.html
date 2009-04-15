@@ -4,19 +4,25 @@
  {{=H2(title)}}
 {{except:}}
 {{pass}}
+<a href="{{=URL(r=request,f='kit_item',args=request.args[0])}}">Contents</a>
+<br />
 {{try:}}
- {{=P(description)}}
+ {{=edit}}
 {{except:}}
 {{pass}}
-<div id='table-container'>
+<div class='item-container'>
 {{try:}}
- {{=list}}
+ {{=item}}
 {{except:}}
   {{include}}
 {{pass}}
 </div>
+{{try:}}
+ {{=delete}}
+{{except:}}
+{{pass}}
 <p>&nbsp;</p>
 {{try:}}
- {{=add_btn}}
+ {{=list_btn}}
 {{except:}}
 {{pass}}

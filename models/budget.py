@@ -194,6 +194,7 @@ db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.descriptio
 db[table].item_id.label=T('Item')
 db[table].item_id.represent=lambda item_id: db(db['%s_item' % module].id==item_id).select()[0].description
 db[table].quantity.requires=IS_NOT_EMPTY()
+db[table].quantity.comment=SPAN("*",_class="req")
 
 # Bundles
 resource='bundle'

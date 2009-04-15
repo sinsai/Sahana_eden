@@ -45,21 +45,26 @@ def kit_item():
         redirect(URL(r=request,f='kit'))
     kit=request.args[0]
     table=db['%s_kit_item' % module]
+    table.kit_id.readable=False
     fields = [table[f] for f in table.fields if table[f].readable]
     headers={}
     for field in fields:
         # Use custom or prettified label
         headers[str(field)]=field.label
     query = table.kit_id==kit
-    #,linkto=
-    list=crud.select(table,query=query,fields=fields,headers=headers)
+    linkto = URL(r=request, f='item', args='read')
+    id = 'item_id'
+    list=crud.select(table,query=query,fields=fields,headers=headers,linkto=linkto,id=id)
+    title=db.budget_kit[kit].code
+    description=db.budget_kit[kit].description
     if auth.is_logged_in():
+        crud.settings.submit_button='Add'
         form=crud.create(table,next=URL(r=request,args=[kit]))
         response.view='%s/kit_item_list_create.html' % module
-        return dict(module_name=module_name,modules=modules,options=options,list=list,form=form)
+        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,list=list,form=form,kit=kit)
     else:
         response.view='%s/kit_item_list.html' % module
-        return dict(module_name=module_name,modules=modules,options=options,list=list)
+        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,list=list)
 def bundle():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'bundle')

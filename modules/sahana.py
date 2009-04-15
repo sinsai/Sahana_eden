@@ -93,8 +93,8 @@ def URL3(a=None, r=None):
 
 # Modified version of SQLTABLE from gluon/sqlhtml.py
 # we need a different linkto construction for our CRUD controller
+# we want to be able to specify a different ID field to direct to for the M2M controller
 class SQLTABLE2(TABLE):
-
     """
     given a SQLRows object, as returned by a db().select(), generates
     an html table with the rows.
@@ -106,6 +106,7 @@ class SQLTABLE2(TABLE):
     headers: dictionary of headers to headers redefinions
     truncate: length at which to truncate text in table cells.
               Defaults to 16 characters.
+    id: field to direct linkto to
     optional names attributes for passed to the <table> tag
     """
 
@@ -117,6 +118,7 @@ class SQLTABLE2(TABLE):
         orderby=None,
         headers={},
         truncate=16,
+        id=None,
         **attributes
         ):
         TABLE.__init__(self, **attributes)
@@ -173,7 +175,10 @@ class SQLTABLE2(TABLE):
                 ur = unicode(r, 'utf8')
                 if len(ur) > truncate:
                     r = ur[:truncate - 3].encode('utf8') + '...'
-                if linkto and field.type == 'id':
+                if id and linkto and field.type == 'id':
+                    row.append(TD(A(r, _href='%s/%s' % (linkto,
+                               sqlrows._db[tablename][r][id]))))
+                elif linkto and field.type == 'id':
                     row.append(TD(A(r, _href='%s/%s' % (linkto,
                                r))))
                 elif linkto and field.type[:9] == 'reference':

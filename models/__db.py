@@ -255,7 +255,7 @@ if not len(db().select(db[table].ALL)):
 	)
 	db[table].insert(
         name="budget",
-        name_nice="Budgetting",
+        name_nice="Budgetting Module",
         priority=12,
         description="Allows a budget to be drawn up",
         enabled='True'

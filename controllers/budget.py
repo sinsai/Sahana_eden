@@ -59,12 +59,29 @@ def kit_item():
     description=db.budget_kit[kit].description
     if auth.is_logged_in():
         crud.settings.submit_button='Add'
+        # Calculate Totals for the Kit after Item is added
+        crud.settings.create_onaccept = lambda form: totals(form)
         form=crud.create(table,next=URL(r=request,args=[kit]))
+        addtitle=T("Add New Item to Kit")
         response.view='%s/kit_item_list_create.html' % module
-        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,list=list,form=form,kit=kit)
+        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,list=list,addtitle=addtitle,form=form,kit=kit)
     else:
         response.view='%s/kit_item_list.html' % module
         return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,list=list)
+def totals(form):
+    "Calculate Totals for the Kit"
+    kit_id=form.vars.kit_id
+    items=db(db.budget_kit_item.kit_id==kit_id).select()
+    total_unit_cost=0
+    total_monthly_cost=0
+    total_minute_cost=0
+    total_megabyte_cost=0
+    for item in items:
+        total_unit_cost+=(db(db.budget_item.id==item.item_id).select()[0].unit_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
+        total_monthly_cost+=(db(db.budget_item.id==item.item_id).select()[0].monthly_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
+        total_minute_cost+=(db(db.budget_item.id==item.item_id).select()[0].minute_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
+        total_megabyte_cost+=(db(db.budget_item.id==item.item_id).select()[0].megabyte_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
+    db(db.budget_kit.id==kit_id).update(total_unit_cost=total_unit_cost,total_monthly_cost=total_monthly_cost,total_minute_cost=total_minute_cost,total_megabyte_cost=total_megabyte_cost)
 def bundle():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'bundle')

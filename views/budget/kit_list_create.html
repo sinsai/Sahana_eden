@@ -2,11 +2,8 @@
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Set the Crud Kit dropdown to the current Kit
-    var options = '<option value="' + {{=kit}} + '"></option>';
-    $("#budget_kit_item_kit_id").html(options);
-    // Hide the dropdown
-    $("#budget_kit_item_kit_id__row").hide();
+    // Hide the Total rows from Form
+    $("tr[id*='total']").hide();
     });
 //]]></script>
 
@@ -15,11 +12,10 @@ $(function() {
 {{except:}}
 {{pass}}
 {{try:}}
- {{=P(description)}}
+ {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-{{=P(A(T("Edit Description"),_href=URL(r=request,f='kit',args=('update',kit))))}}
-<div id='table-container'>
+<div id='list-container'>
 {{try:}}
  {{=list}}
 {{except:}}

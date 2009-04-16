@@ -176,8 +176,9 @@ class SQLTABLE2(TABLE):
                 if len(ur) > truncate:
                     r = ur[:truncate - 3].encode('utf8') + '...'
                 if id and linkto and field.type == 'id':
-                    row.append(TD(A(r, _href='%s/%s' % (linkto,
-                               sqlrows._db[tablename][r][id]))))
+                    link_id = sqlrows._db[tablename][r][id]
+                    row.append(TD(A(link_id, _href='%s/%s' % (linkto,
+                               link_id))))
                 elif linkto and field.type == 'id':
                     row.append(TD(A(r, _href='%s/%s' % (linkto,
                                r))))

@@ -3,12 +3,12 @@ module='dvi'
 # Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('function'),
+                db.Field('description',length=256),
+                db.Field('access',db.auth_group),  # Hide menu options if users don't have the required access level
+                db.Field('priority','integer'),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].function.requires=IS_NOT_EMPTY()
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -44,8 +44,8 @@ if not len(db().select(db[table].ALL)):
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -60,9 +60,9 @@ resource='dead_body'
 table=module+'_'+resource
 
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('tag_label'),      # a unique label
-                SQLField('age_group'),      # age group
-                SQLField('sex'))            # sex
+                db.Field('tag_label'),      # a unique label
+                db.Field('age_group'),      # age group
+                db.Field('sex'))            # sex
 
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 

@@ -3,12 +3,12 @@ module='or'
 # Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('function'),
+                db.Field('description',length=256),
+                db.Field('access',db.auth_group),  # Hide menu options if users don't have the required access level
+                db.Field('priority','integer'),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].function.requires=IS_NOT_EMPTY()
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -68,8 +68,8 @@ if not len(db().select(db[table].ALL)):
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -83,14 +83,14 @@ if not len(db().select(db[table].ALL)):
 resource='organisation'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                #SQLField('privacy','integer',default=0),
-                #SQLField('archived','boolean',default=False),
-                SQLField('name'),
-                SQLField('acronym',length=8),
-                SQLField('type'),
+                #db.Field('privacy','integer',default=0),
+                #db.Field('archived','boolean',default=False),
+                db.Field('name'),
+                db.Field('acronym',length=8),
+                db.Field('type'),
                 admin_id,
-                SQLField('registration'),	# Registration Number
-                SQLField('website'))
+                db.Field('registration'),	# Registration Number
+                db.Field('website'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -115,22 +115,22 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='office'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
-                SQLField('organisation',db.or_organisation),
-                SQLField('type'),
+                db.Field('name'),
+                db.Field('organisation',db.or_organisation),
+                db.Field('type'),
                 admin_id,
                 location_id,
-                SQLField('address','text'),
-                SQLField('postcode'),
-                SQLField('phone1'),
-                SQLField('phone2'),
-                SQLField('email'),
-                SQLField('fax'),
-                SQLField('national_staff','integer'),
-                SQLField('international_staff','integer'),
-                SQLField('number_of_vehicles','integer'),
-                SQLField('vehicle_types'),
-                SQLField('equipment'))
+                db.Field('address','text'),
+                db.Field('postcode'),
+                db.Field('phone1'),
+                db.Field('phone2'),
+                db.Field('email'),
+                db.Field('fax'),
+                db.Field('national_staff','integer'),
+                db.Field('international_staff','integer'),
+                db.Field('number_of_vehicles','integer'),
+                db.Field('vehicle_types'),
+                db.Field('equipment'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.comment=SPAN("*",_class="req")
@@ -163,9 +163,9 @@ resource='contact'
 table=module+'_'+resource
 db.define_table(table,timestamp,
                 person_id,
-                SQLField('office_id',db.or_office),
-                SQLField('title'),
-                SQLField('manager_id',db.pr_person))
+                db.Field('office_id',db.or_office),
+                db.Field('title'),
+                db.Field('manager_id',db.pr_person))
 db[table].person_id.label='Contact'
 db[table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
 db[table].office_id.label='Office'
@@ -193,8 +193,8 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='office_to_organisation'
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('office_id',db.or_office),
-                SQLField('organisation_id',db.or_organisation))
+                db.Field('office_id',db.or_office),
+                db.Field('organisation_id',db.or_organisation))
 db[table].office_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
 db[table].office_id.label='Office'
 db[table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
@@ -206,8 +206,8 @@ db[table].organisation_id.label='Organisation'
 #resource='contact_to_organisation'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('contact_id',db.or_contact),
-#                SQLField('organisation_id',db.or_organisation))
+#                db.Field('contact_id',db.or_contact),
+#                db.Field('organisation_id',db.or_organisation))
 #db[table].contact_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
 #db[table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
 

@@ -3,12 +3,12 @@ module='msg'
 # Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('function'),
+                db.Field('description',length=256),
+                db.Field('access',db.auth_group),  # Hide menu options if users don't have the required access level
+                db.Field('priority','integer'),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=IS_NOT_IN_DB(db,'%s.name' % table)
 db[table].function.requires=IS_NOT_EMPTY()
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -54,8 +54,8 @@ if not len(db().select(db[table].ALL)):
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -69,9 +69,9 @@ if not len(db().select(db[table].ALL)):
 resource='incoming_sms'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('phone','integer'),
-                SQLField('contents','text'),
-                SQLField('smsc','integer'))
+                db.Field('phone','integer'),
+                db.Field('contents','text'),
+                db.Field('smsc','integer'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].phone.label=T("Phone number")
 db[table].phone.comment=SPAN("*",_class="req")
@@ -94,10 +94,10 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='outgoing_sms'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('phone','integer'),
-                SQLField('contents','text'),
-                SQLField('status'),
-                SQLField('smsc','integer'))
+                db.Field('phone','integer'),
+                db.Field('contents','text'),
+                db.Field('status'),
+                db.Field('smsc','integer'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].phone.label=T("Phone number")
 db[table].phone.comment=SPAN("*",_class="req")

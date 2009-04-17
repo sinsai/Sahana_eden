@@ -50,35 +50,35 @@ service=Service(globals())
 
 # Reusable timestamp fields
 timestamp=SQLTable(None,'timestamp',
-            SQLField('created_on','datetime',
+            db.Field('created_on','datetime',
                           readable=False,
                           writable=False,
                           default=request.now),
-            SQLField('modified_on','datetime',
+            db.Field('modified_on','datetime',
                           readable=False,
                           writable=False,
                           default=request.now,update=request.now)) 
 
 # Reusable author fields
 authorstamp=SQLTable(None,'authorstamp',
-            SQLField('created_by',db.auth_user,
+            db.Field('created_by',db.auth_user,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
                           writable=False),
-            SQLField('modified_by',db.auth_user,
+            db.Field('modified_by',db.auth_user,
                           default=session.auth.user.id if auth.is_logged_in() else 0,update=session.auth.user.id if auth.is_logged_in() else 0,
                           writable=False)) 
 
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
 uuidstamp=SQLTable(None,'uuidstamp',
-            SQLField('uuid',length=64,
+            db.Field('uuid',length=64,
                           readable=False,
                           writable=False,
                           default=uuid.uuid4()))
 
 # Reusable Admin field
 admin_id=SQLTable(None,'admin_id',
-            SQLField('admin',
+            db.Field('admin',
                 db.auth_group,requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role')),
                 represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
                 comment=DIV(A(T('Add Role'),_class='popup',_href=URL(r=request,c='default',f='role',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Contact|The Person to contact for this.")))
@@ -115,13 +115,13 @@ module='s3'
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('admin_name'),
-                SQLField('admin_email'),
-                SQLField('admin_tel'),
-                SQLField('debug','boolean'),
-                SQLField('self_registration','boolean'),
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('admin_name'),
+                db.Field('admin_email'),
+                db.Field('admin_tel'),
+                db.Field('debug','boolean'),
+                db.Field('self_registration','boolean'),
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -157,12 +157,12 @@ s3.crud_strings[resource]=Storage(title_create=title_create, title_display=title
 resource='module'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('name'),
-                SQLField('name_nice'),
-                SQLField('access',db.auth_group),  # Hide modules if users don't have the required access level (NB Not yet implemented either in layout.html or the controllers)
-                SQLField('priority','integer'),
-                SQLField('description',length=256),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('name_nice'),
+                db.Field('access',db.auth_group),  # Hide modules if users don't have the required access level (NB Not yet implemented either in layout.html or the controllers)
+                db.Field('priority','integer'),
+                db.Field('description',length=256),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name_nice' % table)]
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -276,26 +276,26 @@ if not len(db().select(db[table].ALL)):
 resource='audit'
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('person',db.auth_user),
-                SQLField('operation'),
-                SQLField('representation'),
-                SQLField('module'),
-                SQLField('resource'),
-                SQLField('record','integer'),
-                SQLField('old_value'),
-                SQLField('new_value'))
+                db.Field('person',db.auth_user),
+                db.Field('operation'),
+                db.Field('representation'),
+                db.Field('module'),
+                db.Field('resource'),
+                db.Field('record','integer'),
+                db.Field('old_value'),
+                db.Field('new_value'))
 db[table].operation.requires=IS_IN_SET(['create','read','update','delete','list'])
 
 module='default'
 # Home Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('access'),  # Hide menu options if users don't have the required access level
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('function'),
+                db.Field('description',length=256),
+                db.Field('access'),  # Hide menu options if users don't have the required access level
+                db.Field('priority','integer'),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].function.requires=IS_NOT_EMPTY()
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -348,8 +348,8 @@ if not len(db().select(db[table].ALL)):
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -364,8 +364,8 @@ module='appadmin'
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 

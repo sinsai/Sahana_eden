@@ -3,12 +3,12 @@ module='budget'
 # Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('function'),
+                db.Field('description',length=256),
+                db.Field('access',db.auth_group),  # Hide menu options if users don't have the required access level
+                db.Field('priority','integer'),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=IS_NOT_IN_DB(db,'%s.name' % table)
 db[table].function.requires=IS_NOT_EMPTY()
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -82,8 +82,8 @@ if not len(db().select(db[table].ALL)):
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -98,10 +98,10 @@ if not len(db().select(db[table].ALL)):
 resource='parameter'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('shipping','double',default=15.00),
-                SQLField('logistics','double',default=0.00),
-                SQLField('admin','double',default=0.00),
-                SQLField('indirect','double',default=7.00)
+                db.Field('shipping','double',default=15.00),
+                db.Field('logistics','double',default=0.00),
+                db.Field('admin','double',default=0.00),
+                db.Field('indirect','double',default=7.00)
                 )
 db[table].shipping.requires=IS_FLOAT_IN_RANGE(0,100)
 db[table].shipping.label="Shipping cost"
@@ -118,16 +118,16 @@ s3.crud_strings[table]=Storage(title_update=title_update)
 resource='item'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('code'),
-                SQLField('description',length=256),
-                SQLField('category'),
-                #SQLField('sub_category'),
-                SQLField('cost_type'),
-                SQLField('unit_cost','double',default=0.00),
-                SQLField('monthly_cost','double',default=0.00),
-                SQLField('minute_cost','double',default=0.00),
-                SQLField('megabyte_cost','double',default=0.00),
-                SQLField('comments',length=256)
+                db.Field('code'),
+                db.Field('description',length=256),
+                db.Field('category'),
+                #db.Field('sub_category'),
+                db.Field('cost_type'),
+                db.Field('unit_cost','double',default=0.00),
+                db.Field('monthly_cost','double',default=0.00),
+                db.Field('minute_cost','double',default=0.00),
+                db.Field('megabyte_cost','double',default=0.00),
+                db.Field('comments',length=256)
                 )
 db[table].code.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.code' % table)]
 db[table].code.comment=SPAN("*",_class="req")
@@ -153,13 +153,13 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='kit'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('code'),
-                SQLField('description',length=256),
-                SQLField('total_unit_cost',writable=False),
-                SQLField('total_monthly_cost',writable=False),
-                SQLField('total_minute_cost',writable=False),
-                SQLField('total_megabyte_cost',writable=False),
-                SQLField('comments',length=256)
+                db.Field('code'),
+                db.Field('description',length=256),
+                db.Field('total_unit_cost',writable=False),
+                db.Field('total_monthly_cost',writable=False),
+                db.Field('total_minute_cost',writable=False),
+                db.Field('total_megabyte_cost',writable=False),
+                db.Field('comments',length=256)
                 )
 db[table].code.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.code' % table)]
 db[table].code.comment=SPAN("*",_class="req")
@@ -184,9 +184,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='kit_item'
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('kit_id',db.budget_kit),
-                SQLField('item_id',db.budget_item),
-                SQLField('quantity','integer',default=1))
+                db.Field('kit_id',db.budget_kit),
+                db.Field('item_id',db.budget_item),
+                db.Field('quantity','integer',default=1))
 db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module,'%s_kit.code' % module)
 db[table].kit_id.label=T('Kit')
 db[table].kit_id.represent=lambda kit_id: db(db['%s_kit' % module].id==kit_id).select()[0].code
@@ -200,11 +200,11 @@ db[table].quantity.comment=SPAN("*",_class="req")
 resource='bundle'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
-                SQLField('description',length=256),
-                SQLField('onetime_cost',writable=False),
-                SQLField('recurring_cost',writable=False),
-                SQLField('comments',length=256)
+                db.Field('name'),
+                db.Field('description',length=256),
+                db.Field('onetime_cost',writable=False),
+                db.Field('recurring_cost',writable=False),
+                db.Field('comments',length=256)
                 )
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -230,13 +230,13 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='staff_type'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
-                SQLField('grade'),
-                SQLField('salary','integer'),
-                SQLField('travel','integer'),
-                SQLField('subsistence','double',default=0.00),
-                SQLField('hazard_pay','double',default=0.00),
-                SQLField('comments',length=256)
+                db.Field('name'),
+                db.Field('grade'),
+                db.Field('salary','integer'),
+                db.Field('travel','integer'),
+                db.Field('subsistence','double',default=0.00),
+                db.Field('hazard_pay','double',default=0.00),
+                db.Field('comments',length=256)
                 )
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -264,11 +264,11 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='location'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('code',length=3),
-                SQLField('description'),
-                SQLField('subsistence','double',default=0.00),
-                SQLField('hazard_pay','double',default=0.00),
-                SQLField('comments',length=256)
+                db.Field('code',length=3),
+                db.Field('description'),
+                db.Field('subsistence','double',default=0.00),
+                db.Field('hazard_pay','double',default=0.00),
+                db.Field('comments',length=256)
                 )
 db[table].code.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.code' % table)]
 db[table].code.comment=SPAN("*",_class="req")
@@ -291,9 +291,9 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='project'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('code'),
-                SQLField('title'),
-                SQLField('comments',length=256)
+                db.Field('code'),
+                db.Field('title'),
+                db.Field('comments',length=256)
                 )
 db[table].code.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.code' % table)]
 db[table].code.comment=SPAN("*",_class="req")
@@ -316,16 +316,16 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='budget_equipment'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('location','reference %s_location' % module),
-                SQLField('project','reference %s_project' % module),
-                SQLField('bundle','reference %s_bundle' % module),
-                SQLField('quantity','integer'),
-                SQLField('unit_cost','double',writable=False),
-                SQLField('months','integer'),
-                SQLField('monthly_cost','double',writable=False),
-                SQLField('total_unit_cost',writable=False),
-                SQLField('total_monthly_cost',writable=False),
-                SQLField('comments',length=256)
+                db.Field('location','reference %s_location' % module),
+                db.Field('project','reference %s_project' % module),
+                db.Field('bundle','reference %s_bundle' % module),
+                db.Field('quantity','integer'),
+                db.Field('unit_cost','double',writable=False),
+                db.Field('months','integer'),
+                db.Field('monthly_cost','double',writable=False),
+                db.Field('total_unit_cost',writable=False),
+                db.Field('total_monthly_cost',writable=False),
+                db.Field('comments',length=256)
                 )
 db[table].location.requires=IS_IN_DB(db,'%s_location.id' % module,'%s_location.name' % module)
 db[table].location.comment=SPAN("*",_class="req")
@@ -351,19 +351,19 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='budget_staff'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('location','reference %s_location' % module),
-                SQLField('project','reference %s_project' % module),
-                SQLField('job_title','reference %s_staff_type' % module),
-                SQLField('grade',writable=False),
-                SQLField('type'),
-                SQLField('headcount','integer'),
-                SQLField('months','integer'),
-                SQLField('salary',writable=False),
-                SQLField('travel',writable=False),
-                SQLField('subsistence','double',writable=False),
-                SQLField('hazard_pay','double',writable=False),
-                SQLField('total','double',writable=False),
-                SQLField('comments',length=256)
+                db.Field('location','reference %s_location' % module),
+                db.Field('project','reference %s_project' % module),
+                db.Field('job_title','reference %s_staff_type' % module),
+                db.Field('grade',writable=False),
+                db.Field('type'),
+                db.Field('headcount','integer'),
+                db.Field('months','integer'),
+                db.Field('salary',writable=False),
+                db.Field('travel',writable=False),
+                db.Field('subsistence','double',writable=False),
+                db.Field('hazard_pay','double',writable=False),
+                db.Field('total','double',writable=False),
+                db.Field('comments',length=256)
                 )
 db[table].location.requires=IS_IN_DB(db,'%s_location.id' % module,'%s_location.name' % module)
 db[table].location.comment=SPAN("*",_class="req")
@@ -390,10 +390,10 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='budget'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
-                SQLField('equipment','reference %s_budget_equipment' % module),
-                SQLField('staff','reference %s_budget_staff' % module),
-                SQLField('comments',length=256)
+                db.Field('name'),
+                db.Field('equipment','reference %s_budget_equipment' % module),
+                db.Field('staff','reference %s_budget_staff' % module),
+                db.Field('comments',length=256)
                 )
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")

@@ -3,12 +3,12 @@ module='pr'
 # Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('function'),
+                db.Field('description',length=256),
+                db.Field('access',db.auth_group),  # Hide menu options if users don't have the required access level
+                db.Field('priority','integer'),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].function.requires=IS_NOT_EMPTY()
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -44,8 +44,8 @@ if not len(db().select(db[table].ALL)):
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -59,14 +59,14 @@ if not len(db().select(db[table].ALL)):
 resource='person'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('first_name'),
-                SQLField('last_name'),  # Family Name
-                #SQLField('l10_name'),
-                SQLField('email'),      # Needed for AAA
-                SQLField('mobile_phone'),     # Needed for SMS
-                SQLField('address','text'),
-                SQLField('postcode'),
-                SQLField('website'))
+                db.Field('first_name'),
+                db.Field('last_name'),  # Family Name
+                #db.Field('l10_name'),
+                db.Field('email'),      # Needed for AAA
+                db.Field('mobile_phone'),     # Needed for SMS
+                db.Field('address','text'),
+                db.Field('postcode'),
+                db.Field('website'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].first_name.requires=IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment=SPAN("*",_class="req")
@@ -94,7 +94,7 @@ msg_list_empty=T('No People currently registered')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 person_id=SQLTable(None,'person_id',
-            SQLField('person_id',
+            db.Field('person_id',
                 db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','%(id)s: %(first_name)s %(last_name)s')),
                 represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
                 comment=DIV(A(T('Add Contact'),_class='popup',_href=URL(r=request,c='pr',f='person',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Contact|The Person to contact for this.")))
@@ -104,8 +104,8 @@ person_id=SQLTable(None,'person_id',
 resource='contact'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),   # Contact type
-                SQLField('value'))
+                db.Field('name'),   # Contact type
+                db.Field('value'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_IN_SET(['phone','fax','skype','msn','yahoo'])
 db[table].value.requires=IS_NOT_EMPTY()
@@ -128,8 +128,8 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='contact_to_person'
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('person_id',db.pr_person),
-                SQLField('contact_id',db.pr_contact))
+                db.Field('person_id',db.pr_person),
+                db.Field('contact_id',db.pr_contact))
 db[table].person_id.label='Person'
 db[table].contact_id.requires=IS_IN_DB(db,'pr_contact.id','pr_contact.name')
 db[table].contact_id.label='Contact Detail'
@@ -140,9 +140,9 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_identity'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('opt_id_type'),		# ID card, Passport, Driving License, etc
-#                SQLField('id_value'))
+#                db.Field('pr_person',length=64),
+#                db.Field('opt_id_type'),		# ID card, Passport, Driving License, etc
+#                db.Field('id_value'))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Details
@@ -150,17 +150,17 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_details'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('next_kin',length=64),
-#                SQLField('birth_date','date'),
-#                SQLField('opt_age_group'),
-#                SQLField('relation'),
-#                SQLField('opt_country'),
-#                SQLField('opt_race'),
-#                SQLField('opt_religion'),
-#                SQLField('opt_marital_status'),
-#                SQLField('opt_gender'),
-#                SQLField('occupation'))
+#                db.Field('pr_person',length=64),
+#                db.Field('next_kin',length=64),
+#                db.Field('birth_date','date'),
+#                db.Field('opt_age_group'),
+#                db.Field('relation'),
+#                db.Field('opt_country'),
+#                db.Field('opt_race'),
+#                db.Field('opt_religion'),
+#                db.Field('opt_marital_status'),
+#                db.Field('opt_gender'),
+#                db.Field('occupation'))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 #db[table].next_kin.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 #db[table].birth_date.requires=IS_DATE(T("%Y-%m-%d")) # Can use Translation to provide localised formatting
@@ -170,11 +170,11 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_status'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('isReliefWorker','boolean',default=False),
-#                SQLField('isVictim','boolean',default=True),
-#                SQLField('opt_status'),	# missing, injured, etc. customizable
-#                SQLField('id_value'))
+#                db.Field('pr_person',length=64),
+#                db.Field('isReliefWorker','boolean',default=False),
+#                db.Field('isVictim','boolean',default=True),
+#                db.Field('opt_status'),	# missing, injured, etc. customizable
+#                db.Field('id_value'))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Physical
@@ -182,15 +182,15 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_physical'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('height'),
-#                SQLField('weight'),
-#                SQLField('opt_blood_type'),
-#                SQLField('opt_eye_color'),
-#                SQLField('opt_skin_color'),
-#                SQLField('opt_hair_color'),
-#                SQLField('injuries'),
-#                SQLField('comments',length=256))
+#                db.Field('pr_person',length=64),
+#                db.Field('height'),
+#                db.Field('weight'),
+#                db.Field('opt_blood_type'),
+#                db.Field('opt_eye_color'),
+#                db.Field('opt_skin_color'),
+#                db.Field('opt_hair_color'),
+#                db.Field('injuries'),
+#                db.Field('comments',length=256))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Missing
@@ -198,10 +198,10 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_missing'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('last_seen'),
-#                SQLField('last_clothing'),
-#                SQLField('comments',length=256))
+#                db.Field('pr_person',length=64),
+#                db.Field('last_seen'),
+#                db.Field('last_clothing'),
+#                db.Field('comments',length=256))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Deceased
@@ -209,11 +209,11 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_deceased'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('details'),
-#                SQLField('date_of_death','date'),
-#                SQLField('place_of_death'),
-#                SQLField('comments',length=256))
+#                db.Field('pr_person',length=64),
+#                db.Field('details'),
+#                db.Field('date_of_death','date'),
+#                db.Field('place_of_death'),
+#                db.Field('comments',length=256))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
 # Person Reporter
@@ -222,9 +222,9 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_report'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('reporter',length=64),
-#                SQLField('relation'))
+#                db.Field('pr_person',length=64),
+#                db.Field('reporter',length=64),
+#                db.Field('relation'))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 #db[table].reporter.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
@@ -233,26 +233,26 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_group'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('uuid',length=64,default=uuid.uuid4()),
-#                SQLField('name'),
-#                SQLField('opt_group_type'))
+#                db.Field('uuid',length=64,default=uuid.uuid4()),
+#                db.Field('name'),
+#                db.Field('opt_group_type'))
 
 # Person Group Details
 # Modules: dvr,mpr
 #resource='person_group_details'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person_group',length=64),
-#                SQLField('head',length=64),
-#                SQLField('no_of_adult_males','integer'),
-#                SQLField('no_of_adult_females','integer'),
-#                SQLField('no_of_children','integer'),
-#                SQLField('no_displaced','integer'),
-#                SQLField('no_missing','integer'),
-#                SQLField('no_dead','integer'),
-#                SQLField('no_rehabilitated','integer'),
-#                SQLField('checklist'),
-#                SQLField('description',length=256))
+#                db.Field('pr_person_group',length=64),
+#                db.Field('head',length=64),
+#                db.Field('no_of_adult_males','integer'),
+#                db.Field('no_of_adult_females','integer'),
+#                db.Field('no_of_children','integer'),
+#                db.Field('no_displaced','integer'),
+#                db.Field('no_missing','integer'),
+#                db.Field('no_dead','integer'),
+#                db.Field('no_rehabilitated','integer'),
+#                db.Field('checklist'),
+#                db.Field('description',length=256))
 #db[table].pr_person_group.requires=IS_IN_DB(db,'pr_person_group.uuid')
 #db[table].head.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 
@@ -262,8 +262,8 @@ db[table].contact_id.label='Contact Detail'
 #resource='person_to_group'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                SQLField('pr_person',length=64),
-#                SQLField('pr_person_group',length=64))
+#                db.Field('pr_person',length=64),
+#                db.Field('pr_person_group',length=64))
 #db[table].pr_person.requires=IS_IN_DB(db,'pr_person.uuid','pr_person.name')
 #db[table].pr_person_group.requires=IS_IN_DB(db,'pr_person_group.uuid')
 

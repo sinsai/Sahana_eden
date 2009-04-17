@@ -3,12 +3,12 @@ module='gis'
 # Menu Options
 table='%s_menu_option' % module
 db.define_table(table,
-                SQLField('name'),
-                SQLField('function'),
-                SQLField('description',length=256),
-                SQLField('access',db.auth_group),  # Hide menu options if users don't have the required access level
-                SQLField('priority','integer'),
-                SQLField('enabled','boolean',default='True'))
+                db.Field('name'),
+                db.Field('function'),
+                db.Field('description',length=256),
+                db.Field('access',db.auth_group),  # Hide menu options if users don't have the required access level
+                db.Field('priority','integer'),
+                db.Field('enabled','boolean',default='True'))
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].function.requires=IS_NOT_EMPTY()
 db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
@@ -38,8 +38,8 @@ if not len(db().select(db[table].ALL)):
 resource='setting'
 table=module+'_'+resource
 db.define_table(table,
-                SQLField('audit_read','boolean'),
-                SQLField('audit_write','boolean'))
+                db.Field('audit_read','boolean'),
+                db.Field('audit_write','boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -53,10 +53,10 @@ if not len(db().select(db[table].ALL)):
 resource='marker'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
-                #SQLField('height','integer'), # In Pixels, for display purposes
-                #SQLField('width','integer'),  # Not needed since we get size client-side using Javascript's Image() class
-                SQLField('image','upload'))
+                db.Field('name'),
+                #db.Field('height','integer'), # In Pixels, for display purposes
+                #db.Field('width','integer'),  # Not needed since we get size client-side using Javascript's Image() class
+                db.Field('image','upload'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -94,7 +94,7 @@ msg_list_empty=T('No Markers currently available')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 marker_id=SQLTable(None,'marker_id',
-            SQLField('marker',
+            db.Field('marker',
                 db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
                 represent=lambda id: DIV(A(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
                 comment=DIV(A(T('Add Marker'),_class='popup',_href=URL(r=request,c='gis',f='marker',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Marker|Defines the icon used for display.")))
@@ -104,11 +104,11 @@ marker_id=SQLTable(None,'marker_id',
 resource='projection'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
-                SQLField('epsg','integer'),
-                SQLField('maxExtent'),
-                SQLField('maxResolution','double'),
-                SQLField('units'))
+                db.Field('name'),
+                db.Field('epsg','integer'),
+                db.Field('maxExtent'),
+                db.Field('maxResolution','double'),
+                db.Field('units'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment=SPAN("*",_class="req")
@@ -158,7 +158,7 @@ msg_list_empty=T('No Projections currently defined')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 projection_id=SQLTable(None,'projection_id',
-            SQLField('projection',
+            db.Field('projection',
                 db.gis_projection,requires=IS_NULL_OR(IS_IN_DB(db,'gis_projection.id','gis_projection.name')),
                 represent=lambda id: db(db.gis_projection.id==id).select()[0].name,
                 comment=''
@@ -171,13 +171,13 @@ projection_id=SQLTable(None,'projection_id',
 resource='config'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-				SQLField('lat','double'),
-				SQLField('lon','double'),
-				SQLField('zoom','integer'),
+				db.Field('lat','double'),
+				db.Field('lon','double'),
+				db.Field('zoom','integer'),
 				projection_id,
 				marker_id,
-				SQLField('map_height','integer'),
-				SQLField('map_width','integer'))
+				db.Field('map_height','integer'),
+				db.Field('map_width','integer'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].lat.requires=IS_LAT()
 db[table].lat.label=T("Latitude")
@@ -223,10 +223,10 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='feature_class'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
+                db.Field('name'),
                 marker_id,
-                SQLField('module'),    # Used to build Edit URL
-                SQLField('resource')   # Used to build Edit URL & to provide Attributes to Display
+                db.Field('module'),    # Used to build Edit URL
+                db.Field('resource')   # Used to build Edit URL & to provide Attributes to Display
                 )
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -249,7 +249,7 @@ msg_list_empty=T('No Feature Classes currently defined')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_class_id=SQLTable(None,'feature_class_id',
-            SQLField('feature_class',
+            db.Field('feature_class',
                 db.gis_feature_class,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_class.id','gis_feature_class.name')),
                 represent=lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
                 comment=DIV(A(T('Add Feature Class'),_class='popup',_href=URL(r=request,c='gis',f='feature_class',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup.")))
@@ -266,15 +266,15 @@ if not len(db().select(db[table].ALL)):
 resource='feature_metadata'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,authorstamp,
-                SQLField('description',length=256),
+                db.Field('description',length=256),
                 person_id,
-                SQLField('source'),
-                SQLField('accuracy'),       # Drop-down on a IS_IN_SET[]?
-                SQLField('sensitivity'),    # Should be turned into a drop-down by referring to AAA's sensitivity table
-                SQLField('event_time','datetime'),
-                SQLField('expiry_time','datetime'),
-                SQLField('url'),
-                SQLField('image','upload'))
+                db.Field('source'),
+                db.Field('accuracy'),       # Drop-down on a IS_IN_SET[]?
+                db.Field('sensitivity'),    # Should be turned into a drop-down by referring to AAA's sensitivity table
+                db.Field('event_time','datetime'),
+                db.Field('expiry_time','datetime'),
+                db.Field('url'),
+                db.Field('image','upload'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].person_id.represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
 db[table].person_id.label=T("Contact")
@@ -300,15 +300,15 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='feature'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
+                db.Field('name'),
                 feature_class_id,
                 marker_id,
-                SQLField('metadata',db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
-                SQLField('type',default='point'),
-                SQLField('lat','double'),    # Only needed for Points
-                SQLField('lon','double'),    # Only needed for Points
-                SQLField('wkt',length=256),  # WKT is auto-calculated from lat/lon for Points
-                SQLField('resource_id','integer')) # Used to build Edit URL for Feature Class.
+                db.Field('metadata',db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
+                db.Field('type',default='point'),
+                db.Field('lat','double'),    # Only needed for Points
+                db.Field('lon','double'),    # Only needed for Points
+                db.Field('wkt',length=256),  # WKT is auto-calculated from lat/lon for Points
+                db.Field('resource_id','integer')) # Used to build Edit URL for Feature Class.
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
@@ -342,7 +342,7 @@ msg_list_empty=T('No Features currently defined')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_id=SQLTable(None,'feature_id',
-            SQLField('feature',
+            db.Field('feature',
                 db.gis_feature,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature.id','gis_feature.name')),
                 represent=lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
                 comment=DIV(A(T('Add Feature'),_class='popup',_href=URL(r=request,c='gis',f='feature',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
@@ -353,12 +353,12 @@ feature_id=SQLTable(None,'feature_id',
 resource='feature_group'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('author',db.auth_user,writable=False), #,default=session.auth.user.id
-                SQLField('name'),
-                SQLField('description',length=256),
-                SQLField('features','text'),        # List of features (to be replaced by many-to-many table)
-                SQLField('feature_classes','text'), # List of feature classes (to be replaced by many-to-many table)
-                SQLField('display','boolean',default='True'))
+                db.Field('author',db.auth_user,writable=False), #,default=session.auth.user.id
+                db.Field('name'),
+                db.Field('description',length=256),
+                db.Field('features','text'),        # List of features (to be replaced by many-to-many table)
+                db.Field('feature_classes','text'), # List of feature classes (to be replaced by many-to-many table)
+                db.Field('display','boolean',default='True'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].author.requires=IS_IN_DB(db,'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
 db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -381,7 +381,7 @@ msg_list_empty=T('No Feature Groups currently defined')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_group_id=SQLTable(None,'feature_group_id',
-            SQLField('feature_group',
+            db.Field('feature_group',
                 db.gis_feature_group,requires=IS_NULL_OR(IS_IN_DB(db,'gis_feature_group.id','gis_feature_group.name')),
                 represent=lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 comment=''
@@ -405,11 +405,11 @@ db.define_table(table,timestamp,
 resource='landmark'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,authorstamp,
-                SQLField('name'),
-                SQLField('type'),
-                SQLField('description',length=256),
-                SQLField('url'),
-                SQLField('image','upload'))
+                db.Field('name'),
+                db.Field('type'),
+                db.Field('description',length=256),
+                db.Field('url'),
+                db.Field('image','upload'))
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()
 db[table].name.comment=SPAN("*",_class="req")
@@ -434,12 +434,12 @@ s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_dis
 resource='location'
 table=module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                SQLField('name'),
+                db.Field('name'),
                 feature_id,         # Either just a Point or a Polygon
-                SQLField('sector'), # Government, Health
-                SQLField('level'),  # Region, Country, District
+                db.Field('sector'), # Government, Health
+                db.Field('level'),  # Region, Country, District
                 admin_id,
-                SQLField('parent', 'reference gis_location'))   # This form of hierarchy may not work on all Databases
+                db.Field('parent', 'reference gis_location'))   # This form of hierarchy may not work on all Databases
 db[table].uuid.requires=IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires=IS_NOT_EMPTY()       # Placenames don't have to be unique
 db[table].feature.label=T("GIS Feature")
@@ -463,7 +463,7 @@ msg_list_empty=T('No Locations currently available')
 s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 location_id=SQLTable(None,'location_id',
-            SQLField('location',
+            db.Field('location',
                 db.gis_location,requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id','gis_location.name')),
                 represent=lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
                 comment=DIV(A(s3.crud_strings.gis_location.label_create_button,_class='popup',_href=URL(r=request,c='gis',f='location',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Location|The Location of this Office, which can be general (for Reporting) or precise (for displaying on a Map).")))
@@ -473,9 +473,9 @@ location_id=SQLTable(None,'location_id',
 resource='apikey' # Can't use 'key' as this has other meanings for dicts!
 table=module+'_'+resource
 db.define_table(table,timestamp,
-                SQLField('name'),
-                SQLField('apikey'),
-				SQLField('description',length=256))
+                db.Field('name'),
+                db.Field('apikey'),
+				db.Field('description',length=256))
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
 db[table].name.requires=IS_IN_SET(['google','multimap','yahoo']) 
@@ -621,13 +621,13 @@ for layertype in gis_layer_types:
     
 # GIS Styles: SLD
 #db.define_table('gis_style',timestamp,
-#                SQLField('name'))
+#                db.Field('name'))
 #db.gis_style.name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'gis_style.name')]
 
 # GIS WebMapContexts
 # (User preferences)
 # GIS Config's Defaults should just be the version for user=0?
 #db.define_table('gis_webmapcontext',timestamp,
-#                SQLField('user',db.auth_user))
+#                db.Field('user',db.auth_user))
 #db.gis_webmapcontext.user.requires=IS_IN_DB(db,'auth_user.id','auth_user.email')
 

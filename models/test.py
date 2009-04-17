@@ -23,17 +23,17 @@ def shn_m2m_widget(self,value,options=[]):
 
 # JSON POST Test
 db.define_table('test_post',
-            SQLField('name')
+            db.Field('name')
             )
     
 # JSON GET Test
 db.define_table('test_get',
-            SQLField('name')
+            db.Field('name')
             )
 
 # M2M test
-#db.define_table('owner',SQLField('name'),SQLField('uuid',length=64,default=uuid.uuid4()))
-#db.define_table('dog',SQLField('name'),SQLField('owner','text'))
+#db.define_table('owner',db.Field('name'),db.Field('uuid',length=64,default=uuid.uuid4()))
+#db.define_table('dog',db.Field('name'),db.Field('owner','text'))
 ##db.dog.owner.requires=IS_IN_DB(db,'owner.uuid','owner.name',multiple=True)
 #db.dog.owner.requires=IS_IN_DB(db,'owner.id','owner.name',multiple=True)
 ##db.dog.owner.display=lambda x: ', '.join([db(db.owner.id==id).select()[0].name for id in x[1:-1].split('|')])

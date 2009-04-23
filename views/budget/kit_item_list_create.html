@@ -8,6 +8,18 @@ $(function() {
     // Hide the dropdown
     $("#budget_kit_item_kit_id__row").hide();
     });
+function make_remove_item() {
+    $(document).ready(function() {
+    $('input.remove_item').click(function(){
+        if(confirm("{{=T("Sure you want to remove this item?")}}")) {
+          $.ajax({ url: "{{=URL2(r=request)}}/kit_remove_item/"+$(this).attr("name")+"/"+$(this).attr("id")+"?format=ajax",  cache: false,  success: function(html){ $("div#list-container").html(html); make_remove_item(); }});
+        }
+        return false;
+    });
+  });
+}
+make_remove_item();
+
 //]]></script>
 
 {{try:}}
@@ -19,6 +31,10 @@ $(function() {
 {{except:}}
 {{pass}}
 {{=P(A(T("Edit Description"),_href=URL(r=request,f='kit',args=('update',kit))))}}
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
 <div class='form-container'>
 <div id='table-container'>
 {{try:}}

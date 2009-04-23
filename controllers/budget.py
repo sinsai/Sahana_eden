@@ -44,29 +44,38 @@ def kit_item():
         session.flash = DIV(T("Need to specify a kit!"),_class="error")
         redirect(URL(r=request,f='kit'))
     kit=request.args[0]
-    table=db['%s_kit_item' % module]
+    table=db.budget_kit_item
     
     # Is user authorised to C/U/D?
     # Currently this is simplified as just whether user is logged in!
     authorised = auth.is_logged_in()
     
-    table.kit_id.readable=False
-    fields = [table[f] for f in table.fields if table[f].readable]
-    headers={}
-    for field in fields:
-        # Use custom or prettified label
-        headers[str(field)]=field.label
     title=db.budget_kit[kit].code
     description=db.budget_kit[kit].description
     query = table.kit_id==kit
     if authorised:
-        #table.quantity.represent=lambda qty: A(qty,_href=URL(r=request,f='kit_quantity',args=[kit,qty]))
-        #table.quantity.represent=lambda qty: SQLFORM(table,kit,fields=['quantity'],showid=False)
-        #table.quantity.represent=lambda qty: FORM(INPUT(value=qty,_name="quantity",requires=IS_NOT_EMPTY()))
-        #table.quantity.represent=lambda qty,record: INPUT(value=qty,_name=record,requires=IS_NOT_EMPTY())
-        #table.quantity.represent=lambda qty: INPUT(value=qty,requires=IS_NOT_EMPTY())
-        #items=db(query).select(table.ALL)
-        items=kit_contents(table,query=query,fields=fields,headers=headers)
+        # Display a List_Create page with editable Quantities
+        item_list=[]
+        sqlrows=db(query).select()
+        even = True
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.item_id
+            description = db.budget_item[id].description
+            id_link = A(id,_href=URL(r=request,f='item',args=['read',id]))
+            quantity_box = INPUT(_value=row.quantity,_size=4)
+            checkbox = INPUT(_type="checkbox",_value="on",_name=kit,_id=id,_class="remove_item")
+            item_list.append(TR(TD(id_link),TD(description),TD(quantity_box),TD(checkbox),_class=theclass))
+            
+        table_header=THEAD(TR(TH('ID'),TH(table.item_id.label),TH(table.quantity.label),TH(T('Delete'))))
+        table_footer=TFOOT(TR(TD(_colspan=2),TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update'))),TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Delete')))))
+        items=DIV(FORM(TABLE(table_header,TBODY(item_list),table_footer,_id="table-container"),_method='post', _enctype='multipart/form-data', _action=''))
+        subtitle=T("Contents")
         
         crud.settings.submit_button='Add'
         # Calculate Totals for the Kit after Item is added
@@ -75,8 +84,15 @@ def kit_item():
         form=crud.create(table,next=URL(r=request,args=[kit]))
         addtitle=T("Add New Item to Kit")
         response.view='%s/kit_item_list_create.html' % module
-        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,items=items,addtitle=addtitle,form=form,kit=kit)
+        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,subtitle=subtitle,items=items,addtitle=addtitle,form=form,kit=kit)
     else:
+        # Display a simple List page
+        table.kit_id.readable=False
+        fields = [table[f] for f in table.fields if table[f].readable]
+        headers={}
+        for field in fields:
+            # Use custom or prettified label
+            headers[str(field)]=field.label
         linkto = URL(r=request, f='item', args='read')
         id = 'item_id'
         items=crud.select(table,query=query,fields=fields,headers=headers,linkto=linkto,id=id)
@@ -97,19 +113,26 @@ def totals(form):
         total_minute_cost+=(db(db.budget_item.id==item.item_id).select()[0].minute_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
         total_megabyte_cost+=(db(db.budget_item.id==item.item_id).select()[0].megabyte_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
     db(db.budget_kit.id==kit_id).update(total_unit_cost=total_unit_cost,total_monthly_cost=total_monthly_cost,total_minute_cost=total_minute_cost,total_megabyte_cost=total_megabyte_cost)
-
-def kit_contents(table,query,fields=None,headers=None):
-    "A custom version of SQLForm to print out our table with editable Quantities"
-    item_list=[]
-    item_list.append('FORM(_method="post", _enctype="multipart/form-data", _action="")')
-    sqlrows=db(query).select()
-    for row in sqlrows:
-        pass
-    submit_button=T('Amend Quantities')
-    item_list.append('INPUT(_id="submit_quantity_button", _type="submit", _value="%s" % submit_button)')
-    items=DIV(TABLE(TR(item_list)))
-    return DIV(*items)
+def kit_remove_item():
+    "Remove an item from a kit"
+    if len(request.args)==0:
+        session.flash = DIV(T("Need to specify a kit!"),_class="error")
+        redirect(URL(r=request,f='kit'))
+    elif len(request.args)==1:
+        session.flash = DIV(T("Need to specify an item!"),_class="error")
+        redirect(URL(r=request,f='kit'))
+    kit=request.args[0]
+    item=request.args[1]
+    table=db.budget_kit_item
     
+    # Is user authorised to Delete items?
+    # Currently this is simplified as just whether user is logged in!
+    authorised = auth.is_logged_in()
+    
+    query = table.kit_id==kit
+    
+    # To be completed!
+    return
 def bundle():
     "RESTlike CRUD controller"
     return shn_rest_controller(module,'bundle')

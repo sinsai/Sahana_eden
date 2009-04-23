@@ -19,11 +19,13 @@ $(function() {
 {{except:}}
 {{pass}}
 {{=P(A(T("Edit Description"),_href=URL(r=request,f='kit',args=('update',kit))))}}
+<div class='form-container'>
 <div id='table-container'>
 {{try:}}
- {{=list}}
+ {{=items}}
 {{except:}}
 {{pass}}
+</div>
 </div>
 <p>&nbsp;</p>
 {{try:}}

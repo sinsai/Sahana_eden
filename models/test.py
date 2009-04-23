@@ -21,17 +21,14 @@ def shn_m2m_widget(self,value,options=[]):
     buttons=[SPAN(A(x,_class='option_selected' if value and '[%s]'%x.lower() in value else 'option_deselected',_onclick=onclick(x)),' ') for x in options]
     return DIV(script,INPUT(_type='hidden',_id=id,_name=self.name,_value=value),*buttons) 
 
-# JSON POST Test
-db.define_table('test_post',
-            db.Field('name')
-            )
-    
-# JSON GET Test
-db.define_table('test_get',
-            db.Field('name')
-            )
+# SQLTable .represent Test
+db.define_table('test_kit',db.Field('item_id'),db.Field('quantity'))
+            
+# JSON Tests
+db.define_table('test_post',db.Field('name'))
+db.define_table('test_get',db.Field('name'))
 
-# M2M test
+# M2M Tagging test
 #db.define_table('owner',db.Field('name'),db.Field('uuid',length=64,default=uuid.uuid4()))
 #db.define_table('dog',db.Field('name'),db.Field('owner','text'))
 ##db.dog.owner.requires=IS_IN_DB(db,'owner.uuid','owner.name',multiple=True)

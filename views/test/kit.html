@@ -1,0 +1,17 @@
+{{extend 'layout.html'}}
+
+{{for item in items:}}
+<!--
+<button onclick="$('#h{{=item.id}}').slideToggle()">{{=item.id}}</button>
+-->
+<div id="h{{=item.id}}" class="h">
+{{form=SQLFORM(table,item.id,formname=item.id)}}
+{{=form}}
+{{if form.accepts(request.vars,session): redirect(URL(r=request))}}
+</div>
+{{pass}}
+<script>
+//$(document).ready(function(){
+//    $('.h').hide()
+//});
+</script>

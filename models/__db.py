@@ -48,6 +48,26 @@ service=Service(globals())
 # 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
 #now=datetime.datetime.today()
 
+# From http://groups.google.com/group/web2py/msg/9803f6bf92349e32
+import re
+def update_column(table, argument_col_num=0, target_col_num=-1, pattern="(\d+)", replace_with="A(%(g1)s, _href=URL(r=request, f='show', args=[%(arg)s]))"):
+    #pass 'replace_with' as a string like "A(%(g1)s, URL(r=request, f='show', args=[%(arg)s]))"
+    #where (g1) means group1 from reg. exp. match (count from 1)
+    #      (arg) is value of column number 'argument_col_num'
+    regexp = re.compile(pattern)
+    tagz = re.compile("<.*?>")
+    for i in range(len(table.components[1])):
+        target_td = table.components[1][i].components[target_col_num]
+        arg_td = table.components[1][i].components[argument_col_num]
+        if type(target_td) == type(TD()) and len(target_td.components) > 0 and len(arg_td.components) > 0:
+            m = re.match(regexp, str(target_td.components[0]))
+            a = re.sub(tagz, '' , str(arg_td.components[0]))
+            d = {'arg': a}
+            if m:
+                for j in range(1, len(m.groups()) + 1): d['g' + str(j)] = m.group(j)
+            table.components[1][i].components[target_col_num] = TD(eval(replace_with % d))
+    return table
+
 # Reusable timestamp fields
 timestamp=SQLTable(None,'timestamp',
             db.Field('created_on','datetime',
@@ -378,18 +398,11 @@ if not len(db().select(db[table].ALL)):
 def shn_sessions(f):
     """
     Extend session to support:
-         Multiple flash classes
          Settings
+            Self-Registration
             Debug mode
             Audit modes
-            Self-Registration
     """
-    response.error=session.error
-    response.confirmation=session.confirmation
-    response.warning=session.warning
-    session.error=[]
-    session.confirmation=[]
-    session.warning=[]
     # Keep all our configuration options in a single global variable
     if not session.s3:
         session.s3=Storage()
@@ -425,12 +438,16 @@ def shn_represent(table,module,resource,deletable=True,main='name',extra=None):
 
 def shn_represent_extra(table,module,resource,deletable=True,extra=None):
     "Display more than one extra field (separated by spaces)"
+    # Is user authorised to C/U/D?
+    # Currently this is simplified as just whether user is logged in!
+    authorised = auth.is_logged_in()
+    
     item_list=[]
     if extra:
         extra_list = extra.split()
         for any_item in extra_list:
             item_list.append("TD(db(db.%s_%s.id==%i).select()[0].%s)" % (module,resource,table.id,any_item))
-    if auth.is_logged_in() and deletable:
+    if authorised and deletable:
         item_list.append("TD(INPUT(_type='checkbox',_class='delete_row',_name='%s',_id='%i'))" % (resource,table.id))
     return ','.join( item_list )
 
@@ -578,14 +595,15 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
         # Default to HTML
         representation="html"
     
-    # Is user logged-in?
-    logged_in = auth.is_logged_in()
+    # Is user authorised to C/U/D?
+    # Currently this is simplified as just whether user is logged in!
+    authorised = auth.is_logged_in()
     
     if len(request.args)==0:
-        # No arguments => default to List (or list_create if logged_in)
+        # No arguments => default to List (or list_create if authorised)
         if session.s3.audit_read:
             db.s3_audit.insert(
-                person=auth.user.id if logged_in else 0,
+                person=auth.user.id if authorised else 0,
                 operation='list',
                 module=request.controller,
                 resource=resource,
@@ -619,7 +637,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 subtitle=s3.crud_strings.subtitle_list
             except:
                 subtitle=''
-            if logged_in and listadd:
+            if authorised and listadd:
                 # Display the Add form below List
                 if deletable and not tabular:
                     # Add extra column header to explain the checkboxes
@@ -711,7 +729,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             response.headers['Content-Type']='application/rss+xml'
             return rss2.dumps(rss)
         else:
-            session.error=T("Unsupported format!")
+            session.flash=DIV(T("Unsupported format!"),_class="error")
             redirect(URL(r=request))
     else:
         if request.args[0].isdigit():
@@ -719,7 +737,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             s3.id=request.args[0]
             if session.s3.audit_read:
                 db.s3_audit.insert(
-                    person=auth.user.id if logged_in else 0,
+                    person=auth.user.id if authorised else 0,
                     operation='read',
                     representation=representation,
                     module=request.controller,
@@ -795,7 +813,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 response.view='plain.html'
                 return dict(item=item)
             else:
-                session.error=T("Unsupported format!")
+                session.flash=DIV(T("Unsupported format!"),_class="error")
                 redirect(URL(r=request))
         else:
             method=str.lower(request.args[0])
@@ -804,7 +822,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             except:
                 pass
             if method=="create":
-                if logged_in:
+                if authorised:
                     if session.s3.audit_write:
                         audit_id=db.s3_audit.insert(
                             person=auth.user.id,
@@ -818,6 +836,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         )
                     if representation=="html":
                         form=crud.create(table,onvalidation=onvalidation)
+                        #form[0].append(TR(TD(),TD(INPUT(_type="reset",_value="Reset form"))))
                         # Check for presence of Custom View
                         custom_view='%s_create.html' % resource
                         _custom_view=os.path.join(request.folder,'views',module,custom_view)
@@ -875,14 +894,14 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             reply=T('Unable to parse CSV file!')
                         return reply
                     else:
-                        session.error=T("Unsupported format!")
+                        session.flash=DIV(T("Unsupported format!"),_class="error")
                         redirect(URL(r=request))
                 else:
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args='create')}))
             elif method=="display" or method=="read":
                 redirect(URL(r=request,args=s3.id))
             elif method=="update":
-                if logged_in:
+                if authorised:
                     if session.s3.audit_write:
                         old_value = []
                         _old_value=db(db[table].id==s3.id).select()[0]
@@ -949,12 +968,12 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         response.view='plain.html'
                         return dict(item=item)
                     else:
-                        session.error=T("Unsupported format!")
+                        session.flash=DIV(T("Unsupported format!"),_class="error")
                         redirect(URL(r=request))
                 else:
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['update',s3.id])}))
             elif method=="delete":
-                if logged_in:
+                if authorised:
                     if session.s3.audit_write:
                         old_value = []
                         _old_value=db(db[table].id==s3.id).select()[0]
@@ -980,7 +999,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             elif method=="search":
                 if session.s3.audit_read:
                     db.s3_audit.insert(
-                        person=auth.user.id if logged_in else 0,
+                        person=auth.user.id if authorised else 0,
                         operation='search',
                         module=request.controller,
                         resource=resource,
@@ -1013,8 +1032,8 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     response.view='plain.html'
                     return dict(item=item)
                 else:
-                    session.error=T("Unsupported format!")
+                    session.flash=DIV(T("Unsupported format!"),_class="error")
                     redirect(URL(r=request))
             else:
-                session.error=T("Unsupported method!")
+                session.flash=DIV(T("Unsupported method!"),_class="error")
                 redirect(URL(r=request))

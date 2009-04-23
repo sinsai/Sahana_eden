@@ -86,11 +86,13 @@
   </div>
   </div>
   <div id="content" class="clearfix">
-    {{if response.error:}}<div class="error">{{=response.error}}</div>{{pass}}
-    {{if response.warning:}}<div class="warning">{{=response.warning}}</div>{{pass}}
-    {{if response.information:}}<div class="information">{{=response.information}}</div>{{pass}}
-    {{if response.confirmation:}}<div class="confirmation">{{=response.confirmation}}</div>{{pass}}
-    {{if response.flash:}}<div class="confirmation">{{=response.flash}}</div>{{pass}}
+    {{if response.flash:}}
+     {{if response.flash.xml()[1:4] == 'div':}}
+      {{=response.flash}}
+     {{else:}}
+      <div class="confirmation">{{=response.flash}}</div>
+     {{pass}}
+    {{pass}}
     {{include}}
   </div>
   </div>

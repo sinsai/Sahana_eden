@@ -40,6 +40,13 @@ def rss(resource):
         entries.append(dict(title=row.name,link=server+link+'/%d' % row.id,description=row.description or '',created_on=row.created_on))
     return dict(title=str(s3.crud_strings[table].subtitle_list),link=server+link,description='',created_on=request.now,entries=entries)
 
+def kit():
+    table=db.test_kit
+    #table.quantity.represent=lambda qty: INPUT(value=qty,requires=IS_NOT_EMPTY())
+    #items=crud.select(table)
+    items=db().select(table.ALL)
+    return dict(table=table,items=items)
+    
 def jquery_upload():
     return dict()
 

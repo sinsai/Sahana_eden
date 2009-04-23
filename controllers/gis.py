@@ -102,7 +102,7 @@ def feature_create_map():
                     google.enabled=1
     except:
         # Redirect to Key entry screen
-        session.warning=T('Please enter a Google Key if you wish to use Google Layers')
+        session.flash=DIV(T('Please enter a Google Key if you wish to use Google Layers'),_class="warning")
         redirect(URL(r=request,f=apikey))
             
     # Yahoo
@@ -118,7 +118,7 @@ def feature_create_map():
                     yahoo.enabled=1
     except:
         # Redirect to Key entry screen
-        session.warning=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
+        session.flash=DIV(T('Please enter a Yahoo Key if you wish to use Yahoo Layers'),_class="warning")
         redirect(URL(r=request,f=apikey))
         
     # Virtual Earth
@@ -252,7 +252,7 @@ def map_viewing_client():
                     google.enabled=1
     except:
         # Redirect to Key entry screen
-        session.warning=T('Please enter a Google Key if you wish to use Google Layers')
+        session.flash=DIV(T('Please enter a Google Key if you wish to use Google Layers'),_class="warning")
         redirect(URL(r=request,f=apikey))
             
     # Yahoo
@@ -268,7 +268,7 @@ def map_viewing_client():
                     yahoo.enabled=1
     except:
         # Redirect to Key entry screen
-        session.warning=T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
+        session.flash=DIV(T('Please enter a Yahoo Key if you wish to use Yahoo Layers'),_class="warning")
         redirect(URL(r=request,f=apikey))
         
     # Virtual Earth

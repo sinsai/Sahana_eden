@@ -31,13 +31,13 @@ def parameter():
     return shn_rest_controller(module,'parameter',deletable=False)
 def item():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'item',main='code',list='table')
+    return shn_rest_controller(module,'item',main='code',format='table')
 def kit():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module,'kit',main='code',list='table')
+    return shn_rest_controller(module,'kit',main='code',format='table')
 #def kit_item():
 #    "RESTlike CRUD controller"
-#    return shn_rest_controller(module,'kit_item',main='kit_id',list='table')
+#    return shn_rest_controller(module,'kit_item',main='kit_id',format='table')
 def kit_item():
     "Many to Many CRUD Controller"
     if len(request.args)==0:

@@ -39,7 +39,7 @@ auth.settings.on_failed_authorization=URL(r=request,f='error')
 crud=CrudS3(globals(),T,db)
 # Use Role-based Access Control for Crud
 # NB Currently only for data() URLs
-crud.settings.auth=auth
+#crud.settings.auth=auth
 
 from gluon.tools import Service
 service=Service(globals())
@@ -536,7 +536,7 @@ def import_json(table,file):
     #table.insert(**dict(items))
     return
             
-def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',extra=None,onvalidation=None,list=None):
+def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',extra=None,onvalidation=None,format=None):
     """
     RESTlike controller function.
     
@@ -546,7 +546,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
     listadd=False: don't provide an add form in the list view
     main='field': main field to display in the list view (defaults to 'name')
     extra='field': extra field to display in the list view
-    list='table': display list in tabular format
+    format='table': display list in tabular format
     
     Anonymous users can Read.
     Authentication required for Create/Update/Delete.
@@ -613,22 +613,22 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
         if representation=="html":
             # Default list format is a simple list, not tabular
             tabular=0
-            if list=='table':
+            if format=='table':
                 tabular=1
                 fields = [table[f] for f in table.fields if table[f].readable]
                 headers={}
                 for field in fields:
                    # Use custom or prettified label
                    headers[str(field)]=field.label
-                list=crud.select(table,fields=fields,headers=headers)
+                items=crud.select(table,fields=fields,headers=headers)
             else:
                 shn_represent(table,module,resource,deletable,main,extra)
-                list=t2.itemize(table)
-            if not list:
+                items=t2.itemize(table)
+            if not items:
                 try:
-                    list=s3.crud_strings.msg_list_empty
+                    items=s3.crud_strings.msg_list_empty
                 except:
-                    list=T('None')
+                    items=T('None')
             try:
                 title=s3.crud_strings.title_list
             except:
@@ -641,8 +641,8 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 # Display the Add form below List
                 if deletable and not tabular:
                     # Add extra column header to explain the checkboxes
-                    if isinstance(list,TABLE):
-                        list.insert(0,TR('',B('Delete?')))
+                    if isinstance(items,TABLE):
+                        items.insert(0,TR('',B('Delete?')))
                 form=crud.create(table,onvalidation=onvalidation)
                 # Check for presence of Custom View
                 custom_view='%s_list_create.html' % resource
@@ -658,7 +658,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     addtitle=s3.crud_strings.subtitle_create
                 except:
                     addtitle=T('Add New')
-                return dict(module_name=module_name,modules=modules,options=options,list=list,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
+                return dict(module_name=module_name,modules=modules,options=options,items=items,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
             else:
                 # List only
                 if listadd:
@@ -679,34 +679,34 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         response.view='table_list.html'
                     else:
                         response.view='list.html'
-                return dict(module_name=module_name,modules=modules,options=options,list=list,title=title,subtitle=subtitle,add_btn=add_btn)
+                return dict(module_name=module_name,modules=modules,options=options,items=items,title=title,subtitle=subtitle,add_btn=add_btn)
         elif representation=="ajax":
-            #list=crud.select(table,fields=fields,headers=headers)
+            #items=crud.select(table,fields=fields,headers=headers)
             shn_represent(table,module,resource,deletable,main,extra)
-            list=t2.itemize(table)
-            if not list:
+            items=t2.itemize(table)
+            if not items:
                 try:
-                    list=s3.crud_strings.msg_list_empty
+                    items=s3.crud_strings.msg_list_empty
                 except:
-                    list=T('None')
+                    items=T('None')
             if deletable:
                 # Add extra column header to explain the checkboxes
-                if isinstance(list,TABLE):
-                    list.insert(0,TR('',B('Delete?')))
+                if isinstance(items,TABLE):
+                    items.insert(0,TR('',B('Delete?')))
             response.view='plain.html'
-            return dict(item=list)
+            return dict(item=items)
         elif representation=="plain":
-            list=crud.select(table)
+            items=crud.select(table)
             response.view='plain.html'
-            return dict(item=list)
+            return dict(item=items)
         elif representation=="json":
-            list=db().select(table.ALL).json()
+            items=db().select(table.ALL).json()
             response.headers['Content-Type']='text/x-json'
-            return list
+            return items
         elif representation=="xml":
-            list=db().select(table.ALL).as_list()
+            items=db().select(table.ALL).as_list()
             response.headers['Content-Type']='text/xml'
-            return str(service.xml_serializer(list))
+            return str(service.xml_serializer(items))
         elif representation=="csv":
             import gluon.contenttype
             response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')

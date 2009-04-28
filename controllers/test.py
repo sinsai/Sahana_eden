@@ -42,9 +42,24 @@ def rss(resource):
 
 def kit():
     table=db.test_kit
-    #table.quantity.represent=lambda qty: INPUT(value=qty,requires=IS_NOT_EMPTY())
-    #items=crud.select(table)
-    items=db().select(table.ALL)
+    item_list=[]
+    sqlrows=db(table.id>0).select()
+    even = True
+    for row in sqlrows:
+        if even:
+            theclass = "even"
+            even = False
+        else:
+            theclass = "odd"
+            even = True
+        id = row.id
+        description = row.item_id
+        quantity_box = INPUT(_value=row.quantity,_size=4)
+        checkbox = INPUT(_type="checkbox",_value="on",_name=kit,_id=id,_class="remove_item")
+        item_list.append(TR(TD(id),TD(description),TD(quantity_box),TD(checkbox),_class=theclass))
+    table_header=THEAD(TR(TH('ID'),TH(table.item_id.label),TH(table.quantity.label),TH(T('Delete'))))
+    table_footer=TFOOT(TR(TD(_colspan=2),TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update'))),TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Delete')))))
+    items=DIV(FORM(TABLE(table_header,TBODY(item_list),table_footer,_id="table-container"),_method='post', _enctype='multipart/form-data', _action=''))
     return dict(table=table,items=items)
     
 def jquery_upload():
@@ -76,30 +91,30 @@ def get():
 # M2M Tests
 def list_dogs():
     "Test for M2M widget"
-    list=t2.itemize(db.dog)
+    items=t2.itemize(db.dog)
     response.view='list_plain.html'
-    return dict(list=list)
+    return dict(items=items)
 
 def display_dog():
     "Test for M2M widget"
-    list=t2.display(db.dog)
+    items=t2.display(db.dog)
     response.view='list_plain.html'
-    return dict(list=list)
+    return dict(items=items)
 
 def update_dog():
     "Test for M2M widget"
-    list=t2.update(db.dog)
+    items=t2.update(db.dog)
     response.view='list_plain.html'
-    return dict(list=list)
+    return dict(items=items)
 
 def delete_dog():
     "Test for M2M widget"
-    list=t2.delete(db.dog)
+    items=t2.delete(db.dog)
     response.view='list_plain.html'
-    return dict(list=list)
+    return dict(items=items)
 
 def delete_owner():
     "Test for M2M widget"
-    list=t2.delete(db.owner)
+    items=t2.delete(db.owner)
     response.view='list_plain.html'
-    return dict(list=list)
+    return dict(items=items)

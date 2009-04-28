@@ -19,6 +19,7 @@ $(function() {
         // Refresh the resource lookuplist
         // ToDo: Pull from Database using AJAX/JSON:
         // http://remysharp.com/2007/01/20/auto-populating-select-boxes-using-jquery-ajax/
+        // http://groups.google.com/group/web2py/msg/b2d536d444001565
 		var options = '';
         //for (var i = 0; i < options_subtype.length; i++) {
         for(key in options_resource) {

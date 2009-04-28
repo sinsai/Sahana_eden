@@ -728,3 +728,4 @@ class S3(T2):
         else:
             session.t2.query=[]
         return DIV(TABLE(TR(form)),_class='t2-search')
+

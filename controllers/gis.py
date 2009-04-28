@@ -140,9 +140,9 @@ def feature_groups():
     """
     title=T("GIS Feature Groups")
     subtitle=T("Add New Feature Group")
-    list=t2.itemize(db.gis_feature_group)
-    if list=="No data":
-        list="No Feature Groups currently defined."
+    items=t2.itemize(db.gis_feature_group)
+    if items=="No data":
+        items="No Feature Groups currently defined."
     # Get all available features
     _features=db(db.gis_feature.id > 0).select()
     # Put them into a list field (should be a dict to store uuid too, but t2.tag_widget doesn't support it)
@@ -155,7 +155,7 @@ def feature_groups():
     #form=t2.create(db.gis_feature_group)
     form=crud.create(db.gis_feature_group)
     response.view='list_create.html'
-    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,list=list,form=form)
+    return dict(title=title,subtitle=subtitle,module_name=module_name,modules=modules,options=options,items=items,form=form)
 	
 @auth.requires_login()
 def update_feature_group():

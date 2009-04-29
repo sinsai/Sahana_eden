@@ -39,7 +39,7 @@ auth.settings.on_failed_authorization=URL(r=request,f='error')
 crud=CrudS3(globals(),T,db)
 # Use Role-based Access Control for Crud
 # NB Currently only for data() URLs
-#crud.settings.auth=auth
+crud.settings.auth=auth
 
 from gluon.tools import Service
 service=Service(globals())
@@ -398,11 +398,18 @@ if not len(db().select(db[table].ALL)):
 def shn_sessions(f):
     """
     Extend session to support:
-         Settings
+        Multiple flash classes
+        Settings
             Self-Registration
             Debug mode
             Audit modes
     """
+    response.error=session.error
+    response.confirmation=session.confirmation
+    response.warning=session.warning
+    session.error=[]
+    session.confirmation=[]
+    session.warning=[]
     # Keep all our configuration options in a single global variable
     if not session.s3:
         session.s3=Storage()
@@ -729,7 +736,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             response.headers['Content-Type']='application/rss+xml'
             return rss2.dumps(rss)
         else:
-            session.flash=DIV(T("Unsupported format!"),_class="error")
+            session.error=T("Unsupported format!")
             redirect(URL(r=request))
     else:
         if request.args[0].isdigit():
@@ -813,7 +820,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 response.view='plain.html'
                 return dict(item=item)
             else:
-                session.flash=DIV(T("Unsupported format!"),_class="error")
+                session.error=T("Unsupported format!")
                 redirect(URL(r=request))
         else:
             method=str.lower(request.args[0])
@@ -894,7 +901,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             reply=T('Unable to parse CSV file!')
                         return reply
                     else:
-                        session.flash=DIV(T("Unsupported format!"),_class="error")
+                        session.error=T("Unsupported format!")
                         redirect(URL(r=request))
                 else:
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args='create')}))
@@ -968,7 +975,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         response.view='plain.html'
                         return dict(item=item)
                     else:
-                        session.flash=DIV(T("Unsupported format!"),_class="error")
+                        session.error=T("Unsupported format!")
                         redirect(URL(r=request))
                 else:
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['update',s3.id])}))
@@ -1032,8 +1039,8 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     response.view='plain.html'
                     return dict(item=item)
                 else:
-                    session.flash=DIV(T("Unsupported format!"),_class="error")
+                    session.error=T("Unsupported format!")
                     redirect(URL(r=request))
             else:
-                session.flash=DIV(T("Unsupported method!"),_class="error")
+                session.error=T("Unsupported method!")
                 redirect(URL(r=request))

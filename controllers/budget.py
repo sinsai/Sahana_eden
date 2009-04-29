@@ -41,7 +41,7 @@ def kit():
 def kit_item():
     "Many to Many CRUD Controller"
     if len(request.args)==0:
-        session.flash = DIV(T("Need to specify a kit!"),_class="error")
+        session.error = T("Need to specify a kit!")
         redirect(URL(r=request,f='kit'))
     kit=request.args[0]
     table=db.budget_kit_item
@@ -116,10 +116,10 @@ def totals(form):
 def kit_remove_item():
     "Remove an item from a kit"
     if len(request.args)==0:
-        session.flash = DIV(T("Need to specify a kit!"),_class="error")
+        session.error = T("Need to specify a kit!")
         redirect(URL(r=request,f='kit'))
     elif len(request.args)==1:
-        session.flash = DIV(T("Need to specify an item!"),_class="error")
+        session.error = T("Need to specify an item!")
         redirect(URL(r=request,f='kit'))
     kit=request.args[0]
     item=request.args[1]

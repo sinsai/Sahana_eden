@@ -6,6 +6,11 @@ modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_mo
 # List Options (from which to build Menu for this Module)
 options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
+# Web2Py Tools functions
+def download():
+    "Download a file."
+    return response.download(request,db) 
+
 # S3 framework functions
 def index():
     "Module's Home Page"

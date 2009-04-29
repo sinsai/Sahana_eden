@@ -196,33 +196,34 @@ from gluon.tools import *
 DEFAULT=lambda:None
 
 class AuthS3(Auth):
-    """Extended version of Auth from gluon/tools.py
-    - Allow Internationalisation of strings (can't be done in gluon)
     """
-    def __init__(self, environment, T, db=None):
+    Extended version of Auth from gluon/tools.py
+    - override login() & register()
+    """
+    def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Auth.__init__(self,environment,db)
-        self.messages.access_denied = T("Insufficient privileges")
-        self.messages.logged_in = T("Logged in")
-        self.messages.email_sent = T("Email sent")
-        self.messages.email_verified = T("Email verified")
-        self.messages.logged_out = T("Logged out")
-        self.messages.registration_successful = T("Registration successful")
-        self.messages.invalid_email = T("Invalid email")
-        self.messages.invalid_login = T("Invalid login")
-        self.messages.mismatched_password = T("Password fields don't match")
-        self.messages.verify_email_subject = T("Password verify")
-        self.messages.username_sent = T("Your username was emailed to you")
-        self.messages.new_password_sent = T("A new password was emailed to you")
-        self.messages.invalid_email = T("Invalid email")
-        self.messages.password_changed = T("Password changed")
-        self.messages.retrieve_username = str(T("Your username is"))+": %(username)s"
-        self.messages.retrieve_username_subject = "Username retrieve"
-        self.messages.retrieve_password = str(T("Your password is"))+": %(password)s"
-        self.messages.retrieve_password_subject = T("Password retrieve")
-        self.messages.profile_updated = T("Profile updated")
-        self.messages.new_password=T("New password")
-        self.messages.old_password=T("Old password")
+        #self.messages.access_denied = T("Insufficient privileges")
+        #self.messages.logged_in = T("Logged in")
+        #self.messages.email_sent = T("Email sent")
+        #self.messages.email_verified = T("Email verified")
+        #self.messages.logged_out = T("Logged out")
+        #self.messages.registration_successful = T("Registration successful")
+        #self.messages.invalid_email = T("Invalid email")
+        #self.messages.invalid_login = T("Invalid login")
+        #self.messages.mismatched_password = T("Password fields don't match")
+        #self.messages.verify_email_subject = T("Password verify")
+        #self.messages.username_sent = T("Your username was emailed to you")
+        #self.messages.new_password_sent = T("A new password was emailed to you")
+        #self.messages.invalid_email = T("Invalid email")
+        #self.messages.password_changed = T("Password changed")
+        #self.messages.retrieve_username = str(T("Your username is"))+": %(username)s"
+        #self.messages.retrieve_username_subject = "Username retrieve"
+        #self.messages.retrieve_password = str(T("Your password is"))+": %(password)s"
+        #self.messages.retrieve_password_subject = T("Password retrieve")
+        #self.messages.profile_updated = T("Profile updated")
+        #self.messages.new_password=T("New password")
+        #self.messages.old_password=T("Old password")
         
                 
     def login(
@@ -243,6 +244,7 @@ class AuthS3(Auth):
             username = 'username'
         else:
             username = 'email'
+        old_requires = user[username].requires
         user[username].requires = IS_NOT_EMPTY()
         request = self.environment.request
         session = self.environment.session
@@ -256,9 +258,10 @@ class AuthS3(Auth):
             onaccept = self.settings.login_onaccept
         if log == DEFAULT:
             log = self.settings.login_log
+        password = self.settings.password_field
         form = SQLFORM(
             user,
-            fields=[username, 'password'],
+            fields=[username, password],
             hidden=dict(_next=request.vars._next),
             showid=self.settings.showid,
             submit_button=self.settings.submit_button,
@@ -279,15 +282,30 @@ class AuthS3(Auth):
                 datetime.datetime,
                 bool,
                 )
-            users = self.db(user[username]
-                             == form.vars[username])(user.password
-                     == form.vars.password)(user.registration_key == ''
-                    ).select()
+            users = self.db(user[username] == form.vars[username])\
+                           (user[password] == form.vars.get(password,''))\
+                           (user.registration_key == '').select()
             if not users:
-                session.error = self.messages.invalid_login
-                if not next:
-                    next = URL(r=request)
-                redirect(next)
+                if username == 'email' and \
+                   self.gmail_login(request.vars.email,request.vars.password):
+                    users = self.db(user.email==form.vars.email).select()
+                    if users:
+                        user=users[0]
+                        user.update_record(password=form.vars.password,
+                                           registration_key='')
+                    else:
+                        user_id = user.insert(email=form.vars.email,
+                                              first_name=form.vars.email[:-10],
+                                              last_name='',
+                                              password=form.vars.password,
+                                              registration_key='')
+                        group_id = self.add_group("user_%s" % user_id)
+                        self.add_membership(group_id, user_id)
+                        users = self.db(user.id==user_id).select()
+                else:
+                    session.error = self.messages.invalid_login
+                    redirect(URL(r=request,args=request.args))
+                    
             user = Storage(dict([(k, v) for (k, v) in users[0].items()
                            if isinstance(v, TYPES)]))
             session.auth = Storage(user=user, last_visit=request.now,
@@ -305,8 +323,8 @@ class AuthS3(Auth):
                 next = URL(r=request, f=next.replace('[id]',
                            str(form.vars.id)))
             redirect(next)
+        user[username].requires=old_requires
         return form
-
 
     def register(
         self,
@@ -343,11 +361,11 @@ class AuthS3(Auth):
                        showid=self.settings.showid,
                        submit_button=self.settings.submit_button,
                        delete_label=self.settings.delete_label)
-        td = form.element(_id="%s_password__row" % user._tablename)[1]
+        td = form.element(_id="%s_%s__row" % (user._tablename, password))[1]
         td.append(BR())
         td.append(INPUT(_name="password2",
                         _type="password",
-                  requires=IS_EXPR('value==%s' % repr(request.vars.password),error_message=self.messages.mismatched_password)))
+                  requires=IS_EXPR('value==%s' % repr(request.vars.get(password,None)),error_message=self.messages.mismatched_password)))
         key = str(uuid.uuid4())
         if form.accepts(request.vars, session, formname='register',
                         onvalidation=onvalidation):
@@ -419,18 +437,19 @@ class AuthS3(Auth):
         return form
 
 class CrudS3(Crud):
-    """Extended version of Crud from gluon/tools.py
-    - Allow Internationalisation of strings (can't be done in gluon)
+    """
+    Extended version of Crud from gluon/tools.py
     - select() uses SQLTABLE2 (to allow different linkto construction)
     """
-    def __init__(self,environment,T,db=None):
+    def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Crud.__init__(self,environment,db)
-        self.settings.submit_button=T("Submit")
-        self.settings.delete_label=T("Check to delete:")
-        self.messages.record_created=T("Record Created")
-        self.messages.record_updated=T("Record Updated")
-
+        #self.settings.submit_button = T("Submit")
+        #self.settings.delete_label = T("Check to delete:")
+        #self.messages.record_created = T("Record Created")
+        #self.messages.record_updated = T("Record Updated")
+        #self.messages.record_deleted = T("Record Deleted")
+        
     def select(
         self,
         table,
@@ -453,20 +472,11 @@ class CrudS3(Crud):
         rows=self.db(query).select(*fields, **dict(orderby=orderby, limitby=limitby))
         if not rows:
             return None # Nicer than an empty table.
-        if not attr.has_key('linkto'):
+        if not 'linkto' in attr:
             attr['linkto'] = URL(r=request, args='read')
-        if not attr.has_key('upload'):
+        if not 'upload' in attr:
             attr['upload'] = URL(r=request, f='download')
         return SQLTABLE2(rows, headers=headers, **attr)
-
-class MailS3(Mail):
-    """Extended version of Mail from gluon/tools.py
-    - currently a placeholder - nothing actually amended
-    """
-    def __init__(self):
-        "Initialise parent class & make any necessary modifications"
-        Mail.__init__(self)
-        
 
 #from applications.t3.modules.t2 import T2
 from applications.sahana.modules.t2 import T2

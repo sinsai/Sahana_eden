@@ -22,24 +22,25 @@ from applications.sahana.modules.sahana import *
 
 t2=S3(request,response,session,cache,T,db)
 
-mail=MailS3()
+mail=Mail()
 # These settings should be made configurable as part of the Messaging Module
 mail.settings.server='mail:25'
 mail.sender='sahana@sahanapy.org'
 
-auth=AuthS3(globals(),T,db)
-#auth=Auth(globals(),db)
+auth=AuthS3(globals(),db)
 auth.define_tables()
 # Email settings for registration verification
 auth.settings.mailer=mail
 # Require captcha verification for registration
 #auth.settings.captcha=RECAPTCHA(request,public_key='RECAPTCHA_PUBLIC_KEY',private_key='RECAPTCHA_PRIVATE_KEY')
+# Allow use of GMail accounts for login
+auth.settings.gmail_login = True
 auth.settings.on_failed_authorization=URL(r=request,f='error')
 
-crud=CrudS3(globals(),T,db)
+crud=CrudS3(globals(),db)
 # Use Role-based Access Control for Crud
 # NB Currently only for data() URLs
-crud.settings.auth=auth
+#crud.settings.auth=auth
 
 from gluon.tools import Service
 service=Service(globals())
@@ -139,6 +140,7 @@ db.define_table(table,timestamp,
                 db.Field('admin_email'),
                 db.Field('admin_tel'),
                 db.Field('debug','boolean'),
+                db.Field('security_policy'),
                 db.Field('self_registration','boolean'),
                 db.Field('audit_read','boolean'),
                 db.Field('audit_write','boolean'))
@@ -151,6 +153,8 @@ if not len(db().select(db[table].ALL)):
         admin_tel=T("Not Set"),
         # Debug => Load all JS/CSS independently & uncompressed. Change to True for Production deployments (& hence stable branches)
         debug=True,
+        # Change to enable a customised security policy
+        security_policy = 'simple',
         # Change to False to disable Self-Registration
         self_registration=True,
         # Change to True to enable Auditing at the Global level (if False here, individual Modules can still enable it for them)
@@ -375,8 +379,8 @@ db.define_table(table,
 if not len(db().select(db[table].ALL)): 
    db[table].insert(
         # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read=False,
-        audit_write=False
+        audit_read = False,
+        audit_write = False
     )
 
 # Settings - appadmin
@@ -391,8 +395,8 @@ db.define_table(table,
 if not len(db().select(db[table].ALL)): 
    db[table].insert(
         # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read=False,
-        audit_write=False
+        audit_read = False,
+        audit_write = False
     )
 
 def shn_sessions(f):
@@ -543,6 +547,16 @@ def import_json(table,file):
     #table.insert(**dict(items))
     return
             
+def has_permission(name,table_name,record_id=0):
+    security=db().select(db.s3_setting.security_policy)[0].security_policy
+    if security=='simple':
+        #
+        authorised = auth.is_logged_in()
+    else:
+        # Require records in auth_permission to specify access
+        authorised = auth.has_permission(name,table_name,record_id)
+    return authorised
+
 def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',extra=None,onvalidation=None,format=None):
     """
     RESTlike controller function.
@@ -602,12 +616,9 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
         # Default to HTML
         representation="html"
     
-    # Is user authorised to C/U/D?
-    # Currently this is simplified as just whether user is logged in!
-    authorised = auth.is_logged_in()
-    
     if len(request.args)==0:
         # No arguments => default to List (or list_create if authorised)
+        authorised = has_permission('create',table)
         if session.s3.audit_read:
             db.s3_audit.insert(
                 person=auth.user.id if authorised else 0,
@@ -741,6 +752,8 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
     else:
         if request.args[0].isdigit():
             # 1st argument is ID not method => Read.
+            method='read'
+            authorised = has_permission(method,table,s3.id)
             s3.id=request.args[0]
             if session.s3.audit_read:
                 db.s3_audit.insert(
@@ -829,6 +842,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             except:
                 pass
             if method=="create":
+                authorised = has_permission(method,table)
                 if authorised:
                     if session.s3.audit_write:
                         audit_id=db.s3_audit.insert(
@@ -908,6 +922,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             elif method=="display" or method=="read":
                 redirect(URL(r=request,args=s3.id))
             elif method=="update":
+                authorised = has_permission(method,table,s3.id)
                 if authorised:
                     if session.s3.audit_write:
                         old_value = []
@@ -980,6 +995,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 else:
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['update',s3.id])}))
             elif method=="delete":
+                authorised = has_permission(method,table,s3.id)
                 if authorised:
                     if session.s3.audit_write:
                         old_value = []
@@ -1004,6 +1020,7 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 else:
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['delete',s3.id])}))
             elif method=="search":
+                #authorised = has_permission(method,table)
                 if session.s3.audit_read:
                     db.s3_audit.insert(
                         person=auth.user.id if authorised else 0,

@@ -357,6 +357,7 @@ class AuthS3(Auth):
         if log == DEFAULT:
             log = self.settings.register_log
         user = self.settings.table_user
+        password = self.settings.password_field
         form = SQLFORM(user, hidden=dict(_next=request.vars._next),
                        showid=self.settings.showid,
                        submit_button=self.settings.submit_button,

@@ -19,6 +19,7 @@ T.current_languages=['en','en-en']
 
 # Custom classes which extend default Gluon & T2
 from applications.sahana.modules.sahana import *
+#from applications.sahana.modules.ldap import AuthLDAP
 
 t2=S3(request,response,session,cache,T,db)
 
@@ -28,6 +29,7 @@ mail.settings.server='mail:25'
 mail.sender='sahana@sahanapy.org'
 
 auth=AuthS3(globals(),db)
+#auth=AuthLDAP(globals(),db)
 auth.define_tables()
 # Email settings for registration verification
 auth.settings.mailer=mail
@@ -550,7 +552,8 @@ def import_json(table,file):
 def has_permission(name,table_name,record_id=0):
     security=db().select(db.s3_setting.security_policy)[0].security_policy
     if security=='simple':
-        #
+        # Anonymous users can Read.
+        # Authentication required for Create/Update/Delete.
         authorised = auth.is_logged_in()
     else:
         # Require records in auth_permission to specify access
@@ -569,9 +572,8 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
     extra='field': extra field to display in the list view
     format='table': display list in tabular format
     
-    Anonymous users can Read.
-    Authentication required for Create/Update/Delete.
-    
+    Customisable Security Policy
+
     Auditing options for Read &/or Write.
     
     Supported Representations:
@@ -592,7 +594,6 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
         Alternate Representations
             CSV update
             SMS,PDF,LDIF
-        Customisable Security Policy
     """
     
     _table='%s_%s' % (module,resource)

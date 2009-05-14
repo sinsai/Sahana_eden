@@ -162,7 +162,7 @@ db.define_table(table,timestamp,
                 db.Field('self_registration','boolean'),
                 db.Field('audit_read','boolean'),
                 db.Field('audit_write','boolean'))
-db[table].security_policy.requires=IS_IN_SET('simple','full')
+db[table].security_policy.requires=IS_IN_SET(['simple','full'])
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 

@@ -1,8 +1,7 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-###########################################################
-### make sure administrator is on localhost
-############################################################
+
+# ##########################################################
+# ## make sure administrator is on localhost
+# ###########################################################
 
 import os
 import socket
@@ -10,17 +9,21 @@ import datetime
 import copy
 import gluon.contenttype
 import gluon.fileutils
-### crittical --- make a copy of the environment
-global_env=copy.copy(globals())
-global_env['datetime']=datetime
+
+# ## crytical --- make a copy of the environment
+
+global_env = copy.copy(globals())
+global_env['datetime'] = datetime
 
 #
 # Native Web2Py Auth (localhost & site password)
 #
 #http_host = request.env.http_host.split(':')[0]
 #remote_addr = request.env.remote_addr
-#try: hosts=(http_host, socket.gethostbyname(remote_addr))
-#except: hosts=(http_host,)
+#try:
+#    hosts = (http_host, socket.gethostbyname(remote_addr))
+#except:
+#    hosts = (http_host, )
 #if remote_addr not in hosts:
 #    raise HTTP(400)
 #if not gluon.fileutils.check_credentials(request):
@@ -39,7 +42,6 @@ except:
     session.error=T('Not Authorised!')
     redirect(URL(r=request,c='default',f='user',args='login'))
 
-
 module='appadmin'
 # Current Module (for sidebar title)
 #module_name=db(db.s3_module.name==module).select()[0].name_nice
@@ -49,48 +51,56 @@ modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_mo
 # List Options (from which to build Menu for this Module)
 #options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
-response.view='default/appadmin.html'
-response.menu=[[T('design'),False,URL('admin','default','design',
-                args=[request.application])],
-               [T('db'),False,URL(r=request,f='index')],
-               [T('state'),False,URL(r=request,f='state')]]
 
-###########################################################
-### auxiliary functions
-############################################################
+ignore_rw = True
+response.view = 'default/appadmin.html'
+response.menu = [[T('design'), False, URL('admin', 'default', 'design',
+                 args=[request.application])], [T('db'), False,
+                 URL(r=request, f='index')], [T('state'), False,
+                 URL(r=request, f='state')]]
+
+# ##########################################################
+# ## auxiliary functions
+# ###########################################################
+
 
 def get_databases(request):
-    dbs={}
+    dbs = {}
     for (key, value) in global_env.items():
-        cond=False
+        cond = False
         try:
-            cond=isinstance(value,GQLDB)
+            cond = isinstance(value, GQLDB)
         except:
-            cond=isinstance(value,SQLDB)
+            cond = isinstance(value, SQLDB)
         if cond:
-            dbs[key]=value
+            dbs[key] = value
     return dbs
 
-databases=get_databases(None)
+
+databases = get_databases(None)
+
 
 def eval_in_global_env(text):
-    exec('_ret=%s'%text,{},global_env)
+    exec ('_ret=%s' % text, {}, global_env)
     return global_env['_ret']
+
 
 def get_database(request):
     if request.args and request.args[0] in databases:
         return eval_in_global_env(request.args[0])
     else:
-        session.flash=T('invalid request')
-        redirect(URL(r=request,f='index'))
+        session.flash = T('invalid request')
+        redirect(URL(r=request, f='index'))
+
 
 def get_table(request):
-    db=get_database(request)
-    if len(request.args)>1 and request.args[1] in db.tables:
+    db = get_database(request)
+    if len(request.args) > 1 and request.args[1] in db.tables:
         return (db, request.args[1])
     else:
-        session.flash=T('invalid request')
-        redirect(URL(r=request,f='index'))
+        session.flash = T('invalid request')
+        redirect(URL(r=request, f='index'))
+
 
 def get_query(request):
     try:
@@ -98,12 +108,15 @@ def get_query(request):
     except Exception:
         return None
 
-###########################################################
-### list all databases and tables
-############################################################
+
+# ##########################################################
+# ## list all databases and tables
+# ###########################################################
+
 
 def index():
-    return dict(databases=databases,module_name=module_name,modules=modules)
+    return dict(databases=databases)
+
 
 # ##########################################################
 # ## insert a new record
@@ -112,10 +125,10 @@ def index():
 
 def insert():
     (db, table) = get_table(request)
-    form = SQLFORM(db[table])
+    form = SQLFORM(db[table], ignore_rw=ignore_rw)
     if form.accepts(request.vars, session):
         response.flash = T('new record inserted')
-    return dict(form=form,module_name=module_name,modules=modules)
+    return dict(form=form)
 
 
 # ##########################################################
@@ -126,24 +139,7 @@ def insert():
 def download():
     import os
     db = get_database(request)
-    filename = request.args[1]
-
-    # ## for GAE only ###
-
-    (table, field) = filename.split('.')[:2]
-    if table in db.tables and field in db[table].fields:
-        uploadfield = db[table][field].uploadfield
-        if isinstance(uploadfield, str):
-            from gluon.contenttype import contenttype
-            response.headers['Content-Type'] = contenttype(filename)
-            rows = db(db[table][field] == filename).select()
-            return rows[0][uploadfield]
-
-    # ## end for GAE ###
-
-    path = os.path.join(request.folder, 'uploads/', filename)
-    return response.stream(open(path, 'rb'))
-
+    return response.download(request,db)
 
 def csv():
     import gluon.contenttype
@@ -153,7 +149,6 @@ def csv():
     query = get_query(request)
     if not query:
         return None
-
     response.headers['Content-disposition'] = 'attachment; filename=%s_%s.csv'\
          % tuple(request.vars.query.split('.')[:2])
     return str(db(query).select())
@@ -161,15 +156,6 @@ def csv():
 
 def import_csv(table, file):
     table.import_from_csv_file(file)
-
-
-
-
-
-
-
-
-
 
 def select():
     import re
@@ -203,15 +189,16 @@ def select():
                 orderby = '~' + orderby
     session.last_orderby = orderby
     session.last_query = request.vars.query
-    form = FORM(TABLE(TR('Query:', '', INPUT(_style='width:400px',
+    form = FORM(TABLE(TR(T('Query:'), '', INPUT(_style='width:400px',
                 _name='query', _value=request.vars.query or '',
-                requires=IS_NOT_EMPTY())), TR('Update:',
+                requires=IS_NOT_EMPTY(error_message=T("Cannot be empty")))), TR(T('Update:'),
                 INPUT(_name='update_check', _type='checkbox',
                 value=False), INPUT(_style='width:400px',
                 _name='update_fields', _value=request.vars.update_fields
-                 or '')), TR('Delete:', INPUT(_name='delete_check',
+                 or '')), TR(T('Delete:'), INPUT(_name='delete_check',
                 _class='delete', _type='checkbox', value=False), ''),
-                TR('', '', INPUT(_type='submit', _value='submit'))))
+                TR('', '', INPUT(_type='submit', _value='submit'))),
+                _action=URL(r=request,args=request.args))
     if request.vars.csvfile != None:
         try:
             import_csv(db[request.vars.table],
@@ -235,7 +222,6 @@ def select():
                 response.flash = T('%s rows deleted', nrows)
             nrows = db(query).count()
             if orderby:
-
                 rows = db(query).select(limitby=(start, stop),
                         orderby=eval_in_global_env(orderby))
             else:
@@ -243,7 +229,6 @@ def select():
         except:
             (rows, nrows) = ([], 0)
             response.flash = T('Invalid Query')
-
     return dict(
         form=form,
         table=table,
@@ -252,7 +237,6 @@ def select():
         nrows=nrows,
         rows=rows,
         query=request.vars.query,
-        module_name=module_name,modules=modules
         )
 
 
@@ -271,9 +255,7 @@ def update():
         redirect(URL(r=request, f='select', args=request.args[:1],
                  vars=dict(query='%s.%s.id>0'
                   % tuple(request.args[:2]))))
-    form = SQLFORM(db[table], record, deletable=True,
-
-
+    form = SQLFORM(db[table], record, deletable=True, delete_label=T('Check to delete'), ignore_rw=ignore_rw,
                    linkto=URL(r=request, f='select',
                    args=request.args[:1]), upload=URL(r=request,
                    f='download', args=request.args[:1]))
@@ -282,7 +264,7 @@ def update():
         redirect(URL(r=request, f='select', args=request.args[:1],
                  vars=dict(query='%s.%s.id>0'
                   % tuple(request.args[:2]))))
-    return dict(form=form,module_name=module_name,modules=modules)
+    return dict(form=form)
 
 
 # ##########################################################
@@ -290,8 +272,7 @@ def update():
 # ###########################################################
 
 
-
 def state():
-    return dict(module_name=module_name,modules=modules)
+    return dict()
 
 

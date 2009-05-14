@@ -29,9 +29,9 @@ mail.settings.server='mail:25'
 mail.sender='sahana@sahanapy.org'
 
 auth=AuthS3(globals(),db)
-from gluon.contrib.login_methods.ldap_auth import ldap_auth
+#from gluon.contrib.login_methods.ldap_auth import ldap_auth
 # OpenLDAP
-auth.settings.login_methods.append(ldap_auth(server="demo.sahanapy.org",base_dn="ou=users,dc=sahanapy,dc=org"))
+#auth.settings.login_methods.append(ldap_auth(server="demo.sahanapy.org",base_dn="ou=users,dc=sahanapy,dc=org"))
 auth.define_tables()
 # Email settings for registration verification
 auth.settings.mailer=mail

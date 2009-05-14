@@ -1,4 +1,5 @@
 databases/*
+modules/ldapconnect.*
 errors/*
 sessions/*
 docs/*

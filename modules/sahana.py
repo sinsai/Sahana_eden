@@ -203,28 +203,6 @@ class AuthS3(Auth):
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Auth.__init__(self,environment,db)
-        #self.messages.access_denied = T("Insufficient privileges")
-        #self.messages.logged_in = T("Logged in")
-        #self.messages.email_sent = T("Email sent")
-        #self.messages.email_verified = T("Email verified")
-        #self.messages.logged_out = T("Logged out")
-        #self.messages.registration_successful = T("Registration successful")
-        #self.messages.invalid_email = T("Invalid email")
-        #self.messages.invalid_login = T("Invalid login")
-        #self.messages.mismatched_password = T("Password fields don't match")
-        #self.messages.verify_email_subject = T("Password verify")
-        #self.messages.username_sent = T("Your username was emailed to you")
-        #self.messages.new_password_sent = T("A new password was emailed to you")
-        #self.messages.invalid_email = T("Invalid email")
-        #self.messages.password_changed = T("Password changed")
-        #self.messages.retrieve_username = str(T("Your username is"))+": %(username)s"
-        #self.messages.retrieve_username_subject = "Username retrieve"
-        #self.messages.retrieve_password = str(T("Your password is"))+": %(password)s"
-        #self.messages.retrieve_password_subject = T("Password retrieve")
-        #self.messages.profile_updated = T("Profile updated")
-        #self.messages.new_password=T("New password")
-        #self.messages.old_password=T("Old password")
-        
                 
     def login(
         self,
@@ -234,19 +212,20 @@ class AuthS3(Auth):
         log=DEFAULT,
         ):
         """
-        Overrides Web2Py's login() to use .error & not .flash for invalid login
+        Overrides Web2Py's login() to use custom flash styles
         
         returns a login form
         """
 
-        user = self.settings.table_user
-        if 'username' in user.fields:
+        table_user = self.settings.table_user
+        if 'username' in table_user.fields:
             username = 'username'
         else:
             username = 'email'
-        old_requires = user[username].requires
-        user[username].requires = IS_NOT_EMPTY()
+        old_requires = table_user[username].requires
+        table_user[username].requires = IS_NOT_EMPTY()
         request = self.environment.request
+        response = self.environment.response
         session = self.environment.session
         if not request.vars._next:
             request.vars._next = request.env.http_referer or ''
@@ -260,7 +239,7 @@ class AuthS3(Auth):
             log = self.settings.login_log
         password = self.settings.password_field
         form = SQLFORM(
-            user,
+            table_user,
             fields=[username, password],
             hidden=dict(_next=request.vars._next),
             showid=self.settings.showid,
@@ -271,49 +250,43 @@ class AuthS3(Auth):
                         formname='login',
                         onvalidation=onvalidation):
 
-            # ## BEGIN
-
-            TYPES = (
-                str,
-                int,
-                long,
-                datetime.time,
-                datetime.date,
-                datetime.datetime,
-                bool,
-                )
-            users = self.db(user[username] == form.vars[username])\
-                           (user[password] == form.vars.get(password,''))\
-                           (user.registration_key == '').select()
-            if not users:
-                if username == 'email' and \
-                   self.gmail_login(request.vars.email,request.vars.password):
-                    users = self.db(user.email==form.vars.email).select()
-                    if users:
-                        user=users[0]
-                        user.update_record(password=form.vars.password,
-                                           registration_key='')
-                    else:
-                        user_id = user.insert(email=form.vars.email,
-                                              first_name=form.vars.email[:-10],
-                                              last_name='',
-                                              password=form.vars.password,
-                                              registration_key='')
-                        group_id = self.add_group("user_%s" % user_id)
-                        self.add_membership(group_id, user_id)
-                        users = self.db(user.id==user_id).select()
-                else:
-                    session.error = self.messages.invalid_login
-                    redirect(URL(r=request,args=request.args))
-                    
-            user = Storage(dict([(k, v) for (k, v) in users[0].items()
-                           if isinstance(v, TYPES)]))
+            user = None # default                
+            if self in self.settings.login_methods:
+                users = self.db(table_user[username] == form.vars[username])\
+                    .select()
+                if users:
+                    ## user in db, check if registration pending or blocked
+                    user = users[0]
+                    if user.registration_key == 'pending':
+                        response.warning = self.messages.registration_pending
+                        return form
+                    elif user.registration_key == 'blocked':
+                        response.error = self.messages.registration_blocked
+                        return form
+                    elif user.registration_key:
+                        response.warning = self.messages.registration_verifying
+                        return form
+                    if user[password] != form.vars.get(password,''):
+                        user = None
+            if not user:
+                ## try alternate login methods
+                for login_method in self.settings.login_methods:
+                    if login_method != self and \
+                            login_method(request.vars[username],
+                                         request.vars.password):
+                        user = self.get_or_create_user(form.vars)
+                        break
+            if not user:
+                ## invalid login
+                session.error = self.messages.invalid_login
+                redirect(URL(r=request,args=request.args))
+                
+            user = Storage(table_user._filter_fields(user,id=True))
             session.auth = Storage(user=user, last_visit=request.now,
                                    expiration=self.settings.expiration)
             self.user = user
             session.flash = self.messages.logged_in
-            log = self.settings.login_log
-            if log:
+            if log and self.user:
                 self.log_event(log % self.user)
             if onaccept:
                 onaccept(form)
@@ -323,7 +296,7 @@ class AuthS3(Auth):
                 next = URL(r=request, f=next.replace('[id]',
                            str(form.vars.id)))
             redirect(next)
-        user[username].requires=old_requires
+        table_user[username].requires=old_requires
         return form
 
     def register(
@@ -335,14 +308,16 @@ class AuthS3(Auth):
         ):
         """
         Overrides Web2Py's register() to add new functionality:
-            * Check that self-registration is allowed: session.s3.self_registration
-            * Check whether email verification is required? (Is static config in __db.py sufficient?)
+            * Whenever someone registers, it adds them to the 'Authenticated' role
             * Whenever someone registers, it automatically adds their name to the Person Registry
             * Registering automatically logs you in
-        
+            * Custom Flash styles
+
         returns a registration form
         """
+
         request = self.environment.request
+        response = self.environment.response
         session = self.environment.session
         if self.is_logged_in():
             redirect(self.settings.logged_url)
@@ -366,10 +341,19 @@ class AuthS3(Auth):
         td.append(BR())
         td.append(INPUT(_name="password2",
                         _type="password",
-                  requires=IS_EXPR('value==%s' % repr(request.vars.get(password,None)),error_message=self.messages.mismatched_password)))
-        key = str(uuid.uuid4())
+                        requires=IS_EXPR('value==%s' % \
+                        repr(request.vars.get(password,None)),
+                        error_message=self.messages.mismatched_password)))
+        if self.settings.captcha!=None:
+            form[0].insert(-1,TR('',self.settings.captcha,''))
+
+        user.registration_key.default = key = str(uuid.uuid4())
+
         if form.accepts(request.vars, session, formname='register',
                         onvalidation=onvalidation):
+            # S3: Add to 'Authenticated' role
+            authenticated = self.id_group('Authenticated')
+            self.add_membership(authenticated,form.vars.id)
             # S3: Add to Person Registry as well
             # Check to see whether User already exists
             if len(self.db(self.db.pr_person.email==form.vars.email).select()):
@@ -385,48 +369,45 @@ class AuthS3(Auth):
                     last_name = form.vars.last_name,
                     email = form.vars.email
                 )
+
             description = \
                 'group uniquely assigned to %(first_name)s %(last_name)s'\
                  % form.vars
             group_id = self.add_group("user_%s" % form.vars.id, description)
             self.add_membership(group_id, form.vars.id)
-            # S3: Control whether verification is required dynamically
-            if session.s3.verification:
-                user[form.vars.id] = dict(registration_key=key)
-                if not self.settings.mailer.send(to=form.vars.email,
+            if self.settings.registration_requires_verification:
+                if not self.settings.mailer or \
+                   not self.settings.mailer.send(to=form.vars.email,
                         subject=self.messages.verify_email_subject,
                         message=self.messages.verify_email
                          % dict(key=key)):
                     self.db.rollback()
-                    session.error = self.messages.invalid_email
+                    response.error = self.messages.invalid_email
                     return form
                 session.flash = self.messages.email_sent
-                log = self.settings.register_log
-                if log:
-                    self.log_event(log % form.vars)
+            elif self.settings.registration_requires_approval:
+                user[form.vars.id] = dict(registration_key='pending')
+                session.warning = self.messages.registration_pending
             else:
+                user[form.vars.id] = dict(registration_key='')
+                session.flash = self.messages.registration_successful
                 # S3: Login automatically upon registration
-                if 'username' in user.fields: username='username'
-                else: username='email'
-                TYPES=(str,int,long,datetime.time,datetime.date,
-                   datetime.datetime,bool)
-                users=self.db(user[username]==form.vars[username])\
-                  (user.password==form.vars.password)\
-                  (user.registration_key=='')\
-                  .select()
-                user=Storage(dict([(k,v) for k,v in users[0].items() \
-                         if isinstance(v,TYPES)]))
-                session.auth=\
-                    Storage(user=user,last_visit=request.now,
-                    expiration=self.settings.expiration)
-                self.user=user
-                session.flash=self.messages.logged_in
-                log=self.settings.register_log
-                if log:
-                    self.log_event(log % form.vars)
-                log=self.settings.login_log
-                if log:
-                    self.log_event(log % self.user)
+                table_user = self.settings.table_user
+                if 'username' in table_user.fields:
+                    username = 'username'
+                else:
+                    username = 'email'
+                users = self.db(table_user[username] == form.vars[username])\
+                    .select()
+                user = users[0]
+                user = Storage(table_user._filter_fields(user,id=True))
+                session.auth = Storage(user=user, last_visit=request.now,
+                                   expiration=self.settings.expiration)
+                self.user = user
+                session.flash = self.messages.logged_in
+
+            if log:
+                self.log_event(log % form.vars)
             if onaccept:
                 onaccept(form)
             if not next:

@@ -40,27 +40,54 @@ def rss(resource):
         entries.append(dict(title=row.name,link=server+link+'/%d' % row.id,description=row.description or '',created_on=row.created_on))
     return dict(title=str(s3.crud_strings[table].subtitle_list),link=server+link,description='',created_on=request.now,entries=entries)
 
-def kit():
-    table=db.test_kit
-    item_list=[]
-    sqlrows=db(table.id>0).select()
-    even = True
-    for row in sqlrows:
-        if even:
-            theclass = "even"
-            even = False
+def test():
+    form=FORM('username:',INPUT(_name='username'),
+            'password:',INPUT(_name='password',_type='password'),
+            INPUT(_type='submit',_value='login'))
+    if form.accepts(request.vars, session):
+        user = self.settings.table_user
+        users = self.db (user.username==form.vars.username).select()
+        if not users:
+            session.error = self.messages.invalid_login
+            redirect(URL(r=request,args=request.args))
         else:
-            theclass = "odd"
-            even = True
-        id = row.id
-        description = row.item_id
-        quantity_box = INPUT(_value=row.quantity,_size=4)
-        checkbox = INPUT(_type="checkbox",_value="on",_name=kit,_id=id,_class="remove_item")
-        item_list.append(TR(TD(id),TD(description),TD(quantity_box),TD(checkbox),_class=theclass))
-    table_header=THEAD(TR(TH('ID'),TH(table.item_id.label),TH(table.quantity.label),TH(T('Delete'))))
-    table_footer=TFOOT(TR(TD(_colspan=2),TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update'))),TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Delete')))))
-    items=DIV(FORM(TABLE(table_header,TBODY(item_list),table_footer,_id="table-container"),_method='post', _enctype='multipart/form-data', _action=''))
-    return dict(table=table,items=items)
+            pass
+    return dict(form=form)
+    
+def kit_item():
+    table=db.test_kit
+    if len(request.args)==0:
+        form=SQLFORM(table)
+    else:
+        item_list=[]
+        kit=request.args[0]
+        #form=SQLFORM(table,kit)
+        query = table.id==kit
+        sqlrows=db(query).select()
+        for row in sqlrows:
+            id = row.item_id
+            id_link = A(id,_href=URL(r=request,f='item',args=['read',id]))
+            quantity_box = INPUT(_value=row.quantity,_size=4)
+            item_list.append(TR(TD(id_link),TD(quantity_box)))
+        table_header=THEAD(TR(TH(table.item_id.label),TH(table.quantity.label)))
+        table_footer=TFOOT(TR(TD(_colspan=2),TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update')))))
+        items=DIV(FORM(TABLE(table_header,TBODY(item_list),table_footer,_id="table-container"),_name='custom',_method='post', _enctype='multipart/form-data', _action=''))
+        
+    #if form.accepts(request.vars,session):
+    #    response.flash="ok"
+    #elif form.errors:
+    #    response.flash="please correct and re-submit"
+    if not items:
+        items=form
+    return dict(items=items)
+
+
+def kit():
+    db.test_kit.quantity.represent = lambda value: TABLE(TR(TD(str(value),_rowspan=2),TD(TABLE(
+        TR(A(T('adjust'),_href=URL(r=request,f='kit/update', args=str(value)))),
+        TR(A(T('delete'),_href=URL(r=request,f='kit/delete', args=str(value))))))))
+    table=SQLTABLE(db(db.test_kit.id>0).select())
+    return dict(table=table)
     
 def jquery_upload():
     return dict()

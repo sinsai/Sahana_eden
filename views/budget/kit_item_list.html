@@ -1,13 +1,7 @@
 {{extend 'layout.html'}}
 
-{{try:}}
- {{=H2(title)}}
-{{except:}}
-{{pass}}
-{{try:}}
- {{=P(description)}}
-{{except:}}
-{{pass}}
+{{include 'budget/kit_item_header.html'}}
+
 <div id='table-container'>
 {{try:}}
  {{=items}}

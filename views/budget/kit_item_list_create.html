@@ -22,14 +22,8 @@ make_remove_item();
 
 //]]></script>
 
-{{try:}}
- {{=H2(title)}}
-{{except:}}
-{{pass}}
-{{try:}}
- {{=P(description)}}
-{{except:}}
-{{pass}}
+{{include 'budget/kit_item_header.html'}}
+
 {{=P(A(T("Edit Description"),_href=URL(r=request,f='kit',args=('update',kit))))}}
 {{try:}}
  {{=H3(subtitle)}}

@@ -187,12 +187,17 @@ db.define_table(table,timestamp,
                 db.Field('kit_id',db.budget_kit),
                 db.Field('item_id',db.budget_item),
                 db.Field('quantity','integer',default=1))
-db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module,'%s_kit.code' % module)
+# NB Keeping 'module' name as configurable in single location => can't edit table using appadmin!
+#db[table].kit_id.requires=IS_IN_DB(db,'%s_kit.id' % module,'%s_kit.code' % module)
+db[table].kit_id.requires=IS_IN_DB(db,'budget_kit.id','budget_kit.code')
 db[table].kit_id.label=T('Kit')
-db[table].kit_id.represent=lambda kit_id: db(db['%s_kit' % module].id==kit_id).select()[0].code
-db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.description' % module)
+#db[table].kit_id.represent=lambda kit_id: db(db['%s_kit' % module].id==kit_id).select()[0].code
+db[table].kit_id.represent=lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+#db[table].item_id.requires=IS_IN_DB(db,'%s_item.id' % module,'%s_item.description' % module)
+db[table].item_id.requires=IS_IN_DB(db,'budget_item.id','budget_item.description')
 db[table].item_id.label=T('Item')
-db[table].item_id.represent=lambda item_id: db(db['%s_item' % module].id==item_id).select()[0].description
+#db[table].item_id.represent=lambda item_id: db(db['%s_item' % module].id==item_id).select()[0].description
+db[table].item_id.represent=lambda item_id: db(db.budget_item.id==item_id).select()[0].description
 db[table].quantity.requires=IS_NOT_EMPTY()
 db[table].quantity.label=T('Quantity')
 db[table].quantity.comment=SPAN("*",_class="req")

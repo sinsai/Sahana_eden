@@ -52,11 +52,16 @@ def kit_item():
     
     title=db.budget_kit[kit].code
     description=db.budget_kit[kit].description
+    total_cost=db.budget_kit[kit].total_unit_cost
+    monthly_cost=db.budget_kit[kit].total_monthly_cost
     query = table.kit_id==kit
+    # Start building the Return with the common items
+    output=dict(module_name=module_name,modules=modules,options=options,title=title,description=description,total_cost=total_cost,monthly_cost=monthly_cost)
     if authorised:
         # Display a List_Create page with editable Quantities
         item_list=[]
         sqlrows=db(query).select()
+        forms=Storage()
         even = True
         for row in sqlrows:
             if even:
@@ -66,15 +71,19 @@ def kit_item():
                 theclass = "odd"
                 even = True
             id = row.item_id
-            description = db.budget_item[id].description
+            forms[id]=SQLFORM(table,id)
+            if forms[id].accepts(request.vars,session):
+                response.flash=T("Quantity Updated")
+            item_description = db.budget_item[id].description
             id_link = A(id,_href=URL(r=request,f='item',args=['read',id]))
             quantity_box = INPUT(_value=row.quantity,_size=4)
+            #quantity_box = INPUT(_value=forms[id].custom.dspval.quantity,_size=4)
             checkbox = INPUT(_type="checkbox",_value="on",_name=kit,_id=id,_class="remove_item")
-            item_list.append(TR(TD(id_link),TD(description),TD(quantity_box),TD(checkbox),_class=theclass))
+            item_list.append(TR(TD(id_link),TD(item_description),TD(quantity_box),TD(checkbox),_class=theclass))
             
         table_header=THEAD(TR(TH('ID'),TH(table.item_id.label),TH(table.quantity.label),TH(T('Delete'))))
         table_footer=TFOOT(TR(TD(_colspan=2),TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update'))),TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Delete')))))
-        items=DIV(FORM(TABLE(table_header,TBODY(item_list),table_footer,_id="table-container"),_method='post', _enctype='multipart/form-data', _action=''))
+        items=DIV(FORM(TABLE(table_header,TBODY(item_list),table_footer,_id="table-container"),_name='custom',_method='post', _enctype='multipart/form-data', _action=''))
         subtitle=T("Contents")
         
         crud.settings.submit_button='Add'
@@ -84,7 +93,8 @@ def kit_item():
         form=crud.create(table,next=URL(r=request,args=[kit]))
         addtitle=T("Add New Item to Kit")
         response.view='%s/kit_item_list_create.html' % module
-        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,subtitle=subtitle,items=items,addtitle=addtitle,form=form,kit=kit)
+        output.update(dict(subtitle=subtitle,items=items,addtitle=addtitle,form=form,kit=kit))
+        return output
     else:
         # Display a simple List page
         table.kit_id.readable=False
@@ -97,7 +107,8 @@ def kit_item():
         id = 'item_id'
         items=crud.select(table,query=query,fields=fields,headers=headers,linkto=linkto,id=id)
         response.view='%s/kit_item_list.html' % module
-        return dict(module_name=module_name,modules=modules,options=options,title=title,description=description,items=items)
+        output.update(dict(items=items))
+        return output
 
 def totals(form):
     "Calculate Totals for the Kit"

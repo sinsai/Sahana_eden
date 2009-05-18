@@ -4,39 +4,34 @@ import os, traceback, datetime
 #try:
 #    from gluon.contrib.gql import *         # if running on Google App Engine
 #except:
-db=SQLDB('sqlite://storage.db')         # if not, use SQLite or other DB
+db = SQLDB('sqlite://storage.db')            # if not, use SQLite or other DB
 #else:
-#    db=GQLDB()                              # connect to Google BigTable
+#    db = GQLDB()                            # connect to Google BigTable
 #    session.connect(request,response,db=db) # and store sessions there
 
 # Default strings are in English
-T.current_languages=['en','en-en']
-
-# Use T2 plugin for AAA & CRUD
-# At top of file rather than usual bottom as we refer to it within our tables
-#from applications.t3.modules.t2 import T2
-#t2=T2(request,response,session,cache,T,db)
+T.current_languages = ['en','en-en']
 
 # Custom classes which extend default Gluon & T2
 from applications.sahana.modules.sahana import *
 from applications.sahana.modules.ldapconnect import AuthLDAP
 
-t2=S3(request,response,session,cache,T,db)
+t2 = S3(request,response,session,cache,T,db)
 
-mail=Mail()
+mail = Mail()
 # These settings should be made configurable as part of the Messaging Module
-mail.settings.server='mail:25'
-mail.sender='sahana@sahanapy.org'
+mail.settings.server = 'mail:25'
+mail.sender = 'sahana@sahanapy.org'
 
-auth=AuthS3(globals(),db)
+auth = AuthS3(globals(),db)
 #from gluon.contrib.login_methods.ldap_auth import ldap_auth
 # OpenLDAP
 #auth.settings.login_methods.append(ldap_auth(server="demo.sahanapy.org",base_dn="ou=users,dc=sahanapy,dc=org"))
 auth.define_tables()
 # Email settings for registration verification
-auth.settings.mailer=mail
+auth.settings.mailer = mail
 # Require captcha verification for registration
-#auth.settings.captcha=RECAPTCHA(request,public_key='RECAPTCHA_PUBLIC_KEY',private_key='RECAPTCHA_PRIVATE_KEY')
+#auth.settings.captcha = RECAPTCHA(request,public_key='RECAPTCHA_PUBLIC_KEY',private_key='RECAPTCHA_PRIVATE_KEY')
 # Require Email Verification
 auth.settings.registration_requires_verification = False
 # ** Amend this to your Publically-accessible URL
@@ -44,20 +39,12 @@ auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s 
 auth.settings.registration_requires_approval = False
 # Allow use of GMail accounts for login
 auth.settings.gmail_login = True
-auth.settings.on_failed_authorization=URL(r=request,f='error')
+auth.settings.on_failed_authorization = URL(r=request,f='error')
 
-
-crud=CrudS3(globals(),db)
-# Use Role-based Access Control for Crud
-# NB Currently only for data() URLs
-#crud.settings.auth=auth
+crud = CrudS3(globals(),db)
 
 from gluon.tools import Service
-service=Service(globals())
-
-# Define 'now'
-# 'modified_on' fields used by T2 to do edit conflict-detection & by DBSync to check which is more recent
-#now=datetime.datetime.today()
+service = Service(globals())
 
 # From http://groups.google.com/group/web2py/msg/9803f6bf92349e32
 # currently unused
@@ -81,7 +68,7 @@ def update_column(table, argument_col_num=0, target_col_num=-1, pattern="(\d+)",
     return table
 
 # Reusable timestamp fields
-timestamp=SQLTable(None,'timestamp',
+timestamp = SQLTable(None,'timestamp',
             db.Field('created_on','datetime',
                           readable=False,
                           writable=False,
@@ -92,7 +79,7 @@ timestamp=SQLTable(None,'timestamp',
                           default=request.now,update=request.now)) 
 
 # Reusable author fields
-authorstamp=SQLTable(None,'authorstamp',
+authorstamp = SQLTable(None,'authorstamp',
             db.Field('created_by',db.auth_user,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
                           writable=False),
@@ -102,21 +89,22 @@ authorstamp=SQLTable(None,'authorstamp',
 
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
-uuidstamp=SQLTable(None,'uuidstamp',
+uuidstamp = SQLTable(None,'uuidstamp',
             db.Field('uuid',length=64,
                           readable=False,
                           writable=False,
                           default=uuid.uuid4()))
 
 # Reusable Deletion status field (needed as part of database synchronization)
-deletion_status=SQLTable(None,'deletion_status',
+# Q: Will this be moved to a separate table? (Simpler for module writers but a performance penalty)
+deletion_status = SQLTable(None,'deletion_status',
             db.Field('deleted','boolean',
                           readable=False,
                           writable=False,
                           default=False))
 
 # Reusable Admin field
-admin_id=SQLTable(None,'admin_id',
+admin_id = SQLTable(None,'admin_id',
             db.Field('admin',
                 db.auth_group,requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role')),
                 represent=lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
@@ -129,30 +117,30 @@ from applications.sahana.modules.validators import *
 from gluon.storage import Storage
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
-s3=Storage()
-s3.crud_strings=Storage()
-s3.display=Storage()
+s3 = Storage()
+s3.crud_strings = Storage()
+s3.display = Storage()
 
-table='auth_group'
-title_create=T('Add Role')
-title_display=T('Role Details')
-title_list=T('List Roles')
-title_update=T('Edit Role')
-title_search=T('Search Roles')
-subtitle_create=T('Add New Role')
-subtitle_list=T('Roles')
-label_list_button=T('List Roles')
-label_create_button=T('Add Role')
-msg_record_created=T('Role added')
-msg_record_modified=T('Role updated')
-msg_record_deleted=T('Role deleted')
-msg_list_empty=T('No Roles currently registered')
-s3.crud_strings[table]=Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+table = 'auth_group'
+title_create = T('Add Role')
+title_display = T('Role Details')
+title_list = T('List Roles')
+title_update = T('Edit Role')
+title_search = T('Search Roles')
+subtitle_create = T('Add New Role')
+subtitle_list = T('Roles')
+label_list_button = T('List Roles')
+label_create_button = T('Add Role')
+msg_record_created = T('Role added')
+msg_record_modified = T('Role updated')
+msg_record_deleted = T('Role deleted')
+msg_list_empty = T('No Roles currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-module='s3'
+module = 's3'
 # Settings - systemwide
-resource='setting'
-table=module+'_'+resource
+resource = 'setting'
+table = module+'_'+resource
 db.define_table(table,timestamp,
                 db.Field('admin_name'),
                 db.Field('admin_email'),
@@ -162,7 +150,7 @@ db.define_table(table,timestamp,
                 db.Field('self_registration','boolean'),
                 db.Field('audit_read','boolean'),
                 db.Field('audit_write','boolean'))
-db[table].security_policy.requires=IS_IN_SET(['simple','full'])
+db[table].security_policy.requires = IS_IN_SET(['simple','full'])
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -181,24 +169,24 @@ if not len(db().select(db[table].ALL)):
         audit_write=False
     )
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
-title_create=T('Add Setting')
-title_display=T('Setting Details')
-title_list=T('List Settings')
-title_update=T('Edit Setting')
-title_search=T('Search Settings')
-subtitle_create=T('Add New Setting')
-subtitle_list=T('Settings')
-label_list_button=T('List Settings')
-label_create_button=T('Add Setting')
-msg_record_created=T('Setting added')
-msg_record_modified=T('Setting updated')
-msg_record_deleted=T('Setting deleted')
-msg_list_empty=T('No Settings currently defined')
-s3.crud_strings[resource]=Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+title_create = T('Add Setting')
+title_display = T('Setting Details')
+title_list = T('List Settings')
+title_update = T('Edit Setting')
+title_search = T('Search Settings')
+subtitle_create = T('Add New Setting')
+subtitle_list = T('Settings')
+label_list_button = T('List Settings')
+label_create_button = T('Add Setting')
+msg_record_created = T('Setting added')
+msg_record_modified = T('Setting updated')
+msg_record_deleted = T('Setting deleted')
+msg_list_empty = T('No Settings currently defined')
+s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
 # Modules
-resource='module'
-table=module+'_'+resource
+resource = 'module'
+table = module+'_'+resource
 db.define_table(table,
                 db.Field('name'),
                 db.Field('name_nice'),
@@ -206,100 +194,121 @@ db.define_table(table,
                 db.Field('priority','integer'),
                 db.Field('description',length=256),
                 db.Field('enabled','boolean',default='True'))
-db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db[table].name_nice.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name_nice' % table)]
-db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
-db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name_nice.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name_nice' % table)]
+db[table].access.requires = IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
+db[table].priority.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 # Populate table with Default modules
 if not len(db().select(db[table].ALL)):
 	db[table].insert(
         name="default",
         name_nice="Sahana Home",
         priority=0,
+        access='',
         description="",
+        enabled='True'
+	)
+	db[table].insert(
+        name="admin",
+        name_nice="Administration",
+        priority=1,
+        access='',
+        description="Site Administration",
         enabled='True'
 	)
 	db[table].insert(
         name="gis",
         name_nice="Mapping",
-        priority=1,
+        priority=2,
+        access='',
         description="Situation Awareness & Geospatial Analysis",
         enabled='True'
 	)
 	db[table].insert(
         name="pr",
         name_nice="Person Registry",
-        priority=2,
+        priority=3,
+        access='',
         description="Central point to record details on People",
         enabled='True'
 	)
 	db[table].insert(
         name="mpr",
         name_nice="Missing Person Registry",
-        priority=3,
+        priority=4,
+        access='',
         description="Helps to report and search missing person",
         enabled='True'
 	)
 	db[table].insert(
         name="dvr",
         name_nice="Disaster Victim Registry",
-        priority=4,
+        priority=5,
+        access='',
         description="Traces internally displaced people (IDPs) and their needs",
         enabled='False'
 	)
 	db[table].insert(
         name="or",
         name_nice="Organization Registry",
-        priority=5,
+        priority=6,
+        access='',
         description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
         enabled='True'
 	)
 	db[table].insert(
         name="cr",
         name_nice="Shelter Registry",
-        priority=6,
+        priority=7,
+        access='',
         description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
         enabled='True'
 	)
 	db[table].insert(
         name="vol",
         name_nice="Volunteer Registry",
-        priority=7,
+        priority=8,
+        access='',
         description="Allows managing volunteers by capturing their skills, availability and allocation",
         enabled='False'
 	)
 	db[table].insert(
         name="ims",
         name_nice="Inventory Management",
-        priority=8,
+        priority=9,
+        access='',
         description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
         enabled='False'
 	)
 	db[table].insert(
         name="rms",
         name_nice="Request Management",
-        priority=9,
+        priority=10,
+        access='',
         description="Tracks requests for aid and matches them against donors who have pledged aid",
         enabled='False'
 	)
 	db[table].insert(
         name="dvi",
         name_nice="Disaster Victim Identification",
-        priority=10,
+        priority=11,
+        access='',
         description="Assists the management of fatalities and identification of the deceased",
         enabled='True'
 	)
 	db[table].insert(
         name="msg",
         name_nice="Messaging Module",
-        priority=11,
+        priority=12,
+        access='',
         description="Sends & Receives Alerts via Email & SMS",
         enabled='True'
 	)
 	db[table].insert(
         name="budget",
         name_nice="Budgetting Module",
-        priority=12,
+        priority=13,
+        access='',
         description="Allows a budget to be drawn up",
         enabled='True'
 	)
@@ -311,20 +320,20 @@ table = auth.settings.table_group_name
 # 1st-run initialisation
 if not len(db().select(db[table].ALL)):
     # Administrators can edit system settings & access all data
-    auth.add_group('Administrator',description='System Administrator - can access & make changes to any data')
+    auth.add_group('Administrator',description = 'System Administrator - can access & make changes to any data')
     # 1st person created will be System Administrator (can be changed later)
     auth.add_membership(1,1)
     # Anonymous users
-    auth.add_group('Anonymous',description='Anonymous - dummy group to grant permissions')
+    auth.add_group('Anonymous',description = 'Anonymous - dummy group to grant permissions')
     # Authenticated users
-    auth.add_group('Authenticated',description='Authenticated - all logged-in users')
+    auth.add_group('Authenticated',description = 'Authenticated - all logged-in users')
     # Editors can change (C/U/D) data (in mode 'full')
-    auth.add_group('Editor',description='Editor - can access & make changes to any unprotected data')
+    auth.add_group('Editor',description = 'Editor - can access & make changes to any unprotected data')
     
 # Auditing
 # ToDo: consider using native Web2Py log to auth_events
-resource='audit'
-table=module+'_'+resource
+resource = 'audit'
+table = module+'_'+resource
 db.define_table(table,timestamp,
                 db.Field('person',db.auth_user),
                 db.Field('operation'),
@@ -334,11 +343,11 @@ db.define_table(table,timestamp,
                 db.Field('record','integer'),
                 db.Field('old_value'),
                 db.Field('new_value'))
-db[table].operation.requires=IS_IN_SET(['create','read','update','delete','list'])
+db[table].operation.requires = IS_IN_SET(['create','read','update','delete','list'])
 
-module='default'
+module = 'default'
 # Home Menu Options
-table='%s_menu_option' % module
+table = '%s_menu_option' % module
 db.define_table(table,
                 db.Field('name'),
                 db.Field('function'),
@@ -346,10 +355,10 @@ db.define_table(table,
                 db.Field('access'),  # Hide menu options if users don't have the required access level
                 db.Field('priority','integer'),
                 db.Field('enabled','boolean',default='True'))
-db[table].name.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db[table].function.requires=IS_NOT_EMPTY()
-db[table].access.requires=IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
-db[table].priority.requires=[IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
+db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].function.requires = IS_NOT_EMPTY()
+db[table].access.requires = IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
+db[table].priority.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
 # Populate table with Default options
 if not len(db().select(db[table].ALL)):
 	db[table].insert(
@@ -358,45 +367,10 @@ if not len(db().select(db[table].ALL)):
         priority=0,
         enabled='True'
 	)
-	db[table].insert(
-        name="Admin",
-        function="admin",
-        access='Administrator',   # Administrator role only
-        priority=1,
-        enabled='True'
-	)
-	db[table].insert(
-        name="Database",
-        function="database",
-        access='Administrator',   # Administrator role only
-        priority=2,
-        enabled='True'
-	)
-	db[table].insert(
-        name="Test",
-        function="test",
-        access='Administrator',   # Administrator role only
-        priority=3,
-        enabled='True'
-	)
-	db[table].insert(
-        name="Import",
-        function="import_data",
-        access='Administrator',   # Administrator role only
-        priority=4,
-        enabled='True'
-	)
-	db[table].insert(
-        name="Export",
-        function="export_data",
-        access='Administrator',   # Administrator role only
-        priority=5,
-        enabled='True'
-	)
 
 # Settings - home
-resource='setting'
-table=module+'_'+resource
+resource = 'setting'
+table = module+'_'+resource
 db.define_table(table,
                 db.Field('audit_read','boolean'),
                 db.Field('audit_write','boolean'))
@@ -410,9 +384,9 @@ if not len(db().select(db[table].ALL)):
     )
 
 # Settings - appadmin
-module='appadmin'
-resource='setting'
-table=module+'_'+resource
+module = 'appadmin'
+resource = 'setting'
+table = module+'_'+resource
 db.define_table(table,
                 db.Field('audit_read','boolean'),
                 db.Field('audit_write','boolean'))
@@ -434,35 +408,35 @@ def shn_sessions(f):
             Debug mode
             Audit modes
     """
-    response.error=session.error
-    response.confirmation=session.confirmation
-    response.warning=session.warning
-    session.error=[]
-    session.confirmation=[]
-    session.warning=[]
+    response.error = session.error
+    response.confirmation = session.confirmation
+    response.warning = session.warning
+    session.error = []
+    session.confirmation = []
+    session.warning = []
     # Keep all our configuration options in a single global variable
     if not session.s3:
-        session.s3=Storage()
-    session.s3.self_registration=db().select(db.s3_setting.self_registration)[0].self_registration
-    session.s3.debug=db().select(db.s3_setting.debug)[0].debug
+        session.s3 = Storage()
+    session.s3.self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
+    session.s3.debug = db().select(db.s3_setting.debug)[0].debug
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
-        session.s3.audit_read=db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
+        session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
     except:
-        session.s3.audit_read=db().select(db.s3_setting.audit_read)[0].audit_read
+        session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read
     try:
-        session.s3.audit_write=db().select(db.s3_setting.audit_write)[0].audit_write or db().select(db['%s_setting' % request.controller].audit_write)[0].audit_write
+        session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write or db().select(db['%s_setting' % request.controller].audit_write)[0].audit_write
     except:
-        session.s3.audit_write=db().select(db.s3_setting.audit_write)[0].audit_write
+        session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write
     # Which roles does a user have?
-    session.s3.roles=[]
+    session.s3.roles = []
     if auth.is_logged_in():
-        roles=db(db.auth_membership.user_id==auth.user.id).select(db.auth_membership.group_id)
+        roles = db(db.auth_membership.user_id==auth.user.id).select(db.auth_membership.group_id)
         for role in roles:
-            role_name=db(db.auth_group.id==role.group_id).select(db.auth_group.role)[0].role
+            role_name = db(db.auth_group.id==role.group_id).select(db.auth_group.role)[0].role
             session.s3.roles.append(role_name)
     return f()
-response._caller=lambda f: shn_sessions(f)
+response._caller = lambda f: shn_sessions(f)
 
 #
 # Representations
@@ -470,7 +444,7 @@ response._caller=lambda f: shn_sessions(f)
 
 def shn_represent(table,module,resource,deletable=True,main='name',extra=None):
     "Designed to be called via table.represent to make t2.itemize() output useful"
-    db[table].represent=lambda table:shn_list_item(table,resource,action='display',main=main,extra=shn_represent_extra(table,module,resource,deletable,extra))
+    db[table].represent = lambda table:shn_list_item(table,resource,action='display',main=main,extra=shn_represent_extra(table,module,resource,deletable,extra))
     return
 
 def shn_represent_extra(table,module,resource,deletable=True,extra=None):
@@ -479,7 +453,7 @@ def shn_represent_extra(table,module,resource,deletable=True,extra=None):
     # Currently this is simplified as just whether user is logged in!
     authorised = auth.is_logged_in()
     
-    item_list=[]
+    item_list = []
     if extra:
         extra_list = extra.split()
         for any_item in extra_list:
@@ -493,7 +467,7 @@ def shn_list_item(table,resource,action,main='name',extra=None):
     item_list = [TD(A(table[main],_href=URL(r=request,f=resource,args=[action,table.id])))]
     if extra:
         item_list.extend(eval(extra))
-    items=DIV(TABLE(TR(item_list)))
+    items = DIV(TABLE(TR(item_list)))
     return DIV(*items)
 
 #
@@ -512,15 +486,15 @@ def wkt_centroid(form):
     Centroid calculation is done using Shapely, which wraps Geos.
     A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
     """
-    if form.vars.type=='point':
-        if form.vars.lon==None:
+    if form.vars.type == 'point':
+        if form.vars.lon == None:
             form.errors['lon'] = T("Invalid: Longitude can't be empty!")
             return
-        if form.vars.lat==None:
+        if form.vars.lat == None:
             form.errors['lat'] = T("Invalid: Latitude can't be empty!")
             return
         form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
-    elif form.vars.type=='line':
+    elif form.vars.type == 'line':
         try:
             from shapely.wkt import loads
             try:
@@ -534,11 +508,11 @@ def wkt_centroid(form):
         except:
             #form.errors['type'] = str(A('Shapely',_href='http://pypi.python.org/pypi/Shapely/',_target='_blank'))+str(T(" library not found, so can't find centroid!"))
             form.errors['type'] = T("Shapely library not found, so can't find centroid!")
-    elif form.vars.type=='polygon':
+    elif form.vars.type == 'polygon':
         try:
             from shapely.wkt import loads
             try:
-                polygon=loads(form.vars.wkt)
+                polygon = loads(form.vars.wkt)
             except:
                 form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
                 return
@@ -566,32 +540,33 @@ def import_csv(table,file):
 def import_json(table,file):
     "Import JSON into Database."
     import gluon.contrib.simplejson as sj
-    reader=sj.loads(file)
+    reader = sj.loads(file)
     # ToDo
     # Get column names (like for SQLTable.import_from_csv_file() )
     # Insert records (or Update if unique field duplicated)
     #table.insert(**dict(items))
     return
             
-def has_permission(name,table_name,record_id=0):
+def has_permission(name, table_name, record_id = 0):
     """
     S3 framework function to define whether a user can access a record
     Designed to be called from the RESTlike controller
     """
-    security=db().select(db.s3_setting.security_policy)[0].security_policy
-    if security=='simple':
+    security = db().select(db.s3_setting.security_policy)[0].security_policy
+    if security == 'simple':
         # Anonymous users can Read.
         if name == 'read':
             authorised = True
-        # Authentication required for Create/Update/Delete.
-        authorised = auth.is_logged_in()
+        else:
+            # Authentication required for Create/Update/Delete.
+            authorised = auth.is_logged_in()
     else:
         # Administrators are always authorised
         if 'Administrator' in session.s3.roles:
             authorised = True
         else:
             # Require records in auth_permission to specify access
-            authorised = auth.has_permission(name,table_name,record_id)
+            authorised = auth.has_permission(name, table_name, record_id)
     return authorised
 
 def accessible_query(name,table):
@@ -600,18 +575,18 @@ def accessible_query(name,table):
     This method does not work on GAE because uses JOIN and IN
     """
     # If using the 'simple' security policy then show all records
-    security=db().select(db.s3_setting.security_policy)[0].security_policy
-    if security=='simple':
+    security = db().select(db.s3_setting.security_policy)[0].security_policy
+    if security == 'simple':
         return table.id>0
     # Administrators can see all data
     if 'Administrator' in session.s3.roles:
         return table.id>0
     # If there is access to the entire table then show all records
-    user_id=auth.user.id
+    user_id = auth.user.id
     if auth.has_permission(name,table,0,user_id):
         return table.id>0
     # Filter Records to show only those to which the user has access
-    session.warning=T("Only showing accessible records!")
+    session.warning = T("Only showing accessible records!")
     membership = auth.settings.table_membership
     permission = auth.settings.table_permission
     return table.id.belongs(db(membership.user_id == user_id)\
@@ -656,33 +631,33 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
             SMS,PDF,LDIF
     """
     
-    _table='%s_%s' % (module,resource)
-    table=db[_table]
-    if resource=='setting':
-        s3.crud_strings=shn_crud_strings_lookup(resource)
+    _table = '%s_%s' % (module,resource)
+    table = db[_table]
+    if resource == 'setting':
+        s3.crud_strings = shn_crud_strings_lookup(resource)
     else:
-        s3.crud_strings=shn_crud_strings_lookup(table)
+        s3.crud_strings = shn_crud_strings_lookup(table)
     
     try:
-        crud.messages.record_created=s3.crud_strings.msg_record_created
-        crud.messages.record_updated=s3.crud_strings.msg_record_modified
-        crud.messages.record_deleted=s3.crud_strings.msg_record_deleted
+        crud.messages.record_created = s3.crud_strings.msg_record_created
+        crud.messages.record_updated = s3.crud_strings.msg_record_modified
+        crud.messages.record_deleted = s3.crud_strings.msg_record_deleted
     except:
         pass
 
     # Which representation should output be in?
     if request.vars.format:
-        representation=str.lower(request.vars.format)
+        representation = str.lower(request.vars.format)
     else:
         # Default to HTML
-        representation="html"
+        representation = "html"
     
-    if len(request.args)==0:
+    if len(request.args) == 0:
         # No arguments => default to List
         authorised = has_permission('read',table)
         if authorised:
             # Filter Search list to just those records which user can read
-            query=accessible_query('read',table)
+            query = accessible_query('read',table)
             # list_create if have permissions
             authorised = has_permission('create',table)
             if session.s3.audit_read:
@@ -694,10 +669,10 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     old_value='',
                     new_value=''
                 )
-            if representation=="html":
+            if representation == "html":
                 # Default list format is a simple list, not tabular
-                tabular=0
-                if format=='table':
+                tabular = 0
+                if format == 'table':
                     tabular=1
                     fields = [table[f] for f in table.fields if table[f].readable]
                     headers={}
@@ -707,104 +682,104 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     items=crud.select(table,query=query,fields=fields,headers=headers)
                 else:
                     shn_represent(table,module,resource,deletable,main,extra)
-                    items=t2.itemize(table,query=query)
+                    items = t2.itemize(table,query=query)
                 if not items:
                     try:
-                        items=s3.crud_strings.msg_list_empty
+                        items = s3.crud_strings.msg_list_empty
                     except:
-                        items=T('None')
+                        items = T('None')
                 try:
-                    title=s3.crud_strings.title_list
+                    title = s3.crud_strings.title_list
                 except:
-                    title=T('List')
+                    title = T('List')
                 try:
-                    subtitle=s3.crud_strings.subtitle_list
+                    subtitle = s3.crud_strings.subtitle_list
                 except:
-                    subtitle=''
+                    subtitle = ''
                 if authorised and listadd:
                     # Display the Add form below List
                     if deletable and not tabular:
                         # Add extra column header to explain the checkboxes
                         if isinstance(items,TABLE):
                             items.insert(0,TR('',B('Delete?')))
-                    form=crud.create(table,onvalidation=onvalidation)
+                    form = crud.create(table,onvalidation=onvalidation)
                     # Check for presence of Custom View
-                    custom_view='%s_list_create.html' % resource
-                    _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                    custom_view = '%s_list_create.html' % resource
+                    _custom_view = os.path.join(request.folder,'views',module,custom_view)
                     if os.path.exists(_custom_view):
-                        response.view=module+'/'+custom_view
+                        response.view = module+'/'+custom_view
                     else:
                         if tabular:
-                            response.view='table_list_create.html'
+                            response.view = 'table_list_create.html'
                         else:
-                            response.view='list_create.html'
+                            response.view = 'list_create.html'
                     try:
-                        addtitle=s3.crud_strings.subtitle_create
+                        addtitle = s3.crud_strings.subtitle_create
                     except:
-                        addtitle=T('Add New')
+                        addtitle = T('Add New')
                     return dict(module_name=module_name,modules=modules,options=options,items=items,form=form,title=title,subtitle=subtitle,addtitle=addtitle)
                 else:
                     # List only
                     if listadd:
                         try:
-                            label_create_button=s3.crud_strings.label_create_button
+                            label_create_button = s3.crud_strings.label_create_button
                         except:
-                            label_create_button=T('Add')
-                        add_btn=A(label_create_button,_href=URL(r=request,f=resource,args='create'),_id='add-btn')
+                            label_create_button = T('Add')
+                        add_btn = A(label_create_button,_href=URL(r=request,f=resource,args='create'),_id='add-btn')
                     else:
-                        add_btn=''
+                        add_btn = ''
                     # Check for presence of Custom View
-                    custom_view='%s_list.html' % resource
-                    _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                    custom_view = '%s_list.html' % resource
+                    _custom_view = os.path.join(request.folder,'views',module,custom_view)
                     if os.path.exists(_custom_view):
-                        response.view=module+'/'+custom_view
+                        response.view = module+'/'+custom_view
                     else:
                         if tabular:
-                            response.view='table_list.html'
+                            response.view = 'table_list.html'
                         else:
-                            response.view='list.html'
+                            response.view = 'list.html'
                     return dict(module_name=module_name,modules=modules,options=options,items=items,title=title,subtitle=subtitle,add_btn=add_btn)
-            elif representation=="ajax":
-                #items=crud.select(table,fields=fields,headers=headers)
+            elif representation == "ajax":
+                #items = crud.select(table,fields=fields,headers=headers)
                 shn_represent(table,module,resource,deletable,main,extra)
-                items=t2.itemize(table,query)
+                items = t2.itemize(table,query)
                 if not items:
                     try:
-                        items=s3.crud_strings.msg_list_empty
+                        items = s3.crud_strings.msg_list_empty
                     except:
-                        items=T('None')
+                        items = T('None')
                 if deletable:
                     # Add extra column header to explain the checkboxes
                     if isinstance(items,TABLE):
                         items.insert(0,TR('',B('Delete?')))
-                response.view='plain.html'
+                response.view = 'plain.html'
                 return dict(item=items)
-            elif representation=="plain":
-                items=crud.select(table,query)
-                response.view='plain.html'
+            elif representation == "plain":
+                items = crud.select(table,query)
+                response.view = 'plain.html'
                 return dict(item=items)
-            elif representation=="json":
-                items=db(query).select(table.ALL).json()
+            elif representation == "json":
+                items = db(query).select(table.ALL).json()
                 response.headers['Content-Type']='text/x-json'
                 return items
-            elif representation=="xml":
-                items=db(query).select(table.ALL).as_list()
-                response.headers['Content-Type']='text/xml'
+            elif representation == "xml":
+                items = db(query).select(table.ALL).as_list()
+                response.headers['Content-Type'] = 'text/xml'
                 return str(service.xml_serializer(items))
-            elif representation=="csv":
+            elif representation == "csv":
                 import gluon.contenttype
-                response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
+                response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
                 #query=db[table].id>0
-                response.headers['Content-disposition']="attachment; filename=%s_%s_list.csv" % (request.env.server_name,resource)
+                response.headers['Content-disposition'] = "attachment; filename=%s_%s_list.csv" % (request.env.server_name,resource)
                 return str(db(query).select())
-            elif representation=="rss":
-                if request.env.remote_addr=='127.0.0.1':
-                    server='http://127.0.0.1:' + request.env.server_port
+            elif representation == "rss":
+                if request.env.remote_addr == '127.0.0.1':
+                    server = 'http://127.0.0.1:' + request.env.server_port
                 else:
-                    server='http://' + request.env.server_name + ':' + request.env.server_port
-                link='/%s/%s/%s' % (request.application,module,resource)
-                entries=[]
-                rows=db(query).select()
+                    server = 'http://' + request.env.server_name + ':' + request.env.server_port
+                link = '/%s/%s/%s' % (request.application,module,resource)
+                entries = []
+                rows = db(query).select()
                 for row in rows:
                     entries.append(dict(title=row.name,link=server+link+'/%d' % row.id,description=row.description or '',created_on=row.created_on))
                 import gluon.contrib.rss2 as rss2
@@ -813,15 +788,15 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                 response.headers['Content-Type']='application/rss+xml'
                 return rss2.dumps(rss)
             else:
-                session.error=T("Unsupported format!")
+                session.error = T("Unsupported format!")
                 redirect(URL(r=request))
         else:
-            session.error=T("Not authorised!")
+            session.error = T("Not authorised!")
             redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource)}))
     else:
         if request.args[0].isdigit():
             # 1st argument is ID not method => Read.
-            s3.id=request.args[0]
+            s3.id = request.args[0]
             authorised = has_permission('read',table,s3.id)
             if authorised:
                 if session.s3.audit_read:
@@ -835,51 +810,51 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                         old_value='',
                         new_value=''
                     )
-                if representation=="html":
-                    item=crud.read(table,s3.id)
+                if representation == "html":
+                    item = crud.read(table,s3.id)
                     # Check for presence of Custom View
-                    custom_view='%s_display.html' % resource
-                    _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                    custom_view = '%s_display.html' % resource
+                    _custom_view = os.path.join(request.folder,'views',module,custom_view)
                     if os.path.exists(_custom_view):
-                        response.view=module+'/'+custom_view
+                        response.view = module+'/'+custom_view
                     else:
-                        response.view='display.html'
+                        response.view = 'display.html'
                     try:
-                        title=s3.crud_strings.title_display
+                        title = s3.crud_strings.title_display
                     except:
-                        title=T('Details')
-                    edit=A(T("Edit"),_href=URL(r=request,f=resource,args=['update',s3.id]),_id='edit-btn')
+                        title = T('Details')
+                    edit = A(T("Edit"),_href=URL(r=request,f=resource,args=['update',s3.id]),_id='edit-btn')
                     if deletable:
-                        delete=A(T("Delete"),_href=URL(r=request,f=resource,args=['delete',s3.id]),_id='delete-btn')
+                        delete = A(T("Delete"),_href=URL(r=request,f=resource,args=['delete',s3.id]),_id='delete-btn')
                     else:
-                        delete=''
+                        delete = ''
                     try:
-                        label_list_button=s3.crud_strings.label_list_button
+                        label_list_button = s3.crud_strings.label_list_button
                     except:
-                        label_list_button=T('List All')
-                    list_btn=A(label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
+                        label_list_button = T('List All')
+                    list_btn = A(label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
                     return dict(module_name=module_name,modules=modules,options=options,item=item,title=title,edit=edit,delete=delete,list_btn=list_btn)
-                elif representation=="plain":
-                    item=crud.read(table,s3.id)
-                    response.view='plain.html'
+                elif representation == "plain":
+                    item = crud.read(table,s3.id)
+                    response.view = 'plain.html'
                     return dict(item=item)
-                elif representation=="json":
-                    item=db(table.id==s3.id).select(table.ALL).json()
-                    response.view='plain.html'
+                elif representation == "json":
+                    item = db(table.id==s3.id).select(table.ALL).json()
+                    response.view = 'plain.html'
                     return dict(item=item)
-                elif representation=="xml":
-                    item=db(table.id==s3.id).select(table.ALL).as_list()
-                    response.headers['Content-Type']='text/xml'
+                elif representation == "xml":
+                    item = db(table.id==s3.id).select(table.ALL).as_list()
+                    response.headers['Content-Type'] = 'text/xml'
                     return str(service.xml_serializer(item))
-                elif representation=="csv":
+                elif representation == "csv":
                     import gluon.contenttype
-                    response.headers['Content-Type']=gluon.contenttype.contenttype('.csv')
-                    query=db[table].id==s3.id
-                    response.headers['Content-disposition']="attachment; filename=%s_%s_%d.csv" % (request.env.server_name,resource,s3.id)
+                    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+                    query = db[table].id==s3.id
+                    response.headers['Content-disposition'] = "attachment; filename=%s_%s_%d.csv" % (request.env.server_name,resource,s3.id)
                     return str(db(query).select())
-                elif representation=="rss":
+                elif representation == "rss":
                     #if request.args and request.args[0] in settings.rss_procedures:
-                    #   feed=eval('%s(*request.args[1:],**dict(request.vars))'%request.args[0])
+                    #   feed = eval('%s(*request.args[1:],**dict(request.vars))'%request.args[0])
                     #else:
                     #   t2._error()
                     #import gluon.contrib.rss2 as rss2
@@ -897,23 +872,23 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                     #   )
                     #response.headers['Content-Type']='application/rss+xml'
                     #return rss2.dumps(rss)
-                    entries[0]=dict(title=table.name,link=URL(r=request,c='module',f='resource',args=[table.id]),description=table.description,created_on=table.created_on)
-                    item=service.rss(entries=entries)
-                    response.view='plain.html'
+                    entries[0] = dict(title=table.name,link=URL(r=request,c='module',f='resource',args=[table.id]),description=table.description,created_on=table.created_on)
+                    item = service.rss(entries=entries)
+                    response.view = 'plain.html'
                     return dict(item=item)
                 else:
-                    session.error=T("Unsupported format!")
+                    session.error = T("Unsupported format!")
                     redirect(URL(r=request))
             else:
-                session.error=T("Not authorised!")
+                session.error = T("Not authorised!")
                 redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['read',s3.id])}))
         else:
-            method=str.lower(request.args[0])
+            method = str.lower(request.args[0])
             try:
-                s3.id=request.args[1]
+                s3.id = request.args[1]
             except:
                 pass
-            if method=="create":
+            if method == "create":
                 authorised = has_permission(method,table)
                 if authorised:
                     if session.s3.audit_write:
@@ -927,42 +902,42 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             old_value='',
                             new_value=''
                         )
-                    if representation=="html":
-                        form=crud.create(table,onvalidation=onvalidation)
+                    if representation == "html":
+                        form = crud.create(table,onvalidation=onvalidation)
                         #form[0].append(TR(TD(),TD(INPUT(_type="reset",_value="Reset form"))))
                         # Check for presence of Custom View
-                        custom_view='%s_create.html' % resource
-                        _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                        custom_view = '%s_create.html' % resource
+                        _custom_view = os.path.join(request.folder,'views',module,custom_view)
                         if os.path.exists(_custom_view):
-                            response.view=module+'/'+custom_view
+                            response.view = module+'/'+custom_view
                         else:
-                            response.view='create.html'
+                            response.view = 'create.html'
                         try:
-                            title=s3.crud_strings.title_create
+                            title = s3.crud_strings.title_create
                         except:
-                            title=T('Add')
+                            title = T('Add')
                         try:
-                            label_list_button=s3.crud_strings.label_list_button
+                            label_list_button = s3.crud_strings.label_list_button
                         except:
-                            label_list_button=T('List All')
-                        list_btn=A(label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
+                            label_list_button = T('List All')
+                        list_btn = A(label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
                         return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
-                    elif representation=="plain":
-                        form=crud.create(table,onvalidation=onvalidation)
-                        response.view='plain.html'
+                    elif representation == "plain":
+                        form = crud.create(table,onvalidation=onvalidation)
+                        response.view = 'plain.html'
                         return dict(item=form)
-                    elif representation=="popup":
-                        form=crud.create(table,onvalidation=onvalidation)
-                        response.view='popup.html'
+                    elif representation == "popup":
+                        form = crud.create(table,onvalidation=onvalidation)
+                        response.view = 'popup.html'
                         return dict(module_name=module_name,form=form,module=module,resource=resource,main=main,caller=request.vars.caller)
-                    elif representation=="json":
-                        record=Storage()
+                    elif representation == "json":
+                        record = Storage()
                         for var in request.vars:
-                            if var=='format':
+                            if var == 'format':
                                 pass
                             else:
                                 record[var] = request.vars[var]
-                        item=''
+                        item = ''
                         for var in record:
                             # Validate request manually
                             if table[var].requires(record[var])[1]:
@@ -971,35 +946,35 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             pass
                         else:
                             try:
-                                id=table.insert(**dict (record))
-                                item='{"Status":"success","Error":{"StatusCode":201,"Message":"Created as '+URL(r=request,c=module,f=resource,args=id)+'"}}'
+                                id = table.insert(**dict (record))
+                                item = '{"Status":"success","Error":{"StatusCode":201,"Message":"Created as '+URL(r=request,c=module,f=resource,args=id)+'"}}'
                             except:
-                                item='{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
-                        response.view='plain.html'
+                                item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
+                        response.view = 'plain.html'
                         return dict(item=item)
-                    elif representation=="csv":
+                    elif representation == "csv":
                         # Read in POST
-                        file=request.vars.filename.file
+                        file = request.vars.filename.file
                         try:
                             import_csv(table,file)
-                            reply=T('Data uploaded')
+                            reply = T('Data uploaded')
                         except: 
-                            reply=T('Unable to parse CSV file!')
+                            reply = T('Unable to parse CSV file!')
                         return reply
                     else:
-                        session.error=T("Unsupported format!")
+                        session.error = T("Unsupported format!")
                         redirect(URL(r=request))
                 else:
-                    session.error=T("Not authorised!")
+                    session.error = T("Not authorised!")
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args='create')}))
-            elif method=="display" or method=="read":
+            elif method == "display" or method == "read":
                 redirect(URL(r=request,args=s3.id))
-            elif method=="update":
+            elif method == "update":
                 authorised = has_permission(method,table,s3.id)
                 if authorised:
                     if session.s3.audit_write:
                         old_value = []
-                        _old_value=db(db[table].id==s3.id).select()[0]
+                        _old_value = db(db[table].id==s3.id).select()[0]
                         for field in _old_value:
                             old_value.append(field+':'+str(_old_value[field]))
                         audit_id=db.s3_audit.insert(
@@ -1012,37 +987,37 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             old_value=old_value,
                             new_value=''
                         )
-                    if representation=="html":
-                        form=crud.update(table,s3.id,onvalidation=onvalidation)
+                    if representation == "html":
+                        form = crud.update(table,s3.id,onvalidation=onvalidation)
                         # Check for presence of Custom View
-                        custom_view='%s_update.html' % resource
-                        _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                        custom_view = '%s_update.html' % resource
+                        _custom_view = os.path.join(request.folder,'views',module,custom_view)
                         if os.path.exists(_custom_view):
-                            response.view=module+'/'+custom_view
+                            response.view = module+'/'+custom_view
                         else:
-                            response.view='update.html'
-                        title=s3.crud_strings.title_update
+                            response.view = 'update.html'
+                        title = s3.crud_strings.title_update
                         if s3.crud_strings.label_list_button:
-                            list_btn=A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
+                            list_btn = A(s3.crud_strings.label_list_button,_href=URL(r=request,f=resource),_id='list-btn')
                             return dict(module_name=module_name,modules=modules,options=options,form=form,title=title,list_btn=list_btn)
                         else:
                             return dict(module_name=module_name,modules=modules,options=options,form=form,title=title)
-                    elif representation=="plain":
-                        form=crud.update(table,s3.id,onvalidation=onvalidation)
-                        response.view='plain.html'
+                    elif representation == "plain":
+                        form = crud.update(table,s3.id,onvalidation=onvalidation)
+                        response.view = 'plain.html'
                         return dict(item=form)
-                    elif representation=="json":
-                        record=Storage()
-                        uuid=0
+                    elif representation == "json":
+                        record = Storage()
+                        uuid = 0
                         for var in request.vars:
-                            if var=='format':
+                            if var == 'format':
                                 pass
-                            elif var=='uuid':
-                                uuid=1
+                            elif var == 'uuid':
+                                uuid = 1
                             else:
                                 record[var] = request.vars[var]
                         if uuid:
-                            item=''
+                            item = ''
                             for var in record:
                                 # Validate request manually
                                 if table[var].requires(record[var])[1]:
@@ -1051,29 +1026,29 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                                 pass
                             else:
                                 try:
-                                    result=db(table.uuid==request.vars.uuid).update(**dict (record))
+                                    result = db(table.uuid==request.vars.uuid).update(**dict (record))
                                     if result:
-                                        item='{"Status":"success","Error":{"StatusCode":200,"Message":"Record updated."}}'
+                                        item = '{"Status":"success","Error":{"StatusCode":200,"Message":"Record updated."}}'
                                     else:
-                                        item='{"Status":"failed","Error":{"StatusCode":404,"Message":"Record '+request.vars.uuid+' does not exist."}}'
+                                        item = '{"Status":"failed","Error":{"StatusCode":404,"Message":"Record '+request.vars.uuid+' does not exist."}}'
                                 except:
-                                    item='{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
+                                    item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
                         else:
-                            item='{"Status":"failed","Error":{"StatusCode":400,"Message":"UUID required!"}}'
-                        response.view='plain.html'
+                            item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"UUID required!"}}'
+                        response.view = 'plain.html'
                         return dict(item=item)
                     else:
-                        session.error=T("Unsupported format!")
+                        session.error = T("Unsupported format!")
                         redirect(URL(r=request))
                 else:
-                    session.error=T("Not authorised!")
+                    session.error = T("Not authorised!")
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['update',s3.id])}))
-            elif method=="delete":
+            elif method == "delete":
                 authorised = has_permission(method,table,s3.id)
                 if authorised:
                     if session.s3.audit_write:
                         old_value = []
-                        _old_value=db(db[table].id==s3.id).select()[0]
+                        _old_value = db(db[table].id==s3.id).select()[0]
                         for field in _old_value:
                             old_value.append(field+':'+str(_old_value[field]))
                         db.s3_audit.insert(
@@ -1086,19 +1061,20 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             old_value=old_value,
                             new_value=''
                         )
-                    if representation=="ajax":
+                    if representation == "ajax":
                         #crud.delete(table,s3.id,next='%s?format=ajax' % resource)
                         t2.delete(table,next='%s?format=ajax' % resource)
                     else:
                         crud.delete(table,s3.id)
                 else:
-                    session.error=T("Not authorised!")
+                    session.error = T("Not authorised!")
                     redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['delete',s3.id])}))
-            elif method=="search":
+            elif method == "search":
                 authorised = has_permission('read',table)
                 if authorised:
                     # Filter Search list to just those records which user can read
-                    query=accessible_query('read',table)
+                    #query = accessible_query('read',table)
+                    # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
                     if session.s3.audit_read:
                         db.s3_audit.insert(
                             person=auth.user.id if authorised else 0,
@@ -1108,37 +1084,38 @@ def shn_rest_controller(module,resource,deletable=True,listadd=True,main='name',
                             old_value='',
                             new_value=''
                         )
-                    if representation=="html":
+                    if representation == "html":
                         shn_represent(table,module,resource,deletable,main,extra)
-                        search=t2.search(table,query)
+                        #search = t2.search(table,query)
+                        search = t2.search(table)
                         # Check for presence of Custom View
-                        custom_view='%s_search.html' % resource
-                        _custom_view=os.path.join(request.folder,'views',module,custom_view)
+                        custom_view = '%s_search.html' % resource
+                        _custom_view = os.path.join(request.folder,'views',module,custom_view)
                         if os.path.exists(_custom_view):
-                            response.view=module+'/'+custom_view
+                            response.view = module+'/'+custom_view
                         else:
-                            response.view='search.html'
-                        title=s3.crud_strings.title_search
+                            response.view = 'search.html'
+                        title = s3.crud_strings.title_search
                         return dict(module_name=module_name,modules=modules,options=options,search=search,title=title)
-                    if representation=="json":
+                    if representation == "json":
                         if request.vars.field and request.vars.filter and request.vars.value:
-                            field=str.lower(request.vars.field)
-                            filter=str.lower(request.vars.filter)
+                            field = str.lower(request.vars.field)
+                            filter = str.lower(request.vars.filter)
                             if filter == '=':
-                                query=(table['%s' % field]==request.vars.value)
+                                query = (table['%s' % field]==request.vars.value)
                                 item = db(query).select().json()
                             else:
-                                item='{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ="}}'
+                                item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ="}}'
                         else:
-                            item='{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
-                        response.view='plain.html'
+                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
+                        response.view = 'plain.html'
                         return dict(item=item)
                     else:
-                        session.error=T("Unsupported format!")
+                        session.error = T("Unsupported format!")
                         redirect(URL(r=request))
                 else:
-                    session.error=T("Unsupported method!")
+                    session.error = T("Unsupported method!")
                     redirect(URL(r=request))
             else:
-                session.error=T("Not authorised!")
+                session.error = T("Not authorised!")
                 redirect(URL(r=request,c='default',f='user',args='login',vars={'_next':URL(r=request,c=module,f=resource,args=['search'])}))

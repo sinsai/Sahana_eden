@@ -41,7 +41,9 @@
     {{=H2(module_name)}}
    {{except:}}
    {{pass}}
-  {{=t2.menu(response.menu)}}
+   {{if response.menu:}}
+    {{=MENU(response.menu)}}
+   {{pass}}
   <ul id="modmenu">
  {{try:}}
   {{for option in options:}}
@@ -78,7 +80,9 @@
    <ul id="optionsmenu">
    {{try:}}
     {{for module in modules:}}
-	<li>{{=A(T(module.name_nice),_href=URL(r=request,c='default',f='open_module',vars=dict(id='%d'%module.id)))}}</li>
+     {{if not module.access or (module.access in session.s3.roles):}}
+ 	  <li>{{=A(T(module.name_nice),_href=URL(r=request,c='default',f='open_module',vars=dict(id='%d'%module.id)))}}</li>
+	 {{pass}}
 	{{pass}}
    {{except:}}
    {{pass}}
@@ -97,7 +101,7 @@
   <div id="footer" align="center">
     <p>
     <a class="help" target="_blank" href="http://sahana.lk" title="Sahana Home">Sahana</a> | 
-    <a class="help" target="_blank" href="https://trac.sahanapy.org/wiki" title="SahanaPy Wiki">Wiki</a> | 
+    <a class="help" target="_blank" href="http://trac.sahanapy.org/wiki" title="SahanaPy Wiki">Wiki</a> | 
     <a class="help" target="_blank" href="http://www.sahana.lk/chat" title="Chat">{{=T("Chat on IRC")}}</a> | 
     <a class="help" target="_blank" href="https://trac.sahanapy.org/report" title="Report a Bug">{{=T("Report a Bug")}}</a>
     </p>

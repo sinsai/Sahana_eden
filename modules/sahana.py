@@ -621,7 +621,7 @@ class S3:
         "Build a search widget for a db field"
         if isinstance(field.requires, IS_NULL_OR):
             requires = field.requires.other
-        else
+        else:
             requires = field.requires
         if isinstance(requires, IS_IN_SET):
             return DIV(

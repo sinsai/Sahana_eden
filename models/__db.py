@@ -14,7 +14,7 @@ T.current_languages = ['en', 'en-en']
 
 # Custom classes which extend default Gluon & T2
 from applications.sahana.modules.sahana import *
-from applications.sahana.modules.ldapconnect import AuthLDAP
+#from applications.sahana.modules.ldapconnect import AuthLDAP
 
 t2 = S3(request, response, session, cache, T, db)
 

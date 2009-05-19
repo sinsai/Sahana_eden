@@ -46,39 +46,6 @@ crud = CrudS3(globals(),db)
 from gluon.tools import Service
 service = Service(globals())
 
-# Web2Py Menus
-if not auth.is_logged_in():
-    if session.s3.self_registration:
-        response.menu_auth = [
-            [T('Login'), False, URL(request.application, 'default', 'user/login'),
-             [
-                    [T('Register'), False,
-                     URL(request.application, 'default', 'user/register')],
-                    [T('Lost Password'), False,
-                     URL(request.application, 'default', 'user/retrieve_password')]]
-             ],
-            ]
-    else:
-        response.menu_auth = [
-            [T('Login'), False, URL(request.application, 'default', 'user/login'),
-             [
-                    [T('Lost Password'), False,
-                     URL(request.application, 'default', 'user/retrieve_password')]]
-             ],
-            ]
-else:
-    response.menu_auth = [
-        ['Logged-in as: ' + auth.user.first_name + ' ' + auth.user.last_name, False, None,
-         [
-                [T('Logout'), False, 
-                 URL(request.application, 'default', 'user/logout')],
-                [T('Edit Profile'), False, 
-                 URL(request.application, 'default', 'user/profile')],
-                [T('Change Password'), False,
-                 URL(request.application, 'default', 'user/change_password')]]
-         ],
-        ]
-
 # From http://groups.google.com/group/web2py/msg/9803f6bf92349e32
 # currently unused
 #import re
@@ -216,6 +183,40 @@ msg_record_modified = T('Setting updated')
 msg_record_deleted = T('Setting deleted')
 msg_list_empty = T('No Settings currently defined')
 s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+# Web2Py Menus
+if not auth.is_logged_in():
+    s3.self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
+    if s3.self_registration:
+        response.menu_auth = [
+            [T('Login'), False, URL(request.application, 'default', 'user/login'),
+             [
+                    [T('Register'), False,
+                     URL(request.application, 'default', 'user/register')],
+                    [T('Lost Password'), False,
+                     URL(request.application, 'default', 'user/retrieve_password')]]
+             ],
+            ]
+    else:
+        response.menu_auth = [
+            [T('Login'), False, URL(request.application, 'default', 'user/login'),
+             [
+                    [T('Lost Password'), False,
+                     URL(request.application, 'default', 'user/retrieve_password')]]
+             ],
+            ]
+else:
+    response.menu_auth = [
+        ['Logged-in as: ' + auth.user.first_name + ' ' + auth.user.last_name, False, None,
+         [
+                [T('Logout'), False, 
+                 URL(request.application, 'default', 'user/logout')],
+                [T('Edit Profile'), False, 
+                 URL(request.application, 'default', 'user/profile')],
+                [T('Change Password'), False,
+                 URL(request.application, 'default', 'user/change_password')]]
+         ],
+        ]
 
 # Modules
 resource = 'module'

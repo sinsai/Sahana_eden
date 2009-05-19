@@ -136,7 +136,7 @@ ul.web2py-menu-hRight ul
 
 ul.web2py-menu li a
 {
-    border: solid 1px #99f
+    border: solid 1px #247
 }
 
 ul.web2py-menu-horizontal li
@@ -158,7 +158,7 @@ ul.web2py-menu-vertical li
 
 ul.web2py-menu-vertical
 {
-    border-top: solid 1px #fff;
+    border-top: solid 1px #369;
 }
 
 ul.web2py-menu li a
@@ -178,18 +178,18 @@ ul.web2py-menu li.sfhover a:active,
 ul.web2py-menu li:hover a:active
 {
     color: #fff;
-    background-color: #c00;
+    background-color: #566316;
 }
 
 ul.web2py-menu li
 {
-    background-color: #ddf;
+    background-color: #369;
 }
 
 ul.web2py-menu li:hover,
 ul.web2py-menu li.sfhover
 {
-    background-color: #eda;
+    background-color: #07a;
 }
 
 ul.web2py-menu li a:hover
@@ -254,7 +254,7 @@ ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu-expand
 
 ul.web2py-menu ul
 {
-    background-color: #fff;
+    background-color: #369;
 }
 
 * html ul.web2py-menu-vertical li,

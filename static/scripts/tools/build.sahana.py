@@ -110,7 +110,8 @@ listCSS = [
     '../../styles/S3/sahana.css',
     '../../styles/S3/jquery.cluetip.css',
     '../../styles/T2/t2.css',
-    '../../styles/web2py/calendar.css'
+    '../../styles/web2py/calendar.css',
+    '../../styles/web2py/menu.css'
 ]
 
 listCSSGIS = [
@@ -140,7 +141,7 @@ mergedGIS = mergejs.run(files, order)
 
 print "Merging Core styles."
 mergedCSS = mergeCSS(listCSS,outputFilenameCSS)
-print "Merging GIS syles."
+print "Merging GIS styles."
 mergedCSSGIS = mergeCSS(listCSSGIS,outputFilenameCSSGIS)
 
 # Compress files

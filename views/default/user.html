@@ -3,11 +3,15 @@
 <div class="frame">
 <h2>
 {{if request.args[0]=='login':}}
-Login
+ {{=T('Login')}}
 {{elif request.args[0]=='register':}}
-Register
+ {{=T('Register')}}
 {{elif request.args[0]=='profile':}}
-Profile
+ {{=T('Profile')}}
+{{elif request.args[0]=='change_password':}}
+ {{=T('Change Password')}}
+{{elif request.args[0]=='retrieve_password':}}
+ {{=T('Retrieve Password')}}
 {{pass}}
 </h2>
 {{=form}}

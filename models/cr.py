@@ -76,6 +76,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
 db[table].name.label = T("Shelter Name")
 db[table].name.comment = SPAN("*",_class="req")
+db[table].admin.label = T("Shelter Manager")
 db[table].person_id.label = T("Contact Person")
 db[table].capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0,999999))
 db[table].dwellings.requires = IS_NULL_OR(IS_INT_IN_RANGE(0,99999))

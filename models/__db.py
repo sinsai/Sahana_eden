@@ -46,6 +46,39 @@ crud = CrudS3(globals(),db)
 from gluon.tools import Service
 service = Service(globals())
 
+# Web2Py Menus
+if not auth.is_logged_in():
+    if session.s3.self_registration:
+        response.menu_auth = [
+            [T('Login'), False, URL(request.application, 'default', 'user/login'),
+             [
+                    [T('Register'), False,
+                     URL(request.application, 'default', 'user/register')],
+                    [T('Lost Password'), False,
+                     URL(request.application, 'default', 'user/retrieve_password')]]
+             ],
+            ]
+    else:
+        response.menu_auth = [
+            [T('Login'), False, URL(request.application, 'default', 'user/login'),
+             [
+                    [T('Lost Password'), False,
+                     URL(request.application, 'default', 'user/retrieve_password')]]
+             ],
+            ]
+else:
+    response.menu_auth = [
+        ['Logged-in as: ' + auth.user.first_name + ' ' + auth.user.last_name, False, None,
+         [
+                [T('Logout'), False, 
+                 URL(request.application, 'default', 'user/logout')],
+                [T('Edit Profile'), False, 
+                 URL(request.application, 'default', 'user/profile')],
+                [T('Change Password'), False,
+                 URL(request.application, 'default', 'user/change_password')]]
+         ],
+        ]
+
 # From http://groups.google.com/group/web2py/msg/9803f6bf92349e32
 # currently unused
 #import re
@@ -108,7 +141,7 @@ admin_id = SQLTable(None, 'admin_id',
             db.Field('admin',
                 db.auth_group,requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
-                comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='default', f='role', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Contact|The Person to contact for this.")))
+                comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='default', f='role', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record.")))
                 ))
     
 # Custom validators
@@ -306,13 +339,20 @@ if not len(db().select(db[table].ALL)):
 	)
 	db[table].insert(
         name="budget",
-        name_nice="Budgetting Module",
+        name_nice="Budgeting Module",
         priority=13,
         access='',
         description="Allows a budget to be drawn up",
         enabled='True'
 	)
-	
+
+# Modules Menu
+#response.menu_modules = [
+#    ['Index', False, 
+#     URL(request.application,'default','index'), []],
+#    ]
+    
+    
 # Authorization
 # User Roles
 # uses native Web2Py Auth Groups

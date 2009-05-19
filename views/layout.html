@@ -15,22 +15,9 @@
 <body>
 <div id="container">
  <div id="header" class="clearfix">
-  <div id="menu" style="text-align: right">
-  {{if auth.user:}}
-    {{=A(T('Profile'),_href=URL(r=request,c='default',f='user',args=['profile']))}}
-    {{=A(T('Logout'),_href=URL(r=request,c='default',f='user',args=['logout']))}}
-  {{else:}}
-    {{=A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']))}}
-    {{if session.s3.self_registration:}}
-      {{=A(T('Register'),_href=URL(r=request,c='default',f='user',args=['register']))}}
-    {{pass}}
-  {{pass}}
+  <div id="menu">
+   {{=MENU(response.menu_auth)}}
   </div>
-  <div id="logged">
-  {{if auth.user:}}
-    <p>Logged in as: {{=auth.user.first_name + ' ' + auth.user.last_name}}</p>
-  {{pass}}
-  </div> 
 </div>
 </div>
 <div id="wrapper" class="clearfix">

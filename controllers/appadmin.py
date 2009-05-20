@@ -36,20 +36,18 @@ try:
     if 'Administrator' in session.s3.roles:
         pass
     else:
-        session.error=T('Not Authorised!')
-        redirect(URL(r=request,c='default',f='user',args='login'))
+        session.error = T('Not Authorised!')
+        redirect(URL(r=request, c='default', f='user', args='login'))
 except:
     session.error=T('Not Authorised!')
-    redirect(URL(r=request,c='default',f='user',args='login'))
+    redirect(URL(r=request, c='default', f='user', args='login'))
 
 module='appadmin'
 # Current Module (for sidebar title)
-#module_name=db(db.s3_module.name==module).select()[0].name_nice
-module_name='App Admin'
-# List Modules (from which to build Menu of Modules)
-modules=db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
+#module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = 'App Admin'
 # List Options (from which to build Menu for this Module)
-#options=db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
+#options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
 
 ignore_rw = True
@@ -115,7 +113,7 @@ def get_query(request):
 
 
 def index():
-    return dict(databases=databases,module_name=module_name,modules=modules)
+    return dict(databases=databases, module_name=module_name)
 
 
 # ##########################################################
@@ -128,7 +126,7 @@ def insert():
     form = SQLFORM(db[table], ignore_rw=ignore_rw)
     if form.accepts(request.vars, session):
         response.flash = T('new record inserted')
-    return dict(form=form,module_name=module_name,modules=modules)
+    return dict(form=form, module_name=module_name)
 
 
 # ##########################################################
@@ -237,8 +235,7 @@ def select():
         nrows=nrows,
         rows=rows,
         query=request.vars.query,
-        module_name=module_name,
-        modules=modules
+        module_name=module_name
         )
 
 
@@ -266,7 +263,7 @@ def update():
         redirect(URL(r=request, f='select', args=request.args[:1],
                  vars=dict(query='%s.%s.id>0'
                   % tuple(request.args[:2]))))
-    return dict(form=form,module_name=module_name,modules=modules)
+    return dict(form=form, module_name=module_name)
 
 
 # ##########################################################
@@ -275,6 +272,6 @@ def update():
 
 
 def state():
-    return dict(module_name=module_name,modules=modules)
+    return dict(module_name=module_name)
 
 

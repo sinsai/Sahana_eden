@@ -1,8 +1,6 @@
 module = 'gis'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Modules (from which to build Menu of Modules)
-modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 # List Options (from which to build Menu for this Module)
 options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
@@ -14,7 +12,7 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, modules=modules, options=options)
+    return dict(module_name=module_name, options=options)
 def open_option():
     "Select Option from Module Menu"
     id = request.vars.id
@@ -23,6 +21,7 @@ def open_option():
         redirect(URL(r=request, f='index'))
     option = options[0].function
     redirect(URL(r=request, f=option))
+
 def apikey():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'apikey', deletable=False, listadd=False)
@@ -134,7 +133,7 @@ def feature_create_map():
             if layer.subtype == subtype:
                 virtualearth['%s' % subtype] = layer.name
 
-    return dict(title=title, module_name=module_name, modules=modules, options=options, form=form, projection=projection, openstreetmap=openstreetmap, google=google, yahoo=yahoo, virtualearth=virtualearth)
+    return dict(title=title, module_name=module_name, options=options, form=form, projection=projection, openstreetmap=openstreetmap, google=google, yahoo=yahoo, virtualearth=virtualearth)
     
 # Feature Groups
 # TODO: https://trac.sahanapy.org/wiki/BluePrintMany2Many
@@ -159,7 +158,7 @@ def feature_groups():
     db.gis_feature_group.features.widget = lambda s,v: t2.tag_widget(s, v, items)
     form = crud.create(db.gis_feature_group)
     response.view = 'list_create.html'
-    return dict(title=title, subtitle=subtitle, module_name=module_name, modules=modules, options=options, items=items, form=form)
+    return dict(title=title, subtitle=subtitle, module_name=module_name, options=options, items=items, form=form)
 	
 @auth.requires_login()
 def update_feature_group():
@@ -175,7 +174,7 @@ def update_feature_group():
     form = crud.update(db.gis_feature_group)
     db.gis_feature.represent = lambda table:shn_list_item(table, action='display')
     search = t2.search(db.gis_feature)
-    return dict(module_name=module_name, modules=modules, options=options, form=form, search=search)
+    return dict(module_name=module_name, options=options, form=form, search=search)
 
 def map_service_catalogue():
     """Map Service Catalogue.
@@ -202,7 +201,7 @@ def map_service_catalogue():
         
     title = T('Map Service Catalogue')
     subtitle = T('List Layers')
-    return dict(module_name=module_name, modules=modules, options=options, title=title, subtitle=subtitle, item=XML(items))
+    return dict(module_name=module_name, options=options, title=title, subtitle=subtitle, item=XML(items))
 
 def map_viewing_client():
     """Map Viewing Client.
@@ -212,7 +211,7 @@ def map_viewing_client():
     response.title = title
 
     # Start building the Return with the Framework
-    output = dict(title=title, module_name=module_name, modules=modules, options=options)
+    output = dict(title=title, module_name=module_name, options=options)
     
     # Config
     width = db(db.gis_config.id==1).select()[0].map_width

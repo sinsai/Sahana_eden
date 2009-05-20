@@ -1,8 +1,6 @@
 module = 'default'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Modules (from which to build Menu of Modules)
-modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 # List Options (from which to build Menu for this Module)
 options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
@@ -10,7 +8,7 @@ options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_op
 # (replaces T2)
 def user():
     "Auth functions based on arg. See gluon/tools.py"
-    return dict(form=auth(), module_name=module_name, modules=modules, options=options)
+    return dict(form=auth(), module_name=module_name, options=options)
 #def data():
 #    """Crud functions based on arg. See gluon/tools.py
 #    NB Not used within Sahana
@@ -30,7 +28,7 @@ def index():
     admin_email = db().select(db.s3_setting.admin_email)[0].admin_email
     admin_tel = db().select(db.s3_setting.admin_tel)[0].admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
-    return dict(module_name=module_name, modules=modules, options=options, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
+    return dict(module_name=module_name, options=options, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 def open_module():
     "Select Module"
     id = request.vars.id
@@ -82,4 +80,4 @@ def about_sahana():
     python_version = sys.version
     web2py_version = open(apath('../VERSION'), 'r').read()[8:]
     sahana_version = open(apath('sahana/VERSION'), 'r').read()
-    return dict(module_name=module_name, modules=modules, options=options, python_version=python_version, sahana_version=sahana_version, web2py_version=web2py_version)
+    return dict(module_name=module_name, options=options, python_version=python_version, sahana_version=sahana_version, web2py_version=web2py_version)

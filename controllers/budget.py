@@ -1,15 +1,13 @@
 module = 'budget'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Modules (from which to build Menu of Modules)
-modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 # List Options (from which to build Menu for this Module)
 options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, modules=modules, options=options)
+    return dict(module_name=module_name, options=options)
 
 def open_option():
     "Select Option from Module Menu"
@@ -56,7 +54,7 @@ def kit_item():
     monthly_cost = db.budget_kit[kit].total_monthly_cost
     query = table.kit_id==kit
     # Start building the Return with the common items
-    output = dict(module_name=module_name, modules=modules, options=options, title=title, description=description, total_cost=total_cost, monthly_cost=monthly_cost)
+    output = dict(module_name=module_name, options=options, title=title, description=description, total_cost=total_cost, monthly_cost=monthly_cost)
     if authorised:
         # Display a List_Create page with editable Quantities
         item_list = []
@@ -124,6 +122,7 @@ def totals(form):
         total_minute_cost += (db(db.budget_item.id==item.item_id).select()[0].minute_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
         total_megabyte_cost += (db(db.budget_item.id==item.item_id).select()[0].megabyte_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
     db(db.budget_kit.id==kit_id).update(total_unit_cost=total_unit_cost,total_monthly_cost=total_monthly_cost,total_minute_cost=total_minute_cost,total_megabyte_cost=total_megabyte_cost)
+
 def kit_remove_item():
     "Remove an item from a kit"
     if len(request.args) == 0:
@@ -144,6 +143,7 @@ def kit_remove_item():
     
     # To be completed!
     return
+
 def bundle():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'bundle')

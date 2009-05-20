@@ -1,15 +1,13 @@
 module = 'admin'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Modules (from which to build Menu of Modules)
-modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 # List Options (from which to build Menu for this Module)
 options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, modules=modules, options=options)
+    return dict(module_name=module_name, options=options)
 def open_option():
     "Select Option from Module Menu"
     id = request.vars.id
@@ -46,14 +44,14 @@ def database():
 def import_data():
     "Import data via POST upload to CRUD controller."
     title = T('Import Data')
-    return dict(module_name=module_name, modules=modules, options=options, title=title)
+    return dict(module_name=module_name, options=options, title=title)
 
 # Export Data
 @auth.requires_login()
 def export_data():
     "Export data via CRUD controller."
     title = T('Export Data')
-    return dict(module_name=module_name, modules=modules, options=options, title=title)
+    return dict(module_name=module_name, options=options, title=title)
 
 # Functional Testing
 @auth.requires_membership('Administrator')
@@ -137,4 +135,4 @@ def handleResults():
     
     response.view = 'display.html'
     title = T('Test Results')
-    return dict(module_name=module_name, modules=modules, options=options, title=title, item=message)
+    return dict(module_name=module_name, options=options, title=title, item=message)

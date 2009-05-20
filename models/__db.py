@@ -347,13 +347,6 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
 	)
 
-# Modules Menu
-#response.menu_modules = [
-#    ['Index', False, 
-#     URL(request.application,'default','index'), []],
-#    ]
-    
-    
 # Authorization
 # User Roles
 # uses native Web2Py Auth Groups
@@ -445,9 +438,9 @@ def shn_sessions(f):
     Extend session to support:
         Multiple flash classes
         Settings
-            Self-Registration
             Debug mode
             Audit modes
+            User Roles
     """
     response.error = session.error
     response.confirmation = session.confirmation
@@ -458,7 +451,6 @@ def shn_sessions(f):
     # Keep all our configuration options in a single global variable
     if not session.s3:
         session.s3 = Storage()
-    session.s3.self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
     session.s3.debug = db().select(db.s3_setting.debug)[0].debug
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
@@ -479,6 +471,13 @@ def shn_sessions(f):
     return f()
 response._caller = lambda f: shn_sessions(f)
 
+# Modules Menu (available in all Controllers)
+response.menu_modules = []
+modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
+for module in modules:
+    if not module.access or (module.access in session.s3.roles):
+        response.menu_modules.append([T(module.name_nice), False, URL(r=request,c='default',f='open_module',vars=dict(id='%d'%module.id))])
+    
 #
 # Representations
 #
@@ -758,7 +757,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         addtitle = s3.crud_strings.subtitle_create
                     except:
                         addtitle = T('Add New')
-                    return dict(module_name=module_name, modules=modules, options=options, items=items, form=form, title=title, subtitle=subtitle, addtitle=addtitle)
+                    return dict(module_name=module_name, options=options, items=items, form=form, title=title, subtitle=subtitle, addtitle=addtitle)
                 else:
                     # List only
                     if listadd:
@@ -779,7 +778,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                             response.view = 'table_list.html'
                         else:
                             response.view = 'list.html'
-                    return dict(module_name=module_name, modules=modules, options=options, items=items, title=title, subtitle=subtitle, add_btn=add_btn)
+                    return dict(module_name=module_name, options=options, items=items, title=title, subtitle=subtitle, add_btn=add_btn)
             elif representation == "ajax":
                 #items = crud.select(table, fields=fields, headers=headers)
                 shn_represent(table, module, resource, deletable, main, extra)
@@ -874,7 +873,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     except:
                         label_list_button = T('List All')
                     list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
-                    return dict(module_name=module_name, modules=modules, options=options, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
+                    return dict(module_name=module_name, options=options, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
                 elif representation == "plain":
                     item = crud.read(table, s3.id)
                     response.view = 'plain.html'
@@ -962,7 +961,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         except:
                             label_list_button = T('List All')
                         list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
-                        return dict(module_name=module_name, modules=modules, options=options, form=form, title=title, list_btn=list_btn)
+                        return dict(module_name=module_name, options=options, form=form, title=title, list_btn=list_btn)
                     elif representation == "plain":
                         form = crud.create(table, onvalidation=onvalidation)
                         response.view = 'plain.html'
@@ -1040,9 +1039,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         title = s3.crud_strings.title_update
                         if s3.crud_strings.label_list_button:
                             list_btn = A(s3.crud_strings.label_list_button, _href=URL(r=request, f=resource),_id='list-btn')
-                            return dict(module_name=module_name, modules=modules, options=options, form=form, title=title, list_btn=list_btn)
+                            return dict(module_name=module_name, options=options, form=form, title=title, list_btn=list_btn)
                         else:
-                            return dict(module_name=module_name, modules=modules, options=options, form=form, title=title)
+                            return dict(module_name=module_name, options=options, form=form, title=title)
                     elif representation == "plain":
                         form = crud.update(table, s3.id, onvalidation=onvalidation)
                         response.view = 'plain.html'
@@ -1137,7 +1136,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         else:
                             response.view = 'search.html'
                         title = s3.crud_strings.title_search
-                        return dict(module_name=module_name, modules=modules, options=options, search=search, title=title)
+                        return dict(module_name=module_name, options=options, search=search, title=title)
                     if representation == "json":
                         if request.vars.field and request.vars.filter and request.vars.value:
                             field = str.lower(request.vars.field)

@@ -6,7 +6,7 @@ This file is released under the BSD license
 web2py (required to run this file) is released under the GPLv2 license.
 """
 
-from gluon.storage import Storage
+from gluon.storage import Storage, Messages
 from gluon.http import *
 from gluon.validators import *
 from gluon.sqlhtml import *
@@ -205,6 +205,9 @@ class AuthS3(Auth):
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Auth.__init__(self, environment, db)
+        self.messages.lock_keys = False
+        self.messages.registration_disabled = 'Registration Disabled!'
+        self.messages.lock_keys = True
                 
     def login(
         self,
@@ -310,6 +313,7 @@ class AuthS3(Auth):
         ):
         """
         Overrides Web2Py's register() to add new functionality:
+            * Checks whether registration is permitted
             * Whenever someone registers, it adds them to the 'Authenticated' role
             * Whenever someone registers, it automatically adds their name to the Person Registry
             * Registering automatically logs you in
@@ -317,10 +321,16 @@ class AuthS3(Auth):
 
         returns a registration form
         """
-
         request = self.environment.request
-        response = self.environment.response
         session = self.environment.session
+        # S3: Don't allow registration if disabled
+        db = self.db
+        self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
+        if not self_registration:
+            session.error = self.messages.registration_disabled
+            redirect(URL(r=request, args=['login']))
+
+        response = self.environment.response
         if self.is_logged_in():
             redirect(self.settings.logged_url)
         if not request.vars._next:

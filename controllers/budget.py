@@ -1,22 +1,24 @@
 module = 'budget'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Options (from which to build Menu for this Module)
-options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
+# Options Menu (available in all Functions' Views)
+response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
+    [T('Parameters'), False, URL(r=request, f='parameters')],
+    [T('Items'), False, URL(r=request, f='item')],
+    [T('Kits'), False, URL(r=request, f='kit')],
+    [T('Bundles'), False, URL(r=request, f='bundle')],
+    [T('Staff Types'), False, URL(r=request, f='staff_type')],
+    [T('Locations'), False, URL(r=request, f='location')],
+    [T('Projects'), False, URL(r=request, f='project')],
+    [T('Budgets'), False, URL(r=request, f='budget')],
+]
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, options=options)
+    return dict(module_name=module_name)
 
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option = options[0].function
-    redirect(URL(r=request, f=option))
 
 def parameters():
     "Select which page to go to depending on login status"

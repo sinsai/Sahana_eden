@@ -16,11 +16,6 @@
 </ul>
 <strong>{{=T("Description of Actions")}}:</strong><br/>
 <ul>
-{{for option in options:}}
-{{if option.function=="index":}}
-{{else:}}
-<li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
-{{pass}}
-{{pass}}
+ <li>{{=T('See left-hand menu')}}
 </ul>
 </div>

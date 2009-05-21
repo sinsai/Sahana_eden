@@ -1,54 +1,11 @@
 module = 'cr'
 
-# Menu Options
-table = '%s_menu_option' % module
-db.define_table(table,
-                db.Field('name'),
-                db.Field('function'),
-                db.Field('description',length=256),
-                db.Field('access'),  # Hide menu options if users don't have the required access level
-                db.Field('priority','integer'),
-                db.Field('enabled','boolean',default='True'))
-db[table].name.requires = IS_NOT_IN_DB(db,'%s.name' % table)
-db[table].function.requires = IS_NOT_EMPTY()
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
-db[table].priority.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db[table].ALL)):
-	db[table].insert(
-        name="Home",
-	function="index",
-	priority=0,
-	description="Home",
-	enabled='True'
-	)
-	db[table].insert(
-        name="Add Shelter",
-	function="shelter/create",
-	priority=1,
-	description="Add a shelter to the database",
-	enabled='True'
-	)
-	db[table].insert(
-        name="List Shelters",
-	function="shelter",
-	priority=2,
-	description="List information of all shelters",
-	enabled='True'
-	)
-	db[table].insert(
-        name="Search Shelters",
-	function="shelter/search",
-	priority=3,
-	description="Search List of shelters",
-	enabled='True'
-	)
-
 # Settings
 resource = 'setting'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read','boolean'),
-                db.Field('audit_write','boolean'))
+                db.Field('audit_read', 'boolean'),
+                db.Field('audit_write', 'boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -60,27 +17,27 @@ if not len(db().select(db[table].ALL)):
 
 # Shelters
 resource = 'shelter'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
                 db.Field('name'),
-                db.Field('description',length=256),
+                db.Field('description', length=256),
                 admin_id,
                 location_id,
                 person_id,
-                db.Field('address','text'),
-                db.Field('capacity','integer'),
-                db.Field('dwellings','integer'),
-                db.Field('persons_per_dwelling','integer'),
+                db.Field('address', 'text'),
+                db.Field('capacity', 'integer'),
+                db.Field('dwellings', 'integer'),
+                db.Field('persons_per_dwelling', 'integer'),
                 db.Field('area'))
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
 db[table].name.label = T("Shelter Name")
-db[table].name.comment = SPAN("*",_class="req")
+db[table].name.comment = SPAN("*", _class="req")
 db[table].admin.label = T("Shelter Manager")
 db[table].person_id.label = T("Contact Person")
-db[table].capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0,999999))
-db[table].dwellings.requires = IS_NULL_OR(IS_INT_IN_RANGE(0,99999))
-db[table].persons_per_dwelling.requires = IS_NULL_OR(IS_INT_IN_RANGE(0,999))
+db[table].capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))
+db[table].dwellings.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+db[table].persons_per_dwelling.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999))
 title_create = T('Add Shelter')
 title_display = T('Shelter Details')
 title_list = T('List Shelters')

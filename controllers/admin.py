@@ -1,27 +1,25 @@
 module = 'admin'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Options (from which to build Menu for this Module)
-options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
+# Options Menu (available in all Functions' Views)
+# NB Sync manually with the copy in 'appadmin.py'
+response.menu_options = [
+    [T('Home'), False, URL(r=request, c='admin', f='index')],
+    [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1])],
+    [T('Roles'), False, URL(r=request, c='admin', f='role')],
+    # description="View/Edit the Database directly (caution doesn't respect the framework rules!)"
+    [T('Database'), False, URL(r=request, c='appadmin', f='index')],
+    [T('Import'), False, URL(r=request, c='admin', f='import_data')],
+    [T('Export'), False, URL(r=request, c='admin', f='export_data')],
+    [T('Site Admin'), False, URL(r=request, a='admin', c='default', f='site')],
+    [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
+]
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, options=options)
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option=options[0].function
-    redirect(URL(r=request, f=option))
+    return dict(module_name=module_name)
 
-# Web2Py Site Admin
-def admin():
-    "Redirect to appadmin's site view."
-    redirect(URL(r=request, a='admin', c='default', f='site'))
-    
 @auth.requires_membership('Administrator')
 def setting():
     "RESTlike CRUD controller"
@@ -32,35 +30,21 @@ def role():
     "RESTlike CRUD controller"
     return shn_rest_controller('auth', 'group')
     
-# Database Page
-def database():
-    """Database Page.
-    Redirect to appadmin.
-    """
-    redirect(URL(r=request, c='appadmin', f='index'))
-    
 # Import Data
 @auth.requires_membership('Administrator')
 def import_data():
     "Import data via POST upload to CRUD controller."
     title = T('Import Data')
-    return dict(module_name=module_name, options=options, title=title)
+    return dict(module_name=module_name, title=title)
 
 # Export Data
 @auth.requires_login()
 def export_data():
     "Export data via CRUD controller."
     title = T('Export Data')
-    return dict(module_name=module_name, options=options, title=title)
+    return dict(module_name=module_name, title=title)
 
 # Functional Testing
-@auth.requires_membership('Administrator')
-def test():
-    """Functional Testing.
-    Redirect to Selenium TestRunner.
-    """
-    redirect(URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults'))))
-    
 def handleResults():
     """Process the POST data returned from Selenium TestRunner.
     The data is written out to 2 files.  The overall results are written to 
@@ -135,4 +119,4 @@ def handleResults():
     
     response.view = 'display.html'
     title = T('Test Results')
-    return dict(module_name=module_name, options=options, title=title, item=message)
+    return dict(module_name=module_name, title=title, item=message)

@@ -1,45 +1,11 @@
 module = 'gis'
 
-# Menu Options
-table = '%s_menu_option' % module
-db.define_table(table,
-                db.Field('name'),
-                db.Field('function'),
-                db.Field('description',length=256),
-                db.Field('access'),  # Hide menu options if users don't have the required access level
-                db.Field('priority','integer'),
-                db.Field('enabled','boolean',default='True'))
-db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db[table].function.requires = IS_NOT_EMPTY()
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
-db[table].priority.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db[table].ALL)):
-	db[table].insert(
-        name="Home",
-	function="index",
-	priority=0,
-	description="Home",
-	enabled='True'
-	)
-	db[table].insert(
-        name="Map Viewing Client",
-	function="map_viewing_client",
-	priority=1,
-	enabled='True'
-	)
-	db[table].insert(
-        name="Map Service Catalogue",
-	function="map_service_catalogue",
-	priority=2,
-	enabled='True'
-	)
-
 # Settings
 resource = 'setting'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read','boolean'),
-                db.Field('audit_write','boolean'))
+                db.Field('audit_read', 'boolean'),
+                db.Field('audit_write', 'boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -51,15 +17,15 @@ if not len(db().select(db[table].ALL)):
 
 # GIS Markers (Icons)
 resource = 'marker'
-table = module+'_'+resource
-db.define_table(table,timestamp,uuidstamp,
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
                 db.Field('name'),
-                #db.Field('height','integer'), # In Pixels, for display purposes
-                #db.Field('width','integer'),  # Not needed since we get size client-side using Javascript's Image() class
-                db.Field('image','upload'))
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db[table].name.comment = SPAN("*",_class="req")
+                #db.Field('height', 'integer'), # In Pixels, for display purposes
+                #db.Field('width', 'integer'),  # Not needed since we get size client-side using Javascript's Image() class
+                db.Field('image', 'upload'))
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.comment = SPAN("*", _class="req")
 db[table].image.autodelete = True 
 # Populate table with Default options
 if not len(db().select(db[table].ALL)):
@@ -95,9 +61,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 marker_id = SQLTable(None,'marker_id',
             db.Field('marker',
-                db.gis_marker,requires=IS_NULL_OR(IS_IN_DB(db,'gis_marker.id','gis_marker.name')),
-                represent=lambda id: DIV(A(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_height=40),_class='zoom',_href='#zoom-gis_config-marker-%s' % id),DIV(IMG(_src=URL(r=request,c='default',f='download',args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600),_id='zoom-gis_config-marker-%s' % id,_class='hidden')),
-                comment=DIV(A(T('Add Marker'),_class='popup',_href=URL(r=request,c='gis',f='marker',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Marker|Defines the icon used for display.")))
+                db.gis_marker, requires = IS_NULL_OR(IS_IN_DB(db, 'gis_marker.id', 'gis_marker.name')),
+                represent = lambda id: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden')),
+                comment = DIV(A(T('Add Marker'), _class='popup', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display.")))
                 ))
 
 # GIS Projections

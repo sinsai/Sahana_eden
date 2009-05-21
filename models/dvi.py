@@ -1,51 +1,11 @@
 module = 'dvi'
 
-# Menu Options
-table = '%s_menu_option' % module
-db.define_table(table,
-                db.Field('name'),
-                db.Field('function'),
-                db.Field('description',length=256),
-                db.Field('access'),  # Hide menu options if users don't have the required access level
-                db.Field('priority','integer'),
-                db.Field('enabled','boolean',default='True'))
-db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db[table].function.requires = IS_NOT_EMPTY()
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
-db[table].priority.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db[table].ALL)):
-	db[table].insert(
-        name="Home",
-	function="index",
-	priority=0,
-	description="Home",
-	enabled='True'
-	)
-	db[table].insert(
-        name="Add Body",
-	function="dead_body/create",
-	priority=1,
-	enabled='True'
-	)
-	db[table].insert(
-        name="List Bodies",
-	function="dead_body",
-	priority=2,
-	enabled='True'
-	)
-	db[table].insert(
-        name="Search Bodies",
-	function="dead_body/search",
-	priority=3,
-	enabled='True'
-	)
-
 # Settings
 resource = 'setting'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read','boolean'),
-                db.Field('audit_write','boolean'))
+                db.Field('audit_read', 'boolean'),
+                db.Field('audit_write', 'boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -57,24 +17,24 @@ if not len(db().select(db[table].ALL)):
 
 # Dead bodies
 resource = 'dead_body'
-table = module+'_'+resource
+table = module + '_' + resource
 
-db.define_table(table,timestamp,uuidstamp,
+db.define_table(table, timestamp, uuidstamp,
                 db.Field('tag_label'),      # a unique label
                 db.Field('age_group'),      # age group
                 db.Field('sex'))            # sex
 
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].tag_label.label = T("Tag Label")
-db[table].tag_label.requires = IS_NOT_IN_DB(db,'%s.tag_label' % table)
+db[table].tag_label.requires = IS_NOT_IN_DB(db, '%s.tag_label' % table)
 db[table].tag_label.requires = IS_NOT_EMPTY()
-db[table].tag_label.comment = SPAN("*",_class="req")
+db[table].tag_label.comment = SPAN("*", _class="req")
 db[table].age_group.label = T("Age Group")
 db[table].age_group.requires = IS_NOT_EMPTY()
-db[table].age_group.requires = IS_IN_SET(['Infant','Child','Adolescent','Adult','Elderly'])
+db[table].age_group.requires = IS_IN_SET(['Infant', 'Child', 'Adolescent', 'Adult', 'Elderly'])
 db[table].sex.label = T("Sex")
 db[table].sex.requires = IS_NOT_EMPTY()
-db[table].sex.requires = IS_IN_SET(['Unknown','Female','Male'])
+db[table].sex.requires = IS_IN_SET(['Unknown', 'Female', 'Male'])
 
 title_create = T('Add Dead Body')
 title_display = T('Dead Body Details')

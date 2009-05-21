@@ -1,51 +1,11 @@
 module = 'pr'
 
-# Menu Options
-table = '%s_menu_option' % module
-db.define_table(table,
-                db.Field('name'),
-                db.Field('function'),
-                db.Field('description',length=256),
-                db.Field('access'),  # Hide menu options if users don't have the required access level
-                db.Field('priority','integer'),
-                db.Field('enabled','boolean',default='True'))
-db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
-db[table].function.requires = IS_NOT_EMPTY()
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db,'auth_group.id','auth_group.role'))
-db[table].priority.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.priority' % table)]
-if not len(db().select(db[table].ALL)):
-	db[table].insert(
-        name="Home",
-	function="index",
-	priority=0,
-	description="Home",
-	enabled='True'
-	)
-	db[table].insert(
-        name="Add Person",
-	function="person/create",
-	priority=1,
-	enabled='True'
-	)
-	db[table].insert(
-        name="List People",
-	function="person",
-	priority=2,
-	enabled='True'
-	)
-	db[table].insert(
-        name="Search People",
-	function="person/search",
-	priority=3,
-	enabled='True'
-	)
-
 # Settings
 resource = 'setting'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read','boolean'),
-                db.Field('audit_write','boolean'))
+                db.Field('audit_read', 'boolean'),
+                db.Field('audit_write', 'boolean'))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -64,19 +24,19 @@ db.define_table(table,timestamp,uuidstamp,
                 #db.Field('l10_name'),
                 db.Field('email'),      # Needed for AAA
                 db.Field('mobile_phone'),     # Needed for SMS
-                db.Field('address','text'),
+                db.Field('address', 'text'),
                 db.Field('postcode'),
                 db.Field('website'))
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
-db[table].first_name.comment = SPAN("*",_class="req")
+db[table].first_name.comment = SPAN("*", _class="req")
 db[table].last_name.label = T("Family Name")
-db[table].email.requires = IS_NOT_IN_DB(db,'%s.email' % table)     # Needs to be unique as used for AAA
+db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
-db[table].email.comment = A(SPAN("[Help]"),_class="tooltip",_title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
-db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db,'%s.mobile_phone' % table))   # Needs to be unique as used for AAA
+db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
+db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
 db[table].mobile_phone.label = T("Mobile Phone #")
-db[table].mobile_phone.comment = A(SPAN("[Help]"),_class="tooltip",_title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
+db[table].mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
 db[table].website.requires = IS_NULL_OR(IS_URL())
 title_create = T('Add Person')
 title_display = T('Person Details')
@@ -95,19 +55,19 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 person_id = SQLTable(None,'person_id',
             db.Field('person_id',
-                db.pr_person,requires=IS_NULL_OR(IS_IN_DB(db,'pr_person.id','%(id)s: %(first_name)s %(last_name)s')),
-                represent=lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
-                comment=DIV(A(T('Add Contact'),_class='popup',_href=URL(r=request,c='pr',f='person',args='create',vars=dict(format='plain')),_target='top'),A(SPAN("[Help]"),_class="tooltip",_title=T("Contact|The Person to contact for this.")))
+                db.pr_person,requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
+                represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
+                comment = DIV(A(T('Add Contact'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Contact|The Person to contact for this.")))
                 ))
 
 # Contacts
 resource = 'contact'
-table = module+'_'+resource
-db.define_table(table,timestamp,uuidstamp,
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
                 db.Field('name'),   # Contact type
                 db.Field('value'))
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = IS_IN_SET(['phone','fax','skype','msn','yahoo'])
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = IS_IN_SET(['phone', 'fax', 'skype', 'msn', 'yahoo'])
 db[table].value.requires = IS_NOT_EMPTY()
 title_create = T('Add Contact Detail')
 title_display = T('Contact Details')
@@ -126,12 +86,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 # Contacts to People
 resource = 'contact_to_person'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,timestamp,
-                db.Field('person_id',db.pr_person),
-                db.Field('contact_id',db.pr_contact))
+                db.Field('person_id', db.pr_person),
+                db.Field('contact_id', db.pr_contact))
 db[table].person_id.label = 'Person'
-db[table].contact_id.requires = IS_IN_DB(db,'pr_contact.id','pr_contact.name')
+db[table].contact_id.requires = IS_IN_DB(db, 'pr_contact.id', 'pr_contact.name')
 db[table].contact_id.label = 'Contact Detail'
 
 

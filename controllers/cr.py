@@ -1,27 +1,18 @@
 module = 'cr'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Options (from which to build Menu for this Module)
-options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
-
-# http://groups.google.com/group/web2py/browse_thread/thread/53086d5f89ac3ae2
-def call():
-    "Call an XMLRPC, JSONRPC or RSS service"
-    return service()
-
+# Options Menu (available in all Functions' Views)
+response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
+    [T('Add Shelter'), False, URL(r=request, f='shelter', args='create')],
+    [T('List Shelters'), False, URL(r=request, f='shelter')],
+    [T('Search Shelters'), False, URL(r=request, f='shelter', args='search')]
+]
+        
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, options=options)
-
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option = options[0].function
-    redirect(URL(r=request, f=option))
+    return dict(module_name=module_name)
 
 def shelter():
     """ RESTlike CRUD controller
@@ -45,6 +36,11 @@ def shelter():
     >>> test.assertHeader("Content-Type", "text/csv")
     """
     return shn_rest_controller(module, 'shelter')
+
+# http://groups.google.com/group/web2py/browse_thread/thread/53086d5f89ac3ae2
+def call():
+    "Call an XMLRPC, JSONRPC or RSS service"
+    return service()
 
 @service.jsonrpc
 @service.xmlrpc

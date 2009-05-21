@@ -1,8 +1,12 @@
 module = 'default'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Options (from which to build Menu for this Module)
-options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
+# Options Menu (available in all Functions)
+response.menu_options = []
+options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL, orderby=db['%s_menu_option' % module].priority)
+for option in options:
+    if not option.access or (option.access in session.s3.roles):
+        response.menu_options.append([T(option.name), False, URL(r=request,f='open_option',vars=dict(id='%d' % option.id))])
 
 # Web2Py Tools functions
 # (replaces T2)

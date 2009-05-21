@@ -42,20 +42,30 @@ except:
     session.error=T('Not Authorised!')
     redirect(URL(r=request, c='default', f='user', args='login'))
 
-module='appadmin'
+module='admin'
 # Current Module (for sidebar title)
-#module_name = db(db.s3_module.name==module).select()[0].name_nice
-module_name = 'App Admin'
-# List Options (from which to build Menu for this Module)
-#options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
-
+module_name = db(db.s3_module.name==module).select()[0].name_nice
+# Options Menu (available in all Functions' Views)
+# NB Sync manually with the copy in 'admin.py'
+response.menu_options = [
+    [T('Home'), False, URL(r=request, c='admin', f='index')],
+    [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1])],
+    [T('Roles'), False, URL(r=request, c='admin', f='role')],
+    # description="View/Edit the Database directly (caution doesn't respect the framework rules!)"
+    [T('Database'), False, URL(r=request, c='appadmin', f='index')],
+    [T('Import'), False, URL(r=request, c='admin', f='import_data')],
+    [T('Export'), False, URL(r=request, c='admin', f='export_data')],
+    [T('Site Admin'), False, URL(r=request, a='admin', c='default', f='site')],
+    [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
+]
 
 ignore_rw = True
 response.view = 'admin/appadmin.html'
-response.menu = [[T('design'), False, URL('admin', 'default', 'design',
-                 args=[request.application])], [T('db'), False,
-                 URL(r=request, f='index')], [T('state'), False,
-                 URL(r=request, f='state')]]
+#response.menu = [[T('design'), False, URL('admin', 'default', 'design',
+#                 args=[request.application])], [T('db'), False,
+#                 URL(r=request, f='index')], [T('state'), False,
+#                 URL(r=request, f='state')]]
+                 
 
 # ##########################################################
 # ## auxiliary functions

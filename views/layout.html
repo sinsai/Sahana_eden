@@ -28,39 +28,11 @@
     {{=H2(module_name)}}
    {{except:}}
    {{pass}}
-   {{if response.menu:}}
-    {{=MENU(response.menu)}}
+  <div id="modmenu">
+   {{if response.menu_options:}}
+    {{=MENU(response.menu_options)}}
    {{pass}}
-  <ul id="modmenu">
- {{try:}}
-  {{for option in options:}}
-   {{if not option.access or (option.access in session.s3.roles):}}
-     {{if option.function=='submenu':}}
-    <li>
-  {{try:}}
-   {{if ( session.menu_open.module_name == module_name ) and ( option.name in session.menu_open.open_menus ):}}
-    <a class="smclose" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
-    <ul id="{{=option.name}}" style="display: block;">
-   {{else:}}
-    <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
-    <ul id="{{=option.name}}" style="display: none;">
-   {{pass}}
-  {{except:}}
-    <a class="smopen" title="{{=option.name}}" href="#">{{=T(option.name)}}</a>
-    <ul id="{{=option.name}}" style="display: none;">
-  {{pass}}
-     {{elif option.function=='submenu/end':}}
-    </ul>
-    </li>
-     {{else:}}
-    <li>{{=A(T(option.name),_href=URL(r=request,f='open_option',vars=dict(id='%d'%option.id)))}}</li>
-     {{pass}}
-    {{pass}}
-  {{pass}}
-    </ul>
- {{except:}}
- {{pass}}
-</ul>
+  </div>
   </div>
   <div id="menuwrap">
    <h2>{{=T("Modules")}}</h2>  

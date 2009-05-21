@@ -1,21 +1,25 @@
 module = 'or'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Options (from which to build Menu for this Module)
-options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
+# Options Menu (available in all Functions' Views)
+response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
+    [T('Organisations'), False, '#',[
+        [T('Add Organisation'), False, URL(r=request, f='organisation', args='create')],
+        [T('List Organisations'), False, URL(r=request, f='organisation')],
+        [T('Search Organisations'), False, URL(r=request, f='organisation', args='search')]
+    ]],
+    [T('Offices'), False, '#',[
+        [T('Add Office'), False, URL(r=request, f='office', args='create')],
+        [T('List Offices'), False, URL(r=request, f='office')],
+        [T('Search Offices'), False, URL(r=request, f='office', args='search')]
+    ]]
+]
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, options=options)
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option = options[0].function
-    redirect(URL(r=request, f=option))
+    return dict(module_name=module_name)
 
 @service.jsonrpc
 @service.xmlrpc
@@ -23,12 +27,14 @@ def open_option():
 def organisation():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'organisation')
+
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
 def office():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'office', extra='organisation type')
+
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc

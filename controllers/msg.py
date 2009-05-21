@@ -1,21 +1,19 @@
 module = 'msg'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# List Options (from which to build Menu for this Module)
-options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL,orderby=db['%s_menu_option' % module].priority)
+# Options Menu (available in all Functions' Views)
+response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
+    [T('Send SMS'), False, URL(r=request, f='outgoing_sms', args='create')],
+    [T('List Received SMS'), False, URL(r=request, f='incoming_sms')],
+    [T('List Sent SMS'), False, URL(r=request, f='outgoing_sms')],
+    [T('Search SMS'), False, URL(r=request, f='message', args='search')]
+]
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, options=options)
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option = options[0].function
-    redirect(URL(r=request, f=option))
+    return dict(module_name=module_name)
 
 def outgoing_sms():
     " RESTlike CRUD controller "

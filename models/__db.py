@@ -106,7 +106,7 @@ deletion_status = SQLTable(None, 'deletion_status',
 # Reusable Admin field
 admin_id = SQLTable(None, 'admin_id',
             db.Field('admin',
-                db.auth_group,requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
+                db.auth_group, requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
                 comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='default', f='role', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record.")))
                 ))
@@ -140,8 +140,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 module = 's3'
 # Settings - systemwide
 resource = 'setting'
-table = module+'_'+resource
-db.define_table(table,timestamp,
+table = module + '_' + resource
+db.define_table(table, timestamp,
                 db.Field('admin_name'),
                 db.Field('admin_email'),
                 db.Field('admin_tel'),
@@ -155,18 +155,18 @@ db[table].security_policy.requires = IS_IN_SET(['simple', 'full'])
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
    db[table].insert(
-        admin_name=T("Sahana Administrator"),
-        admin_email=T("support@Not Set"),
-        admin_tel=T("Not Set"),
+        admin_name = T("Sahana Administrator"),
+        admin_email = T("support@Not Set"),
+        admin_tel = T("Not Set"),
         # Debug => Load all JS/CSS independently & uncompressed. Change to True for Production deployments (& hence stable branches)
-        debug=True,
+        debug = True,
         # Change to enable a customised security policy
         security_policy = 'simple',
         # Change to False to disable Self-Registration
-        self_registration=True,
+        self_registration = True,
         # Change to True to enable Auditing at the Global level (if False here, individual Modules can still enable it for them)
-        audit_read=False,
-        audit_write=False
+        audit_read = False,
+        audit_write = False
     )
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
 title_create = T('Add Setting')
@@ -186,8 +186,8 @@ s3.crud_strings[resource] = Storage(title_create=title_create, title_display=tit
 
 # Web2Py Menus
 if not auth.is_logged_in():
-    s3.self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
-    if s3.self_registration:
+    self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
+    if self_registration:
         response.menu_auth = [
             [T('Login'), False, URL(request.application, 'default', 'user/login'),
              [
@@ -220,17 +220,18 @@ else:
 
 # Modules
 resource = 'module'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,
                 db.Field('name'),
                 db.Field('name_nice'),
-                db.Field('access', db.auth_group),  # Hide modules if users don't have the required access level (NB Not yet implemented either in layout.html or the controllers)
+                #db.Field('access', db.auth_group),  # Hide modules if users don't have the required access level (NB Not yet implemented either in layout.html or the controllers)
+                db.Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in layout.html or the controllers)
                 db.Field('priority', 'integer'),
                 db.Field('description', length=256),
                 db.Field('enabled','boolean', default='True'))
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role'))
+#db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role'))
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 # Populate table with Default modules
 if not len(db().select(db[table].ALL)):
@@ -246,7 +247,7 @@ if not len(db().select(db[table].ALL)):
         name="admin",
         name_nice="Administration",
         priority=1,
-        access='',
+        access='Administrator',
         description="Site Administration",
         enabled='True'
 	)
@@ -356,7 +357,7 @@ if not len(db().select(db[table].ALL)):
     # Administrators can edit system settings & access all data
     auth.add_group('Administrator', description = 'System Administrator - can access & make changes to any data')
     # 1st person created will be System Administrator (can be changed later)
-    auth.add_membership(1,1)
+    auth.add_membership(1, 1)
     # Anonymous users
     auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
     # Authenticated users
@@ -367,7 +368,7 @@ if not len(db().select(db[table].ALL)):
 # Auditing
 # ToDo: consider using native Web2Py log to auth_events
 resource = 'audit'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,timestamp,
                 db.Field('person', db.auth_user),
                 db.Field('operation'),
@@ -389,7 +390,7 @@ db.define_table(table,
                 db.Field('access'),  # Hide menu options if users don't have the required access level
                 db.Field('priority', 'integer'),
                 db.Field('enabled', 'boolean', default='True'))
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db,'%s.name' % table)]
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].function.requires = IS_NOT_EMPTY()
 db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role'))
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
@@ -404,7 +405,7 @@ if not len(db().select(db[table].ALL)):
 
 # Settings - home
 resource = 'setting'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
                 db.Field('audit_write', 'boolean'))
@@ -420,7 +421,7 @@ if not len(db().select(db[table].ALL)):
 # Settings - appadmin
 module = 'appadmin'
 resource = 'setting'
-table = module+'_'+resource
+table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
                 db.Field('audit_write', 'boolean'))
@@ -475,9 +476,13 @@ response._caller = lambda f: shn_sessions(f)
 response.menu_modules = []
 modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL,orderby=db.s3_module.priority)
 for module in modules:
-    if not module.access or (module.access in session.s3.roles):
-        response.menu_modules.append([T(module.name_nice), False, URL(r=request,c='default',f='open_module',vars=dict(id='%d'%module.id))])
-    
+    if not module.access:
+        response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+    else:
+        if auth.is_logged_in():
+            if module.access in session.s3.roles:
+                response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+
 #
 # Representations
 #
@@ -757,7 +762,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         addtitle = s3.crud_strings.subtitle_create
                     except:
                         addtitle = T('Add New')
-                    return dict(module_name=module_name, options=options, items=items, form=form, title=title, subtitle=subtitle, addtitle=addtitle)
+                    return dict(module_name=module_name, items=items, form=form, title=title, subtitle=subtitle, addtitle=addtitle)
                 else:
                     # List only
                     if listadd:
@@ -778,7 +783,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                             response.view = 'table_list.html'
                         else:
                             response.view = 'list.html'
-                    return dict(module_name=module_name, options=options, items=items, title=title, subtitle=subtitle, add_btn=add_btn)
+                    return dict(module_name=module_name, items=items, title=title, subtitle=subtitle, add_btn=add_btn)
             elif representation == "ajax":
                 #items = crud.select(table, fields=fields, headers=headers)
                 shn_represent(table, module, resource, deletable, main, extra)
@@ -873,7 +878,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     except:
                         label_list_button = T('List All')
                     list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
-                    return dict(module_name=module_name, options=options, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
+                    return dict(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
                 elif representation == "plain":
                     item = crud.read(table, s3.id)
                     response.view = 'plain.html'
@@ -961,7 +966,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         except:
                             label_list_button = T('List All')
                         list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
-                        return dict(module_name=module_name, options=options, form=form, title=title, list_btn=list_btn)
+                        return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
                     elif representation == "plain":
                         form = crud.create(table, onvalidation=onvalidation)
                         response.view = 'plain.html'
@@ -1039,9 +1044,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         title = s3.crud_strings.title_update
                         if s3.crud_strings.label_list_button:
                             list_btn = A(s3.crud_strings.label_list_button, _href=URL(r=request, f=resource),_id='list-btn')
-                            return dict(module_name=module_name, options=options, form=form, title=title, list_btn=list_btn)
+                            return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
                         else:
-                            return dict(module_name=module_name, options=options, form=form, title=title)
+                            return dict(module_name=module_name, form=form, title=title)
                     elif representation == "plain":
                         form = crud.update(table, s3.id, onvalidation=onvalidation)
                         response.view = 'plain.html'
@@ -1136,7 +1141,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         else:
                             response.view = 'search.html'
                         title = s3.crud_strings.title_search
-                        return dict(module_name=module_name, options=options, search=search, title=title)
+                        return dict(module_name=module_name, search=search, title=title)
                     if representation == "json":
                         if request.vars.field and request.vars.filter and request.vars.value:
                             field = str.lower(request.vars.field)

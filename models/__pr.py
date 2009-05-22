@@ -20,17 +20,19 @@ resource = 'person'
 table = module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
                 db.Field('first_name'),
-                db.Field('last_name'),  # Family Name
-                #db.Field('l10_name'),
-                db.Field('email'),      # Needed for AAA
-                db.Field('mobile_phone'),     # Needed for SMS
+                db.Field('middle_name'),
+                db.Field('last_name'),      # Family Name?
+                db.Field('preferred_name'),
+                #db.Field('l10_name'),      # SahanaPHP has this
+                db.Field('email'),          # Needed for AAA
+                db.Field('mobile_phone'),   # Needed for SMS
                 db.Field('address', 'text'),
                 db.Field('postcode'),
                 db.Field('website'))
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment = SPAN("*", _class="req")
-db[table].last_name.label = T("Family Name")
+#db[table].last_name.label = T("Family Name")
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))

@@ -60,18 +60,6 @@ function make_delete_row() {
 make_delete_row();
 
 $(document).ready(function() {
-    $('a.smopen, a.smclose').click(function(){
-        $(this).toggleClass('smopen');
-        $(this).toggleClass('smclose');
-        if ($(this).next().css('display') == 'block') {
-            $(this).next().css('display','none');
-            $.ajax({url: "{{=URL(r=request,c='default',f='menu_close')}}",data: "module_name={{try:}}{{=module_name}}{{except:}}{{pass}}&option_name="+$(this).attr('title'),cache: false});
-        } else {
-            $(this).next().css('display','block');
-            $.ajax({url: "{{=URL(r=request,c='default',f='menu_open')}}",data: "module_name={{try:}}{{=module_name}}{{except:}}{{pass}}&option_name="+$(this).attr('title'),cache: false,});
-        }
-        return false;
-    });
     $('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
         { event.default(); } else { event.preventDefault(); }
         return false; });

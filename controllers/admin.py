@@ -6,7 +6,7 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, c='admin', f='index')],
     [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1])],
-    [T('Roles'), False, URL(r=request, c='admin', f='role')],
+    [T('Roles'), False, URL(r=request, c='admin', f='group')],
     # description="View/Edit the Database directly (caution doesn't respect the framework rules!)"
     [T('Database'), False, URL(r=request, c='appadmin', f='index')],
     [T('Import'), False, URL(r=request, c='admin', f='import_data')],
@@ -23,12 +23,13 @@ def index():
 @auth.requires_membership('Administrator')
 def setting():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'setting')
+    s3.crud_strings.setting.label_list_button = None
+    return shn_rest_controller('s3', 'setting', deletable=False)
 
 @auth.requires_membership('Administrator')
-def role():
+def group():
     "RESTlike CRUD controller"
-    return shn_rest_controller('auth', 'group')
+    return shn_rest_controller('auth', 'group', main='role', extra='description')
     
 # Import Data
 @auth.requires_membership('Administrator')

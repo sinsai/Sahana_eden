@@ -141,7 +141,7 @@ module = 's3'
 # Settings - systemwide
 resource = 'setting'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, uuidstamp,
                 db.Field('admin_name'),
                 db.Field('admin_email'),
                 db.Field('admin_tel'),
@@ -1032,6 +1032,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                             old_value=old_value,
                             new_value=''
                         )
+                    crud.settings.update_deletable = deletable
                     if representation == "html":
                         form = crud.update(table, s3.id, onvalidation=onvalidation)
                         # Check for presence of Custom View

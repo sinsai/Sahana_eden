@@ -597,3 +597,49 @@ for layertype in gis_layer_types:
 #                db.Field('user',db.auth_user))
 #db.gis_webmapcontext.user.requires = IS_IN_DB(db,'auth_user.id','auth_user.email')
 
+# Onvalidation callbacks
+def wkt_centroid(form):
+    """GIS
+    If a Point has LonLat defined: calculate the WKT.
+    If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
+    Centroid calculation is done using Shapely, which wraps Geos.
+    A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+    """
+    if form.vars.type == 'point':
+        if form.vars.lon == None:
+            form.errors['lon'] = T("Invalid: Longitude can't be empty!")
+            return
+        if form.vars.lat == None:
+            form.errors['lat'] = T("Invalid: Latitude can't be empty!")
+            return
+        form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
+    elif form.vars.type == 'line':
+        try:
+            from shapely.wkt import loads
+            try:
+                line = loads(form.vars.wkt)
+            except:
+                form.errors['wkt'] = T("Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!")
+                return
+            centroid_point = line.centroid
+            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+        except:
+            #form.errors['type'] = str(A('Shapely',_href='http://pypi.python.org/pypi/Shapely/',_target='_blank'))+str(T(" library not found, so can't find centroid!"))
+            form.errors['type'] = T("Shapely library not found, so can't find centroid!")
+    elif form.vars.type == 'polygon':
+        try:
+            from shapely.wkt import loads
+            try:
+                polygon = loads(form.vars.wkt)
+            except:
+                form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
+                return
+            centroid_point = polygon.centroid
+            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+        except:
+            form.errors['type'] = T("Shapely library not found, so can't find centroid!")
+    else:
+        form.errors['type'] = T('Unknown type!')
+    return

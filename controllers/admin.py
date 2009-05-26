@@ -2,6 +2,7 @@ module = 'admin'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
+# - can Insert/Delete items from default menus within a function, if required.
 # NB Sync manually with the copy in 'appadmin.py'
 response.menu_options = [
     [T('Home'), False, URL(r=request, c='admin', f='index')],

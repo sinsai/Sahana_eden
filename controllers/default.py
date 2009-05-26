@@ -12,15 +12,12 @@ for option in options:
 # (replaces T2)
 def user():
     "Auth functions based on arg. See gluon/tools.py"
-    return dict(form=auth(), module_name=module_name, options=options)
-#def data():
-#    """Crud functions based on arg. See gluon/tools.py
-#    NB Not used within Sahana
-#    """
-#    return dict(form=crud(), module_name=module_name, modules=modules, options=options)
+    return dict(form=auth(), module_name=module_name)
+
 def download():
     "Download a file."
     return response.download(request, db) 
+
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
     return service()
@@ -33,6 +30,7 @@ def index():
     admin_tel = db().select(db.s3_setting.admin_tel)[0].admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
     return dict(module_name=module_name, options=options, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
+
 def open_module():
     "Select Module"
     id = request.vars.id
@@ -41,6 +39,7 @@ def open_module():
         redirect(URL(r=request, f='index'))
     module = modules[0].name
     redirect(URL(r=request, c=module, f='index'))
+
 def open_option():
     "Select Option from Module Menu"
     id = request.vars.id
@@ -49,25 +48,7 @@ def open_option():
         redirect(URL(r=request, f='index'))
     option = options[0].function
     redirect(URL(r=request, f=option))
-def menu_open():
-    if not session.menu_open:
-        session.menu_open = Storage()
-        session.menu_open.open_menus = []
-    if not (session.menu_open.module_name==request.vars.module_name):
-        session.menu_open.module_name = request.vars.module_name
-        session.menu_open.open_menus = []
-    session.menu_open.open_menus.append(request.vars.option_name)
-    return dict(module_name = session.menu_open.module_name)
-def menu_close():
-    if session.menu_open:
-        if session.menu_open.module_name == request.vars.module_name:
-            try:
-                session.menu_open.open_menus.remove(request.vars.option_name)
-            except:
-                pass
-    response.view = 'default/menu_open.html'
-    return dict(module_name = session.menu_open.module_name)
-    
+
 # About Sahana
 def apath(path=''):
     "Application path"
@@ -84,4 +65,4 @@ def about_sahana():
     python_version = sys.version
     web2py_version = open(apath('../VERSION'), 'r').read()[8:]
     sahana_version = open(apath('sahana/VERSION'), 'r').read()
-    return dict(module_name=module_name, options=options, python_version=python_version, sahana_version=sahana_version, web2py_version=web2py_version)
+    return dict(module_name=module_name, python_version=python_version, sahana_version=sahana_version, web2py_version=web2py_version)

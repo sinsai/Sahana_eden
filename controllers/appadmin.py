@@ -33,7 +33,7 @@ global_env['datetime'] = datetime
 # S3 Auth
 #
 try:
-    if 'Administrator' in session.s3.roles:
+    if auth.has_membership(1):
         pass
     else:
         session.error = T('Not Authorised!')

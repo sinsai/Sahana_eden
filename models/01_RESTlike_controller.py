@@ -33,7 +33,7 @@ def has_permission(name, table_name, record_id = 0):
             authorised = auth.is_logged_in()
     else:
         # Administrators are always authorised
-        if 'Administrator' in session.s3.roles:
+        if auth.has_membership(1):
             authorised = True
         else:
             # Require records in auth_permission to specify access
@@ -50,7 +50,7 @@ def accessible_query(name, table):
     if security == 'simple':
         return table.id > 0
     # Administrators can see all data
-    if 'Administrator' in session.s3.roles:
+    if auth.has_membership(1):
         return table.id > 0
     # If there is access to the entire table then show all records
     user_id = auth.user.id

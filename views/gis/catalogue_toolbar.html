@@ -1,6 +1,6 @@
 <table>
 <tr><td id='btn-panel'>
-{{if 'Administrator' in session.s3.roles:}}
+{{if auth.has_membership(1):}}
 <a href="{{=URL(r=request,c='gis',f='config',args=['update','1'])}}">
 {{else:}}
 <a href="{{=URL(r=request,c='gis',f='config',args=['display','1'])}}">

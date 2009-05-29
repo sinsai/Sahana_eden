@@ -1,4 +1,5 @@
 import os, traceback, datetime
+import re
 
 # This scaffolding model makes your app work on Google App Engine too   #
 #try:
@@ -205,14 +206,14 @@ table = module + '_' + resource
 db.define_table(table,
                 db.Field('name'),
                 db.Field('name_nice'),
-                #db.Field('access', db.auth_group),  # Hide modules if users don't have the required access level (NB Not yet implemented either in layout.html or the controllers)
-                db.Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in layout.html or the controllers)
+                db.Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in the Modules menu or the Controllers)
                 db.Field('priority', 'integer'),
                 db.Field('description', length=256),
                 db.Field('enabled','boolean', default='True'))
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
-#db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role'))
+db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role', multiple=True))
+#db[table].access.requires = IS_IN_DB(db, 'auth_group.id', 'auth_group.role', multiple=True)
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 # Populate table with Default modules
 if not len(db().select(db[table].ALL)):
@@ -228,7 +229,7 @@ if not len(db().select(db[table].ALL)):
         name="admin",
         name_nice="Administration",
         priority=1,
-        access='Administrator',
+        access='|1|',        # Administrator
         description="Site Administration",
         enabled='True'
 	)
@@ -355,44 +356,6 @@ db.define_table(table,timestamp,
                 db.Field('new_value'))
 db[table].operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list'])
 
-module = 'default'
-# Home Menu Options
-table = '%s_menu_option' % module
-db.define_table(table,
-                db.Field('name'),
-                db.Field('function'),
-                db.Field('description', length=256),
-                db.Field('access'),  # Hide menu options if users don't have the required access level
-                db.Field('priority', 'integer'),
-                db.Field('enabled', 'boolean', default='True'))
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].function.requires = IS_NOT_EMPTY()
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role'))
-db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
-# Populate table with Default options
-if not len(db().select(db[table].ALL)):
-	db[table].insert(
-        name="About Sahana",
-        function="about_sahana",
-        priority=0,
-        enabled='True'
-	)
-
-# Settings - home
-resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
-# Populate table with Default options
-# - deployments can change these live via appadmin
-if not len(db().select(db[table].ALL)): 
-   db[table].insert(
-        # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read = False,
-        audit_write = False
-    )
-
 # Settings - appadmin
 module = 'appadmin'
 resource = 'setting'
@@ -416,7 +379,6 @@ def shn_sessions(f):
         Settings
             Debug mode
             Audit modes
-            User Roles
     """
     response.error = session.error
     response.confirmation = session.confirmation
@@ -437,13 +399,6 @@ def shn_sessions(f):
         session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write or db().select(db['%s_setting' % request.controller].audit_write)[0].audit_write
     except:
         session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write
-    # Which roles does a user have?
-    session.s3.roles = []
-    if auth.is_logged_in():
-        roles = db(db.auth_membership.user_id==auth.user.id).select(db.auth_membership.group_id)
-        for role in roles:
-            role_name = db(db.auth_group.id==role.group_id).select(db.auth_group.role)[0].role
-            session.s3.roles.append(role_name)
     return f()
 response._caller = lambda f: shn_sessions(f)
 
@@ -454,9 +409,13 @@ for module in modules:
     if not module.access:
         response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
     else:
-        if auth.is_logged_in():
-            if module.access in session.s3.roles:
-                response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+        authorised = False
+        groups = re.split('\|', module.access)[1:-1]
+        for group in groups:
+            if auth.has_membership(group):
+                authorised = True
+        if authorised == True:
+            response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
 
 #
 # Widgets

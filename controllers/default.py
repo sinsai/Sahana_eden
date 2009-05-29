@@ -2,11 +2,9 @@ module = 'default'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions)
-response.menu_options = []
-options = db(db['%s_menu_option' % module].enabled=='Yes').select(db['%s_menu_option' % module].ALL, orderby=db['%s_menu_option' % module].priority)
-for option in options:
-    if not option.access or (option.access in session.s3.roles):
-        response.menu_options.append([T(option.name), False, URL(r=request,f='open_option',vars=dict(id='%d' % option.id))])
+response.menu_options = [
+    [T('About Sahana'), False, URL(r=request, f='about_sahana')],
+]
 
 # Web2Py Tools functions
 # (replaces T2)
@@ -29,7 +27,7 @@ def index():
     admin_email = db().select(db.s3_setting.admin_email)[0].admin_email
     admin_tel = db().select(db.s3_setting.admin_tel)[0].admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
-    return dict(module_name=module_name, options=options, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
+    return dict(module_name=module_name, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def open_module():
     "Select Module"
@@ -39,15 +37,6 @@ def open_module():
         redirect(URL(r=request, f='index'))
     module = modules[0].name
     redirect(URL(r=request, c=module, f='index'))
-
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option = options[0].function
-    redirect(URL(r=request, f=option))
 
 # About Sahana
 def apath(path=''):

@@ -50,12 +50,12 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, c='admin', f='index')],
     [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1])],
-    [T('Roles'), False, URL(r=request, c='admin', f='role')],
-    # description="View/Edit the Database directly (caution doesn't respect the framework rules!)"
-    [T('Database'), False, URL(r=request, c='appadmin', f='index')],
+    [T('Users'), False, URL(r=request, c='admin', f='user')],
+    [T('Roles'), False, URL(r=request, c='admin', f='group')],
     [T('Import'), False, URL(r=request, c='admin', f='import_data')],
     [T('Export'), False, URL(r=request, c='admin', f='export_data')],
-    [T('Site Admin'), False, URL(r=request, a='admin', c='default', f='site')],
+    [T('Database'), False, URL(r=request, c='appadmin', f='index')],
+    [T('Edit Application'), False, URL(r=request, a='admin', c='default', f='design', args=['sahana'])],
     [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
 ]
 

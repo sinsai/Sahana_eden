@@ -103,6 +103,22 @@ s3 = Storage()
 s3.crud_strings = Storage()
 s3.display = Storage()
 
+table = 'auth_user'
+title_create = T('Add User')
+title_display = T('User Details')
+title_list = T('List Users')
+title_update = T('Edit User')
+title_search = T('Search Users')
+subtitle_create = T('Add New User')
+subtitle_list = T('Users')
+label_list_button = T('List Users')
+label_create_button = T('Add User')
+msg_record_created = T('User added')
+msg_record_modified = T('User updated')
+msg_record_deleted = T('User deleted')
+msg_list_empty = T('No Users currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
 table = 'auth_group'
 title_create = T('Add Role')
 title_display = T('Role Details')
@@ -116,7 +132,7 @@ label_create_button = T('Add Role')
 msg_record_created = T('Role added')
 msg_record_modified = T('Role updated')
 msg_record_deleted = T('Role deleted')
-msg_list_empty = T('No Roles currently registered')
+msg_list_empty = T('No Roles currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 module = 's3'

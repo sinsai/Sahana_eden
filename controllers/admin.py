@@ -7,11 +7,16 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, c='admin', f='index')],
     [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1])],
-    [T('Users'), False, URL(r=request, c='admin', f='user')],
-    [T('Roles'), False, URL(r=request, c='admin', f='group')],
-    [T('Import'), False, URL(r=request, c='admin', f='import_data')],
-    [T('Export'), False, URL(r=request, c='admin', f='export_data')],
-    [T('Database'), False, URL(r=request, c='appadmin', f='index')],
+    [T('User Management'), False, '#', [
+        [T('Users'), False, URL(r=request, c='admin', f='user')],
+        [T('Roles'), False, URL(r=request, c='admin', f='group')],
+        [T('Membership'), False, URL(r=request, c='admin', f='membership')]
+    ]],
+    [T('Database'), False, '#', [
+        [T('Import'), False, URL(r=request, c='admin', f='import_data')],
+        [T('Export'), False, URL(r=request, c='admin', f='export_data')],
+        [T('Raw Database access'), False, URL(r=request, c='appadmin', f='index')]
+    ]],
     [T('Edit Application'), False, URL(r=request, a='admin', c='default', f='design', args=['sahana'])],
     [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
 ]
@@ -36,6 +41,11 @@ def user():
 def group():
     "RESTlike CRUD controller"
     return shn_rest_controller('auth', 'group', main='role', extra='description')
+    
+@auth.requires_membership('Administrator')
+def membership():
+    "RESTlike CRUD controller"
+    return shn_rest_controller('auth', 'membership', main='user_id', extra='group_id')
     
 # Import Data
 @auth.requires_membership('Administrator')

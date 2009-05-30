@@ -135,6 +135,22 @@ msg_record_deleted = T('Role deleted')
 msg_list_empty = T('No Roles currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+table = 'auth_membership'
+title_create = T('Add Membership')
+title_display = T('Membership Details')
+title_list = T('List Memberships')
+title_update = T('Edit Membership')
+title_search = T('Search Memberships')
+subtitle_create = T('Add New Membership')
+subtitle_list = T('Memberships')
+label_list_button = T('List Memberships')
+label_create_button = T('Add Membership')
+msg_record_created = T('Membership added')
+msg_record_modified = T('Membership updated')
+msg_record_deleted = T('Membership deleted')
+msg_list_empty = T('No Memberships currently defined')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
 module = 's3'
 # Settings - systemwide
 resource = 'setting'

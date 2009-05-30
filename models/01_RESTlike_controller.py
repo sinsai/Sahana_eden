@@ -496,7 +496,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                             response.view = module + '/' + custom_view
                         else:
                             response.view = 'update.html'
-                        title = s3.crud_strings.title_update
+                        try:
+                            title = s3.crud_strings.title_update
+                        except:
+                            title = T('Edit')
                         if s3.crud_strings.label_list_button:
                             list_btn = A(s3.crud_strings.label_list_button, _href=URL(r=request, f=resource),_id='list-btn')
                             return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)

@@ -27,22 +27,26 @@ mail.settings.server = 'mail:25'
 mail.sender = 'sahana@sahanapy.org'
 
 auth = AuthS3(globals(),db)
-#from gluon.contrib.login_methods.ldap_auth import ldap_auth
-# OpenLDAP
-#auth.settings.login_methods.append(ldap_auth(server="demo.sahanapy.org",base_dn="ou=users,dc=sahanapy,dc=org"))
 auth.define_tables()
-# Email settings for registration verification
-auth.settings.mailer = mail
+# Require Admin approval for self-registered users
+auth.settings.registration_requires_approval = False
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request,public_key='RECAPTCHA_PUBLIC_KEY',private_key='RECAPTCHA_PRIVATE_KEY')
 # Require Email Verification
 auth.settings.registration_requires_verification = False
+# Email settings for registration verification
+auth.settings.mailer = mail
 # ** Amend this to your Publically-accessible URL
 auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s to verify your email'
-auth.settings.registration_requires_approval = False
 # Allow use of GMail accounts for login
 auth.settings.gmail_login = True
 auth.settings.on_failed_authorization = URL(r=request,f='error')
+# Allow use of LDAP accounts for login
+#from gluon.contrib.login_methods.ldap_auth import ldap_auth
+# OpenLDAP
+#auth.settings.login_methods.append(ldap_auth(server="demo.sahanapy.org",base_dn="ou=users,dc=sahanapy,dc=org"))
+# Add registered users to Person Registry & 'Authenticated' role
+auth.settings.register_onaccept = lambda form: auth.register_post(form)
 
 crud = CrudS3(globals(),db)
 

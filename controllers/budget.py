@@ -22,7 +22,9 @@ def index():
 
 def parameters():
     "Select which page to go to depending on login status"
-    if auth.is_logged_in():
+    table=db.budget_parameter
+    authorised = has_permission('update', table)
+    if authorised:
         redirect (URL(r=request, f='parameter', args=['update',1]))
     else:
         redirect (URL(r=request, f='parameter', args=['read',1]))
@@ -35,9 +37,7 @@ def item():
 def kit():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'kit', main='code', format='table')
-#def kit_item():
-#    "RESTlike CRUD controller"
-#    return shn_rest_controller(module, 'kit_item', main='kit_id', format='table')
+
 def kit_item():
     "Many to Many CRUD Controller"
     if len(request.args) == 0:

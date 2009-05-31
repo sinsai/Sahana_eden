@@ -201,6 +201,7 @@ class AuthS3(Auth):
     """
     Extended version of Auth from gluon/tools.py
     - override login() & register()
+    - add register_post()
     """
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
@@ -314,8 +315,6 @@ class AuthS3(Auth):
         """
         Overrides Web2Py's register() to add new functionality:
             * Checks whether registration is permitted
-            * Whenever someone registers, it adds them to the 'Authenticated' role
-            * Whenever someone registers, it automatically adds their name to the Person Registry
             * Registering automatically logs you in
             * Custom Flash styles
 
@@ -363,25 +362,6 @@ class AuthS3(Auth):
 
         if form.accepts(request.vars, session, formname='register',
                         onvalidation=onvalidation):
-            # S3: Add to 'Authenticated' role
-            authenticated = self.id_group('Authenticated')
-            self.add_membership(authenticated, form.vars.id)
-            # S3: Add to Person Registry as well
-            # Check to see whether User already exists
-            if len(self.db(self.db.pr_person.email==form.vars.email).select()):
-                # Update
-                #db(db.pr_person.email==form.vars.email).select()[0].update_record(
-                #    name = form.vars.name
-                #)
-                pass
-            else:
-                # Insert
-                self.db.pr_person.insert(
-                    first_name = form.vars.first_name,
-                    last_name = form.vars.last_name,
-                    email = form.vars.email
-                )
-
             description = \
                 'group uniquely assigned to %(first_name)s %(last_name)s'\
                  % form.vars
@@ -430,6 +410,37 @@ class AuthS3(Auth):
             redirect(next)
         return form
 
+    def register_post(
+        self,
+        form
+        ):
+        """
+        S3 framework function
+        Designed to be used as an onaccept callback for register()
+        Whenever someone registers, it:
+            * adds them to the 'Authenticated' role
+            * adds their name to the Person Registry
+        """
+        # Add to 'Authenticated' role
+        authenticated = self.id_group('Authenticated')
+        self.add_membership(authenticated, form.vars.id)
+        # S3: Add to Person Registry as well
+        # Check to see whether User already exists
+        if len(self.db(self.db.pr_person.email==form.vars.email).select()):
+            # Update
+            #db(db.pr_person.email==form.vars.email).select()[0].update_record(
+            #    name = form.vars.name
+            #)
+            pass
+        else:
+            # Insert
+            self.db.pr_person.insert(
+                first_name = form.vars.first_name,
+                last_name = form.vars.last_name,
+                email = form.vars.email
+            )
+
+        
 class CrudS3(Crud):
     """
     Extended version of Crud from gluon/tools.py

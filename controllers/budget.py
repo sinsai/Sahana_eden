@@ -46,9 +46,8 @@ def kit_item():
     kit = request.args[0]
     table = db.budget_kit_item
     
-    # Is user authorised to C/U/D?
-    # Currently this is simplified as just whether user is logged in!
-    authorised = auth.is_logged_in()
+    # Is user authorised to Update?
+    authorised = has_permission('update', table)
     
     title = db.budget_kit[kit].code
     description = db.budget_kit[kit].description
@@ -56,7 +55,7 @@ def kit_item():
     monthly_cost = db.budget_kit[kit].total_monthly_cost
     query = table.kit_id==kit
     # Start building the Return with the common items
-    output = dict(module_name=module_name, options=options, title=title, description=description, total_cost=total_cost, monthly_cost=monthly_cost)
+    output = dict(module_name=module_name, title=title, description=description, total_cost=total_cost, monthly_cost=monthly_cost)
     if authorised:
         # Display a List_Create page with editable Quantities
         item_list = []
@@ -79,11 +78,11 @@ def kit_item():
             quantity_box = INPUT(_value=row.quantity, _size=4)
             #quantity_box = INPUT(_value=forms[id].custom.dspval.quantity,_size=4)
             checkbox = INPUT(_type="checkbox", _value="on", _name=kit, _id=id, _class="remove_item")
-            item_list.append(TR(TD(id_link),TD(item_description),TD(quantity_box),TD(checkbox),_class=theclass))
+            item_list.append(TR(TD(id_link), TD(item_description), TD(quantity_box), TD(checkbox), _class=theclass))
             
-        table_header = THEAD(TR(TH('ID'),TH(table.item_id.label),TH(table.quantity.label),TH(T('Delete'))))
-        table_footer = TFOOT(TR(TD(_colspan=2),TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update'))),TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Delete')))))
-        items = DIV(FORM(TABLE(table_header,TBODY(item_list),table_footer,_id="table-container"),_name='custom',_method='post', _enctype='multipart/form-data', _action=''))
+        table_header = THEAD(TR(TH('ID'), TH(table.item_id.label), TH(table.quantity.label), TH(T('Delete'))))
+        table_footer = TFOOT(TR(TD(_colspan=2), TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update'))), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Delete')))))
+        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=''))
         subtitle = T("Contents")
         
         crud.messages.submit_button=T('Add')
@@ -132,19 +131,18 @@ def kit_remove_item():
         redirect(URL(r=request, f='kit'))
     elif len(request.args) == 1:
         session.error = T("Need to specify an item!")
-        redirect(URL(r=request, f='kit'))
+        redirect(URL(r=request, f='kit_item', args=[request.args[0]]))
     kit = request.args[0]
     item = request.args[1]
     table = db.budget_kit_item
-    
-    # Is user authorised to Delete items?
-    # Currently this is simplified as just whether user is logged in!
-    authorised = auth.is_logged_in()
-    
-    query = table.kit_id==kit
-    
-    # To be completed!
-    return
+    authorised = has_permission('delete', table)
+    if authorised:
+        query = (table.kit_id==kit)&(table.user_id==user)
+        db(query).delete()
+        session.flash = T("Item deleted")
+    else:
+        session.error = T("Not authorised!")
+    redirect(URL(r=request, f='kit_item', args=[request.args[0]]))
 
 def bundle():
     "RESTlike CRUD controller"

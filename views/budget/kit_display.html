@@ -1,28 +1,4 @@
-{{extend 'layout.html'}}
+{{extend 'display.html'}}
 
-{{try:}}
- {{=H2(title)}}
-{{except:}}
-{{pass}}
-<a href="{{=URL(r=request,f='kit_item',args=request.args[0])}}">Contents</a>
+<a href="{{=URL(r=request,f='kit_item',args=request.args[0])}}">{{=T('Contents')}}</a>
 <br />
-{{try:}}
- {{=edit}}
-{{except:}}
-{{pass}}
-<div class='item-container'>
-{{try:}}
- {{=item}}
-{{except:}}
-  {{include}}
-{{pass}}
-</div>
-{{try:}}
- {{=delete}}
-{{except:}}
-{{pass}}
-<p>&nbsp;</p>
-{{try:}}
- {{=list_btn}}
-{{except:}}
-{{pass}}

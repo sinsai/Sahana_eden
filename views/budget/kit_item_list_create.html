@@ -2,7 +2,7 @@
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Set the Crud Kit dropdown to the current Kit
+    // Set the Crud dropdown to the current Kit
     var options = '<option value="' + {{=kit}} + '"></option>';
     $("#budget_kit_item_kit_id").html(options);
     // Hide the dropdown
@@ -25,6 +25,7 @@ make_remove_item();
 {{include 'budget/kit_item_header.html'}}
 
 {{=P(A(T("Edit Description"),_href=URL(r=request,f='kit',args=('update',kit))))}}
+
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}

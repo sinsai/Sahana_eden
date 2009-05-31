@@ -265,8 +265,8 @@ class AuthS3(Auth):
                     if user.registration_key == 'pending':
                         response.warning = self.messages.registration_pending
                         return form
-                    elif user.registration_key == 'blocked':
-                        response.error = self.messages.registration_blocked
+                    elif user.registration_key == 'disabled':
+                        response.error = self.messages.login_disabled
                         return form
                     elif user.registration_key:
                         response.warning = self.messages.registration_verifying

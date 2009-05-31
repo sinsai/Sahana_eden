@@ -35,6 +35,9 @@ def setting():
 @auth.requires_membership('Administrator')
 def user():
     "RESTlike CRUD controller"
+    db.auth_user.registration_key.writable = True
+    db.auth_user.registration_key.label = T('Disabled?')
+    db.auth_user.registration_key.requires = IS_IN_SET(['','disabled'])
     return shn_rest_controller('auth', 'user', main='first_name', extra='last_name', format='table')
     
 @auth.requires_membership('Administrator')
@@ -149,7 +152,7 @@ def groups():
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_description), TD(checkbox), _class=theclass))
         
     table_header = THEAD(TR(TH('ID'), TH(T('Role')), TH(T('Description')), TH(T('Remove'))))
-    table_footer = TFOOT(TR(TD(_colspan=4), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Remove')))))
+    table_footer = TFOOT(TR(TD(_colspan=3), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Remove')))))
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='user_remove_groups', args=[user])))
         
     subtitle = T("Roles")

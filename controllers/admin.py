@@ -29,8 +29,11 @@ def index():
 @auth.requires_membership('Administrator')
 def setting():
     "RESTlike CRUD controller"
+    s3.crud_strings.setting.title_update = T('Edit Settings')
+    s3.crud_strings.setting.msg_record_modified = T('Settings updated')
     s3.crud_strings.setting.label_list_button = None
-    return shn_rest_controller('s3', 'setting', deletable=False)
+    crud.settings.update_next = URL(r=request, args=['update', 1])
+    return shn_rest_controller('s3', 'setting', deletable=False, listadd=False)
 
 @auth.requires_membership('Administrator')
 def user():
@@ -68,6 +71,8 @@ def users():
     # Start building the Return
     output = dict(module_name=module_name, title=title, description=description, group=group)
 
+    # Audit
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'membership', 'html')
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -112,6 +117,8 @@ def group_remove_users():
         user = var
         query = (table.group_id==group) & (table.user_id==user)
         db(query).delete()
+    # Audit
+    #crud.settings.update_onaccept = lambda form: shn_audit_update(form, 'membership', 'html')
     session.flash = T("Users removed")
     redirect(URL(r=request, f='users', args=[group]))
 
@@ -129,6 +136,8 @@ def groups():
     # Start building the Return
     output = dict(module_name=module_name, title=title, description=description, user=user)
 
+    # Audit
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'membership', 'html')
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -175,6 +184,8 @@ def user_remove_groups():
         group = var
         query = (table.group_id==group) & (table.user_id==user)
         db(query).delete()
+    # Audit
+    #crud.settings.update_onaccept = lambda form: shn_audit_update(form, 'membership', 'html')
     session.flash = T("Groups removed")
     redirect(URL(r=request, f='groups', args=[user]))
 

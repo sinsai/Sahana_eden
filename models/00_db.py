@@ -390,7 +390,7 @@ db.define_table(table,timestamp,
                 db.Field('record', 'integer'),
                 db.Field('old_value'),
                 db.Field('new_value'))
-db[table].operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list'])
+db[table].operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list', 'search'])
 
 # Settings - appadmin
 module = 'appadmin'

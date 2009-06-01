@@ -56,7 +56,17 @@ def kit_item():
     query = table.kit_id==kit
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=description, total_cost=total_cost, monthly_cost=monthly_cost)
+    if session.s3.audit_read:
+            db.s3_audit.insert(
+                person = auth.user.id if session.auth else 0,
+                operation = 'list',
+                module = module,
+                resource = 'kit_item',
+                record = kit
+            )
     if authorised:
+        # Audit
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'kit_item', 'html')
         # Display a List_Create page with editable Quantities
         item_list = []
         sqlrows = db(query).select()
@@ -91,6 +101,8 @@ def kit_item():
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form, kit=kit))
         return output
     else:
+        # Audit
+        shn_audit_read(operation='list', resource='kit_item', representation='html')
         # Display a simple List page
         table.kit_id.readable = False
         fields = [table[f] for f in table.fields if table[f].readable]
@@ -148,6 +160,8 @@ def kit_update_items():
                 db(query).delete()
         # Update the Total values
         kit_totals(kit)
+        # Audit
+        #crud.settings.update_onaccept = lambda form: shn_audit_update(form, 'kit_item', 'html')
         session.flash = T("Kit updated")
     else:
         session.error = T("Not authorised!")

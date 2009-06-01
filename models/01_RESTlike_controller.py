@@ -65,8 +65,88 @@ def accessible_query(name, table):
                        (permission.name == name)\
                        (permission.table_name == table)\
                        ._select(permission.record_id))
+
+# Audit
+def shn_audit_read(operation, resource, record=None, representation=None):
+    "Called during Read operations to enable optional Auditing"
+    if session.s3.audit_read:
+        db.s3_audit.insert(
+                person = auth.user.id if session.auth else 0,
+                operation = operation,
+                module = request.controller,
+                resource = resource,
+                record = record,
+                representation = representation,
+            )
+    return
+
+def shn_audit_create(form, resource, representation=None):
+    """
+    Called during Create operations to enable optional Auditing
+    Called as an onaccept so that it only takes effect when saved & can read the new values in:
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
+    """
+    if session.s3.audit_write:
+        record =  form.vars.id
+        new_value = []
+        for var in form.vars:
+            new_value.append(var + ':' + str(form.vars[var]))
+        db.s3_audit.insert(
+                person = auth.user.id if session.auth else 0,
+                operation = 'create',
+                module = request.controller,
+                resource = resource,
+                record = record,
+                representation = representation,
+                new_value = new_value
+            )
+    return
+
+def shn_audit_update(form, resource, representation=None):
+    """
+    Called during Update operations to enable optional Auditing
+    Called as an onaccept so that it only takes effect when saved & can read the new values in:
+    crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
+    """
+    if session.s3.audit_write:
+        record =  form.vars.id
+        new_value = []
+        for var in form.vars:
+            new_value.append(var + ':' + str(form.vars[var]))
+        db.s3_audit.insert(
+                person = auth.user.id if session.auth else 0,
+                operation = 'update',
+                module = request.controller,
+                resource = resource,
+                record = record,
+                representation = representation,
+                #old_value = old_value, # Need to store these beforehand if we want them
+                new_value = new_value
+            )
+    return
+
+def shn_audit_delete(resource, record, representation=None):
+    "Called during Delete operations to enable optional Auditing"
+    if session.s3.audit_write:
+        module = request.controller
+        table = '%s_%s' % (module, resource)
+        old_value = []
+        _old_value = db(db[table].id==record).select()[0]
+        for field in _old_value:
+            old_value.append(field + ':' + str(_old_value[field]))
+        db.s3_audit.insert(
+                person = auth.user.id if session.auth else 0,
+                operation = 'delete',
+                module = module,
+                resource = resource,
+                record = record,
+                representation = representation,
+                old_value = old_value
+            )
+    return
+
     
-# Representations
+# Display Representations
 def shn_represent(table, module, resource, deletable=True, main='name', extra=None):
     "Designed to be called via table.represent to make t2.itemize() output useful"
     db[table].represent = lambda table:shn_list_item(table, resource, action='display', main=main, extra=shn_represent_extra(table, module, resource, deletable, extra))
@@ -159,15 +239,8 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             query = accessible_query('read', table)
             # list_create if have permissions
             authorised = has_permission('create', table)
-            if session.s3.audit_read:
-                db.s3_audit.insert(
-                    person=auth.user.id if authorised else 0,
-                    operation='list',
-                    module=request.controller,
-                    resource=resource,
-                    old_value='',
-                    new_value=''
-                )
+            # Audit
+            shn_audit_read(operation='list', resource=resource, representation=representation)
             if representation == "html":
                 # Default list format is a simple list, not tabular
                 tabular = 0
@@ -196,6 +269,8 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 except:
                     subtitle = ''
                 if authorised and listadd:
+                    # Audit
+                    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
                     # Display the Add form below List
                     if deletable and not tabular:
                         # Add extra column header to explain the checkboxes
@@ -295,22 +370,13 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     else:
         if request.args[0].isdigit():
             # 1st argument is ID not method => Read.
-            s3.id = request.args[0]
-            authorised = has_permission('read', table, s3.id)
+            record = request.args[0]
+            authorised = has_permission('read', table, record)
             if authorised:
-                if session.s3.audit_read:
-                    db.s3_audit.insert(
-                        person=auth.user.id if authorised else 0,
-                        operation='read',
-                        representation=representation,
-                        module=request.controller,
-                        resource=resource,
-                        record=s3.id,
-                        old_value='',
-                        new_value=''
-                    )
+                # Audit
+                shn_audit_read(operation='read', resource=resource, record=record, representation=representation)
                 if representation == "html":
-                    item = crud.read(table, s3.id)
+                    item = crud.read(table, record)
                     # Check for presence of Custom View
                     custom_view = '%s_display.html' % resource
                     _custom_view = os.path.join(request.folder, 'views', module, custom_view)
@@ -322,9 +388,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         title = s3.crud_strings.title_display
                     except:
                         title = T('Details')
-                    edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', s3.id]), _id='edit-btn')
+                    edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', record]), _id='edit-btn')
                     if deletable:
-                        delete = A(T("Delete"), _href=URL(r=request, f=resource, args=['delete', s3.id]), _id='delete-btn')
+                        delete = A(T("Delete"), _href=URL(r=request, f=resource, args=['delete', record]), _id='delete-btn')
                     else:
                         delete = ''
                     try:
@@ -334,22 +400,22 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
                     return dict(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
                 elif representation == "plain":
-                    item = crud.read(table, s3.id)
+                    item = crud.read(table, record)
                     response.view = 'plain.html'
                     return dict(item=item)
                 elif representation == "json":
-                    item = db(table.id==s3.id).select(table.ALL).json()
+                    item = db(table.id==record).select(table.ALL).json()
                     response.view = 'plain.html'
                     return dict(item=item)
                 elif representation == "xml":
-                    item = db(table.id==s3.id).select(table.ALL).as_list()
+                    item = db(table.id==record).select(table.ALL).as_list()
                     response.headers['Content-Type'] = 'text/xml'
                     return str(service.xml_serializer(item))
                 elif representation == "csv":
                     import gluon.contenttype
                     response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
-                    query = db[table].id == s3.id
-                    response.headers['Content-disposition'] = "attachment; filename=%s_%s_%d.csv" % (request.env.server_name, resource, s3.id)
+                    query = db[table].id == record
+                    response.headers['Content-disposition'] = "attachment; filename=%s_%s_%d.csv" % (request.env.server_name, resource, record)
                     return str(db(query).select())
                 elif representation == "rss":
                     #if request.args and request.args[0] in settings.rss_procedures:
@@ -380,27 +446,18 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     redirect(URL(r=request))
             else:
                 session.error = T("Not authorised!")
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['read', s3.id])}))
+                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['read', record])}))
         else:
             method = str.lower(request.args[0])
             try:
-                s3.id = request.args[1]
+                record = request.args[1]
             except:
                 pass
             if method == "create":
                 authorised = has_permission(method, table)
                 if authorised:
-                    if session.s3.audit_write:
-                        audit_id = db.s3_audit.insert(
-                            person=auth.user.id,
-                            operation='create',
-                            representation=representation,
-                            module=request.controller,
-                            resource=resource,
-                            record=s3.id,
-                            old_value='',
-                            new_value=''
-                        )
+                    # Audit
+                    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
                     if representation == "html":
                         form = crud.create(table, onvalidation=onvalidation)
                         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -467,28 +524,15 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     session.error = T("Not authorised!")
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args='create')}))
             elif method == "display" or method == "read":
-                redirect(URL(r=request, args=s3.id))
+                redirect(URL(r=request, args=record))
             elif method == "update":
-                authorised = has_permission(method, table, s3.id)
+                authorised = has_permission(method, table, record)
                 if authorised:
-                    if session.s3.audit_write:
-                        old_value = []
-                        _old_value = db(db[table].id==s3.id).select()[0]
-                        for field in _old_value:
-                            old_value.append(field+':'+str(_old_value[field]))
-                        audit_id = db.s3_audit.insert(
-                            person=auth.user.id,
-                            operation='update',
-                            representation=representation,
-                            module=request.controller,
-                            resource=resource,
-                            record=s3.id,
-                            old_value=old_value,
-                            new_value=''
-                        )
+                    # Audit
+                    crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
                     crud.settings.update_deletable = deletable
                     if representation == "html":
-                        form = crud.update(table, s3.id, onvalidation=onvalidation)
+                        form = crud.update(table, record, onvalidation=onvalidation)
                         # Check for presence of Custom View
                         custom_view = '%s_update.html' % resource
                         _custom_view = os.path.join(request.folder, 'views', module, custom_view)
@@ -506,7 +550,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         else:
                             return dict(module_name=module_name, form=form, title=title)
                     elif representation == "plain":
-                        form = crud.update(table, s3.id, onvalidation=onvalidation)
+                        form = crud.update(table, record, onvalidation=onvalidation)
                         response.view = 'plain.html'
                         return dict(item=form)
                     elif representation == "json":
@@ -545,48 +589,28 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         redirect(URL(r=request))
                 else:
                     session.error = T("Not authorised!")
-                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['update', s3.id])}))
+                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['update', record])}))
             elif method == "delete":
-                authorised = has_permission(method, table, s3.id)
+                authorised = has_permission(method, table, record)
                 if authorised:
-                    if session.s3.audit_write:
-                        old_value = []
-                        _old_value = db(db[table].id==s3.id).select()[0]
-                        for field in _old_value:
-                            old_value.append(field+':'+str(_old_value[field]))
-                        db.s3_audit.insert(
-                            person=auth.user.id,
-                            operation='delete',
-                            representation=representation,
-                            module=request.controller,
-                            resource=resource,
-                            record=s3.id,
-                            old_value=old_value,
-                            new_value=''
-                        )
+                    # Audit
+                    shn_audit_delete(resource, record, representation)
                     if representation == "ajax":
-                        #crud.delete(table, s3.id, next='%s?format=ajax' % resource)
+                        #crud.delete(table, record, next='%s?format=ajax' % resource)
                         t2.delete(table, next='%s?format=ajax' % resource)
                     else:
-                        crud.delete(table, s3.id)
+                        crud.delete(table, record)
                 else:
                     session.error = T("Not authorised!")
-                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', s3.id])}))
+                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))
             elif method == "search":
                 authorised = has_permission('read', table)
                 if authorised:
                     # Filter Search list to just those records which user can read
                     #query = accessible_query('read', table)
                     # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
-                    if session.s3.audit_read:
-                        db.s3_audit.insert(
-                            person=auth.user.id if authorised else 0,
-                            operation='search',
-                            module=request.controller,
-                            resource=resource,
-                            old_value='',
-                            new_value=''
-                        )
+                    # Audit
+                    shn_audit_read(operation='search', resource=resource, representation=representation)
                     if representation == "html":
                         shn_represent(table, module, resource, deletable, main, extra)
                         #search = t2.search(table, query)

@@ -70,24 +70,20 @@ def kit_item():
                 theclass = "odd"
                 even = True
             id = row.item_id
-            forms[id] = SQLFORM(table, id)
-            if forms[id].accepts(request.vars, session):
-                response.flash = T("Quantity Updated")
             item_description = db.budget_item[id].description
-            id_link = A(id,_href=URL(r=request,f='item',args=['read', id]))
-            quantity_box = INPUT(_value=row.quantity, _size=4)
-            #quantity_box = INPUT(_value=forms[id].custom.dspval.quantity,_size=4)
-            checkbox = INPUT(_type="checkbox", _value="on", _name=kit, _id=id, _class="remove_item")
+            id_link = A(id, _href=URL(r=request, f='item', args=['read', id]))
+            quantity_box = INPUT(_value=row.quantity, _size=4, _name='qty'+str(id))
+            checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
             item_list.append(TR(TD(id_link), TD(item_description), TD(quantity_box), TD(checkbox), _class=theclass))
             
         table_header = THEAD(TR(TH('ID'), TH(table.item_id.label), TH(table.quantity.label), TH(T('Delete'))))
-        table_footer = TFOOT(TR(TD(_colspan=2), TD(INPUT(_id='submit_quantity_button', _type='submit', _value=T('Update'))), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Delete')))))
-        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=''))
+        table_footer = TFOOT(TR(TD(_colspan=3), TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')))))
+        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='kit_update_items', args=[kit])))
         subtitle = T("Contents")
         
         crud.messages.submit_button=T('Add')
         # Calculate Totals for the Kit after Item is added
-        crud.settings.create_onaccept = lambda form: totals(form)
+        crud.settings.create_onaccept = lambda form: kit_total(form)
         crud.messages.record_created = T('Kit Updated')
         form = crud.create(table,next=URL(r=request, args=[kit]))
         addtitle = T("Add New Item to Kit")
@@ -109,40 +105,53 @@ def kit_item():
         output.update(dict(items=items))
         return output
 
-def totals(form):
-    "Calculate Totals for the Kit"
-    kit_id = form.vars.kit_id
-    items = db(db.budget_kit_item.kit_id==kit_id).select()
+def kit_total(form):
+    "Calculate Totals for the Kit specified by Form"
+    kit = form.vars.kit_id
+    kit_totals(kit)
+    
+def kit_totals(kit):
+    "Calculate Totals for a Kit"
+    table = db.budget_kit_item
+    query = table.kit_id==kit
+    items = db(query).select()
     total_unit_cost = 0
     total_monthly_cost = 0
     total_minute_cost = 0
     total_megabyte_cost = 0
     for item in items:
-        total_unit_cost += (db(db.budget_item.id==item.item_id).select()[0].unit_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select()[0].monthly_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
-        total_minute_cost += (db(db.budget_item.id==item.item_id).select()[0].minute_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
-        total_megabyte_cost += (db(db.budget_item.id==item.item_id).select()[0].megabyte_cost)*(db(db.budget_kit_item.id==kit_id).select()[0].quantity)
-    db(db.budget_kit.id==kit_id).update(total_unit_cost=total_unit_cost,total_monthly_cost=total_monthly_cost,total_minute_cost=total_minute_cost,total_megabyte_cost=total_megabyte_cost)
+        query = (table.kit_id==kit) & (table.item_id==item.item_id)
+        total_unit_cost += (db(db.budget_item.id==item.item_id).select()[0].unit_cost) * (db(query).select()[0].quantity)
+        total_monthly_cost += (db(db.budget_item.id==item.item_id).select()[0].monthly_cost) * (db(query).select()[0].quantity)
+        total_minute_cost += (db(db.budget_item.id==item.item_id).select()[0].minute_cost) * (db(query).select()[0].quantity)
+        total_megabyte_cost += (db(db.budget_item.id==item.item_id).select()[0].megabyte_cost) * (db(query).select()[0].quantity)
+    db(db.budget_kit.id==kit).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost, total_minute_cost=total_minute_cost, total_megabyte_cost=total_megabyte_cost)
 
-def kit_remove_item():
-    "Remove an item from a kit"
+def kit_update_items():
+    "Update a Kit's items (Quantity & Delete)"
     if len(request.args) == 0:
         session.error = T("Need to specify a kit!")
         redirect(URL(r=request, f='kit'))
-    elif len(request.args) == 1:
-        session.error = T("Need to specify an item!")
-        redirect(URL(r=request, f='kit_item', args=[request.args[0]]))
     kit = request.args[0]
-    item = request.args[1]
     table = db.budget_kit_item
-    authorised = has_permission('delete', table)
+    authorised = has_permission('update', table)
     if authorised:
-        query = (table.kit_id==kit)&(table.user_id==user)
-        db(query).delete()
-        session.flash = T("Item deleted")
+        for var in request.vars:
+            if 'qty' in var:
+                item = var[3:]
+                quantity = request.vars[var]
+                query = (table.kit_id==kit) & (table.item_id==item)
+                db(query).update(quantity=quantity)
+            else:
+                item = var
+                query = (table.kit_id==kit) & (table.item_id==item)
+                db(query).delete()
+        # Update the Total values
+        kit_totals(kit)
+        session.flash = T("Kit updated")
     else:
         session.error = T("Not authorised!")
-    redirect(URL(r=request, f='kit_item', args=[request.args[0]]))
+    redirect(URL(r=request, f='kit_item', args=[kit]))
 
 def bundle():
     "RESTlike CRUD controller"

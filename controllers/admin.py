@@ -81,9 +81,6 @@ def users():
             theclass = "odd"
             even = True
         id = row.user_id
-        forms[id] = SQLFORM(table, id)
-        if forms[id].accepts(request.vars, session):
-            response.flash = T("Membership Updated")
         item_first = db.auth_user[id].first_name
         item_second = db.auth_user[id].last_name
         item_description = db.auth_user[id].email
@@ -116,7 +113,7 @@ def group_remove_users():
         query = (table.group_id==group) & (table.user_id==user)
         db(query).delete()
     session.flash = T("Users removed")
-    redirect(URL(r=request, f='users', args=[request.args[0]]))
+    redirect(URL(r=request, f='users', args=[group]))
 
 @auth.requires_membership('Administrator')
 def groups():
@@ -150,7 +147,7 @@ def groups():
             response.flash = T("Membership Updated")
         item_first = db.auth_group[id].role
         item_description = db.auth_group[id].description
-        id_link = A(id,_href=URL(r=request,f='group',args=['read', id]))
+        id_link = A(id, _href=URL(r=request, f='group', args=['read', id]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_description), TD(checkbox), _class=theclass))
         
@@ -179,7 +176,7 @@ def user_remove_groups():
         query = (table.group_id==group) & (table.user_id==user)
         db(query).delete()
     session.flash = T("Groups removed")
-    redirect(URL(r=request, f='groups', args=[request.args[0]]))
+    redirect(URL(r=request, f='groups', args=[user]))
 
 # Import Data
 @auth.requires_membership('Administrator')

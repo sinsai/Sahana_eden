@@ -33,7 +33,7 @@ def organisation():
 @service.amfrpc
 def office():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'office', extra='organisation type')
+    return shn_rest_controller(module, 'office')
 
 @service.jsonrpc
 @service.xmlrpc

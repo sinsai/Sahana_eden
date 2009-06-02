@@ -16,4 +16,4 @@ def index():
 
 def dead_body():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'dead_body', main='tag_label', extra='age_group')
+    return shn_rest_controller(module, 'dead_body', main='tag_label')

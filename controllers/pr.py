@@ -16,7 +16,7 @@ def index():
 
 def person():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'person', main='first_name', extra='last_name')
+    return shn_rest_controller(module, 'person', main='first_name')
 def contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact')

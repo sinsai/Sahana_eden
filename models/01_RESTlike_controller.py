@@ -147,8 +147,10 @@ def shn_audit_delete(resource, record, representation=None):
 
     
 # Display Representations
+# t2.itemize now deprecated
+# but still used for t2.search
 def shn_represent(table, module, resource, deletable=True, main='name', extra=None):
-    "Designed to be called via table.represent to make t2.itemize() output useful"
+    "Designed to be called via table.represent to make t2.search() output useful"
     db[table].represent = lambda table:shn_list_item(table, resource, action='display', main=main, extra=shn_represent_extra(table, module, resource, deletable, extra))
     return
 
@@ -173,7 +175,7 @@ def shn_list_item(table, resource, action, main='name', extra=None):
     return DIV(*items)
 
 # Main controller function
-def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', extra=None, onvalidation=None, format=None):
+def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', onvalidation=None):
     """
     RESTlike controller function.
     
@@ -181,9 +183,6 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     Optional parameters:
     deletable=False: don't provide visible options for deletion
     listadd=False: don't provide an add form in the list view
-    main='field': main field to display in the list view (defaults to 'name')
-    extra='field': extra field to display in the list view
-    format='table': display list in tabular format
     
     Customisable Security Policy
 
@@ -242,19 +241,12 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             # Audit
             shn_audit_read(operation='list', resource=resource, representation=representation)
             if representation == "html":
-                # Default list format is a simple list, not tabular
-                tabular = 0
-                if format == 'table':
-                    tabular = 1
-                    fields = [table[f] for f in table.fields if table[f].readable]
-                    headers = {}
-                    for field in fields:
-                       # Use custom or prettified label
-                       headers[str(field)] = field.label
-                    items=crud.select(table, query=query, fields=fields, headers=headers)
-                else:
-                    shn_represent(table, module, resource, deletable, main, extra)
-                    items = t2.itemize(table, query=query)
+                fields = [table[f] for f in table.fields if table[f].readable]
+                headers = {}
+                for field in fields:
+                   # Use custom or prettified label
+                   headers[str(field)] = field.label
+                items=crud.select(table, query=query, fields=fields, headers=headers)
                 if not items:
                     try:
                         items = s3.crud_strings.msg_list_empty
@@ -272,10 +264,6 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     # Audit
                     crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
                     # Display the Add form below List
-                    if deletable and not tabular:
-                        # Add extra column header to explain the checkboxes
-                        if isinstance(items, TABLE):
-                            items.insert(0, TR('', B('Delete?')))
                     form = crud.create(table, onvalidation=onvalidation)
                     # Check for presence of Custom View
                     custom_view = '%s_list_create.html' % resource
@@ -283,10 +271,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     if os.path.exists(_custom_view):
                         response.view = module + '/' + custom_view
                     else:
-                        if tabular:
-                            response.view = 'table_list_create.html'
-                        else:
-                            response.view = 'list_create.html'
+                        response.view = 'list_create.html'
                     try:
                         addtitle = s3.crud_strings.subtitle_create
                     except:
@@ -308,24 +293,22 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     if os.path.exists(_custom_view):
                         response.view = module + '/' + custom_view
                     else:
-                        if tabular:
-                            response.view = 'table_list.html'
-                        else:
-                            response.view = 'list.html'
+                        response.view = 'list.html'
                     return dict(module_name=module_name, items=items, title=title, subtitle=subtitle, add_btn=add_btn)
             elif representation == "ajax":
-                #items = crud.select(table, fields=fields, headers=headers)
-                shn_represent(table, module, resource, deletable, main, extra)
-                items = t2.itemize(table, query)
+                #shn_represent(table, module, resource, deletable, main, extra)
+                #items = t2.itemize(table, query)
+                fields = [table[f] for f in table.fields if table[f].readable]
+                headers = {}
+                for field in fields:
+                   # Use custom or prettified label
+                   headers[str(field)] = field.label
+                items=crud.select(table, query=query, fields=fields, headers=headers)
                 if not items:
                     try:
                         items = s3.crud_strings.msg_list_empty
                     except:
                         items = T('None')
-                if deletable:
-                    # Add extra column header to explain the checkboxes
-                    if isinstance(items, TABLE):
-                        items.insert(0, TR('', B('Delete?')))
                 response.view = 'plain.html'
                 return dict(item=items)
             elif representation == "plain":
@@ -513,10 +496,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         file = request.vars.filename.file
                         try:
                             import_csv(table, file)
-                            reply = T('Data uploaded')
+                            session.flash = T('Data uploaded')
                         except: 
-                            reply = T('Unable to parse CSV file!')
-                        return reply
+                            session.error = T('Unable to parse CSV file!')
+                        redirect(URL(r=request))
                     else:
                         session.error = T("Unsupported format!")
                         redirect(URL(r=request))

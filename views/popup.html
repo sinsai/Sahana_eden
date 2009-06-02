@@ -18,7 +18,7 @@ $(function() {
         // find which ID we need to make active
         {{field='%s_%s_%s' % (module,resource,main)}}
         value=$('input#{{=field}}').val();
-        $.getJSON("{{=URL(r=request,c=module,f=resource,args=['search'],vars=dict(format='json',field=main,filter='='))}}"+"&value="+value,
+        $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}"+"&value="+value,
         function(data){
             // set the caller's lookup list to the new ID
             self.opener.$('select#{{=caller}}').val(data[0].id);

@@ -44,7 +44,7 @@ def marker():
     return shn_rest_controller(module, 'marker')
 def projection():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'projection', deletable=False, extra='epsg')
+    return shn_rest_controller(module, 'projection', deletable=False)
 def layer_openstreetmap():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'layer_openstreetmap', deletable=False)

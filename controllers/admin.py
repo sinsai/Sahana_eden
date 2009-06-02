@@ -44,18 +44,18 @@ def user():
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.label = T('Disabled?')
     db.auth_user.registration_key.requires = IS_IN_SET(['','disabled'])
-    return shn_rest_controller('auth', 'user', main='first_name', extra='last_name', format='table')
+    return shn_rest_controller('auth', 'user', main='first_name')
     
 @auth.requires_membership('Administrator')
 def group():
     "RESTlike CRUD controller"
-    return shn_rest_controller('auth', 'group', main='role', extra='description', format='table')
+    return shn_rest_controller('auth', 'group', main='role')
     
 # Unused as poor UI
 @auth.requires_membership('Administrator')
 def membership():
     "RESTlike CRUD controller"
-    return shn_rest_controller('auth', 'membership', main='user_id', extra='group_id', format='table')
+    return shn_rest_controller('auth', 'membership', main='user_id')
     
 @auth.requires_membership('Administrator')
 def users():

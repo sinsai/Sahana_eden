@@ -33,10 +33,10 @@ def parameter():
     return shn_rest_controller(module, 'parameter', deletable=False)
 def item():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'item', main='code', format='table')
+    return shn_rest_controller(module, 'item', main='code')
 def kit():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'kit', main='code', format='table')
+    return shn_rest_controller(module, 'kit', main='code')
 
 def kit_item():
     "Many to Many CRUD Controller"
@@ -178,7 +178,7 @@ def location():
     return shn_rest_controller(module, 'location', main='code')
 def project():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'project', main='code', extra='title')
+    return shn_rest_controller(module, 'project', main='code')
 def budget():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'budget')

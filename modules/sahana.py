@@ -562,6 +562,7 @@ class S3:
             self.redirect(f=next, flash=self.messages.record_deleted)
         return True
         
+    # Deprecated
     def itemize(self, *tables, **opts):
         """
         Lists all records from tables.

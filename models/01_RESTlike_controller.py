@@ -3,20 +3,101 @@
 #
 
 # Data conversions
+def export_csv(resource, query, record=None):
+    "Export record(s) as CSV"
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+    if record:
+        filename = "%s_%s_%d.csv" % (request.env.server_name, resource, record)
+    else:
+        # List
+        filename = "%s_%s_list.csv" % (request.env.server_name, resource)
+    response.headers['Content-disposition'] = "attachment; filename=%s" % filename
+    return str(db(query).select())
+                    
+def export_json(table, query):
+    "Export record(s) as JSON"
+    response.headers['Content-Type'] = 'text/x-json'
+    return db(query).select(table.ALL).json()
+    
+def export_xml(table, query):
+    "Export record(s) as XML"
+    import gluon.serializers
+    items = db(query).select(table.ALL).as_list()
+    response.headers['Content-Type'] = 'text/xml'
+    return str(gluon.serializers.xml(items))
+    
+def export_rss(module, resource, query, main='name', extra='description'):
+    """Export record(s) as RSS feed
+    main='field': the field used for the title
+    extra='field': the field used for the description
+    """
+    if request.env.remote_addr == '127.0.0.1':
+        server = 'http://127.0.0.1:' + request.env.server_port
+    else:
+        server = 'http://' + request.env.server_name + ':' + request.env.server_port
+    link = '/%s/%s/%s' % (request.application, module, resource)
+    entries = []
+    rows = db(query).select()
+    try:
+        for row in rows:
+            entries.append(dict(title=row[main], link=server+link+'/%d' % row.id, description=row[extra], created_on=row.created_on))
+    except:
+        for row in rows:
+            entries.append(dict(title=row[main], link=server+link+'/%d' % row.id, description='', created_on=row.created_on))
+    import gluon.contrib.rss2 as rss2
+    items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
+    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server+link+'/%d' % row.id, description = '', lastBuildDate = request.now, items = items)
+    response.headers['Content-Type'] = 'application/rss+xml'
+    return rss2.dumps(rss)
+
 def import_csv(table, file):
     "Import CSV file into Database. Comes from appadmin.py. Modified to do Validation on UUIDs"
     table.import_from_csv_file(file)
 
-def import_json(table, file):
-    "Import JSON into Database."
-    import gluon.contrib.simplejson as sj
-    reader = sj.loads(file)
-    # ToDo
-    # Get column names (like for SQLTable.import_from_csv_file() )
-    # Insert records (or Update if unique field duplicated)
-    #table.insert(**dict(items))
-    return
-
+def import_json(method):
+    """Import GET vars into Database & respond in JSON
+    Supported methods: 'create' & 'update'
+    """
+    record = Storage()
+    uuid = False
+    for var in request.vars:
+        # Skip the Representation
+        if var == 'format':
+            pass
+        if var == 'uuid' and method == 'update':
+            uuid = True
+        else:
+            record[var] = request.vars[var]
+    if not uuid:
+        item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"UUID required!"}}'
+    else:
+        item = ''
+        for var in record:
+            # Validate request manually
+            if table[var].requires(record[var])[1]:
+                item += '{"Status":"failed","Error":{"StatusCode":403,"Message":"' + var + ' invalid: ' + table[var].requires(record[var])[1] + '"}}'
+        if item:
+            # Don't import if validation failed
+            pass
+        else:
+            try:
+                if method == 'create':
+                    id = table.insert(**dict (record))
+                    item = '{"Status":"success","Error":{"StatusCode":201,"Message":"Created as ' + URL(r=request, c=module, f=resource, args=id) + '"}}'
+                elif method == 'update':
+                    result = db(table.uuid==request.vars.uuid).update(**dict (record))
+                    if result:
+                        item = '{"Status":"success","Error":{"StatusCode":200,"Message":"Record updated."}}'
+                    else:
+                        item = '{"Status":"failed","Error":{"StatusCode":404,"Message":"Record ' + request.vars.uuid + ' does not exist."}}'
+                else:
+                    item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Unsupported Method!"}}'
+            except:
+                item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
+    response.headers['Content-Type'] = 'text/x-json'
+    return item
+    
 # Authorisation    
 def has_permission(name, table_name, record_id = 0):
     """
@@ -175,7 +256,7 @@ def shn_list_item(table, resource, action, main='name', extra=None):
     return DIV(*items)
 
 # Main controller function
-def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', onvalidation=None):
+def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', extra=None, onvalidation=None):
     """
     RESTlike controller function.
     
@@ -183,6 +264,8 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     Optional parameters:
     deletable=False: don't provide visible options for deletion
     listadd=False: don't provide an add form in the list view
+    main='field': the field used for the title in RSS output
+    extra='field': the field used for the description in RSS output
     
     Customisable Security Policy
 
@@ -296,6 +379,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         response.view = 'list.html'
                     return dict(module_name=module_name, items=items, title=title, subtitle=subtitle, add_btn=add_btn)
             elif representation == "ajax":
+                # Unused now that we don't use make_delete_row
                 #shn_represent(table, module, resource, deletable, main, extra)
                 #items = t2.itemize(table, query)
                 fields = [table[f] for f in table.fields if table[f].readable]
@@ -316,34 +400,13 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 response.view = 'plain.html'
                 return dict(item=items)
             elif representation == "json":
-                items = db(query).select(table.ALL).json()
-                response.headers['Content-Type'] = 'text/x-json'
-                return items
+                return export_json(table, query)
             elif representation == "xml":
-                items = db(query).select(table.ALL).as_list()
-                response.headers['Content-Type'] = 'text/xml'
-                return str(service.xml_serializer(items))
+                return export_xml(table, query)
             elif representation == "csv":
-                import gluon.contenttype
-                response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
-                #query=db[table].id>0
-                response.headers['Content-disposition'] = "attachment; filename=%s_%s_list.csv" % (request.env.server_name, resource)
-                return str(db(query).select())
+                return export_csv(resource, query)
             elif representation == "rss":
-                if request.env.remote_addr == '127.0.0.1':
-                    server = 'http://127.0.0.1:' + request.env.server_port
-                else:
-                    server = 'http://' + request.env.server_name + ':' + request.env.server_port
-                link = '/%s/%s/%s' % (request.application, module, resource)
-                entries = []
-                rows = db(query).select()
-                for row in rows:
-                    entries.append(dict(title=row.name, link=server+link+'/%d' % row.id, description=row.description or '', created_on=row.created_on))
-                import gluon.contrib.rss2 as rss2
-                items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
-                rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server+link+'/%d' % row.id, description = '', lastBuildDate = request.now, items = items)
-                response.headers['Content-Type'] = 'application/rss+xml'
-                return rss2.dumps(rss)
+                return export_rss(module, resource, query, main, extra)
             else:
                 session.error = T("Unsupported format!")
                 redirect(URL(r=request))
@@ -387,43 +450,17 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     response.view = 'plain.html'
                     return dict(item=item)
                 elif representation == "json":
-                    item = db(table.id==record).select(table.ALL).json()
-                    response.view = 'plain.html'
-                    return dict(item=item)
-                elif representation == "xml":
-                    item = db(table.id==record).select(table.ALL).as_list()
-                    response.headers['Content-Type'] = 'text/xml'
-                    return str(service.xml_serializer(item))
-                elif representation == "csv":
-                    import gluon.contenttype
-                    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
                     query = db[table].id == record
-                    response.headers['Content-disposition'] = "attachment; filename=%s_%s_%d.csv" % (request.env.server_name, resource, record)
-                    return str(db(query).select())
+                    return export_json(table, query)
+                elif representation == "xml":
+                    query = db[table].id == record
+                    return export_xml(table, query)
+                elif representation == "csv":
+                    query = db[table].id == record
+                    return export_csv(resource, query)
                 elif representation == "rss":
-                    #if request.args and request.args[0] in settings.rss_procedures:
-                    #   feed = eval('%s(*request.args[1:],**dict(request.vars))' % request.args[0])
-                    #else:
-                    #   t2._error()
-                    #import gluon.contrib.rss2 as rss2
-                    #rss = rss2.RSS2(
-                    #   title = feed['title'],
-                    #   link = feed['link'],
-                    #   description = feed['description'],
-                    #   lastBuildDate = feed['created_on'],
-                    #   items = [
-                    #      rss2.RSSItem(
-                    #        title = entry['title'],
-                    #        link = entry['link'],
-                    #        description = entry['description'],
-                    #        pubDate = entry['created_on']) for entry in feed['entries']]
-                    #   )
-                    #response.headers['Content-Type'] = 'application/rss+xml'
-                    #return rss2.dumps(rss)
-                    entries[0] = dict(title=table.name, link=URL(r=request, c='module', f='resource', args=[table.id]), description=table.description, created_on=table.created_on)
-                    item = service.rss(entries=entries)
-                    response.view = 'plain.html'
-                    return dict(item=item)
+                    query = db[table].id == record
+                    return export_rss(module, resource, query, main, extra)
                 else:
                     session.error = T("Unsupported format!")
                     redirect(URL(r=request))
@@ -470,27 +507,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         response.view = 'popup.html'
                         return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
                     elif representation == "json":
-                        record = Storage()
-                        for var in request.vars:
-                            if var == 'format':
-                                pass
-                            else:
-                                record[var] = request.vars[var]
-                        item = ''
-                        for var in record:
-                            # Validate request manually
-                            if table[var].requires(record[var])[1]:
-                                item += '{"Status":"failed","Error":{"StatusCode":403,"Message":"' + var + ' invalid: ' + table[var].requires(record[var])[1] + '"}}'
-                        if item:
-                            pass
-                        else:
-                            try:
-                                id = table.insert(**dict (record))
-                                item = '{"Status":"success","Error":{"StatusCode":201,"Message":"Created as ' + URL(r=request, c=module, f=resource, args=id) + '"}}'
-                            except:
-                                item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
-                        response.view = 'plain.html'
-                        return dict(item=item)
+                        return import_json(method='create')
                     elif representation == "csv":
                         # Read in POST
                         file = request.vars.filename.file
@@ -537,36 +554,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         response.view = 'plain.html'
                         return dict(item=form)
                     elif representation == "json":
-                        record = Storage()
-                        uuid = 0
-                        for var in request.vars:
-                            if var == 'format':
-                                pass
-                            elif var == 'uuid':
-                                uuid = 1
-                            else:
-                                record[var] = request.vars[var]
-                        if uuid:
-                            item = ''
-                            for var in record:
-                                # Validate request manually
-                                if table[var].requires(record[var])[1]:
-                                    item += '{"Status":"failed","Error":{"StatusCode":403,"Message":"' + var + ' invalid: ' + table[var].requires(record[var])[1] + '"}}'
-                            if item:
-                                pass
-                            else:
-                                try:
-                                    result = db(table.uuid==request.vars.uuid).update(**dict (record))
-                                    if result:
-                                        item = '{"Status":"success","Error":{"StatusCode":200,"Message":"Record updated."}}'
-                                    else:
-                                        item = '{"Status":"failed","Error":{"StatusCode":404,"Message":"Record ' + request.vars.uuid + ' does not exist."}}'
-                                except:
-                                    item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
-                        else:
-                            item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"UUID required!"}}'
-                        response.view = 'plain.html'
-                        return dict(item=item)
+                        return import_json(method='update')
                     else:
                         session.error = T("Unsupported format!")
                         redirect(URL(r=request))

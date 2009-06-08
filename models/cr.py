@@ -5,7 +5,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -28,7 +29,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('capacity', 'integer'),
                 db.Field('dwellings', 'integer'),
                 db.Field('persons_per_dwelling', 'integer'),
-                db.Field('area'))
+                db.Field('area'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
 db[table].name.label = T("Shelter Name")

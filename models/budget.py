@@ -5,7 +5,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -23,8 +24,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('shipping', 'double', default=15.00),
                 db.Field('logistics', 'double', default=0.00),
                 db.Field('admin', 'double', default=0.00),
-                db.Field('indirect', 'double', default=7.00)
-                )
+                db.Field('indirect', 'double', default=7.00),
+                migrate=migrate)
 db[table].shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
 db[table].shipping.label = "Shipping cost"
 db[table].logistics.requires = IS_FLOAT_IN_RANGE(0, 100)
@@ -49,8 +50,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('monthly_cost', 'double', default=0.00),
                 db.Field('minute_cost', 'double', default=0.00),
                 db.Field('megabyte_cost', 'double', default=0.00),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
 db[table].category.requires = IS_IN_SET(['Consumable', 'Satellite', 'HF', 'VHF', 'Telephony', 'W-LAN', 'Network', 'Generator', 'Electrical', 'Vehicle', 'GPS', 'Tools', 'IT', 'ICT', 'TC', 'Stationery', 'Relief', 'Miscellaneous', 'Running Cost'])
@@ -81,8 +82,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('total_monthly_cost', writable=False),
                 db.Field('total_minute_cost', writable=False),
                 db.Field('total_megabyte_cost', writable=False),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
 db[table].total_minute_cost.label = "Total cost per minute"
@@ -108,7 +109,8 @@ table = module + '_' + resource
 db.define_table(table, timestamp,
                 db.Field('kit_id', db.budget_kit),
                 db.Field('item_id', db.budget_item),
-                db.Field('quantity', 'integer', default=1))
+                db.Field('quantity', 'integer', default=1),
+                migrate=migrate)
 # NB Keeping 'module' name as configurable in single location => can't edit table using appadmin!
 #db[table].kit_id.requires = IS_IN_DB(db, '%s_kit.id' % module, '%s_kit.code' % module)
 db[table].kit_id.requires = IS_IN_DB(db, 'budget_kit.id', 'budget_kit.code')
@@ -132,8 +134,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('description', length=256),
                 db.Field('onetime_cost', writable=False),
                 db.Field('recurring_cost', writable=False),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
 title_create = T('Add Bundle')
@@ -164,8 +166,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('travel', 'integer'),
                 db.Field('subsistence', 'double', default=0.00),
                 db.Field('hazard_pay', 'double', default=0.00),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
 db[table].grade.requires = IS_NOT_EMPTY()
@@ -196,8 +198,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('description'),
                 db.Field('subsistence', 'double', default=0.00),
                 db.Field('hazard_pay', 'double', default=0.00),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
 title_create = T('Add Location')
@@ -221,8 +223,8 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('code'),
                 db.Field('title'),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
 title_create = T('Add Project')
@@ -253,8 +255,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('monthly_cost', 'double', writable=False),
                 db.Field('total_unit_cost', writable=False),
                 db.Field('total_monthly_cost', writable=False),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].location.requires = IS_IN_DB(db, '%s_location.id' % module, '%s_location.name' % module)
 db[table].location.comment = SPAN("*", _class="req")
 db[table].project.requires = IS_IN_DB(db,'%s_project.id' % module, '%s_project.code' % module)
@@ -291,8 +293,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('subsistence', 'double', writable=False),
                 db.Field('hazard_pay', 'double', writable=False),
                 db.Field('total', 'double', writable=False),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].location.requires = IS_IN_DB(db, '%s_location.id' % module, '%s_location.name' % module)
 db[table].location.comment = SPAN("*", _class="req")
 db[table].project.requires = IS_IN_DB(db, '%s_project.id' % module, '%s_project.code' % module)
@@ -321,8 +323,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('name'),
                 db.Field('equipment', 'reference %s_budget_equipment' % module),
                 db.Field('staff', 'reference %s_budget_staff' % module),
-                db.Field('comments', length=256)
-                )
+                db.Field('comments', length=256),
+                migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
 db[table].equipment.requires = IS_IN_DB(db, '%s_budget_equipment.id' % module)

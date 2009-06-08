@@ -5,7 +5,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -26,7 +27,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('type'),
                 admin_id,
                 db.Field('registration'),	# Registration Number
-                db.Field('website'))
+                db.Field('website'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
@@ -66,7 +68,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('international_staff', 'integer'),
                 db.Field('number_of_vehicles', 'integer'),
                 db.Field('vehicle_types'),
-                db.Field('equipment'))
+                db.Field('equipment'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.comment = SPAN("*", _class="req")
@@ -101,7 +104,8 @@ db.define_table(table, timestamp,
                 person_id,
                 db.Field('office_id', db.or_office),
                 db.Field('title'),
-                db.Field('manager_id', db.pr_person))
+                db.Field('manager_id', db.pr_person),
+                migrate=migrate)
 db[table].person_id.label = 'Contact'
 db[table].office_id.requires = IS_IN_DB(db, 'or_office.id', 'or_office.name')
 db[table].office_id.label = 'Office'
@@ -130,7 +134,8 @@ resource = 'office_to_organisation'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 db.Field('office_id', db.or_office),
-                db.Field('organisation_id', db.or_organisation))
+                db.Field('organisation_id', db.or_organisation),
+                migrate=migrate)
 db[table].office_id.requires = IS_IN_DB(db, 'or_office.id', 'or_office.name')
 db[table].office_id.label = 'Office'
 db[table].organisation_id.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')

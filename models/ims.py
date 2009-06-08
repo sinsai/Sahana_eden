@@ -5,7 +5,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 

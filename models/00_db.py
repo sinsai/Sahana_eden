@@ -1,6 +1,10 @@
 import os, traceback, datetime
 import re
 
+# Switch to 'False' in Production for a Performance gain
+# (need to set to 'True' again when amending Table definitions)
+migrate = True
+
 # This scaffolding model makes your app work on Google App Engine too   #
 #try:
 #    from gluon.contrib.gql import *         # if running on Google App Engine
@@ -49,6 +53,7 @@ auth.settings.on_failed_authorization = URL(r=request,f='error')
 auth.settings.register_onaccept = lambda form: auth.register_post(form)
 
 crud = CrudS3(globals(),db)
+#crud.settings.keepvalues = True
 
 from gluon.tools import Service
 service = Service(globals())
@@ -67,11 +72,13 @@ timestamp = SQLTable(None, 'timestamp',
 # Reusable author fields
 authorstamp = SQLTable(None, 'authorstamp',
             db.Field('created_by', db.auth_user,
-                          default=session.auth.user.id if auth.is_logged_in() else 0,
-                          writable=False),
+                          writable=False,
+                          default=session.auth.user.id if auth.is_logged_in() else 0),
             db.Field('modified_by', db.auth_user,
-                          default=session.auth.user.id if auth.is_logged_in() else 0,update=session.auth.user.id if auth.is_logged_in() else 0,
-                          writable=False)) 
+                          writable=False,
+                          default=session.auth.user.id if auth.is_logged_in() else 0,
+                          update=session.auth.user.id if auth.is_logged_in() else 0)
+            ) 
 
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
@@ -167,7 +174,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('security_policy'),
                 db.Field('self_registration', 'boolean'),
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 db[table].security_policy.requires = IS_IN_SET(['simple', 'full'])
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -245,7 +253,8 @@ db.define_table(table,
                 db.Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in the Modules menu or the Controllers)
                 db.Field('priority', 'integer'),
                 db.Field('description', length=256),
-                db.Field('enabled','boolean', default='True'))
+                db.Field('enabled','boolean', default='True'),
+                migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
 db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role', multiple=True))
@@ -389,7 +398,8 @@ db.define_table(table,timestamp,
                 db.Field('resource'),
                 db.Field('record', 'integer'),
                 db.Field('old_value'),
-                db.Field('new_value'))
+                db.Field('new_value'),
+                migrate=migrate)
 db[table].operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list', 'search'])
 
 # Settings - appadmin
@@ -398,7 +408,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -425,6 +436,7 @@ def shn_sessions(f):
     # Keep all our configuration options in a single global variable
     if not session.s3:
         session.s3 = Storage()
+    # Are we running in debug mode?
     session.s3.debug = db().select(db.s3_setting.debug)[0].debug
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
@@ -459,3 +471,43 @@ for module in modules:
 
 # See test.py
 
+def pagenav(page=1, totalpages=None, pagesize=20, prev='<', next='>', last='last'):
+    '''
+      Generate a page navigator around current record number, eg 1 < 20 40 60 ... 100 > 365
+      
+      Inspired by: http://99babysteps.appspot.com/how2/default/article_read/2
+    '''
+    pagerange = (pagesize + 1) / 2 # half the page numbers will be below the startpage, half above
+    if not totalpages:
+        maxpages = page + 1
+    else:
+        maxpages = totalpages
+        page = min(page, totalpages)
+    # create page selector list eg 34 35 36 37 38
+    pagelinks = [i for i in range(max(1, page - pagerange), min(page + pagerange, maxpages) + 1)]
+    startpagepos = pagelinks.index(page)
+    # make pagelist into hyperlinks:
+    pagelinks = [A(str(page), _href=URL(r=request, vars={'page':page})) for page in pagelinks]
+    # remove link to current page & make text emphasised:
+    pagelinks[startpagepos] = B(str(page)) # use emphasised or bold & check this works
+    nextlink = A(next,_href=URL(r=request, args=[page + 1])) if page < maxpages else next # no link if no next
+    prevlink = A(prev,_href=URL(r=request, args=[page - 1])) if page > 1 else prev # no link if no prev
+    firstlink = A('1',_href=URL(r=request, args=[1])) if page > 1 else '1'
+    if last <> '':
+        if totalpages > 0:
+            lasttext = last + '(' + str(totalpages) + ')'
+        else:
+            lasttext = last + '...'
+    lastlink = A(lasttext, _href=URL(r=request, args=[maxpages]))
+    delim = XML('&nbsp;') # nonbreaking delim
+    pagenav = firstlink
+    pagenav.append(delim)
+    pagenav.append(prevlink)
+    pagenav.append(delim)
+    for pageref in pagelinks:
+        pagenav.append(pageref)
+        pagenav.append(delim)
+    pagenav.append(nextlink)
+    pagenav.append(delim)
+    pagenav.append(lastlink)
+    return pagenav

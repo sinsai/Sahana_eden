@@ -5,7 +5,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -28,7 +29,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('mobile_phone'),   # Needed for SMS
                 db.Field('address', 'text'),
                 db.Field('postcode'),
-                db.Field('website'))
+                db.Field('website'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment = SPAN("*", _class="req")
@@ -67,7 +69,8 @@ resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('name'),   # Contact type
-                db.Field('value'))
+                db.Field('value'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_IN_SET(['phone', 'fax', 'skype', 'msn', 'yahoo'])
 db[table].value.requires = IS_NOT_EMPTY()
@@ -91,7 +94,8 @@ resource = 'contact_to_person'
 table = module + '_' + resource
 db.define_table(table,timestamp,
                 db.Field('person_id', db.pr_person),
-                db.Field('contact_id', db.pr_contact))
+                db.Field('contact_id', db.pr_contact),
+                migrate=migrate)
 db[table].person_id.label = 'Person'
 db[table].contact_id.requires = IS_IN_DB(db, 'pr_contact.id', 'pr_contact.name')
 db[table].contact_id.label = 'Contact Detail'

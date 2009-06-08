@@ -5,7 +5,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -22,7 +23,8 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('name'),
                 #db.Field('height', 'integer'), # In Pixels, for display purposes
                 #db.Field('width', 'integer'),  # Not needed since we get size client-side using Javascript's Image() class
-                db.Field('image', 'upload'))
+                db.Field('image', 'upload'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
@@ -74,7 +76,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('epsg','integer'),
                 db.Field('maxExtent'),
                 db.Field('maxResolution','double'),
-                db.Field('units'))
+                db.Field('units'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment = SPAN("*",_class="req")
@@ -143,7 +146,8 @@ db.define_table(table,timestamp,uuidstamp,
 				projection_id,
 				marker_id,
 				db.Field('map_height','integer'),
-				db.Field('map_width','integer'))
+				db.Field('map_width','integer'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].lat.requires = IS_LAT()
 db[table].lat.label = T("Latitude")
@@ -192,8 +196,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('name'),
                 marker_id,
                 db.Field('module'),    # Used to build Edit URL
-                db.Field('resource')   # Used to build Edit URL & to provide Attributes to Display
-                )
+                db.Field('resource'),   # Used to build Edit URL & to provide Attributes to Display
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
 db[table].name.comment = SPAN("*",_class="req")
@@ -240,7 +244,8 @@ db.define_table(table,timestamp,uuidstamp,authorstamp,
                 db.Field('event_time','datetime'),
                 db.Field('expiry_time','datetime'),
                 db.Field('url'),
-                db.Field('image','upload'))
+                db.Field('image','upload'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].person_id.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
 db[table].person_id.label = T("Contact")
@@ -274,7 +279,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('lat','double'),    # Only needed for Points
                 db.Field('lon','double'),    # Only needed for Points
                 db.Field('wkt',length=256),  # WKT is auto-calculated from lat/lon for Points
-                db.Field('resource_id','integer')) # Used to build Edit URL for Feature Class.
+                db.Field('resource_id','integer'),
+                migrate=migrate) # Used to build Edit URL for Feature Class.
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.comment = SPAN("*",_class="req")
@@ -324,7 +330,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('description',length=256),
                 db.Field('features','text'),        # List of features (to be replaced by many-to-many table)
                 db.Field('feature_classes','text'), # List of feature classes (to be replaced by many-to-many table)
-                db.Field('display','boolean',default='True'))
+                db.Field('display','boolean',default='True'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].author.requires = IS_IN_DB(db,'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
 db[table].name.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db,'%s.name' % table)]
@@ -360,13 +367,15 @@ resource = 'feature_to_feature_group'
 table = module+'_'+resource
 db.define_table(table,timestamp,
                 feature_group_id,
-                feature_id)
+                feature_id,
+                migrate=migrate)
                 
 resource = 'feature_class_to_feature_group'
 table = module+'_'+resource
 db.define_table(table,timestamp,
                 feature_group_id,
-                feature_class_id)
+                feature_class_id,
+                migrate=migrate)
 
 resource = 'landmark'
 table = module+'_'+resource
@@ -375,7 +384,8 @@ db.define_table(table,timestamp,uuidstamp,authorstamp,
                 db.Field('type'),
                 db.Field('description',length=256),
                 db.Field('url'),
-                db.Field('image','upload'))
+                db.Field('image','upload'),
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.comment = SPAN("*",_class="req")
@@ -405,7 +415,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('sector'), # Government, Health
                 db.Field('level'),  # Region, Country, District
                 admin_id,
-                db.Field('parent', 'reference gis_location'))   # This form of hierarchy may not work on all Databases
+                db.Field('parent', 'reference gis_location'),   # This form of hierarchy may not work on all Databases
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()       # Placenames don't have to be unique
 db[table].feature.label = T("GIS Feature")
@@ -441,7 +452,8 @@ table = module+'_'+resource
 db.define_table(table,timestamp,
                 db.Field('name'),
                 db.Field('apikey'),
-				db.Field('description',length=256))
+				db.Field('description',length=256),
+                migrate=migrate)
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
 db[table].name.requires = IS_IN_SET(['google','multimap','yahoo']) 

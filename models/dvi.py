@@ -5,7 +5,8 @@ resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
                 db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'))
+                db.Field('audit_write', 'boolean'),
+                migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -22,7 +23,8 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('tag_label'),      # a unique label
                 db.Field('age_group'),      # age group
-                db.Field('sex'))            # sex
+                db.Field('sex'),            # sex
+                migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].tag_label.label = T("Tag Label")

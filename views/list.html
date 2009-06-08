@@ -14,6 +14,11 @@
 {{except:}}
 {{pass}}
 </div>
+{{try:}}
+ {{=pagenav(page=page, totalpages=totalpages)}}
+{{except:}}
+ {{=pagenav(page=page)}}
+{{pass}}
 <p>&nbsp;</p>
 {{try:}}
  {{=add_btn}}

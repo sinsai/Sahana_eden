@@ -2,6 +2,9 @@
 # RESTlike CRUD Controller
 #
 
+# How many rows to show per page in list outputs
+rowsperpage = 20
+
 # Data conversions
 def export_csv(resource, query, record=None):
     "Export record(s) as CSV"
@@ -255,6 +258,55 @@ def shn_list_item(table, resource, action, main='name', extra=None):
     items = DIV(TABLE(TR(item_list)))
     return DIV(*items)
 
+def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last', pagenums=10):
+    '''
+      Generate a page navigator around current record number, eg 1 < 3 4 5 > 36
+      Derived from: http://99babysteps.appspot.com/how2/default/article_read/2
+    '''
+    if not totalpages:
+        maxpages = page + 1
+    else:
+        maxpages = totalpages
+        page = min(page, totalpages)
+    pagerange = pagenums / 2 # half the page numbers will be below the startpage, half above
+    # create page selector list eg 1 2 3
+    pagelinks = [i for i in range(max(1, page - pagerange), min(page + pagerange, maxpages) + 1)]
+    startpagepos = pagelinks.index(page)
+    # make pagelist into hyperlinks:
+    pagelinks = [A(str(pagelink), _href=URL(r=request, vars={'page':pagelink})) for pagelink in pagelinks]
+    # remove link to current page & make text emphasised:
+    pagelinks[startpagepos] = B(str(page))
+    if page < maxpages:
+        nextlink = A(next, _href=URL(r=request, vars={'page':page + 1}))
+    else:
+        # no link if no next
+        nextlink = next
+    if page > 1:
+        prevlink = A(prev, _href=URL(r=request, vars={'page':page - 1}))
+        firstlink = A(first, _href=URL(r=request, vars={'page':1}))
+    else:
+        # no links if no prev
+        prevlink = prev
+        firstlink = DIV(first)
+    if last <> '':
+        if totalpages > 0:
+            lasttext = last + '(' + str(totalpages) + ')'
+        else:
+            lasttext = last + '...'
+    lastlink = A(lasttext, _href=URL(r=request, vars={'page':maxpages}))
+    delim = XML('&nbsp;') # nonbreaking delim
+    pagenav = firstlink
+    pagenav.append(delim)
+    pagenav.append(prevlink)
+    pagenav.append(delim)
+    for pageref in pagelinks:
+        pagenav.append(pageref)
+        pagenav.append(delim)
+    pagenav.append(nextlink)
+    pagenav.append(delim)
+    pagenav.append(lastlink)
+    return pagenav
+    
 # Main controller function
 def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', extra=None, onvalidation=None):
     """
@@ -324,12 +376,26 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             # Audit
             shn_audit_read(operation='list', resource=resource, representation=representation)
             if representation == "html":
+                # Start building the Return
+                output = dict(module_name=module_name)
+                # Pagination
+                if 'page' in request.vars:
+                    page = int(request.vars.page)
+                else:
+                    page = 1
+                start_record = (page - 1) * rowsperpage
+                end_record = start_record + rowsperpage
+                limitby = start_record, end_record
+                totalpages = db(query).count() / rowsperpage # Fails on GAE
+                output.update(dict(page=page, totalpages=totalpages))
+                # Which fields do we display?
                 fields = [table[f] for f in table.fields if table[f].readable]
+                # Column labels
                 headers = {}
                 for field in fields:
                    # Use custom or prettified label
                    headers[str(field)] = field.label
-                items=crud.select(table, query=query, fields=fields, headers=headers)
+                items = crud.select(table, query=query, fields=fields, limitby=limitby, headers=headers)
                 if not items:
                     try:
                         items = s3.crud_strings.msg_list_empty
@@ -343,11 +409,17 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     subtitle = s3.crud_strings.subtitle_list
                 except:
                     subtitle = ''
+                # Update the Return with common items
+                output.update(dict(items=items, title=title, subtitle=subtitle))
                 if authorised and listadd:
                     # Audit
                     crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
                     # Display the Add form below List
                     form = crud.create(table, onvalidation=onvalidation)
+                    try:
+                        addtitle = s3.crud_strings.subtitle_create
+                    except:
+                        addtitle = T('Add New')
                     # Check for presence of Custom View
                     custom_view = '%s_list_create.html' % resource
                     _custom_view = os.path.join(request.folder, 'views', module, custom_view)
@@ -355,11 +427,8 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         response.view = module + '/' + custom_view
                     else:
                         response.view = 'list_create.html'
-                    try:
-                        addtitle = s3.crud_strings.subtitle_create
-                    except:
-                        addtitle = T('Add New')
-                    return dict(module_name=module_name, items=items, form=form, title=title, subtitle=subtitle, addtitle=addtitle)
+                    # Add specificities to Return
+                    output.update(dict(form=form, addtitle=addtitle))
                 else:
                     # List only
                     if listadd:
@@ -377,24 +446,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         response.view = module + '/' + custom_view
                     else:
                         response.view = 'list.html'
-                    return dict(module_name=module_name, items=items, title=title, subtitle=subtitle, add_btn=add_btn)
-            elif representation == "ajax":
-                # Unused now that we don't use make_delete_row
-                #shn_represent(table, module, resource, deletable, main, extra)
-                #items = t2.itemize(table, query)
-                fields = [table[f] for f in table.fields if table[f].readable]
-                headers = {}
-                for field in fields:
-                   # Use custom or prettified label
-                   headers[str(field)] = field.label
-                items=crud.select(table, query=query, fields=fields, headers=headers)
-                if not items:
-                    try:
-                        items = s3.crud_strings.msg_list_empty
-                    except:
-                        items = T('None')
-                response.view = 'plain.html'
-                return dict(item=items)
+                    # Add specificities to Return
+                    output.update(dict(add_btn=add_btn))
+                return output
             elif representation == "plain":
                 items = crud.select(table, query)
                 response.view = 'plain.html'

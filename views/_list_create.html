@@ -12,6 +12,11 @@
 {{except:}}
 {{pass}}
 </div>
+{{try:}}
+ {{=pagenav(page=page, totalpages=totalpages)}}
+{{except:}}
+ {{=pagenav(page=page)}}
+{{pass}}
 <p>&nbsp;</p>
 {{try:}}
  {{=H3(addtitle)}}

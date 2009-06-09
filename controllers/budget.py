@@ -47,7 +47,7 @@ def kit_item():
     table = db.budget_kit_item
     
     # Is user authorised to Update?
-    authorised = has_permission('update', table)
+    authorised = shn_has_permission('update', table)
     
     title = db.budget_kit[kit].code
     description = db.budget_kit[kit].description
@@ -92,7 +92,7 @@ def kit_item():
         subtitle = T("Contents")
         
         crud.messages.submit_button=T('Add')
-        # Calculate Totals for the Kit after Item is added
+        # Calculate Totals for the Kit after Item is added to DB
         crud.settings.create_onaccept = lambda form: kit_total(form)
         crud.messages.record_created = T('Kit Updated')
         form = crud.create(table,next=URL(r=request, args=[kit]))
@@ -146,7 +146,7 @@ def kit_update_items():
         redirect(URL(r=request, f='kit'))
     kit = request.args[0]
     table = db.budget_kit_item
-    authorised = has_permission('update', table)
+    authorised = shn_has_permission('update', table)
     if authorised:
         for var in request.vars:
             if 'qty' in var:
@@ -161,7 +161,7 @@ def kit_update_items():
         # Update the Total values
         kit_totals(kit)
         # Audit
-        #crud.settings.update_onaccept = lambda form: shn_audit_update(form, 'kit_item', 'html')
+        shn_audit_update_m2m(resource='kit_item', record=kit, representation='html')
         session.flash = T("Kit updated")
     else:
         session.error = T("Not authorised!")

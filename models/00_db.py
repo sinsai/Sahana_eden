@@ -53,7 +53,7 @@ auth.settings.on_failed_authorization = URL(r=request,f='error')
 auth.settings.register_onaccept = lambda form: auth.register_post(form)
 
 crud = CrudS3(globals(),db)
-#crud.settings.keepvalues = True
+crud.settings.keepvalues = True
 
 from gluon.tools import Service
 service = Service(globals())
@@ -67,7 +67,9 @@ timestamp = SQLTable(None, 'timestamp',
             db.Field('modified_on', 'datetime',
                           readable=False,
                           writable=False,
-                          default=request.now,update=request.now)) 
+                          default=request.now,
+                          update=request.now)
+            ) 
 
 # Reusable author fields
 authorstamp = SQLTable(None, 'authorstamp',

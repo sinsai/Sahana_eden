@@ -102,7 +102,7 @@ def import_json(method):
     return item
     
 # Authorisation    
-def has_permission(name, table_name, record_id = 0):
+def shn_has_permission(name, table_name, record_id = 0):
     """
     S3 framework function to define whether a user can access a record
     Designed to be called from the RESTlike controller
@@ -124,7 +124,7 @@ def has_permission(name, table_name, record_id = 0):
             authorised = auth.has_permission(name, table_name, record_id)
     return authorised
 
-def accessible_query(name, table):
+def shn_accessible_query(name, table):
     """
     Returns a query with all accessible records for the current logged in user
     This method does not work on GAE because uses JOIN and IN
@@ -209,6 +209,25 @@ def shn_audit_update(form, resource, representation=None):
             )
     return
 
+def shn_audit_update_m2m(resource, record, representation=None):
+    """
+    Called during Update operations to enable optional Auditing
+    Designed for use in M2M 'Update Qty/Delete' (which can't use crud.settings.update_onaccept)
+    shn_audit_update_m2m(resource, record, representation)
+    """
+    if session.s3.audit_write:
+        db.s3_audit.insert(
+                person = auth.user.id if session.auth else 0,
+                operation = 'update',
+                module = request.controller,
+                resource = resource,
+                record = record,
+                representation = representation,
+                #old_value = old_value, # Need to store these beforehand if we want them
+                #new_value = new_value  # Various changes can happen, so would need to store dict of {item_id: qty}
+            )
+    return
+
 def shn_audit_delete(resource, record, representation=None):
     "Called during Delete operations to enable optional Auditing"
     if session.s3.audit_write:
@@ -240,7 +259,7 @@ def shn_represent(table, module, resource, deletable=True, main='name', extra=No
 
 def shn_represent_extra(table, module, resource, deletable=True, extra=None):
     "Display more than one extra field (separated by spaces)"
-    authorised = has_permission('delete', table)
+    authorised = shn_has_permission('delete', table)
     item_list = []
     if extra:
         extra_list = extra.split()
@@ -367,12 +386,12 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     
     if len(request.args) == 0:
         # No arguments => default to List
-        authorised = has_permission('read', table)
+        authorised = shn_has_permission('read', table)
         if authorised:
             # Filter Search list to just those records which user can read
-            query = accessible_query('read', table)
+            query = shn_accessible_query('read', table)
             # list_create if have permissions
-            authorised = has_permission('create', table)
+            authorised = shn_has_permission('create', table)
             # Audit
             shn_audit_read(operation='list', resource=resource, representation=representation)
             if representation == "html":
@@ -471,7 +490,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
         if request.args[0].isdigit():
             # 1st argument is ID not method => Read.
             record = request.args[0]
-            authorised = has_permission('read', table, record)
+            authorised = shn_has_permission('read', table, record)
             if authorised:
                 # Audit
                 shn_audit_read(operation='read', resource=resource, record=record, representation=representation)
@@ -528,7 +547,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             except:
                 pass
             if method == "create":
-                authorised = has_permission(method, table)
+                authorised = shn_has_permission(method, table)
                 if authorised:
                     # Audit
                     crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
@@ -580,7 +599,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             elif method == "display" or method == "read":
                 redirect(URL(r=request, args=record))
             elif method == "update":
-                authorised = has_permission(method, table, record)
+                authorised = shn_has_permission(method, table, record)
                 if authorised:
                     # Audit
                     crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
@@ -616,7 +635,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     session.error = T("Not authorised!")
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['update', record])}))
             elif method == "delete":
-                authorised = has_permission(method, table, record)
+                authorised = shn_has_permission(method, table, record)
                 if authorised:
                     # Audit
                     shn_audit_delete(resource, record, representation)
@@ -629,10 +648,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     session.error = T("Not authorised!")
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))
             elif method == "search":
-                authorised = has_permission('read', table)
+                authorised = shn_has_permission('read', table)
                 if authorised:
                     # Filter Search list to just those records which user can read
-                    #query = accessible_query('read', table)
+                    #query = shn_accessible_query('read', table)
                     # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
                     # Audit
                     shn_audit_read(operation='search', resource=resource, representation=representation)

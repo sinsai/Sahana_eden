@@ -21,9 +21,9 @@ resource = 'dead_body'
 table = module + '_' + resource
 
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('tag_label'),      # a unique label
-                db.Field('age_group'),      # age group
-                db.Field('sex'),            # sex
+                db.Field('tag_label', notnull=True, unique=True),   # a unique label
+                db.Field('age_group', notnull=True),                # age group
+                db.Field('sex', notnull=True),                      # gender
                 migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)

@@ -22,7 +22,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 #db.Field('privacy', 'integer', default=0),
                 #db.Field('archived', 'boolean', default=False),
-                db.Field('name'),
+                db.Field('name', notnull=True, unique=True),
                 db.Field('acronym', length=8),
                 db.Field('type'),
                 admin_id,
@@ -53,11 +53,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'office'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name'),
+                db.Field('name', notnull=True),
                 db.Field('organisation', db.or_organisation),
                 db.Field('type'),
                 admin_id,
                 location_id,
+                db.Field('parent', 'reference or_office'),   # This form of hierarchy may not work on all Databases
                 db.Field('address', 'text'),
                 db.Field('postcode'),
                 db.Field('phone1'),
@@ -76,6 +77,8 @@ db[table].name.comment = SPAN("*", _class="req")
 db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
 db[table].organisation.represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0]
 db[table].organisation.comment = DIV(A(s3.crud_strings.or_organisation.label_create_button, _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Organisation|The Organisation this Office belongs to.")))
+db[table].parent.requires = IS_NULL_OR(IS_IN_DB(db, 'or_office.id', 'or_office.name'))
+db[table].parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(['Headquarters', 'Regional', 'Country', 'Satellite Office']))
 db[table].national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 db[table].international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))

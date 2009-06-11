@@ -1,3 +1,11 @@
 {{extend 'layout.html'}}
 
-{{=form}}
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}

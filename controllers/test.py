@@ -10,6 +10,11 @@ def call():
     "Call an XMLRPC, JSONRPC or RSS service"
     return service()
 
+def test():
+    items = None
+    form = None
+    return dict(items=items, form=form)
+    
 @service.rss
 def rss(resource):
     " http://127.0.0.1:8000/sahana/test/call/rss/rss/resource "

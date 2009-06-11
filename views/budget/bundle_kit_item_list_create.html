@@ -1,0 +1,42 @@
+{{extend 'layout.html'}}
+
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Set the Crud dropdowns to the current Bundle
+    var options = '<option value="' + {{=bundle}} + '"></option>';
+    $("#budget_bundle_kit_bundle_id").html(options);
+    $("#budget_bundle_item_bundle_id").html(options);
+    // Hide the dropdowns
+    $("#budget_bundle_kit_bundle_id__row").hide();
+    $("#budget_bundle_item_bundle_id__row").hide();
+    });
+//]]></script>
+
+{{include 'budget/bundle_kit_item_header.html'}}
+
+{{=P(A(T("Edit Description"), _href=URL(r=request, f='bundle', args=('update', bundle))))}}
+
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+</div>
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=H3(addtitle)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+</div>
+{{include 'key.html'}}

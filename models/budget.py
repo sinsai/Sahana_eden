@@ -21,10 +21,10 @@ if not len(db().select(db[table].ALL)):
 resource = 'parameter'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
-                db.Field('shipping', 'double', default=15.00),
-                db.Field('logistics', 'double', default=0.00),
-                db.Field('admin', 'double', default=0.00),
-                db.Field('indirect', 'double', default=7.00),
+                db.Field('shipping', 'double', default=15.00, notnull=True),
+                db.Field('logistics', 'double', default=0.00, notnull=True),
+                db.Field('admin', 'double', default=0.00, notnull=True),
+                db.Field('indirect', 'double', default=7.00, notnull=True),
                 migrate=migrate)
 db[table].shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
 db[table].shipping.label = "Shipping cost"
@@ -41,11 +41,11 @@ s3.crud_strings[table] = Storage(title_update=title_update)
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code'),
+                db.Field('code', notnull=True, unique=True),
                 db.Field('description', length=256),
                 db.Field('category'),
                 #db.Field('sub_category'),
-                db.Field('cost_type'),
+                db.Field('cost_type', notnull=True),
                 db.Field('unit_cost', 'double', default=0.00),
                 db.Field('monthly_cost', 'double', default=0.00),
                 db.Field('minute_cost', 'double', default=0.00),
@@ -76,12 +76,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'kit'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code'),
+                db.Field('code', notnull=True, unique=True),
                 db.Field('description', length=256),
-                db.Field('total_unit_cost', writable=False),
-                db.Field('total_monthly_cost', writable=False),
-                db.Field('total_minute_cost', writable=False),
-                db.Field('total_megabyte_cost', writable=False),
+                db.Field('total_unit_cost', 'double', writable=False),
+                db.Field('total_monthly_cost', 'double', writable=False),
+                db.Field('total_minute_cost', 'double', writable=False),
+                db.Field('total_megabyte_cost', 'double', writable=False),
                 db.Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
@@ -109,18 +109,13 @@ table = module + '_' + resource
 db.define_table(table, timestamp,
                 db.Field('kit_id', db.budget_kit),
                 db.Field('item_id', db.budget_item),
-                db.Field('quantity', 'integer', default=1),
+                db.Field('quantity', 'integer', default=1, notnull=True),
                 migrate=migrate)
-# NB Keeping 'module' name as configurable in single location => can't edit table using appadmin!
-#db[table].kit_id.requires = IS_IN_DB(db, '%s_kit.id' % module, '%s_kit.code' % module)
 db[table].kit_id.requires = IS_IN_DB(db, 'budget_kit.id', 'budget_kit.code')
 db[table].kit_id.label = T('Kit')
-#db[table].kit_id.represent = lambda kit_id: db(db['%s_kit' % module].id==kit_id).select()[0].code
 db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
-#db[table].item_id.requires = IS_IN_DB(db, '%s_item.id' % module, '%s_item.description' % module)
 db[table].item_id.requires = IS_IN_DB(db, 'budget_item.id', 'budget_item.description')
 db[table].item_id.label = T('Item')
-#db[table].item_id.represent = lambda item_id: db(db['%s_item' % module].id==item_id).select()[0].description
 db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
 db[table].quantity.requires = IS_NOT_EMPTY()
 db[table].quantity.label = T('Quantity')
@@ -130,14 +125,16 @@ db[table].quantity.comment = SPAN("*", _class="req")
 resource = 'bundle'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name'),
+                db.Field('name', notnull=True, unique=True),
                 db.Field('description', length=256),
-                db.Field('onetime_cost', writable=False),
-                db.Field('recurring_cost', writable=False),
+                db.Field('total_unit_cost', writable=False),
+                db.Field('total_monthly_cost', writable=False),
                 db.Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
+db[table].total_unit_cost.label = T('One time cost')
+db[table].total_monthly_cost.label = T('Recurring cost')
 title_create = T('Add Bundle')
 title_display = T('Bundle Details')
 title_list = T('List Bundles')
@@ -153,16 +150,65 @@ msg_record_deleted = T('Bundle deleted')
 msg_list_empty = T('No Bundles currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# ToDo: Bundle<>Kit Many2Many
-# ToDo: Bundle<>Item Many2Many
+# Bundle<>Kit Many2Many
+resource = 'bundle_kit'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                db.Field('bundle_id', db.budget_bundle),
+                db.Field('kit_id', db.budget_kit),
+                db.Field('quantity', 'integer', default=1, notnull=True),
+                db.Field('minutes', 'integer', default=0, notnull=True),
+                db.Field('megabytes', 'integer', default=0, notnull=True),
+                migrate=migrate)
+db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.description')
+db[table].bundle_id.label = T('Bundle')
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
+db[table].kit_id.requires = IS_IN_DB(db, 'budget_kit.id', 'budget_kit.code')
+db[table].kit_id.label = T('Kit')
+db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].minutes.requires = IS_NOT_EMPTY()
+db[table].minutes.label = T('Minutes per Month')
+db[table].minutes.comment = SPAN("*", _class="req")
+db[table].megabytes.requires = IS_NOT_EMPTY()
+db[table].megabytes.label = T('Megabytes per Month')
+db[table].megabytes.comment = SPAN("*", _class="req")
+
+# Bundle<>Item Many2Many
+resource = 'bundle_item'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                db.Field('bundle_id', db.budget_bundle),
+                db.Field('item_id', db.budget_item),
+                db.Field('quantity', 'integer', default=1, notnull=True),
+                db.Field('minutes', 'integer', default=0, notnull=True),
+                db.Field('megabytes', 'integer', default=0, notnull=True),
+                migrate=migrate)
+db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.description')
+db[table].bundle_id.label = T('Bundle')
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
+db[table].item_id.requires = IS_IN_DB(db, 'budget_item.id', 'budget_item.description')
+db[table].item_id.label = T('Item')
+db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].minutes.requires = IS_NOT_EMPTY()
+db[table].minutes.label = T('Minutes per Month')
+db[table].minutes.comment = SPAN("*", _class="req")
+db[table].megabytes.requires = IS_NOT_EMPTY()
+db[table].megabytes.label = T('Megabytes per Month')
+db[table].megabytes.comment = SPAN("*", _class="req")
 
 # Staff Types
 resource = 'staff_type'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name'),
-                db.Field('grade'),
-                db.Field('salary', 'integer'),
+                db.Field('name', notnull=True, unique=True),
+                db.Field('grade', notnull=True),
+                db.Field('salary', 'integer', notnull=True),
                 db.Field('travel', 'integer'),
                 db.Field('subsistence', 'double', default=0.00),
                 db.Field('hazard_pay', 'double', default=0.00),
@@ -194,7 +240,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'location'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code',length=3),
+                db.Field('code', length=3, notnull=True, unique=True),
                 db.Field('description'),
                 db.Field('subsistence', 'double', default=0.00),
                 db.Field('hazard_pay', 'double', default=0.00),
@@ -221,7 +267,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'project'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code'),
+                db.Field('code', notnull=True, unique=True),
                 db.Field('title'),
                 db.Field('comments', length=256),
                 migrate=migrate)
@@ -320,7 +366,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'budget'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name'),
+                db.Field('name', notnull=True, unique=True),
                 db.Field('equipment', 'reference %s_budget_equipment' % module),
                 db.Field('staff', 'reference %s_budget_staff' % module),
                 db.Field('comments', length=256),

@@ -46,14 +46,19 @@ auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s 
 auth.settings.gmail_login = True
 auth.settings.on_failed_authorization = URL(r=request,f='error')
 # Allow use of LDAP accounts for login
-#from gluon.contrib.login_methods.ldap_auth import ldap_auth
+from gluon.contrib.login_methods.ldap_auth import ldap_auth
 # OpenLDAP
-#auth.settings.login_methods.append(ldap_auth(server="demo.sahanapy.org",base_dn="ou=users,dc=sahanapy,dc=org"))
+#auth.settings.login_methods.append(ldap_auth(server='demo.sahanapy.org', base_dn='ou=users,dc=sahanapy,dc=org'))
+# Active Directory
+#auth.settings.login_methods.append(ldap_auth(mode='ad', server='dc.domain.org', base_dn='ou=Users,dc=domain,dc=org'))
+# Domino
+#auth.settings.login_methods.append(ldap_auth(mode='domino', server='domino.domain.org'))
 # Add registered users to Person Registry & 'Authenticated' role
 auth.settings.register_onaccept = lambda form: auth.register_post(form)
 
 crud = CrudS3(globals(),db)
-crud.settings.keepvalues = True
+# Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
+#crud.settings.keepvalues = True
 
 from gluon.tools import Service
 service = Service(globals())
@@ -86,6 +91,8 @@ authorstamp = SQLTable(None, 'authorstamp',
 import uuid
 uuidstamp = SQLTable(None, 'uuidstamp',
             db.Field('uuid', length=64,
+                          notnull=True,
+                          unique=True,
                           readable=False,
                           writable=False,
                           default=uuid.uuid4()))
@@ -100,8 +107,8 @@ deletion_status = SQLTable(None, 'deletion_status',
 
 # Reusable Admin field
 admin_id = SQLTable(None, 'admin_id',
-            db.Field('admin',
-                db.auth_group, requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
+            db.Field('admin', db.auth_group,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
                 comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record.")))
                 ))
@@ -250,17 +257,16 @@ else:
 resource = 'module'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('name'),
-                db.Field('name_nice'),
+                db.Field('name', notnull=True, unique=True),
+                db.Field('name_nice', notnull=True, unique=True),
                 db.Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in the Modules menu or the Controllers)
-                db.Field('priority', 'integer'),
+                db.Field('priority', 'integer', notnull=True, unique=True),
                 db.Field('description', length=256),
-                db.Field('enabled','boolean', default='True'),
+                db.Field('enabled', 'boolean', default=True),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
 db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role', multiple=True))
-#db[table].access.requires = IS_IN_DB(db, 'auth_group.id', 'auth_group.role', multiple=True)
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 # Populate table with Default modules
 if not len(db().select(db[table].ALL)):

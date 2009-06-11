@@ -20,7 +20,7 @@ if not len(db().select(db[table].ALL)):
 resource = 'shelter'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
-                db.Field('name'),
+                db.Field('name', notnull=True),
                 db.Field('description', length=256),
                 admin_id,
                 location_id,

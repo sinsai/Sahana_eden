@@ -20,13 +20,12 @@ if not len(db().select(db[table].ALL)):
 resource = 'person'
 table = module+'_'+resource
 db.define_table(table,timestamp,uuidstamp,
-                db.Field('first_name'),
+                db.Field('first_name', notnull=True),
                 db.Field('middle_name'),
-                db.Field('last_name'),      # Family Name?
+                db.Field('last_name'),
                 db.Field('preferred_name'),
-                #db.Field('l10_name'),      # SahanaPHP has this
-                db.Field('email'),          # Needed for AAA
-                db.Field('mobile_phone'),   # Needed for SMS
+                db.Field('email', unique=True), # Needed for AAA
+                db.Field('mobile_phone'),       # Needed for SMS
                 db.Field('address', 'text'),
                 db.Field('postcode'),
                 db.Field('website'),
@@ -69,7 +68,7 @@ resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('name'),   # Contact type
-                db.Field('value'),
+                db.Field('value', notnull=True),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_IN_SET(['phone', 'fax', 'skype', 'msn', 'yahoo'])
@@ -99,137 +98,3 @@ db.define_table(table,timestamp,
 db[table].person_id.label = 'Person'
 db[table].contact_id.requires = IS_IN_DB(db, 'pr_contact.id', 'pr_contact.name')
 db[table].contact_id.label = 'Contact Detail'
-
-
-# Person Identity
-# Modules: dvr,mpr
-#resource = 'person_identity'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('opt_id_type'),		# ID card, Passport, Driving License, etc
-#                db.Field('id_value'))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-
-# Person Details
-# Modules: cr,dvr,mpr
-#resource = 'person_details'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('next_kin',length=64),
-#                db.Field('birth_date','date'),
-#                db.Field('opt_age_group'),
-#                db.Field('relation'),
-#                db.Field('opt_country'),
-#                db.Field('opt_race'),
-#                db.Field('opt_religion'),
-#                db.Field('opt_marital_status'),
-#                db.Field('opt_gender'),
-#                db.Field('occupation'))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db[table].next_kin.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db[table].birth_date.requires = IS_DATE(T("%Y-%m-%d")) # Can use Translation to provide localised formatting
-
-# Person Status
-# Modules: dvr,mpr
-#resource = 'person_status'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('isReliefWorker','boolean',default=False),
-#                db.Field('isVictim','boolean',default=True),
-#                db.Field('opt_status'),	# missing, injured, etc. customizable
-#                db.Field('id_value'))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-
-# Person Physical
-# Modules: dvr,mpr
-#resource = 'person_physical'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('height'),
-#                db.Field('weight'),
-#                db.Field('opt_blood_type'),
-#                db.Field('opt_eye_color'),
-#                db.Field('opt_skin_color'),
-#                db.Field('opt_hair_color'),
-#                db.Field('injuries'),
-#                db.Field('comments',length=256))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-
-# Person Missing
-# Modules: dvr,mpr
-#resource = 'person_missing'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('last_seen'),
-#                db.Field('last_clothing'),
-#                db.Field('comments',length=256))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-
-# Person Deceased
-# Modules: dvr,mpr
-#resource = 'person_deceased'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('details'),
-#                db.Field('date_of_death','date'),
-#                db.Field('place_of_death'),
-#                db.Field('comments',length=256))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-
-# Person Reporter
-# (The pr_person who reported about this pr_person)
-# Modules: dvr,mpr
-#resource = 'person_report'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('reporter',length=64),
-#                db.Field('relation'))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db[table].reporter.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-
-# Person Group
-# Modules: dvr,mpr
-#resource = 'person_group'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('uuid',length=64,default=uuid.uuid4()),
-#                db.Field('name'),
-#                db.Field('opt_group_type'))
-
-# Person Group Details
-# Modules: dvr,mpr
-#resource = 'person_group_details'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person_group',length=64),
-#                db.Field('head',length=64),
-#                db.Field('no_of_adult_males','integer'),
-#                db.Field('no_of_adult_females','integer'),
-#                db.Field('no_of_children','integer'),
-#                db.Field('no_displaced','integer'),
-#                db.Field('no_missing','integer'),
-#                db.Field('no_dead','integer'),
-#                db.Field('no_rehabilitated','integer'),
-#                db.Field('checklist'),
-#                db.Field('description',length=256))
-#db[table].pr_person_group.requires = IS_IN_DB(db,'pr_person_group.uuid')
-#db[table].head.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-
-# Person to Group
-# (A pr_person can belong to multiple groups)
-# Modules: dvr,mpr
-#resource = 'person_to_group'
-#table = module+'_'+resource
-#db.define_table(table,timestamp,
-#                db.Field('pr_person',length=64),
-#                db.Field('pr_person_group',length=64))
-#db[table].pr_person.requires = IS_IN_DB(db,'pr_person.uuid','pr_person.name')
-#db[table].pr_person_group.requires = IS_IN_DB(db,'pr_person_group.uuid')
-

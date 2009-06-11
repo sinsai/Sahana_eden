@@ -353,12 +353,12 @@ def bundle_update_items():
                     quantity = request.vars[var]
                     query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
                     db(query).update(quantity=quantity)
-                if 'mins' in var:
+                elif 'mins' in var:
                     kit = var[9:]
                     minutes = request.vars[var]
                     query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
                     db(query).update(minutes=minutes)
-                if 'mbytes' in var:
+                elif 'mbytes' in var:
                     kit = var[11:]
                     megabytes = request.vars[var]
                     query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
@@ -374,12 +374,12 @@ def bundle_update_items():
                     quantity = request.vars[var]
                     query = (tables[1].bundle_id==bundle) & (tables[1].item_id==item)
                     db(query).update(quantity=quantity)
-                if 'mins' in var:
+                elif 'mins' in var:
                     item = var[10:]
                     minutes = request.vars[var]
                     query = (tables[1].bundle_id==bundle) & (tables[1].item_id==item)
                     db(query).update(minutes=minutes)
-                if 'mbytes' in var:
+                elif 'mbytes' in var:
                     item = var[12:]
                     megabytes = request.vars[var]
                     query = (tables[1].bundle_id==bundle) & (tables[1].item_id==item)

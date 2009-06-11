@@ -46,7 +46,7 @@ auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s 
 auth.settings.gmail_login = True
 auth.settings.on_failed_authorization = URL(r=request,f='error')
 # Allow use of LDAP accounts for login
-from gluon.contrib.login_methods.ldap_auth import ldap_auth
+#from gluon.contrib.login_methods.ldap_auth import ldap_auth
 # OpenLDAP
 #auth.settings.login_methods.append(ldap_auth(server='demo.sahanapy.org', base_dn='ou=users,dc=sahanapy,dc=org'))
 # Active Directory

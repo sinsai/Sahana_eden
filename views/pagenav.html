@@ -1,0 +1,7 @@
+﻿{{try:}}
+ {{if totalpages <> 1:}}
+  {{=pagenav(page=page, totalpages=totalpages)}}
+ {{pass}}
+{{except:}}
+ {{=pagenav(page=page)}}
+{{pass}}

@@ -14,11 +14,7 @@
 {{except:}}
 {{pass}}
 </div>
-{{try:}}
- {{=pagenav(page=page, totalpages=totalpages)}}
-{{except:}}
- {{=pagenav(page=page)}}
-{{pass}}
+{{include 'pagenav.html'}}
 <p>&nbsp;</p>
 {{try:}}
  {{=add_btn}}

@@ -42,10 +42,10 @@ resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('code', notnull=True, unique=True),
-                db.Field('description', length=256),
+                db.Field('description', length=256, notnull=True),
+                db.Field('cost_type', notnull=True),
                 db.Field('category'),
                 #db.Field('sub_category'),
-                db.Field('cost_type', notnull=True),
                 db.Field('unit_cost', 'double', default=0.00),
                 db.Field('monthly_cost', 'double', default=0.00),
                 db.Field('minute_cost', 'double', default=0.00),
@@ -54,9 +54,11 @@ db.define_table(table, timestamp, uuidstamp,
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
+db[table].description.requires = IS_NOT_EMPTY()
+db[table].description.comment = SPAN("*", _class="req")
+db[table].cost_type.requires = IS_IN_SET(['One-time', 'Recurring'])
 db[table].category.requires = IS_IN_SET(['Consumable', 'Satellite', 'HF', 'VHF', 'Telephony', 'W-LAN', 'Network', 'Generator', 'Electrical', 'Vehicle', 'GPS', 'Tools', 'IT', 'ICT', 'TC', 'Stationery', 'Relief', 'Miscellaneous', 'Running Cost'])
 #db[table].sub_category.requires = IS_IN_SET(['Satellite', 'VHF', 'UHF', 'HF', 'Airband', 'Telephony', 'GPS'])
-db[table].cost_type.requires = IS_IN_SET(['One-time', 'Recurring'])
 title_create = T('Add Item')
 title_display = T('Item Details')
 title_list = T('List Items')

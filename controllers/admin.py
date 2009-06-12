@@ -39,7 +39,7 @@ def setting():
 def user():
     "RESTlike CRUD controller"
     # Add users to Person Registry & 'Authenticated' role
-    crud.settings.create_onaccept = lambda form: auth.register_post(form)
+    crud.settings.create_onaccept = lambda form: auth.shn_register(form)
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.label = T('Disabled?')

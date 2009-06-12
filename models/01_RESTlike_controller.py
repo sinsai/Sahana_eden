@@ -327,7 +327,7 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
     return pagenav
     
 # Main controller function
-def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', extra=None, onvalidation=None):
+def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', extra=None, onvalidation=None, onaccept=None):
     """
     RESTlike controller function.
     
@@ -337,6 +337,8 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     listadd=False: don't provide an add form in the list view
     main='field': the field used for the title in RSS output
     extra='field': the field used for the description in RSS output
+    onvalidation=lambda form: function(form)    callback processed *before* DB IO
+    onaccept=lambda form: function(form)        callback processed *after* DB IO
     
     Customisable Security Policy
 
@@ -434,7 +436,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     # Audit
                     crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
                     # Display the Add form below List
-                    form = crud.create(table, onvalidation=onvalidation)
+                    form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
                     try:
                         addtitle = s3.crud_strings.subtitle_create
                     except:
@@ -552,7 +554,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     # Audit
                     crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
                     if representation == "html":
-                        form = crud.create(table, onvalidation=onvalidation)
+                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
                         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
                         # Check for presence of Custom View
                         custom_view = '%s_create.html' % resource
@@ -572,11 +574,11 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
                         return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
                     elif representation == "plain":
-                        form = crud.create(table, onvalidation=onvalidation)
+                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
                         response.view = 'plain.html'
                         return dict(item=form)
                     elif representation == "popup":
-                        form = crud.create(table, onvalidation=onvalidation)
+                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
                         response.view = 'popup.html'
                         return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
                     elif representation == "json":
@@ -605,7 +607,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
                     crud.settings.update_deletable = deletable
                     if representation == "html":
-                        form = crud.update(table, record, onvalidation=onvalidation)
+                        form = crud.update(table, record, onvalidation=onvalidation, onaccept=onaccept)
                         # Check for presence of Custom View
                         custom_view = '%s_update.html' % resource
                         _custom_view = os.path.join(request.folder, 'views', module, custom_view)
@@ -623,7 +625,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         else:
                             return dict(module_name=module_name, form=form, title=title)
                     elif representation == "plain":
-                        form = crud.update(table, record, onvalidation=onvalidation)
+                        form = crud.update(table, record, onvalidation=onvalidation, onaccept=onaccept)
                         response.view = 'plain.html'
                         return dict(item=form)
                     elif representation == "json":

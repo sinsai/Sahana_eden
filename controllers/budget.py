@@ -39,7 +39,7 @@ def item():
 
 def kit():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'kit', main='code')
+    return shn_rest_controller(module, 'kit', main='code', onaccept=lambda form: kit_total(form))
 
 def kit_item():
     "Many to Many CRUD Controller"
@@ -117,7 +117,12 @@ def kit_item():
 
 def kit_total(form):
     "Calculate Totals for the Kit specified by Form"
-    kit = form.vars.kit_id
+    if 'kit_id' in form.vars:
+        # called by kit_item()
+        kit = form.vars.kit_id
+    else:
+        # called by kit()
+        kit = form.vars.id
     kit_totals(kit)
     
 def kit_totals(kit):
@@ -168,7 +173,7 @@ def kit_update_items():
 
 def bundle():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'bundle')
+    return shn_rest_controller(module, 'bundle', onaccept=lambda form: bundle_total(form))
 
 def bundle_kit_item():
     "Many to Many CRUD Controller"
@@ -275,10 +280,11 @@ def bundle_kit_item():
         response.view = '%s/bundle_kit_item_list_create.html' % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form1, bundle=bundle))
         return output
-    else: # FIXME!
+    else:
         # Display a simple List page
         table = tables[0]
-        table.kit_id.readable = False
+        query = table.bundle_id==bundle
+        table.bundle_id.readable = False
         fields = [table[f] for f in table.fields if table[f].readable]
         headers = {}
         for field in fields:
@@ -289,7 +295,8 @@ def bundle_kit_item():
         items1 = crud.select(table, query=query, fields=fields, headers=headers, linkto=linkto, id=id)
         
         table = tables[1]
-        table.item_id.readable = False
+        query = table.bundle_id==bundle
+        table.bundle_id.readable = False
         fields = [table[f] for f in table.fields if table[f].readable]
         headers = {}
         for field in fields:
@@ -299,15 +306,18 @@ def bundle_kit_item():
         id = 'item_id'
         items2 = crud.select(table, query=query, fields=fields, headers=headers, linkto=linkto, id=id)
         
-        items = items1, items2
-        
         response.view = '%s/bundle_kit_item_list.html' % module
-        output.update(dict(items=items))
+        output.update(dict(items1=items1, items2=items2))
         return output
 
 def bundle_total(form):
     "Calculate Totals for the Bundle specified by Form"
-    bundle = form.vars.bundle_id
+    if 'bundle_id' in form.vars:
+        # called by bundle_kit_item()
+        bundle = form.vars.bundle_id
+    else:
+        # called by bundle()
+        bundle = form.vars.id
     bundle_totals(bundle)
     
 def bundle_totals(bundle):

@@ -2,9 +2,17 @@
 
 {{include 'budget/bundle_kit_item_header.html'}}
 
+<p>&nbsp;</p>
+{{=H3(T('Contents'))}}
 <div id='table-container'>
 {{try:}}
- {{=items}}
+ {{=items1}}
+{{except:}}
+{{pass}}
+{{try:}}
+ {{ if items2:}}
+  {{=items2}}
+ {{pass}}
 {{except:}}
 {{pass}}
 </div>

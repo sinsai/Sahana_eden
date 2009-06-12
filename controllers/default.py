@@ -8,18 +8,21 @@ response.menu_options = [
 
 # Web2Py Tools functions
 # (replaces T2)
-def user():
-    "Auth functions based on arg. See gluon/tools.py"
-    return dict(form=auth(), module_name=module_name)
-
-def download():
-    "Download a file."
-    return response.download(request, db) 
-
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
     return service()
     
+def download():
+    "Download a file."
+    return response.download(request, db) 
+
+def user():
+    "Auth functions based on arg. See gluon/tools.py"
+    auth.settings.on_failed_authorization = URL(r=request, f='error')
+    # Add newly-registered users to Person Registry & 'Authenticated' role
+    auth.settings.register_onaccept = lambda form: auth.shn_register(form)
+    return dict(form=auth(), module_name=module_name)
+
 # S3 framework functions
 def index():
     "Module's Home Page"

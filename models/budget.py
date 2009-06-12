@@ -108,7 +108,7 @@ resource = 'kit_item'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 db.Field('kit_id', db.budget_kit),
-                db.Field('item_id', db.budget_item),
+                db.Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 db.Field('quantity', 'integer', default=1, notnull=True),
                 migrate=migrate)
 db[table].kit_id.requires = IS_IN_DB(db, 'budget_kit.id', 'budget_kit.code')
@@ -155,7 +155,7 @@ resource = 'bundle_kit'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 db.Field('bundle_id', db.budget_bundle),
-                db.Field('kit_id', db.budget_kit),
+                db.Field('kit_id', db.budget_kit, ondelete='RESTRICT'),
                 db.Field('quantity', 'integer', default=1, notnull=True),
                 db.Field('minutes', 'integer', default=0, notnull=True),
                 db.Field('megabytes', 'integer', default=0, notnull=True),
@@ -181,7 +181,7 @@ resource = 'bundle_item'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 db.Field('bundle_id', db.budget_bundle),
-                db.Field('item_id', db.budget_item),
+                db.Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 db.Field('quantity', 'integer', default=1, notnull=True),
                 db.Field('minutes', 'integer', default=0, notnull=True),
                 db.Field('megabytes', 'integer', default=0, notnull=True),
@@ -292,9 +292,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'budget_equipment'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('location', 'reference %s_location' % module),
-                db.Field('project', 'reference %s_project' % module),
-                db.Field('bundle', 'reference %s_bundle' % module),
+                db.Field('location', 'reference %s_location' % module, ondelete='RESTRICT'),
+                db.Field('project', 'reference %s_project' % module, ondelete='RESTRICT'),
+                db.Field('bundle', 'reference %s_bundle' % module, ondelete='RESTRICT'),
                 db.Field('quantity', 'integer'),
                 db.Field('unit_cost', 'double', writable=False),
                 db.Field('months', 'integer'),
@@ -327,9 +327,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'budget_staff'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('location', 'reference %s_location' % module),
-                db.Field('project', 'reference %s_project' % module),
-                db.Field('job_title', 'reference %s_staff_type' % module),
+                db.Field('location', 'reference %s_location' % module, ondelete='RESTRICT'),
+                db.Field('project', 'reference %s_project' % module, ondelete='RESTRICT'),
+                db.Field('job_title', 'reference %s_staff_type' % module, ondelete='RESTRICT'),
                 db.Field('grade', writable=False),
                 db.Field('type'),
                 db.Field('headcount', 'integer'),
@@ -367,8 +367,8 @@ resource = 'budget'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('name', notnull=True, unique=True),
-                db.Field('equipment', 'reference %s_budget_equipment' % module),
-                db.Field('staff', 'reference %s_budget_staff' % module),
+                db.Field('equipment', 'reference %s_budget_equipment' % module, ondelete='RESTRICT'),
+                db.Field('staff', 'reference %s_budget_staff' % module, ondelete='RESTRICT'),
                 db.Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]

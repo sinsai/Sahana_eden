@@ -18,8 +18,8 @@ if not len(db().select(db[table].ALL)):
 
 # People
 resource = 'person'
-table = module+'_'+resource
-db.define_table(table,timestamp,uuidstamp,
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
                 db.Field('first_name', notnull=True),
                 db.Field('middle_name'),
                 db.Field('last_name'),
@@ -56,11 +56,12 @@ msg_record_deleted = T('Person deleted')
 msg_list_empty = T('No People currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
-person_id = SQLTable(None,'person_id',
-            db.Field('person_id',
-                db.pr_person,requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
+person_id = SQLTable(None, 'person_id',
+            db.Field('person_id', db.pr_person,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
                 represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
-                comment = DIV(A(T('Add Contact'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Contact|The Person to contact for this.")))
+                comment = DIV(A(T('Add Contact'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Contact|The Person to contact for this."))),
+                ondelete = 'RESTRICT'
                 ))
 
 # Contacts

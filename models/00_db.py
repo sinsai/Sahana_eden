@@ -10,8 +10,8 @@ migrate = True
 #    from gluon.contrib.gql import *         # if running on Google App Engine
 #except:
 db = SQLDB('sqlite://storage.db')            # if not, use SQLite
-#db = SQLDB('mysql://user:password@hostname/db', pools=10) # or other DB
-#db = SQLDB('postgres://user:password@hostname/db', pools=10)
+#db = SQLDB('mysql://root:password@localhost/db', pools=10) # or other DB
+#db = SQLDB('postgres://postgres:password@localhost/db', pools=10)
 #else:
 #    db = GQLDB()                            # connect to Google BigTable
 #    session.connect(request,response,db=db) # and store sessions there
@@ -40,21 +40,21 @@ auth.settings.registration_requires_approval = False
 auth.settings.registration_requires_verification = False
 # Email settings for registration verification
 auth.settings.mailer = mail
-# ** Amend this to your Publically-accessible URL
+# ** Amend this to your Publically-accessible URL ***
 auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s to verify your email'
-# Allow use of GMail accounts for login
-auth.settings.gmail_login = True
-auth.settings.on_failed_authorization = URL(r=request,f='error')
 # Allow use of LDAP accounts for login
+# (NB These are not automatically added to PR or to Authenticated role since they enter via the login() method not register())
 #from gluon.contrib.login_methods.ldap_auth import ldap_auth
-# OpenLDAP
-#auth.settings.login_methods.append(ldap_auth(server='demo.sahanapy.org', base_dn='ou=users,dc=sahanapy,dc=org'))
 # Active Directory
 #auth.settings.login_methods.append(ldap_auth(mode='ad', server='dc.domain.org', base_dn='ou=Users,dc=domain,dc=org'))
+# or if not wanting local users at all (no passwords saved within DB):
+#auth.settings.login_methods=[ldap_auth(mode='ad', server='dc.domain.org', base_dn='ou=Users,dc=domain,dc=org')]
 # Domino
 #auth.settings.login_methods.append(ldap_auth(mode='domino', server='domino.domain.org'))
-# Add registered users to Person Registry & 'Authenticated' role
-auth.settings.register_onaccept = lambda form: auth.register_post(form)
+# OpenLDAP
+#auth.settings.login_methods.append(ldap_auth(server='demo.sahanapy.org', base_dn='ou=users,dc=sahanapy,dc=org'))
+# Allow use of Email accounts for login
+#auth.settings.login_methods.append(email_auth("smtp.gmail.com:587", "@gmail.com"))
 
 crud = CrudS3(globals(),db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
@@ -80,11 +80,13 @@ timestamp = SQLTable(None, 'timestamp',
 authorstamp = SQLTable(None, 'authorstamp',
             db.Field('created_by', db.auth_user,
                           writable=False,
-                          default=session.auth.user.id if auth.is_logged_in() else 0),
+                          default=session.auth.user.id if auth.is_logged_in() else 0,
+                          ondelete='RESTRICT'),
             db.Field('modified_by', db.auth_user,
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
-                          update=session.auth.user.id if auth.is_logged_in() else 0)
+                          update=session.auth.user.id if auth.is_logged_in() else 0,
+                          ondelete='RESTRICT')
             ) 
 
 # Reusable UUID field (needed as part of database synchronization)
@@ -110,7 +112,8 @@ admin_id = SQLTable(None, 'admin_id',
             db.Field('admin', db.auth_group,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
-                comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record.")))
+                comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
+                ondelete='RESTRICT'
                 ))
     
 # Custom validators
@@ -389,6 +392,7 @@ table = auth.settings.table_group_name
 # 1st-run initialisation
 if not len(db().select(db[table].ALL)):
     auth.add_group('Administrator', description = 'System Administrator - can access & make changes to any data')
+    # Doesn't work on Postgres!
     auth.add_membership(1, 1) # 1st person created will be System Administrator (can be changed later)
     auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
     auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
@@ -399,7 +403,7 @@ if not len(db().select(db[table].ALL)):
 resource = 'audit'
 table = module + '_' + resource
 db.define_table(table,timestamp,
-                db.Field('person', db.auth_user),
+                db.Field('person', db.auth_user, ondelete='RESTRICT'),
                 db.Field('operation'),
                 db.Field('representation'),
                 db.Field('module'),

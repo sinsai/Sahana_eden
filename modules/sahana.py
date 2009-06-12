@@ -201,7 +201,7 @@ class AuthS3(Auth):
     """
     Extended version of Auth from gluon/tools.py
     - override login() & register()
-    - add register_post()
+    - add shn_register() callback
     """
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
@@ -257,7 +257,7 @@ class AuthS3(Auth):
                         onvalidation=onvalidation):
 
             user = None # default                
-            if self in self.settings.login_methods:
+            if self.settings.login_methods[0] == self:
                 users = self.db(table_user[username] == form.vars[username])\
                     .select()
                 if users:
@@ -280,6 +280,8 @@ class AuthS3(Auth):
                     if login_method != self and \
                             login_method(request.vars[username],
                                          request.vars.password):
+                        if not self in self.settings.login_methods:
+                            form.vars[password] = None # do not store password
                         user = self.get_or_create_user(form.vars)
                         break
             if not user:
@@ -410,10 +412,7 @@ class AuthS3(Auth):
             redirect(next)
         return form
 
-    def register_post(
-        self,
-        form
-        ):
+    def shn_register(self, form):
         """
         S3 framework function
         Designed to be used as an onaccept callback for register()
@@ -421,12 +420,13 @@ class AuthS3(Auth):
             * adds them to the 'Authenticated' role
             * adds their name to the Person Registry
         """
+        db = self.db
         # Add to 'Authenticated' role
         authenticated = self.id_group('Authenticated')
         self.add_membership(authenticated, form.vars.id)
         # S3: Add to Person Registry as well
         # Check to see whether User already exists
-        if len(self.db(self.db.pr_person.email==form.vars.email).select()):
+        if len(db(db.pr_person.email==form.vars.email).select()):
             # Update
             #db(db.pr_person.email==form.vars.email).select()[0].update_record(
             #    name = form.vars.name
@@ -434,12 +434,11 @@ class AuthS3(Auth):
             pass
         else:
             # Insert
-            self.db.pr_person.insert(
+            db.pr_person.insert(
                 first_name = form.vars.first_name,
                 last_name = form.vars.last_name,
                 email = form.vars.email
             )
-
         
 class CrudS3(Crud):
     """

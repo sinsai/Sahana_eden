@@ -94,6 +94,8 @@ def kit_item():
         subtitle = T("Contents")
         
         crud.messages.submit_button=T('Add')
+        # Check for duplicates before Item is added to DB
+        crud.settings.create_onvalidation = lambda form: kit_dupes(form)
         # Calculate Totals for the Kit after Item is added to DB
         crud.settings.create_onaccept = lambda form: kit_total(form)
         crud.messages.record_created = T('Kit Updated')
@@ -117,6 +119,19 @@ def kit_item():
         output.update(dict(items=items))
         return output
 
+def kit_dupes(form):
+    "Checks for duplicate Item before adding to DB"
+    kit = form.vars.kit_id
+    item = form.vars.item_id
+    table = db.budget_kit_item
+    query = (table.kit_id==kit) & (table.item_id==item)
+    items = db(query).select()
+    if items:
+        session.error = T("Item already in Kit!")
+        redirect(URL(r=request, args=kit))
+    else:
+        return
+    
 def kit_total(form):
     "Calculate Totals for the Kit specified by Form"
     if 'kit_id' in form.vars:
@@ -273,14 +288,18 @@ def bundle_kit_item():
         subtitle = T("Contents")
         
         crud.messages.submit_button=T('Add')
+        # Check for duplicates before Item is added to DB
+        crud.settings.create_onvalidation = lambda form: bundle_dupes(form)
         # Calculate Totals for the Bundle after Item is added to DB
         crud.settings.create_onaccept = lambda form: bundle_total(form)
         crud.messages.record_created = T('Bundle Updated')
         form1 = crud.create(tables[0], next=URL(r=request, args=[bundle]))
+        form1[0][0].append(TR(TD(T('Type:')),TD(SELECT(OPTION(T('Kit')), OPTION(T('Item')), _id="kit_item1"))))
         form2 = crud.create(tables[1], next=URL(r=request, args=[bundle]))
+        form2[0][0].append(TR(TD(T('Type:')),TD(SELECT(OPTION(T('Kit')), OPTION(T('Item')), _id="kit_item2"))))
         addtitle = T("Add to Bundle")
         response.view = '%s/bundle_kit_item_list_create.html' % module
-        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form1, bundle=bundle))
+        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, bundle=bundle))
         return output
     else:
         # Display a simple List page
@@ -312,6 +331,27 @@ def bundle_kit_item():
         output.update(dict(items1=items1, items2=items2))
         return output
 
+def bundle_dupes(form):
+    "Checks for duplicate Kit/Item before adding to DB"
+    bundle = form.vars.bundle_id
+    if 'kit_id' in form.vars:
+        kit = form.vars.kit_id
+        table = db.budget_bundle_kit
+        query = (table.bundle_id==bundle) & (table.kit_id==kit)
+    elif 'item_id' in form.vars:
+        item = form.vars.item_id
+        table = db.budget_bundle_item
+        query = (table.bundle_id==bundle) & (table.item_id==item)
+    else:
+        # Something went wrong!
+        return
+    items = db(query).select()
+    if items:
+        session.error = T("Item already in Bundle!")
+        redirect(URL(r=request, args=bundle))
+    else:
+        return
+    
 def bundle_total(form):
     "Calculate Totals for the Bundle specified by Form"
     if 'bundle_id' in form.vars:

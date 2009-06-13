@@ -9,6 +9,35 @@ $(function() {
     // Hide the dropdowns
     $("#budget_bundle_kit_bundle_id__row").hide();
     $("#budget_bundle_item_bundle_id__row").hide();
+    
+    // Hide the Items form
+    $("form:last").hide();
+    
+    // When the Type changes:
+	$("select#kit_item1").change(function() {
+		// What is the new type?
+        type=$(this).val();
+        if (type=="Item") {
+            // Hide the Kits form
+            $("form:eq(1)").hide();
+            // Set the selector to 'Item'
+            $("select#kit_item2").html('<option value="Kit">Kit</option><option value="Item"  selected="yes">Item</option>');
+            // Show the Items form
+            $("form:last").show();
+        }
+    })
+	$("select#kit_item2").change(function() {
+		// What is the new type?
+        type=$(this).val();
+        if (type=="Kit") {
+            // Hide the Items form
+            $("form:last").hide();
+            // Set the selector to 'Kit'
+            $("select#kit_item1").html('<option value="Kit" selected="yes">Kit</option><option value="Item">Item</option>');
+            // Show the Kits form
+            $("form:eq(1)").show();
+        }
+	})
     });
 //]]></script>
 
@@ -35,7 +64,11 @@ $(function() {
 {{pass}}
 <div class='form-container'>
 {{try:}}
- {{=form}}
+ {{=form1}}
+{{except:}}
+{{pass}}
+{{try:}}
+ {{=form2}}
 {{except:}}
 {{pass}}
 </div>

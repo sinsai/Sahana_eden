@@ -1,4 +1,6 @@
-﻿class CrudController():
+﻿# -*- coding: utf-8 -*-
+
+class CrudController():
     """
     RESTlike Crud controller converted to a class so that it can be extended for Many<>Many, etc
     

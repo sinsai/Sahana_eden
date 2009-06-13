@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 import wsgi_intercept.webtest_intercept
 
 class WSGI_Test(wsgi_intercept.webtest_intercept.WebCase):

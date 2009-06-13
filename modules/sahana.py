@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 """
 This file was developed by Fran Boon as a web2py extension.
 This file is released under the BSD license 

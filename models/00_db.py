@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 import os, traceback, datetime
 import re
 

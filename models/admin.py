@@ -1,4 +1,6 @@
-﻿module = 'admin'
+﻿# -*- coding: utf-8 -*-
+
+module = 'admin'
 
 # Settings
 resource = 'setting'

@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 # This file is used to test out various ideas or new Web2Py features
 module = 'test'
 

@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 def user():
     "Defined in admin module, so redirect there"
     args=request.args

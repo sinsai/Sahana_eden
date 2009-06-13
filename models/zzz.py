@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 # Security Model
 
 # FIle needs to be last in order to be able to have all Tables defined

@@ -1,4 +1,6 @@
-﻿module = 'rms'
+﻿# -*- coding: utf-8 -*-
+
+module = 'rms'
 
 # Settings
 resource = 'setting'

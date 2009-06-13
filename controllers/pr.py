@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 module = 'pr'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice

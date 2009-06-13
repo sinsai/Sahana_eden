@@ -1,3 +1,5 @@
+﻿# -*- coding: utf-8 -*-
+
 # From http://groups.google.com/group/web2py/msg/9803f6bf92349e32
 # currently unused
 import re

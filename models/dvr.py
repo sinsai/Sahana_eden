@@ -1,4 +1,6 @@
-﻿module = 'dvr'
+﻿# -*- coding: utf-8 -*-
+
+module = 'dvr'
 
 # Settings
 resource = 'setting'

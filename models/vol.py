@@ -1,4 +1,6 @@
-﻿module = 'vol'
+﻿# -*- coding: utf-8 -*-
+
+module = 'vol'
 
 # Settings
 resource = 'setting'

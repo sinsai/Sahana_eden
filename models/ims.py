@@ -1,4 +1,6 @@
-﻿module = 'ims'
+﻿# -*- coding: utf-8 -*-
+
+module = 'ims'
 
 # Settings
 resource = 'setting'

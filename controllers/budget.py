@@ -37,7 +37,7 @@ def parameter():
     
 def item():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'item', main='code')
+    return shn_rest_controller(module, 'item', main='code', extra='description')
 
 def kit():
     "RESTlike CRUD controller"

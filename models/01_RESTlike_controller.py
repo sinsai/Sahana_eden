@@ -338,7 +338,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     deletable=False: don't provide visible options for deletion
     listadd=False: don't provide an add form in the list view
     main='field': the field used for the title in RSS output
-    extra='field': the field used for the description in RSS output
+    extra='field': the field used for the description in RSS output & in Search AutoComplete
     onvalidation=lambda form: function(form)    callback processed *before* DB IO
     onaccept=lambda form: function(form)        callback processed *after* DB IO
     
@@ -400,7 +400,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             shn_audit_read(operation='list', resource=resource, representation=representation)
             if representation == "html":
                 # Start building the Return
-                output = dict(module_name=module_name)
+                output = dict(module_name=module_name, main=main, extra=extra)
                 # Pagination
                 if 'page' in request.vars:
                     page = int(request.vars.page)
@@ -673,14 +673,23 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         title = s3.crud_strings.title_search
                         return dict(module_name=module_name, search=search, title=title)
                     if representation == "json":
-                        if request.vars.field and request.vars.filter and request.vars.value:
+                        # JQuery Autocomplete uses 'q' instead of 'value'
+                        value = request.vars.value or request.vars.q or None
+                        if request.vars.field and request.vars.filter and value:
                             field = str.lower(request.vars.field)
-                            filter = str.lower(request.vars.filter)
+                            filter = request.vars.filter
                             if filter == '=':
-                                query = (table['%s' % field]==request.vars.value)
+                                query = (table[field]==value)
                                 item = db(query).select().json()
+                            elif filter == '~':
+                                query = (table[field].like('%' + value + '%'))
+                                limit = int(request.vars.limit) or None
+                                if limit:
+                                    item = db(query).select(limitby=(0,limit)).json()
+                                else:
+                                    item = db(query).select().json()
                             else:
-                                item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ="}}'
+                                item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: =, ~"}}'
                         else:
                             item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
                         response.view = 'plain.html'

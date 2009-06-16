@@ -31,7 +31,7 @@ $(function() {
 	})
     
     // Set unused values before submitting form
-    $("input[type='submit']").click(function(event){
+    $("input[type='submit']:last").click(function(event){
         // What is the final cost type?
         cost_type=$("select[name='cost_type']").val();
         if (cost_type=="Recurring") {

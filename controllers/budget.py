@@ -37,7 +37,40 @@ def parameter():
     
 def item():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'item', main='code', extra='description')
+    return shn_rest_controller(module, 'item', main='code', extra='description', onaccept=lambda form: item_cascade(form))
+
+def item_cascade(form):
+    """
+    When an Item is updated, then also need to update all Kits, Bundles & Budgets which contain this item
+    Called as an onaccept from the RESTlike controller
+    """
+    # Check if we're an update form
+    if form.vars.id:
+        item = form.vars.id
+        # Update Kits containing this Item
+        table = db.budget_kit_item
+        query = table.item_id==item
+        rows = db(query).select()
+        for row in rows:
+            kit = row.kit_id
+            kit_totals(kit)
+            # Update Bundles containing this Kit
+            table = db.budget_bundle_kit
+            query = table.kit_id==kit
+            rows = db(query).select()
+            for row in rows:
+                bundle = row.bundle_id
+                bundle_totals(bundle)
+                # Update Budgets containing this Bundle (tbc)
+        # Update Bundles containing this Item
+        table = db.budget_bundle_item
+        query = table.item_id==item
+        rows = db(query).select()
+        for row in rows:
+            bundle = row.bundle_id
+            bundle_totals(bundle)
+            # Update Budgets containing this Bundle (tbc)
+    return
 
 def kit():
     "RESTlike CRUD controller"

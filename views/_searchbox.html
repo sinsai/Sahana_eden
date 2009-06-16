@@ -21,11 +21,12 @@ $(function() {
     $("input#search").click(function() {
         // Set the Action URL
         $("form#searchform").attr("action","{{=URL(r=request)}}/"+$("input#searchbox").val());
-        return True;
+        event.default();
+        return false;
     })
 });
 //]]></script>
 
- <FORM id="searchform" method="get" enctype="multipart/form-data" action="{{=URL(r=request, args='id')}}">
+ <FORM id="searchform" method="get" enctype="multipart/form-data" action="{{=URL(r=request)}}">
   <B>{{=T('Search')}}</B>: <INPUT size=30 id="searchbox" class="ac_input" type="text" autocomplete="off"/><input type="submit" id="search" value="{{=T('Details')}}"/>
  </FORM>

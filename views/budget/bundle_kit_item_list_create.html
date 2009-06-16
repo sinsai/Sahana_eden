@@ -38,7 +38,31 @@ $(function() {
             $("form:eq(1)").show();
         }
 	})
-    });
+    // When the Kit changes:
+	$("select#budget_bundle_item_kit_id").change(function() {
+		// What is the new Kit?
+        kit = $(this).val();
+        // Read details on Item
+        $.getJSON("{{=URL(r=request, f='kit')}}" + "/" + kit + "?format=json", function(json){
+            // Does it have a Minutes cost?
+            if (json[0].total_minute_cost==0.0) {
+                // Disable the input
+                $("input#budget_bundle_kit_minutes").attr("disabled", true);
+            } else {
+                // Enable the input
+                $("input#budget_bundle_kit_minutes").removeAttr("disabled");
+            }
+            // Does it have a Megabytes cost?
+            if (json[0].total_megabyte_cost==0.0) {
+                // Disable the input
+                $("input#budget_bundle_kit_megabytes").attr("disabled", true);
+            } else {
+                // Enable the input
+                $("input#budget_bundle_kit_megabytes").removeAttr("disabled");
+            }
+        });
+    })
+});
 //]]></script>
 
 {{include 'budget/bundle_kit_item_header.html'}}

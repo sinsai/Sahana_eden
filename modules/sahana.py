@@ -548,21 +548,6 @@ class S3:
             self.session.flash = flash
         redirect(self.action(f, args, vars))
 
-    def delete(self, table, query=None, next=None):
-        """
-        Deletes the result of the query. If no query: query=table.id==t2.id
-        """
-        request, response, session, cache, T, db = self._globals()
-        if not next:
-            next = request.function
-        if not query:
-            id = self.id or self._error()  
-            query = table.id == id
-        table._db(query).delete()
-        if next:
-            self.redirect(f=next, flash=self.messages.record_deleted)
-        return True
-        
     # Deprecated
     def itemize(self, *tables, **opts):
         """

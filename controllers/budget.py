@@ -148,8 +148,9 @@ def kit_item():
         linkto = URL(r=request, f='item', args='read')
         id = 'item_id'
         items = crud.select(table, query=query, fields=fields, headers=headers, linkto=linkto, id=id)
+        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/kit_item_list.html' % module
-        output.update(dict(items=items))
+        output.update(dict(items=items, add_btn=add_btn))
         return output
 
 def kit_dupes(form):
@@ -327,9 +328,9 @@ def bundle_kit_item():
         crud.settings.create_onaccept = lambda form: bundle_total(form)
         crud.messages.record_created = T('Bundle Updated')
         form1 = crud.create(tables[0], next=URL(r=request, args=[bundle]))
-        form1[0][0].append(TR(TD(T('Type:')),TD(SELECT(OPTION(T('Kit')), OPTION(T('Item')), _id="kit_item1"))))
+        form1[0][0].append(TR(TD(T('Type:')), TD(LABEL(T('Kit'), INPUT(_type="radio", _name="kit_item1", _value="Kit", value="Kit")), LABEL(T('Item'), INPUT(_type="radio", _name="kit_item1", _value="Item", value="Kit")))))
         form2 = crud.create(tables[1], next=URL(r=request, args=[bundle]))
-        form2[0][0].append(TR(TD(T('Type:')),TD(SELECT(OPTION(T('Kit')), OPTION(T('Item')), _id="kit_item2"))))
+        form2[0][0].append(TR(TD(T('Type:')), TD(LABEL(T('Kit'), INPUT(_type="radio", _name="kit_item2", _value="Kit", value="Item")), LABEL(T('Item'), INPUT(_type="radio", _name="kit_item2", _value="Item", value="Item")))))
         addtitle = T("Add to Bundle")
         response.view = '%s/bundle_kit_item_list_create.html' % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, bundle=bundle))
@@ -360,8 +361,9 @@ def bundle_kit_item():
         id = 'item_id'
         items2 = crud.select(table, query=query, fields=fields, headers=headers, linkto=linkto, id=id)
         
+        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/bundle_kit_item_list.html' % module
-        output.update(dict(items1=items1, items2=items2))
+        output.update(dict(items1=items1, items2=items2, add_btn=add_btn))
         return output
 
 def bundle_dupes(form):

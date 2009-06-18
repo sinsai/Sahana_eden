@@ -644,10 +644,8 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     # Audit
                     shn_audit_delete(resource, record, representation)
                     if representation == "ajax":
-                        #crud.delete(table, record, next='%s?format=ajax' % resource)
-                        t2.delete(table, next='%s?format=ajax' % resource)
-                    else:
-                        crud.delete(table, record)
+                        crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
+                    crud.delete(table, record)
                 else:
                     session.error = T("Not authorised!")
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))

@@ -14,32 +14,32 @@ $(function() {
     $("form:last").hide();
     
     // When the Type changes:
-	$("select#kit_item1").change(function() {
+	$("input[name='kit_item1']:radio").change(function() {
 		// What is the new type?
-        type=$(this).val();
+        type=$("input[name='kit_item1']:radio:checked").val();
         if (type=="Item") {
             // Hide the Kits form
             $("form:eq(1)").hide();
-            // Set the selector to 'Item'
-            $("select#kit_item2").html('<option value="Kit">Kit</option><option value="Item"  selected="yes">Item</option>');
+            // Set the radio to 'Item'
+            $("input[name='kit_item2']:nth(1)").attr("checked","checked");
             // Show the Items form
             $("form:last").show();
         }
     })
-	$("select#kit_item2").change(function() {
+	$("input[name='kit_item2']:radio").change(function() {
 		// What is the new type?
-        type=$(this).val();
+        type=$("input[name='kit_item2']:radio:checked").val();
         if (type=="Kit") {
             // Hide the Items form
             $("form:last").hide();
-            // Set the selector to 'Kit'
-            $("select#kit_item1").html('<option value="Kit" selected="yes">Kit</option><option value="Item">Item</option>');
+            // Set the radio to 'Kit'
+            $("input[name='kit_item1']:nth(0)").attr("checked","checked");
             // Show the Kits form
             $("form:eq(1)").show();
         }
 	})
     // When the Kit changes:
-	$("select#budget_bundle_item_kit_id").change(function() {
+	$("select#budget_bundle_kit_kit_id").change(function() {
 		// What is the new Kit?
         kit = $(this).val();
         // Read details on Item
@@ -59,6 +59,30 @@ $(function() {
             } else {
                 // Enable the input
                 $("input#budget_bundle_kit_megabytes").removeAttr("disabled");
+            }
+        });
+    })
+    // When the Item changes:
+	$("select#budget_bundle_item_item_id").change(function() {
+		// What is the new Item?
+        item = $(this).val();
+        // Read details on Item
+        $.getJSON("{{=URL(r=request, f='item')}}" + "/" + item + "?format=json", function(json){
+            // Does it have a Minutes cost?
+            if (json[0].minute_cost==0.0) {
+                // Disable the input
+                $("input#budget_bundle_item_minutes").attr("disabled", true);
+            } else {
+                // Enable the input
+                $("input#budget_bundle_item_minutes").removeAttr("disabled");
+            }
+            // Does it have a Megabytes cost?
+            if (json[0].megabyte_cost==0.0) {
+                // Disable the input
+                $("input#budget_bundle_item_megabytes").attr("disabled", true);
+            } else {
+                // Enable the input
+                $("input#budget_bundle_item_megabytes").removeAttr("disabled");
             }
         });
     })

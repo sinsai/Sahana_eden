@@ -25,7 +25,7 @@ function addLayers(map) {
 
 Ext.onReady(function() {
 
-    map = new OpenLayers.Map('center',options);
+    map = new OpenLayers.Map('center', options);
 	addLayers(map);
 	{{include 'gis/ol_controls.js'}}
     toolbar = createToolbar(map);

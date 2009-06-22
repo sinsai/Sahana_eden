@@ -213,8 +213,9 @@ db.define_table(table, timestamp, uuidstamp,
                 db.Field('name', notnull=True, unique=True),
                 db.Field('grade', notnull=True),
                 db.Field('salary', 'integer', notnull=True),
-                db.Field('travel', 'integer'),
-                db.Field('subsistence', 'double', default=0.00),
+                db.Field('travel', 'integer', default=0),
+                # Shouldn't be grade-dependent
+                #db.Field('subsistence', 'double', default=0.00),
                 db.Field('hazard_pay', 'double', default=0.00),
                 db.Field('comments', length=256),
                 migrate=migrate)
@@ -224,7 +225,6 @@ db[table].grade.requires = IS_NOT_EMPTY()
 db[table].grade.comment = SPAN("*", _class="req")
 db[table].salary.requires = IS_NOT_EMPTY()
 db[table].salary.comment = SPAN("*", _class="req")
-db[table].subsistence.label = "DSA"
 title_create = T('Add Staff Type')
 title_display = T('Staff Type Details')
 title_list = T('List Staff Types')
@@ -252,6 +252,8 @@ db.define_table(table, timestamp, uuidstamp,
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
+# UN terminology
+#db[table].subsistence.label = "DSA"
 title_create = T('Add Location')
 title_display = T('Location Details')
 title_list = T('List Locations')

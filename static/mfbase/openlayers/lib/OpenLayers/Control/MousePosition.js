@@ -9,6 +9,8 @@
 
 /**
  * Class: OpenLayers.Control.MousePosition
+ * The MousePosition control displays geographic coordinates of the mouse
+ * pointer, as it is moved about the map.
  *
  * Inherits from:
  *  - <OpenLayers.Control>
@@ -53,7 +55,7 @@ OpenLayers.Control.MousePosition = OpenLayers.Class(OpenLayers.Control, {
     
     /** 
      * Property: lastXy
-     * {<OpenLayers.LonLat>}
+     * {<OpenLayers.Pixel>}
      */
     lastXy: null,
 

@@ -94,13 +94,13 @@ def kit_item():
     output = dict(module_name=module_name, title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
     # Audit
     shn_audit_read(operation='list', resource='kit_item', record=kit, representation='html')
+    item_list = []
+    sqlrows = db(query).select()
+    even = True
     if authorised:
         # Audit
         crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'kit_item', 'html')
         # Display a List_Create page with editable Quantities
-        item_list = []
-        sqlrows = db(query).select()
-        even = True
         for row in sqlrows:
             if even:
                 theclass = "even"
@@ -139,15 +139,28 @@ def kit_item():
         return output
     else:
         # Display a simple List page
-        table.kit_id.readable = False
-        fields = [table[f] for f in table.fields if table[f].readable]
-        headers = {}
-        for field in fields:
-            # Use custom or prettified label
-            headers[str(field)] = field.label
-        linkto = URL(r=request, f='item', args='read')
-        id = 'item_id'
-        items = crud.select(table, query=query, fields=fields, headers=headers, linkto=linkto, id=id)
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.item_id
+            description = db.budget_item[id].description
+            id_link = A(id, _href=URL(r=request, f='item', args=['read', id]))
+            quantity_box = row.quantity
+            unit_cost = db.budget_item[id].unit_cost
+            monthly_cost = db.budget_item[id].monthly_cost
+            minute_cost = db.budget_item[id].minute_cost
+            megabyte_cost = db.budget_item[id].megabyte_cost
+            total_units = unit_cost * row.quantity
+            total_monthly = monthly_cost * row.quantity
+            item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minute_cost), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
+            
+        table_header = THEAD(TR(TH('ID'), TH(table.item_id.label), TH(table.quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(db.budget_item.minute_cost.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly'))))
+        table_footer = TFOOT(TR(TD(B(T('Totals for Kit:')), _colspan=7), TD(B(kit_total_cost)), TD(B(kit_monthly_cost)), _align='right'))
+        items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/kit_item_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
@@ -243,16 +256,16 @@ def bundle_kit_item():
     output = dict(module_name=module_name, title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
     # Audit
     shn_audit_read(operation='list', resource='bundle_kit_item', record=bundle, representation='html')
+    item_list = []
+    even = True
     if authorised:
         # Audit
         crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'bundle_kit_item', 'html')
         # Display a List_Create page with editable Quantities, Minutes & Megabytes
-        item_list = []
         
         # Kits
         query = tables[0].bundle_id==bundle
         sqlrows = db(query).select()
-        even = True
         for row in sqlrows:
             if even:
                 theclass = "even"
@@ -337,33 +350,72 @@ def bundle_kit_item():
         return output
     else:
         # Display a simple List page
-        table = tables[0]
-        query = table.bundle_id==bundle
-        table.bundle_id.readable = False
-        fields = [table[f] for f in table.fields if table[f].readable]
-        headers = {}
-        for field in fields:
-            # Use custom or prettified label
-            headers[str(field)] = field.label
-        linkto = URL(r=request, f='kit', args='read')
-        id = 'kit_id'
-        items1 = crud.select(table, query=query, fields=fields, headers=headers, linkto=linkto, id=id)
+        # Kits
+        query = tables[0].bundle_id==bundle
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.kit_id
+            description = db.budget_kit[id].description
+            id_link = A(id, _href=URL(r=request, f='kit', args=['read', id]))
+            quantity_box = INPUT(_value=row.quantity, _size=4, _name='kit_qty_' + str(id))
+            minute_cost = db.budget_kit[id].total_minute_cost
+            if minute_cost:
+                minutes_box = INPUT(_value=row.minutes, _size=4, _name='kit_mins_' + str(id))
+            else:
+                minutes_box = INPUT(_value=0, _size=4, _name='kit_mins_' + str(id), _disabled='disabled')
+            megabyte_cost = db.budget_kit[id].total_megabyte_cost
+            if megabyte_cost:
+                megabytes_box = INPUT(_value=row.megabytes, _size=4, _name='kit_mbytes_' + str(id))
+            else:
+                megabytes_box = INPUT(_value=0, _size=4, _name='kit_mbytes_' + str(id), _disabled='disabled')
+            unit_cost = db.budget_kit[id].total_unit_cost
+            monthly_cost = db.budget_kit[id].total_monthly_cost
+            minute_cost = db.budget_kit[id].total_minute_cost
+            megabyte_cost = db.budget_kit[id].total_megabyte_cost
+            total_units = unit_cost * row.quantity
+            total_monthly = monthly_cost * row.quantity
+            checkbox = INPUT(_type="checkbox", _value="on", _name='kit_' + str(id), _class="remove_item")
+            item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), TD(checkbox, _align='center'), _class=theclass, _align='right'))
+            
+        # Items
+        query = tables[1].bundle_id==bundle
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.item_id
+            description = db.budget_item[id].description
+            id_link = A(id, _href=URL(r=request, f='item', args=['read', id]))
+            quantity_box = row.quantity
+            minute_cost = db.budget_item[id].minute_cost
+            minutes_box = row.minutes
+            megabyte_cost = db.budget_item[id].megabyte_cost
+            megabytes_box = row.megabytes
+            unit_cost = db.budget_item[id].unit_cost
+            monthly_cost = db.budget_item[id].monthly_cost
+            minute_cost = db.budget_item[id].minute_cost
+            megabyte_cost = db.budget_item[id].megabyte_cost
+            total_units = unit_cost * row.quantity
+            total_monthly = monthly_cost * row.quantity
+            item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
         
-        table = tables[1]
-        query = table.bundle_id==bundle
-        table.bundle_id.readable = False
-        fields = [table[f] for f in table.fields if table[f].readable]
-        headers = {}
-        for field in fields:
-            # Use custom or prettified label
-            headers[str(field)] = field.label
-        linkto = URL(r=request, f='item', args='read')
-        id = 'item_id'
-        items2 = crud.select(table, query=query, fields=fields, headers=headers, linkto=linkto, id=id)
+        table_header = THEAD(TR(TH('ID'), TH(T('Description')), TH(tables[0].quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(tables[0].minutes.label), TH(db.budget_item.minute_cost.label), TH(tables[0].megabytes.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly'))))
+        table_footer = TFOOT(TR(TD(B(T('Totals for Bundle:')), _colspan=9), TD(B(bundle_total_cost)), TD(B(bundle_monthly_cost))), _align='right')
+        items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
         
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/bundle_kit_item_list.html' % module
-        output.update(dict(items1=items1, items2=items2, add_btn=add_btn))
+        output.update(dict(items=items, add_btn=add_btn))
         return output
 
 def bundle_dupes(form):

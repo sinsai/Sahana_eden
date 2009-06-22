@@ -12,8 +12,13 @@ static/mfbase/ext/.source/*
 static/mfbase/ext/air/.samples/*
 static/mfbase/ext/air/.src/*
 static/mfbase/mapfish/.tests/*
+static/mfbase/openlayers/.apidoc_config/*
+static/mfbase/openlayers/.build/*
+static/mfbase/openlayers/.doc/*
+static/mfbase/openlayers/.doc_config/*
 static/mfbase/openlayers/.examples/*
 static/mfbase/openlayers/.tests/*
+static/mfbase/openlayers/.tools/*
 static/selenium/results/*
 static/*/.svn/*
 static/*test*

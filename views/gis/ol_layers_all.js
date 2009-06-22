@@ -8,8 +8,8 @@
     {{if yahoo:}}
         {{include 'gis/ol_layers_yahoo.js'}}
     {{pass}}
-    {{if virtualearth:}}
-        {{include 'gis/ol_layers_virtualearth.js'}}
+    {{if bing:}}
+        {{include 'gis/ol_layers_bing.js'}}
     {{pass}}
 {{else:}}
     // Disable other base layers if using a non-sphericalMercator WMS projection

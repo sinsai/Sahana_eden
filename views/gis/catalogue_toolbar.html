@@ -1,32 +1,32 @@
 <table>
 <tr><td id='btn-panel'>
 {{if auth.has_membership(1):}}
-<a href="{{=URL(r=request,c='gis',f='config',args=['update','1'])}}">
+ <a href="{{=URL(r=request, c='gis', f='config', args=['update', '1'])}}">
 {{else:}}
-<a href="{{=URL(r=request,c='gis',f='config',args=['display','1'])}}">
+ <a href="{{=URL(r=request, c='gis', f='config', args=['display', '1'])}}">
 {{pass}}
 <input type="button" id="configs-btn" value="{{=T("Defaults")}}" />
 </a></td>
 <td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='feature')}}">
+<a href="{{=URL(r=request, c='gis', f='feature')}}">
 <input type="button" id="features-btn" value="{{=T("Features")}}" />
 </a></td>
 <!--
 <td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='import')}}">
+<a href="{{=URL(r=request, c='gis', f='import')}}">
 <input type="button" id="import-btn" value="{{=T("Import")}}" />
 </a></td>
 -->
 <td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='apikey')}}">
+<a href="{{=URL(r=request, c='gis', f='apikey')}}">
 <input type="button" id="keys-btn" value="{{=T("Keys")}}" />
 </a></td>
 <td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='marker')}}">
+<a href="{{=URL(r=request, c='gis', f='marker')}}">
 <input type="button" id="markers-btn" value="{{=T("Markers")}}" />
 </a></td>
 <td id='btn-panel'>
-<a href="{{=URL(r=request,c='gis',f='projection')}}">
+<a href="{{=URL(r=request, c='gis', f='projection')}}">
 <input type="button" id="projections-btn" value="{{=T("Projections")}}" />
 </a></td>
 </tr>

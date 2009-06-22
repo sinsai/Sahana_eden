@@ -11,6 +11,7 @@
  * @requires OpenLayers/Geometry/MultiLineString.js
  * @requires OpenLayers/Geometry/Polygon.js
  * @requires OpenLayers/Geometry/MultiPolygon.js
+ * @requires OpenLayers/Console.js
  */
 
 /**
@@ -211,7 +212,7 @@ OpenLayers.Format.GeoJSON = OpenLayers.Class(OpenLayers.Format.JSON, {
         if (obj == null) {
             return null;
         }
-        var geometry;
+        var geometry, collection = false;
         if(obj.type == "GeometryCollection") {
             if(!(obj.geometries instanceof Array)) {
                 throw "GeometryCollection must have geometries array: " + obj;
@@ -224,6 +225,7 @@ OpenLayers.Format.GeoJSON = OpenLayers.Class(OpenLayers.Format.JSON, {
                 );
             }
             geometry = new OpenLayers.Geometry.Collection(components);
+            collection = true;
         } else {
             if(!(obj.coordinates instanceof Array)) {
                 throw "Geometry must have coordinates array: " + obj;
@@ -240,7 +242,9 @@ OpenLayers.Format.GeoJSON = OpenLayers.Class(OpenLayers.Format.JSON, {
                 throw err;
             }
         }
-        if (this.internalProjection && this.externalProjection) {
+        // We don't reproject collections because the children are reprojected
+        // for us when they are created.
+        if (this.internalProjection && this.externalProjection && !collection) {
             geometry.transform(this.externalProjection, 
                                this.internalProjection); 
         }                       

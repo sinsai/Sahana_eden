@@ -40,15 +40,19 @@ OpenLayers.Class = function() {
         if(typeof arguments[i] == "function") {
             // make the class passed as the first argument the superclass
             if(i == 0 && len > 1) {
+                initialize = arguments[i].prototype.initialize;
                 // replace the initialize method with an empty function,
                 // because we do not want to create a real instance here
-                initialize = arguments[i].prototype.initialize;
                 arguments[i].prototype.initialize = function() {};
                 // the line below makes sure that the new class has a
                 // superclass
                 extended = new arguments[i];
                 // restore the original initialize method
-                arguments[i].prototype.initialize = initialize;
+                if(initialize === undefined) {
+                    delete arguments[i].prototype.initialize;
+                } else {
+                    arguments[i].prototype.initialize = initialize;
+                }
             }
             // get the prototype of the superclass
             parent = arguments[i].prototype;

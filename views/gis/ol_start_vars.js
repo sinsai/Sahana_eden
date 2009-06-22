@@ -13,7 +13,7 @@ OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
 OpenLayers.Util.onImageLoadErrorColor = "transparent";
 
 // Set Proxy Host
-OpenLayers.ProxyHost = '{{=URL(r=request,c='static',f='proxy.py?url=')}}';
+OpenLayers.ProxyHost = '{{=URL(r=request, c='static', f='proxy.py?url=')}}';
 
 var lat = {{=lat}};
 var lon = {{=lon}};

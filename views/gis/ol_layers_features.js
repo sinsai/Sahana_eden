@@ -6,7 +6,7 @@ var proj_current = map.getProjectionObject();
     var geom = parser.read('{{=feature.wkt}}').geometry;
     geom = geom.transform(proj4326, proj_current);
     var popupContentHTML = {{include 'gis/ol_features_popup.html'}}
-    var iconURL = '{{=URL(r=request,c='default',f='download',args=[features_markers[feature.id]])}}';
+    var iconURL = '{{=URL(r=request, c='default', f='download', args=[features_markers[feature.id]])}}';
     add_Feature_with_popup(featuresLayer, '{{=feature.uuid}}', geom, popupContentHTML, iconURL);
 {{pass}}
     

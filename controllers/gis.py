@@ -56,9 +56,9 @@ def layer_google():
 def layer_yahoo():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'layer_yahoo', deletable=False)
-def layer_virtualearth():
+def layer_bing():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'layer_virtualearth', deletable=False)
+    return shn_rest_controller(module, 'layer_bing', deletable=False)
 
 # Module-specific functions
 
@@ -123,15 +123,15 @@ def feature_create_map():
         session.warning = T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
         redirect(URL(r=request, f=apikey))
         
-    # Virtual Earth
-    virtualearth = Storage()
-    layers_virtualearth = db(db.gis_layer_virtualearth.enabled==True).select(db.gis_layer_virtualearth.ALL)
-    for layer in layers_virtualearth:
-        for subtype in gis_layer_virtualearth_subtypes:
+    # Bing (Virtual Earth)
+    bing = Storage()
+    layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
+    for layer in layers_bing:
+        for subtype in gis_layer_bing_subtypes:
             if layer.subtype == subtype:
-                virtualearth['%s' % subtype] = layer.name
+                bing['%s' % subtype] = layer.name
 
-    return dict(title=title, module_name=module_name, form=form, projection=projection, openstreetmap=openstreetmap, google=google, yahoo=yahoo, virtualearth=virtualearth)
+    return dict(title=title, module_name=module_name, form=form, projection=projection, openstreetmap=openstreetmap, google=google, yahoo=yahoo, bing=bing)
     
 # Feature Groups
 # TODO: https://trac.sahanapy.org/wiki/BluePrintMany2Many
@@ -271,13 +271,13 @@ def map_viewing_client():
         session.warning = T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
         redirect(URL(r=request, f=apikey))
         
-    # Virtual Earth
-    virtualearth = Storage()
-    layers_virtualearth = db(db.gis_layer_virtualearth.enabled==True).select(db.gis_layer_virtualearth.ALL)
-    for layer in layers_virtualearth:
-        for subtype in gis_layer_virtualearth_subtypes:
+    # Bing (Virtual Earth)
+    bing = Storage()
+    layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
+    for layer in layers_bing:
+        for subtype in gis_layer_bing_subtypes:
             if layer.subtype == subtype:
-                virtualearth['%s' % subtype] = layer.name
+                bing['%s' % subtype] = layer.name
     
     # Internal Features
     # ToDo: Only include those features which are are in enabled feature groups (either independently or through a feature class)
@@ -312,6 +312,6 @@ def map_viewing_client():
         features_metadata[feature.id] = feature_metadata
 
     # Add the Layers to the Return
-    output.update(dict(openstreetmap=openstreetmap, google=google, yahoo=yahoo, virtualearth=virtualearth, features=features, features_classes=features_classes, features_markers=features_markers, features_metadata=features_metadata))
+    output.update(dict(openstreetmap=openstreetmap, google=google, yahoo=yahoo, bing=bing, features=features, features_classes=features_classes, features_markers=features_markers, features_metadata=features_metadata))
     
     return output

@@ -501,12 +501,12 @@ msg_list_empty = T('No Keys currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # GIS Layers
-#gis_layer_types = ['features', 'georss', 'kml', 'gpx', 'shapefile', 'scan', 'google', 'openstreetmap', 'virtualearth', 'wms', 'yahoo']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'virtualearth']
+#gis_layer_types = ['features', 'georss', 'kml', 'gpx', 'shapefile', 'scan', 'bing', 'google', 'openstreetmap', 'wms', 'yahoo']
+gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
 gis_layer_yahoo_subtypes = ['Satellite', 'Maps', 'Hybrid']
-gis_layer_virtualearth_subtypes = ['Satellite', 'Maps', 'Hybrid']
+gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
 # Base table from which the rest inherit
 gis_layer = SQLTable(db, 'gis_layer', timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
@@ -585,23 +585,23 @@ for layertype in gis_layer_types:
         label_list_button = T('List Yahoo Layers')
         msg_list_empty = T('No Yahoo Layers currently defined')
         s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    if layertype == "virtualearth":
+    if layertype == "bing":
         t = SQLTable(db, table,
             db.Field('subtype'),
             gis_layer)
-        t.subtype.requires = IS_IN_SET(gis_layer_virtualearth_subtypes)
+        t.subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
         db.define_table(table, t)
         if not len(db().select(db[table].ALL)):
             # Populate table
-            for subtype in gis_layer_virtualearth_subtypes:
+            for subtype in gis_layer_bing_subtypes:
                 db[table].insert(
-                        name = 'VE ' + subtype,
+                        name = 'Bing ' + subtype,
                         subtype = subtype,
                         enabled = False
                     )
         # Customise CRUD strings if-desired
-        label_list_button = T('List Virtual Earth Layers')
-        msg_list_empty = T('No Virtual Earth Layers currently defined')
+        label_list_button = T('List Bing Layers')
+        msg_list_empty = T('No Bing Layers currently defined')
         s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     
 # GIS Styles: SLD

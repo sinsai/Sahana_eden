@@ -10,6 +10,7 @@
  * @requires OpenLayers/Geometry/Polygon.js
  * @requires OpenLayers/Geometry/Collection.js
  * @requires OpenLayers/Request/XMLHttpRequest.js
+ * @requires OpenLayers/Console.js
  */
 
 /**
@@ -543,7 +544,7 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
                 // Create reference to styleUrl 
                 if (this.extractStyles && feature.attributes &&
                     feature.attributes.styleUrl) {
-                    feature.style = this.getStyle(feature.attributes.styleUrl);
+                    feature.style = this.getStyle(feature.attributes.styleUrl, options);
                 }
 
                 if (this.extractStyles) {
@@ -663,7 +664,7 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
         }
 
         // return requested style
-        var style = this.styles[styleUrl];
+        var style = OpenLayers.Util.extend({}, this.styles[styleUrl]);
         return style;
     },
     
@@ -725,7 +726,7 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
                                                        "coordinates");
             var line = null;
             if(nodeList.length > 0) {
-                var coordString = this.concatChildValues(nodeList[0]);
+                var coordString = this.getChildValue(nodeList[0]);
 
                 coordString = coordString.replace(this.regExes.trimSpace,
                                                   "");
@@ -839,9 +840,17 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
      */
     parseAttributes: function(node) {
         var attributes = {};
+       
+        // Extended Data is parsed first.
+        var edNodes = node.getElementsByTagName("ExtendedData");
+        if (edNodes.length) {
+            attributes = this.parseExtendedData(edNodes[0]);
+        }
+        
         // assume attribute nodes are type 1 children with a type 3 or 4 child
         var child, grandchildren, grandchild;
         var children = node.childNodes;
+
         for(var i=0, len=children.length; i<len; ++i) {
             child = children[i];
             if(child.nodeType == 1) {
@@ -873,6 +882,31 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
         return attributes;
     },
 
+    /**
+     * Method: parseExtendedData
+     * Parse ExtendedData from KML. No support for schemas/datatypes.
+     *     See http://code.google.com/apis/kml/documentation/kmlreference.html#extendeddata
+     *     for more information on extendeddata.
+     */
+    parseExtendedData: function(node) {
+        var attributes = {};
+        var dataNodes = node.getElementsByTagName("Data");
+        for (var i = 0, len = dataNodes.length; i < len; i++) {
+            var data = dataNodes[i];
+            var key = data.getAttribute("name");
+            var ed = {};
+            var valueNode = data.getElementsByTagName("value");
+            if (valueNode.length) {
+                ed['value'] = this.getChildValue(valueNode[0]);
+            }    
+            var nameNode = data.getElementsByTagName("displayName");
+            if (nameNode.length) {
+                ed['displayName'] = this.getChildValue(nameNode[0]);
+            }
+            attributes[key] = ed;
+        }
+        return attributes;    
+    },
     
     /**
      * Method: parseProperty

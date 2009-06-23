@@ -178,28 +178,112 @@ def map_service_catalogue():
     """Map Service Catalogue.
     Allows selection of which Layers are active."""
 
-    # Create a manual table to aggregate all layer types
-    # Could look to rewrite using Helpers: http://groups.google.com/group/web2py/browse_thread/thread/ac045f3b1d3846d9
-    # We should also move to the View for better MVC!
-    items = '<table><tr><td></td><td><b>Enabled?</b></td></tr>'
-    for type in gis_layer_types:
-        resource = 'layer_'+type
-        table = db['%s_%s' % (module,resource)]
-        for layer in db(table.id>0).select():
-            items += '<tr><td><a href="'
-            items += URL(r=request, f=resource)
-            items += '/display/'
-            items += str(layer.id)
-            items += '">'
-            items += layer.name
-            items += '</a></td><td>'
-            items += str(layer.enabled)
-            items += '</td></tr>'
-    items += '</table>'
-        
     title = T('Map Service Catalogue')
     subtitle = T('List Layers')
-    return dict(module_name=module_name, title=title, subtitle=subtitle, item=XML(items))
+    # Start building the Return with the common items
+    output = dict(module_name=module_name, title=title, subtitle=subtitle)
+    
+    # Hack: We control all perms from this 1 table
+    table = db.gis_layer_openstreetmap
+    authorised = shn_has_permission('update', table)
+    item_list = []
+    even = True
+    if authorised:
+        # List View with checkboxes to Enable/Disable layers
+        for type in gis_layer_types:
+            table = db['gis_layer_%s' % type]
+            query = table.id > 0
+            sqlrows = db(query).select()
+            for row in sqlrows:
+                if even:
+                    theclass = "even"
+                    even = False
+                else:
+                    theclass = "odd"
+                    even = True
+                if row.description:
+                    description = row.description
+                else:
+                    description = ''
+                label = type + '_' + str(row.id)
+                if row.enabled:
+                    enabled = INPUT(_type="checkbox", value=True, _name=label)
+                else:
+                    enabled = INPUT(_type="checkbox", _name=label)
+                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
+                
+        table_header = THEAD(TR(TH('Layer'), TH('Description'), TH('Enabled?')))
+        table_footer = TFOOT(TR(TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')), _colspan=3)), _align='right')
+        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='layers_enable')))
+
+    else:
+        # Simple List View
+        for type in gis_layer_types:
+            table = db['gis_layer_%s' % type]
+            query = table.id > 0
+            sqlrows = db(query).select()
+            for row in sqlrows:
+                if even:
+                    theclass = "even"
+                    even = False
+                else:
+                    theclass = "odd"
+                    even = True
+                if row.description:
+                    description = row.description
+                else:
+                    description = ''
+                if row.enabled:
+                    enabled = INPUT(_type="checkbox", value='on', _disabled="disabled")
+                else:
+                    enabled = INPUT(_type="checkbox", _disabled="disabled")
+                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
+                
+        table_header = THEAD(TR(TH('Layer'), TH('Description'), TH('Enabled?')))
+        items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
+
+    output.update(dict(items=items))
+    return output
+
+def layers_enable():
+    "Enable/Disable Layers"
+    # Hack: We control all perms from this 1 table
+    table = db.gis_layer_openstreetmap
+    authorised = shn_has_permission('update', table)
+    if authorised:
+        for type in gis_layer_types:
+            resource = 'gis_layer_%s' % type
+            table = db[resource]
+            query = table.id > 0
+            sqlrows = db(query).select()
+            for row in sqlrows:
+                query_inner = table.id==row.id
+                var = '%s_%i' % (type, row.id)
+                # Read current state
+                if db(query_inner).select()[0].enabled:
+                    # Old state: Enabled
+                    if var in request.vars:
+                        # Do nothing
+                        pass
+                    else:
+                        # Disable
+                        db(query_inner).update(enabled=False)
+                        # Audit
+                        shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                else:
+                    # Old state: Disabled
+                    if var in request.vars:
+                        # Enable
+                        db(query_inner).update(enabled=True)
+                        # Audit
+                        shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                    else:
+                        # Do nothing
+                        pass
+        session.flash = T("Layers updated")
+    else:
+        session.error = T("Not authorised!")
+    redirect(URL(r=request, f='map_service_catalogue'))
 
 def map_viewing_client():
     """Map Viewing Client.

@@ -202,9 +202,9 @@ ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand a,
 ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu-expand a
 {
     padding-right: 25px;
-    background-image: url("expand-right.gif");
-    background-repeat: no-repeat;
-    background-position: 100% 50%;
+    // background-image: url("expand-right.gif");
+    // background-repeat: no-repeat;
+    // background-position: 100% 50%;
 }
 
 ul.web2py-menu-vRight li.web2py-menu-expand a,
@@ -216,17 +216,17 @@ ul.web2py-menu-hRight li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu
 {
     padding-right: 5px;
     padding-left: 20px;
-    background-image: url("expand-left.gif");
-    background-repeat: no-repeat;
-    background-position: -5px 50%;
+    // background-image: url("expand-left.gif");
+    // background-repeat: no-repeat;
+    // background-position: -5px 50%;
 }
 
 ul.web2py-menu-horizontal li.web2py-menu-expand a
 {
     padding-left: 5px;
     padding-right: 15px;
-    background-image: url("expand-down.gif");
-    background-position: 100% 50%;
+    // background-image: url("expand-down.gif");
+    // background-position: 100% 50%;
 }
 
 ul.web2py-menu li.web2py-menu-expand li a,

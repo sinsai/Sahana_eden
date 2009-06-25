@@ -79,59 +79,10 @@ def feature_create_map():
     _projection = db(db.gis_config.id==1).select()[0].projection
     projection = db(db.gis_projection.id==_projection).select()[0].epsg
 
-    #
     # Layers
-    #
-    
-    # OpenStreetMap
-    openstreetmap = Storage()
-    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select(db.gis_layer_openstreetmap.ALL)
-    for layer in layers_openstreetmap:
-        for subtype in gis_layer_openstreetmap_subtypes:
-            if layer.subtype == subtype:
-                openstreetmap['%s' % subtype] = layer.name
-    
-    # Google
-    google = Storage()
-    # Check for Google Key
-    try:
-        google.key = db(db.gis_apikey.name=='google').select(db.gis_apikey.apikey)[0].apikey
-        layers_google = db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
-        for layer in layers_google:
-            for subtype in gis_layer_google_subtypes:
-                if layer.subtype == subtype:
-                    google['%s' % subtype] = layer.name
-                    google.enabled = 1
-    except:
-        # Redirect to Key entry screen
-        session.warning = T('Please enter a Google Key if you wish to use Google Layers')
-        redirect(URL(r=request, f=apikey))
-            
-    # Yahoo
-    yahoo = Storage()
-    # Check for Yahoo Key
-    try:
-        yahoo.key = db(db.gis_apikey.name=='yahoo').select(db.gis_apikey.apikey)[0].apikey
-        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
-        for layer in layers_yahoo:
-            for subtype in gis_layer_yahoo_subtypes:
-                if layer.subtype == subtype:
-                    yahoo['%s' % subtype] = layer.name
-                    yahoo.enabled = 1
-    except:
-        # Redirect to Key entry screen
-        session.warning = T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
-        redirect(URL(r=request, f=apikey))
-        
-    # Bing (Virtual Earth)
-    bing = Storage()
-    layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
-    for layer in layers_bing:
-        for subtype in gis_layer_bing_subtypes:
-            if layer.subtype == subtype:
-                bing['%s' % subtype] = layer.name
+    baselayers = layers()
 
-    return dict(title=title, module_name=module_name, form=form, projection=projection, openstreetmap=openstreetmap, google=google, yahoo=yahoo, bing=bing)
+    return dict(title=title, module_name=module_name, form=form, projection=projection, openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing)
     
 # Feature Groups
 # TODO: https://trac.sahanapy.org/wiki/BluePrintMany2Many
@@ -245,8 +196,64 @@ def map_service_catalogue():
     output.update(dict(items=items))
     return output
 
+def layers():
+    "Provide the Enabled Layers"
+
+    layers = Storage()
+
+    # OpenStreetMap
+    layers.openstreetmap = Storage()
+    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select(db.gis_layer_openstreetmap.ALL)
+    for layer in layers_openstreetmap:
+        for subtype in gis_layer_openstreetmap_subtypes:
+            if layer.subtype == subtype:
+                layers.openstreetmap['%s' % subtype] = layer.name
+    
+    # Google
+    layers.google = Storage()
+    # Check for Google Key
+    try:
+        layers.google.key = db(db.gis_apikey.name=='google').select(db.gis_apikey.apikey)[0].apikey
+        layers_google = db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
+        for layer in layers_google:
+            for subtype in gis_layer_google_subtypes:
+                if layer.subtype == subtype:
+                    layers.google['%s' % subtype] = layer.name
+                    layers.google.enabled = 1
+    except:
+        # Redirect to Key entry screen
+        session.warning = T('Please enter a Google Key if you wish to use Google Layers')
+        redirect(URL(r=request, f=apikey))
+            
+    # Yahoo
+    layers.yahoo = Storage()
+    # Check for Yahoo Key
+    try:
+        layers.yahoo.key = db(db.gis_apikey.name=='yahoo').select(db.gis_apikey.apikey)[0].apikey
+        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
+        for layer in layers_yahoo:
+            for subtype in gis_layer_yahoo_subtypes:
+                if layer.subtype == subtype:
+                    layers.yahoo['%s' % subtype] = layer.name
+                    layers.yahoo.enabled = 1
+    except:
+        # Redirect to Key entry screen
+        session.warning = T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
+        redirect(URL(r=request, f=apikey))
+        
+    # Bing (Virtual Earth)
+    layers.bing = Storage()
+    layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
+    for layer in layers_bing:
+        for subtype in gis_layer_bing_subtypes:
+            if layer.subtype == subtype:
+                layers.bing['%s' % subtype] = layer.name
+                
+    return layers
+    
 def layers_enable():
     "Enable/Disable Layers"
+    
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap
     authorised = shn_has_permission('update', table)
@@ -311,57 +318,8 @@ def map_viewing_client():
     # Add the Config to the Return
     output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, features_marker=features_marker))
     
-    #
     # Layers
-    #
-    
-    # OpenStreetMap
-    openstreetmap = Storage()
-    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select(db.gis_layer_openstreetmap.ALL)
-    for layer in layers_openstreetmap:
-        for subtype in gis_layer_openstreetmap_subtypes:
-            if layer.subtype == subtype:
-                openstreetmap['%s' % subtype] = layer.name
-    
-    # Google
-    google = Storage()
-    # Check for Google Key
-    try:
-        google.key = db(db.gis_apikey.name=='google').select(db.gis_apikey.apikey)[0].apikey
-        layers_google = db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
-        for layer in layers_google:
-            for subtype in gis_layer_google_subtypes:
-                if layer.subtype == subtype:
-                    google['%s' % subtype] = layer.name
-                    google.enabled = 1
-    except:
-        # Redirect to Key entry screen
-        session.warning = T('Please enter a Google Key if you wish to use Google Layers')
-        redirect(URL(r=request, f=apikey))
-            
-    # Yahoo
-    yahoo = Storage()
-    # Check for Yahoo Key
-    try:
-        yahoo.key = db(db.gis_apikey.name=='yahoo').select(db.gis_apikey.apikey)[0].apikey
-        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
-        for layer in layers_yahoo:
-            for subtype in gis_layer_yahoo_subtypes:
-                if layer.subtype == subtype:
-                    yahoo['%s' % subtype] = layer.name
-                    yahoo.enabled = 1
-    except:
-        # Redirect to Key entry screen
-        session.warning = T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
-        redirect(URL(r=request, f=apikey))
-        
-    # Bing (Virtual Earth)
-    bing = Storage()
-    layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
-    for layer in layers_bing:
-        for subtype in gis_layer_bing_subtypes:
-            if layer.subtype == subtype:
-                bing['%s' % subtype] = layer.name
+    baselayers = layers()
     
     # Internal Features
     # ToDo: Only include those features which are are in enabled feature groups (either independently or through a feature class)
@@ -396,6 +354,6 @@ def map_viewing_client():
         features_metadata[feature.id] = feature_metadata
 
     # Add the Layers to the Return
-    output.update(dict(openstreetmap=openstreetmap, google=google, yahoo=yahoo, bing=bing, features=features, features_classes=features_classes, features_markers=features_markers, features_metadata=features_metadata))
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, features=features, features_classes=features_classes, features_markers=features_markers, features_metadata=features_metadata))
     
     return output

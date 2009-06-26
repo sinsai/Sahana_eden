@@ -198,6 +198,7 @@ resource = 'feature_class'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('name', notnull=True, unique=True),
+                db.Field('description', length=256),
                 marker_id,
                 db.Field('module'),    # Used to build Edit URL
                 db.Field('resource'),   # Used to build Edit URL & to provide Attributes to Display
@@ -333,16 +334,16 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp,
                 db.Field('name', notnull=True, unique=True),
                 db.Field('description', length=256),
-                db.Field('features', 'text'),        # List of features (to be replaced by many-to-many table)
-                db.Field('feature_classes', 'text'), # List of feature classes (to be replaced by many-to-many table)
+                #db.Field('features', 'text'),        # List of features (to be replaced by many-to-many table)
+                #db.Field('feature_classes', 'text'), # List of feature classes (to be replaced by many-to-many table)
                 db.Field('display', 'boolean', default='True'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].author.requires = IS_IN_DB(db, 'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
-db[table].features.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+#db[table].features.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+#db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 title_create = T('Add Feature Group')
 title_display = T('Feature Group Details')
 title_list = T('List Feature Groups')

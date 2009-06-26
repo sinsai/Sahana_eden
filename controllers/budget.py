@@ -136,7 +136,6 @@ def kit_item():
         addtitle = T("Add New Item to Kit")
         response.view = '%s/kit_item_list_create.html' % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form, kit=kit))
-        return output
     else:
         # Display a simple List page
         for row in sqlrows:
@@ -164,7 +163,7 @@ def kit_item():
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/kit_item_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
-        return output
+    return output
 
 def kit_dupes(form):
     "Checks for duplicate Item before adding to DB"
@@ -347,7 +346,6 @@ def bundle_kit_item():
         addtitle = T("Add to Bundle")
         response.view = '%s/bundle_kit_item_list_create.html' % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, bundle=bundle))
-        return output
     else:
         # Display a simple List page
         # Kits
@@ -416,7 +414,7 @@ def bundle_kit_item():
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/bundle_kit_item_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
-        return output
+    return output
 
 def bundle_dupes(form):
     "Checks for duplicate Kit/Item before adding to DB"
@@ -504,7 +502,7 @@ def bundle_update_items():
                     db(query).update(megabytes=megabytes)
                 else:
                     # Delete
-                    item = var[4:]
+                    kit = var[4:]
                     query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
                     db(query).delete()
             if 'item' in var:

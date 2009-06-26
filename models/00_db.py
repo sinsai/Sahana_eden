@@ -83,11 +83,13 @@ authorstamp = SQLTable(None, 'authorstamp',
             db.Field('created_by', db.auth_user,
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
+                          represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
                           ondelete='RESTRICT'),
             db.Field('modified_by', db.auth_user,
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
                           update=session.auth.user.id if auth.is_logged_in() else 0,
+                          represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
                           ondelete='RESTRICT')
             ) 
 

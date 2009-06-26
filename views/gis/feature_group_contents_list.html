@@ -1,0 +1,18 @@
+{{extend 'layout.html'}}
+
+{{=H2(title)}}
+{{=P(description)}}
+
+<p>&nbsp;</p>
+{{=H3(T('Contents'))}}
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=add_btn}}
+{{except:}}
+{{pass}}

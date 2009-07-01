@@ -57,6 +57,8 @@ auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s 
 #auth.settings.login_methods.append(ldap_auth(server='demo.sahanapy.org', base_dn='ou=users,dc=sahanapy,dc=org'))
 # Allow use of Email accounts for login
 #auth.settings.login_methods.append(email_auth("smtp.gmail.com:587", "@gmail.com"))
+# We don't wish to clutter the groups list with 1 per user.
+auth.settings.create_user_groups = False
 
 crud = CrudS3(globals(),db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34

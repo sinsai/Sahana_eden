@@ -5,6 +5,8 @@ class CrudController():
     RESTlike Crud controller converted to a class so that it can be extended for Many<>Many, etc
     
     Work-in-progress
+    
+    Based on OLD version of controller!
     """
     
     def __init__(self, request, response, session, T, db, s3, crud, auth):

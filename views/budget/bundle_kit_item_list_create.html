@@ -48,6 +48,8 @@ $(function() {
             if (json[0].total_minute_cost==0.0) {
                 // Disable the input
                 $("input#budget_bundle_kit_minutes").attr("disabled", true);
+                // Set to 0 (otherwise validation will fail)
+                $("input#budget_bundle_kit_minutes").val(0);
             } else {
                 // Enable the input
                 $("input#budget_bundle_kit_minutes").removeAttr("disabled");
@@ -56,6 +58,8 @@ $(function() {
             if (json[0].total_megabyte_cost==0.0) {
                 // Disable the input
                 $("input#budget_bundle_kit_megabytes").attr("disabled", true);
+                // Set to 0 (otherwise validation will fail)
+                $("input#budget_bundle_kit_megabytes").val(0);
             } else {
                 // Enable the input
                 $("input#budget_bundle_kit_megabytes").removeAttr("disabled");
@@ -72,6 +76,8 @@ $(function() {
             if (json[0].minute_cost==0.0) {
                 // Disable the input
                 $("input#budget_bundle_item_minutes").attr("disabled", true);
+                // Set to 0 (otherwise validation will fail)
+                $("input#budget_bundle_item_minutes").val(0);
             } else {
                 // Enable the input
                 $("input#budget_bundle_item_minutes").removeAttr("disabled");
@@ -80,6 +86,8 @@ $(function() {
             if (json[0].megabyte_cost==0.0) {
                 // Disable the input
                 $("input#budget_bundle_item_megabytes").attr("disabled", true);
+                // Set to 0 (otherwise validation will fail)
+                $("input#budget_bundle_item_megabytes").val(0);
             } else {
                 // Enable the input
                 $("input#budget_bundle_item_megabytes").removeAttr("disabled");

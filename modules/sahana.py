@@ -369,8 +369,9 @@ class AuthS3(Auth):
             description = \
                 'group uniquely assigned to %(first_name)s %(last_name)s'\
                  % form.vars
-            group_id = self.add_group("user_%s" % form.vars.id, description)
-            self.add_membership(group_id, form.vars.id)
+            if self.settings.create_user_groups:
+                group_id = self.add_group("user_%s" % form.vars.id, description)
+                self.add_membership(group_id, form.vars.id)
             if self.settings.registration_requires_verification:
                 if not self.settings.mailer or \
                    not self.settings.mailer.send(to=form.vars.email,

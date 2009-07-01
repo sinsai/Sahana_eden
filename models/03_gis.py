@@ -504,7 +504,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # GIS Layers
 #gis_layer_types = ['features', 'georss', 'kml', 'gpx', 'shapefile', 'scan', 'bing', 'google', 'openstreetmap', 'wms', 'yahoo']
 gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing']
-gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
+#gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
+gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
 gis_layer_yahoo_subtypes = ['Satellite', 'Maps', 'Hybrid']
 gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']

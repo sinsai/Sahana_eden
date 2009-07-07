@@ -418,7 +418,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 for field in fields:
                    # Use custom or prettified label
                    headers[str(field)] = field.label
-                items = crud.select(table, query=query, fields=fields, limitby=limitby, headers=headers)
+                items = crud.select(table, query=query, fields=fields, limitby=limitby, headers=headers, truncate=48)
                 if not items:
                     try:
                         items = s3.crud_strings.msg_list_empty
@@ -473,7 +473,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     output.update(dict(add_btn=add_btn))
                 return output
             elif representation == "plain":
-                items = crud.select(table, query)
+                items = crud.select(table, query, truncate=24)
                 response.view = 'plain.html'
                 return dict(item=items)
             elif representation == "json":

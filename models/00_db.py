@@ -59,6 +59,8 @@ auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s 
 #auth.settings.login_methods.append(email_auth("smtp.gmail.com:587", "@gmail.com"))
 # We don't wish to clutter the groups list with 1 per user.
 auth.settings.create_user_groups = False
+# We need to allow basic logins for Webservices
+auth.settings.allow_basic_login = False
 
 crud = CrudS3(globals(),db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34

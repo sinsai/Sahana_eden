@@ -131,8 +131,8 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('name', notnull=True, unique=True),
                 db.Field('description', length=256),
-                db.Field('total_unit_cost', writable=False),
-                db.Field('total_monthly_cost', writable=False),
+                db.Field('total_unit_cost', 'double', writable=False),
+                db.Field('total_monthly_cost', 'double', writable=False),
                 db.Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -207,16 +207,18 @@ db[table].megabytes.label = T('Megabytes per Month')
 db[table].megabytes.comment = SPAN("*", _class="req")
 
 # Staff Types
-resource = 'staff_type'
+resource = 'staff'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('name', notnull=True, unique=True),
                 db.Field('grade', notnull=True),
                 db.Field('salary', 'integer', notnull=True),
+                db.Field('currency', notnull=True),
                 db.Field('travel', 'integer', default=0),
-                # Shouldn't be grade-dependent
+                # Shouldn't be grade-dependent, but purely location-dependent
                 #db.Field('subsistence', 'double', default=0.00),
-                db.Field('hazard_pay', 'double', default=0.00),
+                # Location-dependent
+                #db.Field('hazard_pay', 'double', default=0.00),
                 db.Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -224,7 +226,9 @@ db[table].name.comment = SPAN("*", _class="req")
 db[table].grade.requires = IS_NOT_EMPTY()
 db[table].grade.comment = SPAN("*", _class="req")
 db[table].salary.requires = IS_NOT_EMPTY()
+db[table].salary.label = T('Monthly Salary')
 db[table].salary.comment = SPAN("*", _class="req")
+db[table].currency.requires = IS_IN_SET(['Dollars', 'Euros', 'Pounds'])
 title_create = T('Add Staff Type')
 title_display = T('Staff Type Details')
 title_list = T('List Staff Types')
@@ -295,94 +299,17 @@ msg_list_empty = T('No Projects currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Budgets
-resource = 'budget_equipment'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
-                db.Field('location', 'reference %s_location' % module, ondelete='RESTRICT'),
-                db.Field('project', 'reference %s_project' % module, ondelete='RESTRICT'),
-                db.Field('bundle', 'reference %s_bundle' % module, ondelete='RESTRICT'),
-                db.Field('quantity', 'integer'),
-                db.Field('unit_cost', 'double', writable=False),
-                db.Field('months', 'integer'),
-                db.Field('monthly_cost', 'double', writable=False),
-                db.Field('total_unit_cost', writable=False),
-                db.Field('total_monthly_cost', writable=False),
-                db.Field('comments', length=256),
-                migrate=migrate)
-db[table].location.requires = IS_IN_DB(db, '%s_location.id' % module, '%s_location.name' % module)
-db[table].location.comment = SPAN("*", _class="req")
-db[table].project.requires = IS_IN_DB(db,'%s_project.id' % module, '%s_project.code' % module)
-db[table].project.comment = SPAN("*",_class="req")
-db[table].bundle.requires = IS_IN_DB(db, '%s_bundle.id' % module, '%s_bundle.name' % module)
-db[table].bundle.comment = SPAN("*", _class="req")
-title_create = T('Add Equipment Budget')
-title_display = T('Equipment Budget Details')
-title_list = T('List Equipment Budgets')
-title_update = T('Edit Equipment Budget')
-title_search = T('Search Equipment Budgets')
-subtitle_create = T('Add New Equipment Budget')
-subtitle_list = T('Equipment Budgets')
-label_list_button = T('List Equipment Budgets')
-label_create_button = T('Add Equipment Budget')
-msg_record_created = T('Equipment Budget added')
-msg_record_modified = T('Equipment Budget updated')
-msg_record_deleted = T('Equipment Budget deleted')
-msg_list_empty = T('No Equipment Budgets currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-resource = 'budget_staff'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
-                db.Field('location', 'reference %s_location' % module, ondelete='RESTRICT'),
-                db.Field('project', 'reference %s_project' % module, ondelete='RESTRICT'),
-                db.Field('job_title', 'reference %s_staff_type' % module, ondelete='RESTRICT'),
-                db.Field('grade', writable=False),
-                db.Field('type'),
-                db.Field('headcount', 'integer'),
-                db.Field('months', 'integer'),
-                db.Field('salary', writable=False),
-                db.Field('travel', writable=False),
-                db.Field('subsistence', 'double', writable=False),
-                db.Field('hazard_pay', 'double', writable=False),
-                db.Field('total', 'double', writable=False),
-                db.Field('comments', length=256),
-                migrate=migrate)
-db[table].location.requires = IS_IN_DB(db, '%s_location.id' % module, '%s_location.name' % module)
-db[table].location.comment = SPAN("*", _class="req")
-db[table].project.requires = IS_IN_DB(db, '%s_project.id' % module, '%s_project.code' % module)
-db[table].job_title.requires = IS_IN_DB(db, '%s_staff_type.id' % module, '%s_staff_type.name' % module)
-db[table].job_title.comment = SPAN("*", _class="req")
-db[table].project.comment = SPAN("*", _class="req")
-db[table].type.requires = IS_IN_SET(['Staff', 'Consultant'])
-title_create = T('Add Staff Budget')
-title_display = T('Staff Budget Details')
-title_list = T('List Staff Budgets')
-title_update = T('Edit Staff Budget')
-title_search = T('Search Staff Budgets')
-subtitle_create = T('Add New Staff Budget')
-subtitle_list = T('Staff Budgets')
-label_list_button = T('List Staff Budgets')
-label_create_button = T('Add Staff Budget')
-msg_record_created = T('Staff Budget added')
-msg_record_modified = T('Staff Budget updated')
-msg_record_deleted = T('Staff Budget deleted')
-msg_list_empty = T('No Staff Budgets currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
 resource = 'budget'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 db.Field('name', notnull=True, unique=True),
-                db.Field('equipment', 'reference %s_budget_equipment' % module, ondelete='RESTRICT'),
-                db.Field('staff', 'reference %s_budget_staff' % module, ondelete='RESTRICT'),
+                db.Field('description', length=256),
+                db.Field('total_onetime_costs', 'double', writable=False),
+                db.Field('total_recurring_costs', 'double', writable=False),
                 db.Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
-db[table].equipment.requires = IS_IN_DB(db, '%s_budget_equipment.id' % module)
-db[table].equipment.comment = SPAN("*", _class="req")
-db[table].staff.requires = IS_IN_DB(db, '%s_budget_staff.id' % module)
-db[table].staff.comment = SPAN("*", _class="req")
 title_create = T('Add Budget')
 title_display = T('Budget Details')
 title_list = T('List Budgets')
@@ -398,3 +325,142 @@ msg_record_deleted = T('Budget deleted')
 msg_list_empty = T('No Budgets currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+# Budget<>Bundle Many2Many
+resource = 'budget_bundle'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                db.Field('budget_id', db.budget_budget),
+                db.Field('project_id', db.budget_project),
+                db.Field('location_id', db.budget_location),
+                db.Field('bundle_id', db.budget_bundle, ondelete='RESTRICT'),
+                db.Field('quantity', 'integer', default=1, notnull=True),
+                db.Field('months', 'integer', default=3, notnull=True),
+                migrate=migrate)
+db[table].budget_id.requires = IS_IN_DB(db, 'budget_budget.id', 'budget_budget.name')
+db[table].budget_id.label = T('Budget')
+db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
+db[table].project_id.requires = IS_IN_DB(db,'budget_project.id', 'budget_project.code')
+db[table].project_id.label = T('Project')
+db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
+db[table].location_id.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
+db[table].location_id.label = T('Location')
+db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
+db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.name')
+db[table].bundle_id.label = T('Bundle')
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].name
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].months.requires = IS_NOT_EMPTY()
+db[table].months.label = T('Months')
+db[table].months.comment = SPAN("*", _class="req")
+
+# Budget<>Staff Many2Many
+resource = 'budget_staff'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                db.Field('budget_id', db.budget_budget),
+                db.Field('project_id', db.budget_project),
+                db.Field('location_id', db.budget_location),
+                db.Field('staff_id', db.budget_staff, ondelete='RESTRICT'),
+                db.Field('quantity', 'integer', default=1, notnull=True),
+                db.Field('months', 'integer', default=3, notnull=True),
+                migrate=migrate)
+db[table].budget_id.requires = IS_IN_DB(db, 'budget_budget.id', 'budget_budget.name')
+db[table].budget_id.label = T('Budget')
+db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
+db[table].project_id.requires = IS_IN_DB(db,'budget_project.id', 'budget_project.code')
+db[table].project_id.label = T('Project')
+db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
+db[table].location_id.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
+db[table].location_id.label = T('Location')
+db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
+db[table].staff_id.requires = IS_IN_DB(db, 'budget_staff.id', 'budget_staff.name')
+db[table].staff_id.label = T('Staff')
+db[table].staff_id.represent = lambda bundle_id: db(db.budget_staff.id==staff_id).select()[0].description
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].months.requires = IS_NOT_EMPTY()
+db[table].months.label = T('Months')
+db[table].months.comment = SPAN("*", _class="req")
+
+#resource = 'budget_equipment'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp,
+#                db.Field('name', notnull=True, unique=True),
+#                db.Field('location', 'reference budget_location', ondelete='RESTRICT'),
+#                db.Field('project', 'reference budget_project', ondelete='RESTRICT'),
+#                db.Field('bundle', 'reference budget_bundle', ondelete='RESTRICT'),
+#                db.Field('quantity', 'integer'),
+#                db.Field('unit_cost', 'double', writable=False),
+#                db.Field('months', 'integer'),
+#                db.Field('monthly_cost', 'double', writable=False),
+#                db.Field('total_unit_cost', writable=False),
+#                db.Field('total_monthly_cost', writable=False),
+#                db.Field('comments', length=256),
+#                migrate=migrate)
+#db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+#db[table].name.comment = SPAN("*", _class="req")
+#db[table].location.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
+#db[table].location.comment = SPAN("*", _class="req")
+#db[table].project.requires = IS_IN_DB(db,'budget_project.id', 'budget_project.code')
+#db[table].project.comment = SPAN("*",_class="req")
+#db[table].bundle.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.name')
+#db[table].bundle.comment = SPAN("*", _class="req")
+#title_create = T('Add Equipment Budget')
+#title_display = T('Equipment Budget Details')
+#title_list = T('List Equipment Budgets')
+#title_update = T('Edit Equipment Budget')
+#title_search = T('Search Equipment Budgets')
+#subtitle_create = T('Add New Equipment Budget')
+#subtitle_list = T('Equipment Budgets')
+#label_list_button = T('List Equipment Budgets')
+#label_create_button = T('Add Equipment Budget')
+#msg_record_created = T('Equipment Budget added')
+#msg_record_modified = T('Equipment Budget updated')
+#msg_record_deleted = T('Equipment Budget deleted')
+#msg_list_empty = T('No Equipment Budgets currently registered')
+#s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+#resource = 'budget_staff'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp,
+#                db.Field('name', notnull=True, unique=True),
+#                db.Field('location', 'reference budget_location', ondelete='RESTRICT'),
+#                db.Field('project', 'reference budget_project', ondelete='RESTRICT'),
+#                db.Field('job_title', 'reference budget_staff', ondelete='RESTRICT'),
+#                db.Field('grade', writable=False),
+#                db.Field('type'),
+#                db.Field('headcount', 'integer'),
+#                db.Field('months', 'integer'),
+#                db.Field('salary', writable=False),
+#                db.Field('travel', writable=False),
+#                db.Field('subsistence', 'double', writable=False),
+#                db.Field('hazard_pay', 'double', writable=False),
+#                db.Field('total', 'double', writable=False),
+#                db.Field('comments', length=256),
+#                migrate=migrate)
+#db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+#db[table].name.comment = SPAN("*", _class="req")
+#db[table].location.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
+#db[table].location.comment = SPAN("*", _class="req")
+#db[table].project.requires = IS_IN_DB(db, 'budget_project.id', 'budget_project.code')
+#db[table].job_title.requires = IS_IN_DB(db, 'budget_staff.id', 'budget_staff.name')
+#db[table].job_title.comment = SPAN("*", _class="req")
+#db[table].project.comment = SPAN("*", _class="req")
+#db[table].type.requires = IS_IN_SET(['Staff', 'Consultant'])
+#title_create = T('Add Staff Budget')
+#title_display = T('Staff Budget Details')
+#title_list = T('List Staff Budgets')
+#title_update = T('Edit Staff Budget')
+#title_search = T('Search Staff Budgets')
+#subtitle_create = T('Add New Staff Budget')
+#subtitle_list = T('Staff Budgets')
+#label_list_button = T('List Staff Budgets')
+#label_create_button = T('Add Staff Budget')
+#msg_record_created = T('Staff Budget added')
+#msg_record_modified = T('Staff Budget updated')
+#msg_record_deleted = T('Staff Budget deleted')
+#msg_list_empty = T('No Staff Budgets currently registered')
+#s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)

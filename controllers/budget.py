@@ -10,10 +10,10 @@ response.menu_options = [
     [T('Items'), False, URL(r=request, f='item')],
     [T('Kits'), False, URL(r=request, f='kit')],
     [T('Bundles'), False, URL(r=request, f='bundle')],
-    [T('Staff Types'), False, URL(r=request, f='staff_type')],
+    [T('Staff'), False, URL(r=request, f='staff')],
     [T('Locations'), False, URL(r=request, f='location')],
     [T('Projects'), False, URL(r=request, f='project')],
-    [T('Budgets'), False, URL(r=request, f='budget')],
+    [T('Budgets'), False, URL(r=request, f='budget')]
 ]
 
 # S3 framework functions
@@ -379,7 +379,7 @@ def bundle_kit_item():
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name='kit_' + str(id), _class="remove_item")
-            item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), TD(checkbox, _align='center'), _class=theclass, _align='right'))
+            item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
             
         # Items
         query = tables[1].bundle_id==bundle
@@ -535,9 +535,9 @@ def bundle_update_items():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f='bundle_kit_item', args=[bundle]))
 
-def staff_type():
+def staff():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'staff_type')
+    return shn_rest_controller(module, 'staff')
 def location():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'location', main='code')
@@ -547,9 +547,270 @@ def project():
 def budget():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'budget')
-def budget_equipment():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'budget_equipment')
-def budget_staff():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'budget_staff')
+
+def budget_staff_bundle():
+    "Many to Many CRUD Controller"
+    if len(request.args) == 0:
+        session.error = T("Need to specify a Budget!")
+        redirect(URL(r=request, f='budget'))
+    budget = request.args[0]
+    tables = [db.budget_budget_staff, db.budget_budget_bundle]
+    authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
+    
+    title = db.budget_budget[budget].name
+    budget_description = db.budget_budget[budget].description
+    budget_onetime_cost = db.budget_budget[budget].total_onetime_costs
+    budget_recurring_cost = db.budget_budget[budget].total_recurring_costs
+    # Start building the Return with the common items
+    output = dict(module_name=module_name, title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
+    # Audit
+    shn_audit_read(operation='list', resource='budget_staff_bundle', record=budget, representation='html')
+    item_list = []
+    even = True
+    if authorised:
+        # Audit
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'budget_staff_bundle', 'html')
+        # Display a List_Create page with editable Quantities & Months
+        
+        # Staff
+        query = tables[0].budget_id==budget
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.staff_id
+            name = db.budget_staff[id].name
+            id_link = A(name, _href=URL(r=request, f='staff', args=['read', id]))
+            location = db.budget_location[row.location_id].code
+            location_link = A(location, _href=URL(r=request, f='location', args=['read', row.location_id]))
+            project = db.budget_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, f='project', args=['read', row.project_id]))
+            description = db.budget_staff[id].comments
+            quantity_box = INPUT(_value=row.quantity, _size=4, _name='staff_qty_' + str(id))
+            months_box = INPUT(_value=row.months, _size=4, _name='staff_months_' + str(id))
+            salary = db.budget_staff[id].salary
+            travel = db.budget_staff[id].travel
+            onetime = travel * row.quantity
+            recurring = salary * row.quantity
+            checkbox = INPUT(_type="checkbox", _value="on", _name='staff_' + str(id), _class="remove_item")
+            item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(travel), TD(salary), TD(months_box), TD(onetime), TD(recurring), TD(checkbox, _align='center'), _class=theclass, _align='right'))
+            
+        # Bundles
+        query = tables[1].budget_id==budget
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.bundle_id
+            name = db.budget_bundle[id].name
+            id_link = A(name, _href=URL(r=request, f='bundle', args=['read', id]))
+            location = db.budget_location[row.location_id].code
+            location_link = A(location, _href=URL(r=request, f='location', args=['read', row.location_id]))
+            project = db.budget_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, f='project', args=['read', row.project_id]))
+            description = db.budget_bundle[id].description
+            quantity_box = INPUT(_value=row.quantity, _size=4, _name='bundle_qty_' + str(id))
+            months_box = INPUT(_value=row.months, _size=4, _name='bundle_months_' + str(id))
+            unit_cost = db.budget_bundle[id].total_unit_cost
+            monthly_cost = db.budget_bundle[id].total_monthly_cost
+            onetime = unit_cost * row.quantity
+            recurring = monthly_cost * row.months
+            checkbox = INPUT(_type="checkbox", _value="on", _name='bundle_' + str(id), _class="remove_item")
+            item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), TD(checkbox, _align='center'), _class=theclass, _align='right'))
+        
+        table_header = THEAD(TR(TH('Location'), TH('Project'), TH('Item'), TH(T('Description')), TH(tables[0].quantity.label), TH(T('One-time costs')), TH(T('Recurring costs')), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label), TH(T('Remove'))))
+        table_footer = TFOOT(TR(TD(B(T('Totals for Budget:')), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost)), TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')))), _align='right')
+        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='budget_update_items', args=[budget])))
+        subtitle = T("Contents")
+        
+        crud.messages.submit_button=T('Add')
+        # Check for duplicates before Item is added to DB
+        crud.settings.create_onvalidation = lambda form: budget_dupes(form)
+        # Calculate Totals for the budget after Item is added to DB
+        crud.settings.create_onaccept = lambda form: budget_total(form)
+        crud.messages.record_created = T('Budget Updated')
+        form1 = crud.create(tables[0], next=URL(r=request, args=[budget]))
+        form1[0][0].append(TR(TD(T('Type:')), TD(LABEL(T('Staff'), INPUT(_type="radio", _name="staff_bundle1", _value="Staff", value="Staff")), LABEL(T('Bundle'), INPUT(_type="radio", _name="staff_bundle1", _value="Bundle", value="Staff")))))
+        form2 = crud.create(tables[1], next=URL(r=request, args=[budget]))
+        form2[0][0].append(TR(TD(T('Type:')), TD(LABEL(T('Staff'), INPUT(_type="radio", _name="staff_bundle2", _value="Staff", value="Bundle")), LABEL(T('Bundle'), INPUT(_type="radio", _name="staff_bundle2", _value="Bundle", value="Bundle")))))
+        addtitle = T("Add to budget")
+        response.view = '%s/budget_staff_bundle_list_create.html' % module
+        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, budget=budget))
+    else:
+        # Display a simple List page
+        # Staff
+        query = tables[0].budget_id==budget
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.staff_id
+            name = db.budget_staff[id].name
+            id_link = A(name, _href=URL(r=request, f='staff', args=['read', id]))
+            location = db.budget_location[row.location_id].code
+            location_link = A(location, _href=URL(r=request, f='location', args=['read', row.location_id]))
+            project = db.budget_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, f='project', args=['read', row.project_id]))
+            description = db.budget_staff[id].comments
+            quantity_box = INPUT(_value=row.quantity, _size=4, _name='staff_qty_' + str(id))
+            months_box = INPUT(_value=row.months, _size=4, _name='staff_mins_' + str(id))
+            salary = db.budget_staff[id].salary
+            travel = db.budget_staff[id].travel
+            onetime = travel * row.quantity
+            recurring = salary * row.quantity
+            checkbox = INPUT(_type="checkbox", _value="on", _name='staff_' + str(id), _class="remove_item")
+            item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(travel), TD(salary), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align='right'))
+            
+        # Bundles
+        query = tables[1].budget_id==budget
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.bundle_id
+            name = db.budget_bundle[id].name
+            id_link = A(name, _href=URL(r=request, f='bundle', args=['read', id]))
+            location = db.budget_location[row.location_id].code
+            location_link = A(location, _href=URL(r=request, f='location', args=['read', row.location_id]))
+            project = db.budget_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, f='project', args=['read', row.project_id]))
+            description = db.budget_bundle[id].description
+            quantity_box = row.quantity
+            months_box = row.months
+            unit_cost = db.budget_bundle[id].total_unit_cost
+            monthly_cost = db.budget_bundle[id].total_monthly_cost
+            onetime = unit_cost * row.quantity
+            recurring = monthly_cost * row.months
+            item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align='right'))
+        
+        table_header = THEAD(TR(TH('Location'), TH('Project'), TH('Item'), TH(T('Description')), TH(tables[0].quantity.label), TH(T('One-time costs')), TH(T('Recurring costs')), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label)))
+        table_footer = TFOOT(TR(TD(B(T('Totals for Budget:')), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost))), _align='right')
+        items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
+        
+        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
+        response.view = '%s/budget_staff_bundle_list.html' % module
+        output.update(dict(items=items, add_btn=add_btn))
+    return output
+
+def budget_dupes(form):
+    "Checks for duplicate staff/bundle before adding to DB"
+    budget = form.vars.budget_id
+    if 'staff_id' in form.vars:
+        staff = form.vars.staff_id
+        table = db.budget_budget_staff
+        query = (table.budget_id==budget) & (table.staff_id==staff)
+    elif 'bundle_id' in form.vars:
+        bundle = form.vars.bundle_id
+        table = db.budget_budget_bundle
+        query = (table.budget_id==budget) & (table.bundle_id==bundle)
+    else:
+        # Something went wrong!
+        return
+    items = db(query).select()
+    if items:
+        session.error = T("Item already in budget!")
+        redirect(URL(r=request, args=budget))
+    else:
+        return
+    
+def budget_total(form):
+    "Calculate Totals for the budget specified by Form"
+    if 'budget_id' in form.vars:
+        # called by budget_staff_bundle()
+        budget = form.vars.budget_id
+    else:
+        # called by budget()
+        budget = form.vars.id
+    budget_totals(budget)
+    
+def budget_totals(budget):
+    "Calculate Totals for a budget"
+    total_onetime_cost = 0
+    total_recurring_cost = 0
+    
+    table = db.budget_budget_staff
+    query = table.budget_id==budget
+    staffs = db(query).select()
+    for staff in staffs:
+        query = (table.budget_id==budget) & (table.staff_id==staff.staff_id)
+        total_onetime_cost += (db(db.budget_staff.id==staff.staff_id).select()[0].travel) * (db(query).select()[0].quantity)
+        total_recurring_cost += (db(db.budget_staff.id==staff.staff_id).select()[0].salary) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
+        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select()[0].subsistence) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
+        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select()[0].hazard_pay) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
+        
+    table = db.budget_budget_bundle
+    query = table.budget_id==budget
+    bundles = db(query).select()
+    for bundle in bundles:
+        query = (table.budget_id==budget) & (table.bundle_id==bundle.bundle_id)
+        total_onetime_cost += (db(db.budget_bundle.id==bundle.bundle_id).select()[0].total_unit_cost) * (db(query).select()[0].quantity)
+        total_recurring_cost += (db(db.budget_bundle.id==bundle.bundle_id).select()[0].total_monthly_cost) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
+        
+    db(db.budget_budget.id==budget).update(total_onetime_costs=total_onetime_cost, total_recurring_costs=total_recurring_cost)
+
+def budget_update_items():
+    "Update a Budget's items (Quantity, Months & Delete)"
+    if len(request.args) == 0:
+        session.error = T("Need to specify a budget!")
+        redirect(URL(r=request, f='budget'))
+    budget = request.args[0]
+    tables = [db.budget_budget_staff, db.budget_budget_bundle]
+    authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
+    if authorised:
+        for var in request.vars:
+            if 'staff' in var:
+                if 'qty' in var:
+                    staff = var[10:]
+                    quantity = request.vars[var]
+                    query = (tables[0].budget_id==budget) & (tables[0].staff_id==staff)
+                    db(query).update(quantity=quantity)
+                elif 'months' in var:
+                    staff = var[13:]
+                    months = request.vars[var]
+                    query = (tables[0].budget_id==budget) & (tables[0].staff_id==staff)
+                    db(query).update(months=months)
+                else:
+                    # Delete
+                    staff = var[6:]
+                    query = (tables[0].budget_id==budget) & (tables[0].staff_id==staff)
+                    db(query).delete()
+            if 'bundle' in var:
+                if 'qty' in var:
+                    bundle = var[11:]
+                    quantity = request.vars[var]
+                    query = (tables[1].budget_id==budget) & (tables[1].bundle_id==bundle)
+                    db(query).update(quantity=quantity)
+                elif 'months' in var:
+                    bundle = var[14:]
+                    months = request.vars[var]
+                    query = (tables[1].budget_id==budget) & (tables[1].bundle_id==bundle)
+                    db(query).update(months=months)
+                else:
+                    # Delete
+                    bundle = var[7:]
+                    query = (tables[1].budget_id==budget) & (tables[1].bundle_id==bundle)
+                    db(query).delete()
+        # Update the Total values
+        budget_totals(budget)
+        # Audit
+        shn_audit_update_m2m(resource='budget_staff_bundle', record=budget, representation='html')
+        session.flash = T("Budget updated")
+    else:
+        session.error = T("Not authorised!")
+    redirect(URL(r=request, f='budget_staff_bundle', args=[budget]))

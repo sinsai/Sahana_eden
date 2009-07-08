@@ -392,11 +392,11 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
     )
     db[table].insert(
-        name="lms",
-        name_nice="Logistics Management System",
+        name="wms",
+        name_nice="Warehouse Management System",
         priority=14,
         access='',
-        description="The Logistics Management System for Sahana is envisioned to be composed of several sub-modules that work together to provide complex functionality for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.",
+        description="Warehouse Management System deals with Warehouses, Intake of Items and Inventory Management",
         enabled='True'
     )    
 

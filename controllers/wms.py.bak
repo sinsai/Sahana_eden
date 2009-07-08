@@ -1,0 +1,45 @@
+﻿# -*- coding: utf-8 -*-
+
+module = 'wms'
+# Current Module (for sidebar title)
+module_name = db(db.s3_module.name==module).select()[0].name_nice
+# Options Menu (available in all Functions' Views)
+response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
+    [T('Manage Sites'), False, '#',[
+        [T('Add Site (s)'), False, URL(r=request, f='site', args='add')],
+        [T('Add Storage Location'), False, URL(r=request, f='site', args='add_location')],        
+        [T('Search & Edit Site (s)'), False, URL(r=request, f='site', args='search')],
+        [T('Search & Edit Storage Location(s)'), False, URL(r=request, f='site', args='search_location')],        
+        [T('List Sites (Reports)'), False, URL(r=request, f='site', args='list')]        
+    ]],
+    [T('Intake System'), False, '#',[
+        [T('Add Item (s)'), False, URL(r=request, f='item', args='add')],
+        [T('Search & Edit Item (s)'), False, URL(r=request, f='item', args='search')],
+        [T('List Items (Reports)'), False, URL(r=request, f='item', args='list')]
+    ]],
+    [T('Inventory Management'), False, '#',[
+        [T('Adjust Item(s) Quantity'), False, URL(r=request, f='inventory', args='adjust')],
+        [T('Kitting of Items'), False, URL(r=request, f='inventory', args='kitting')],
+        [T('De-kitting of Items'), False, URL(r=request, f='inventory', args='dekitting')],
+        [T('Aggregate Items'), False, URL(r=request, f='inventory', args='aggregate')]        
+    ]]
+]
+
+def index():
+    "Module's Home Page"
+    return dict(module_name=module_name)
+
+def site():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'site')
+
+
+def item():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'item')
+
+
+def inventory():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'inventory')

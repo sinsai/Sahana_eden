@@ -1,0 +1,2 @@
+# try something like
+wms=SQLDB("sqlite://wms.db")

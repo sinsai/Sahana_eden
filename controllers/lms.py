@@ -7,7 +7,21 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Administration'), False, '#',[
-        [T('Warehouse/Sites Registry'), False, URL(r=request, f='site', args='create')],
+        [T('Warehouse/Sites Registry'), False, '#',[
+			[T('Add Site'), False, URL(r=request, f='site', args='create')],
+			[T('List Site'), False, URL(r=request, f='site')],
+			[T('Search Site'), False, URL(r=request, f='site', args='search')]
+		]],
+        [T('Warehouse/Sites Category'), False, '#',[
+			[T('Add Category'), False, URL(r=request, f='category', args='create')],
+			[T('List Categories'), False, URL(r=request, f='category')],
+			[T('Search Categories'), False, URL(r=request, f='category', args='search')]
+		]],
+        [T('Storage Locations'), False, '#',[
+			[T('Add Locations'), False, URL(r=request, f='storage_loc', args='create')],
+			[T('List Locations'), False, URL(r=request, f='storage_loc')],
+			[T('Search Locations'), False, URL(r=request, f='storage_loc', args='search')]
+		]],		
         [T('Relief Item Catalogue'), False, URL(r=request, f='catalogue', args='create')],             
     ]],
     [T('Intake System'), False, '#',[
@@ -31,8 +45,15 @@ def site():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'site')
 
+def category():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'category')
 
-def item():
+def storage_loc():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'storage_loc')	
+
+def catalogue():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'item')
 

@@ -17,7 +17,7 @@ if not len(db().select(db[table].ALL)):
         audit_read = False,
         audit_write = False
     )
-# Sites Category
+''' Sites Category
 resource = 'site_category'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
@@ -43,14 +43,14 @@ msg_record_modified = T('Category updated')
 msg_record_deleted = T('Category deleted')
 msg_list_empty = T('No Categories currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
+'''
 # Sites
 resource = 'site'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
                 db.Field('name', notnull=True),
                 db.Field('description', length=256),
-				db.Field('site_category_id', db.lms_site_category),
+				db.Field('category'),
                 admin_id,
                 location_id,
                 person_id,
@@ -59,8 +59,9 @@ db.define_table(table,timestamp,uuidstamp,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
-db[table].site_category_id.requires = IS_IN_DB(db, 'lms_site_category.id', 'lms_site_category.name')
-db[table].site_category_id.comment = DIV(A(T('Add Category'), _class='popup', _href=URL(r=request, c='lms', f='site_category', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Category|The Category of Site.")))
+# db[table].site_category_id.requires = IS_IN_DB(db, 'lms_site_category.id', 'lms_site_category.name')
+db[table].category.requires=IS_IN_SET(['warehouse'])
+# db[table].site_category_id.comment = DIV(A(T('Add Category'), _class='popup', _href=URL(r=request, c='lms', f='site_category', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Category|The Category of Site.")))
 db[table].name.label = T("Site Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].admin.label = T("Site Manager")

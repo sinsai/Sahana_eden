@@ -12,11 +12,6 @@ response.menu_options = [
 			[T('List Site'), False, URL(r=request, f='site')],
 			[T('Search Site'), False, URL(r=request, f='site', args='search')]
 		]],
-        [T('Warehouse/Sites Category'), False, '#',[
-			[T('Add Category'), False, URL(r=request, f='site_category', args='create')],
-			[T('List Categories'), False, URL(r=request, f='site_category')],
-			[T('Search Categories'), False, URL(r=request, f='site_category', args='search')]
-		]],
         [T('Storage Locations'), False, '#',[
 			[T('Add Locations'), False, URL(r=request, f='storage_loc', args='create')],
 			[T('List Locations'), False, URL(r=request, f='storage_loc')],
@@ -50,10 +45,10 @@ def site():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'site')
 
-def site_category():
+'''def site_category():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'site_category')
-
+'''
 def storage_loc():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'storage_loc')

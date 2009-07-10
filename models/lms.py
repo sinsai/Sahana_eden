@@ -118,12 +118,11 @@ resource = 'storage_bin'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
                 db.Field('number', notnull=True),
-                db.Field('capacity', length=256),
-				db.Field('bin_type'),
+                db.Field('bin_type'),
                 db.Field('storage_id', db.lms_storage_loc),
-                db.Field('dimension'),
-                db.Field('area'),
-				db.Field('height'),
+                db.Field('total_capacity', length=256),
+				db.Field('max_weight'),
+				db.Field('comments', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names

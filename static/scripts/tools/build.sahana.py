@@ -108,8 +108,8 @@ configDictGlobalGIS.update(configDictGIS)
 
 listCSS = [
     '../../styles/S3/sahana.css',
-    '../../styles/S3/jquery.autocomplete.css',
     '../../styles/S3/jquery.cluetip.css',
+    '../../styles/S3/jquery.dataTables.css',
     '../../styles/T2/t2.css',
     '../../styles/web2py/calendar.css',
     '../../styles/web2py/menu.css'

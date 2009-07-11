@@ -401,16 +401,22 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             if representation == "html":
                 # Start building the Return
                 output = dict(module_name=module_name, main=main, extra=extra)
-                # Pagination
                 if 'page' in request.vars:
+                    # Pagination at server-side (since no JS available)
                     page = int(request.vars.page)
+                    start_record = (page - 1) * rowsperpage
+                    end_record = start_record + rowsperpage
+                    limitby = start_record, end_record
+                    totalpages = (db(query).count() / rowsperpage) + 1 # Fails on GAE
+                    label_search_button = T('Search')
+                    search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
+                    output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
                 else:
-                    page = 1
-                start_record = (page - 1) * rowsperpage
-                end_record = start_record + rowsperpage
-                limitby = start_record, end_record
-                totalpages = (db(query).count() / rowsperpage) + 1 # Fails on GAE
-                output.update(dict(page=page, totalpages=totalpages))
+                    # No Pagination server-side (to allow it to be done client-side)
+                    limitby = ''
+                    # Redirect to a paginated version if JS not-enabled
+                    request.vars['page'] = 1
+                    response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>' 
                 # Which fields do we display?
                 fields = [table[f] for f in table.fields if table[f].readable]
                 # Column labels
@@ -418,7 +424,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 for field in fields:
                    # Use custom or prettified label
                    headers[str(field)] = field.label
-                items = crud.select(table, query=query, fields=fields, limitby=limitby, headers=headers, truncate=48)
+                items = crud.select(table, query=query, fields=fields, limitby=limitby, headers=headers, truncate=48, _id='list', _class='display')
                 if not items:
                     try:
                         items = s3.crud_strings.msg_list_empty

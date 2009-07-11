@@ -1,7 +1,14 @@
-﻿{{try:}}
- {{if totalpages <> 1:}}
-  {{include '_searchbox.html'}}
- {{pass}}
-{{except:}}
- {{include '_searchbox.html'}}
+﻿{{if 'page' in request.vars:}}
+  {{try:}}
+    {{if totalpages <> 1:}}
+      {{=search_btn}}
+      <p>&nbsp;</p>
+    {{pass}}
+  {{except:}}
+    {{try:}}
+      {{=search_btn}}
+      <p>&nbsp;</p>
+    {{except:}}
+    {{pass}}
+  {{pass}}
 {{pass}}

@@ -3,7 +3,7 @@
 <head>
 <title>{{try:}}{{=title}}{{except:}}{{pass}}</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-{{if response.refresh:}}{{=refresh}}{{pass}}
+{{if response.refresh:}}{{=XML(response.refresh)}}{{pass}}
 {{if session.s3.debug:}}
   {{include 'sahana_scripts_debug.html'}}
   {{include 'sahana_styles_debug.html'}}

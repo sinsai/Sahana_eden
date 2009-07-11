@@ -7,31 +7,4 @@ $(function() {
     });
 //]]></script>
 
-{{try:}}
- {{=H2(title)}}
-{{except:}}
-{{pass}}
-{{try:}}
- {{=H3(subtitle)}}
-{{except:}}
-{{pass}}
-<div id='table-container'>
-{{try:}}
- {{=items}}
-{{except:}}
-{{pass}}
-</div>
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
-<p>&nbsp;</p>
-{{try:}}
- {{=H3(addtitle)}}
-{{except:}}
-{{pass}}
-<div class='form-container'>
-{{try:}}
- {{=form}}
-{{except:}}
-{{pass}}
-</div>
-{{include 'key.html'}}
+{{include '_list_create.html'}}

@@ -3,7 +3,7 @@ Sahana - Default Theme - Stylesheet
 -----------------------------------------------------------------------------------
 designer : Prabhath Sirisena - prabhath@vesess.com - http://nidahas.com
 updated : Priyanga Fonseka  - jo@opensource.lk
-updated for Sahana 3 : Fran Boon  - flavour@partyvibe.com
+updated for SahanaPy : Fran Boon  - flavour@partyvibe.com
  
 Selectors are listed in their order of appearance in the html, where applicable.
 ---------------------------------------------------------------------------------- 
@@ -124,11 +124,12 @@ div#container { }
 			#home p { text-align:center; /*	padding-left:200px;*/ padding: 10px 10px 10px 10px; text-align:justify; line-height:1.25; }
 			#home h2 { font-size:16px; text-align:center; } 
 
-			/* layout table */
+			/* layout table
 			table.layout { border-collapse: collapse; width:100%; }
 			table.layout thead td { text-align:center; padding:0px; background: #555; color:#fff; font-size:100%; }
 			table.layout td { padding: 0px 0px 0 0px; border: 0px solid #ccc; }
-            
+            */
+             
             /* GIS module */
             #btn-panel { padding: 2px; }
             
@@ -162,10 +163,15 @@ div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
 /* Tabular data view */
+/*
 div#table-container th { border: 1px solid #ccc;background: #ddd; }
 div#table-container tr.even td { border: 1px solid #ccc;background: #fff; }
 div#table-container tr.odd td { border: 1px solid #ccc;background: #eee; }
-
+*/
+div#table-container th { border: 1px solid #ccc; }
+div#table-container tr.even td { border: 1px solid #ccc; }
+div#table-container tr.odd td { border: 1px solid #ccc; }
+ 
 /* Required Field indicator */
 .req { color:red; font-weight:bold;  }
 /* For Key - ugly! */

@@ -11,7 +11,7 @@
         {{=instance}}
       </instance>
       
-      {{try:}}{{=bindings.xml()}}{{except:}}{{pass}}
+      {{try:}}{{for items in bindings:}}{{=XML(items)}}{{pass}}{{except:}}{{pass}}
       
     </model>
   </h:head>

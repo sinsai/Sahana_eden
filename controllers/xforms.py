@@ -20,7 +20,7 @@ def xforms():
     controllers_list = []
     
     for field in table.fields:
-        if field == 'id':
+        if field in ['id','created_on','modified_on','uuid'] :
             # This will get added server-side
             pass
         else:
@@ -46,7 +46,7 @@ def xforms():
                 # Unknown type
                 _type = 'string'
                 
-            bindings_list.append(TAG['bind'](nodeset=field, _type=_type, _required=required))
+            bindings_list.append(TAG['bind'](_nodeset=field, _type=_type, _required=required))
             
             # Controllers
             if hasattr(table[field].requires,'options'):

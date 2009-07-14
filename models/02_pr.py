@@ -6,8 +6,8 @@ module = 'pr'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -22,15 +22,15 @@ if not len(db().select(db[table].ALL)):
 resource = 'person'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('first_name', notnull=True),
-                db.Field('middle_name'),
-                db.Field('last_name'),
-                db.Field('preferred_name'),
-                db.Field('email', unique=True), # Needed for AAA
-                db.Field('mobile_phone'),       # Needed for SMS
-                db.Field('address', 'text'),
-                db.Field('postcode'),
-                db.Field('website'),
+                Field('first_name', notnull=True),
+                Field('middle_name'),
+                Field('last_name'),
+                Field('preferred_name'),
+                Field('email', unique=True), # Needed for AAA
+                Field('mobile_phone'),       # Needed for SMS
+                Field('address', 'text'),
+                Field('postcode'),
+                Field('website'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
@@ -59,7 +59,7 @@ msg_list_empty = T('No People currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 person_id = SQLTable(None, 'person_id',
-            db.Field('person_id', db.pr_person,
+            Field('person_id', db.pr_person,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
                 represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
                 comment = DIV(A(T('Add Contact'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Contact|The Person to contact for this."))),
@@ -70,8 +70,8 @@ person_id = SQLTable(None, 'person_id',
 resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name'),   # Contact type
-                db.Field('value', notnull=True),
+                Field('name'),   # Contact type
+                Field('value', notnull=True),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_IN_SET(['phone', 'fax', 'skype', 'msn', 'yahoo'])
@@ -95,8 +95,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'contact_to_person'
 table = module + '_' + resource
 db.define_table(table,timestamp,
-                db.Field('person_id', db.pr_person),
-                db.Field('contact_id', db.pr_contact),
+                Field('person_id', db.pr_person),
+                Field('contact_id', db.pr_contact),
                 migrate=migrate)
 db[table].person_id.label = 'Person'
 db[table].contact_id.requires = IS_IN_DB(db, 'pr_contact.id', 'pr_contact.name')

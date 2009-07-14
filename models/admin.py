@@ -6,8 +6,8 @@ module = 'admin'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin

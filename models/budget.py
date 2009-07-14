@@ -6,8 +6,8 @@ module = 'budget'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -23,10 +23,10 @@ if not len(db().select(db[table].ALL)):
 resource = 'parameter'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
-                db.Field('shipping', 'double', default=15.00, notnull=True),
-                db.Field('logistics', 'double', default=0.00, notnull=True),
-                db.Field('admin', 'double', default=0.00, notnull=True),
-                db.Field('indirect', 'double', default=7.00, notnull=True),
+                Field('shipping', 'double', default=15.00, notnull=True),
+                Field('logistics', 'double', default=0.00, notnull=True),
+                Field('admin', 'double', default=0.00, notnull=True),
+                Field('indirect', 'double', default=7.00, notnull=True),
                 migrate=migrate)
 db[table].shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
 db[table].shipping.label = "Shipping cost"
@@ -43,16 +43,16 @@ s3.crud_strings[table] = Storage(title_update=title_update)
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code', notnull=True, unique=True),
-                db.Field('description', length=256, notnull=True),
-                db.Field('cost_type', notnull=True),
-                db.Field('category'),
-                #db.Field('sub_category'),
-                db.Field('unit_cost', 'double', default=0.00),
-                db.Field('monthly_cost', 'double', default=0.00),
-                db.Field('minute_cost', 'double', default=0.00),
-                db.Field('megabyte_cost', 'double', default=0.00),
-                db.Field('comments', length=256),
+                Field('code', notnull=True, unique=True),
+                Field('description', length=256, notnull=True),
+                Field('cost_type', notnull=True),
+                Field('category'),
+                #Field('sub_category'),
+                Field('unit_cost', 'double', default=0.00),
+                Field('monthly_cost', 'double', default=0.00),
+                Field('minute_cost', 'double', default=0.00),
+                Field('megabyte_cost', 'double', default=0.00),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
@@ -81,13 +81,13 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'kit'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code', notnull=True, unique=True),
-                db.Field('description', length=256),
-                db.Field('total_unit_cost', 'double', writable=False),
-                db.Field('total_monthly_cost', 'double', writable=False),
-                db.Field('total_minute_cost', 'double', writable=False),
-                db.Field('total_megabyte_cost', 'double', writable=False),
-                db.Field('comments', length=256),
+                Field('code', notnull=True, unique=True),
+                Field('description', length=256),
+                Field('total_unit_cost', 'double', writable=False),
+                Field('total_monthly_cost', 'double', writable=False),
+                Field('total_minute_cost', 'double', writable=False),
+                Field('total_megabyte_cost', 'double', writable=False),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
@@ -112,9 +112,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'kit_item'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                db.Field('kit_id', db.budget_kit),
-                db.Field('item_id', db.budget_item, ondelete='RESTRICT'),
-                db.Field('quantity', 'integer', default=1, notnull=True),
+                Field('kit_id', db.budget_kit),
+                Field('item_id', db.budget_item, ondelete='RESTRICT'),
+                Field('quantity', 'integer', default=1, notnull=True),
                 migrate=migrate)
 db[table].kit_id.requires = IS_IN_DB(db, 'budget_kit.id', 'budget_kit.code')
 db[table].kit_id.label = T('Kit')
@@ -130,11 +130,11 @@ db[table].quantity.comment = SPAN("*", _class="req")
 resource = 'bundle'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name', notnull=True, unique=True),
-                db.Field('description', length=256),
-                db.Field('total_unit_cost', 'double', writable=False),
-                db.Field('total_monthly_cost', 'double', writable=False),
-                db.Field('comments', length=256),
+                Field('name', notnull=True, unique=True),
+                Field('description', length=256),
+                Field('total_unit_cost', 'double', writable=False),
+                Field('total_monthly_cost', 'double', writable=False),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
@@ -159,11 +159,11 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'bundle_kit'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                db.Field('bundle_id', db.budget_bundle),
-                db.Field('kit_id', db.budget_kit, ondelete='RESTRICT'),
-                db.Field('quantity', 'integer', default=1, notnull=True),
-                db.Field('minutes', 'integer', default=0, notnull=True),
-                db.Field('megabytes', 'integer', default=0, notnull=True),
+                Field('bundle_id', db.budget_bundle),
+                Field('kit_id', db.budget_kit, ondelete='RESTRICT'),
+                Field('quantity', 'integer', default=1, notnull=True),
+                Field('minutes', 'integer', default=0, notnull=True),
+                Field('megabytes', 'integer', default=0, notnull=True),
                 migrate=migrate)
 db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.description')
 db[table].bundle_id.label = T('Bundle')
@@ -185,11 +185,11 @@ db[table].megabytes.comment = SPAN("*", _class="req")
 resource = 'bundle_item'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                db.Field('bundle_id', db.budget_bundle),
-                db.Field('item_id', db.budget_item, ondelete='RESTRICT'),
-                db.Field('quantity', 'integer', default=1, notnull=True),
-                db.Field('minutes', 'integer', default=0, notnull=True),
-                db.Field('megabytes', 'integer', default=0, notnull=True),
+                Field('bundle_id', db.budget_bundle),
+                Field('item_id', db.budget_item, ondelete='RESTRICT'),
+                Field('quantity', 'integer', default=1, notnull=True),
+                Field('minutes', 'integer', default=0, notnull=True),
+                Field('megabytes', 'integer', default=0, notnull=True),
                 migrate=migrate)
 db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.description')
 db[table].bundle_id.label = T('Bundle')
@@ -211,16 +211,16 @@ db[table].megabytes.comment = SPAN("*", _class="req")
 resource = 'staff'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name', notnull=True, unique=True),
-                db.Field('grade', notnull=True),
-                db.Field('salary', 'integer', notnull=True),
-                db.Field('currency', notnull=True),
-                db.Field('travel', 'integer', default=0),
+                Field('name', notnull=True, unique=True),
+                Field('grade', notnull=True),
+                Field('salary', 'integer', notnull=True),
+                Field('currency', notnull=True),
+                Field('travel', 'integer', default=0),
                 # Shouldn't be grade-dependent, but purely location-dependent
-                #db.Field('subsistence', 'double', default=0.00),
+                #Field('subsistence', 'double', default=0.00),
                 # Location-dependent
-                #db.Field('hazard_pay', 'double', default=0.00),
-                db.Field('comments', length=256),
+                #Field('hazard_pay', 'double', default=0.00),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
@@ -249,11 +249,11 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'location'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code', length=3, notnull=True, unique=True),
-                db.Field('description'),
-                db.Field('subsistence', 'double', default=0.00),
-                db.Field('hazard_pay', 'double', default=0.00),
-                db.Field('comments', length=256),
+                Field('code', length=3, notnull=True, unique=True),
+                Field('description'),
+                Field('subsistence', 'double', default=0.00),
+                Field('hazard_pay', 'double', default=0.00),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
@@ -278,9 +278,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'project'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('code', notnull=True, unique=True),
-                db.Field('title'),
-                db.Field('comments', length=256),
+                Field('code', notnull=True, unique=True),
+                Field('title'),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
@@ -303,11 +303,11 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'budget'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name', notnull=True, unique=True),
-                db.Field('description', length=256),
-                db.Field('total_onetime_costs', 'double', writable=False),
-                db.Field('total_recurring_costs', 'double', writable=False),
-                db.Field('comments', length=256),
+                Field('name', notnull=True, unique=True),
+                Field('description', length=256),
+                Field('total_onetime_costs', 'double', writable=False),
+                Field('total_recurring_costs', 'double', writable=False),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.comment = SPAN("*", _class="req")
@@ -330,12 +330,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'budget_bundle'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                db.Field('budget_id', db.budget_budget),
-                db.Field('project_id', db.budget_project),
-                db.Field('location_id', db.budget_location),
-                db.Field('bundle_id', db.budget_bundle, ondelete='RESTRICT'),
-                db.Field('quantity', 'integer', default=1, notnull=True),
-                db.Field('months', 'integer', default=3, notnull=True),
+                Field('budget_id', db.budget_budget),
+                Field('project_id', db.budget_project),
+                Field('location_id', db.budget_location),
+                Field('bundle_id', db.budget_bundle, ondelete='RESTRICT'),
+                Field('quantity', 'integer', default=1, notnull=True),
+                Field('months', 'integer', default=3, notnull=True),
                 migrate=migrate)
 db[table].budget_id.requires = IS_IN_DB(db, 'budget_budget.id', 'budget_budget.name')
 db[table].budget_id.label = T('Budget')
@@ -360,12 +360,12 @@ db[table].months.comment = SPAN("*", _class="req")
 resource = 'budget_staff'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                db.Field('budget_id', db.budget_budget),
-                db.Field('project_id', db.budget_project),
-                db.Field('location_id', db.budget_location),
-                db.Field('staff_id', db.budget_staff, ondelete='RESTRICT'),
-                db.Field('quantity', 'integer', default=1, notnull=True),
-                db.Field('months', 'integer', default=3, notnull=True),
+                Field('budget_id', db.budget_budget),
+                Field('project_id', db.budget_project),
+                Field('location_id', db.budget_location),
+                Field('staff_id', db.budget_staff, ondelete='RESTRICT'),
+                Field('quantity', 'integer', default=1, notnull=True),
+                Field('months', 'integer', default=3, notnull=True),
                 migrate=migrate)
 db[table].budget_id.requires = IS_IN_DB(db, 'budget_budget.id', 'budget_budget.name')
 db[table].budget_id.label = T('Budget')
@@ -389,17 +389,17 @@ db[table].months.comment = SPAN("*", _class="req")
 #resource = 'budget_equipment'
 #table = module + '_' + resource
 #db.define_table(table, timestamp, uuidstamp,
-#                db.Field('name', notnull=True, unique=True),
-#                db.Field('location', 'reference budget_location', ondelete='RESTRICT'),
-#                db.Field('project', 'reference budget_project', ondelete='RESTRICT'),
-#                db.Field('bundle', 'reference budget_bundle', ondelete='RESTRICT'),
-#                db.Field('quantity', 'integer'),
-#                db.Field('unit_cost', 'double', writable=False),
-#                db.Field('months', 'integer'),
-#                db.Field('monthly_cost', 'double', writable=False),
-#                db.Field('total_unit_cost', writable=False),
-#                db.Field('total_monthly_cost', writable=False),
-#                db.Field('comments', length=256),
+#                Field('name', notnull=True, unique=True),
+#                Field('location', 'reference budget_location', ondelete='RESTRICT'),
+#                Field('project', 'reference budget_project', ondelete='RESTRICT'),
+#                Field('bundle', 'reference budget_bundle', ondelete='RESTRICT'),
+#                Field('quantity', 'integer'),
+#                Field('unit_cost', 'double', writable=False),
+#                Field('months', 'integer'),
+#                Field('monthly_cost', 'double', writable=False),
+#                Field('total_unit_cost', writable=False),
+#                Field('total_monthly_cost', writable=False),
+#                Field('comments', length=256),
 #                migrate=migrate)
 #db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 #db[table].name.comment = SPAN("*", _class="req")
@@ -427,20 +427,20 @@ db[table].months.comment = SPAN("*", _class="req")
 #resource = 'budget_staff'
 #table = module + '_' + resource
 #db.define_table(table, timestamp, uuidstamp,
-#                db.Field('name', notnull=True, unique=True),
-#                db.Field('location', 'reference budget_location', ondelete='RESTRICT'),
-#                db.Field('project', 'reference budget_project', ondelete='RESTRICT'),
-#                db.Field('job_title', 'reference budget_staff', ondelete='RESTRICT'),
-#                db.Field('grade', writable=False),
-#                db.Field('type'),
-#                db.Field('headcount', 'integer'),
-#                db.Field('months', 'integer'),
-#                db.Field('salary', writable=False),
-#                db.Field('travel', writable=False),
-#                db.Field('subsistence', 'double', writable=False),
-#                db.Field('hazard_pay', 'double', writable=False),
-#                db.Field('total', 'double', writable=False),
-#                db.Field('comments', length=256),
+#                Field('name', notnull=True, unique=True),
+#                Field('location', 'reference budget_location', ondelete='RESTRICT'),
+#                Field('project', 'reference budget_project', ondelete='RESTRICT'),
+#                Field('job_title', 'reference budget_staff', ondelete='RESTRICT'),
+#                Field('grade', writable=False),
+#                Field('type'),
+#                Field('headcount', 'integer'),
+#                Field('months', 'integer'),
+#                Field('salary', writable=False),
+#                Field('travel', writable=False),
+#                Field('subsistence', 'double', writable=False),
+#                Field('hazard_pay', 'double', writable=False),
+#                Field('total', 'double', writable=False),
+#                Field('comments', length=256),
 #                migrate=migrate)
 #db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 #db[table].name.comment = SPAN("*", _class="req")

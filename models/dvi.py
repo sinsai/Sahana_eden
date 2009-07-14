@@ -6,8 +6,8 @@ module = 'dvi'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -23,9 +23,9 @@ resource = 'dead_body'
 table = module + '_' + resource
 
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('tag_label', notnull=True, unique=True),   # a unique label
-                db.Field('age_group', notnull=True),                # age group
-                db.Field('sex', notnull=True),                      # gender
+                Field('tag_label', notnull=True, unique=True),   # a unique label
+                Field('age_group', notnull=True),                # age group
+                Field('sex', notnull=True),                      # gender
                 migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)

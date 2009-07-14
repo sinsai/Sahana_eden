@@ -7,16 +7,17 @@ import re
 # (need to set to 'True' again when amending Table definitions)
 migrate = True
 
-# This scaffolding model makes your app work on Google App Engine too   #
-#try:
-#    from gluon.contrib.gql import *         # if running on Google App Engine
-#except:
-db = SQLDB('sqlite://storage.db')            # if not, use SQLite
-#db = SQLDB('mysql://root:password@localhost/db', pools=10) # or other DB
-#db = SQLDB('postgres://postgres:password@localhost/db', pools=10)
-#else:
-#    db = GQLDB()                            # connect to Google BigTable
-#    session.connect(request,response,db=db) # and store sessions there
+#if request.env.web2py_runtime_gae:            # if running on Google App Engine
+#    db = DAL('gae')                           # connect to Google BigTable
+#    session.connect(request, response, db=db) # and store sessions and tickets there
+    ### or use the following lines to store sessions in Memcache
+    # from gluon.contrib.memdb import MEMDB
+    # from google.appengine.api.memcache import Client
+    # session.connect(request, response, db=MEMDB(Client())
+#else:                                         # else use a normal relational database
+db = DAL('sqlite://storage.db')       # if not, use SQLite or other DB
+#db = DAL('mysql://root:password@localhost/db', pools=10) # or other DB
+#db = DAL('postgres://postgres:password@localhost/db', pools=10)
 
 # Default strings are in English
 T.current_languages = ['en', 'en-en']
@@ -71,11 +72,11 @@ service = Service(globals())
 
 # Reusable timestamp fields
 timestamp = SQLTable(None, 'timestamp',
-            db.Field('created_on', 'datetime',
+            Field('created_on', 'datetime',
                           readable=False,
                           writable=False,
                           default=request.now),
-            db.Field('modified_on', 'datetime',
+            Field('modified_on', 'datetime',
                           readable=False,
                           writable=False,
                           default=request.now,
@@ -84,12 +85,12 @@ timestamp = SQLTable(None, 'timestamp',
 
 # Reusable author fields
 authorstamp = SQLTable(None, 'authorstamp',
-            db.Field('created_by', db.auth_user,
+            Field('created_by', db.auth_user,
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
                           represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
                           ondelete='RESTRICT'),
-            db.Field('modified_by', db.auth_user,
+            Field('modified_by', db.auth_user,
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
                           update=session.auth.user.id if auth.is_logged_in() else 0,
@@ -100,7 +101,7 @@ authorstamp = SQLTable(None, 'authorstamp',
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
 uuidstamp = SQLTable(None, 'uuidstamp',
-            db.Field('uuid', length=64,
+            Field('uuid', length=64,
                           notnull=True,
                           unique=True,
                           readable=False,
@@ -110,14 +111,14 @@ uuidstamp = SQLTable(None, 'uuidstamp',
 # Reusable Deletion status field (needed as part of database synchronization)
 # Q: Will this be moved to a separate table? (Simpler for module writers but a performance penalty)
 deletion_status = SQLTable(None, 'deletion_status',
-            db.Field('deleted', 'boolean',
+            Field('deleted', 'boolean',
                           readable=False,
                           writable=False,
                           default=False))
 
 # Reusable Admin field
 admin_id = SQLTable(None, 'admin_id',
-            db.Field('admin', db.auth_group,
+            Field('admin', db.auth_group,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
                 comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
@@ -187,14 +188,14 @@ module = 's3'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('admin_name'),
-                db.Field('admin_email'),
-                db.Field('admin_tel'),
-                db.Field('debug', 'boolean'),
-                db.Field('security_policy'),
-                db.Field('self_registration', 'boolean'),
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('admin_name'),
+                Field('admin_email'),
+                Field('admin_tel'),
+                Field('debug', 'boolean'),
+                Field('security_policy'),
+                Field('self_registration', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 db[table].security_policy.requires = IS_IN_SET(['simple', 'full'])
 # Populate table with Default options
@@ -268,12 +269,12 @@ else:
 resource = 'module'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('name', notnull=True, unique=True),
-                db.Field('name_nice', notnull=True, unique=True),
-                db.Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in the Modules menu or the Controllers)
-                db.Field('priority', 'integer', notnull=True, unique=True),
-                db.Field('description', length=256),
-                db.Field('enabled', 'boolean', default=True),
+                Field('name', notnull=True, unique=True),
+                Field('name_nice', notnull=True, unique=True),
+                Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in the Modules menu or the Controllers)
+                Field('priority', 'integer', notnull=True, unique=True),
+                Field('description', length=256),
+                Field('enabled', 'boolean', default=True),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
@@ -411,14 +412,14 @@ if not len(db().select(db[table].ALL)):
 resource = 'audit'
 table = module + '_' + resource
 db.define_table(table,timestamp,
-                db.Field('person', db.auth_user, ondelete='RESTRICT'),
-                db.Field('operation'),
-                db.Field('representation'),
-                db.Field('module'),
-                db.Field('resource'),
-                db.Field('record', 'integer'),
-                db.Field('old_value'),
-                db.Field('new_value'),
+                Field('person', db.auth_user, ondelete='RESTRICT'),
+                Field('operation'),
+                Field('representation'),
+                Field('module'),
+                Field('resource'),
+                Field('record', 'integer'),
+                Field('old_value'),
+                Field('new_value'),
                 migrate=migrate)
 db[table].operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list', 'search'])
 
@@ -427,8 +428,8 @@ module = 'appadmin'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin

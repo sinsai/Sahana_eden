@@ -6,8 +6,8 @@ module = 'msg'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -22,9 +22,9 @@ if not len(db().select(db[table].ALL)):
 resource = 'incoming_sms'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('phone', 'integer'),
-                db.Field('contents', 'text'),
-                db.Field('smsc', 'integer'),
+                Field('phone', 'integer'),
+                Field('contents', 'text'),
+                Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].phone.label = T("Phone number")
@@ -48,10 +48,10 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'outgoing_sms'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('phone', 'integer'),
-                db.Field('contents', 'text'),
-                db.Field('status'),
-                db.Field('smsc', 'integer'),
+                Field('phone', 'integer'),
+                Field('contents', 'text'),
+                Field('status'),
+                Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].phone.label = T("Phone number")

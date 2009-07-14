@@ -6,8 +6,8 @@ module = 'mpr'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -22,9 +22,9 @@ resource = 'person'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 person_id,
-                db.Field('last_seen'),
-                db.Field('last_clothing'),
-                db.Field('comments', length=256),
+                Field('last_seen'),
+                Field('last_clothing'),
+                Field('comments', length=256),
                 migrate=migrate)
 db[table].person_id.label = 'Person'
 title_create = T('Add Person')

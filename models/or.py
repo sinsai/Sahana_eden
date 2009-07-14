@@ -6,8 +6,8 @@ module = 'or'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -22,14 +22,14 @@ if not len(db().select(db[table].ALL)):
 resource = 'organisation'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                #db.Field('privacy', 'integer', default=0),
-                #db.Field('archived', 'boolean', default=False),
-                db.Field('name', notnull=True, unique=True),
-                db.Field('acronym', length=8),
-                db.Field('type'),
+                #Field('privacy', 'integer', default=0),
+                #Field('archived', 'boolean', default=False),
+                Field('name', notnull=True, unique=True),
+                Field('acronym', length=8),
+                Field('type'),
                 admin_id,
-                db.Field('registration'),	# Registration Number
-                db.Field('website'),
+                Field('registration'),	# Registration Number
+                Field('website'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -55,23 +55,23 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'office'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                db.Field('name', notnull=True),
-                db.Field('organisation', db.or_organisation),
-                db.Field('type'),
+                Field('name', notnull=True),
+                Field('organisation', db.or_organisation),
+                Field('type'),
                 admin_id,
                 location_id,
-                db.Field('parent', 'reference or_office'),   # This form of hierarchy may not work on all Databases
-                db.Field('address', 'text'),
-                db.Field('postcode'),
-                db.Field('phone1'),
-                db.Field('phone2'),
-                db.Field('email'),
-                db.Field('fax'),
-                db.Field('national_staff', 'integer'),
-                db.Field('international_staff', 'integer'),
-                db.Field('number_of_vehicles', 'integer'),
-                db.Field('vehicle_types'),
-                db.Field('equipment'),
+                Field('parent', 'reference or_office'),   # This form of hierarchy may not work on all Databases
+                Field('address', 'text'),
+                Field('postcode'),
+                Field('phone1'),
+                Field('phone2'),
+                Field('email'),
+                Field('fax'),
+                Field('national_staff', 'integer'),
+                Field('international_staff', 'integer'),
+                Field('number_of_vehicles', 'integer'),
+                Field('vehicle_types'),
+                Field('equipment'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
@@ -107,9 +107,9 @@ resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 person_id,
-                db.Field('office_id', db.or_office),
-                db.Field('title'),
-                db.Field('manager_id', db.pr_person),
+                Field('office_id', db.or_office),
+                Field('title'),
+                Field('manager_id', db.pr_person),
                 migrate=migrate)
 db[table].person_id.label = 'Contact'
 db[table].office_id.requires = IS_IN_DB(db, 'or_office.id', 'or_office.name')
@@ -138,8 +138,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'office_to_organisation'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                db.Field('office_id', db.or_office),
-                db.Field('organisation_id', db.or_organisation),
+                Field('office_id', db.or_office),
+                Field('organisation_id', db.or_organisation),
                 migrate=migrate)
 db[table].office_id.requires = IS_IN_DB(db, 'or_office.id', 'or_office.name')
 db[table].office_id.label = 'Office'
@@ -152,8 +152,8 @@ db[table].organisation_id.label = 'Organisation'
 #resource='contact_to_organisation'
 #table=module+'_'+resource
 #db.define_table(table,timestamp,
-#                db.Field('contact_id',db.or_contact),
-#                db.Field('organisation_id',db.or_organisation))
+#                Field('contact_id',db.or_contact),
+#                Field('organisation_id',db.or_organisation))
 #db[table].contact_id.requires=IS_IN_DB(db,'or_office.id','or_office.name')
 #db[table].organisation_id.requires=IS_IN_DB(db,'or_organisation.id','or_organisation.name')
 

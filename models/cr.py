@@ -6,8 +6,8 @@ module = 'cr'
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
-                db.Field('audit_read', 'boolean'),
-                db.Field('audit_write', 'boolean'),
+                Field('audit_read', 'boolean'),
+                Field('audit_write', 'boolean'),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin
@@ -22,16 +22,16 @@ if not len(db().select(db[table].ALL)):
 resource = 'shelter'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
-                db.Field('name', notnull=True),
-                db.Field('description', length=256),
+                Field('name', notnull=True),
+                Field('description', length=256),
                 admin_id,
                 location_id,
                 person_id,
-                db.Field('address', 'text'),
-                db.Field('capacity', 'integer'),
-                db.Field('dwellings', 'integer'),
-                db.Field('persons_per_dwelling', 'integer'),
-                db.Field('area'),
+                Field('address', 'text'),
+                Field('capacity', 'integer'),
+                Field('dwellings', 'integer'),
+                Field('persons_per_dwelling', 'integer'),
+                Field('area'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names

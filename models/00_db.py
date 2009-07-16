@@ -29,9 +29,11 @@ from applications.sahana.modules.sahana import *
 t2 = S3(request, response, session, cache, T, db)
 
 mail = Mail()
-# These settings should be made configurable as part of the Messaging Module
+# These settings could be made configurable as part of the Messaging Module
+# - however also need to be used by Auth (order issues), DB calls are overheads
+# - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
 mail.settings.server = 'mail:25'
-mail.sender = 'sahana@sahanapy.org'
+mail.settings.sender = 'sahana@sahanapy.org'
 
 auth = AuthS3(globals(),db)
 auth.define_tables()
@@ -491,3 +493,4 @@ for module in modules:
 #
 
 # See test.py
+

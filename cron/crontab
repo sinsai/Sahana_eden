@@ -1,0 +1,2 @@
+﻿#*/5   *       *       *       *       root *msg/email_send
+*/5   *       *       *       *       root *applications/sahana/cron/email_send.py

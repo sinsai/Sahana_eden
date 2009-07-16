@@ -32,7 +32,7 @@ if not len(db().select(db[table].ALL)):
 resource = 'person'                                     # rename into pentity
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                Field('is_group', 'boolean'),
+                Field('is_group', 'boolean'),           # Replace by opt_pentity_type
                 Field('first_name', notnull=True),      # Group names go here
                 Field('middle_name'),
                 Field('last_name'),

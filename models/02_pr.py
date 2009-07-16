@@ -1,4 +1,10 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+#
+# Person Registry (VITA)
+#
+# created 2009-07-15 by nursix
+#
 
 module = 'pr'
 
@@ -18,19 +24,24 @@ if not len(db().select(db[table].ALL)):
         audit_write = False
     )
 
-# People
-resource = 'person'
+#
+# Person Entities
+# A person entity represents the logical appearance of persons, which can be individuals
+# or groups. 
+#
+resource = 'person'                                     # rename into pentity
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                Field('first_name', notnull=True),
+                Field('is_group', 'boolean'),           # Replace by opt_pentity_type
+                Field('first_name', notnull=True),      # Group names go here
                 Field('middle_name'),
                 Field('last_name'),
                 Field('preferred_name'),
-                Field('email', unique=True), # Needed for AAA
-                Field('mobile_phone'),       # Needed for SMS
-                Field('address', 'text'),
-                Field('postcode'),
-                Field('website'),
+                Field('email', unique=True),            # Needed for AAA (change this!)
+                Field('mobile_phone'),                  # Needed for SMS (change this!)
+                Field('address', 'text'),               # move to address data
+                Field('postcode'),                      # move to address data
+                Field('website'),                       # to be removed (goes into contacts)
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
@@ -65,6 +76,45 @@ person_id = SQLTable(None, 'person_id',
                 comment = DIV(A(T('Add Contact'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Contact|The Person to contact for this."))),
                 ondelete = 'RESTRICT'
                 ))
+
+#
+# Person-Identity
+# An identity is a unique code assigned to an individual person in a person registry.
+# This table is to track official identities of individuals in the Sahana Person Registry.
+#
+resource='id_type'
+table=module+'_'+resource
+db.define_table(table,
+                db.Field('name')
+               )
+db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
+
+if not len(db().select(db[table].ALL)):
+   db[table].insert(name = "Passport")
+   db[table].insert(name = "National ID Card")
+   db[table].insert(name = "Driving License")
+
+# Reusable field for other tables to reference
+opt_id_type = SQLTable(None, 'opt_id_type',
+                db.Field('id_type', db.pr_id_type,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_id_type.id', 'pr_id_type.name')),
+                represent = lambda id: (id and [db(db.pr_id_type.id==id).select()[0].name] or ["None"])[0],
+                comment = None,
+                ondelete = 'RESTRICT'
+                ))
+
+resource = 'identity'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                person_id,                          # Reference to person
+                opt_id_type,                        # ID type
+                Field('value'),                     # ID value
+                Field('ia_name'),                   # Name of issuing authority
+#                Field('ia_subdivision'),            # Name of issuing authority subdivision
+#                Field('ia_code'),                   # Code of issuing authority (if any)
+                Field('comment'))                   # a comment (optional)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].ia_name.label = T("Issuing Authority")
 
 # Contacts
 resource = 'contact'

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import os, traceback, datetime
 import re
@@ -373,11 +373,11 @@ if not len(db().select(db[table].ALL)):
         enabled='False'
 	)
 	db[table].insert(
-        name="dvi",
-        name_nice="Disaster Victim Identification",
+        name="vita",
+        name_nice="Person Tracking and Tracing",
         priority=11,
         access='',
-        description="Assists the management of fatalities and identification of the deceased",
+        description="Person Tracking and Tracing",
         enabled='True'
 	)
 	db[table].insert(

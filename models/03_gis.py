@@ -253,7 +253,7 @@ db.define_table(table, timestamp, uuidstamp, authorstamp,
                 Field('image', 'upload'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].person_id.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].name] or ["None"])[0]
+db[table].person_id.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
 db[table].person_id.label = T("Contact")
 db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
 db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())

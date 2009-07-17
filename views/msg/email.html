@@ -1,0 +1,15 @@
+{{extend 'layout.html'}}
+
+<div id="home">
+{{=H2(title)}}
+<p>
+{{=T('Description of Email')}} 
+</p>
+<h3>{{=T("Functions available")}}:</h3>
+<ul>
+<li><a href='{{=URL(r=request, f='email_outbox', args='create')}}'>{{=T('Send Email')}}</a></li>
+<li><a href='{{=URL(r=request, f='email_inbox')}}'>{{=T('View Email InBox')}}</a></li>
+<li><a href='{{=URL(r=request, f='email_outbox')}}'>{{=T('View Email OutBox')}}</a></li>
+<li><a href='{{=URL(r=request, f='email_sent')}}'>{{=T('View Sent Email')}}</a></li>
+</ul>
+</div>

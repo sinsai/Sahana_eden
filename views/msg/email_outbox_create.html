@@ -1,0 +1,70 @@
+﻿{{extend 'layout.html'}}
+
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    $("#msg_email_outbox_person_id").autocomplete('{{=URL(r=request, c='pr', f='person', args='search', vars={'format':'json', 'filter':'~', 'field':'first_name'})}}', {
+    matchContains: true,
+        dataType: 'json',
+        parse: function(data) {
+            var rows = new Array();
+            for(var i=0; i<data.length; i++){
+                rows[i] = { data:data[i], value:data[i].id, result:data[i].id };
+            }
+            return rows;
+        },
+    });
+});
+//]]></script>
+
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+{{include 'key.html'}}
+<div class='form-container'>
+{{try:}}
+ {{=form.custom.begin}}
+ <table>
+ <tbody>
+ <tr id='msg_email_outbox_person_id__row'>
+ <td>
+ <label>{{=form.custom.label.person_id}}</label>
+ </td>
+ <td>
+ {{=form.custom.widget.person_id}}
+ </td>
+ </tr>
+ <tr id='msg_email_outbox_subject__row'>
+ <td>
+ <label>{{=form.custom.label.subject}}</label>
+ </td>
+ <td>
+ {{=form.custom.widget.subject}}
+ </td>
+ </tr>
+ <tr id='msg_email_outbox_body__row'>
+ <td>
+ <label>{{=form.custom.label.body}}</label>
+ </td>
+ <td>
+ {{=form.custom.widget.body}}
+ </td>
+ </tr>
+ <tr id='submit_record__row'>
+ <td>
+ </td>
+ <td>
+ {{=form.custom.submit}}
+ </td>
+ </tr>
+ </tbody>
+ </table>
+ {{=form.custom.end}} 
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=list_btn}}
+{{except:}}
+{{pass}}

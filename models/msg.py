@@ -25,18 +25,36 @@ if not len(db().select(db[table].ALL)):
     )
 
 # Group
+resource = 'group_type'
+table = module + '_' + resource
+db.define_table(table,
+                Field('name', notnull=True),
+                migrate=migrate)
+db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
+if not len(db().select(db[table].ALL)):
+    db[table].insert(name = "Email")
+    db[table].insert(name = "SMS")
+    db[table].insert(name = "Both")
+# Reusable field for other tables to reference
+opt_msg_group_type = SQLTable(None, 'opt_msg_group_type',
+                db.Field('group_type', db.msg_group_type,
+                requires = IS_IN_DB(db, 'msg_group_type.id', 'msg_group_type.name'),
+                label = T('Type'),
+                represent = lambda id: (id and [db(db.msg_group_type.id==id).select()[0].name] or ["None"])[0],
+                comment = None,
+                ondelete = 'RESTRICT'
+                ))
+
 resource = 'group'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 Field('name', notnull=True),
-                Field('usage'),
+                opt_msg_group_type,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.comment = SPAN("*", _class="req")
-db[table].usage.requires = IS_IN_SET(['Email', 'SMS', 'Both'])
-db[table].usage.label = T('Type')
 title_create = T('Add Group')
 title_display = T('Group Details')
 title_list = T('List Groups')
@@ -101,13 +119,15 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'sms_outbox'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp,
-                Field('phone_number', 'integer', notnull=True),
+                #Field('phone_number', 'integer', notnull=True),
+                group_id,
                 Field('contents', length=140),
                 #Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].phone_number.requires = IS_NOT_EMPTY()
-db[table].phone_number.comment = SPAN("*", _class="req")
+#db[table].phone_number.requires = IS_NOT_EMPTY()
+#db[table].phone_number.comment = SPAN("*", _class="req")
+db[table].group_id.label = T('Recipients')
 title_create = T('Send SMS')
 title_display = T('SMS Details')
 title_list = T('View SMS OutBox')
@@ -126,13 +146,15 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'sms_sent'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp,
-                Field('phone_number', 'integer', notnull=True),
+                #Field('phone_number', 'integer', notnull=True),
+                group_id,
                 Field('contents', length=140),
                 #Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].phone_number.requires = IS_NOT_EMPTY()
+#db[table].phone_number.requires = IS_NOT_EMPTY()
 #db[table].phone_number.comment = SPAN("*", _class="req")
+db[table].group_id.label = T('Recipients')
 #title_create = T('Send SMS')
 title_display = T('SMS Details')
 title_list = T('View Sent SMS')

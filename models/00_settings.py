@@ -203,7 +203,7 @@ db[table].security_policy.requires = IS_IN_SET(['simple', 'full'])
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
-   db[table].insert(
+    db[table].insert(
         admin_name = T("Sahana Administrator"),
         admin_email = T("support@Not Set"),
         admin_tel = T("Not Set"),
@@ -285,118 +285,118 @@ db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 # Populate table with Default modules
 if not len(db().select(db[table].ALL)):
-	db[table].insert(
+    db[table].insert(
         name="default",
         name_nice="Sahana Home",
         priority=0,
         access='',
         description="",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="admin",
         name_nice="Administration",
         priority=1,
         access='|1|',        # Administrator
         description="Site Administration",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="gis",
         name_nice="Mapping",
         priority=2,
         access='',
         description="Situation Awareness & Geospatial Analysis",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="pr",
         name_nice="Person Registry",
         priority=3,
         access='',
         description="Central point to record details on People",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="mpr",
         name_nice="Missing Person Registry",
         priority=4,
         access='',
         description="Helps to report and search missing person",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="dvr",
         name_nice="Disaster Victim Registry",
         priority=5,
         access='',
         description="Traces internally displaced people (IDPs) and their needs",
         enabled='False'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="or",
         name_nice="Organization Registry",
         priority=6,
         access='',
         description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="cr",
         name_nice="Shelter Registry",
         priority=7,
         access='',
         description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="vol",
         name_nice="Volunteer Registry",
         priority=8,
         access='',
         description="Allows managing volunteers by capturing their skills, availability and allocation",
         enabled='False'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="ims",
         name_nice="Inventory Management",
         priority=9,
         access='',
         description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
         enabled='False'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="rms",
         name_nice="Request Management",
         priority=10,
         access='',
         description="Tracks requests for aid and matches them against donors who have pledged aid",
         enabled='False'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="vita",
         name_nice="Person Tracking and Tracing",
         priority=11,
         access='',
         description="Person Tracking and Tracing",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="msg",
         name_nice="Messaging Module",
         priority=12,
         access='',
         description="Sends & Receives Alerts via Email & SMS",
         enabled='True'
-	)
-	db[table].insert(
+    )
+    db[table].insert(
         name="budget",
         name_nice="Budgeting Module",
         priority=13,
         access='',
         description="Allows a budget to be drawn up",
         enabled='True'
-	)
+    )
 
 # Modules Menu (available in all Controllers)
 response.menu_modules = []

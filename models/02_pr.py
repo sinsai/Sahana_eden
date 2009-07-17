@@ -85,7 +85,7 @@ person_id = SQLTable(None, 'person_id',
 resource='id_type'
 table=module+'_'+resource
 db.define_table(table,
-                db.Field('name')
+                db.Field('name', notnull=True)
                )
 db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
 
@@ -163,9 +163,9 @@ db.define_table(table,
 db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
 
 if not len(db().select(db[table].ALL)):
-   db[table].insert(name = "Family")
-   db[table].insert(name = "Friends")
-   db[table].insert(name = "Colleagues")
+    db[table].insert(name = "Family")
+    db[table].insert(name = "Friends")
+    db[table].insert(name = "Colleagues")
 
 # Reusable field for other tables to reference
 opt_sn_type = SQLTable(None, 'opt_sn_type',

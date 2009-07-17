@@ -103,6 +103,8 @@ def email_send():
 # Contacts
 def group():
     " RESTlike CRUD controller "
+    if len(request.args) == 2:
+        crud.settings.update_next = URL(r=request, f='group_user', args=request.args[1])
     return shn_rest_controller(module, 'group')
   
 def group_user():
@@ -116,10 +118,10 @@ def group_user():
     
     title = db.msg_group[group].name
     group_description = db.msg_group[group].comments
-    group_usage = db.msg_group[group].usage
+    group_type = db(db.msg_group_type.id == db.msg_group[group].group_type).select()[0].name
     query = table.group_id==group
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=group_description, usage=group_usage)
+    output = dict(module_name=module_name, title=title, description=group_description, group_type=group_type)
     # Audit
     shn_audit_read(operation='list', resource='group_user', record=group, representation='html')
     item_list = []
@@ -139,7 +141,7 @@ def group_user():
             id = row.person_id
             name = db.pr_person[id].first_name + ' ' + db.pr_person[id].last_name
             preferred = db.pr_person[id].preferred_name
-            id_link = A(id, _href=URL(r=request, f='user', args=['read', id]))
+            id_link = A(id, _href=URL(r=request, c='pr', f='person', args=['read', id]))
             checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(preferred, _align='left'), TD(checkbox, _align='center'), _class=theclass, _align='right'))
             
@@ -149,8 +151,8 @@ def group_user():
         subtitle = T("Contents")
         
         crud.messages.submit_button=T('Add')
-        # Check for duplicates before Item is added to DB
-        crud.settings.create_onvalidation = lambda form: group_dupes(form)
+        # Do Checks before User is added to Group: Duplicates & Email/SMS fields available
+        crud.settings.create_onvalidation = lambda form: group_validation(form)
         crud.messages.record_created = T('Group Updated')
         form = crud.create(table, next=URL(r=request, args=[group]))
         addtitle = T("Add New User to Group")
@@ -168,7 +170,7 @@ def group_user():
             id = row.person_id
             name = db.pr_person[id].first_name + ' ' + db.pr_person[id].last_name
             preferred = db.pr_person[id].preferred_name
-            id_link = A(id, _href=URL(r=request, f='user', args=['read', id]))
+            id_link = A(id, _href=URL(r=request, c='pr', f='person', args=['read', id]))
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(preferred, _align='left'), _class=theclass, _align='right'))
             
         table_header = THEAD(TR(TH('ID'), TH(table.person_id.label), TH(T('Preferred Name'))))
@@ -178,10 +180,14 @@ def group_user():
         output.update(dict(items=items, add_btn=add_btn))
     return output
 
-def group_dupes(form):
-    "Checks for duplicate User before adding to Group"
+def group_validation(form):
+    """Do Checks before User added to Group:
+    * Not a duplicate
+    * User has Email &/or SMS fields available
+    """
     group = form.vars.group_id
     user = form.vars.person_id
+    # Check for Duplicates
     table = db.msg_group_user
     query = (table.group_id==group) & (table.person_id==user)
     items = db(query).select()
@@ -189,10 +195,30 @@ def group_dupes(form):
         session.error = T("User already in Group!")
         redirect(URL(r=request, args=group))
     else:
+        # Which type of Group is this?
+        table = db.msg_group
+        query = table.id==group
+        group_type = db(query).select()[0].group_type
+        table = db.pr_person
+        query = table.id==user
+        email = db(query).select()[0].email
+        sms = db(query).select()[0].mobile_phone
+        session.warning = ''
+        # type 1 = Email
+        # type 3 = Both
+        if group_type == 1 or group_type == 3:
+            # Check that Email field populated
+            if not email:
+                session.warning += str(T("User has no Email address!"))
+        # type 2 = SMS
+        if group_type == 2 or group_type == 3:
+            # Check that SMS field populated
+            if not sms:
+                session.warning += str(T("User has no SMS address!"))
         return
     
 def group_update_users():
-    "Update a Group's users (Delete)"
+    "Update a Group's members (Delete)"
     if len(request.args) == 0:
         session.error = T("Need to specify a group!")
         redirect(URL(r=request, f='group'))

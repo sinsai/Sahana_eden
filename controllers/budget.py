@@ -74,6 +74,8 @@ def item_cascade(form):
 
 def kit():
     "RESTlike CRUD controller"
+    if len(request.args) == 2:
+        crud.settings.update_next = URL(r=request, f='kit_item', args=request.args[1])
     return shn_rest_controller(module, 'kit', main='code', onaccept=lambda form: kit_total(form))
 
 def kit_item():
@@ -236,6 +238,8 @@ def kit_update_items():
 
 def bundle():
     "RESTlike CRUD controller"
+    if len(request.args) == 2:
+        crud.settings.update_next = URL(r=request, f='bundle_kit_item', args=request.args[1])
     return shn_rest_controller(module, 'bundle', onaccept=lambda form: bundle_total(form))
 
 def bundle_kit_item():

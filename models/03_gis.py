@@ -66,7 +66,7 @@ marker_id = SQLTable(None, 'marker_id',
             Field('marker', db.gis_marker,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'gis_marker.id', 'gis_marker.name')),
                 represent = lambda id: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden')),
-                comment = DIV(A(T('Add Marker'), _class='popup', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display."))),
+                comment = DIV(A(T('Add Marker'), _class='popup', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -160,6 +160,7 @@ db[table].lon.label = T("Longitude")
 db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 db[table].zoom.requires = IS_INT_IN_RANGE(0,19)
 db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+db[table].marker.label = T('Default Marker')
 db[table].map_height.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
 db[table].map_height.comment = SPAN("*", _class="req")
 db[table].map_width.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]

@@ -10,13 +10,24 @@ db.define_table(table,
                 Field('audit_write', 'boolean'),
                 # Also needs to be used by Auth (order issues), DB calls are overheads
                 # - as easy for admin to edit source in 00_db.py as to edit DB (although an admin panel can be nice)
+                Field('inbound_mail_server'),
+                Field('inbound_mail_type'),
+                Field('inbound_mail_port'),
+                Field('inbound_mail_login'),
+                Field('inbound_mail_password'),
                 #Field('outbound_mail_server'),
                 #Field('outbound_mail_from'),
                 migrate=migrate)
+db[table].inbound_mail_type.requires = IS_IN_SET(['imap', 'pop3'])
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
    db[table].insert(
+        inbound_mail_server = 'mail',
+        inbound_mail_type = 'imap',
+        inbound_mail_port = '143',
+        inbound_mail_login = 'username',
+        inbound_mail_password = 'password',
         #outbound_mail_server = 'mail:25',
         #outbound_mail_from = 'demo@sahanapy.org',
         # If Disabled at the Global Level then can still Enable just for this Module here

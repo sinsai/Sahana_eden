@@ -326,9 +326,17 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
     )
     db[table].insert(
+        name="vita",
+        name_nice="Person Tracking and Tracing",
+        priority=5,
+        access='',
+        description="Person Tracking and Tracing",
+        enabled='True'
+    )
+    db[table].insert(
         name="dvr",
         name_nice="Disaster Victim Registry",
-        priority=5,
+        priority=6,
         access='',
         description="Traces internally displaced people (IDPs) and their needs",
         enabled='False'
@@ -336,7 +344,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="or",
         name_nice="Organization Registry",
-        priority=6,
+        priority=7,
         access='',
         description="Lists 'who is doing what & where'. Allows relief agencies to self organize the activities rendering fine coordination among them",
         enabled='True'
@@ -344,7 +352,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="cr",
         name_nice="Shelter Registry",
-        priority=7,
+        priority=8,
         access='',
         description="Tracks the location, distibution, capacity and breakdown of victims in shelter",
         enabled='True'
@@ -352,49 +360,41 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="vol",
         name_nice="Volunteer Registry",
-        priority=8,
+        priority=9,
         access='',
         description="Allows managing volunteers by capturing their skills, availability and allocation",
         enabled='False'
     )
     db[table].insert(
-        name="ims",
-        name_nice="Inventory Management",
-        priority=9,
+        name="lms",
+        name_nice="Logistics Management System",
+        priority=10,
         access='',
-        description="Effectively and efficiently manage relief aid, enables transfer of inventory items to different inventories and notify when items are required to refill",
-        enabled='False'
+        description="The Logistics Management System for Sahana is envisioned to be composed of several sub-modules that work together to provide complex functionality for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.",
+        enabled='True'
     )
     db[table].insert(
         name="rms",
         name_nice="Request Management",
-        priority=10,
+        priority=11,
         access='',
         description="Tracks requests for aid and matches them against donors who have pledged aid",
         enabled='False'
     )
     db[table].insert(
-        name="vita",
-        name_nice="Person Tracking and Tracing",
-        priority=11,
+        name="budget",
+        name_nice="Budgeting Module",
+        priority=12,
         access='',
-        description="Person Tracking and Tracing",
+        description="Allows a budget to be drawn up",
         enabled='True'
     )
     db[table].insert(
         name="msg",
         name_nice="Messaging Module",
-        priority=12,
-        access='',
-        description="Sends & Receives Alerts via Email & SMS",
-        enabled='True'
-    )
-    db[table].insert(
-        name="budget",
-        name_nice="Budgeting Module",
         priority=13,
         access='',
-        description="Allows a budget to be drawn up",
+        description="Sends & Receives Alerts via Email & SMS",
         enabled='True'
     )
 

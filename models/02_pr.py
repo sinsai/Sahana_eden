@@ -151,3 +151,35 @@ db.define_table(table,timestamp,
 db[table].person_id.label = 'Person'
 db[table].contact_id.requires = IS_IN_DB(db, 'pr_contact.id', 'pr_contact.name')
 db[table].contact_id.label = 'Contact Detail'
+
+# Network
+# The network tables represent the social networks of persons or groups
+#
+resource='sn_type'
+table=module+'_'+resource
+db.define_table(table,
+                db.Field('name')
+               )
+db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
+
+if not len(db().select(db[table].ALL)):
+   db[table].insert(name = "Family")
+   db[table].insert(name = "Friends")
+   db[table].insert(name = "Colleagues")
+
+# Reusable field for other tables to reference
+opt_sn_type = SQLTable(None, 'opt_sn_type',
+                db.Field('network_type', db.pr_sn_type,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_sn_type.id', 'pr_sn_type.name')),
+                represent = lambda id: (id and [db(db.pr_sn_type.id==id).select()[0].name] or ["None"])[0],
+                comment = None,
+                ondelete = 'RESTRICT'
+                ))
+
+resource = 'network'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                person_id,                          # Reference to person
+                opt_sn_type,                        # ID type
+                Field('comment'))                   # a comment (optional)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)

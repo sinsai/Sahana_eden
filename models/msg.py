@@ -24,6 +24,54 @@ if not len(db().select(db[table].ALL)):
         audit_write = False
     )
 
+# Group
+resource = 'group'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                Field('name', notnull=True),
+                Field('usage'),
+                Field('comments', length=256),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = IS_NOT_EMPTY()
+db[table].name.comment = SPAN("*", _class="req")
+db[table].usage.requires = IS_IN_SET(['Email', 'SMS', 'Both'])
+db[table].usage.label = T('Type')
+title_create = T('Add Group')
+title_display = T('Group Details')
+title_list = T('List Groups')
+title_update = T('Edit Group')
+title_search = T('Search Groups')
+subtitle_create = T('Add New Group')
+subtitle_list = T('Groups')
+label_list_button = T('List Groups')
+label_create_button = T('Add Group')
+msg_record_created = T('Group added')
+msg_record_modified = T('Group updated')
+msg_record_deleted = T('Group deleted')
+msg_list_empty = T('No Groups currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+group_id = SQLTable(None, 'group_id',
+            Field('group_id', db.msg_group,
+                requires = IS_IN_DB(db, 'msg_group.id', 'msg_group.name'),
+                represent = lambda id: (id and [db(db.msg_group.id==id).select()[0].name] or ["None"])[0],
+                comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='msg', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Distribution Group|The Group of People to whom this Message should be sent."))),
+                ondelete = 'RESTRICT'
+                ))
+
+# Group<>User Many2Many
+resource = 'group_user'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                Field('group_id', db.msg_group),
+                person_id,
+                migrate=migrate)
+db[table].group_id.requires = IS_IN_DB(db, 'msg_group.id', 'msg_group.name')
+db[table].group_id.label = T('Group')
+db[table].group_id.represent = lambda group_id: db(db.msg_group.id==group_id).select()[0].name
+db[table].person_id.label = T('User')
+
 # Incoming SMS
 resource = 'sms_inbox'
 table = module + '_' + resource
@@ -130,15 +178,14 @@ resource = 'email_outbox'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp,
                 #Field('recipient', notnull=True),
-                person_id,
+                group_id,
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].recipient.requires = IS_EMAIL()
 #db[table].recipient.comment = SPAN("*", _class="req")
-db[table].person_id.label = T('Recipient')
-db[table].person_id.requires = IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')
+db[table].group_id.label = T('Recipients')
 title_create = T('Send Email')
 title_display = T('Email Details')
 title_list = T('View Email OutBox')
@@ -158,14 +205,14 @@ resource = 'email_sent'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp,
                 #Field('recipient', notnull=True),
-                person_id,
+                group_id,
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].recipient.requires = IS_EMAIL()
 #db[table].recipient.comment = SPAN("*", _class="req")
-db[table].person_id.label = T('Recipient')
+db[table].group_id.label = T('Recipients')
 #title_create = T('Send Email')
 title_display = T('Email Details')
 title_list = T('View Sent Email')
@@ -181,73 +228,3 @@ msg_record_deleted = T('Email deleted')
 msg_list_empty = T('No Emails currently in Sent')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# User
-resource = 'user'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
-                Field('name', notnull=True),
-                Field('email_address'),
-                Field('phone_number', 'integer'),
-                Field('comments', length=256),
-                migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.comment = SPAN("*", _class="req")
-db[table].email_address.requires = IS_NULL_OR(IS_EMAIL())
-#db[table].phone_number.requires = IS_INT_IN_RANGE(0,999999999999)
-title_create = T('Add User')
-title_display = T('User Details')
-title_list = T('List Users')
-title_update = T('Edit User')
-title_search = T('Search Users')
-subtitle_create = T('Add New User')
-subtitle_list = T('Users')
-label_list_button = T('List Users')
-label_create_button = T('Add User')
-msg_record_created = T('User added')
-msg_record_modified = T('User updated')
-msg_record_deleted = T('User deleted')
-msg_list_empty = T('No Users currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-# Group
-resource = 'group'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
-                Field('name', notnull=True),
-                Field('usage'),
-                Field('comments', length=256),
-                migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.comment = SPAN("*", _class="req")
-db[table].usage.requires = IS_IN_SET(['Email', 'SMS', 'Both'])
-db[table].usage.label = T('Type')
-title_create = T('Add Group')
-title_display = T('Group Details')
-title_list = T('List Groups')
-title_update = T('Edit Group')
-title_search = T('Search Groups')
-subtitle_create = T('Add New Group')
-subtitle_list = T('Groups')
-label_list_button = T('List Groups')
-label_create_button = T('Add Group')
-msg_record_created = T('Group added')
-msg_record_modified = T('Group updated')
-msg_record_deleted = T('Group deleted')
-msg_list_empty = T('No Groups currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-# Group<>User Many2Many
-resource = 'group_user'
-table = module + '_' + resource
-db.define_table(table, timestamp,
-                Field('group_id', db.msg_group),
-                Field('user_id', db.msg_user, ondelete='RESTRICT'),
-                migrate=migrate)
-db[table].group_id.requires = IS_IN_DB(db, 'msg_group.id', 'msg_group.name')
-db[table].group_id.label = T('Group')
-db[table].group_id.represent = lambda group_id: db(db.msg_group.id==group_id).select()[0].name
-db[table].user_id.requires = IS_IN_DB(db, 'msg_user.id', 'msg_user.name')
-db[table].user_id.label = T('User')
-db[table].user_id.represent = lambda user_id: db(db.msg_user.id==user_id).select()[0].name

@@ -42,10 +42,11 @@ db.define_table(table,
                 Field('name', notnull=True),
                 migrate=migrate)
 db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
+# Pre-populate options
 if not len(db().select(db[table].ALL)):
-    db[table].insert(name = "Email")
-    db[table].insert(name = "SMS")
-    db[table].insert(name = "Both")
+    db[table].insert(name = "Email")    # ID:1
+    db[table].insert(name = "SMS")      # ID:2
+    db[table].insert(name = "Both")     # ID:3
 # Reusable field for other tables to reference
 opt_msg_group_type = SQLTable(None, 'opt_msg_group_type',
                 db.Field('group_type', db.msg_group_type,

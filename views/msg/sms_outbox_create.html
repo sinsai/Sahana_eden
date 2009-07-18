@@ -2,7 +2,7 @@
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    $("#msg_email_outbox_group_id").autocomplete('{{=URL(r=request, c='msg', f='group', args='search', vars={'format':'json', 'filter':'~', 'field':'name'})}}', {
+    $("#msg_sms_outbox_group_id").autocomplete('{{=URL(r=request, c='msg', f='group', args='search', vars={'format':'json', 'filter':'~', 'field':'name'})}}', {
     matchContains: true,
         dataType: 'json',
         parse: function(data) {
@@ -26,7 +26,7 @@ $(function() {
  {{=form.custom.begin}}
  <table>
  <tbody>
- <tr id='msg_email_outbox_group_id__row'>
+ <tr id='msg_sms_outbox_group_id__row'>
  <td>
  <label>{{=form.custom.label.group_id}}</label>
  </td>
@@ -34,20 +34,12 @@ $(function() {
  {{=form.custom.widget.group_id}}
  </td>
  </tr>
- <tr id='msg_email_outbox_subject__row'>
+ <tr id='msg_sms_contents_body__row'>
  <td>
- <label>{{=form.custom.label.subject}}</label>
+ <label>{{=form.custom.label.contents}}</label>
  </td>
  <td>
- {{=form.custom.widget.subject}}
- </td>
- </tr>
- <tr id='msg_email_outbox_body__row'>
- <td>
- <label>{{=form.custom.label.body}}</label>
- </td>
- <td>
- {{=form.custom.widget.body}}
+ {{=form.custom.widget.contents}}
  </td>
  </tr>
  <tr id='submit_record__row'>

@@ -28,11 +28,12 @@ def user():
 # S3 framework functions
 def index():
     "Module's Home Page"
+    modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL, orderby=db.s3_module.priority)
     admin_name = db().select(db.s3_setting.admin_name)[0].admin_name
     admin_email = db().select(db.s3_setting.admin_email)[0].admin_email
     admin_tel = db().select(db.s3_setting.admin_tel)[0].admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
-    return dict(module_name=module_name, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
+    return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def open_module():
     "Select Module"

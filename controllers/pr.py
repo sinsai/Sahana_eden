@@ -18,7 +18,16 @@ response.menu_options = [
     [T('Groups'), False, '#',[
         [T('Add Group'), False, URL(r=request, f='group', args='create')],
         [T('List Groups'), False, URL(r=request, f='group')],
-        [T('Search Group'), False, URL(r=request, f='group', args='search')]
+        [T('Search Group'), False, URL(r=request, f='group', args='search')],
+        [T('Add Persons to Groups'), False, URL(r=request, f='group_member', args='create')],
+        [T('List Group Members'), False, URL(r=request, f='group_member')]
+    ]],
+    [T('Contacts'), False, '#',[
+        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
+        [T('List Contacts'), False, URL(r=request, f='contact')],
+        [T('Search Contacts'), False, URL(r=request, f='contact', args='search')],
+        [T('Add Contacts to Persons'), False, URL(r=request, f='contact_to_person', args='create')],
+        [T('List Contacts of Persons'), False, URL(r=request, f='contact_to_person')]
     ]],
     [T('Identities'), False, '#',[
         [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
@@ -40,9 +49,15 @@ def person():
 def group():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_create_pentity(form))
+def group_member():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'group_member')
 def identity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'identity')
 def contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact')
+def contact_to_person():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'contact_to_person')

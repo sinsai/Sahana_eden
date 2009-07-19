@@ -53,7 +53,55 @@ db.define_table(table, timestamp,
                 migrate=migrate)
 
 #
-# Person ----------------------------------------------------------------------
+# Persons ---------------------------------------------------------------------
+#
+resource='sex'
+table=module+'_'+resource
+db.define_table(table,
+                db.Field('name', notnull=True)
+               )
+db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
+
+if not len(db().select(db[table].ALL)):
+   db[table].insert(name = "female")
+   db[table].insert(name = "male")
+   db[table].insert(name = "unknown")
+
+# Reusable field for other tables to reference
+opt_pr_sex = SQLTable(None, 'opt_pr_sex',
+                    db.Field('opt_pr_sex', db.pr_sex,
+                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_sex.id', 'pr_sex.name')),
+                    represent = lambda id: (id and [db(db.pr_sex.id==id).select()[0].name] or ["None"])[0],
+                    comment = None,
+                    ondelete = 'RESTRICT'
+                    ))
+
+resource='age_group'
+table=module+'_'+resource
+db.define_table(table,
+                db.Field('name', notnull=True)
+               )
+db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
+
+if not len(db().select(db[table].ALL)):
+   db[table].insert(name = "unknown")
+   db[table].insert(name = "infant (0-1)")
+   db[table].insert(name = "child (2-11)")
+   db[table].insert(name = "adolescent (12-20)")
+   db[table].insert(name = "adult (21-50)")
+   db[table].insert(name = "senior (50+)")
+
+# Reusable field for other tables to reference
+opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
+                            db.Field('opt_pr_age_group', db.pr_age_group,
+                            requires = IS_NULL_OR(IS_IN_DB(db, 'pr_age_group.id', 'pr_age_group.name')),
+                            represent = lambda id: (id and [db(db.pr_age_group.id==id).select()[0].name] or ["None"])[0],
+                            comment = None,
+                            ondelete = 'RESTRICT'
+                            ))
+
+#
+# Person
 #
 resource = 'person'
 table = module + '_' + resource
@@ -63,8 +111,8 @@ db.define_table(table, timestamp,
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
                 Field('preferred_name'),                # how the person uses to be called
-                Field('sex'),                           # sex
-                Field('age_group'),                     # age group
+                opt_pr_sex,                             # sex
+                opt_pr_age_group,                       # age group
                 Field('email', unique=True),            # Needed for AAA (change this!)
                 Field('mobile_phone'),                  # Needed for SMS (change this!)
                 Field('comment'),                       # comment
@@ -76,6 +124,8 @@ db[table].pentity_id.writable = False
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment = SPAN("*", _class="req")
 #db[table].last_name.label = T("Family Name")
+db[table].opt_pr_sex.label = T("Sex")
+db[table].opt_pr_age_group.label = T("Age Group")
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
@@ -103,7 +153,7 @@ person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
                 represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
-                comment = DIV(A(T('Add Contact'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Contact|The Person to contact for this."))),
+                comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -232,8 +282,8 @@ db.define_table(table, timestamp,
                 Field('no_of_adult_males','integer'),           # Sahana legacy
                 Field('no_of_adult_females','integer'),         # Sahana legacy
 #                Field('no_of_children', 'integer'),            # Sahana legacy
-                Field('no_of_children_males','integer'),
-                Field('no_of_children_females','integer'),
+                Field('no_of_children_males','integer'),        # by Khushbu
+                Field('no_of_children_females','integer'),      # by Khushbu
 #                Field('no_of_displaced', 'integer'),           # Sahana legacy
 #                Field('no_of_missing', 'integer'),             # Sahana legacy
 #                Field('no_of_dead', 'integer'),                # Sahana legacy
@@ -243,14 +293,36 @@ db.define_table(table, timestamp,
                 Field('comment'),                               # optional comment
                 migrate=migrate)
 
-# TODO: reusable id field
-# TODO: CRUD strings
+db[table].opt_pr_group_type.label = T("Group type")
 # TODO: restrictions and requirements
 db[table].is_group.readable = False
 db[table].is_group.writable = False
 db[table].pentity_id.readable = False
 db[table].pentity_id.writable = False
+# TODO: CRUD strings
+# TODO: reusable id field
+# Reusable field for other tables to reference
+group_id = SQLTable(None, 'group_id',
+                Field('group_id', db.pr_group,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_group.id', '%(id)s: %(group_name)s')),
+                represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
+                comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
+                ondelete = 'RESTRICT'
+                ))
+#
+# Group members
+#
+resource = 'group_member'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                group_id,
+                person_id,
+                Field('group_head', 'boolean', default=False),
+                Field('description'),
+                Field('comment'),
+                migrate=migrate)
 
+db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [""])[0]
 #
 # Contact ---------------------------------------------------------------------
 #

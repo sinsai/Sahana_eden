@@ -52,9 +52,19 @@ def email():
     " Simple page for showing links "
     title = T('Email')
     return dict(module_name=module_name, title=title)
+
 def email_inbox():
     " RESTlike CRUD controller "
+    # Is there an error from the polling script?
+    status = db().select(db.msg_email_inbound_status.ALL)
+    try:
+        response.warning = status[0].status
+        # Clear status
+        db(db.msg_email_inbound_status.id==status[0].id).delete()
+    except:
+        pass
     return shn_rest_controller(module, 'email_inbox', listadd=False)
+
 def email_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin

@@ -12,28 +12,41 @@ db.define_table(table,
                 # - as easy for admin to edit source in 00_db.py as to edit DB (although an admin panel can be nice)
                 Field('inbound_mail_server'),
                 Field('inbound_mail_type'),
-                Field('inbound_mail_port'),
-                Field('inbound_mail_login'),
+                Field('inbound_mail_ssl', 'boolean'),
+                Field('inbound_mail_port', 'integer'),
+                Field('inbound_mail_username'),
                 Field('inbound_mail_password'),
+                Field('inbound_mail_delete', 'boolean'),
                 #Field('outbound_mail_server'),
                 #Field('outbound_mail_from'),
                 migrate=migrate)
 db[table].inbound_mail_type.requires = IS_IN_SET(['imap', 'pop3'])
+db[table].inbound_mail_port.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP)."))
+db[table].inbound_mail_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Delete|If this is set to True then mails will be deleted from the server after downloading."))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
    db[table].insert(
-        inbound_mail_server = 'mail',
+        inbound_mail_server = 'imap.gmail.com',
         inbound_mail_type = 'imap',
-        inbound_mail_port = '143',
-        inbound_mail_login = 'username',
+        inbound_mail_ssl = True,
+        inbound_mail_port = '993',
+        inbound_mail_username = 'username',
         inbound_mail_password = 'password',
+        inbound_mail_delete = False,
         #outbound_mail_server = 'mail:25',
         #outbound_mail_from = 'demo@sahanapy.org',
         # If Disabled at the Global Level then can still Enable just for this Module here
         audit_read = False,
         audit_write = False
     )
+
+# Status
+resource = 'email_inbound_status'
+table = module + '_' + resource
+db.define_table(table,
+                Field('status'),
+                migrate=migrate)
 
 # Group
 resource = 'group_type'
@@ -107,7 +120,7 @@ resource = 'sms_inbox'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 Field('phone_number', 'integer', notnull=True),
-                Field('contents', length=140),
+                Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -133,12 +146,13 @@ table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp,
                 #Field('phone_number', 'integer', notnull=True),
                 group_id,
-                Field('contents', length=140),
+                Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].phone_number.requires = IS_NOT_EMPTY()
 #db[table].phone_number.comment = SPAN("*", _class="req")
+db[table].contents.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contents|If this is over 140 characters then it will be split into Multiple SMS's."))
 db[table].group_id.label = T('Recipients')
 title_create = T('Send SMS')
 title_display = T('SMS Details')
@@ -160,7 +174,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp,
                 #Field('phone_number', 'integer', notnull=True),
                 group_id,
-                Field('contents', length=140),
+                Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)

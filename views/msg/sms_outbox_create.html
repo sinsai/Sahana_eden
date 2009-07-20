@@ -2,6 +2,10 @@
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
+    // Warn when SMS goes over 140 characters
+    // tbc
+    // Turn the Distribution Group dropdown into an Autocomplete INPUT
+    // tbc
     $("#msg_sms_outbox_group_id").autocomplete('{{=URL(r=request, c='msg', f='group', args='search', vars={'format':'json', 'filter':'~', 'field':'name'})}}', {
     matchContains: true,
         dataType: 'json',
@@ -33,6 +37,9 @@ $(function() {
  <td>
  {{=form.custom.widget.group_id}}
  </td>
+ <td>
+ {{=form.custom.comment.group_id}}
+ </td>
  </tr>
  <tr id='msg_sms_contents_body__row'>
  <td>
@@ -40,6 +47,9 @@ $(function() {
  </td>
  <td>
  {{=form.custom.widget.contents}}
+ </td>
+ <td>
+ {{=form.custom.comment.contents}}
  </td>
  </tr>
  <tr id='submit_record__row'>
@@ -49,6 +59,8 @@ $(function() {
  {{=form.custom.submit}}
  </td>
  </tr>
+ <td>
+ </td>
  </tbody>
  </table>
  {{=form.custom.end}} 

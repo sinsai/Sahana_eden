@@ -46,13 +46,13 @@ def export_rss(module, resource, query, main='name', extra='description'):
     rows = db(query).select()
     try:
         for row in rows:
-            entries.append(dict(title=row[main], link=server+link+'/%d' % row.id, description=row[extra], created_on=row.created_on))
+            entries.append(dict(title=row[main], link=server + link + '/%d' % row.id, description=row[extra], created_on=row.created_on))
     except:
         for row in rows:
-            entries.append(dict(title=row[main], link=server+link+'/%d' % row.id, description='', created_on=row.created_on))
+            entries.append(dict(title=row[main], link=server + link + '/%d' % row.id, description='', created_on=row.created_on))
     import gluon.contrib.rss2 as rss2
     items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
-    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server+link+'/%d' % row.id, description = '', lastBuildDate = request.now, items = items)
+    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.now, items = items)
     response.headers['Content-Type'] = 'application/rss+xml'
     return rss2.dumps(rss)
 

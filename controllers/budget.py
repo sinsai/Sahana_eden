@@ -236,6 +236,91 @@ def kit_update_items():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f='kit_item', args=[kit]))
 
+def kit_export():
+    """
+    Export a list of Kits in Excel XLS format
+    Sheet 1 is a list of Kits
+    Then there is a separate sheet per kit, listing it's component items
+    """
+    try:
+        import xlwt
+    except ImportError:
+        session.error = T('xlwt module not available within the running Python  - this needs installing to do XLS Reporting!')
+        redirect(URL(r=request, c='kit'))
+    
+    import StringIO
+    output = StringIO.StringIO()
+    
+    book = xlwt.Workbook()
+    # List of Kits
+    sheet1 = book.add_sheet('Kits')
+    # Header row for Kits sheet
+    row0 = sheet1.row(0)
+    cell = 0
+    table = db.budget_kit
+    kits = db(table.id > 0).select()
+    fields = [table[f] for f in table.fields if table[f].readable]
+    for field in fields:
+        row0.write(cell, field.label, xlwt.easyxf('font: bold True;'))
+        cell += 1
+    
+    # For Header row on Items sheets
+    table = db.budget_item
+    fields_items = [table[f] for f in table.fields if table[f].readable]
+    
+    row = 1
+    for kit in kits:
+        # The Kit details on Sheet 1
+        rowx = sheet1.row(row)
+        row += 1
+        cell1 = 0
+        for field in fields:
+            tab, col = str(field).split('.')
+            rowx.write(cell1, kit[col])
+            cell1 += 1
+        # Sheet per Kit detailing constituent Items
+        sheetname = kit.code.replace("\\","")
+        sheet = book.add_sheet(sheetname)
+        # Header row for Items sheet
+        row0 = sheet.row(0)
+        cell = 0
+        for field_item in fields_items:
+            row0.write(cell, field_item.label, xlwt.easyxf('font: bold True;'))
+            cell += 1
+        # List Items in each Kit
+        table = db.budget_kit_item
+        contents = db(table.kit_id == kit.id).select()
+        rowy = 1
+        for content in contents:
+            table = db.budget_item
+            item = db(table.id == content.item_id).select()[0]
+            rowx = sheet.row(rowy)
+            rowy += 1
+            cell = 0
+            for field_item in fields_items:
+                tab, col = str(field_item).split('.')
+                # Do lookups for option fields
+                if col == 'cost_type':
+                    table = db.budget_cost_type
+                    value = db(table.id == item[col]).select()[0].name
+                elif col == 'category_type':
+                    table = db.budget_category_type
+                    value = db(table.id == item[col]).select()[0].name
+                else:
+                    value = item[col]
+                rowx.write(cell, value)
+                cell += 1
+    
+    book.save(output)
+    output.seek(0)
+
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.xls')
+    filename = "%s_kits.xls" % (request.env.server_name)
+    response.headers['Content-disposition'] = "attachment; filename=%s" % filename
+    
+    return output.read()
+    
 def bundle():
     "RESTlike CRUD controller"
     if len(request.args) == 2:

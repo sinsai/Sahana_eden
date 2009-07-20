@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 This file was developed by Fran Boon as a web2py extension.
@@ -437,11 +437,14 @@ class AuthS3(Auth):
             pass
         else:
             # Insert
-            db.pr_person.insert(
-                first_name = form.vars.first_name,
-                last_name = form.vars.last_name,
-                email = form.vars.email
-            )
+            pentity_id = db.pr_pentity.insert(is_group=False)
+            if pentity_id:
+                db.pr_person.insert(
+                    pentity_id = pentity_id,
+                    first_name = form.vars.first_name,
+                    last_name = form.vars.last_name,
+                    email = form.vars.email
+                )
         
 class CrudS3(Crud):
     """

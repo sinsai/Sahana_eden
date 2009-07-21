@@ -22,13 +22,13 @@ response.menu_options = [
         [T('Add Persons to Groups'), False, URL(r=request, f='group_member', args='create')],
         [T('List Group Members'), False, URL(r=request, f='group_member')]
     ]],
-    [T('Contacts'), False, '#',[
-        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
-        [T('List Contacts'), False, URL(r=request, f='contact')],
-        [T('Search Contacts'), False, URL(r=request, f='contact', args='search')],
-        [T('Add Contacts to Persons'), False, URL(r=request, f='contact_to_person', args='create')],
-        [T('List Contacts of Persons'), False, URL(r=request, f='contact_to_person')]
-    ]],
+#    [T('Contacts'), False, '#',[
+#        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
+#        [T('List Contacts'), False, URL(r=request, f='contact')],
+#        [T('Search Contacts'), False, URL(r=request, f='contact', args='search')],
+#        [T('Add Contacts to Persons'), False, URL(r=request, f='contact_to_person', args='create')],
+#        [T('List Contacts of Persons'), False, URL(r=request, f='contact_to_person')]
+#    ]],
     [T('Identities'), False, '#',[
         [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
         [T('List Identites'), False, URL(r=request, f='identity')]
@@ -40,9 +40,9 @@ def index():
     "Module's Home Page"
     return dict(module_name=module_name)
 
-#def pentity():
-#    "RESTlike CRUD controller"
-#    return shn_rest_controller(module, 'pentity')
+def pentity():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pentity')
 def person():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"

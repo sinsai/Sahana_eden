@@ -293,13 +293,29 @@ db.define_table(table, timestamp,
                 Field('comment'),                               # optional comment
                 migrate=migrate)
 
-db[table].opt_pr_group_type.label = T("Group type")
 # TODO: restrictions and requirements
 db[table].is_group.readable = False
 db[table].is_group.writable = False
 db[table].pentity_id.readable = False
 db[table].pentity_id.writable = False
 # TODO: CRUD strings
+db[table].opt_pr_group_type.label = T("Group type")
+db[table].group_name.label = T("Group name")
+db[table].group_description.label = T("Group description")
+title_create = T('Add Group')
+title_display = T('Group Details')
+title_list = T('List Groups')
+title_update = T('Edit Group')
+title_search = T('Search Groups')
+subtitle_create = T('Add New Group')
+subtitle_list = T('Groups')
+label_list_button = T('List Groups')
+label_create_button = T('Add Group')
+msg_record_created = T('Group added')
+msg_record_modified = T('Group updated')
+msg_record_deleted = T('Group deleted')
+msg_list_empty = T('No Groups currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # TODO: reusable id field
 # Reusable field for other tables to reference
 group_id = SQLTable(None, 'group_id',
@@ -387,21 +403,24 @@ db.define_table(table, timestamp, uuidstamp,
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 #
-# Forms -----------------------------------------------------------------------
-#
-
-#
 # Callback functions ----------------------------------------------------------
 #
 
-#
-# Create Person Entity:
-#   for on-validation callback in person/create or group/create through
-#   RESTlike CRUD controller, creates or deletes a person entity as needed
-#
-#   This requires an onvalidation callback from delete action, which is
-#   not provided by the CRUD controller, see workaround in shn_rest_controller
-#
+# pentity_ondelete
+# deletes a pentity record if the corresponding person/group record gets deleted
+# designed as callback function for crud.delete (=> requires web2py/tools.py patch)
+def shn_pentity_ondelete(record):
+    if record.pentity_id:
+        del db.pr_pentity[record.pentity_id]
+    else:
+        #ignore
+        pass
+    return
+
+# pentity_onvalidation
+# creates a pentity record if a new person/group record is created
+# calls shn_pentity_ondelete() on delete action from update view
+# designed as callback function for crud.create and crud.update
 def shn_pentity_onvalidation(form, is_group):
     if len(request.args) == 0 or request.args[0] == 'create':
         # this is a create action either directly or from list view
@@ -413,28 +432,8 @@ def shn_pentity_onvalidation(form, is_group):
             # this is a delete action from update
             if len(request.args) > 1:
                 my_id = request.args[1]
-                print 'my_id ', my_id
                 if is_group:
-                    my_pentity_id = db.pr_group[my_id].pentity_id
-                    del db.pr_pentity[my_pentity_id]
+                    shn_pentity_ondelete(db.pr_group[my_id])
                 else:
-                    my_pentity_id = db.pr_person[my_id].pentity_id
-                    del db.pr_pentity[my_pentity_id]
-            else:
-                # no ID passed - ignore (no ID - no action)
-                pass
-        else:
-            #ignore
-            pass
-    else:
-        #ignore
-        pass
-    return
-
-def shn_pentity_ondelete(record):
-    if record.pentity_id:
-        del db.pr_pentity[record.pentity_id]
-    else:
-        #ignore
-        pass
+                    shn_pentity_ondelete(db.pr_person[my_id])
     return

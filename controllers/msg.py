@@ -42,6 +42,9 @@ def sms_inbox():
     return shn_rest_controller(module, 'sms_inbox', listadd=False)
 def sms_outbox():
     " RESTlike CRUD controller "
+    # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
+    db.msg_sms_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
+    # We also want to restrict list to just those of type 'sms'
     return shn_rest_controller(module, 'sms_outbox')
 def sms_sent():
     " RESTlike CRUD controller "
@@ -68,7 +71,7 @@ def email_inbox():
 def email_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
-    #db.msg_email_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v, _class='ac_input')
+    db.msg_email_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
     # We also want to restrict list to just those of type 'email'
     return shn_rest_controller(module, 'email_outbox', listadd=False)
 def email_sent():

@@ -45,10 +45,10 @@ def index():
 #    return shn_rest_controller(module, 'pentity')
 def person():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_create_pentity(form))
+    return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_pentity(form, is_group=False))
 def group():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_create_pentity(form))
+    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity(form, is_group=True))
 def group_member():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group_member')

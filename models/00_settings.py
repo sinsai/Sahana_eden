@@ -8,14 +8,17 @@ mail = Mail()
 # - however also need to be used by Auth (order issues), DB calls are overheads
 # - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
 mail.settings.server = 'mail:25'
+#mail.settings.server = 'smtp.gmail.com:587'
+#mail.settings.login = 'username:password'
 mail.settings.sender = 'sahana@sahanapy.org'
 
 auth = AuthS3(globals(),db)
 auth.define_tables()
+auth.settings.expiration = 3600  # seconds
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = False
 # Require captcha verification for registration
-#auth.settings.captcha = RECAPTCHA(request,public_key='RECAPTCHA_PUBLIC_KEY',private_key='RECAPTCHA_PRIVATE_KEY')
+#auth.settings.captcha = RECAPTCHA(request, public_key='PUBLIC_KEY', private_key='PRIVATE_KEY')
 # Require Email Verification
 auth.settings.registration_requires_verification = False
 # Email settings for registration verification
@@ -38,7 +41,7 @@ auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s 
 # We don't wish to clutter the groups list with 1 per user.
 auth.settings.create_user_groups = False
 # We need to allow basic logins for Webservices
-auth.settings.allow_basic_login = False
+auth.settings.allow_basic_login = True
 
 crud = CrudS3(globals(),db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34

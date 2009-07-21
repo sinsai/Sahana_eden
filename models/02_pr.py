@@ -119,7 +119,7 @@ db.define_table(table, timestamp,
                 migrate=migrate)
 
 #db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-#db[table].pentity_id.readable = False
+db[table].pentity_id.readable = False
 db[table].pentity_id.writable = False
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment = SPAN("*", _class="req")
@@ -297,7 +297,7 @@ db[table].opt_pr_group_type.label = T("Group type")
 # TODO: restrictions and requirements
 db[table].is_group.readable = False
 db[table].is_group.writable = False
-#db[table].pentity_id.readable = False
+db[table].pentity_id.readable = False
 db[table].pentity_id.writable = False
 # TODO: CRUD strings
 # TODO: reusable id field
@@ -402,17 +402,18 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #   This requires an onvalidation callback from delete action, which is
 #   not provided by the CRUD controller, see workaround in shn_rest_controller
 #
-def shn_pentity(form, is_group):
+def shn_pentity_onvalidation(form, is_group):
     if len(request.args) == 0 or request.args[0] == 'create':
         # this is a create action either directly or from list view
         pentity_id = db['pr_pentity'].insert(is_group = is_group)
         if pentity_id:
             form.vars.pentity_id = pentity_id
     elif len(request.args) > 0:
-        if request.args[0] == 'delete' or form.vars.delete_this_record:
-            # this is a delete action either directly or from update
+        if request.args[0] == 'update' and form.vars.delete_this_record:
+            # this is a delete action from update
             if len(request.args) > 1:
                 my_id = request.args[1]
+                print 'my_id ', my_id
                 if is_group:
                     my_pentity_id = db.pr_group[my_id].pentity_id
                     del db.pr_pentity[my_pentity_id]
@@ -423,9 +424,17 @@ def shn_pentity(form, is_group):
                 # no ID passed - ignore (no ID - no action)
                 pass
         else:
-            # must be update action - ignore
+            #ignore
             pass
     else:
-        # this will never happen - ignore
+        #ignore
+        pass
+    return
+
+def shn_pentity_ondelete(record):
+    if record.pentity_id:
+        del db.pr_pentity[record.pentity_id]
+    else:
+        #ignore
         pass
     return

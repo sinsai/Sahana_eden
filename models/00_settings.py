@@ -358,12 +358,12 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
     )
     db[table].insert(
-        name="vita",
-        name_nice="Person Tracking and Tracing",
+        name="dvi",
+        name_nice="Disaster Victim Identification",
         priority=5,
         module_type=3,
         access='',
-        description="Person Tracking and Tracing",
+        description="Disaster Victim Identification",
         enabled='True'
     )
     db[table].insert(

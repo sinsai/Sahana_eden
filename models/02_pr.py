@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Person Registry (VITA)
+# Sahanapy VITA - Part 02_pr: Person Registry
 #
 # created 2009-07-15 by nursix
 #

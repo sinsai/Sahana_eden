@@ -1,53 +1,34 @@
 # -*- coding: utf-8 -*-
 
 #
-# Person Tracking and Tracing (VITA)
+# Sahanapy VITA - Part 04_pr: Person Tracking and Tracing
 #
-# created 2009-07-14 by nursix
+# created 2009-07-23 by nursix
 #
 
-module = 'vita'
-
-# Settings
-resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
-                Field('audit_read', 'boolean'),
-                Field('audit_write', 'boolean'),
-                migrate=migrate)
-# Populate table with Default options
-# - deployments can change these live via appadmin
-if not len(db().select(db[table].ALL)): 
-   db[table].insert(
-        # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read = False,
-        audit_write = False
-    )
+module = 'pr'
 
 #
-# Person-Item
-# An person item represents a physical appearance of a person entity, either its bodily
-# appearance (personal presence or dead body), or any item that belongs to it (clothes,
-# luggage, personal effects etc.) Every person item can be tracked separately, if
-# necessary - if not, then it is tracked together with the super-item it is part of
+# Person-Item -----------------------------------------------------------------
 #
 resource='item_class'
 table=module+'_'+resource
 db.define_table(table,
+                db.Field('code'),
                 db.Field('name')
                )
 db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
 
 if not len(db().select(db[table].ALL)):
-   db[table].insert(name = "Personal Presence")
-   db[table].insert(name = "Dead Body")
-   db[table].insert(name = "Personal Belongings")
+   db[table].insert(code = 'ppr', name = "Personal Presence")
+   db[table].insert(code = 'bdy', name = "Dead Body")
+   db[table].insert(code = 'opb', name = "Personal Belongings")
 
 # Reusable field for other tables to reference
 opt_item_class = SQLTable(None, 'opt_item_class',
-                 db.Field('item_class', db.vita_item_class,
-                 requires = IS_NULL_OR(IS_IN_DB(db, 'vita_item_class.id', 'vita_item_class.name')),
-                 represent = lambda id: (id and [db(db.vita_item_class.id==id).select()[0].name] or ["None"])[0],
+                 db.Field('item_class', db.pr_item_class,
+                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_item_class.id', 'pr_item_class.name')),
+                 represent = lambda id: (id and [db(db.pr_item_class.id==id).select()[0].name] or ["None"])[0],
                  comment = None,
                  ondelete = 'RESTRICT'
                  ))
@@ -65,9 +46,9 @@ if not len(db().select(db[table].ALL)):
 
 # Reusable field for other tables to reference
 opt_tag_type = SQLTable(None, 'opt_tag_type',
-                 db.Field('tag_type', db.vita_tag_type,
-                 requires = IS_NULL_OR(IS_IN_DB(db, 'vita_tag_type.id', 'vita_tag_type.name')),
-                 represent = lambda id: (id and [db(db.vita_tag_type.id==id).select()[0].name] or ["None"])[0],
+                 db.Field('tag_type', db.pr_tag_type,
+                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_tag_type.id', 'pr_tag_type.name')),
+                 represent = lambda id: (id and [db(db.pr_tag_type.id==id).select()[0].name] or ["None"])[0],
                  comment = None,
                  ondelete = 'RESTRICT'
                  ))
@@ -100,17 +81,24 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 # Reusable field for other tables to reference
 pitem_id = SQLTable(None, 'pitem_id',
-                Field('pitem_id', db.vita_pitem,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'vita_pitem.id', '%(tag_label)s: %(description)s')),
-                represent = lambda id: (id and [db(db.vita_pitem.id==id).select()[0].tag_label] or ["None"])[0],
-                comment = DIV(A(T('Add Item'), _class='popup', _href=URL(r=request, c='vita', f='pitem', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Item|New Personal Presence, Body or Item."))),
+                Field('pitem_id', db.pr_pitem,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pitem.id', '%(tag_label)s: %(description)s')),
+                represent = lambda id: (id and [db(db.pr_pitem.id==id).select()[0].tag_label] or ["None"])[0],
+                comment = DIV(A(T('Add Item'), _class='popup', _href=URL(r=request, c='pr', f='pitem', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Item|New Personal Presence, Body or Item."))),
                 ondelete = 'RESTRICT'
                 ))
+#
+# PItem to PEntity ------------------------------------------------------------
+#
+resource = 'pitem_to_pentity'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                pentity_id,
+                pitem_id,
+                migrate=migrate)
 
 #
-# Presence
-# A presence is a documented sighting of a personal item, and tracks locations over time
-# as well as status changes of a person or their belongings
+# Presence --------------------------------------------------------------------
 #
 
 resource = 'presence'

@@ -10,17 +10,23 @@ response.menu_options = [
 #        [T('Add Pentity'), False, URL(r=request, f='pentity', args='create')],
 #        [T('List Pentity'), False, URL(r=request, f='pentity')]
 #    ]],
-    [T('Persons'), False, '#',[
+    [T('Persons'), False, URL(r=request, f='person'),[
         [T('Add Person'), False, URL(r=request, f='person', args='create')],
         [T('List People'), False, URL(r=request, f='person')],
         [T('Search People'), False, URL(r=request, f='person', args='search')]
     ]],
-    [T('Groups'), False, '#',[
+    [T('Groups'), False, URL(r=request, f='group'),[
         [T('Add Group'), False, URL(r=request, f='group', args='create')],
         [T('List Groups'), False, URL(r=request, f='group')],
         [T('Search Group'), False, URL(r=request, f='group', args='search')],
         [T('Add Persons to Groups'), False, URL(r=request, f='group_member', args='create')],
         [T('List Group Members'), False, URL(r=request, f='group_member')]
+    ]],
+    [T('Cases'), False, URL(r=request, f='index'),[
+        [T('My Cases'), False, URL(r=request, f='index')],
+        [T('All Cases'), False, URL(r=request, f='index')],
+        [T('Find Case'), False, URL(r=request, f='index')],
+        [T('New Case'), False, URL(r=request, f='index')]
     ]],
 #    [T('Contacts'), False, '#',[
 #        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
@@ -29,9 +35,15 @@ response.menu_options = [
 #        [T('Add Contacts to Persons'), False, URL(r=request, f='contact_to_person', args='create')],
 #        [T('List Contacts of Persons'), False, URL(r=request, f='contact_to_person')]
 #    ]],
-    [T('Identities'), False, '#',[
-        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
-        [T('List Identites'), False, URL(r=request, f='identity')]
+#    [T('Identities'), False, '#',[
+#        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+#        [T('List Identites'), False, URL(r=request, f='identity')]
+#    ]],
+    [T('Tracking and Tracing'), False, '#',[
+        [T('Add Item'), False, URL(r=request, f='pitem', args='create')],
+        [T('List Items'), False, URL(r=request, f='pitem')],
+        [T('Add Presence'), False, URL(r=request, f='presence', args='create')],
+        [T('List Presences'), False, URL(r=request, f='presence')]
     ]]
 ]
 
@@ -63,3 +75,9 @@ def contact():
 def contact_to_person():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact_to_person')
+def pitem():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pitem', main='tag_label', extra='description')
+def presence():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'presence')

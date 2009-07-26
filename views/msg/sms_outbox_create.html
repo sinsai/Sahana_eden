@@ -4,28 +4,19 @@
 $(function() {
     // Warn when SMS goes over 140 characters
     // tbc
-    // Hide the real Input Row
-    $("#msg_sms_outbox_group_id__row").hide();
-    // Autocomplete-enable the Dummy Input
-    $("#dummy").autocomplete('{{=URL(r=request, c='msg', f='group', args='search', vars={'format':'json', 'filter':'~', 'field':'name'})}}', {
-        matchContains: true,
+    // Turn the Distribution Group dropdown into an Autocomplete INPUT
+    // tbc
+    $("#msg_sms_outbox_group_id").autocomplete('{{=URL(r=request, c='msg', f='group', args='search', vars={'format':'json', 'filter':'~', 'field':'name'})}}', {
+    matchContains: true,
         dataType: 'json',
         parse: function(data) {
             var rows = new Array();
             for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
+                rows[i] = { data:data[i], value:data[i].id, result:data[i].id };
             }
             return rows;
         },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
     });
-    // Populate the real Input when the Dummy is selected
-    $("#dummy").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#msg_sms_outbox_group_id").val(newvalue);
-    }); 
 });
 //]]></script>
 
@@ -39,25 +30,15 @@ $(function() {
  {{=form.custom.begin}}
  <table>
  <tbody>
- <tr id='msg_sms_outbox_group_ac__row'>
- <td>
- <label>{{=form.custom.label.group_id}}</label>
- </td>
- <td>
- {{=INPUT(_id="dummy", _class="ac_input")}}
- </td>
- <td>
- {{=form.custom.comment.group_id}}
- </td>
- </tr>
  <tr id='msg_sms_outbox_group_id__row'>
  <td>
- <label></label>
+ <label>{{=form.custom.label.group_id}}</label>
  </td>
  <td>
  {{=form.custom.widget.group_id}}
  </td>
  <td>
+ {{=form.custom.comment.group_id}}
  </td>
  </tr>
  <tr id='msg_sms_contents_body__row'>

@@ -651,10 +651,6 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     shn_audit_delete(resource, record, representation)
                     if representation == "ajax":
                         crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
-                    # call onvalidation without form (since delete action doesn't produce a form)
-                    # this is a workaround, because there's no callback option in crud.delete
-                    if (onvalidation):
-                        onvalidation(None)
                     crud.delete(table, record)
                 else:
                     session.error = T("Not authorised!")

@@ -10,28 +10,40 @@ response.menu_options = [
 #        [T('Add Pentity'), False, URL(r=request, f='pentity', args='create')],
 #        [T('List Pentity'), False, URL(r=request, f='pentity')]
 #    ]],
-    [T('Persons'), False, '#',[
+    [T('Persons'), False, URL(r=request, f='person'),[
         [T('Add Person'), False, URL(r=request, f='person', args='create')],
         [T('List People'), False, URL(r=request, f='person')],
         [T('Search People'), False, URL(r=request, f='person', args='search')]
     ]],
-    [T('Groups'), False, '#',[
+    [T('Groups'), False, URL(r=request, f='group'),[
         [T('Add Group'), False, URL(r=request, f='group', args='create')],
         [T('List Groups'), False, URL(r=request, f='group')],
         [T('Search Group'), False, URL(r=request, f='group', args='search')],
         [T('Add Persons to Groups'), False, URL(r=request, f='group_member', args='create')],
         [T('List Group Members'), False, URL(r=request, f='group_member')]
     ]],
-    [T('Contacts'), False, '#',[
-        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
-        [T('List Contacts'), False, URL(r=request, f='contact')],
-        [T('Search Contacts'), False, URL(r=request, f='contact', args='search')],
-        [T('Add Contacts to Persons'), False, URL(r=request, f='contact_to_person', args='create')],
-        [T('List Contacts of Persons'), False, URL(r=request, f='contact_to_person')]
+    [T('Cases'), False, URL(r=request, f='index'),[
+        [T('My Cases'), False, URL(r=request, f='index')],
+        [T('All Cases'), False, URL(r=request, f='index')],
+        [T('Find Case'), False, URL(r=request, f='index')],
+        [T('New Case'), False, URL(r=request, f='index')]
     ]],
-    [T('Identities'), False, '#',[
-        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
-        [T('List Identites'), False, URL(r=request, f='identity')]
+#    [T('Contacts'), False, '#',[
+#        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
+#        [T('List Contacts'), False, URL(r=request, f='contact')],
+#        [T('Search Contacts'), False, URL(r=request, f='contact', args='search')],
+#        [T('Add Contacts to Persons'), False, URL(r=request, f='contact_to_person', args='create')],
+#        [T('List Contacts of Persons'), False, URL(r=request, f='contact_to_person')]
+#    ]],
+#    [T('Identities'), False, '#',[
+#        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+#        [T('List Identites'), False, URL(r=request, f='identity')]
+#    ]],
+    [T('Tracking and Tracing'), False, '#',[
+        [T('Add Item'), False, URL(r=request, f='pitem', args='create')],
+        [T('List Items'), False, URL(r=request, f='pitem')],
+        [T('Add Presence'), False, URL(r=request, f='presence', args='create')],
+        [T('List Presences'), False, URL(r=request, f='presence')]
     ]]
 ]
 
@@ -40,15 +52,17 @@ def index():
     "Module's Home Page"
     return dict(module_name=module_name)
 
-#def pentity():
-#    "RESTlike CRUD controller"
-#    return shn_rest_controller(module, 'pentity')
+def pentity():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pentity')
 def person():
+    crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_pentity(form, is_group=False))
+    return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_pentity_onvalidation(form, is_group=False))
 def group():
+    crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity(form, is_group=True))
+    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, is_group=True))
 def group_member():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group_member')
@@ -61,3 +75,9 @@ def contact():
 def contact_to_person():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact_to_person')
+def pitem():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pitem', main='tag_label', extra='description')
+def presence():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'presence')

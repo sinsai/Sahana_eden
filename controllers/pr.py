@@ -31,10 +31,17 @@ response.menu_options = [
         [T('List Group Members'), False, URL(r=request, f='group_member')]
     ]],
     [T('Cases'), False, URL(r=request, f='index'),[
+<<<<<<< TREE
         [T('My Cases'), False, URL(r=request, f='cases', args='my')],
         [T('All Cases'), False, URL(r=request, f='cases', args='all')],
         [T('Find Case'), False, URL(r=request, f='cases', args='find')],
         [T('New Case'), False, URL(r=request, f='cases', args='new')]
+=======
+        [T('My Cases'), False, URL(r=request, f='index')],
+        [T('All Cases'), False, URL(r=request, f='index')],
+        [T('Find Case'), False, URL(r=request, f='index')],
+        [T('New Case'), False, URL(r=request, f='index')]
+>>>>>>> MERGE-SOURCE
     ]],
 #    [T('Contacts'), False, '#',[
 #        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
@@ -47,10 +54,13 @@ response.menu_options = [
 #        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
 #        [T('List Identites'), False, URL(r=request, f='identity')]
 #    ]],
+<<<<<<< TREE
     [T('Status'), False, '#',[
         [T('Add Status To Person'), False, URL(r=request, f='pentity_status', args='create')],
         [T('List Status'), False, URL(r=request, f='pentity_status')]
     ]],
+=======
+>>>>>>> MERGE-SOURCE
     [T('Tracking and Tracing'), False, '#',[
         [T('Add Item'), False, URL(r=request, f='pitem', args='create')],
         [T('List Items'), False, URL(r=request, f='pitem')],
@@ -64,7 +74,13 @@ def index():
     "Module's Home Page"
     return dict(module_name=module_name)
 
+<<<<<<< TREE
 # RESTlike CRUD functions
+=======
+def pentity():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pentity')
+>>>>>>> MERGE-SOURCE
 def person():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
@@ -73,11 +89,14 @@ def group():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, is_group=True))
+<<<<<<< TREE
 
 def pentity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'pentity')
 
+=======
+>>>>>>> MERGE-SOURCE
 def group_member():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group_member')
@@ -100,6 +119,7 @@ def pitem():
 def presence():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
+<<<<<<< TREE
 
 #
 # Interactive functions -------------------------------------------------------
@@ -148,3 +168,5 @@ def select():
     
     response.view = module + '/' + custom_view
     return dict(module_name=module_name)
+=======
+>>>>>>> MERGE-SOURCE

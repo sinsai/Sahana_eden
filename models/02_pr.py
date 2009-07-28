@@ -42,14 +42,38 @@ pentity_id = SQLTable(None, 'pentity_id',
                 ))
 
 #
+# Person Status
+#
+resource = 'status'
+table = module + '_' + resource
+db.define_table(table,
+                Field('individual', 'boolean', default=True),
+                Field('status'),
+                Field('value'),
+                migrate=migrate)
+
+if not len(db().select(db[table].ALL)): 
+   db[table].insert( individual=True, status='Vitality', value='alive' )
+   db[table].insert( individual=True, status='Vitality', value='deceased' )
+   db[table].insert( individual=True, status='Vitality', value='unknown' )
+
+# Reusable field for other tables to reference
+opt_pr_status = SQLTable(None, 'opt_pr_status',
+                    db.Field('opt_pr_status', db.pr_status,
+                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_status.id', '%(status)s: %(value)s')),
+                    represent = lambda id: (id and [db(db.pr_status.id==id).select()[0].value] or ["None"])[0],
+                    comment = None,
+                    ondelete = 'RESTRICT'
+                    ))
+
+#
 # Person Entity Status (Sahana legacy)
 #
 resource = 'pentity_status'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 pentity_id,
-                Field('role'),
-                Field('status'),
+                opt_pr_status,
                 migrate=migrate)
 
 #

@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
 
+#
+# VITA - Person Registry, Identification, Tracking and Tracing system
+#
+# created 2009-07-24 by nursix
+#
+
 module = 'pr'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
@@ -23,10 +31,10 @@ response.menu_options = [
         [T('List Group Members'), False, URL(r=request, f='group_member')]
     ]],
     [T('Cases'), False, URL(r=request, f='index'),[
-        [T('My Cases'), False, URL(r=request, f='index')],
-        [T('All Cases'), False, URL(r=request, f='index')],
-        [T('Find Case'), False, URL(r=request, f='index')],
-        [T('New Case'), False, URL(r=request, f='index')]
+        [T('My Cases'), False, URL(r=request, f='cases', args='my')],
+        [T('All Cases'), False, URL(r=request, f='cases', args='all')],
+        [T('Find Case'), False, URL(r=request, f='cases', args='find')],
+        [T('New Case'), False, URL(r=request, f='cases', args='new')]
     ]],
 #    [T('Contacts'), False, '#',[
 #        [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
@@ -39,6 +47,10 @@ response.menu_options = [
 #        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
 #        [T('List Identites'), False, URL(r=request, f='identity')]
 #    ]],
+    [T('Status'), False, '#',[
+        [T('Add Status To Person'), False, URL(r=request, f='pentity_status', args='create')],
+        [T('List Status'), False, URL(r=request, f='pentity_status')]
+    ]],
     [T('Tracking and Tracing'), False, '#',[
         [T('Add Item'), False, URL(r=request, f='pitem', args='create')],
         [T('List Items'), False, URL(r=request, f='pitem')],
@@ -52,9 +64,7 @@ def index():
     "Module's Home Page"
     return dict(module_name=module_name)
 
-def pentity():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'pentity')
+# RESTlike CRUD functions
 def person():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
@@ -63,12 +73,21 @@ def group():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, is_group=True))
+
+def pentity():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pentity')
+
 def group_member():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group_member')
+
 def identity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'identity')
+def pentity_status():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pentity_status')
 def contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact')
@@ -81,3 +100,51 @@ def pitem():
 def presence():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
+
+#
+# Interactive functions -------------------------------------------------------
+#
+
+#
+# Case Management
+#
+def cases():
+    custom_view='index.html'
+    
+    if len(request.args) == 0:
+        # No arguments => defaults to my
+        pass
+    else:
+        method = str.lower(request.args[0])
+        if method == 'my':
+            pass
+        elif method == 'all':
+            pass
+        elif method == 'find':
+            pass
+        elif method == 'new':
+            pass
+        else:
+            pass
+    pass
+    
+    response.view = module + '/' + custom_view
+    return dict(module_name=module_name)
+
+#
+# Recognition
+#
+def recognize():
+    custom_view='index.html'
+    
+    response.view = module + '/' + custom_view
+    return dict(module_name=module_name)
+
+#
+# Person Selector
+#
+def select():
+    custom_view='index.html'
+    
+    response.view = module + '/' + custom_view
+    return dict(module_name=module_name)

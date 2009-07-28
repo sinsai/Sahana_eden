@@ -49,26 +49,16 @@ db.define_table(table,
                 migrate=migrate)
 
 # Group
-resource = 'group_type'
-table = module + '_' + resource
-db.define_table(table,
-                Field('name', notnull=True),
-                migrate=migrate)
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-# Pre-populate options
-if not len(db().select(db[table].ALL)):
-    db[table].insert(name = "Email")    # ID:1
-    db[table].insert(name = "SMS")      # ID:2
-    db[table].insert(name = "Both")     # ID:3
-# Reusable field for other tables to reference
+msg_group_type_opts = {
+    1:T('Email'),
+    2:T('SMS'),
+    3:T('Both')
+    }
 opt_msg_group_type = SQLTable(None, 'opt_msg_group_type',
-                db.Field('group_type', db.msg_group_type,
-                requires = IS_IN_DB(db, 'msg_group_type.id', 'msg_group_type.name'),
-                label = T('Type'),
-                represent = lambda id: (id and [db(db.msg_group_type.id==id).select()[0].name] or ["None"])[0],
-                comment = None,
-                ondelete = 'RESTRICT'
-                ))
+                    db.Field('group_type', 'integer', notnull=True,
+                    requires = IS_IN_SET(msg_group_type_opts),
+                    default = 1,
+                    represent = lambda opt: opt and msg_group_type_opts[opt]))
 
 resource = 'group'
 table = module + '_' + resource

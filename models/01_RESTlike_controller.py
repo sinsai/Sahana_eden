@@ -693,7 +693,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                                 query = (table[field].like('%' + value + '%'))
                                 limit = int(request.vars.limit) or None
                                 if limit:
-                                    item = db(query).select(limitby=(0,limit)).json()
+                                    item = db(query).select(limitby=(0, limit)).json()
                                 else:
                                     item = db(query).select().json()
                             else:

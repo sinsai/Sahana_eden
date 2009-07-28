@@ -40,61 +40,41 @@ title_update = T('Edit Parameters')
 s3.crud_strings[table] = Storage(title_update=title_update)
 
 # Items
-resource = 'cost_type'
-table = module + '_' + resource
-db.define_table(table,
-                Field('name', notnull=True),
-                migrate=migrate)
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-# Pre-populate options
-if not len(db().select(db[table].ALL)):
-    db[table].insert(name = "One-time")  # ID:1
-    db[table].insert(name = "Recurring") # ID:2
-# Reusable field for other tables to reference
-opt_budget_cost_type = SQLTable(None, 'opt_budget_cost_type',
-                db.Field('cost_type', db.budget_cost_type,
-                requires = IS_IN_DB(db, 'budget_cost_type.id', 'budget_cost_type.name'),
-                represent = lambda id: (id and [db(db.budget_cost_type.id==id).select()[0].name] or ["None"])[0],
-                comment = None,
-                ondelete = 'RESTRICT'
-                ))
-
-resource = 'category_type'
-table = module + '_' + resource
-db.define_table(table,
-                Field('name', notnull=True),
-                migrate=migrate)
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-# Pre-populate options
-if not len(db().select(db[table].ALL)):
-    db[table].insert(name = "Consumable")   # ID:1
-    db[table].insert(name = "Satellite")    # ID:2
-    db[table].insert(name = "HF")           # ID:3
-    db[table].insert(name = "VHF")          # ID:4
-    db[table].insert(name = "Telephony")    # ID:5
-    db[table].insert(name = "W-LAN")        # ID:6
-    db[table].insert(name = "Network")      # ID:7
-    db[table].insert(name = "Generator")    # ID:8
-    db[table].insert(name = "Electrical")   # ID:9
-    db[table].insert(name = "Vehicle")      # ID:10
-    db[table].insert(name = "GPS")          # ID:11
-    db[table].insert(name = "Tools")        # ID:12
-    db[table].insert(name = "IT")           # ID:13
-    db[table].insert(name = "ICT")          # ID:14
-    db[table].insert(name = "TC")           # ID:15
-    db[table].insert(name = "Stationery")   # ID:16
-    db[table].insert(name = "Relief")       # ID:17
-    db[table].insert(name = "Miscellaneous") # ID:18
-    db[table].insert(name = "Running Cost") # ID:19
-# Reusable field for other tables to reference
-opt_budget_category_type = SQLTable(None, 'opt_budget_category_type',
-                db.Field('category_type', db.budget_category_type,
-                requires = IS_IN_DB(db, 'budget_category_type.id', 'budget_category_type.name'),
-                represent = lambda id: (id and [db(db.budget_category_type.id==id).select()[0].name] or ["None"])[0],
-                comment = None,
-                ondelete = 'RESTRICT'
-                ))
-
+budget_cost_type_opts = {
+    1:T('One-time'),
+    2:T('Recurring')
+    }
+opt_budget_cost_type = SQLTable(None, 'budget_cost_type',
+                    db.Field('cost_type', 'integer', notnull=True,
+                    requires = IS_IN_SET(budget_cost_type_opts),
+                    default = 1,
+                    represent = lambda opt: opt and budget_cost_type_opts[opt]))
+budget_category_type_opts = {
+    1:T('Consumable'),
+    2:T('Satellite'),
+    3:T('HF'),
+    4:T('VHF'),
+    5:T('Telephony'),
+    6:T('W-LAN'),
+    7:T('Network'),
+    8:T('Generator'),
+    9:T('Electrical'),
+    10:T('Vehicle'),
+    11:T('GPS'),
+    12:T('Tools'),
+    13:T('IT'),
+    14:T('ICT'),
+    15:T('TC'),
+    16:T('Stationery'),
+    17:T('Relief'),
+    18:T('Miscellaneous'),
+    19:T('Running Cost')
+    }
+opt_budget_category_type = SQLTable(None, 'budget_category_type',
+                    db.Field('category_type', 'integer', notnull=True,
+                    requires = IS_IN_SET(budget_category_type_opts),
+                    default = 1,
+                    represent = lambda opt: opt and budget_category_type_opts[opt]))
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
@@ -102,7 +82,6 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('description', length=256, notnull=True),
                 opt_budget_cost_type,
                 opt_budget_category_type,
-                #Field('sub_category'),
                 Field('unit_cost', 'double', default=0.00),
                 Field('monthly_cost', 'double', default=0.00),
                 Field('minute_cost', 'double', default=0.00),
@@ -113,7 +92,6 @@ db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.comment = SPAN("*", _class="req")
 db[table].description.requires = IS_NOT_EMPTY()
 db[table].description.comment = SPAN("*", _class="req")
-#db[table].sub_category.requires = IS_IN_SET(['Satellite', 'VHF', 'UHF', 'HF', 'Airband', 'Telephony', 'GPS'])
 title_create = T('Add Item')
 title_display = T('Item Details')
 title_list = T('List Items')
@@ -261,25 +239,16 @@ db[table].megabytes.label = T('Megabytes per Month')
 db[table].megabytes.comment = SPAN("*", _class="req")
 
 # Staff Types
-resource = 'currency_type'
-table = module + '_' + resource
-db.define_table(table,
-                Field('name', notnull=True),
-                migrate=migrate)
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-# Pre-populate options
-if not len(db().select(db[table].ALL)):
-    db[table].insert(name = "Dollars")  # ID:1
-    db[table].insert(name = "Euros")    # ID:2
-    db[table].insert(name = "Pounds")   # ID:3
-# Reusable field for other tables to reference
-opt_budget_currency_type = SQLTable(None, 'opt_budget_currency_type',
-                db.Field('currency_type', db.budget_currency_type,
-                requires = IS_IN_DB(db, 'budget_currency_type.id', 'budget_currency_type.name'),
-                represent = lambda id: (id and [db(db.budget_currency_type.id==id).select()[0].name] or ["None"])[0],
-                comment = None,
-                ondelete = 'RESTRICT'
-                ))
+budget_currency_type_opts = {
+    1:T('Dollars'),
+    2:T('Euros'),
+    3:T('Pounds')
+    }
+opt_budget_currency_type = SQLTable(None, 'budget_currency_type',
+                    db.Field('currency_type', 'integer', notnull=True,
+                    requires = IS_IN_SET(budget_currency_type_opts),
+                    default = 1,
+                    represent = lambda opt: opt and budget_currency_type_opts[opt]))
 
 resource = 'staff'
 table = module + '_' + resource

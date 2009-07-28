@@ -44,7 +44,8 @@ def sms_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
     db.msg_sms_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
-    # We also want to restrict list to just those of type 'sms'
+    # Restrict list to just those of type 'sms'
+    # tbc
     return shn_rest_controller(module, 'sms_outbox')
 def sms_sent():
     " RESTlike CRUD controller "
@@ -72,7 +73,8 @@ def email_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
     db.msg_email_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
-    # We also want to restrict list to just those of type 'email'
+    # Restrict list to just those of type 'email'
+    # tbc
     return shn_rest_controller(module, 'email_outbox', listadd=False)
 def email_sent():
     " RESTlike CRUD controller "
@@ -116,8 +118,9 @@ def email_send():
 # Contacts
 def group():
     " RESTlike CRUD controller "
+    # If we know which record we're editing
     if len(request.args) == 2:
-        crud.settings.update_next = URL(r=request, f='group_user', args=request.args[1])
+        crud.settings.update_next = URL(r=request, f='group_user', args=request.args(1))
     return shn_rest_controller(module, 'group')
   
 def group_user():
@@ -131,7 +134,8 @@ def group_user():
     
     title = db.msg_group[group].name
     group_description = db.msg_group[group].comments
-    group_type = db(db.msg_group_type.id == db.msg_group[group].group_type).select()[0].name
+    _group_type = db.msg_group[group].group_type
+    group_type = msg_group_type_opts[_group_type]
     query = table.group_id==group
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=group_description, group_type=group_type)

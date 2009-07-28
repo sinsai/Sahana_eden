@@ -103,6 +103,9 @@ def pitem():
 def presence():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
+def case():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'case')
 
 #
 # Interactive functions -------------------------------------------------------
@@ -135,19 +138,16 @@ def cases():
     return dict(module_name=module_name)
 
 #
-# Recognition
-#
-def recognize():
-    custom_view='index.html'
-    
-    response.view = module + '/' + custom_view
-    return dict(module_name=module_name)
-
-#
 # Person Selector
 #
 def select():
-    custom_view='index.html'
-    
-    response.view = module + '/' + custom_view
-    return dict(module_name=module_name)
+
+    form=FORM(TABLE(TR("ID, Name or Label:",INPUT(_type="text",_name="label",requires=IS_NOT_EMPTY())),
+            TR("",INPUT(_type="submit",_value="Search"))))
+
+    items=None
+
+    if form.accepts(request.vars,session):
+        items = crud.select(db.pr_person, db.pr_pitem.tag_label.like(form.vars.label), truncate=48, _id='list', _class='display')
+
+    return dict(request, title="Test", form=form, items=items)

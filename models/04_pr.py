@@ -107,5 +107,27 @@ db.define_table(table, timestamp, uuidstamp,
                 pitem_id,                           # Personal Item Reference
                 Field('description'),               # Short Description
                 Field('details','text'),            # Detailed Description
-                Field('comment'))                   # a comment (optional)
+                Field('comment'),                   # a comment (optional)
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+#
+# Case ------------------------------------------------------------------------
+#
+resource = 'case'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                Field('description'),               # Short Description
+                Field('details','text'),            # Detailed Description
+                Field('comment'),                   # a comment (optional)
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+# Reusable field for other tables to reference
+pcase_id = SQLTable(None, 'pcase_id',
+                Field('pcase_id', db.pr_case,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_case.id', '%(description)s')),
+                represent = lambda id: (id and [db(db.pr_case.id==id).select()[0].description] or ["None"])[0],
+                comment = DIV(A(T('Add Case'), _class='popup', _href=URL(r=request, c='pr', f='case', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Case|Add new case."))),
+                ondelete = 'RESTRICT'
+                ))

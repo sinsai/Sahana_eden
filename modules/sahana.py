@@ -249,10 +249,7 @@ class AuthS3(Auth):
         form = SQLFORM(
             table_user,
             fields=[username, password],
-# -- nursix says:
-# -- This duplicates request.vars._next, i.e. it gets turned from a string into a list,
-# -- so that the replace method before/in redirect() fails and raises an internal error:
-#            hidden=dict(_next=request.vars._next),
+            hidden=dict(_next=request.vars._next),
             showid=self.settings.showid,
             submit_button=self.settings.submit_button,
             delete_label=self.settings.delete_label,

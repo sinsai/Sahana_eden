@@ -16,17 +16,19 @@ migrate = True
     # session.connect(request, response, db=MEMDB(Client())
 #else:                                         # else use a normal relational database
 db = DAL('sqlite://storage.db')       # if not, use SQLite or other DB
-#db = DAL('mysql://root:password@localhost/db', pools=10) # or other DB
-#db = DAL('postgres://postgres:password@localhost/db', pools=10)
+#db = DAL('mysql://root:password@localhost/db', pool_size=10) # or other DB
+#db = DAL('postgres://postgres:password@localhost/db', pool_size=10)
 
 # Custom classes which extend default Gluon & T2
-from applications.sahana.modules.sahana import *
-#from applications.sahana.modules.ldapconnect import AuthLDAP
-
+exec('from applications.%s.modules.sahana import *' % request.application)
+# Faster for Production (where app-name won't change):
+#from applications.sahana.modules.sahana import *
 t2 = S3(request, response, session, cache, T, db)
 
 # Custom validators
-from applications.sahana.modules.validators import *
+exec('from applications.%s.modules.validators import *' % request.application)
+# Faster for Production (where app-name won't change):
+#from applications.sahana.modules.validators import *
 
 def shn_sessions(f):
     """

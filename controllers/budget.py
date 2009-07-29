@@ -301,11 +301,11 @@ def kit_export():
                 tab, col = str(field_item).split('.')
                 # Do lookups for option fields
                 if col == 'cost_type':
-                    table = db.budget_cost_type
-                    value = db(table.id == item[col]).select()[0].name
+                    opt = item[col]
+                    value = str(budget_cost_type_opts[opt])
                 elif col == 'category_type':
-                    table = db.budget_category_type
-                    value = db(table.id == item[col]).select()[0].name
+                    opt = item[col]
+                    value = str(budget_category_type_opts[opt])
                 else:
                     value = item[col]
                 rowx.write(cell, value)

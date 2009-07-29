@@ -15,8 +15,6 @@ mail.settings.sender = 'sahana@sahanapy.org'
 auth = AuthS3(globals(),db)
 auth.define_tables()
 auth.settings.expiration = 3600  # seconds
-# Require Admin approval for self-registered users
-auth.settings.registration_requires_approval = False
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key='PUBLIC_KEY', private_key='PRIVATE_KEY')
 # Require Email Verification
@@ -25,6 +23,10 @@ auth.settings.registration_requires_verification = False
 auth.settings.mailer = mail
 # ** Amend this to your Publically-accessible URL ***
 auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s to verify your email'
+# Require Admin approval for self-registered users
+auth.settings.registration_requires_approval = False
+# Notify UserAdmin of new pending user registration to action
+# auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='adminwithapprovalpower@admindomain', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap.' % form.email)
 # Allow use of LDAP accounts for login
 # (NB These are not automatically added to PR or to Authenticated role since they enter via the login() method not register())
 #from gluon.contrib.login_methods.ldap_auth import ldap_auth
@@ -272,28 +274,18 @@ else:
 
         
 # Modules
-resource = 'module_type'
-table = module + '_' + resource
-db.define_table(table,
-                Field('name', notnull=True),
-                migrate=migrate)
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-# Pre-populate options
-if not len(db().select(db[table].ALL)):
-    db[table].insert(name = "Home")                 # ID:1
-    db[table].insert(name = "Situation Awareness")  # ID:2
-    db[table].insert(name = "Person Management")    # ID:3
-    db[table].insert(name = "Aid Management")       # ID:4
-    db[table].insert(name = "Communications")       # ID:5
-# Reusable field for other tables to reference
+s3_module_type_opts = {
+    1:T('Home'),
+    2:T('Situation Awareness'),
+    3:T('Person Management'),
+    4:T('Aid Management'),
+    5:T('Communications')
+    }
 opt_s3_module_type = SQLTable(None, 'opt_s3_module_type',
-                db.Field('module_type', db.s3_module_type,
-                requires = IS_IN_DB(db, 's3_module_type.id', 's3_module_type.name'),
-                label = T('Type'),
-                represent = lambda id: (id and [db(db.s3_module_type.id==id).select()[0].name] or ["None"])[0],
-                comment = None,
-                ondelete = 'RESTRICT'
-                ))
+                    db.Field('module_type', 'integer', notnull=True,
+                    requires = IS_IN_SET(s3_module_type_opts),
+                    default = 1,
+                    represent = lambda opt: opt and s3_module_type_opts[opt]))
 
 resource = 'module'
 table = module + '_' + resource
@@ -465,7 +457,7 @@ for module_type in [1, 2]:
             if authorised == True:
                 response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
 for module_type in [3, 4]:
-    module_type_name = db(db.s3_module_type.id==module_type).select()[0].name
+    module_type_name = str(s3_module_type_opts[module_type])
     module_type_menu = ([T(module_type_name), False, '#'])
     modules_submenu = []
     query = (db.s3_module.enabled=='Yes')&(db.s3_module.module_type==module_type)

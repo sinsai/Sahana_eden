@@ -42,6 +42,13 @@ def sms_inbox():
     return shn_rest_controller(module, 'sms_inbox', listadd=False)
 def sms_outbox():
     " RESTlike CRUD controller "
+<<<<<<< TREE
+=======
+    # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
+    db.msg_sms_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
+    # Restrict list to just those of type 'sms'
+    # tbc
+>>>>>>> MERGE-SOURCE
     return shn_rest_controller(module, 'sms_outbox')
 def sms_sent():
     " RESTlike CRUD controller "
@@ -68,8 +75,14 @@ def email_inbox():
 def email_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
+<<<<<<< TREE
     #db.msg_email_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v, _class='ac_input')
     # We also want to restrict list to just those of type 'email'
+=======
+    db.msg_email_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
+    # Restrict list to just those of type 'email'
+    # tbc
+>>>>>>> MERGE-SOURCE
     return shn_rest_controller(module, 'email_outbox', listadd=False)
 def email_sent():
     " RESTlike CRUD controller "
@@ -113,8 +126,9 @@ def email_send():
 # Contacts
 def group():
     " RESTlike CRUD controller "
+    # If we know which record we're editing
     if len(request.args) == 2:
-        crud.settings.update_next = URL(r=request, f='group_user', args=request.args[1])
+        crud.settings.update_next = URL(r=request, f='group_user', args=request.args(1))
     return shn_rest_controller(module, 'group')
   
 def group_user():
@@ -128,7 +142,8 @@ def group_user():
     
     title = db.msg_group[group].name
     group_description = db.msg_group[group].comments
-    group_type = db(db.msg_group_type.id == db.msg_group[group].group_type).select()[0].name
+    _group_type = db.msg_group[group].group_type
+    group_type = msg_group_type_opts[_group_type]
     query = table.group_id==group
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=group_description, group_type=group_type)
@@ -247,3 +262,29 @@ def group_update_users():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f='group_user', args=[group]))
 
+def group_search():
+    """Do a search of groups which match a type
+    Used for auto-completion
+    """
+    item = ''
+    if not 'type' in request.vars:
+        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Type!"}}'
+    if request.vars.type == 'email':
+            # Types 'Email' & 'Both'
+            belongs = (1, 3)
+    elif request.vars.type == 'sms':
+            # Types 'SMS' & 'Both'
+            belongs = (2, 3)
+    else:
+        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported type! Supported types: email, sms"}}'
+    if not item:
+        table = db.msg_group
+        field = 'name'
+        # JQuery Autocomplete uses 'q' instead of 'value'
+        value = request.vars.q
+        # JOIN bad for GAE
+        query = (table[field].like('%' + value + '%')) & (table['group_type'].belongs(belongs))
+        item = db(query).select().json()
+        
+    response.view = 'plain.html'
+    return dict(item=item)

@@ -62,3 +62,18 @@ def feature():
 def refresh():
     response.refresh = '<noscript><meta http-equiv="refresh" content="2; url=' + URL(r=request, c='budget', f='item') + '" /></noscript>' 
     return dict()
+
+def css():
+    items = crud.select(db.pr_person, _id='myid', _class='myclass')
+    form = crud.create(db.pr_person)
+    form['_class'] = 'my2class'
+    form['_id'] = 'my2id'
+    return dict(items=items, form=form)
+    
+def type():
+    table = db.msg_group_type
+    table.name.represent = lambda name: T(name)
+    items = crud.select(table)
+    table = db.msg_group
+    form = crud.create(table)
+    return dict(form=form, items=items)

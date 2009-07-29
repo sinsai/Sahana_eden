@@ -2,8 +2,16 @@
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
+<<<<<<< TREE
     $("#msg_email_outbox_group_id").autocomplete('{{=URL(r=request, c='msg', f='group', args='search', vars={'format':'json', 'filter':'~', 'field':'name'})}}', {
     matchContains: true,
+=======
+    // Hide the real Input Row
+    $("#msg_email_outbox_group_id__row").hide();
+    // Autocomplete-enable the Dummy Input
+    $("#dummy").autocomplete('{{=URL(r=request, c='msg', f='group_search', vars={'type':'email'})}}', {
+        matchContains: true,
+>>>>>>> MERGE-SOURCE
         dataType: 'json',
         parse: function(data) {
             var rows = new Array();

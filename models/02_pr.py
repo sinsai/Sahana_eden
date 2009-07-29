@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Person Registry (VITA)
+# Sahanapy VITA - Part 02_pr: Person Registry
 #
 # created 2009-07-15 by nursix
 #
@@ -26,6 +26,36 @@ if not len(db().select(db[table].ALL)):
     )
 
 #
+# Field options ---------------------------------------------------------------
+#
+pr_person_gender_opts = {
+    1:T('unknown'),
+    2:T('female'),
+    3:T('male')
+    }
+
+opt_pr_gender = SQLTable(None, 'opt_pr_gender',
+                    db.Field('opt_pr_gender','integer',
+                    requires = IS_IN_SET(pr_person_gender_opts),
+                    default = 1,
+                    represent = lambda opt: opt and pr_person_gender_opts[opt]))
+
+pr_person_age_group_opts = {
+    1:T('unknown'),
+    2:T('infant (0-1)'),
+    3:T('child (2-11)'),
+    4:T('adolescent (12-20)'),
+    5:T('adult (21-50)'),
+    6:T('senior (50+)')
+    }
+
+opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
+                    db.Field('opt_pr_age_group','integer',
+                    requires = IS_IN_SET(pr_person_age_group_opts),
+                    default = 1,
+                    represent = lambda opt: opt and pr_person_age_group_opts[opt]))
+
+#
 # Person Entity ---------------------------------------------------------------
 #
 resource = 'pentity'
@@ -42,66 +72,42 @@ pentity_id = SQLTable(None, 'pentity_id',
                 ))
 
 #
+# Person Status
+#
+resource = 'status'
+table = module + '_' + resource
+db.define_table(table,
+                Field('individual', 'boolean', default=True),
+                Field('status'),
+                Field('value'),
+                migrate=migrate)
+
+if not len(db().select(db[table].ALL)): 
+   db[table].insert( individual=True, status='Vitality', value='alive' )
+   db[table].insert( individual=True, status='Vitality', value='deceased' )
+   db[table].insert( individual=True, status='Vitality', value='unknown' )
+
+# Reusable field for other tables to reference
+opt_pr_status = SQLTable(None, 'opt_pr_status',
+                    db.Field('opt_pr_status', db.pr_status,
+                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_status.id', '%(status)s: %(value)s')),
+                    represent = lambda id: (id and [db(db.pr_status.id==id).select()[0].value] or ["None"])[0],
+                    comment = None,
+                    ondelete = 'RESTRICT'
+                    ))
+
+#
 # Person Entity Status (Sahana legacy)
 #
 resource = 'pentity_status'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 pentity_id,
-                Field('role'),
-                Field('status'),
+                opt_pr_status,
                 migrate=migrate)
 
 #
 # Persons ---------------------------------------------------------------------
-#
-resource='sex'
-table=module+'_'+resource
-db.define_table(table,
-                db.Field('name', notnull=True)
-               )
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-
-if not len(db().select(db[table].ALL)):
-   db[table].insert(name = "female")
-   db[table].insert(name = "male")
-   db[table].insert(name = "unknown")
-
-# Reusable field for other tables to reference
-opt_pr_sex = SQLTable(None, 'opt_pr_sex',
-                    db.Field('opt_pr_sex', db.pr_sex,
-                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_sex.id', 'pr_sex.name')),
-                    represent = lambda id: (id and [db(db.pr_sex.id==id).select()[0].name] or ["None"])[0],
-                    comment = None,
-                    ondelete = 'RESTRICT'
-                    ))
-
-resource='age_group'
-table=module+'_'+resource
-db.define_table(table,
-                db.Field('name', notnull=True)
-               )
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-
-if not len(db().select(db[table].ALL)):
-   db[table].insert(name = "unknown")
-   db[table].insert(name = "infant (0-1)")
-   db[table].insert(name = "child (2-11)")
-   db[table].insert(name = "adolescent (12-20)")
-   db[table].insert(name = "adult (21-50)")
-   db[table].insert(name = "senior (50+)")
-
-# Reusable field for other tables to reference
-opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
-                            db.Field('opt_pr_age_group', db.pr_age_group,
-                            requires = IS_NULL_OR(IS_IN_DB(db, 'pr_age_group.id', 'pr_age_group.name')),
-                            represent = lambda id: (id and [db(db.pr_age_group.id==id).select()[0].name] or ["None"])[0],
-                            comment = None,
-                            ondelete = 'RESTRICT'
-                            ))
-
-#
-# Person
 #
 resource = 'person'
 table = module + '_' + resource
@@ -111,21 +117,25 @@ db.define_table(table, timestamp,
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
                 Field('preferred_name'),                # how the person uses to be called
-                opt_pr_sex,                             # sex
-                opt_pr_age_group,                       # age group
+                opt_pr_gender,
+                opt_pr_age_group,
                 Field('email', unique=True),            # Needed for AAA (change this!)
                 Field('mobile_phone'),                  # Needed for SMS (change this!)
                 Field('comment'),                       # comment
                 migrate=migrate)
 
 #db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-#db[table].pentity_id.readable = False
+#db[table].gender.label = T('Gender')
+#db[table].gender.requires = IS_IN_SET( pr_person_gender_opts )
+#db[table].gender.represent = lambda opt: pr_person_gender_opts[opt]
+#db[table].age_group.label = T('Age group')
+#db[table].age_group.requires = IS_IN_SET( pr_person_age_group_opts )
+#db[table].age_group.represent = lambda opt: pr_person_age_group_opts[opt]
+db[table].pentity_id.readable = False
 db[table].pentity_id.writable = False
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment = SPAN("*", _class="req")
 #db[table].last_name.label = T("Family Name")
-db[table].opt_pr_sex.label = T("Sex")
-db[table].opt_pr_age_group.label = T("Age Group")
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
@@ -293,13 +303,29 @@ db.define_table(table, timestamp,
                 Field('comment'),                               # optional comment
                 migrate=migrate)
 
-db[table].opt_pr_group_type.label = T("Group type")
 # TODO: restrictions and requirements
 db[table].is_group.readable = False
 db[table].is_group.writable = False
-#db[table].pentity_id.readable = False
+db[table].pentity_id.readable = False
 db[table].pentity_id.writable = False
 # TODO: CRUD strings
+db[table].opt_pr_group_type.label = T("Group type")
+db[table].group_name.label = T("Group name")
+db[table].group_description.label = T("Group description")
+title_create = T('Add Group')
+title_display = T('Group Details')
+title_list = T('List Groups')
+title_update = T('Edit Group')
+title_search = T('Search Groups')
+subtitle_create = T('Add New Group')
+subtitle_list = T('Groups')
+label_list_button = T('List Groups')
+label_create_button = T('Add Group')
+msg_record_created = T('Group added')
+msg_record_modified = T('Group updated')
+msg_record_deleted = T('Group deleted')
+msg_list_empty = T('No Groups currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # TODO: reusable id field
 # Reusable field for other tables to reference
 group_id = SQLTable(None, 'group_id',
@@ -387,45 +413,37 @@ db.define_table(table, timestamp, uuidstamp,
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 #
-# Forms -----------------------------------------------------------------------
-#
-
-#
 # Callback functions ----------------------------------------------------------
 #
 
-#
-# Create Person Entity:
-#   for on-validation callback in person/create or group/create through
-#   RESTlike CRUD controller, creates or deletes a person entity as needed
-#
-#   This requires an onvalidation callback from delete action, which is
-#   not provided by the CRUD controller, see workaround in shn_rest_controller
-#
-def shn_pentity(form, is_group):
+# pentity_ondelete
+# deletes a pentity record if the corresponding person/group record gets deleted
+# designed as callback function for crud.delete (=> requires web2py/tools.py patch)
+def shn_pentity_ondelete(record):
+    if record.pentity_id:
+        del db.pr_pentity[record.pentity_id]
+    else:
+        #ignore
+        pass
+    return
+
+# pentity_onvalidation
+# creates a pentity record if a new person/group record is created
+# calls shn_pentity_ondelete() on delete action from update view
+# designed as callback function for crud.create and crud.update
+def shn_pentity_onvalidation(form, is_group=False):
     if len(request.args) == 0 or request.args[0] == 'create':
         # this is a create action either directly or from list view
         pentity_id = db['pr_pentity'].insert(is_group = is_group)
         if pentity_id:
             form.vars.pentity_id = pentity_id
     elif len(request.args) > 0:
-        if request.args[0] == 'delete' or form.vars.delete_this_record:
-            # this is a delete action either directly or from update
+        if request.args[0] == 'update' and form.vars.delete_this_record:
+            # this is a delete action from update
             if len(request.args) > 1:
                 my_id = request.args[1]
                 if is_group:
-                    my_pentity_id = db.pr_group[my_id].pentity_id
-                    del db.pr_pentity[my_pentity_id]
+                    shn_pentity_ondelete(db.pr_group[my_id])
                 else:
-                    my_pentity_id = db.pr_person[my_id].pentity_id
-                    del db.pr_pentity[my_pentity_id]
-            else:
-                # no ID passed - ignore (no ID - no action)
-                pass
-        else:
-            # must be update action - ignore
-            pass
-    else:
-        # this will never happen - ignore
-        pass
+                    shn_pentity_ondelete(db.pr_person[my_id])
     return

@@ -254,3 +254,29 @@ def group_update_users():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f='group_user', args=[group]))
 
+def group_search():
+    """Do a search of groups which match a type
+    Used for auto-completion
+    """
+    item = ''
+    if not 'type' in request.vars:
+        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Type!"}}'
+    if request.vars.type == 'email':
+            # Types 'Email' & 'Both'
+            belongs = (1, 3)
+    elif request.vars.type == 'sms':
+            # Types 'SMS' & 'Both'
+            belongs = (2, 3)
+    else:
+        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported type! Supported types: email, sms"}}'
+    if not item:
+        table = db.msg_group
+        field = 'name'
+        # JQuery Autocomplete uses 'q' instead of 'value'
+        value = request.vars.q
+        # JOIN bad for GAE
+        query = (table[field].like('%' + value + '%')) & (table['group_type'].belongs(belongs))
+        item = db(query).select().json()
+        
+    response.view = 'plain.html'
+    return dict(item=item)

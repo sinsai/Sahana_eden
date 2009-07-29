@@ -6,10 +6,10 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
-#    [T('Find'), False, URL(r=request, f='find'),[
-#        [T('Add Report'), False, URL(r=request, f='find', args='create')],
-#        [T('List Reports'), False, URL(r=request, f='find')]
-#    ]],
+    [T('Find'), False, URL(r=request, f='find'),[
+        [T('Add Report'), False, URL(r=request, f='find', args='create')],
+        [T('List Reports'), False, URL(r=request, f='find')]
+    ]],
     [T('Recovery'), False, URL(r=request, f='recovery'),[
         [T('Add Body'), False, URL(r=request, f='body', args='create')],
         [T('List Bodies'), False, URL(r=request, f='body')]
@@ -38,6 +38,10 @@ response.menu_options = [
 def index():
     "Module's Home Page"
     return dict(module_name=module_name)
+
+def find():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'find')
 
 def body():
     "RESTlike CRUD controller"

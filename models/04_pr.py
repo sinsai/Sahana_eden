@@ -9,7 +9,7 @@
 module = 'pr'
 
 #
-# Field options ---------------------------------------------------------------
+# Option Fields ---------------------------------------------------------------
 #
 
 pr_pitem_class_opts = {
@@ -94,10 +94,11 @@ resource = 'presence'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 pitem_id,                           # Personal Item Reference
+                location_id,                        # Location
                 Field('time_start', 'datetime'),    # Start time
                 Field('time_end', 'datetime'),      # End time
                 Field('description'),               # Short Description
-                Field('details','text'),            # Detailed Description
+#                Field('details','text'),            # Detailed Description
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)

@@ -111,6 +111,12 @@ def case():
 # Interactive functions -------------------------------------------------------
 #
 
+def update_presence():
+
+
+    
+    return dict(module_name=module_name)
+
 #
 # Case Management
 #

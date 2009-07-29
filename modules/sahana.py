@@ -223,6 +223,10 @@ class AuthS3(Auth):
         Overrides Web2Py's login() to use custom flash styles
         
         returns a login form
+
+        .. method:: Auth.login([next=DEFAULT [, onvalidation=DEFAULT
+            [, onaccept=DEFAULT [, log=DEFAULT]]]])
+
         """
 
         table_user = self.settings.table_user
@@ -235,8 +239,7 @@ class AuthS3(Auth):
         request = self.environment.request
         response = self.environment.response
         session = self.environment.session
-        if not request.vars._next:
-            request.vars._next = request.env.http_referer or ''
+        passfield = self.settings.password_field
         if next == DEFAULT:
             next = request.vars._next or self.settings.login_next
         if onvalidation == DEFAULT:
@@ -244,70 +247,93 @@ class AuthS3(Auth):
         if onaccept == DEFAULT:
             onaccept = self.settings.login_onaccept
         if log == DEFAULT:
-            log = self.settings.login_log
-        password = self.settings.password_field
-        form = SQLFORM(
-            table_user,
-            fields=[username, password],
-            hidden=dict(_next=request.vars._next),
-            showid=self.settings.showid,
-            submit_button=self.settings.submit_button,
-            delete_label=self.settings.delete_label,
-            )
-        if FORM.accepts(form, request.vars, session,
-                        formname='login',
-                        onvalidation=onvalidation):
+            log = self.messages.login_log
 
-            user = None # default                
-            if self.settings.login_methods[0] == self:
-                users = self.db(table_user[username] == form.vars[username])\
-                    .select()
-                if users:
-                    ## user in db, check if registration pending or blocked
-                    user = users[0]
-                    if user.registration_key == 'pending':
-                        response.warning = self.messages.registration_pending
-                        return form
-                    elif user.registration_key == 'disabled':
-                        response.error = self.messages.login_disabled
-                        return form
-                    elif user.registration_key:
-                        response.warning = self.messages.registration_verifying
-                        return form
-                    if user[password] != form.vars.get(password,''):
-                        user = None
-            if not user:
-                ## try alternate login methods
-                for login_method in self.settings.login_methods:
-                    if login_method != self and \
-                            login_method(request.vars[username],
-                                         request.vars.password):
-                        if not self in self.settings.login_methods:
-                            form.vars[password] = None # do not store password
-                        user = self.get_or_create_user(form.vars)
-                        break
-            if not user:
-                ## invalid login
-                session.error = self.messages.invalid_login
-                redirect(URL(r=request, args=request.args))
-                
+        user = None # default
+
+        # do we use our own login form, or from a central source?
+        if self.settings.login_form == self:
+            form = SQLFORM(
+                table_user,
+                fields=[username, passfield],
+                hidden=dict(_next=request.vars._next),
+                showid=self.settings.showid,
+                submit_button=self.messages.submit_button,
+                delete_label=self.messages.delete_label,
+                )
+            accepted_form = False
+            if FORM.accepts(form, request.vars, session,
+                            formname='login',
+                            onvalidation=onvalidation):
+                accepted_form = True
+                if self.settings.login_methods[0] == self:
+                    users = self.db(table_user[username] == \
+                        form.vars[username]).select()
+                    if users:
+                        ## user in db, check if registration pending or disabled
+                        user = users[0]
+                        if user.registration_key == 'pending':
+                            response.warning = self.messages.registration_pending
+                            return form
+                        elif user.registration_key == 'disabled':
+                            response.error = self.messages.login_disabled
+                            return form
+                        elif user.registration_key:
+                            response.warning = \
+                                self.messages.registration_verifying
+                            return form
+                        if user[passfield] != form.vars.get(passfield, ''):
+                            user = None
+                if not user:
+                    ## try alternate login methods
+                    for login_method in self.settings.login_methods:
+                        if login_method != self and \
+                                login_method(request.vars[username],
+                                             request.vars[passfield]):
+                            if not self in self.settings.login_methods:
+                                form.vars[passfield]=None #do not store password
+                            user = self.get_or_create_user(form.vars)
+                            break
+                if not user:
+                    ## invalid login
+                    session.error = self.messages.invalid_login
+                    redirect(self.url(args=request.args))
+        else:
+            # use a central authentication server
+            cas = self.settings.login_form
+            cas_user = cas.get_user()
+            if cas_user:
+                cas_user[passfield] = None
+                user = self.get_or_create_user(cas_user)
+            else:
+                # we need to pass through login again before going on
+                next = URL(r=request) + '?_next=' + next
+                redirect(cas.login_url(next))
+
+        # process authenticated users
+        if user:
             user = Storage(table_user._filter_fields(user, id=True))
             session.auth = Storage(user=user, last_visit=request.now,
                                    expiration=self.settings.expiration)
             self.user = user
-            session.flash = self.messages.logged_in
-            if log and self.user:
-                self.log_event(log % self.user)
-            if onaccept:
-                onaccept(form)
-            if not next:
-                next = URL(r=request)
-            elif next and not next[0] == '/' and next[:4] != 'http':
-                next = URL(r=request, f=next.replace('[id]',
-                           str(form.vars.id)))
+            session.confirmation = self.messages.logged_in
+        if log and self.user:
+            self.log_event(log % self.user)
+
+        # how to continue
+        if self.settings.login_form == self:
+            if accepted_form:
+                if onaccept:
+                    onaccept(form)
+                if isinstance(next, (list, tuple)): ### fix issue with 2.6
+                    next = next[0]
+                if next and not next[0] == '/' and next[:4] != 'http':
+                    next = self.url(next.replace('[id]', str(form.vars.id)))
+                redirect(next)
+            table_user[username].requires = old_requires
+            return form
+        else:
             redirect(next)
-        table_user[username].requires = old_requires
-        return form
 
     def register(
         self,
@@ -319,13 +345,20 @@ class AuthS3(Auth):
         """
         Overrides Web2Py's register() to add new functionality:
             * Checks whether registration is permitted
-            * Registering automatically logs you in
             * Custom Flash styles
-
+            
         returns a registration form
+
+        .. method:: Auth.register([next=DEFAULT [, onvalidation=DEFAULT
+            [, onaccept=DEFAULT [, log=DEFAULT]]]])
+
+
         """
+
         request = self.environment.request
+        response = self.environment.response
         session = self.environment.session
+        
         # S3: Don't allow registration if disabled
         db = self.db
         self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
@@ -333,11 +366,11 @@ class AuthS3(Auth):
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=['login']))
 
-        response = self.environment.response
+
         if self.is_logged_in():
             redirect(self.settings.logged_url)
-        if not request.vars._next:
-            request.vars._next = request.env.http_referer or ''
+
+
         if next == DEFAULT:
             next = request.vars._next or self.settings.register_next
         if onvalidation == DEFAULT:
@@ -345,20 +378,27 @@ class AuthS3(Auth):
         if onaccept == DEFAULT:
             onaccept = self.settings.register_onaccept
         if log == DEFAULT:
-            log = self.settings.register_log
+            log = self.messages.register_log
         user = self.settings.table_user
-        password = self.settings.password_field
+        passfield = self.settings.password_field
         form = SQLFORM(user, hidden=dict(_next=request.vars._next),
                        showid=self.settings.showid,
-                       submit_button=self.settings.submit_button,
-                       delete_label=self.settings.delete_label)
-        td = form.element(_id="%s_%s__row" % (user._tablename, password))[1]
-        td.append(BR())
-        td.append(INPUT(_name="password2",
-                        _type="password",
-                        requires=IS_EXPR('value==%s' % \
-                        repr(request.vars.get(password, None)),
-                        error_message=self.messages.mismatched_password)))
+                       submit_button=self.messages.submit_button,
+                       delete_label=self.messages.delete_label)
+        for i, row in enumerate(form[0].components):
+            item = row[1][0]
+            if isinstance(item, INPUT) and item['_name'] == passfield:
+                form[0].insert(i+1, TR(
+                        LABEL(self.messages.verify_password+':'),
+                        INPUT(_name="password_two",
+
+
+
+                              _type="password",
+                              requires=IS_EXPR('value==%s' % \
+                               repr(request.vars.get(passfield, None)),
+                        error_message=self.messages.mismatched_password)),
+                '', _class='%s_%s__row' % (user, 'password_two')))
         if self.settings.captcha != None:
             form[0].insert(-1, TR('', self.settings.captcha, ''))
 
@@ -381,14 +421,14 @@ class AuthS3(Auth):
                     self.db.rollback()
                     response.error = self.messages.invalid_email
                     return form
-                session.flash = self.messages.email_sent
+                session.confirmation = self.messages.email_sent
             elif self.settings.registration_requires_approval:
                 user[form.vars.id] = dict(registration_key='pending')
                 session.warning = self.messages.registration_pending
             else:
                 user[form.vars.id] = dict(registration_key='')
-                session.flash = self.messages.registration_successful
-                # S3: Login automatically upon registration
+                session.confirmation = self.messages.registration_successful
+
                 table_user = self.settings.table_user
                 if 'username' in table_user.fields:
                     username = 'username'
@@ -408,10 +448,13 @@ class AuthS3(Auth):
             if onaccept:
                 onaccept(form)
             if not next:
-                next = URL(r=request)
+                next = self.url(args = request.args)
+            elif isinstance(next, (list, tuple)): ### fix issue with 2.6
+                next = next[0]
+
             elif next and not next[0] == '/' and next[:4] != 'http':
-                next = URL(r=request, f=next.replace('[id]',
-                           str(form.vars.id)))
+                next = self.url(next.replace('[id]', str(form.vars.id)))
+
             redirect(next)
         return form
 

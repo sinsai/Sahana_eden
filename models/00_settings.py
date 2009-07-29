@@ -364,7 +364,7 @@ if not len(db().select(db[table].ALL)):
         module_type=3,
         access='',
         description="Disaster Victim Identification",
-        enabled='True'
+        enabled='False'
     )
     db[table].insert(
         name="dvr",
@@ -376,8 +376,8 @@ if not len(db().select(db[table].ALL)):
         enabled='False'
     )
     db[table].insert(
-        name="fm",
-        name_nice="Fatality Management",
+        name="hrm",
+        name_nice="Human Remains Management",
         priority=7,
         module_type=3,
         access='',

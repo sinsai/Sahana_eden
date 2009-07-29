@@ -280,3 +280,6 @@ def group_search():
         
     response.view = 'plain.html'
     return dict(item=item)
+
+def admin():
+    redirect(URL())

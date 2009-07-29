@@ -350,13 +350,13 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
     )
     db[table].insert(
-        name="vita",
-        name_nice="Person Tracking and Tracing",
+        name="dvi",
+        name_nice="Disaster Victim Identification",
         priority=5,
         module_type=3,
         access='',
-        description="Person Tracking and Tracing",
-        enabled='True'
+        description="Disaster Victim Identification",
+        enabled='False'
     )
     db[table].insert(
         name="dvr",
@@ -368,9 +368,18 @@ if not len(db().select(db[table].ALL)):
         enabled='False'
     )
     db[table].insert(
+        name="hrm",
+        name_nice="Human Remains Management",
+        priority=7,
+        module_type=3,
+        access='',
+        description="Manages Human Remains",
+        enabled='True'
+    )
+    db[table].insert(
         name="or",
         name_nice="Organization Registry",
-        priority=7,
+        priority=8,
         module_type=4,
         access='',
         description="Lists 'who is doing what & where'. Allows relief agencies to coordinate their activities",
@@ -379,7 +388,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="cr",
         name_nice="Shelter Registry",
-        priority=8,
+        priority=9,
         module_type=4,
         access='',
         description="Tracks the location, distibution, capacity and breakdown of victims in Shelters",
@@ -388,7 +397,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="vol",
         name_nice="Volunteer Registry",
-        priority=9,
+        priority=10,
         module_type=4,
         access='',
         description="Manage volunteers by capturing their skills, availability and allocation",
@@ -397,7 +406,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="lms",
         name_nice="Logistics Management System",
-        priority=10,
+        priority=11,
         module_type=4,
         access='',
         description="Several sub-modules that work together to provide for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.",
@@ -406,7 +415,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="rms",
         name_nice="Request Management",
-        priority=11,
+        priority=12,
         module_type=4,
         access='',
         description="Tracks requests for aid and matches them against donors who have pledged aid",
@@ -415,7 +424,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="budget",
         name_nice="Budgeting Module",
-        priority=12,
+        priority=13,
         module_type=4,
         access='',
         description="Allows a Budget to be drawn up",
@@ -424,7 +433,7 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="msg",
         name_nice="Messaging Module",
-        priority=13,
+        priority=14,
         module_type=5,
         access='',
         description="Sends & Receives Alerts via Email & SMS",

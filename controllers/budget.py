@@ -245,7 +245,7 @@ def kit_spreadsheet():
     try:
         import xlwt
     except ImportError:
-        session.error = T('xlwt module not available within the running Python  - this needs installing to do XLS Reporting!')
+        session.error = T('xlwt module not available within the running Python - this needs installing to do XLS Reporting!')
         redirect(URL(r=request, c='kit'))
     
     import StringIO

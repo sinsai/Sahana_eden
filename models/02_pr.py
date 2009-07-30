@@ -43,6 +43,7 @@ opt_pr_gender = SQLTable(None, 'opt_pr_gender',
                     db.Field('opt_pr_gender','integer',
                     requires = IS_IN_SET(pr_person_gender_opts),
                     default = 1,
+                    label = T('Gender'),
                     represent = lambda opt: opt and pr_person_gender_opts[opt]))
 
 #
@@ -62,6 +63,7 @@ opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                     db.Field('opt_pr_age_group','integer',
                     requires = IS_IN_SET(pr_person_age_group_opts),
                     default = 1,
+                    label = T('Age Group'),
                     represent = lambda opt: opt and pr_person_age_group_opts[opt]))
 
 #
@@ -79,6 +81,7 @@ opt_pr_id_type = SQLTable(None, 'opt_pr_id_type',
                     db.Field('opt_pr_id_type','integer',
                     requires = IS_IN_SET(pr_id_type_opts),
                     default = 1,
+                    label = T('ID type'),
                     represent = lambda opt: opt and pr_id_type_opts[opt]))
 
 #
@@ -149,7 +152,7 @@ pentity_id = SQLTable(None, 'pentity_id',
                 Field('pentity_id', db.pr_pentity,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(pr_tag_label)s (%(id)s)')),
                 represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None"])[0],
-                comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
+#                comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
                 ondelete = 'RESTRICT',
                 readable = False,
                 writable = False
@@ -166,7 +169,7 @@ pentity_field_set = SQLTable(None, 'pentity_id',
                     Field('pentity_id', db.pr_pentity,
                     requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(id)s (%(pr_tag_label)s)')),
                     represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0],
-                    comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
+#                    comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
                     ondelete = 'RESTRICT',
                     readable = False,
                     writable = False),

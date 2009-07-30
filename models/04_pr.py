@@ -83,6 +83,21 @@ db[table].time_start.label = T('Date and Time')
 db[table].pentity_id.readable=True
 db[table].pentity_id.writable=True
 db[table].pentity_id.label = T('Tag Label (ID)')
+
+title_create = T('Presence')
+title_display = T('Presence Details')
+title_list = T('List Presence Records')
+title_update = T('Edit Presence Details')
+title_search = T('Search Presence Records')
+subtitle_create = T('Add New Presence Record')
+subtitle_list = T('Presence Records')
+label_list_button = T('List Presence Records')
+label_create_button = T('Add Presence Record')
+msg_record_created = T('Presence Record added')
+msg_record_modified = T('Presence Record updated')
+msg_record_deleted = T('Presence Record deleted')
+msg_list_empty = T('No presence records currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 #
 # Case ------------------------------------------------------------------------
 #

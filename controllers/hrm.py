@@ -44,8 +44,9 @@ def find():
     return shn_rest_controller(module, 'find')
 
 def body():
+    crud.settings.delete_onvalidation=shn_pitem_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'body')
+    return shn_rest_controller(module, 'body', onvalidation=lambda form: shn_pitem_onvalidation(form, resource='hrm_body', item_class=2))
 
 #def storage():
 #    "RESTlike CRUD controller"

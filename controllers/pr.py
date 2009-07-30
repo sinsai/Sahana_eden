@@ -52,7 +52,6 @@ response.menu_options = [
         [T('List Status'), False, URL(r=request, f='pentity_status')]
     ]],
     [T('Tracking and Tracing'), False, '#',[
-        [T('Add Item'), False, URL(r=request, f='pitem', args='create')],
         [T('List Items'), False, URL(r=request, f='pitem')],
         [T('Add Presence'), False, URL(r=request, f='presence', args='create')],
         [T('List Presences'), False, URL(r=request, f='presence')]
@@ -99,7 +98,7 @@ def contact_to_person():
     return shn_rest_controller(module, 'contact_to_person')
 def pitem():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'pitem', main='tag_label', extra='description')
+    return shn_rest_controller(module, 'pitem', main='tag_label', extra='description', listadd=False, deletable=False)
 def presence():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')

@@ -24,3 +24,4 @@ static/*/.svn/*
 static/*test*
 tests/.cherrypy/*
 errors/*
+uploads/*

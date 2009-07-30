@@ -44,14 +44,14 @@ def index():
 def person():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_pentity_onvalidation(form, resource='pr_person', item_class=1))
+    return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_pentity_onvalidation(form, resource='pr_person', entity_class=1))
 def identity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'identity')
 def group():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, resource='pr_person', item_class=2))
+    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, resource='pr_person', entity_class=2))
 def group_membership():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group_membership')

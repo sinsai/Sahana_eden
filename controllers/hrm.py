@@ -46,7 +46,7 @@ def find():
 def body():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'body', onvalidation=lambda form: shn_pentity_onvalidation(form, resource='hrm_body', item_class=3))
+    return shn_rest_controller(module, 'body', onvalidation=lambda form: shn_pentity_onvalidation(form, resource='hrm_body', entity_class=3))
 
 #def storage():
 #    "RESTlike CRUD controller"

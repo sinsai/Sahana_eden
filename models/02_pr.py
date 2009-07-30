@@ -26,8 +26,13 @@ if not len(db().select(db[table].ALL)):
     )
 
 #
-# Field options ---------------------------------------------------------------
+# Option fields ---------------------------------------------------------------
 #
+
+#
+# Gender ------------------------------
+#
+
 pr_person_gender_opts = {
     1:T('unknown'),
     2:T('female'),
@@ -39,6 +44,10 @@ opt_pr_gender = SQLTable(None, 'opt_pr_gender',
                     requires = IS_IN_SET(pr_person_gender_opts),
                     default = 1,
                     represent = lambda opt: opt and pr_person_gender_opts[opt]))
+
+#
+# Age Groups --------------------------
+#
 
 pr_person_age_group_opts = {
     1:T('unknown'),
@@ -54,6 +63,23 @@ opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                     requires = IS_IN_SET(pr_person_age_group_opts),
                     default = 1,
                     represent = lambda opt: opt and pr_person_age_group_opts[opt]))
+
+#
+# ID Types ----------------------------
+#
+
+pr_id_type_opts = {
+    1:T('Passport'),
+    2:T('National ID Card'),
+    3:T('Driving License'),
+    4:T('Other')
+    }
+
+opt_pr_id_type = SQLTable(None, 'opt_pr_id_type',
+                    db.Field('opt_pr_id_type','integer',
+                    requires = IS_IN_SET(pr_id_type_opts),
+                    default = 1,
+                    represent = lambda opt: opt and pr_id_type_opts[opt]))
 
 #
 # Person Entity ---------------------------------------------------------------
@@ -120,17 +146,13 @@ db.define_table(table, timestamp,
                 opt_pr_gender,
                 opt_pr_age_group,
                 Field('email', unique=True),            # Needed for AAA (change this!)
-                Field('mobile_phone'),                  # Needed for SMS (change this!)
+                Field('mobile_phone','integer'),        # Needed for SMS (change this!)
                 Field('comment'),                       # comment
                 migrate=migrate)
 
 #db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-#db[table].gender.label = T('Gender')
-#db[table].gender.requires = IS_IN_SET( pr_person_gender_opts )
-#db[table].gender.represent = lambda opt: pr_person_gender_opts[opt]
-#db[table].age_group.label = T('Age group')
-#db[table].age_group.requires = IS_IN_SET( pr_person_age_group_opts )
-#db[table].age_group.represent = lambda opt: pr_person_age_group_opts[opt]
+db[table].opt_pr_gender.label = T('Gender')
+db[table].opt_pr_age_group.label = T('Age group')
 db[table].pentity_id.readable = False
 db[table].pentity_id.writable = False
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
@@ -215,26 +237,6 @@ db.define_table(table, timestamp,
 #
 # Identities ------------------------------------------------------------------
 #
-resource='id_type'
-table=module+'_'+resource
-db.define_table(table,
-                db.Field('name', notnull=True)
-               )
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-
-if not len(db().select(db[table].ALL)):
-   db[table].insert(name = "Passport")
-   db[table].insert(name = "National ID Card")
-   db[table].insert(name = "Driving License")
-
-# Reusable field for other tables to reference
-opt_pr_id_type = SQLTable(None, 'opt_id_type',
-                    db.Field('id_type', db.pr_id_type,
-                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_id_type.id', 'pr_id_type.name')),
-                    represent = lambda id: (id and [db(db.pr_id_type.id==id).select()[0].name] or ["None"])[0],
-                    comment = None,
-                    ondelete = 'RESTRICT'
-                    ))
 
 #
 # Identity

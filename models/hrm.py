@@ -97,10 +97,7 @@ hrm_find_id = SQLTable(None, 'hrm_find_id',
 resource = 'body'
 table = module + '_' + resource
 db.define_table(table, timestamp, #uuidstamp,
-#                pitem_id,
-#                opt_pr_tag_type,
-#                Field('tag_label'),
-                pitem_fields,
+                pitem_field_set,
 #                db.Field('date_of_find', 'date'),
                 hrm_find_id,                                # Associated find report (if any)
                 db.Field('date_of_recovery', 'date'),

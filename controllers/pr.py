@@ -20,8 +20,8 @@ response.menu_options = [
 #    ]],
     [T('Persons'), False, URL(r=request, f='person'),[
         [T('Add Person'), False, URL(r=request, f='person', args='create')],
-        [T('List People'), False, URL(r=request, f='person')],
-        [T('Search People'), False, URL(r=request, f='person', args='search')]
+        [T('List Persons'), False, URL(r=request, f='person')],
+        [T('Search Persons'), False, URL(r=request, f='person', args='search')]
     ]],
     [T('Groups'), False, URL(r=request, f='group'),[
         [T('Add Group'), False, URL(r=request, f='group', args='create')],
@@ -51,11 +51,19 @@ response.menu_options = [
         [T('Add Status To Person'), False, URL(r=request, f='pentity_status', args='create')],
         [T('List Status'), False, URL(r=request, f='pentity_status')]
     ]],
+    [T('Findings'), False, '#',[
+        [T('Add Finding'), False, URL(r=request, f='finding', args='create')],
+        [T('List Findings'), False, URL(r=request, f='finding')]
+    ]],
     [T('Tracking and Tracing'), False, '#',[
         [T('List Items'), False, URL(r=request, f='pitem')],
         [T('Add Presence'), False, URL(r=request, f='presence', args='create')],
         [T('List Presences'), False, URL(r=request, f='presence')]
-    ]]
+    ]],
+    [T('Images'), False, URL(r=request, f='images'),[
+        [T('Add Image'), False, URL(r=request, f='image', args='create')],
+        [T('List Images'), False, URL(r=request, f='image')]
+    ]],
 ]
 
 # S3 framework functions
@@ -79,6 +87,14 @@ def group():
 def pentity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'pentity')
+
+def finding():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'finding')
+
+def image():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'image')
 
 def group_member():
     "RESTlike CRUD controller"
@@ -128,6 +144,7 @@ def cases():
     else:
         method = str.lower(request.args[0])
         if method == 'my':
+            #  session.auth.user.id
             pass
         elif method == 'all':
             pass
@@ -147,12 +164,54 @@ def cases():
 #
 def select():
 
-    form=FORM(TABLE(TR("ID, Name or Label:",INPUT(_type="text",_name="label",requires=IS_NOT_EMPTY())),
-            TR("",INPUT(_type="submit",_value="Search"))))
+    if not session.pr:
+        session.pr = Storage()
+
+    if request.vars.person_id:
+        record = db.pr_person[request.vars.person_id]
+        if record:
+            session.pr.current_person = record.id
+        del request.vars['person_id']
+        redirect( URL( r=request ))
+
+    if not session.pr.current_person:
+        print 'No person currently selected'
+        person_name="No person selected"
+    else:
+        print 'Person ' + str(session.pr.current_person) + ' currently selected'
+        person_name=db.pr_person[session.pr.current_person]['first_name']+' '+db.pr_person[session.pr.current_person]['last_name']
+
+    form=FORM(TABLE(
+            TR("", person_name,
+                INPUT(_name="clr_btn", _type="submit", _value='Clear')
+            ),
+            TR("ID, Name or Label:",
+                INPUT(_type="text",_name="label"),
+                INPUT(_name="sbm_btn", _type="submit",_value='Search')
+                )))
 
     items=None
 
     if form.accepts(request.vars,session):
-        items = crud.select(db.pr_person, db.pr_pitem.tag_label.like(form.vars.label), truncate=48, _id='list', _class='display')
+        print form.vars
+        if form.vars.clr_btn=='':
+            session.pr.current_person = db.pr_person[1].id
+            redirect( URL( r=request ))
+        else:
+            if session.pr.current_person:
+                del session.pr['current_person']
+            redirect( URL( r=request ))
+
+    if session.pr.current_person:
+        items=TABLE(
+                TR('Currently selected: '),
+                TR(db.pr_person[session.pr.current_person]['first_name'],
+                    db.pr_person[session.pr.current_person]['last_name']))
 
     return dict(request, title="Test", form=form, items=items)
+
+#
+# Update presence
+#
+def update_presence():
+    return dict(module_name=module_name)

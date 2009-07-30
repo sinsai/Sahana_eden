@@ -45,7 +45,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 opt_pr_pitem_class,                 # Item class
                 opt_pr_tag_type,                    # Tag type
-                Field('tag_label'),                 # Tag Label
+                Field('pr_tag_label'),              # Tag Label
                 Field('description'),               # Short Description
                 Field('details','text'),            # Detailed Description
                 Field('comment'),                   # a comment (optional)
@@ -72,21 +72,43 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 pitem_id = SQLTable(None, 'pitem_id',
                 Field('pitem_id', db.pr_pitem,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pitem.id', '%(tag_label)s: %(description)s')),
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pitem.id', '%(pr_tag_label)s: %(description)s')),
                 represent = lambda id: (id and [db(db.pr_pitem.id==id).select()[0].id] or ["None"])[0],
                 comment = DIV(A(T('Add Item'), _class='popup', _href=URL(r=request, c='pr', f='pitem', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Item|New Personal Presence, Body or Item."))),
                 ondelete = 'RESTRICT'
                 ))
 
-# Reusable fields for other tables
-pitem_fields = SQLTable(None, 'pitem_id',
-                Field('pitem_id', db.pr_pitem,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pitem.id', '%(tag_label)s: %(description)s')),
-                represent = lambda id: (id and [db(db.pr_pitem.id==id).select()[0].id] or ["None"])[0],
-                comment = DIV(A(T('Add Item'), _class='popup', _href=URL(r=request, c='pr', f='pitem', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Item|New Personal Presence, Body or Item."))),
-                ondelete = 'RESTRICT'),
-                opt_pr_tag_type,
-                Field('pr_tag_label', label = T('Tag Label')))
+#
+# Reusable field set for PersonItem tables
+# includes:
+#   pitem               Person Item ID      (should be invisible in forms)
+#   opt_pr_tag_type     Tag Type
+#   pr_tag_label        Tag Label
+#
+pitem_field_set = SQLTable(None, 'pitem_id',
+                    Field('pitem_id', db.pr_pitem,
+                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pitem.id', '%(pr_tag_label)s: %(description)s')),
+                    represent = lambda id: (id and [db(db.pr_pitem.id==id).select()[0].id] or ["None"])[0],
+                    comment = DIV(A(T('Add Item'), _class='popup', _href=URL(r=request, c='pr', f='pitem', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Item|New Personal Presence, Body or Item."))),
+                    ondelete = 'RESTRICT'),
+                    opt_pr_tag_type,
+                    Field('pr_tag_label', label = T('Tag Label')))
+
+#
+# Images ----------------------------------------------------------------------
+#
+resource = 'image'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                pitem_id,
+                Field('title'),
+                Field('image', 'upload', autodelete=True),
+                Field('description'),
+                Field('comment'),
+                migrate=migrate)
+
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
 #
 # PItem to PEntity ------------------------------------------------------------
 #
@@ -136,6 +158,24 @@ pcase_id = SQLTable(None, 'pcase_id',
                 ))
 
 #
+# Findings --------------------------------------------------------------------
+#
+resource = 'finding'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                pitem_id,                       # about which item?
+#                opt_pr_findings_type,           # Finding type
+                Field('description'),           # Descriptive title
+                Field('module'),                # Access module
+                Field('resource'),              # Access resource
+                Field('resource_id'),           # Access ID
+                migrate=migrate)
+
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].module.requires = IS_NULL_OR(IS_IN_DB(db, 's3_module.name', '%(name_nice)s'))
+db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name).select()[0].name_nice] or ["None"])[0]
+
+#
 # Callback functions ----------------------------------------------------------
 #
 
@@ -162,7 +202,7 @@ def shn_pitem_onvalidation(form, resource=None, item_class=1):
                 pitem_id = db['pr_pitem'].insert(
                     opt_pr_pitem_class=item_class,
                     opt_pr_tag_type=form.vars.opt_pr_tag_type,
-                    tag_label=form.vars.pr_tag_label )
+                    pr_tag_label=form.vars.pr_tag_label )
                 if pitem_id:
                     form.vars.pitem_id = pitem_id
         elif len(request.args) > 0:
@@ -176,6 +216,8 @@ def shn_pitem_onvalidation(form, resource=None, item_class=1):
                 if len(request.args) > 1:
                     my_id = request.args[1]
                     if resource:
-                        db(db.pr_pitem.id==db[resource][my_id].pitem_id).update(opt_pr_tag_type=form.vars.opt_pr_tag_type, tag_label=form.vars.pr_tag_label)
+                        db(db.pr_pitem.id==db[resource][my_id].pitem_id).update(
+                            opt_pr_tag_type=form.vars.opt_pr_tag_type,
+                            pr_tag_label=form.vars.pr_tag_label)
     return
 

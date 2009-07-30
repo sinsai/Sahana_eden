@@ -5,7 +5,11 @@
 #
 
 # How many rows to show per page in list outputs
-rowsperpage = 20
+ROWSPERPAGE = 20
+
+# Make these constants to ensure consistency
+UNAUTHORISED = T('Not authorised!')
+BADFORMAT = T('Unsupported format!')
 
 # Data conversions
 def export_csv(resource, query, record=None):
@@ -404,10 +408,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 if 'page' in request.vars:
                     # Pagination at server-side (since no JS available)
                     page = int(request.vars.page)
-                    start_record = (page - 1) * rowsperpage
-                    end_record = start_record + rowsperpage
+                    start_record = (page - 1) * ROWSPERPAGE
+                    end_record = start_record + ROWSPERPAGE
                     limitby = start_record, end_record
-                    totalpages = (db(query).count() / rowsperpage) + 1 # Fails on GAE
+                    totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
                     label_search_button = T('Search')
                     search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
                     output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
@@ -491,10 +495,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             elif representation == "rss":
                 return export_rss(module, resource, query, main, extra)
             else:
-                session.error = T("Unsupported format!")
+                session.error = BADFORMAT
                 redirect(URL(r=request))
         else:
-            session.error = T("Not authorised!")
+            session.error = UNAUTHORISED
             redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource)}))
     else:
         if request.args[0].isdigit():
@@ -545,10 +549,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     query = db[table].id == record
                     return export_rss(module, resource, query, main, extra)
                 else:
-                    session.error = T("Unsupported format!")
+                    session.error = BADFORMAT
                     redirect(URL(r=request))
             else:
-                session.error = T("Not authorised!")
+                session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['read', record])}))
         else:
             method = str.lower(request.args[0])
@@ -601,10 +605,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                             session.error = T('Unable to parse CSV file!')
                         redirect(URL(r=request))
                     else:
-                        session.error = T("Unsupported format!")
+                        session.error = BADFORMAT
                         redirect(URL(r=request))
                 else:
-                    session.error = T("Not authorised!")
+                    session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args='create')}))
             elif method == "display" or method == "read":
                 redirect(URL(r=request, args=record))
@@ -639,10 +643,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     elif representation == "json":
                         return import_json(method='update')
                     else:
-                        session.error = T("Unsupported format!")
+                        session.error = BADFORMAT
                         redirect(URL(r=request))
                 else:
-                    session.error = T("Not authorised!")
+                    session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['update', record])}))
             elif method == "delete":
                 authorised = shn_has_permission(method, table, record)
@@ -653,7 +657,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
                     crud.delete(table, record)
                 else:
-                    session.error = T("Not authorised!")
+                    session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))
             elif method == "search":
                 authorised = shn_has_permission('read', table)
@@ -699,11 +703,11 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         response.view = 'plain.html'
                         return dict(item=item)
                     else:
-                        session.error = T("Unsupported format!")
+                        session.error = BADFORMAT
                         redirect(URL(r=request))
                 else:
-                    session.error = T("Unsupported method!")
+                    session.error = T('Unsupported method!')
                     redirect(URL(r=request))
             else:
-                session.error = T("Not authorised!")
+                session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login' ,vars={'_next':URL(r=request, c=module, f=resource, args=['search'])}))

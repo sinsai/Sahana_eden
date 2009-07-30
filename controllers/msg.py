@@ -6,6 +6,7 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
+    [T('Admin'), False, URL(r=request, f='admin')],
     [T('Email'), False, URL(r=request, f='email'), [
         [T('Send Email'), False, URL(r=request, f='email_outbox', args='create')],
         [T('View Email InBox'), False, URL(r=request, f='email_inbox')],
@@ -32,6 +33,22 @@ def tbc():
     "Coming soon..."
     return dict(module_name=module_name)
 
+
+def admin():
+    # This can be set to a MessagingAdmin role, if-desired
+    if auth.has_membership(auth.id_group('Administrator')):
+        redirect(URL(r=request, f='setting', args=['update', 1]))
+    else:
+        redirect(URL(r=request, f='setting', args=['read', 1]))
+    
+def setting():
+    " RESTlike CRUD controller "
+    if request.args(0) == 'update' or request.args(0) == 'delete':
+        if not auth.has_membership(auth.id_group('Administrator')):
+            session.error = UNAUTHORISED
+            redirect(URL(r=request, f='index'))
+    return shn_rest_controller(module, 'setting', listadd=False, deletable=False)
+    
 # SMS
 def sms():
     " Simple page for showing links "
@@ -42,13 +59,10 @@ def sms_inbox():
     return shn_rest_controller(module, 'sms_inbox', listadd=False)
 def sms_outbox():
     " RESTlike CRUD controller "
-<<<<<<< TREE
-=======
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
     db.msg_sms_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
     # Restrict list to just those of type 'sms'
     # tbc
->>>>>>> MERGE-SOURCE
     return shn_rest_controller(module, 'sms_outbox')
 def sms_sent():
     " RESTlike CRUD controller "
@@ -75,14 +89,9 @@ def email_inbox():
 def email_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
-<<<<<<< TREE
-    #db.msg_email_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v, _class='ac_input')
-    # We also want to restrict list to just those of type 'email'
-=======
     db.msg_email_outbox.group_id.widget = lambda f, v: StringWidget.widget(f, v)
     # Restrict list to just those of type 'email'
     # tbc
->>>>>>> MERGE-SOURCE
     return shn_rest_controller(module, 'email_outbox', listadd=False)
 def email_sent():
     " RESTlike CRUD controller "

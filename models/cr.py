@@ -21,7 +21,7 @@ if not len(db().select(db[table].ALL)):
 # Shelters
 resource = 'shelter'
 table = module + '_' + resource
-db.define_table(table,timestamp,uuidstamp,
+db.define_table(table, timestamp, uuidstamp,
                 Field('name', notnull=True),
                 Field('description', length=256),
                 admin_id,
@@ -33,7 +33,7 @@ db.define_table(table,timestamp,uuidstamp,
                 Field('persons_per_dwelling', 'integer'),
                 Field('area'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
 db[table].name.label = T("Shelter Name")
 db[table].name.comment = SPAN("*", _class="req")

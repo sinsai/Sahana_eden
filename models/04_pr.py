@@ -34,6 +34,7 @@ opt_pr_tag_type = SQLTable(None, 'opt_pr_tag_type',
                     db.Field('opt_pr_tag_type','integer',
                     requires = IS_IN_SET(pr_tag_type_opts),
                     default = 1,
+                    label = T('Tag Type'),
                     represent = lambda opt: opt and pr_tag_type_opts[opt]))
 
 #
@@ -72,10 +73,20 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 pitem_id = SQLTable(None, 'pitem_id',
                 Field('pitem_id', db.pr_pitem,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pitem.id', '%(tag_label)s: %(description)s')),
-                represent = lambda id: (id and [db(db.pr_pitem.id==id).select()[0].tag_label] or ["None"])[0],
+                represent = lambda id: (id and [db(db.pr_pitem.id==id).select()[0].id] or ["None"])[0],
                 comment = DIV(A(T('Add Item'), _class='popup', _href=URL(r=request, c='pr', f='pitem', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Item|New Personal Presence, Body or Item."))),
                 ondelete = 'RESTRICT'
                 ))
+
+# Reusable fields for other tables
+pitem_fields = SQLTable(None, 'pitem_id',
+                Field('pitem_id', db.pr_pitem,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pitem.id', '%(tag_label)s: %(description)s')),
+                represent = lambda id: (id and [db(db.pr_pitem.id==id).select()[0].id] or ["None"])[0],
+                comment = DIV(A(T('Add Item'), _class='popup', _href=URL(r=request, c='pr', f='pitem', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Item|New Personal Presence, Body or Item."))),
+                ondelete = 'RESTRICT'),
+                opt_pr_tag_type,
+                Field('pr_tag_label', label = T('Tag Label')))
 #
 # PItem to PEntity ------------------------------------------------------------
 #
@@ -128,34 +139,43 @@ pcase_id = SQLTable(None, 'pcase_id',
 # Callback functions ----------------------------------------------------------
 #
 
-# pentity_ondelete
-# deletes a pentity record if the corresponding person/group record gets deleted
-# designed as callback function for crud.delete (=> requires web2py/tools.py patch)
-#def shn_pitem_ondelete(record):
-#    if record.pitem_id:
-#        del db.pr_pitem[record.pitem_id]
-#    else:
-#        #ignore
-#        pass
-#    return
+#
+# pitem_ondelete
+#
+def shn_pitem_ondelete(record):
+    if record.pitem_id:
+        del db.pr_pitem[record.pitem_id]
+    else:
+        #ignore
+        pass
+    return
 
-# pentity_onvalidation
-# creates a pentity record if a new person/group record is created
-# calls shn_pentity_ondelete() on delete action from update view
-# designed as callback function for crud.create and crud.update
-#def shn_pentity_onvalidation(form):
-#    if len(request.args) == 0 or request.args[0] == 'create':
-#        # this is a create action either directly or from list view
-#        pentity_id = db['pr_pentity'].insert(is_group = is_group)
-#        if pentity_id:
-#            form.vars.pentity_id = pentity_id
-#    elif len(request.args) > 0:
-#        if request.args[0] == 'update' and form.vars.delete_this_record:
-#            # this is a delete action from update
-#            if len(request.args) > 1:
-#                my_id = request.args[1]
-#                if is_group:
-#                    shn_pentity_ondelete(db.pr_group[my_id])
-#                else:
-#                    shn_pentity_ondelete(db.pr_person[my_id])
-#    return
+#
+# pitem_onvalidation
+#
+
+def shn_pitem_onvalidation(form, resource=None, item_class=1):
+    if form:
+        if len(request.args) == 0 or request.args[0] == 'create':
+            # this is a create action either directly or from list view
+            if item_class in pr_pitem_class_opts.keys():
+                pitem_id = db['pr_pitem'].insert(
+                    opt_pr_pitem_class=item_class,
+                    opt_pr_tag_type=form.vars.opt_pr_tag_type,
+                    tag_label=form.vars.pr_tag_label )
+                if pitem_id:
+                    form.vars.pitem_id = pitem_id
+        elif len(request.args) > 0:
+            if request.args[0] == 'update' and form.vars.delete_this_record:
+                # this is a delete action from update
+                if len(request.args) > 1:
+                    my_id = request.args[1]
+                    if resource:
+                        shn_pitem_ondelete(db[resource][my_id])
+            elif request.args[0] == 'update':
+                if len(request.args) > 1:
+                    my_id = request.args[1]
+                    if resource:
+                        db(db.pr_pitem.id==db[resource][my_id].pitem_id).update(opt_pr_tag_type=form.vars.opt_pr_tag_type, tag_label=form.vars.pr_tag_label)
+    return
+

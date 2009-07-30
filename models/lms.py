@@ -17,40 +17,40 @@ if not len(db().select(db[table].ALL)):
         audit_read = False,
         audit_write = False
     )
-# Sites Category
-#resource = 'site_category'
-#table = module + '_' + resource
-#db.define_table(table,timestamp,uuidstamp,
-#                db.Field('name', notnull=True),
-#                db.Field('description', length=256),
-#                db.Field('comments', 'text'),
-#                migrate=migrate)
-#db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-#db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
-#db[table].name.label = T("Site Category")
-#db[table].name.comment = SPAN("*", _class="req")
-#title_create = T('Add Site Category')
-#title_display = T('Site Category Details')
-#title_list = T('List Categories')
-#title_update = T('Edit Category')
-#title_search = T('Search Category(s)')
-#subtitle_create = T('Add New Site Category')
-#subtitle_list = T('Site Categories')
-#label_list_button = T('List Categories')
-#label_create_button = T('Add Site Category')
-#msg_record_created = T('Category  added')
-#msg_record_modified = T('Category updated')
-#msg_record_deleted = T('Category deleted')
-#msg_list_empty = T('No Categories currently registered')
-#s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
+''' Sites Category
+resource = 'site_category'
+table = module + '_' + resource
+db.define_table(table,timestamp,uuidstamp,
+                db.Field('name', notnull=True),
+                db.Field('description', length=256),
+                db.Field('comments', 'text'),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
+db[table].name.label = T("Site Category")
+db[table].name.comment = SPAN("*", _class="req")
+title_create = T('Add Site Category')
+title_display = T('Site Category Details')
+title_list = T('List Categories')
+title_update = T('Edit Category')
+title_search = T('Search Category(s)')
+subtitle_create = T('Add New Site Category')
+subtitle_list = T('Site Categories')
+label_list_button = T('List Categories')
+label_create_button = T('Add Site Category')
+msg_record_created = T('Category  added')
+msg_record_modified = T('Category updated')
+msg_record_deleted = T('Category deleted')
+msg_list_empty = T('No Categories currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+'''
 # Sites
 resource = 'site'
 table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
                 db.Field('name', notnull=True),
                 db.Field('description', length=256),
-                db.Field('category'),
+				db.Field('category'),
                 admin_id,
                 location_id,
                 person_id,
@@ -87,11 +87,11 @@ table = module + '_' + resource
 db.define_table(table,timestamp,uuidstamp,
                 db.Field('name', notnull=True),
                 db.Field('description', length=256),
-                db.Field('site_id', db.lms_site),
+				db.Field('site_id', db.lms_site),
                 location_id,
                 db.Field('dimension'),
                 db.Field('area'),
-                db.Field('height'),
+				db.Field('height'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
@@ -122,8 +122,8 @@ db.define_table(table,timestamp,uuidstamp,
                 db.Field('bin_type'),
                 db.Field('storage_id', db.lms_storage_loc),
                 db.Field('total_capacity', length=256),
-                db.Field('max_weight'),
-                db.Field('comments', 'text'),
+				db.Field('max_weight'),
+				db.Field('comments', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names

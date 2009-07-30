@@ -23,7 +23,7 @@ $(function() {
     $("#dummy").result(function(event, data, formatted) {
         var newvalue = data.id;
         $("#msg_email_outbox_group_id").val(newvalue);
-    }); 
+    });
 });
 //]]></script>
 
@@ -50,11 +50,13 @@ $(function() {
  </tr>
  <tr id='msg_email_outbox_group_id__row'>
  <td>
+ <label>{{=form.custom.label.group_id}}</label>
  </td>
  <td>
  {{=form.custom.widget.group_id}}
  </td>
  <td>
+ {{=form.custom.comment.group_id}}
  </td>
  </tr>
  <tr id='msg_email_outbox_subject__row'>

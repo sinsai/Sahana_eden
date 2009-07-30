@@ -330,13 +330,13 @@ def kit_pdf():
         from reportlab.lib.units import cm
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
-        session.error = T('reportlab module not available within the running Python  - this needs installing to do PDF Reporting!')
+        session.error = T('reportlab module not available within the running Python - this needs installing to do PDF Reporting!')
         redirect(URL(r=request, c='kit'))
     try:
         from geraldo import Report, ReportBand, SubReport, Label, ObjectValue, SystemField, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
-        session.error = T('geraldo module not available within the running Python  - this needs installing to do PDF Reporting!')
+        session.error = T('geraldo module not available within the running Python - this needs installing to do PDF Reporting!')
         redirect(URL(r=request, c='kit'))
 
     import StringIO

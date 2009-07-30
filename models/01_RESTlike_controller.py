@@ -29,6 +29,64 @@ def export_json(table, query):
     response.headers['Content-Type'] = 'text/x-json'
     return db(query).select(table.ALL).json()
     
+def export_pdf(table, query):
+    "Export record(s) as Adobe PDF"
+    try:
+        from reportlab.lib.units import cm
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    except ImportError:
+        session.error = T('reportlab module not available within the running Python - this needs installing for PDF output!')
+        redirect(URL(r=request))
+    try:
+        from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, BAND_WIDTH
+        from geraldo.generators import PDFGenerator
+    except ImportError:
+        session.error = T('geraldo module not available within the running Python - this needs installing for PDF output!')
+        redirect(URL(r=request))
+
+    import StringIO
+    output = StringIO.StringIO()
+    
+    fields = [table[f] for f in table.fields if table[f].readable]
+    _elements = [SystemField(expression='%(report_title)s', top=0.1*cm,
+                    left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
+                    'fontSize': 14, 'alignment': TA_CENTER})]
+    detailElements = []
+    left = 0.2
+    for field in fields:
+        _elements.append(Label(text=str(field.label), top=0.8*cm, left=left*cm))
+        tab, col = str(field).split('.')
+        detailElements.append(ObjectValue(attribute_name=col, left=left*cm))
+        left += 2
+        
+    class MyReport(Report):
+        title = str(table)
+        class band_page_header(ReportBand):
+            height = 1.3*cm
+            elements = _elements
+            borders = {'bottom': True}
+        class band_page_footer(ReportBand):
+            height = 0.5*cm
+            elements = [
+                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
+                    width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
+            ]
+            borders = {'top': True}
+        class band_detail(ReportBand):
+            height = 0.5*cm
+            elements = tuple(detailElements)
+    objects_list = db(query).select(table.ALL)
+    report = MyReport(queryset=objects_list)
+    report.generate_by(PDFGenerator, filename=output)
+
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.pdf')
+    filename = "%s_%s.xls" % (request.env.server_name, str(table))
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
+    return output.read()
+    
 def export_rss(module, resource, query, main='name', extra='description'):
     """Export record(s) as RSS feed
     main='field': the field used for the title

@@ -151,7 +151,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 pentity_id = SQLTable(None, 'pentity_id',
                 Field('pentity_id', db.pr_pentity,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(pr_tag_label)s (%(id)s)')),
-                represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None"])[0],
+                represent = lambda id: (id and db(db.pr_pentity.id==id).select()[0].pr_tag_label and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None ("+str(id)+")"])[0],
 #                comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
                 ondelete = 'RESTRICT',
                 readable = False,

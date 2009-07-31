@@ -138,7 +138,7 @@ opt_pr_tag_type = SQLTable(None, 'opt_pr_tag_type',
 #
 resource = 'pentity'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 opt_pr_pentity_class,               # Entity class
                 opt_pr_tag_type,                    # Tag type
                 Field('pr_tag_label'),              # Tag Label
@@ -181,7 +181,7 @@ pentity_field_set = SQLTable(None, 'pentity_id',
 #
 resource = 'person'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 pentity_field_set,
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
@@ -238,7 +238,7 @@ person_id = SQLTable(None, 'person_id',
 #
 resource = 'person_details'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 person_id,
                 Field('birth_date','date'),             # Sahana legacy
                 Field('country'),                       # Sahana legacy
@@ -253,7 +253,7 @@ db.define_table(table, timestamp,
 #
 resource = 'person_physical'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 person_id,
                 Field('description','text'),
                 migrate=migrate)
@@ -263,7 +263,7 @@ db.define_table(table, timestamp,
 #
 resource = 'person_missing'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 person_id,
                 Field('description','text'),
                 migrate=migrate)
@@ -273,7 +273,7 @@ db.define_table(table, timestamp,
 #
 resource = 'person_deceased'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 person_id,
                 Field('description','text'),
                 migrate=migrate)
@@ -287,7 +287,7 @@ db.define_table(table, timestamp,
 #
 resource = 'identity'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 person_id,                          # Reference to person
                 opt_pr_id_type,                     # ID type
                 Field('value'),                     # ID value
@@ -304,7 +304,7 @@ db[table].ia_name.label = T("Issuing Authority")
 #
 resource = 'group'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 pentity_field_set,                                # pentity reference
                 opt_pr_group_type,                              # group type
                 Field('group_name'),                            # Group name (optional?)
@@ -364,7 +364,7 @@ group_id = SQLTable(None, 'group_id',
 #
 resource = 'group_membership'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 group_id,
                 person_id,
                 Field('group_head', 'boolean', default=False),
@@ -379,7 +379,7 @@ db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [
 #
 resource = 'contact'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name'),                          # Contact type
                 Field('value', notnull=True),
                 migrate=migrate)
@@ -393,7 +393,7 @@ db[table].value.requires = IS_NOT_EMPTY()
 #
 resource = 'contact_to_person'
 table = module + '_' + resource
-db.define_table(table,timestamp,
+db.define_table(table, timestamp, deletion_status,
                 person_id,                              # current, too keep it working
 #                pentity_id,                            # future
                 Field('contact_id', db.pr_contact),     # modify into reusable field
@@ -431,7 +431,7 @@ opt_sn_type = SQLTable(None, 'opt_sn_type',
 #
 resource = 'network'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 person_id,                          # Reference to person
                 opt_sn_type,                        # ID type
                 Field('comment'))                   # a comment (optional)

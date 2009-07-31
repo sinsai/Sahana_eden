@@ -197,7 +197,7 @@ s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_
 # GIS Features
 resource = 'feature_class'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
                 Field('description', length=256),
                 marker_id,
@@ -242,7 +242,7 @@ if not len(db().select(db[table].ALL)):
 
 resource = 'feature_metadata'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('description', length=256),
                 person_id,
                 Field('source'),
@@ -277,7 +277,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'feature'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 feature_class_id,
                 marker_id,
@@ -332,7 +332,7 @@ feature_id = SQLTable(None, 'feature_id',
 # Used to select a set of Features for either Display or Export
 resource = 'feature_group'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
                 Field('description', length=256),
                 #Field('features', 'text'),        # List of features (to be replaced by many-to-many table)
@@ -373,21 +373,21 @@ feature_group_id = SQLTable(None, 'feature_group_id',
 # are we using these or a tag-like pseudo M2M?
 resource = 'feature_to_feature_group'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 feature_group_id,
                 feature_id,
                 migrate=migrate)
                 
 resource = 'feature_class_to_feature_group'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 feature_group_id,
                 feature_class_id,
                 migrate=migrate)
 
 resource = 'landmark'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True),
                 Field('type'),
                 Field('description', length=256),
@@ -417,7 +417,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # GIS Locations
 resource = 'location'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 feature_id,         # Either just a Point or a Polygon
                 Field('sector'), # Government, Health

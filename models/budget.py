@@ -45,10 +45,10 @@ budget_cost_type_opts = {
     2:T('Recurring')
     }
 opt_budget_cost_type = SQLTable(None, 'budget_cost_type',
-                    db.Field('cost_type', 'integer', notnull=True,
-                    requires = IS_IN_SET(budget_cost_type_opts),
-                    default = 1,
-                    represent = lambda opt: opt and budget_cost_type_opts[opt]))
+                        Field('cost_type', 'integer', notnull=True,
+                            requires = IS_IN_SET(budget_cost_type_opts),
+                            default = 1,
+                            represent = lambda opt: opt and budget_cost_type_opts[opt]))
 budget_category_type_opts = {
     1:T('Consumable'),
     2:T('Satellite'),
@@ -71,13 +71,13 @@ budget_category_type_opts = {
     19:T('Running Cost')
     }
 opt_budget_category_type = SQLTable(None, 'budget_category_type',
-                    db.Field('category_type', 'integer', notnull=True,
-                    requires = IS_IN_SET(budget_category_type_opts),
-                    default = 1,
-                    represent = lambda opt: opt and budget_category_type_opts[opt]))
+                            Field('category_type', 'integer', notnull=True,
+                                requires = IS_IN_SET(budget_category_type_opts),
+                                default = 1,
+                                represent = lambda opt: opt and budget_category_type_opts[opt]))
 resource = 'item'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('code', notnull=True, unique=True),
                 Field('description', length=256, notnull=True),
                 opt_budget_cost_type,
@@ -111,7 +111,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Kits
 resource = 'kit'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('code', notnull=True, unique=True),
                 Field('description', length=256),
                 Field('total_unit_cost', 'double', writable=False),
@@ -142,7 +142,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Kit<>Item Many2Many
 resource = 'kit_item'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 Field('kit_id', db.budget_kit),
                 Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
@@ -160,7 +160,7 @@ db[table].quantity.comment = SPAN("*", _class="req")
 # Bundles
 resource = 'bundle'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
                 Field('description', length=256),
                 Field('total_unit_cost', 'double', writable=False),
@@ -189,7 +189,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Bundle<>Kit Many2Many
 resource = 'bundle_kit'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 Field('bundle_id', db.budget_bundle),
                 Field('kit_id', db.budget_kit, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
@@ -215,7 +215,7 @@ db[table].megabytes.comment = SPAN("*", _class="req")
 # Bundle<>Item Many2Many
 resource = 'bundle_item'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 Field('bundle_id', db.budget_bundle),
                 Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
@@ -252,7 +252,7 @@ opt_budget_currency_type = SQLTable(None, 'budget_currency_type',
 
 resource = 'staff'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
                 Field('grade', notnull=True),
                 Field('salary', 'integer', notnull=True),
@@ -289,7 +289,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Locations
 resource = 'location'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('code', length=3, notnull=True, unique=True),
                 Field('description'),
                 Field('subsistence', 'double', default=0.00),
@@ -318,7 +318,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Projects
 resource = 'project'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('code', notnull=True, unique=True),
                 Field('title'),
                 Field('comments', length=256),
@@ -343,7 +343,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Budgets
 resource = 'budget'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
                 Field('description', length=256),
                 Field('total_onetime_costs', 'double', writable=False),
@@ -370,7 +370,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Budget<>Bundle Many2Many
 resource = 'budget_bundle'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 Field('budget_id', db.budget_budget),
                 Field('project_id', db.budget_project),
                 Field('location_id', db.budget_location),
@@ -400,7 +400,7 @@ db[table].months.comment = SPAN("*", _class="req")
 # Budget<>Staff Many2Many
 resource = 'budget_staff'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 Field('budget_id', db.budget_budget),
                 Field('project_id', db.budget_project),
                 Field('location_id', db.budget_location),
@@ -429,7 +429,7 @@ db[table].months.comment = SPAN("*", _class="req")
 
 #resource = 'budget_equipment'
 #table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                Field('name', notnull=True, unique=True),
 #                Field('location', 'reference budget_location', ondelete='RESTRICT'),
 #                Field('project', 'reference budget_project', ondelete='RESTRICT'),
@@ -467,7 +467,7 @@ db[table].months.comment = SPAN("*", _class="req")
 
 #resource = 'budget_staff'
 #table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                Field('name', notnull=True, unique=True),
 #                Field('location', 'reference budget_location', ondelete='RESTRICT'),
 #                Field('project', 'reference budget_project', ondelete='RESTRICT'),

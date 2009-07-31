@@ -505,6 +505,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
         if authorised:
             # Filter Search list to just those records which user can read
             query = shn_accessible_query('read', table)
+            # Filter Search List to remove entries which have been deleted
+            if 'deleted' in table:
+                query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
             # list_create if have permissions
             authorised = shn_has_permission('create', table)
             # Audit
@@ -770,6 +773,12 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 if authorised:
                     # Audit
                     shn_audit_delete(resource, record, representation)
+                    if "deleted" in db[table]:
+                        # Mark as deleted rather than really deleting
+                        db(db[table].id == record).update(deleted = True)
+                    else:
+                        # Delete properly
+                        crud.delete(table, record)
                     if representation == "ajax":
                         crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
                     crud.delete(table, record)

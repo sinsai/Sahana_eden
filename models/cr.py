@@ -21,7 +21,7 @@ if not len(db().select(db[table].ALL)):
 # Shelters
 resource = 'shelter'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 Field('description', length=256),
                 admin_id,

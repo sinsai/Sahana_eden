@@ -62,7 +62,7 @@ opt_msg_group_type = SQLTable(None, 'opt_msg_group_type',
 
 resource = 'group'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 opt_msg_group_type,
                 Field('comments', length=256),
@@ -96,7 +96,7 @@ group_id = SQLTable(None, 'group_id',
 # Group<>User Many2Many
 resource = 'group_user'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 Field('group_id', db.msg_group),
                 person_id,
                 migrate=migrate)
@@ -108,7 +108,7 @@ db[table].person_id.label = T('User')
 # Incoming SMS
 resource = 'sms_inbox'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('phone_number', 'integer', notnull=True),
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
@@ -133,7 +133,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Outgoing SMS
 resource = 'sms_outbox'
 table = module + '_' + resource
-db.define_table(table, timestamp, authorstamp, uuidstamp,
+db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('phone_number', 'integer', notnull=True),
                 group_id,
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
@@ -161,7 +161,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'sms_sent'
 table = module + '_' + resource
-db.define_table(table, timestamp, authorstamp, uuidstamp,
+db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('phone_number', 'integer', notnull=True),
                 group_id,
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
@@ -189,7 +189,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Incoming Email
 resource = 'email_inbox'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('sender', notnull=True),
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
@@ -214,7 +214,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Outgoing Email
 resource = 'email_outbox'
 table = module + '_' + resource
-db.define_table(table, timestamp, authorstamp, uuidstamp,
+db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('recipient', notnull=True),
                 group_id,
                 Field('subject', length=78),    # RFC 2822
@@ -241,7 +241,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'email_sent'
 table = module + '_' + resource
-db.define_table(table, timestamp, authorstamp, uuidstamp,
+db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('recipient', notnull=True),
                 group_id,
                 Field('subject', length=78),    # RFC 2822

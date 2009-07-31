@@ -480,15 +480,21 @@ class AuthS3(Auth):
             pass
         else:
             # Insert
-            pentity_id = db.pr_pentity.insert(is_group=False)
+            pentity_id = db.pr_pentity.insert(
+                opt_pr_pentity_class=1,
+                opt_pr_tag_type=1,
+                pr_tag_label=None
+                )
             if pentity_id:
                 db.pr_person.insert(
                     pentity_id = pentity_id,
+                    opt_pr_tag_type=1,
+                    pr_tag_label=None,
                     first_name = form.vars.first_name,
                     last_name = form.vars.last_name,
                     email = form.vars.email
                 )
-        
+
 class CrudS3(Crud):
     """
     Extended version of Crud from gluon/tools.py

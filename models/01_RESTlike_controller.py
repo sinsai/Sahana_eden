@@ -29,12 +29,63 @@ def export_json(table, query):
     response.headers['Content-Type'] = 'text/x-json'
     return db(query).select(table.ALL).json()
     
-def export_xml(table, query):
-    "Export record(s) as XML"
-    import gluon.serializers
-    items = db(query).select(table.ALL).as_list()
-    response.headers['Content-Type'] = 'text/xml'
-    return str(gluon.serializers.xml(items))
+def export_pdf(table, query):
+    "Export record(s) as Adobe PDF"
+    try:
+        from reportlab.lib.units import cm
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    except ImportError:
+        session.error = T('reportlab module not available within the running Python - this needs installing for PDF output!')
+        redirect(URL(r=request))
+    try:
+        from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, BAND_WIDTH
+        from geraldo.generators import PDFGenerator
+    except ImportError:
+        session.error = T('geraldo module not available within the running Python - this needs installing for PDF output!')
+        redirect(URL(r=request))
+
+    import StringIO
+    output = StringIO.StringIO()
+    
+    fields = [table[f] for f in table.fields if table[f].readable]
+    _elements = [SystemField(expression='%(report_title)s', top=0.1*cm,
+                    left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
+                    'fontSize': 14, 'alignment': TA_CENTER})]
+    detailElements = []
+    left = 0.2
+    for field in fields:
+        _elements.append(Label(text=str(field.label), top=0.8*cm, left=left*cm))
+        tab, col = str(field).split('.')
+        detailElements.append(ObjectValue(attribute_name=col, left=left*cm))
+        left += 2
+        
+    class MyReport(Report):
+        title = str(table)
+        class band_page_header(ReportBand):
+            height = 1.3*cm
+            elements = _elements
+            borders = {'bottom': True}
+        class band_page_footer(ReportBand):
+            height = 0.5*cm
+            elements = [
+                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
+                    width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
+            ]
+            borders = {'top': True}
+        class band_detail(ReportBand):
+            height = 0.5*cm
+            elements = tuple(detailElements)
+    objects_list = db(query).select(table.ALL)
+    report = MyReport(queryset=objects_list)
+    report.generate_by(PDFGenerator, filename=output)
+
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.pdf')
+    filename = "%s_%s.xls" % (request.env.server_name, str(table))
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
+    return output.read()
     
 def export_rss(module, resource, query, main='name', extra='description'):
     """Export record(s) as RSS feed
@@ -60,6 +111,53 @@ def export_rss(module, resource, query, main='name', extra='description'):
     response.headers['Content-Type'] = 'application/rss+xml'
     return rss2.dumps(rss)
 
+def export_xls(table, query):
+    "Export record(s) as XLS"
+    try:
+        import xlwt
+    except ImportError:
+        session.error = T('xlwt module not available within the running Python - this needs installing for XLS output!')
+        redirect(URL(r=request))
+    
+    import StringIO
+    output = StringIO.StringIO()
+    
+    items = db(query).select(table.ALL)
+    
+    book = xlwt.Workbook()
+    sheet1 = book.add_sheet(str(table))
+    # Header row
+    row0 = sheet1.row(0)
+    cell = 0
+    fields = [table[f] for f in table.fields if table[f].readable]
+    for field in fields:
+        row0.write(cell, str(field.label), xlwt.easyxf('font: bold True;'))
+        cell += 1
+    row = 1
+    for item in items:
+        # Item details
+        rowx = sheet1.row(row)
+        row += 1
+        cell1 = 0
+        for field in fields:
+            tab, col = str(field).split('.')
+            rowx.write(cell1, item[col])
+            cell1 += 1
+    book.save(output)
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.xls')
+    filename = "%s_%s.xls" % (request.env.server_name, str(table))
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
+    return output.read()
+    
+def export_xml(table, query):
+    "Export record(s) as XML"
+    import gluon.serializers
+    items = db(query).select(table.ALL).as_list()
+    response.headers['Content-Type'] = 'text/xml'
+    return str(gluon.serializers.xml(items))
+    
 def import_csv(table, file):
     "Import CSV file into Database. Comes from appadmin.py. Modified to do Validation on UUIDs"
     table.import_from_csv_file(file)
@@ -364,10 +462,12 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
         XML (list/read only)
         AJAX (designed to be run asynchronously to refresh page elements)
         POPUP
+        XLS (list/read only)
+        PDF (list/read only)
     ToDo:
         Alternate Representations
             CSV update
-            SMS,PDF,LDIF
+            SMS, LDIF
     """
     
     _table = '%s_%s' % (module, resource)
@@ -486,14 +586,18 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 items = crud.select(table, query, truncate=24)
                 response.view = 'plain.html'
                 return dict(item=items)
-            elif representation == "json":
-                return export_json(table, query)
-            elif representation == "xml":
-                return export_xml(table, query)
             elif representation == "csv":
                 return export_csv(resource, query)
+            elif representation == "json":
+                return export_json(table, query)
+            elif representation == "pdf":
+                return export_pdf(table, query)
             elif representation == "rss":
                 return export_rss(module, resource, query, main, extra)
+            elif representation == "xls":
+                return export_xls(table, query)
+            elif representation == "xml":
+                return export_xml(table, query)
             else:
                 session.error = BADFORMAT
                 redirect(URL(r=request))

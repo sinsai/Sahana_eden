@@ -236,7 +236,7 @@ def kit_update_items():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f='kit_item', args=[kit]))
 
-def kit_export():
+def kit_spreadsheet():
     """
     Export a list of Kits in Excel XLS format
     Sheet 1 is a list of Kits
@@ -245,7 +245,7 @@ def kit_export():
     try:
         import xlwt
     except ImportError:
-        session.error = T('xlwt module not available within the running Python  - this needs installing to do XLS Reporting!')
+        session.error = T('xlwt module not available within the running Python - this needs installing to do XLS Reporting!')
         redirect(URL(r=request, c='kit'))
     
     import StringIO
@@ -279,7 +279,8 @@ def kit_export():
             rowx.write(cell1, kit[col])
             cell1 += 1
         # Sheet per Kit detailing constituent Items
-        sheetname = kit.code.replace("\\","")
+        # Replace characters which are illegal in sheetnames
+        sheetname = kit.code.replace("/","_")
         sheet = book.add_sheet(sheetname)
         # Header row for Items sheet
         row0 = sheet.row(0)
@@ -312,13 +313,95 @@ def kit_export():
                 cell += 1
     
     book.save(output)
-    output.seek(0)
 
+    output.seek(0)
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.xls')
     filename = "%s_kits.xls" % (request.env.server_name)
-    response.headers['Content-disposition'] = "attachment; filename=%s" % filename
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
+    return output.read()
     
+def kit_pdf():
+    """
+    Export a list of Kits in Adobe PDF format using Geraldo
+    http://geraldo.sourceforge.net/docs/index.html
+    """
+    try:
+        from reportlab.lib.units import cm
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    except ImportError:
+        session.error = T('reportlab module not available within the running Python - this needs installing to do PDF Reporting!')
+        redirect(URL(r=request, c='kit'))
+    try:
+        from geraldo import Report, ReportBand, SubReport, Label, ObjectValue, SystemField, BAND_WIDTH
+        from geraldo.generators import PDFGenerator
+    except ImportError:
+        session.error = T('geraldo module not available within the running Python - this needs installing to do PDF Reporting!')
+        redirect(URL(r=request, c='kit'))
+
+    import StringIO
+    output = StringIO.StringIO()
+    
+    class MyReport(Report):
+        title = "Kits"
+        class band_page_header(ReportBand):
+            height = 1.3*cm
+            elements = [
+                SystemField(expression='%(report_title)s', top=0.1*cm,
+                    left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
+                    'fontSize': 14, 'alignment': TA_CENTER}),
+                Label(text="Code", top=0.8*cm, left=0.2*cm),
+                Label(text="Description", top=0.8*cm, left=1.5*cm),
+                Label(text="Cost", top=0.8*cm, left=6*cm),
+                Label(text="Monthly Cost", top=0.8*cm, left=8*cm),
+                Label(text="Minute Cost", top=0.8*cm, left=10*cm),
+                Label(text="Megabyte Cost", top=0.8*cm, left=12*cm),
+                Label(text="Comments", top=0.8*cm, left=15*cm),
+            ]
+            borders = {'bottom': True}
+        class band_page_footer(ReportBand):
+            height = 0.5*cm
+            elements = [
+                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
+                    width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
+            ]
+            borders = {'top': True}
+        class band_detail(ReportBand):
+            height = 0.5*cm
+            elements = (
+                    ObjectValue(attribute_name='code', left=0.2*cm),
+                    ObjectValue(attribute_name='description', left=1.5*cm),
+                    ObjectValue(attribute_name='total_unit_cost', left=6*cm),
+                    ObjectValue(attribute_name='total_monthly_cost', left=8*cm),
+                    ObjectValue(attribute_name='total_minute_cost', left=10*cm),
+                    ObjectValue(attribute_name='total_megabyte_cost', left=12*cm),
+                    ObjectValue(attribute_name='comments', left=15*cm),
+                    )
+        #subreports = [
+        #    SubReport(
+        #        queryset_string = '%(object)s.item_set.all()',
+        #        detail_band = ReportBand(
+        #            height=0.5*cm,
+        #            elements=[
+        #                ObjectValue(attribute_name='code', top=0, left=1*cm),
+        #                ObjectValue(attribute_name='description', top=0, left=5*cm),
+        #                ]
+        #            ),
+        #        ),
+        #    ]
+
+        
+    table = db.budget_kit
+    objects_list = db(table.id > 0).select()
+    report = MyReport(queryset=objects_list)
+    report.generate_by(PDFGenerator, filename=output)
+
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.pdf')
+    filename = "%s_kits.pdf" % (request.env.server_name)
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
     return output.read()
     
 def bundle():

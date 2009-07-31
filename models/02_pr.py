@@ -26,8 +26,13 @@ if not len(db().select(db[table].ALL)):
     )
 
 #
-# Field options ---------------------------------------------------------------
+# Option fields ---------------------------------------------------------------
 #
+
+#
+# Gender ------------------------------
+#
+
 pr_person_gender_opts = {
     1:T('unknown'),
     2:T('female'),
@@ -38,7 +43,12 @@ opt_pr_gender = SQLTable(None, 'opt_pr_gender',
                     db.Field('opt_pr_gender','integer',
                     requires = IS_IN_SET(pr_person_gender_opts),
                     default = 1,
+                    label = T('Gender'),
                     represent = lambda opt: opt and pr_person_gender_opts[opt]))
+
+#
+# Age Groups --------------------------
+#
 
 pr_person_age_group_opts = {
     1:T('unknown'),
@@ -53,58 +63,118 @@ opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                     db.Field('opt_pr_age_group','integer',
                     requires = IS_IN_SET(pr_person_age_group_opts),
                     default = 1,
+                    label = T('Age Group'),
                     represent = lambda opt: opt and pr_person_age_group_opts[opt]))
 
 #
-# Person Entity ---------------------------------------------------------------
+# ID Types ----------------------------
+#
+
+pr_id_type_opts = {
+    1:T('Passport'),
+    2:T('National ID Card'),
+    3:T('Driving License'),
+    4:T('Other')
+    }
+
+opt_pr_id_type = SQLTable(None, 'opt_pr_id_type',
+                    db.Field('opt_pr_id_type','integer',
+                    requires = IS_IN_SET(pr_id_type_opts),
+                    default = 1,
+                    label = T('ID type'),
+                    represent = lambda opt: opt and pr_id_type_opts[opt]))
+
+#
+# Group types -------------------------
+#
+pr_group_type_opts = {
+    1:T('Family'),
+    2:T('Tourist Group'),
+    3:T('Relief Team'),
+    4:T('Other')
+    }
+
+opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
+                    db.Field('opt_pr_group_type','integer',
+                    requires = IS_IN_SET(pr_group_type_opts),
+                    default = 4,
+                    label = T('Group Type'),
+                    represent = lambda opt: opt and pr_group_type_opts[opt]))
+
+#
+# PersonEntity classes ----------------
+#
+pr_pentity_class_opts = {
+    1:T('Person'),
+    2:T('Group'),
+    3:T('Dead Body'),
+    4:T('Personal Belongings')
+    }
+
+opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
+                    db.Field('opt_pr_pentity_class','integer',
+                    requires = IS_IN_SET(pr_pentity_class_opts),
+                    default = 1,
+                    represent = lambda opt: opt and pr_pentity_class_opts[opt]))
+
+#
+# Tag types ---------------------------
+#
+pr_tag_type_opts = {
+    1:T('None'),
+    2:T('Number Tag'),
+    3:T('Barcode Label')
+    }
+
+opt_pr_tag_type = SQLTable(None, 'opt_pr_tag_type',
+                    db.Field('opt_pr_tag_type','integer',
+                    requires = IS_IN_SET(pr_tag_type_opts),
+                    default = 1,
+                    label = T('Tag Type'),
+                    represent = lambda opt: opt and pr_tag_type_opts[opt]))
+
+#
+# Person-Entity ---------------------------------------------------------------
 #
 resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                Field('is_group', 'boolean', default=False),
+                opt_pr_pentity_class,               # Entity class
+                opt_pr_tag_type,                    # Tag type
+                Field('pr_tag_label'),              # Tag Label
                 migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
+#
 # Reusable field for other tables to reference
+#
 pentity_id = SQLTable(None, 'pentity_id',
                 Field('pentity_id', db.pr_pentity,
-                requires = IS_IN_DB(db, 'pr_pentity.id'),
-                ondelete = 'RESTRICT'
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(pr_tag_label)s (%(id)s)')),
+                represent = lambda id: (id and db(db.pr_pentity.id==id).select()[0].pr_tag_label and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None ("+str(id)+")"])[0],
+#                comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
+                ondelete = 'RESTRICT',
+                readable = False,
+                writable = False
                 ))
 
 #
-# Person Status
+# Reusable field set for PersonEntity tables
+# includes:
+#   pentity_id          Person Entity ID      (should be invisible in forms)
+#   opt_pr_tag_type     Tag Type
+#   pr_tag_label        Tag Label
 #
-resource = 'status'
-table = module + '_' + resource
-db.define_table(table,
-                Field('individual', 'boolean', default=True),
-                Field('status'),
-                Field('value'),
-                migrate=migrate)
-
-if not len(db().select(db[table].ALL)): 
-   db[table].insert( individual=True, status='Vitality', value='alive' )
-   db[table].insert( individual=True, status='Vitality', value='deceased' )
-   db[table].insert( individual=True, status='Vitality', value='unknown' )
-
-# Reusable field for other tables to reference
-opt_pr_status = SQLTable(None, 'opt_pr_status',
-                    db.Field('opt_pr_status', db.pr_status,
-                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_status.id', '%(status)s: %(value)s')),
-                    represent = lambda id: (id and [db(db.pr_status.id==id).select()[0].value] or ["None"])[0],
-                    comment = None,
-                    ondelete = 'RESTRICT'
-                    ))
-
-#
-# Person Entity Status (Sahana legacy)
-#
-resource = 'pentity_status'
-table = module + '_' + resource
-db.define_table(table, timestamp,
-                pentity_id,
-                opt_pr_status,
-                migrate=migrate)
+pentity_field_set = SQLTable(None, 'pentity_id',
+                    Field('pentity_id', db.pr_pentity,
+                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(id)s (%(pr_tag_label)s)')),
+                    represent = lambda id: (id and db(db.pr_pentity.id==id).select()[0].pr_tag_label and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None ("+str(id)+")"])[0],
+#                    comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
+                    ondelete = 'RESTRICT',
+                    readable = False,
+                    writable = False),
+                    opt_pr_tag_type,
+                    Field('pr_tag_label', label = T('Tag Label')))
 
 #
 # Persons ---------------------------------------------------------------------
@@ -112,7 +182,7 @@ db.define_table(table, timestamp,
 resource = 'person'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                pentity_id,                             # person entity reference
+                pentity_field_set,
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
@@ -120,19 +190,15 @@ db.define_table(table, timestamp,
                 opt_pr_gender,
                 opt_pr_age_group,
                 Field('email', unique=True),            # Needed for AAA (change this!)
-                Field('mobile_phone'),                  # Needed for SMS (change this!)
+                Field('mobile_phone','integer'),        # Needed for SMS (change this!)
                 Field('comment'),                       # comment
                 migrate=migrate)
 
 #db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-#db[table].gender.label = T('Gender')
-#db[table].gender.requires = IS_IN_SET( pr_person_gender_opts )
-#db[table].gender.represent = lambda opt: pr_person_gender_opts[opt]
-#db[table].age_group.label = T('Age group')
-#db[table].age_group.requires = IS_IN_SET( pr_person_age_group_opts )
-#db[table].age_group.represent = lambda opt: pr_person_age_group_opts[opt]
-db[table].pentity_id.readable = False
-db[table].pentity_id.writable = False
+db[table].opt_pr_gender.label = T('Gender')
+db[table].opt_pr_age_group.label = T('Age group')
+#db[table].pentity_id.readable = False
+#db[table].pentity_id.writable = False
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment = SPAN("*", _class="req")
 #db[table].last_name.label = T("Family Name")
@@ -215,26 +281,6 @@ db.define_table(table, timestamp,
 #
 # Identities ------------------------------------------------------------------
 #
-resource='id_type'
-table=module+'_'+resource
-db.define_table(table,
-                db.Field('name', notnull=True)
-               )
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-
-if not len(db().select(db[table].ALL)):
-   db[table].insert(name = "Passport")
-   db[table].insert(name = "National ID Card")
-   db[table].insert(name = "Driving License")
-
-# Reusable field for other tables to reference
-opt_pr_id_type = SQLTable(None, 'opt_id_type',
-                    db.Field('id_type', db.pr_id_type,
-                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_id_type.id', 'pr_id_type.name')),
-                    represent = lambda id: (id and [db(db.pr_id_type.id==id).select()[0].name] or ["None"])[0],
-                    comment = None,
-                    ondelete = 'RESTRICT'
-                    ))
 
 #
 # Identity
@@ -254,37 +300,12 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].ia_name.label = T("Issuing Authority")
 
 #
-# Groups ----------------------------------------------------------------------
-#
-resource='group_type'
-table=module+'_'+resource
-db.define_table(table,
-                db.Field('name')
-               )
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-
-if not len(db().select(db[table].ALL)):         # TODO: should be refined!
-    db[table].insert(name = "Family")
-    db[table].insert(name = "Tourists")
-    db[table].insert(name = "Other")
-
-# Reusable field for other tables to reference
-opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
-                    Field('opt_pr_group_type', db.pr_group_type,
-                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_group_type.id', 'pr_group_type.name')),
-                    represent = lambda id: (id and [db(db.pr_group_type.id==id).select()[0].name] or ["None"])[0],
-                    comment = None,
-                    ondelete = 'RESTRICT'
-                    ))
-
-#
-# Group
+# Group -----------------------------------------------------------------------
 #
 resource = 'group'
 table = module + '_' + resource
 db.define_table(table, timestamp,
-                Field('is_group', 'boolean', default=True),     # necessary??
-                pentity_id,                                     # pentity reference
+                pentity_field_set,                                # pentity reference
                 opt_pr_group_type,                              # group type
                 Field('group_name'),                            # Group name (optional?)
                 Field('group_description'),                     # Group short description
@@ -304,12 +325,14 @@ db.define_table(table, timestamp,
                 migrate=migrate)
 
 # TODO: restrictions and requirements
-db[table].is_group.readable = False
-db[table].is_group.writable = False
-db[table].pentity_id.readable = False
-db[table].pentity_id.writable = False
 # TODO: CRUD strings
+db[table].opt_pr_tag_type.readable=False
+db[table].opt_pr_tag_type.writable=False
+db[table].pr_tag_label.readable=False
+db[table].pr_tag_label.writable=False
+
 db[table].opt_pr_group_type.label = T("Group type")
+
 db[table].group_name.label = T("Group name")
 db[table].group_description.label = T("Group description")
 title_create = T('Add Group')
@@ -335,10 +358,11 @@ group_id = SQLTable(None, 'group_id',
                 comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
                 ondelete = 'RESTRICT'
                 ))
+
 #
-# Group members
+# Group membership ------------------------------------------------------------
 #
-resource = 'group_member'
+resource = 'group_membership'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 group_id,
@@ -349,6 +373,7 @@ db.define_table(table, timestamp,
                 migrate=migrate)
 
 db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [""])[0]
+
 #
 # Contact ---------------------------------------------------------------------
 #
@@ -416,9 +441,10 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 # Callback functions ----------------------------------------------------------
 #
 
-# pentity_ondelete
-# deletes a pentity record if the corresponding person/group record gets deleted
-# designed as callback function for crud.delete (=> requires web2py/tools.py patch)
+#
+# pentity_ondelete:
+# Remove a pentity when the corresponding subclass item gets deleted
+#
 def shn_pentity_ondelete(record):
     if record.pentity_id:
         del db.pr_pentity[record.pentity_id]
@@ -427,23 +453,34 @@ def shn_pentity_ondelete(record):
         pass
     return
 
-# pentity_onvalidation
-# creates a pentity record if a new person/group record is created
-# calls shn_pentity_ondelete() on delete action from update view
-# designed as callback function for crud.create and crud.update
-def shn_pentity_onvalidation(form, is_group=False):
-    if len(request.args) == 0 or request.args[0] == 'create':
-        # this is a create action either directly or from list view
-        pentity_id = db['pr_pentity'].insert(is_group = is_group)
-        if pentity_id:
-            form.vars.pentity_id = pentity_id
-    elif len(request.args) > 0:
-        if request.args[0] == 'update' and form.vars.delete_this_record:
-            # this is a delete action from update
-            if len(request.args) > 1:
-                my_id = request.args[1]
-                if is_group:
-                    shn_pentity_ondelete(db.pr_group[my_id])
-                else:
-                    shn_pentity_ondelete(db.pr_person[my_id])
+#
+# pentity_onvalidation:
+# Create/update a pentity when a corresponding subclass item gets created/updated
+#
+def shn_pentity_onvalidation(form, resource=None, entity_class=1):
+    if form:
+        if len(request.args) == 0 or request.args[0] == 'create':
+            # this is a create action either directly or from list view
+            if entity_class in pr_pentity_class_opts.keys():
+                pentity_id = db['pr_pentity'].insert(
+                    opt_pr_pentity_class=entity_class,
+                    opt_pr_tag_type=form.vars.opt_pr_tag_type,
+                    pr_tag_label=form.vars.pr_tag_label )
+                if pentity_id:
+                    form.vars.pentity_id = pentity_id
+        elif len(request.args) > 0:
+            if request.args[0] == 'update' and form.vars.delete_this_record:
+                # this is a delete action from update
+                if len(request.args) > 1:
+                    my_id = request.args[1]
+                    if resource:
+                        shn_pentity_ondelete(db[resource][my_id])
+            elif request.args[0] == 'update':
+                if len(request.args) > 1:
+                    my_id = request.args[1]
+                    if resource:
+                        db(db.pr_pentity.id==db[resource][my_id].pentity_id).update(
+                            opt_pr_tag_type=form.vars.opt_pr_tag_type,
+                            pr_tag_label=form.vars.pr_tag_label)
     return
+

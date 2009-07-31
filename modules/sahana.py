@@ -567,7 +567,7 @@ class S3:
         
     def _globals(self):
         """
-        Returns (request,response,session,cache,T,db)
+        Returns (request, response, session, cache, T, db)
         """
         return self.request, self.response, self.session, \
                self.cache, self.T, self.db

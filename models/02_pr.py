@@ -146,12 +146,30 @@ db.define_table(table, timestamp, uuidstamp,
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 #
+#
+#
+def shn_pentity_id_represent(pentity_id):
+    record = db(db.pr_pentity.id==pentity_id).select()[0]
+    if record:
+        pr_pentity_type = record.opt_pr_pentity_class
+        if pr_pentity_type==1:
+            person_record = db(db.pr_person.pentity_id==pentity_id).select()[0]
+            return person_record.first_name + " " + person_record.last_name + " (" + record.pr_tag_label + ")"
+        elif pr_pentity_type==2:
+            group_record = db(db.pr_group.pentity_id==pentity_id).select()[0]
+            return group_record.name + " (" + str(pentity_id) + ")"
+        else:
+            return str(pr_pentity_class_opts[pr_pentity_type]) + ": " + record.pr_tag_label + " (" + str(pentity_id) + ")"
+    else:
+        return('None')
+
+#
 # Reusable field for other tables to reference
 #
 pentity_id = SQLTable(None, 'pentity_id',
                 Field('pentity_id', db.pr_pentity,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(pr_tag_label)s (%(id)s)')),
-                represent = lambda id: (id and db(db.pr_pentity.id==id).select()[0].pr_tag_label and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None ("+str(id)+")"])[0],
+                represent = lambda id: (id and [shn_pentity_id_represent(id)] or ["None ("+str(id)+")"])[0],
 #                comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
                 ondelete = 'RESTRICT',
                 readable = False,

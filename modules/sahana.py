@@ -536,7 +536,7 @@ class CrudS3(Crud):
 #from applications.t3.modules.t2 import T2
 #class S3(T2):
 class S3:
-    "The T2 functions we use extracted from t2.py"
+    "The T2 functions we still use extracted from t2.py"
 
     IMAGE_EXT = ['.jpg', '.gif', '.png']
     def __init__(self, request, response, session, cache, T, db,
@@ -580,7 +580,7 @@ class S3:
 
     def action(self, f=None, args=[], vars={}):
         """
-        self.action('name',[],{}) is a shortcut for 
+        self.action('name', [], {}) is a shortcut for 
      
             URL(r=request, f='name', args=[], vars={})
         """
@@ -592,7 +592,7 @@ class S3:
 
     def redirect(self, f=None, args=[], vars={}, flash=None):
         """
-        self.redirect('name',[],{},'message') is a shortcut for
+        self.redirect('name', [], {}, 'message') is a shortcut for
 
             session.flash = 'message'
             redirect(URL(r=request, f='name', args=[], vars={})

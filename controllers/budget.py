@@ -37,6 +37,7 @@ def parameter():
     
 def item():
     "RESTlike CRUD controller"
+    response.pdf = URL(r=request, f='item_export_pdf')
     return shn_rest_controller(module, 'item', main='code', extra='description', onaccept=lambda form: item_cascade(form))
 
 def item_cascade(form):
@@ -72,6 +73,106 @@ def item_cascade(form):
             # Update Budgets containing this Bundle (tbc)
     return
 
+def item_export_pdf():
+    """
+    Export a list of Items in Adobe PDF format
+    Uses Geraldo Grouping Report
+    """
+    try:
+        from reportlab.lib.units import cm
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    except ImportError:
+        session.error = T('ReportLab module not available within the running Python - this needs installing to do PDF Reporting!')
+        redirect(URL(r=request, c='item'))
+    try:
+        from geraldo import Report, ReportBand, ReportGroup, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
+        from geraldo.generators import PDFGenerator
+    except ImportError:
+        session.error = T('Geraldo module not available within the running Python - this needs installing to do PDF Reporting!')
+        redirect(URL(r=request, c='item'))
+
+    table = db.budget_item
+    objects_list = db(table.id > 0).select(orderby=table.category_type)
+    if not objects_list:
+        session.warning = T('No data in this table - cannot create PDF!')
+        redirect(URL(r=request))
+    
+    import StringIO
+    output = StringIO.StringIO()
+    
+    class MyReport(Report):
+        def __init__(self, queryset=None, T=None):
+            " Initialise parent class & make any necessary modifications "
+            Report.__init__(self, queryset)
+            self.T = T
+        def _T(self, rawstring):
+            return self.T(rawstring)
+        # can't use T() here!
+        #title = _T("Items")
+        title = "Items"
+        page_size = landscape(A4)
+        class band_page_header(ReportBand):
+            height = 1.3*cm
+            elements = [
+                SystemField(expression='%(report_title)s', top=0.1*cm,
+                    left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
+                    'fontSize': 14, 'alignment': TA_CENTER}
+                    ),
+                Label(text="Code", top=0.8*cm, left=0.2*cm),
+                Label(text="Description", top=0.8*cm, left=3*cm),
+                Label(text="Unit Cost", top=0.8*cm, left=13*cm),
+                Label(text="per Month", top=0.8*cm, left=15*cm),
+                Label(text="per Minute", top=0.8*cm, left=17*cm),
+                Label(text="per Megabyte", top=0.8*cm, left=19*cm),
+                Label(text="Comments", top=0.8*cm, left=21*cm),
+            ]
+            borders = {'bottom': True}
+        class band_page_footer(ReportBand):
+            height = 0.5*cm
+            elements = [
+                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
+                    width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
+            ]
+            borders = {'top': True}
+        class band_detail(ReportBand):
+            height = 0.5*cm
+            auto_expand_height = True
+            elements = (
+                    ObjectValue(attribute_name='code', left=0.2*cm, width=2.8*cm),
+                    ObjectValue(attribute_name='description', left=3*cm, width=10*cm),
+                    ObjectValue(attribute_name='unit_cost', left=13*cm, width=2*cm),
+                    ObjectValue(attribute_name='monthly_cost', left=15*cm, width=2*cm),
+                    ObjectValue(attribute_name='minute_cost', left=17*cm, width=2*cm),
+                    ObjectValue(attribute_name='megabyte_cost', left=19*cm, width=2*cm),
+                    ObjectValue(attribute_name='comments', left=21*cm, width=6*cm),
+                    )
+        groups = [
+        ReportGroup(attribute_name='category_type',
+            band_header=ReportBand(
+                height=0.7*cm,
+                elements=[
+                    ObjectValue(attribute_name='category_type', left=0, top=0.1*cm,
+                        get_value=lambda instance: instance.category_type and budget_category_type_opts[instance.category_type],
+                        style={'fontName': 'Helvetica-Bold', 'fontSize': 12})
+                ],
+                borders={'bottom': True},
+            ),
+        ),
+    ]
+
+    #report = MyReport(queryset=objects_list)
+    report = MyReport(queryset=objects_list, T=T)
+    report.generate_by(PDFGenerator, filename=output)
+
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.pdf')
+    filename = "%s_items.pdf" % (request.env.server_name)
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
+    return output.read()
+    
 def kit():
     "RESTlike CRUD controller"
     if len(request.args) == 2:
@@ -329,21 +430,28 @@ def kit_export_xls():
 def kit_export_pdf():
     """
     Export a list of Kits in Adobe PDF format
+    Uses Geraldo SubReport
     """
     try:
         from reportlab.lib.units import cm
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
-        session.error = T('reportlab module not available within the running Python - this needs installing to do PDF Reporting!')
+        session.error = T('ReportLab module not available within the running Python - this needs installing to do PDF Reporting!')
         redirect(URL(r=request, c='kit'))
     try:
         from geraldo import Report, ReportBand, SubReport, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
-        session.error = T('geraldo module not available within the running Python - this needs installing to do PDF Reporting!')
+        session.error = T('Geraldo module not available within the running Python - this needs installing to do PDF Reporting!')
         redirect(URL(r=request, c='kit'))
 
+    table = db.budget_kit
+    objects_list = db(table.id > 0).select()
+    if not objects_list:
+        session.warning = T('No data in this table - cannot create PDF!')
+        redirect(URL(r=request))
+    
     import StringIO
     output = StringIO.StringIO()
     
@@ -422,8 +530,6 @@ def kit_export_pdf():
             ]
 
         
-    table = db.budget_kit
-    objects_list = db(table.id > 0).select()
     #report = MyReport(queryset=objects_list)
     report = MyReport(queryset=objects_list, db=db)
     report.generate_by(PDFGenerator, filename=output)

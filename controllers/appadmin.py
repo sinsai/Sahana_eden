@@ -57,6 +57,11 @@ response.menu_options = [
         [T('Export'), False, URL(r=request, c='admin', f='export_data')],
         [T('Raw Database access'), False, URL(r=request, c='appadmin', f='index')]
     ]],
+    [T('Synchronisation'), False, '#', [
+            [T('Sync History'), False, URL(r=request, c='admin', f='autosync')],
+            [T('Sync Partners'), False, URL(r=request, c='admin', f='sync_partners')],
+            [T('Sync Settings'), False, URL(r=request, c='admin', f='sync_settings')]
+    ]],
     [T('Edit Application'), False, URL(r=request, a='admin', c='default', f='design', args=['sahana'])],
     [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
 ]

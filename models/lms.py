@@ -47,7 +47,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Sites
 resource = 'site'
 table = module + '_' + resource
-db.define_table(table,timestamp,uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('name', notnull=True),
                 db.Field('description', length=256),
 				db.Field('category'),
@@ -84,7 +84,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Storage Locations
 resource = 'storage_loc'
 table = module + '_' + resource
-db.define_table(table,timestamp,uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('name', notnull=True),
                 db.Field('description', length=256),
 				db.Field('site_id', db.lms_site),
@@ -117,7 +117,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Storage Bins
 resource = 'storage_bin'
 table = module + '_' + resource
-db.define_table(table,timestamp,uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('number', notnull=True),
                 db.Field('bin_type'),
                 db.Field('storage_id', db.lms_storage_loc),

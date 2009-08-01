@@ -33,12 +33,13 @@ def export_pdf(table, query):
     "Export record(s) as Adobe PDF"
     try:
         from reportlab.lib.units import cm
+        from reportlab.lib.pagesizes import A4
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
         session.error = T('reportlab module not available within the running Python - this needs installing for PDF output!')
         redirect(URL(r=request))
     try:
-        from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, BAND_WIDTH
+        from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
         session.error = T('geraldo module not available within the running Python - this needs installing for PDF output!')
@@ -52,17 +53,22 @@ def export_pdf(table, query):
                     left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
                     'fontSize': 14, 'alignment': TA_CENTER})]
     detailElements = []
-    left = 0.2
+    COLWIDTH = 2.5
+    LEFTMARGIN = 0.2
     for field in fields:
-        _elements.append(Label(text=str(field.label), top=0.8*cm, left=left*cm))
+        #_elements.append(Label(text=str(field.label), top=0.8*cm, left=LEFTMARGIN*cm, width=COLWIDTH*cm))
+        _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split('.')
-        detailElements.append(ObjectValue(attribute_name=col, left=left*cm))
-        left += 2
+        value = db[tab][col]
+        detailElements.append(ObjectValue(attribute_name=col, left=LEFTMARGIN*cm, width=COLWIDTH*cm))
+        LEFTMARGIN += COLWIDTH
         
     class MyReport(Report):
         title = str(table)
+        page_size = landscape(A4)
         class band_page_header(ReportBand):
             height = 1.3*cm
+            auto_expand_height = True
             elements = _elements
             borders = {'bottom': True}
         class band_page_footer(ReportBand):
@@ -75,6 +81,7 @@ def export_pdf(table, query):
             borders = {'top': True}
         class band_detail(ReportBand):
             height = 0.5*cm
+            auto_expand_height = True
             elements = tuple(detailElements)
     objects_list = db(query).select(table.ALL)
     report = MyReport(queryset=objects_list)
@@ -83,7 +90,7 @@ def export_pdf(table, query):
     output.seek(0)
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.pdf')
-    filename = "%s_%s.xls" % (request.env.server_name, str(table))
+    filename = "%s_%s.pdf" % (request.env.server_name, str(table))
     response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
     return output.read()
     
@@ -498,6 +505,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
         if authorised:
             # Filter Search list to just those records which user can read
             query = shn_accessible_query('read', table)
+            # Filter Search List to remove entries which have been deleted
+            if 'deleted' in table:
+                query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
             # list_create if have permissions
             authorised = shn_has_permission('create', table)
             # Audit
@@ -640,18 +650,24 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     item = crud.read(table, record)
                     response.view = 'plain.html'
                     return dict(item=item)
-                elif representation == "json":
-                    query = db[table].id == record
-                    return export_json(table, query)
-                elif representation == "xml":
-                    query = db[table].id == record
-                    return export_xml(table, query)
                 elif representation == "csv":
                     query = db[table].id == record
                     return export_csv(resource, query)
+                elif representation == "json":
+                    query = db[table].id == record
+                    return export_json(table, query)
+                elif representation == "pdf":
+                    query = db[table].id == record
+                    return export_pdf(table, query)
                 elif representation == "rss":
                     query = db[table].id == record
                     return export_rss(module, resource, query, main, extra)
+                elif representation == "xls":
+                    query = db[table].id == record
+                    return export_xls(table, query)
+                elif representation == "xml":
+                    query = db[table].id == record
+                    return export_xml(table, query)
                 else:
                     session.error = BADFORMAT
                     redirect(URL(r=request))
@@ -757,6 +773,12 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                 if authorised:
                     # Audit
                     shn_audit_delete(resource, record, representation)
+                    if "deleted" in db[table]:
+                        # Mark as deleted rather than really deleting
+                        db(db[table].id == record).update(deleted = True)
+                    else:
+                        # Delete properly
+                        crud.delete(table, record)
                     if representation == "ajax":
                         crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
                     crud.delete(table, record)

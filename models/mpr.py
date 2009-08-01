@@ -20,7 +20,7 @@ if not len(db().select(db[table].ALL)):
 
 resource = 'person'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 person_id,
                 Field('last_seen'),
                 Field('last_clothing'),

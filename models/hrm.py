@@ -48,7 +48,7 @@ opt_hrm_task_status = SQLTable(None, 'opt_hrm_task_status',
 #
 resource = 'find'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('find_date', 'datetime'),         # Date and time of find
                 location_id,                            # Place of find
                 Field('location_details'),              # Details on location
@@ -96,7 +96,7 @@ hrm_find_id = SQLTable(None, 'hrm_find_id',
 
 resource = 'body'
 table = module + '_' + resource
-db.define_table(table, timestamp, #uuidstamp,
+db.define_table(table, timestamp, deletion_status, #uuidstamp,
                 pentity_field_set,
 #                db.Field('date_of_find', 'date'),
                 hrm_find_id,                                # Associated find report (if any)
@@ -147,7 +147,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Data capture for that: Location, type of remains, photograph, environment information - has to be reported to the team coordinator.
 #resource = 'recovery'
 #table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                db.Field('case_id', length = 64),        # For Case Management            
 #                pitem_id,
 #                db.Field('date_of_recovery', 'date'),
@@ -196,7 +196,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # and recorded in the database until the final release for burial or issuance to relatives.
 #resource = 'movement'
 #table = module + '_' + resource
-#db.define_table(table, timestamp, #uuidstamp,
+#db.define_table(table, timestamp, deletion_status, #uuidstamp,
 #                pitem_id,
 #                db.Field('moved_on','date'),
 #                db.Field('destination'),                      # presence_id
@@ -245,7 +245,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # after Identification till it is released or Unidentified  
 #resource = 'storage'
 #table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                case_id,
 #                opt_storage_type,
 #                location_id,
@@ -263,7 +263,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Each case is registered and assigned to someone for investigation
 #resource = 'management'
 #table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                case_id,
 #                person_id,
 #                db.Field('assigned_on', 'date'),
@@ -277,7 +277,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # To report the progress of processing
 #resource = 'operation_checklist'
 #table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                case_id,
 #                db.Field('personal_effects'),
 #                db.Field('photography'),

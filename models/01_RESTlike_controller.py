@@ -36,15 +36,20 @@ def export_pdf(table, query):
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
-        session.error = T('reportlab module not available within the running Python - this needs installing for PDF output!')
+        session.error = T('ReportLab module not available within the running Python - this needs installing for PDF output!')
         redirect(URL(r=request))
     try:
         from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
-        session.error = T('geraldo module not available within the running Python - this needs installing for PDF output!')
+        session.error = T('Geraldo module not available within the running Python - this needs installing for PDF output!')
         redirect(URL(r=request))
 
+    objects_list = db(query).select(table.ALL)
+    if not objects_list:
+        session.warning = T('No data in this table - cannot create PDF!')
+        redirect(URL(r=request))
+    
     import StringIO
     output = StringIO.StringIO()
     
@@ -56,15 +61,18 @@ def export_pdf(table, query):
     COLWIDTH = 2.5
     LEFTMARGIN = 0.2
     for field in fields:
-        #_elements.append(Label(text=str(field.label), top=0.8*cm, left=LEFTMARGIN*cm, width=COLWIDTH*cm))
         _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split('.')
-        value = db[tab][col]
+        #db[table][col].represent = 'foo'
         detailElements.append(ObjectValue(attribute_name=col, left=LEFTMARGIN*cm, width=COLWIDTH*cm))
         LEFTMARGIN += COLWIDTH
+    
+    mod, res = str(table).split('_', 1)
+    mod_nice = db(db.s3_module.name==mod).select()[0].name_nice
+    _title = mod_nice + ': ' + res.capitalize()
         
     class MyReport(Report):
-        title = str(table)
+        title = _title
         page_size = landscape(A4)
         class band_page_header(ReportBand):
             height = 1.3*cm
@@ -83,7 +91,6 @@ def export_pdf(table, query):
             height = 0.5*cm
             auto_expand_height = True
             elements = tuple(detailElements)
-    objects_list = db(query).select(table.ALL)
     report = MyReport(queryset=objects_list)
     report.generate_by(PDFGenerator, filename=output)
 

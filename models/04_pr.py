@@ -32,7 +32,7 @@ opt_pr_image_type = SQLTable(None, 'opt_pr_image_type',
 #
 resource = 'image'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pentity_id,
                 opt_pr_image_type,
                 Field('title'),
@@ -69,7 +69,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'presence'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pentity_id,                         # Personal Entity Reference
                 location_id,                        # Location
                 Field('time_start', 'datetime'),    # Start time
@@ -103,7 +103,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 resource = 'case'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('description'),               # Short Description
                 Field('details','text'),            # Detailed Description
                 Field('comment'),                   # a comment (optional)
@@ -124,7 +124,7 @@ pcase_id = SQLTable(None, 'pcase_id',
 #
 resource = 'finding'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pentity_id,                      # about which entity?
 #                opt_pr_findings_type,           # Finding type
                 Field('description'),           # Descriptive title

@@ -21,7 +21,7 @@ if not len(db().select(db[table].ALL)):
 # Organisations
 resource = 'organisation'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('privacy', 'integer', default=0),
                 #Field('archived', 'boolean', default=False),
                 Field('name', notnull=True, unique=True),
@@ -54,7 +54,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Offices
 resource = 'office'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 Field('organisation', db.or_organisation),
                 Field('type'),
@@ -105,7 +105,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # ToDo: Build an Organigram out of this data?
 resource = 'contact'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 person_id,
                 Field('office_id', db.or_office),
                 Field('title'),
@@ -137,7 +137,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #resource='organisation_offices'
 resource = 'office_to_organisation'
 table = module + '_' + resource
-db.define_table(table, timestamp,
+db.define_table(table, timestamp, deletion_status,
                 Field('office_id', db.or_office),
                 Field('organisation_id', db.or_organisation),
                 migrate=migrate)

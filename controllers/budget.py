@@ -80,6 +80,11 @@ def kit():
 
 def kit_item():
     "Many to Many CRUD Controller"
+    if 'format' in request.vars:
+        if request.vars.format == 'xls':
+            redirect(URL(r=request, f='kit_export_xls'))
+        elif request.vars.format == 'pdf':
+            redirect(URL(r=request, f='kit_export_pdf'))
     if len(request.args) == 0:
         session.error = T("Need to specify a kit!")
         redirect(URL(r=request, f='kit'))
@@ -236,7 +241,7 @@ def kit_update_items():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f='kit_item', args=[kit]))
 
-def kit_export():
+def kit_export_xls():
     """
     Export a list of Kits in Excel XLS format
     Sheet 1 is a list of Kits
@@ -245,7 +250,7 @@ def kit_export():
     try:
         import xlwt
     except ImportError:
-        session.error = T('xlwt module not available within the running Python  - this needs installing to do XLS Reporting!')
+        session.error = T('xlwt module not available within the running Python - this needs installing to do XLS Reporting!')
         redirect(URL(r=request, c='kit'))
     
     import StringIO
@@ -279,7 +284,8 @@ def kit_export():
             rowx.write(cell1, kit[col])
             cell1 += 1
         # Sheet per Kit detailing constituent Items
-        sheetname = kit.code.replace("\\","")
+        # Replace characters which are illegal in sheetnames
+        sheetname = kit.code.replace("/","_")
         sheet = book.add_sheet(sheetname)
         # Header row for Items sheet
         row0 = sheet.row(0)
@@ -312,13 +318,121 @@ def kit_export():
                 cell += 1
     
     book.save(output)
-    output.seek(0)
 
+    output.seek(0)
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.xls')
     filename = "%s_kits.xls" % (request.env.server_name)
-    response.headers['Content-disposition'] = "attachment; filename=%s" % filename
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
+    return output.read()
     
+def kit_export_pdf():
+    """
+    Export a list of Kits in Adobe PDF format
+    """
+    try:
+        from reportlab.lib.units import cm
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    except ImportError:
+        session.error = T('reportlab module not available within the running Python - this needs installing to do PDF Reporting!')
+        redirect(URL(r=request, c='kit'))
+    try:
+        from geraldo import Report, ReportBand, SubReport, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
+        from geraldo.generators import PDFGenerator
+    except ImportError:
+        session.error = T('geraldo module not available within the running Python - this needs installing to do PDF Reporting!')
+        redirect(URL(r=request, c='kit'))
+
+    import StringIO
+    output = StringIO.StringIO()
+    
+    #class MySubReport(SubReport):
+    #    def __init__(self, db=None, **kwargs):
+    #        " Initialise parent class & make any necessary modifications "
+    #        self.db = db
+    #        SubReport.__init__(self, **kwargs)
+
+    class MyReport(Report):
+        def __init__(self, queryset=None, db=None):
+            " Initialise parent class & make any necessary modifications "
+            Report.__init__(self, queryset)
+            self.db = db
+        # can't use T() here!
+        title = "Kits"
+        page_size = landscape(A4)
+        class band_page_header(ReportBand):
+            height = 1.3*cm
+            elements = [
+                SystemField(expression='%(report_title)s', top=0.1*cm,
+                    left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
+                    'fontSize': 14, 'alignment': TA_CENTER}
+                    ),
+                Label(text="Code", top=0.8*cm, left=0.2*cm),
+                Label(text="Description", top=0.8*cm, left=2*cm),
+                Label(text="Cost", top=0.8*cm, left=10*cm),
+                Label(text="Monthly", top=0.8*cm, left=12*cm),
+                Label(text="per Minute", top=0.8*cm, left=14*cm),
+                Label(text="per Megabyte", top=0.8*cm, left=16*cm),
+                Label(text="Comments", top=0.8*cm, left=18*cm),
+            ]
+            borders = {'bottom': True}
+        class band_page_footer(ReportBand):
+            height = 0.5*cm
+            elements = [
+                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
+                    width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
+            ]
+            borders = {'top': True}
+        class band_detail(ReportBand):
+            height = 0.5*cm
+            auto_expand_height = True
+            elements = (
+                    ObjectValue(attribute_name='code', left=0.2*cm, width=1.8*cm),
+                    ObjectValue(attribute_name='description', left=2*cm, width=8*cm),
+                    ObjectValue(attribute_name='total_unit_cost', left=10*cm, width=2*cm),
+                    ObjectValue(attribute_name='total_monthly_cost', left=12*cm, width=2*cm),
+                    ObjectValue(attribute_name='total_minute_cost', left=14*cm, width=2*cm),
+                    ObjectValue(attribute_name='total_megabyte_cost', left=16*cm, width=2*cm),
+                    ObjectValue(attribute_name='comments', left=18*cm, width=6*cm),
+                    )
+        subreports = [
+            SubReport(
+                #queryset_string = 'db((db.budget_kit_item.kit_id==%(object)s.id)&(db.budget_item.id==db.budget_kit_item.item_id)).select(db.budget_item.code, db.budget_item.description, db.budget_item.unit_cost)',
+                #queryset_string = 'db(db.budget_kit_item.kit_id==%(object)s.id).select()',
+                band_header = ReportBand(
+                        height=0.5*cm,
+                        elements=[
+                            Label(text='Item ID', top=0, left=0.2*cm, style={'fontName': 'Helvetica-Bold'}),
+                            Label(text='Quantity', top=0, left=2*cm, style={'fontName': 'Helvetica-Bold'}),
+                            #Label(text='Unit Cost', top=0, left=4*cm, style={'fontName': 'Helvetica-Bold'}),
+                            ],
+                        borders={'top': True, 'left': True, 'right': True},
+                        ),
+                detail_band = ReportBand(
+                        height=0.5*cm,
+                        elements=[
+                            ObjectValue(attribute_name='item_id', top=0, left=0.2*cm),
+                            ObjectValue(attribute_name='quantity', top=0, left=2*cm),
+                            #ObjectValue(attribute_name='unit_cost', top=0, left=4*cm),
+                            ]
+                        ),
+                ),
+            ]
+
+        
+    table = db.budget_kit
+    objects_list = db(table.id > 0).select()
+    #report = MyReport(queryset=objects_list)
+    report = MyReport(queryset=objects_list, db=db)
+    report.generate_by(PDFGenerator, filename=output)
+
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.pdf')
+    filename = "%s_kits.pdf" % (request.env.server_name)
+    response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
     return output.read()
     
 def bundle():

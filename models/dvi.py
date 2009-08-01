@@ -22,7 +22,7 @@ if not len(db().select(db[table].ALL)):
 resource = 'dead_body'
 table = module + '_' + resource
 
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('tag_label', notnull=True, unique=True),   # a unique label
                 Field('age_group', notnull=True),                # age group
                 Field('sex', notnull=True),                      # gender

@@ -175,6 +175,8 @@ def item_export_pdf():
     
 def kit():
     "RESTlike CRUD controller"
+    response.pdf = URL(r=request, f='kit_export_pdf')
+    response.xls = URL(r=request, f='kit_export_xls')
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='kit_item', args=request.args[1])
     return shn_rest_controller(module, 'kit', main='code', onaccept=lambda form: kit_total(form))

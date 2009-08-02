@@ -28,7 +28,7 @@ response.menu_options = [
     ]],
     [T('Person Entities'), False, '#',[
         [T('List Entities'), False, URL(r=request, f='pentity')],
-        [T('Add Image'), False, URL(r=request, f='image', args='create')],
+        [T('Add Image To Entity'), False, URL(r=request, f='image', args='create')],
         [T('List Images'), False, URL(r=request, f='image')],
         [T('Add Presence Record'), False, URL(r=request, f='presence', args='create')],
         [T('List Presence Records'), False, URL(r=request, f='presence')]
@@ -71,52 +71,4 @@ def pentity():
 def download():
     "Download a file."
     return response.download(request, db) 
-
-#
-# Person Selector
-#
-def select():
-
-    if not session.pr:
-        session.pr = Storage()
-
-    if request.vars.person_id:
-        record = db.pr_person[request.vars.person_id]
-        if record:
-            session.pr.current_person = record.id
-        del request.vars['person_id']
-        redirect( URL( r=request ))
-
-    if not session.pr.current_person:
-        person_name="No person selected"
-    else:
-        person_name=db.pr_person[session.pr.current_person]['first_name']+' '+db.pr_person[session.pr.current_person]['last_name']
-
-    form=FORM(TABLE(
-            TR("", person_name,
-                INPUT(_name="clr_btn", _type="submit", _value='Clear')
-            ),
-            TR("ID, Name or Label:",
-                INPUT(_type="text",_name="label"),
-                INPUT(_name="sbm_btn", _type="submit",_value='Search')
-                )))
-
-    items=None
-
-    if form.accepts(request.vars,session):
-        if form.vars.clr_btn=='':
-            session.pr.current_person = db.pr_person[1].id
-            redirect( URL( r=request ))
-        else:
-            if session.pr.current_person:
-                del session.pr['current_person']
-            redirect( URL( r=request ))
-
-    if session.pr.current_person:
-        items=TABLE(
-                TR('Currently selected: '),
-                TR(db.pr_person[session.pr.current_person]['first_name'],
-                    db.pr_person[session.pr.current_person]['last_name']))
-
-    return dict(request, title="Test", form=form, items=items)
 

@@ -102,22 +102,6 @@ opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
                     represent = lambda opt: opt and pr_group_type_opts[opt]))
 
 #
-# PersonEntity classes ----------------
-#
-pr_pentity_class_opts = {
-    1:T('Person'),
-    2:T('Group'),
-    3:T('Dead Body'),
-    4:T('Personal Belongings')
-    }
-
-opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
-                    db.Field('opt_pr_pentity_class','integer',
-                    requires = IS_IN_SET(pr_pentity_class_opts),
-                    default = 1,
-                    represent = lambda opt: opt and pr_pentity_class_opts[opt]))
-
-#
 # Tag types ---------------------------
 #
 pr_tag_type_opts = {
@@ -134,55 +118,77 @@ opt_pr_tag_type = SQLTable(None, 'opt_pr_tag_type',
                     represent = lambda opt: opt and pr_tag_type_opts[opt]))
 
 #
+# PersonEntity classes ----------------
+#
+pr_pentity_class_opts = {
+    1:T('Person'),                  # used in PR  - don't change
+    2:T('Group'),                   # used in PR  - don't change
+    3:T('Dead Body'),               # used in HRM - don't change
+    4:T('Personal Belongings'),     # used in HRM - don't change
+    5:T('Missing Person')           # used in MPR - don't change
+    }
+
+opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
+                    db.Field('opt_pr_pentity_class','integer',
+                    requires = IS_IN_SET(pr_pentity_class_opts),
+                    default = 1,
+                    label = T('Entity Class'),
+                    represent = lambda opt: opt and pr_pentity_class_opts[opt]))
+
+#
 # Person-Entity ---------------------------------------------------------------
+#
+# includes:
+#   pr_pentity.id                       - Record ID
+#   pr_pentity.opt_pr_pentity_class     - Entity Class
+#   pr_pentity.label                    - Recognition Label
 #
 resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 opt_pr_pentity_class,               # Entity class
-                opt_pr_tag_type,                    # Tag type
-                Field('pr_tag_label'),              # Tag Label
+                Field('label', unique=True),        # Recognition Label
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
+
+
+#
+# Person Entity Field Set -------------
+#
+# for other Person Entity Tables to reference
+#
+pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
+                    Field('pr_pe_id', db.pr_pentity,
+                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(id)s')), # TODO: use custom validator!
+                    represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
+                    ondelete = 'RESTRICT',
+                    readable = False,   # should be invisible in (most) forms
+                    writable = False    # should be invisible in (most) forms
+                    ),
+                    Field('pr_pe_label',
+                    label = T('Recognition Label'),
+                    requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
+                    ))
 
 #
 # Reusable field for other tables to reference
 #
-pentity_id = SQLTable(None, 'pentity_id',
-                Field('pentity_id', db.pr_pentity,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(pr_tag_label)s (%(id)s)')),
-                represent = lambda id: (id and db(db.pr_pentity.id==id).select()[0].pr_tag_label and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None ("+str(id)+")"])[0],
-#                comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
+pr_pe_id = SQLTable(None, 'pe_id',
+                Field('pr_pe_id', db.pr_pentity,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(label)s (%(id)s)')), # TODO: use custom validator!
+                represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
                 ondelete = 'RESTRICT',
-                readable = False,
-                writable = False
+                label = T('Entity ID')
                 ))
 
 #
-# Reusable field set for PersonEntity tables
-# includes:
-#   pentity_id          Person Entity ID      (should be invisible in forms)
-#   opt_pr_tag_type     Tag Type
-#   pr_tag_label        Tag Label
-#
-pentity_field_set = SQLTable(None, 'pentity_id',
-                    Field('pentity_id', db.pr_pentity,
-                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(id)s (%(pr_tag_label)s)')),
-                    represent = lambda id: (id and db(db.pr_pentity.id==id).select()[0].pr_tag_label and [db(db.pr_pentity.id==id).select()[0].pr_tag_label+" ("+str(id)+")"] or ["None ("+str(id)+")"])[0],
-#                    comment = DIV(A(T('Add Entity'), _class='popup', _href=URL(r=request, c='pr', f='pentity', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Entity|New Personal Presence, Body or Item."))),
-                    ondelete = 'RESTRICT',
-                    readable = False,
-                    writable = False),
-                    opt_pr_tag_type,
-                    Field('pr_tag_label', label = T('Tag Label')))
-
-#
-# Persons ---------------------------------------------------------------------
+# Person ----------------------------------------------------------------------
 #
 resource = 'person'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
-                pentity_field_set,
+                pr_pe_fieldset,                         # Person Entity Field Set
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
@@ -194,21 +200,16 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),                       # comment
                 migrate=migrate)
 
-#db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].opt_pr_gender.label = T('Gender')
 db[table].opt_pr_age_group.label = T('Age group')
-#db[table].pentity_id.readable = False
-#db[table].pentity_id.writable = False
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].first_name.comment = SPAN("*", _class="req")
-#db[table].last_name.label = T("Family Name")
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
 db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
 db[table].mobile_phone.label = T("Mobile Phone #")
 db[table].mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
-#db[table].website.requires = IS_NULL_OR(IS_URL())
 title_create = T('Add Person')
 title_display = T('Person Details')
 title_list = T('List Persons')
@@ -234,7 +235,7 @@ person_id = SQLTable(None, 'person_id',
                 ))
 
 #
-# Person Details (Sahana legacy)
+# Person Details (Sahana legacy) ----------------------------------------------
 #
 resource = 'person_details'
 table = module + '_' + resource
@@ -249,7 +250,7 @@ db.define_table(table, timestamp, deletion_status,
                 migrate=migrate)
 
 #
-# Person Physical (Sahana legacy)
+# Person Physical (Sahana legacy) ---------------------------------------------
 #
 resource = 'person_physical'
 table = module + '_' + resource
@@ -258,32 +259,28 @@ db.define_table(table, timestamp, deletion_status,
                 Field('description','text'),
                 migrate=migrate)
 
+# ************************************* TO BE REMOVED!
+# Missing Person (Sahana legacy) ----------------------------------------------
 #
-# Missing Person (Sahana legacy)
+#resource = 'person_missing'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, deletion_status,
+#                person_id,
+#                Field('description','text'),
+#                migrate=migrate)
+
+# ************************************* TO BE REMOVED!
+# Deceased Person (Sahana legacy) ---------------------------------------------
 #
-resource = 'person_missing'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                person_id,
-                Field('description','text'),
-                migrate=migrate)
+#resource = 'person_deceased'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, deletion_status,
+#                person_id,
+#                Field('description','text'),
+#                migrate=migrate)
 
 #
-# Deceased Person (Sahana legacy)
-#
-resource = 'person_deceased'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                person_id,
-                Field('description','text'),
-                migrate=migrate)
-
-#
-# Identities ------------------------------------------------------------------
-#
-
-#
-# Identity
+# Identitiy -------------------------------------------------------------------
 #
 resource = 'identity'
 table = module + '_' + resource
@@ -291,6 +288,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 person_id,                          # Reference to person
                 opt_pr_id_type,                     # ID type
                 Field('value'),                     # ID value
+                Field('country_code', length=4),    # Country Code (for National ID Cards)
                 Field('ia_name'),                   # Name of issuing authority
 #                Field('ia_subdivision'),            # Name of issuing authority subdivision
 #                Field('ia_code'),                   # Code of issuing authority (if any)
@@ -301,20 +299,21 @@ db[table].ia_name.label = T("Issuing Authority")
 
 #
 # Group -----------------------------------------------------------------------
+# TODO: elaborate!
 #
 resource = 'group'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
-                pentity_field_set,                                # pentity reference
+                pr_pe_fieldset,                                 # Person Entity Field Set
                 opt_pr_group_type,                              # group type
                 Field('group_name'),                            # Group name (optional?)
                 Field('group_description'),                     # Group short description
 #                Field('group_head'),                           # Sahana legacy
-                Field('no_of_adult_males','integer'),           # Sahana legacy
-                Field('no_of_adult_females','integer'),         # Sahana legacy
+#                Field('no_of_adult_males','integer'),           # Sahana legacy
+#                Field('no_of_adult_females','integer'),         # Sahana legacy
 #                Field('no_of_children', 'integer'),            # Sahana legacy
-                Field('no_of_children_males','integer'),        # by Khushbu
-                Field('no_of_children_females','integer'),      # by Khushbu
+#                Field('no_of_children_males','integer'),        # by Khushbu
+#                Field('no_of_children_females','integer'),      # by Khushbu
 #                Field('no_of_displaced', 'integer'),           # Sahana legacy
 #                Field('no_of_missing', 'integer'),             # Sahana legacy
 #                Field('no_of_dead', 'integer'),                # Sahana legacy
@@ -324,12 +323,8 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),                               # optional comment
                 migrate=migrate)
 
-# TODO: restrictions and requirements
-# TODO: CRUD strings
-db[table].opt_pr_tag_type.readable=False
-db[table].opt_pr_tag_type.writable=False
-db[table].pr_tag_label.readable=False
-db[table].pr_tag_label.writable=False
+db[table].pr_pe_label.readable=False
+db[table].pr_pe_label.writable=False
 
 db[table].opt_pr_group_type.label = T("Group type")
 
@@ -441,19 +436,19 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 # Callback functions ----------------------------------------------------------
 #
 
-#
+# TODO: use get() to avoid exception
 # pentity_ondelete:
 # Remove a pentity when the corresponding subclass item gets deleted
 #
 def shn_pentity_ondelete(record):
-    if record.pentity_id:
-        del db.pr_pentity[record.pentity_id]
+    if record.pe_id:
+        del db.pr_pentity[record.pe_id]
     else:
         #ignore
         pass
     return
 
-#
+# TODO: check for pe_fieldset before update
 # pentity_onvalidation:
 # Create/update a pentity when a corresponding subclass item gets created/updated
 #
@@ -462,25 +457,22 @@ def shn_pentity_onvalidation(form, resource=None, entity_class=1):
         if len(request.args) == 0 or request.args[0] == 'create':
             # this is a create action either directly or from list view
             if entity_class in pr_pentity_class_opts.keys():
-                pentity_id = db['pr_pentity'].insert(
+                pr_pe_id = db['pr_pentity'].insert(
                     opt_pr_pentity_class=entity_class,
-                    opt_pr_tag_type=form.vars.opt_pr_tag_type,
-                    pr_tag_label=form.vars.pr_tag_label )
-                if pentity_id:
-                    form.vars.pentity_id = pentity_id
+                    label=form.vars.pr_pe_label
+                    )
+                if pr_pe_id:
+                    form.vars.pr_pe_id = pr_pe_id
         elif len(request.args) > 0:
             if request.args[0] == 'update' and form.vars.delete_this_record:
                 # this is a delete action from update
                 if len(request.args) > 1:
-                    my_id = request.args[1]
+                    pr_pe_id = request.args[1]
                     if resource:
-                        shn_pentity_ondelete(db[resource][my_id])
+                        shn_pentity_ondelete(db[resource][pr_pe_id])
             elif request.args[0] == 'update':
                 if len(request.args) > 1:
-                    my_id = request.args[1]
+                    pr_pe_id = request.args[1]
                     if resource:
-                        db(db.pr_pentity.id==db[resource][my_id].pentity_id).update(
-                            opt_pr_tag_type=form.vars.opt_pr_tag_type,
-                            pr_tag_label=form.vars.pr_tag_label)
+                        db(db.pr_pentity.id==db[resource][pr_pe_id].pr_pe_id).update(label=form.vars.pr_pe_label)
     return
-

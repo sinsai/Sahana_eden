@@ -58,6 +58,10 @@ def group_membership():
 def image():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')
+def image_person():
+    request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'image')
 def presence():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')

@@ -152,9 +152,7 @@ class IS_PE_ID(object):
             else:
                 pe_label_str = ''
             label = pe_class_str+pe_id_str+pe_name_str+pe_label_str
-            print label
             set.append((r.id, label))
-            print set
         return( set )
 
     def __call__(self,value):

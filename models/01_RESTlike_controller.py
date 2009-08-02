@@ -516,6 +516,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             # Filter Search List to remove entries which have been deleted
             if 'deleted' in table:
                 query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
+            # Filter Search List for custom query
+            if request.filter:
+                query = request.filter & query
             # list_create if have permissions
             authorised = shn_has_permission('create', table)
             # Audit

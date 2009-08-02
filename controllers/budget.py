@@ -188,6 +188,26 @@ def kit_item():
             redirect(URL(r=request, f='kit_export_xls'))
         elif request.vars.format == 'pdf':
             redirect(URL(r=request, f='kit_export_pdf'))
+        elif request.vars.format == 'csv':
+            if str.lower(request.args(0)) == 'list':
+                redirect(URL(r=request, f='kit_export_csv'))
+            elif str.lower(request.args(0)) == 'create':
+                resource = request.function
+                table = db[module + '_' + resource]
+                # Read in POST
+                file = request.vars.filename.file
+                try:
+                    import_csv(table, file)
+                    session.flash = T('Data uploaded')
+                except: 
+                    session.error = T('Unable to parse CSV file!')
+                redirect(URL(r=request))
+            else:
+                session.error = BADMETHOD
+                redirect(URL(r=request))
+        else:
+            session.error = BADFORMAT
+            redirect(URL(r=request))
     if len(request.args) == 0:
         session.error = T("Need to specify a kit!")
         redirect(URL(r=request, f='kit'))
@@ -542,6 +562,21 @@ def kit_export_pdf():
     filename = "%s_kits.pdf" % (request.env.server_name)
     response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
     return output.read()
+    
+def kit_export_csv():
+    """
+    Export kit_item in CSV format
+    Currently this just exports kit_item (kit needs to be done separately via main RESTlike controller)
+    """
+    resource = 'kit_item'
+    
+    table = db[module + '_' + resource]
+    # Filter Search list to just those records which user can read
+    query = shn_accessible_query('read', table)
+    # Filter Search List to remove entries which have been deleted
+    if 'deleted' in table:
+        query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
+    return export_csv(resource, query, record=None)
     
 def bundle():
     "RESTlike CRUD controller"

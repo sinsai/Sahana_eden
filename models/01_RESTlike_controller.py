@@ -10,6 +10,7 @@ ROWSPERPAGE = 20
 # Make these constants to ensure consistency
 UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported format!')
+BADMETHOD = T('Unsupported method!')
 
 # Data conversions
 def export_csv(resource, query, record=None):
@@ -862,7 +863,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         session.error = BADFORMAT
                         redirect(URL(r=request))
                 else:
-                    session.error = T('Unsupported method!')
+                    session.error = BADMETHOD
                     redirect(URL(r=request))
             else:
                 session.error = UNAUTHORISED

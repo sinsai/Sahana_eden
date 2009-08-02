@@ -1,8 +1,16 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+#
+# Missing Person Module
+#
+# created 2009-08-01 by nursix
+#
 
 module = 'mpr'
 
-# Settings
+#
+# Settings --------------------------------------------------------------------
+#
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table,
@@ -18,15 +26,20 @@ if not len(db().select(db[table].ALL)):
         audit_write = False
     )
 
-resource = 'person'
+#
+# Missing Person --------------------------------------------------------------
+#
+
+resource = 'missing_person'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                person_id,
-                Field('last_seen'),
-                Field('last_clothing'),
-                Field('comments', length=256),
+                pr_pe_fieldset,
                 migrate=migrate)
-db[table].person_id.label = 'Person'
+
+# Hide label
+db[table].pr_pe_label.readable=False
+db[table].pr_pe_label.writable=False
+
 title_create = T('Add Person')
 title_display = T('Person Details')
 title_list = T('List People')

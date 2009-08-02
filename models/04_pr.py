@@ -33,7 +33,7 @@ opt_pr_image_type = SQLTable(None, 'opt_pr_image_type',
 resource = 'image'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                pentity_id,
+                pr_pe_id,
                 opt_pr_image_type,
                 Field('title'),
                 Field('image', 'upload', autodelete=True),
@@ -43,9 +43,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].pentity_id.readable = True
-db[table].pentity_id.writable = True
-db[table].pentity_id.label = T('Tag Label (ID)')
 db[table].image.represent = lambda image: DIV(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60))
 
 title_create = T('Image')
@@ -70,7 +67,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'presence'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                pentity_id,                         # Personal Entity Reference
+                pr_pe_id,                         # Personal Entity Reference
                 location_id,                        # Location
                 Field('time_start', 'datetime'),    # Start time
 #                Field('time_end', 'datetime'),      # End time
@@ -80,9 +77,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].time_start.label = T('Date and Time')
-db[table].pentity_id.readable=True
-db[table].pentity_id.writable=True
-db[table].pentity_id.label = T('Tag Label (ID)')
 
 title_create = T('Presence')
 title_display = T('Presence Details')
@@ -125,7 +119,7 @@ pcase_id = SQLTable(None, 'pcase_id',
 resource = 'finding'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                pentity_id,                      # about which entity?
+                pr_pe_id,                      # about which entity?
 #                opt_pr_findings_type,           # Finding type
                 Field('description'),           # Descriptive title
                 Field('module'),                # Access module

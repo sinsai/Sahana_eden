@@ -458,6 +458,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     extra='field': the field used for the description in RSS output & in Search AutoComplete
     onvalidation=lambda form: function(form)    callback processed *before* DB IO
     onaccept=lambda form: function(form)        callback processed *after* DB IO
+
+    Request options:
+
+        request.filter              contains custom query to filter list views
     
     Customisable Security Policy
 
@@ -516,6 +520,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             # Filter Search List to remove entries which have been deleted
             if 'deleted' in table:
                 query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
+            # Filter Search List for custom query
+            if request.filter:
+                query = request.filter & query
             # list_create if have permissions
             authorised = shn_has_permission('create', table)
             # Audit

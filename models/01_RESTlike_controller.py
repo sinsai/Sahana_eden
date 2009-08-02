@@ -10,6 +10,7 @@ ROWSPERPAGE = 20
 # Make these constants to ensure consistency
 UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported format!')
+BADMETHOD = T('Unsupported method!')
 
 # Data conversions
 def export_csv(resource, query, record=None):
@@ -623,8 +624,31 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource)}))
     else:
         if request.args[0].isdigit():
-            # 1st argument is ID not method => Read.
+            # 1st argument is ID not method
             record = request.args[0]
+            if request.env.request_method == 'DELETE':
+                # This client is using REST
+                if db(db[table].id == record).select():
+                    authorised = shn_has_permission('delete', table, record)
+                    if authorised:
+                        # Audit
+                        shn_audit_delete(resource, record, representation)
+                        if "deleted" in db[table]:
+                            # Mark as deleted rather than really deleting
+                            db(db[table].id == record).update(deleted = True)
+                        else:
+                            # Delete properly
+                            crud.delete(table, record)
+                        item = '{"Status":"OK","Error":{"StatusCode":200}}'
+                        response.view = 'plain.html'
+                        return dict(item=item)
+                    else:
+                        # Unauthorised
+                        raise HTTP(401)
+                else:
+                    # Not found
+                    raise HTTP(404)
+            # Not DELETE => Read (we don't yet implement PUT for create/update)
             authorised = shn_has_permission('read', table, record)
             if authorised:
                 # Audit
@@ -839,7 +863,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         session.error = BADFORMAT
                         redirect(URL(r=request))
                 else:
-                    session.error = T('Unsupported method!')
+                    session.error = BADMETHOD
                     redirect(URL(r=request))
             else:
                 session.error = UNAUTHORISED

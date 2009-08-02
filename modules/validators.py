@@ -109,30 +109,60 @@ class IS_PE_ID(object):
             self.dbset = dbset
 
     def options(self):
+        query = self.dbset._db['pr_pentity']['id']>0
         if self.filter_opts:
-            query = self.dbset._db['pr_pentity'].opt_pr_pentity_class.belongs(self.filter_opts)
-            records = self.dbset(query).select(
-                self.dbset._db['pr_pentity'].id,
-                self.dbset._db['pr_pentity'].opt_pr_pentity_class,
-                self.dbset._db['pr_pentity'].label
-                )
-        else:
-            query = None
-            records = self.dbset.select(
-                self.dbset._db['pr_pentity'].id,
-                self.dbset._db['pr_pentity'].opt_pr_pentity_class,
-                self.dbset._db['pr_pentity'].label
-                )
-        if (self.class_opts):
-            set = [ ( r.id , str(self.class_opts[r.opt_pr_pentity_class]) + ' ' + str(r.id)) for r in records ]
-        else:
-            set = [ ( r.id , str(r.id)) for r in records ]
+            query = query&(self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts))
+        records = self.dbset(query).select(
+            self.dbset._db['pr_pentity'].id,
+            self.dbset._db['pr_pentity'].opt_pr_pentity_class,
+            self.dbset._db['pr_pentity'].label
+            )
+        set = []
+        for r in records:
+            if self.class_opts:
+                pe_class_str = str(self.class_opts[r.opt_pr_pentity_class]) + ' '
+            else:
+                pe_class_str = ''
+            if r.opt_pr_pentity_class==1:
+                query = self.dbset._db['pr_person']['pr_pe_id']==r.id
+                person_record = self.dbset(query).select()[0]
+                if person_record:
+                    pe_id_str = str(person_record.id) + ': '
+                    if person_record.last_name:
+                        pe_name_str =  person_record.first_name + ' ' + person_record.last_name + ' '
+                    else:
+                        pe_name_str = person_record.first_name + ' '
+                else:
+                    pe_id_str = str(r.id) + ': '
+                    pe_name_str = ''
+            elif r.opt_pr_pentity_class==2:
+                query = self.dbset._db['pr_group']['pr_pe_id']==r.id
+                group_record = self.dbset(query).select()[0]
+                if group_record:
+                    pe_id_str = str(group_record.id) + ': '
+                    pe_name_str = group_record.group_name + ' '
+                else:
+                    pe_id_str = str(r.id) + ': '
+                    pe_name_str = ''
+            else:
+                pe_id_str = str(r.id) + ': '
+                pe_name_str = ''
+            if r.label:
+                pe_label_str = r.label
+            else:
+                pe_label_str = ''
+            label = pe_class_str+pe_id_str+pe_name_str+pe_label_str
+            print label
+            set.append((r.id, label))
+            print set
         return( set )
 
     def __call__(self,value):
         try:
-            field = self.dbset._db['pr_pentity']['id']
-            if self.dbset(field == value).count():
+            query = self.dbset._db['pr_pentity']['id']==value
+            if self.filter_opts:
+                query = query&(self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts))
+            if self.dbset(query).count():
                 return (value, None)
             else:
                 pass

@@ -458,6 +458,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
     extra='field': the field used for the description in RSS output & in Search AutoComplete
     onvalidation=lambda form: function(form)    callback processed *before* DB IO
     onaccept=lambda form: function(form)        callback processed *after* DB IO
+
+    Request options:
+
+        request.filter              contains custom query to filter list views
     
     Customisable Security Policy
 

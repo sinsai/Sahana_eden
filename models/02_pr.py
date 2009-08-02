@@ -146,12 +146,14 @@ opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
 resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('parent'),                    # Parent Entity
                 opt_pr_pentity_class,               # Entity class
                 Field('label', unique=True),        # Recognition Label
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-
+db[table].parent.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts))
+db[table].parent.label = T('belongs to')
 
 #
 # Person Entity Field Set -------------
@@ -160,9 +162,17 @@ db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
 #
 pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
                     Field('pr_pe_id', db.pr_pentity,
-                    requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(id)s')), # TODO: use custom validator!
+                    requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
                     represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
                     ondelete = 'RESTRICT',
+                    readable = False,   # should be invisible in (most) forms
+                    writable = False    # should be invisible in (most) forms
+                    ),
+                    Field('pr_pe_parent', db.pr_pentity,
+                    requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
+                    represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
+                    ondelete = 'RESTRICT',
+                    label = T('belongs to'),
                     readable = False,   # should be invisible in (most) forms
                     writable = False    # should be invisible in (most) forms
                     ),
@@ -176,7 +186,7 @@ pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
 #
 pr_pe_id = SQLTable(None, 'pe_id',
                 Field('pr_pe_id', db.pr_pentity,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_pentity.id', '%(label)s (%(id)s)')), # TODO: use custom validator!
+                requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
                 represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
                 ondelete = 'RESTRICT',
                 label = T('Entity ID')

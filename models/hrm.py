@@ -110,8 +110,9 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
                 migrate = migrate)
 
 #db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].pr_pe_id.readable = False
-db[table].pr_pe_id.writable = False
+db[table].pr_pe_parent.readable = True
+db[table].pr_pe_parent.writable = True
+db[table].pr_pe_parent.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(3,)))
 #db[table].opt_pr_tag_type.label = T('Tag type')
 db[table].hrm_find_id.label = T('Find report')
 db[table].opt_pr_gender.label=T('Apparent Gender')

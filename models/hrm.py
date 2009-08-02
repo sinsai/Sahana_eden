@@ -97,7 +97,7 @@ hrm_find_id = SQLTable(None, 'hrm_find_id',
 resource = 'body'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status, #uuidstamp,
-                pentity_field_set,
+                pr_pe_fieldset,                             # Person Entity Fieldset
 #                db.Field('date_of_find', 'date'),
                 hrm_find_id,                                # Associated find report (if any)
                 db.Field('date_of_recovery', 'date'),
@@ -110,9 +110,9 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
                 migrate = migrate)
 
 #db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].pentity_id.readable = False
-db[table].pentity_id.writable = False
-db[table].opt_pr_tag_type.label = T('Tag type')
+db[table].pr_pe_id.readable = False
+db[table].pr_pe_id.writable = False
+#db[table].opt_pr_tag_type.label = T('Tag type')
 db[table].hrm_find_id.label = T('Find report')
 db[table].opt_pr_gender.label=T('Apparent Gender')
 db[table].opt_pr_age_group.label=T('Apparent Age')

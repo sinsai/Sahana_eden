@@ -8,9 +8,7 @@ $(document).ready(function() {
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-<a href="{{=response.pdf or URL(r=request, args=request.args, vars={'format':'pdf'})}}"><img src="/{{=request.application}}/static/img/pdficon_small.gif"/></a>
-<a href="{{=URL(r=request, args=request.args, vars={'format':'rss'})}}"><img src="/{{=request.application}}/static/img/RSS_16.png"/></a>
-<a href="{{=response.xls or URL(r=request, args=request.args, vars={'format':'xls'})}}"><img src="/{{=request.application}}/static/img/icon-xls.png"/></a>
+{{include 'formats.html'}}
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}

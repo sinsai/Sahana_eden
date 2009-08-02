@@ -96,7 +96,7 @@ def item_export_pdf():
     objects_list = db(table.id > 0).select(orderby=table.category_type)
     if not objects_list:
         session.warning = T('No data in this table - cannot create PDF!')
-        redirect(URL(r=request))
+        redirect(URL(r=request, f='item'))
     
     import StringIO
     output = StringIO.StringIO()

@@ -156,6 +156,60 @@ db[table].parent.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts))
 db[table].parent.label = T('belongs to')
 
 #
+# shn_pentity_represent:
+def shn_pentity_represent(pentity):
+    if pentity and pentity.opt_pr_pentity_class==1:
+        subentity_record=db(db.pr_person.pr_pe_id==pentity.id).select()[0]
+        if subentity_record:
+            pentity_str = '%s %s [%s] (%s %s)' % (
+                subentity_record.first_name,
+                subentity_record.last_name or '',
+                subentity_record.pr_pe_label or 'no label',
+                pr_pentity_class_opts[1],
+                subentity_record.id
+            )
+        else:
+            pentity_str = '[%s] (%s PE=%s)' % (
+                pentity.label or 'no label',
+                pr_pentity_class_opts[1],
+                pentity.id
+            )
+    elif pentity and pentity.opt_pr_pentity_class==2:
+        subentity_record=db(db.pr_group.pr_pe_id==pentity.id).select()[0]
+        if subentity_record:
+            pentity_str = '%s (%s %s)' % (
+                subentity_record.group_name,
+                pr_pentity_class_opts[2],
+                subentity_record.id
+            )
+        else:
+            pentity_str = '(%s PE=%s)' % (
+                pr_pentity_class_opts[2],
+                pentity.id
+            )
+    elif pentity and pentity.opt_pr_pentity_class==3:
+        subentity_record=db(db.hrm_body.pr_pe_id==pentity.id).select()[0]
+        if subentity_record:
+            pentity_str = '[%s] (%s %s)' % (
+                subentity_record.pr_pe_label or 'no label',
+                pr_pentity_class_opts[3],
+                subentity_record.id
+            )
+        else:
+            pentity_str = '[%s] (%s PE=%s)' % (
+                pentity.label or 'no label',
+                pr_pentity_class_opts[3],
+                pentity.id
+            )
+    elif pentity:
+        pentity_str = '[%s] (%s PE=%s)' % (
+            pentity.label or 'no label',
+            pr_pentity_class_opts[pentity.opt_pr_pentity_class],
+            pentity.id
+        )
+    return pentity_str
+
+#
 # Person Entity Field Set -------------
 #
 # for other Person Entity Tables to reference
@@ -163,14 +217,14 @@ db[table].parent.label = T('belongs to')
 pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
                     Field('pr_pe_id', db.pr_pentity,
                     requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
-                    represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
+                    represent = lambda id: (id and [shn_pentity_represent(db(db.pr_pentity.id==id).select()[0])] or ["None"])[0],
                     ondelete = 'RESTRICT',
                     readable = False,   # should be invisible in (most) forms
                     writable = False    # should be invisible in (most) forms
                     ),
                     Field('pr_pe_parent', db.pr_pentity,
                     requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
-                    represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
+                    represent =  lambda id: (id and [shn_pentity_represent(db(db.pr_pentity.id==id).select()[0])] or ["None"])[0],
                     ondelete = 'RESTRICT',
                     label = T('belongs to'),
                     readable = False,   # should be invisible in (most) forms
@@ -187,7 +241,7 @@ pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
 pr_pe_id = SQLTable(None, 'pe_id',
                 Field('pr_pe_id', db.pr_pentity,
                 requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
-                represent = lambda id: (id and [db(db.pr_pentity.id==id).select()[0].id] or ["None"])[0], # TODO: use custom representation!
+                represent = lambda id: (id and [shn_pentity_represent(db(db.pr_pentity.id==id).select()[0])] or ["None"])[0],
                 ondelete = 'RESTRICT',
                 label = T('Entity ID')
                 ))
@@ -446,43 +500,50 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 # Callback functions ----------------------------------------------------------
 #
 
-# TODO: use get() to avoid exception
-# pentity_ondelete:
-# Remove a pentity when the corresponding subclass item gets deleted
-#
 def shn_pentity_ondelete(record):
-    if record.pe_id:
-        del db.pr_pentity[record.pe_id]
-    else:
-        #ignore
-        pass
+    """
+    VITA function:
+    Minimalistic callback function for CRUD controller, deletes a pentity record
+    when the corresponding subclass record gets deleted.
+     
+    Use as setting in the calling controller:
+    
+    crud.settings.delete_onvalidation=shn_pentity_ondelete
+
+    Also called by the shn_pentity_onvalidation function on deletion from update form
+    """
+    if record.get('pr_pe_id'):
+        del db.pr_pentity[record.pr_pe_id]
     return
 
-# TODO: check for pe_fieldset before update
-# pentity_onvalidation:
-# Create/update a pentity when a corresponding subclass item gets created/updated
-#
-def shn_pentity_onvalidation(form, resource=None, entity_class=1):
-    if form:
-        if len(request.args) == 0 or request.args[0] == 'create':
+def shn_pentity_onvalidation(form, table=None, entity_class=1):
+    """
+    VITA function:
+    Callback function for RESTlike CRUD controller, creates or updates a pentity
+    record when the corresponding subclass record gets created/updated.
+     
+    Passed to shn_rest_controller as:
+    
+    onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1)
+
+    form            : the current form containing pr_pe_id and pr_pe_label (from pr_pe_fieldset)
+    table           : the table containing the subclass entity
+    entity_class    : the class of pentity to be created (from pr_pentity_class_opts)
+    """
+    if form.vars:
+        if (len(request.args) == 0 or request.args[0] == 'create') and entity_class in pr_pentity_class_opts.keys():
             # this is a create action either directly or from list view
-            if entity_class in pr_pentity_class_opts.keys():
-                pr_pe_id = db['pr_pentity'].insert(
-                    opt_pr_pentity_class=entity_class,
-                    label=form.vars.pr_pe_label
-                    )
-                if pr_pe_id:
-                    form.vars.pr_pe_id = pr_pe_id
-        elif len(request.args) > 0:
-            if request.args[0] == 'update' and form.vars.delete_this_record:
-                # this is a delete action from update
-                if len(request.args) > 1:
-                    pr_pe_id = request.args[1]
-                    if resource:
-                        shn_pentity_ondelete(db[resource][pr_pe_id])
-            elif request.args[0] == 'update':
-                if len(request.args) > 1:
-                    pr_pe_id = request.args[1]
-                    if resource:
-                        db(db.pr_pentity.id==db[resource][pr_pe_id].pr_pe_id).update(label=form.vars.pr_pe_label)
+            subentity_label = form.vars.get('pr_pe_label')
+            pr_pe_id = db['pr_pentity'].insert(opt_pr_pentity_class=entity_class,label=subentity_label)
+            if pr_pe_id: form.vars.pr_pe_id = pr_pe_id
+        elif len(request.args) > 1 and request.args[0] == 'update' and form.vars.delete_this_record and table:
+            # this is a delete action from update
+            subentity_id = request.args[1]
+            shn_pentity_ondelete(db[table][subentity_id])
+        elif len(request.args) > 1 and request.args[0] == 'update' and table:
+            # this is an update action
+            subentity_id = request.args[1]
+            subentity_record=db[table][subentity_id]
+            if subentity_record and subentity_record.pr_pe_id:
+                db(db.pr_pentity.id==subentity_record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
     return

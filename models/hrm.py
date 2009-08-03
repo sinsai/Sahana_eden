@@ -117,8 +117,8 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
                 migrate = migrate)
 
 # Settings and Restrictions
-db[table].pr_pe_parent.readable = False         # not visible in body registration form
-db[table].pr_pe_parent.writable = False         # not visible in body registration form
+db[table].pr_pe_parent.readable = True         # not visible in body registration form
+db[table].pr_pe_parent.writable = True         # not visible in body registration form
 db[table].pr_pe_parent.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(3,)))
 
 # Labels

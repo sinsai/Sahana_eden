@@ -446,43 +446,51 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 # Callback functions ----------------------------------------------------------
 #
 
-# TODO: use get() to avoid exception
-# pentity_ondelete:
-# Remove a pentity when the corresponding subclass item gets deleted
-#
 def shn_pentity_ondelete(record):
-    if record.pe_id:
-        del db.pr_pentity[record.pe_id]
-    else:
-        #ignore
-        pass
+    """
+    VITA function:
+    Minimalistic callback function for CRUD controller, deletes a pentity record
+    when the corresponding subclass record gets deleted.
+     
+    Use as setting in the calling controller:
+    
+    crud.settings.delete_onvalidation=shn_pentity_ondelete
+
+    Also called by the shn_pentity_onvalidation function on deletion from update form
+    """
+    if record.get('pr_pe_id'):
+        del db.pr_pentity[record.pr_pe_id]
     return
 
-# TODO: check for pe_fieldset before update
-# pentity_onvalidation:
-# Create/update a pentity when a corresponding subclass item gets created/updated
-#
-def shn_pentity_onvalidation(form, resource=None, entity_class=1):
-    if form:
-        if len(request.args) == 0 or request.args[0] == 'create':
+def shn_pentity_onvalidation(form, table=None, entity_class=1):
+    """
+    VITA function:
+    Callback function for RESTlike CRUD controller, creates or updates a pentity
+    record when the corresponding subclass record gets created/updated.
+     
+    Passed to shn_rest_controller as:
+    
+    onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1)
+
+    form            : the current form containing pr_pe_id and pr_pe_label (from pr_pe_fieldset)
+    table           : the table containing the subclass entity
+    entity_class    : the class of pentity to be created (from pr_pentity_class_opts)
+    """
+    if form.vars:
+        if (len(request.args) == 0 or request.args[0] == 'create') and entity_class in pr_pentity_class_opts.keys():
             # this is a create action either directly or from list view
-            if entity_class in pr_pentity_class_opts.keys():
-                pr_pe_id = db['pr_pentity'].insert(
-                    opt_pr_pentity_class=entity_class,
-                    label=form.vars.pr_pe_label
-                    )
-                if pr_pe_id:
-                    form.vars.pr_pe_id = pr_pe_id
-        elif len(request.args) > 0:
-            if request.args[0] == 'update' and form.vars.delete_this_record:
-                # this is a delete action from update
-                if len(request.args) > 1:
-                    pr_pe_id = request.args[1]
-                    if resource:
-                        shn_pentity_ondelete(db[resource][pr_pe_id])
-            elif request.args[0] == 'update':
-                if len(request.args) > 1:
-                    pr_pe_id = request.args[1]
-                    if resource:
-                        db(db.pr_pentity.id==db[resource][pr_pe_id].pr_pe_id).update(label=form.vars.pr_pe_label)
+            subentity_id    = form.vars.get('id')
+            subentity_label = form.vars.get('pr_pe_label')
+            pr_pe_id = db['pr_pentity'].insert(opt_pr_pentity_class=entity_class,label=subentity_label)
+            if pr_pe_id: form.vars.pr_pe_id = pr_pe_id
+        elif len(request.args) > 1 and request.args[0] == 'update' and form.vars.delete_this_record and table:
+            # this is a delete action from update
+            subentity_id = request.args[1]
+            shn_pentity_ondelete(db[table][subentity_id])
+        elif len(request.args) > 1 and request.args[0] == 'update' and table:
+            # this is an update action
+            subentity_id = request.args[1]
+            subentity_record=db[table][subentity_id]
+            if subentity_record and subentity_record.pr_pe_id:
+                db(db.pr_pentity.id==subentity_record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
     return

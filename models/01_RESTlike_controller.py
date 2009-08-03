@@ -446,13 +446,21 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
     return pagenav
     
 # Main controller function
-def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', extra=None, onvalidation=None, onaccept=None):
+def shn_rest_controller(module, resource,
+    deletable=True,
+    editable=True,          # by nursix
+    listadd=True,
+    main='name',
+    extra=None,
+    onvalidation=None,
+    onaccept=None):
     """
     RESTlike controller function.
     
     Provides CRUD operations for the given module/resource.
     Optional parameters:
     deletable=False: don't provide visible options for deletion
+    editable=False: don't provide visible options for editing
     listadd=False: don't provide an add form in the list view
     main='field': the field used for the title in RSS output
     extra='field': the field used for the description in RSS output & in Search AutoComplete
@@ -673,7 +681,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         title = s3.crud_strings.title_display
                     except:
                         title = T('Details')
-                    edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', record]), _id='edit-btn')
+                    if editable:
+                        edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', record]), _id='edit-btn')
+                    else:
+                        edit = ''
                     if deletable:
                         delete = A(T("Delete"), _href=URL(r=request, f=resource, args=['delete', record]), _id='delete-btn')
                     else:

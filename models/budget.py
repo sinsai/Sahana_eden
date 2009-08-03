@@ -22,7 +22,7 @@ if not len(db().select(db[table].ALL)):
 # Only record 1 is used
 resource = 'parameter'
 table = module + '_' + resource
-db.define_table(table,timestamp,uuidstamp,
+db.define_table(table, timestamp, uuidstamp,
                 Field('shipping', 'double', default=15.00, notnull=True),
                 Field('logistics', 'double', default=0.00, notnull=True),
                 Field('admin', 'double', default=0.00, notnull=True),
@@ -142,7 +142,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Kit<>Item Many2Many
 resource = 'kit_item'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('kit_id', db.budget_kit),
                 Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),

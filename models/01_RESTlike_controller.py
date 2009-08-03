@@ -173,9 +173,13 @@ def export_xml(table, query):
     response.headers['Content-Type'] = 'text/xml'
     return str(gluon.serializers.xml(items))
     
-def import_csv(table, file):
-    "Import CSV file into Database. Comes from appadmin.py. Modified to do Validation on UUIDs"
-    table.import_from_csv_file(file)
+def import_csv(file, table=None):
+    "Import CSV file into Database"
+    if table:
+        table.import_from_csv_file(file)
+    else:
+        # This is the preferred method as it updates reference fields
+        db.import_from_csv_file(file)
 
 def import_json(method):
     """Import GET vars into Database & respond in JSON
@@ -475,7 +479,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
         JSON (designed to be accessed via JavaScript)
          - responses in JSON format
          - create/update/delete done via simple GET vars (no form displayed)
-        CSV (useful for synchronization)
+        CSV (useful for synchronization / database migration)
          - List/Display/Create for now
         RSS (list only)
         XML (list/read only)
@@ -757,7 +761,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         # Read in POST
                         file = request.vars.filename.file
                         try:
-                            import_csv(table, file)
+                            import_csv(file, table)
                             session.flash = T('Data uploaded')
                         except: 
                             session.error = T('Unable to parse CSV file!')
@@ -814,12 +818,12 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     if "deleted" in db[table]:
                         # Mark as deleted rather than really deleting
                         db(db[table].id == record).update(deleted = True)
+                        redirect(URL(r=request))
                     else:
                         # Delete properly
+                        if representation == "ajax":
+                            crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
                         crud.delete(table, record)
-                    if representation == "ajax":
-                        crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
-                    crud.delete(table, record)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))

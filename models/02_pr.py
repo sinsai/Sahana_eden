@@ -154,6 +154,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
 db[table].parent.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts))
 db[table].parent.label = T('belongs to')
+db[table].deleted.readable = True
 
 #
 # shn_pentity_represent:
@@ -513,7 +514,9 @@ def shn_pentity_ondelete(record):
     Also called by the shn_pentity_onvalidation function on deletion from update form
     """
     if record.get('pr_pe_id'):
-        del db.pr_pentity[record.pr_pe_id]
+        # del db.pr_pentity[record.pr_pe_id]
+        # Mark as deleted rather than really deleting
+        db(db.pr_pentity.id == record.pr_pe_id).update(deleted = True)
     return
 
 def shn_pentity_onvalidation(form, table=None, entity_class=1):

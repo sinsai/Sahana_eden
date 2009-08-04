@@ -177,7 +177,7 @@ def groups():
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='user_remove_groups', args=[user])))
         
     subtitle = T("Roles")
-    crud.messages.submit_button=T('Add')
+    crud.messages.submit_button = T('Add')
     crud.messages.record_created = T('User Updated')
     form = crud.create(table, next=URL(r=request, args=[user]))
     addtitle = T("Add New Role to User")
@@ -237,11 +237,11 @@ def sync_settings():
         options.remove(row.uuid)
 
     form = FORM(TABLE(
-            #TR('Uuid',SELECT(*options, _name='uuid', requires=IS_IN_SET(options))),
-            TR('Sync Policy',SELECT('Newer Timestamp', 'Keep All', 'Replace All', _name="policy")), #if this set is changed, then its corresponding set in admin model should also be changed
-            TR('',INPUT(_name = 'submit',_type = 'submit', _value='Submit'))
+            #TR('Uuid', SELECT(*options, _name='uuid', requires=IS_IN_SET(options))),
+            TR('Sync Policy', SELECT('Newer Timestamp', 'Keep All', 'Replace All', _name="policy")), #if this set is changed, then its corresponding set in admin model should also be changed
+            TR('', INPUT(_name = 'submit', _type = 'submit', _value='Submit'))
             ))
-    if form.accepts(request.vars,session):
+    if form.accepts(request.vars, session):
         db.sync_setting.insert(uuid = form.vars.uuid,
                                     policy = form.vars.policy
                                     )

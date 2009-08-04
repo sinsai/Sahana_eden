@@ -63,6 +63,10 @@ def refresh():
     response.refresh = '<noscript><meta http-equiv="refresh" content="2; url=' + URL(r=request, c='budget', f='item') + '" /></noscript>' 
     return dict()
 
+def photo():
+    form = crud.create(db.test_photo)
+    return dict(form=form)
+    
 def css():
     items = crud.select(db.pr_person, _id='myid', _class='myclass')
     form = crud.create(db.pr_person)

@@ -109,13 +109,14 @@ class IS_PE_ID(object):
             self.dbset = dbset
 
     def options(self):
-        query = self.dbset._db['pr_pentity']['id']>0
+        query = self.dbset._db['pr_pentity']['deleted']==False
         if self.filter_opts:
-            query = query&(self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts))
+            query = (self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts)) & query
         records = self.dbset(query).select(
             self.dbset._db['pr_pentity'].id,
             self.dbset._db['pr_pentity'].opt_pr_pentity_class,
-            self.dbset._db['pr_pentity'].label
+            self.dbset._db['pr_pentity'].label,
+            orderby=self.dbset._db['pr_pentity'].opt_pr_pentity_class
             )
         set = []
         for r in records:

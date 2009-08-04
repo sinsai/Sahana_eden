@@ -829,6 +829,9 @@ def shn_rest_controller(module, resource,
                     if "deleted" in db[table]:
                         # Mark as deleted rather than really deleting
                         db(db[table].id == record).update(deleted = True)
+                        # Nevertheless: call crud.delete_onvalidation if set
+                        if crud.settings.delete_onvalidation:
+                            crud.settings.delete_onvalidation(db(db[table].id == record).select()[0])
                         redirect(URL(r=request))
                     else:
                         # Delete properly

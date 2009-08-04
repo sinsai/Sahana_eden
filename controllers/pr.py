@@ -15,10 +15,23 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Persons'), False, URL(r=request, f='person'),[
-        [T('Add Person'), False, URL(r=request, f='person', args='create')],
-        [T('List Persons'), False, URL(r=request, f='person')],
-        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
-        [T('List Identities'), False, URL(r=request, f='identity')]
+        [T('Persons'), False, URL(r=request, f='person'),[
+            [T('Add Person'), False, URL(r=request, f='person', args='create')],
+            [T('List Persons'), False, URL(r=request, f='person')]
+        ]],
+        [T('Images'), False, URL(r=request, f='image_person'),[
+            [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
+            [T('List Images'), False, URL(r=request, f='image_person')]
+        ]],
+        [T('Identities'), False, URL(r=request, f='identity'),[
+            [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+            [T('List Identities'), False, URL(r=request, f='identities')]
+        ]],
+#        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
+#        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+#        [T('List Persons'), False, URL(r=request, f='person')],
+#        [T('List Images'), False, URL(r=request, f='image_person')],
+#        [T('List Identities'), False, URL(r=request, f='identity')]
     ]],
     [T('Groups'), False, URL(r=request, f='group'),[
         [T('Add Group'), False, URL(r=request, f='group', args='create')],
@@ -28,8 +41,8 @@ response.menu_options = [
     ]],
     [T('Person Entities'), False, '#',[
         [T('List Entities'), False, URL(r=request, f='pentity')],
-        [T('Add Image To Entity'), False, URL(r=request, f='image', args='create')],
-        [T('List Images'), False, URL(r=request, f='image')],
+#        [T('Add Image To Entity'), False, URL(r=request, f='image', args='create')],
+#        [T('List Images'), False, URL(r=request, f='image')],
         [T('Add Presence Record'), False, URL(r=request, f='presence', args='create')],
         [T('List Presence Records'), False, URL(r=request, f='presence')]
     ]]
@@ -59,6 +72,7 @@ def image():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')
 def image_person():
+    db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(1,)))
     request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')

@@ -123,7 +123,7 @@ opt_pr_tag_type = SQLTable(None, 'opt_pr_tag_type',
 pr_pentity_class_opts = {
     1:T('Person'),                  # used in PR  - don't change
     2:T('Group'),                   # used in PR  - don't change
-    3:T('Dead Body'),               # used in HRM - don't change
+    3:T('Body'),                    # used in HRM - don't change
     4:T('Personal Belongings'),     # used in HRM - don't change
     5:T('Missing Person')           # used in MPR - don't change
     }

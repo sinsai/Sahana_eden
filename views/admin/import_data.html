@@ -35,10 +35,16 @@ $(function() {
 });
 //]]></script>
 
+Import multiple tables as CSV:{{=A(SPAN("[Help]"), _class="tooltip", _title=T("Import multiple tables as CSV|This is the way to transfer data between machines as it maintains referential integrity...duplicate data should be removed manually 1st!"))}}
 <div class='form-container'>
-{{try:}}
- {{=form}}
-{{except:}}
+<form id="multi" action="{{=URL(r=request, f='import_csv')}}" method="POST" enctype="multipart/form-data">
+<input type="file" name="multifilename"/>
+<input id="multisubmit" type="submit" value="Upload"/>
+</form>
+</div>
+<p>&nbsp;</p>
+<div class='form-container'>
+Selective import:
 <form id="poster" action="/sahana/module/resource/create?format=representation" method="POST" enctype="multipart/form-data">
     <table>
     <tr><td>Module:</td><td>
@@ -73,6 +79,5 @@ $(function() {
     </td></tr>
     </table>
 </form>
-{{pass}}
 </div>
 <div id='results'></div>

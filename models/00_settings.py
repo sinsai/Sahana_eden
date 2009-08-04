@@ -31,6 +31,8 @@ auth.settings.registration_requires_approval = False
 # Allow use of LDAP accounts for login
 # (NB These are not automatically added to PR or to Authenticated role since they enter via the login() method not register())
 #from gluon.contrib.login_methods.ldap_auth import ldap_auth
+# Require even alternate login methods to register users 1st (Patch to Web2Py required)
+#auth.settings.alternate_requires_registration = True
 # Active Directory
 #auth.settings.login_methods.append(ldap_auth(mode='ad', server='dc.domain.org', base_dn='ou=Users,dc=domain,dc=org'))
 # or if not wanting local users at all (no passwords saved within DB):

@@ -208,6 +208,17 @@ def import_data():
     title = T('Import Data')
     return dict(module_name=module_name, title=title)
 
+@auth.requires_membership('Administrator')
+def import_csv():
+    "Import CSV data via POST upload to Database."
+    file = request.vars.filename.file
+    try:
+        import_csv(file)
+        session.flash = T('Data uploaded')
+    except: 
+        session.error = T('Unable to parse CSV file!')
+    redirect(URL(r=request))
+
 # Export Data
 @auth.requires_login()
 def export_data():
@@ -215,6 +226,21 @@ def export_data():
     title = T('Export Data')
     return dict(module_name=module_name, title=title)
 
+@auth.requires_login()
+def export_csv():
+    "Export entire database as CSV"
+    import StringIO
+    output = StringIO.StringIO()
+    
+    db.export_to_csv_file(output)
+    
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+    filename = "%s_database.csv" % (request.env.server_name)
+    response.headers['Content-disposition'] = "attachment; filename=%s" % filename
+    return output.read()
+    
 #
 # Sync
 #

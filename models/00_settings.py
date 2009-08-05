@@ -24,6 +24,7 @@ auth.settings.registration_requires_verification = False
 auth.settings.mailer = mail
 # ** Amend this to your Publically-accessible URL ***
 auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s to verify your email'
+auth.settings.on_failed_authorization = URL(r=request, c='default', f='user', args='not_authorized')
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = False
 # Notify UserAdmin of new pending user registration to action

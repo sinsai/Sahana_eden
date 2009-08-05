@@ -1,4 +1,5 @@
 #crontab
 #*/5   *       *       *       *       root *msg/email_send
-*/5   *       *       *       *       root *applications/sahana/cron/email_send.py
-*/15   *       *       *       *       root *applications/sahana/cron/email_receive.py
+#*/5   *       *       *       *       root web2py.exe -S sahana/msg/email_send
+*/5   *       *       *       *       root python web2py.py -S sahana/msg/email_send
+*/15  *       *       *       *       root *applications/sahana/cron/email_receive.py

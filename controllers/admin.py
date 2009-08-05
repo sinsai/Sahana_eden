@@ -211,7 +211,7 @@ def import_data():
 @auth.requires_membership('Administrator')
 def import_csv():
     "Import CSV data via POST upload to Database."
-    file = request.vars.filename.file
+    file = request.vars.multifile.file
     try:
         import_csv(file)
         session.flash = T('Data uploaded')

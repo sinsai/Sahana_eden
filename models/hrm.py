@@ -41,6 +41,7 @@ opt_hrm_task_status = SQLTable(None, 'opt_hrm_task_status',
                     db.Field('opt_hrm_task_status','integer',
                     requires = IS_IN_SET(hrm_task_status_opts),
                     default = 1,
+                    label = T('Task Status'),
                     represent = lambda opt: opt and hrm_task_status_opts[opt]))
 
 #
@@ -49,13 +50,13 @@ opt_hrm_task_status = SQLTable(None, 'opt_hrm_task_status',
 resource = 'find'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('find_date', 'datetime'),         # Date and time of find
-                location_id,                            # Place of find
-                Field('location_details'),              # Details on location
-                person_id,                              # Finder
-                Field('description'),                   # Description of find
+                Field('find_date', 'datetime'),                 # Date and time of find
+                location_id,                                    # Place of find
+                Field('location_details'),                      # Details on location
+                person_id,                                      # Finder
+                Field('description'),                           # Description of find
                 Field('bodies_est', 'integer', default=1),      # Estimated number of dead bodies
-                opt_hrm_task_status,                    # Task status
+                opt_hrm_task_status,                            # Task status
                 Field('bodies_rcv', 'integer', default=0),      # Number of bodies recovered
                 migrate=migrate)
 
@@ -104,16 +105,16 @@ hrm_find_id = SQLTable(None, 'hrm_find_id',
 resource = 'body'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status, #uuidstamp,
-                pr_pe_fieldset,                             # Person Entity Fieldset
-#                db.Field('date_of_find', 'date'),          # from Khushbu
-                hrm_find_id,                                # Associated find report (if any)
+                pr_pe_fieldset,                                 # Person Entity Fieldset
+#                db.Field('date_of_find', 'date'),              # from Khushbu
+                hrm_find_id,                                    # Associated find report (if any)
                 db.Field('date_of_recovery', 'date'),           # change into datetime?
                 db.Field('has_major_outward_damage','boolean'), # Khushbu, TODO: elaborate
                 db.Field('is_burned_or_charred','boolean'),     # Khushbu, TODO: elaborate
                 db.Field('is_decayed','boolean'),               # Khushbu, TODO: elaborate
                 db.Field('is_incomplete','boolean'),            # Khushbu, TODO: elaborate
-                opt_pr_gender,                              # from VITA
-                opt_pr_age_group,                           # from VITA
+                opt_pr_gender,                                  # from VITA
+                opt_pr_age_group,                               # from VITA
                 migrate = migrate)
 
 # Settings and Restrictions

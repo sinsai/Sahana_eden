@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Missing Person Module
+# MPR Missing Person Registry (Sahana Legacy)
 #
 # created 2009-08-01 by nursix
 #

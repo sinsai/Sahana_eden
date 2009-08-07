@@ -231,7 +231,8 @@ def shn_has_permission(name, table_name, record_id = 0):
     Designed to be called from the RESTlike controller
     """
     security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 'simple':
+    if security == 1:
+        # Simple policy
         # Anonymous users can Read.
         if name == 'read':
             authorised = True
@@ -239,6 +240,7 @@ def shn_has_permission(name, table_name, record_id = 0):
             # Authentication required for Create/Update/Delete.
             authorised = auth.is_logged_in()
     else:
+        # Full policy
         # Administrators are always authorised
         if auth.has_membership(1):
             authorised = True

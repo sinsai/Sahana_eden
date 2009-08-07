@@ -48,6 +48,7 @@ opt_budget_cost_type = SQLTable(None, 'budget_cost_type',
                         Field('cost_type', 'integer', notnull=True,
                             requires = IS_IN_SET(budget_cost_type_opts),
                             default = 1,
+                            label = T('Cost Type'),
                             represent = lambda opt: opt and budget_cost_type_opts[opt]))
 budget_category_type_opts = {
     1:T('Consumable'),
@@ -74,6 +75,7 @@ opt_budget_category_type = SQLTable(None, 'budget_category_type',
                             Field('category_type', 'integer', notnull=True,
                                 requires = IS_IN_SET(budget_category_type_opts),
                                 default = 1,
+                                label = T('Category'),
                                 represent = lambda opt: opt and budget_category_type_opts[opt]))
 resource = 'item'
 table = module + '_' + resource
@@ -89,9 +91,16 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
 db[table].code.comment = SPAN("*", _class="req")
 db[table].description.requires = IS_NOT_EMPTY()
+db[table].description.label = T('Description')
 db[table].description.comment = SPAN("*", _class="req")
+db[table].unit_cost.label = T('Unit Cost')
+db[table].monthly_cost.label = T('Monthly Cost')
+db[table].minute_cost.label = T('Cost per Minute')
+db[table].megabyte_cost.label = T('Cost per Megabyte')
+db[table].comments.label = T('Comments')
 title_create = T('Add Item')
 title_display = T('Item Details')
 title_list = T('List Items')
@@ -121,9 +130,14 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
 db[table].code.comment = SPAN("*", _class="req")
-db[table].total_minute_cost.label = "Total cost per minute"
-db[table].total_megabyte_cost.label = "Total cost per Mbyte"
+db[table].description.label = T('Description')
+db[table].total_unit_cost.label = T('Total Unit Cost')
+db[table].total_monthly_cost.label = T('Total Monthly Cost')
+db[table].total_minute_cost.label = T('Total Cost per Minute')
+db[table].total_megabyte_cost.label = T('Total Cost per Megabyte')
+db[table].comments.label = T('Comments')
 title_create = T('Add Kit')
 title_display = T('Kit Details')
 title_list = T('List Kits')
@@ -168,9 +182,12 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
 db[table].total_unit_cost.label = T('One time cost')
 db[table].total_monthly_cost.label = T('Recurring cost')
+db[table].comments.label = T('Comments')
 title_create = T('Add Bundle')
 title_display = T('Bundle Details')
 title_list = T('List Bundles')
@@ -248,6 +265,7 @@ opt_budget_currency_type = SQLTable(None, 'budget_currency_type',
                     db.Field('currency_type', 'integer', notnull=True,
                     requires = IS_IN_SET(budget_currency_type_opts),
                     default = 1,
+                    label = T('Currency'),
                     represent = lambda opt: opt and budget_currency_type_opts[opt]))
 
 resource = 'staff'
@@ -265,12 +283,16 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].grade.requires = IS_NOT_EMPTY()
+db[table].grade.label = T('Grade')
 db[table].grade.comment = SPAN("*", _class="req")
 db[table].salary.requires = IS_NOT_EMPTY()
 db[table].salary.label = T('Monthly Salary')
 db[table].salary.comment = SPAN("*", _class="req")
+db[table].travel.label = T('Travel Cost')
+db[table].comments.label = T('Comments')
 title_create = T('Add Staff Type')
 title_display = T('Staff Type Details')
 title_list = T('List Staff Types')
@@ -297,9 +319,14 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
 db[table].code.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
+db[table].subsistence.label = T('Subsistence Cost')
 # UN terminology
 #db[table].subsistence.label = "DSA"
+db[table].hazard_pay.label = T('Hazard Pay')
+db[table].comments.label = T('Comments')
 title_create = T('Add Location')
 title_display = T('Location Details')
 title_list = T('List Locations')
@@ -324,7 +351,10 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
 db[table].code.comment = SPAN("*", _class="req")
+db[table].title.label = T('Title')
+db[table].comments.label = T('Comments')
 title_create = T('Add Project')
 title_display = T('Project Details')
 title_list = T('List Projects')
@@ -351,7 +381,12 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comments', length=256),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
+db[table].total_onetime_costs.label = T('Total One-time Costs')
+db[table].total_recurring_costs.label = T('Total Recurring Costs')
+db[table].comments.label = T('Comments')
 title_create = T('Add Budget')
 title_display = T('Budget Details')
 title_list = T('List Budgets')
@@ -426,83 +461,3 @@ db[table].quantity.comment = SPAN("*", _class="req")
 db[table].months.requires = IS_NOT_EMPTY()
 db[table].months.label = T('Months')
 db[table].months.comment = SPAN("*", _class="req")
-
-#resource = 'budget_equipment'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp, deletion_status,
-#                Field('name', notnull=True, unique=True),
-#                Field('location', 'reference budget_location', ondelete='RESTRICT'),
-#                Field('project', 'reference budget_project', ondelete='RESTRICT'),
-#                Field('bundle', 'reference budget_bundle', ondelete='RESTRICT'),
-#                Field('quantity', 'integer'),
-#                Field('unit_cost', 'double', writable=False),
-#                Field('months', 'integer'),
-#                Field('monthly_cost', 'double', writable=False),
-#                Field('total_unit_cost', writable=False),
-#                Field('total_monthly_cost', writable=False),
-#                Field('comments', length=256),
-#                migrate=migrate)
-#db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-#db[table].name.comment = SPAN("*", _class="req")
-#db[table].location.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
-#db[table].location.comment = SPAN("*", _class="req")
-#db[table].project.requires = IS_IN_DB(db,'budget_project.id', 'budget_project.code')
-#db[table].project.comment = SPAN("*",_class="req")
-#db[table].bundle.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.name')
-#db[table].bundle.comment = SPAN("*", _class="req")
-#title_create = T('Add Equipment Budget')
-#title_display = T('Equipment Budget Details')
-#title_list = T('List Equipment Budgets')
-#title_update = T('Edit Equipment Budget')
-#title_search = T('Search Equipment Budgets')
-#subtitle_create = T('Add New Equipment Budget')
-#subtitle_list = T('Equipment Budgets')
-#label_list_button = T('List Equipment Budgets')
-#label_create_button = T('Add Equipment Budget')
-#msg_record_created = T('Equipment Budget added')
-#msg_record_modified = T('Equipment Budget updated')
-#msg_record_deleted = T('Equipment Budget deleted')
-#msg_list_empty = T('No Equipment Budgets currently registered')
-#s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-#resource = 'budget_staff'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp, deletion_status,
-#                Field('name', notnull=True, unique=True),
-#                Field('location', 'reference budget_location', ondelete='RESTRICT'),
-#                Field('project', 'reference budget_project', ondelete='RESTRICT'),
-#                Field('job_title', 'reference budget_staff', ondelete='RESTRICT'),
-#                Field('grade', writable=False),
-#                Field('type'),
-#                Field('headcount', 'integer'),
-#                Field('months', 'integer'),
-#                Field('salary', writable=False),
-#                Field('travel', writable=False),
-#                Field('subsistence', 'double', writable=False),
-#                Field('hazard_pay', 'double', writable=False),
-#                Field('total', 'double', writable=False),
-#                Field('comments', length=256),
-#                migrate=migrate)
-#db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-#db[table].name.comment = SPAN("*", _class="req")
-#db[table].location.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
-#db[table].location.comment = SPAN("*", _class="req")
-#db[table].project.requires = IS_IN_DB(db, 'budget_project.id', 'budget_project.code')
-#db[table].job_title.requires = IS_IN_DB(db, 'budget_staff.id', 'budget_staff.name')
-#db[table].job_title.comment = SPAN("*", _class="req")
-#db[table].project.comment = SPAN("*", _class="req")
-#db[table].type.requires = IS_IN_SET(['Staff', 'Consultant'])
-#title_create = T('Add Staff Budget')
-#title_display = T('Staff Budget Details')
-#title_list = T('List Staff Budgets')
-#title_update = T('Edit Staff Budget')
-#title_search = T('Search Staff Budgets')
-#subtitle_create = T('Add New Staff Budget')
-#subtitle_list = T('Staff Budgets')
-#label_list_button = T('List Staff Budgets')
-#label_create_button = T('Add Staff Budget')
-#msg_record_created = T('Staff Budget added')
-#msg_record_modified = T('Staff Budget updated')
-#msg_record_deleted = T('Staff Budget deleted')
-#msg_list_empty = T('No Staff Budgets currently registered')
-#s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)

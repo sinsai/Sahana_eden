@@ -62,12 +62,12 @@ def layer_bing():
 
 # Module-specific functions
 
-def shn_latlon_to_wkt(lat,lon):
+def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
-    >>> shn_latlon_to_wkt(6,80)
+    >>> shn_latlon_to_wkt(6, 80)
     'POINT(80 6)'
     """
-    WKT = 'POINT(%d %d)' %(lon,lat)
+    WKT = 'POINT(%d %d)' % (lon, lat)
     return WKT
 
 # Features
@@ -456,7 +456,7 @@ def map_viewing_client():
     #feature_groups=db(db.gis_feature_group.enabled==True).select(db.gis_layer_feature_group.ALL)
     #for feature_group in feature_groups:
     # Limit to return only 200 features to prevent overloading the browser!
-    features = db(db.gis_feature.id>0).select(db.gis_feature.ALL,limitby=(0,200))
+    features = db(db.gis_feature.id>0).select(db.gis_feature.ALL, limitby=(0, 200))
     features_classes = Storage()
     features_markers = Storage()
     features_metadata = Storage()

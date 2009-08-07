@@ -25,7 +25,7 @@ response.menu_options = [
         ]],
         [T('Identities'), False, URL(r=request, f='identity'),[
             [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
-            [T('List Identities'), False, URL(r=request, f='identities')]
+            [T('List Identities'), False, URL(r=request, f='identity')]
         ]],
 #        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
 #        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],

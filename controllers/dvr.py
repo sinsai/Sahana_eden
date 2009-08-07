@@ -1,22 +1,35 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+#
+# DVR Disaster Victim Registry (Sahana Legacy)
+#
+# created 2009-08-06 by nursix
+#
 
 module = 'dvr'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# Options Menu (available in all Functions)
+# Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
+    [T('Add Disaster Victims'), False,  URL(r=request, f='index'),[
+        [T('Add new Group'), False, URL(r=request, f='index')],
+        [T('Add new Individual'), False, URL(r=request, f='index')]
+    ]],
+    [T('Edit Disaster Victims'), False,  URL(r=request, f='index'),[
+        [T('Search and Edit Group'), False, URL(r=request, f='index')],
+        [T('Search and Edit Individual'), False, URL(r=request, f='index')]
+    ]],
+    [T('List Groups'), False,  URL(r=request, f='index'),[
+        [T('List Groups/View Members'), False, URL(r=request, f='index')]
+    ]],
+    [T('Reports'), False,  URL(r=request, f='index'),[
+        [T('Drill Down by Group'), False, URL(r=request, f='index')],
+        [T('Drill Down by Shelter'), False, URL(r=request, f='index')],
+        [T('Drill Down by Incident'), False, URL(r=request, f='index')]
+    ]],
 ]
 
-# S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, options=options)
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option = options[0].function
-    redirect(URL(r=request, f=option))
+    return dict(module_name=module_name)

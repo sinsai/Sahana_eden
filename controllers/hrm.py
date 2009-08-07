@@ -13,8 +13,10 @@ response.menu_options = [
     [T('Recovery'), False, URL(r=request, f='recovery'),[
         [T('Add Body'), False, URL(r=request, f='body', args='create')],
         [T('Add Image'), False, URL(r=request, f='image_body', args='create')],
+        [T('Register to Location'), False, URL(r=request, f='presence_body', args='create')],
         [T('List Bodies'), False, URL(r=request, f='body')],
-        [T('List Images'), False, URL(r=request, f='image_body')]
+        [T('List Images'), False, URL(r=request, f='image_body')],
+        [T('List Locations'), False, URL(r=request, f='presence_body')],
 #        [T('Add Item'), False, URL(r=request, f='item', args='create')],
 #        [T('List Items'), False, URL(r=request, f='item')]
     ]]
@@ -55,6 +57,12 @@ def image_body():
     request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==3)
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', 'image')
+
+def presence_body():
+    db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(3,)))
+    request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==3)
+    "RESTlike CRUD controller"
+    return shn_rest_controller('pr', 'presence')
 
 #def storage():
 #    "RESTlike CRUD controller"

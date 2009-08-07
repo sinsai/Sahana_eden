@@ -67,6 +67,24 @@ opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                     represent = lambda opt: opt and pr_person_age_group_opts[opt]))
 
 #
+# Nationalities -----------------------
+#
+
+pr_nationality_opts = { # TODO: add all major nationalities
+    1:T('unknown'),
+    2:T('Germany'),
+    3:T('Great Britain'),
+    4:T('India')
+    }
+
+opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
+                        db.Field('opt_pr_nationality','integer',
+                        requires = IS_IN_SET(pr_nationality_opts),
+                        default = 1,
+                        label = T('Nationality'),
+                        represent = lambda opt: opt and pr_nationality_opts[opt]))
+
+#
 # ID Types ----------------------------
 #
 
@@ -307,11 +325,67 @@ table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 person_id,
                 Field('birth_date','date'),             # Sahana legacy
-                Field('country'),                       # Sahana legacy
-                Field('race'),                          # Sahana legacy
-                Field('religion'),                      # Sahana legacy
-                Field('marital_status'),                # Sahana legacy
+#                Field('country'),                       # Sahana legacy
+                opt_pr_nationality,                     # by nursix
+#                Field('race'),                          # Sahana legacy
+                Field('ethnicity'),                     # by nursix
+                Field('religion'),                      # Sahana legacy - TODO: make option field
+                Field('marital_status'),                # Sahana legacy - TODO: make option field
                 Field('occupation'),                    # Sahana legacy
+                migrate=migrate)
+
+db[table].birth_date.requires=IS_NULL_OR(IS_DATE())
+title_create = T('Add Person Details')
+title_display = T('Person Details')
+title_list = T('List Person Details')
+title_update = T('Edit Person Details')
+title_search = T('Search Person Details')
+subtitle_create = T('Add Person Details')
+subtitle_list = T('Person Details')
+label_list_button = T('List Person Details')
+label_create_button = T('Add Person Details')
+msg_record_created = T('Person Details added')
+msg_record_modified = T('Person Details updated')
+msg_record_deleted = T('Person Details deleted')
+msg_list_empty = T('No Person Details currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+#
+# Health Information (nursix) -------------------------------------------------
+#
+resource = 'person_health'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status,
+                person_id,
+                # consciousness
+                Field('unconscious', 'boolean', default=False),
+                # senses
+                Field('blind', 'boolean', default=False),
+                Field('deaf', 'boolean', default=False),
+                # acute injuries and diseases
+                Field('injured', 'boolean', default=False),
+                Field('injuries'),
+                Field('diseased', 'boolean', default=False),
+                Field('acute_diseases'),
+                # handicaps
+                Field('physically_handicapped', 'boolean', default=False),
+                Field('physical_handicaps'),
+                Field('mentally_handicapped', 'boolean', default=False),
+                Field('mental_handicaps'),
+                # chronical diseases
+                Field('chronically_ill', 'boolean', default=False),
+                Field('chronic_diseases'),
+                # support needed
+                Field('needs_assistance', 'boolean', default=False),
+                Field('assistance_needed', 'text'),
+                Field('needs_medicine', 'boolean', default=False),
+                Field('medicine_needed', 'text'),
+                Field('needs_medical_support', 'boolean', default=False),
+                Field('medical_support_needed'),
+                Field('needs_special_transport', 'boolean', default=False),
+                Field('transport_requirements'),
+                Field('needs_attendance', 'boolean', default=False),
+                Field('needs_supervision', 'boolean', default=False),
                 migrate=migrate)
 
 #

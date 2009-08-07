@@ -357,7 +357,7 @@ if not len(db().select(db[table].ALL)):
     )
     db[table].insert(
         name="mpr",
-        name_nice="Missing Person Registry",
+        name_nice="Missing Persons Registry",
         priority=4,
         module_type=3,
         access='',
@@ -365,30 +365,30 @@ if not len(db().select(db[table].ALL)):
         enabled='True'
     )
     db[table].insert(
-        name="dvi",
-        name_nice="Disaster Victim Identification",
+        name="dvr",
+        name_nice="Disaster Victim Registry",
         priority=5,
         module_type=3,
         access='',
-        description="Disaster Victim Identification",
-        enabled='False'
-    )
-    db[table].insert(
-        name="dvr",
-        name_nice="Disaster Victim Registry",
-        priority=6,
-        module_type=3,
-        access='',
         description="Traces internally displaced people (IDPs) and their needs",
-        enabled='False'
+        enabled='True'
     )
     db[table].insert(
         name="hrm",
         name_nice="Human Remains Management",
+        priority=6,
+        module_type=3,
+        access='',
+        description="Helps to manage human remains",
+        enabled='True'
+    )
+    db[table].insert(
+        name="dvi",
+        name_nice="Disaster Victim Identification",
         priority=7,
         module_type=3,
         access='',
-        description="Manages Human Remains",
+        description="Disaster Victim Identification",
         enabled='True'
     )
     db[table].insert(

@@ -220,7 +220,7 @@ class AuthS3(Auth):
         log=DEFAULT,
         ):
         """
-        Overrides Web2Py's login() to use custom flash styles
+        Overrides Web2Py's login() to use custom flash styles &  utcnow
         
         returns a login form
 
@@ -313,7 +313,7 @@ class AuthS3(Auth):
         # process authenticated users
         if user:
             user = Storage(table_user._filter_fields(user, id=True))
-            session.auth = Storage(user=user, last_visit=request.now,
+            session.auth = Storage(user=user, last_visit=request.utcnow,
                                    expiration=self.settings.expiration)
             self.user = user
             session.confirmation = self.messages.logged_in
@@ -346,6 +346,7 @@ class AuthS3(Auth):
         Overrides Web2Py's register() to add new functionality:
             * Checks whether registration is permitted
             * Custom Flash styles
+            * utcnow
             
         returns a registration form
 
@@ -438,7 +439,7 @@ class AuthS3(Auth):
                     .select()
                 user = users[0]
                 user = Storage(table_user._filter_fields(user, id=True))
-                session.auth = Storage(user=user, last_visit=request.now,
+                session.auth = Storage(user=user, last_visit=request.utcnow,
                                    expiration=self.settings.expiration)
                 self.user = user
                 session.flash = self.messages.logged_in

@@ -30,7 +30,7 @@ def rss(resource):
     rows = db(db[table].id>0).select()
     for row in rows:
         entries.append(dict(title=row.name, link=server+link+'/%d' % row.id, description=row.description or '', created_on=row.created_on))
-    return dict(title=str(s3.crud_strings[table].subtitle_list), link=server+link, description='', created_on=request.now, entries=entries)
+    return dict(title=str(s3.crud_strings[table].subtitle_list), link=server+link, description='', created_on=request.utcnow, entries=entries)
 
 def post():
     """Test for JSON POST

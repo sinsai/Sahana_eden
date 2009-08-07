@@ -63,12 +63,12 @@ timestamp = SQLTable(None, 'timestamp',
             Field('created_on', 'datetime',
                           readable=False,
                           writable=False,
-                          default=request.now),
+                          default=request.utcnow),
             Field('modified_on', 'datetime',
                           readable=False,
                           writable=False,
-                          default=request.now,
-                          update=request.now)
+                          default=request.utcnow,
+                          update=request.utcnow)
             ) 
 
 # Reusable author fields
@@ -208,7 +208,7 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('admin_name'),
                 Field('admin_email'),
                 Field('admin_tel'),
-                Field('debug', 'boolean', default=True),
+                Field('debug', 'boolean', default=False),
                 Field('security_policy', 'integer', default=1),
                 Field('self_registration', 'boolean', default=True),
                 Field('archive_not_delete', 'boolean', default=True),

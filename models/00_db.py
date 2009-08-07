@@ -2,6 +2,9 @@
 
 import os, traceback, datetime
 import re
+import datetime
+# All dates should be stored in UTC for Sync to work reliably
+request.utcnow = datetime.datetime.utcnow() 
 
 # Switch to 'False' in Production for a Performance gain
 # (need to set to 'True' again when amending Table definitions)

@@ -430,7 +430,7 @@ def putdata(uuid, username, password, nicedbdump): #uuid of the system which is 
     db[logtable].insert(
         uuid=uuid,
         function='putdata',
-        timestamp=request.now,
+        timestamp=request.utcnow,
         )
     
     return True
@@ -508,7 +508,7 @@ def getdata(uuid, username, password, timestamp = None): #if no timestamp is pas
     db[logtable].insert(
         uuid=uuid,
         function='getdata',
-        timestamp=request.now,
+        timestamp=request.utcnow,
         )
     
     return nicedbdump
@@ -558,8 +558,8 @@ def handleResults():
 
     # We want to store results separately for each browser
     browserName = getBrowserName(request.env.http_user_agent)
-    date = str(request.now)[:-16]
-    time = str(request.now)[11:-10]
+    date = str(request.utcnow)[:-16]
+    time = str(request.utcnow)[11:-10]
     time = time.replace(':','-')
 
     # Write out results

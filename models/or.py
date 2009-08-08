@@ -19,6 +19,15 @@ if not len(db().select(db[table].ALL)):
     )
 
 # Organisations
+or_organisation_type_opts = {
+    1:T('Government'),
+    2:T('International Governmental Organization'),
+    3:T('International NGO'),
+    4:T('Misc'),
+    5:T('National Institution'),
+    6:T('National NGO'),
+    7:T('United Nations')
+    }
 resource = 'organisation'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -26,16 +35,22 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('archived', 'boolean', default=False),
                 Field('name', notnull=True, unique=True),
                 Field('acronym', length=8),
-                Field('type'),
+                Field('type', 'integer'),
                 admin_id,
                 Field('registration'),	# Registration Number
                 Field('website'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(['Government', 'International Governmental Organization', 'International NGO', 'Misc', 'National Institution', 'National NGO', 'United Nations']))
+db[table].acronym.label = T('Acronym')
+db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
+db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
+db[table].type.label = T('Type')
+db[table].registration.label = T('Registration')
 db[table].website.requires = IS_NULL_OR(IS_URL())
+db[table].website.label = T('Website')
 title_create = T('Add Organisation')
 title_display = T('Organisation Details')
 title_list = T('List Organisations')
@@ -52,12 +67,18 @@ msg_list_empty = T('No Organisations currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Offices
+or_office_type_opts = {
+    1:T('Headquarters'),
+    2:T('Regional'),
+    3:T('Country'),
+    4:T('Satellite Office')
+    }
 resource = 'office'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 Field('organisation', db.or_organisation),
-                Field('type'),
+                Field('type', 'integer'),
                 admin_id,
                 location_id,
                 Field('parent', 'reference or_office'),   # This form of hierarchy may not work on all Databases
@@ -75,16 +96,32 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
 db[table].organisation.represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0]
+db[table].organisation.label = T('Organisation')
 db[table].organisation.comment = DIV(A(s3.crud_strings.or_organisation.label_create_button, _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Organisation|The Organisation this Office belongs to.")))
 db[table].parent.requires = IS_NULL_OR(IS_IN_DB(db, 'or_office.id', 'or_office.name'))
 db[table].parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(['Headquarters', 'Regional', 'Country', 'Satellite Office']))
+db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))
+db[table].type.represent = lambda opt: opt and or_office_type_opts[opt]
+db[table].type.label = T('Type')
+db[table].parent.label = T('Parent')
+db[table].address.label = T('Address')
+db[table].postcode.label = T('Postcode')
+db[table].phone1.label = T('Phone 1')
+db[table].phone2.label = T('Phone 2')
+db[table].email.label = T('Email')
+db[table].fax.label = T('FAX')
 db[table].national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+db[table].national_staff.label = T('National Staff')
 db[table].international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].international_staff.label = T('International Staff')
 db[table].number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].number_of_vehicles.label = T('Number of Vehicles')
+db[table].vehicle_types.label = T('Vehicle Types')
+db[table].equipment.label = T('Equipment')
 title_create = T('Add Office')
 title_display = T('Office Details')
 title_list = T('List Offices')
@@ -111,12 +148,13 @@ db.define_table(table, timestamp, deletion_status,
                 Field('title'),
                 Field('manager_id', db.pr_person),
                 migrate=migrate)
-db[table].person_id.label = 'Contact'
+db[table].person_id.label = T('Contact')
 db[table].office_id.requires = IS_IN_DB(db, 'or_office.id', 'or_office.name')
-db[table].office_id.label = 'Office'
+db[table].office_id.label = T('Office')
+db[table].title.label = T('Title')
 db[table].title.comment = A(SPAN("[Help]"), _class="popupLink", _id="tooltip", _title=T("Title|The Role this person plays within this Office."))
 db[table].manager_id.requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', 'pr_person.name'))
-db[table].manager_id.label = 'Manager'
+db[table].manager_id.label = T('Manager')
 db[table].manager_id.comment = A(SPAN("[Help]"), _class="popupLink", _id="tooltip", _title=T("Manager|The person's manager within this Office."))
 title_create = T('Add Contact')
 title_display = T('Contact Details')
@@ -142,9 +180,9 @@ db.define_table(table, timestamp, deletion_status,
                 Field('organisation_id', db.or_organisation),
                 migrate=migrate)
 db[table].office_id.requires = IS_IN_DB(db, 'or_office.id', 'or_office.name')
-db[table].office_id.label = 'Office'
+db[table].office_id.label = T('Office')
 db[table].organisation_id.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
-db[table].organisation_id.label = 'Organisation'
+db[table].organisation_id.label = T('Organisation')
 
 # Contacts to Organisations
 # Do we want to allow contacts which are affiliated to an organisation but not to an office?

@@ -220,7 +220,7 @@ class AuthS3(Auth):
         log=DEFAULT,
         ):
         """
-        Overrides Web2Py's login() to use custom flash styles
+        Overrides Web2Py's login() to use custom flash styles &  utcnow
         
         returns a login form
 
@@ -313,7 +313,7 @@ class AuthS3(Auth):
         # process authenticated users
         if user:
             user = Storage(table_user._filter_fields(user, id=True))
-            session.auth = Storage(user=user, last_visit=request.now,
+            session.auth = Storage(user=user, last_visit=request.utcnow,
                                    expiration=self.settings.expiration)
             self.user = user
             session.confirmation = self.messages.logged_in
@@ -346,6 +346,7 @@ class AuthS3(Auth):
         Overrides Web2Py's register() to add new functionality:
             * Checks whether registration is permitted
             * Custom Flash styles
+            * utcnow
             
         returns a registration form
 
@@ -438,7 +439,7 @@ class AuthS3(Auth):
                     .select()
                 user = users[0]
                 user = Storage(table_user._filter_fields(user, id=True))
-                session.auth = Storage(user=user, last_visit=request.now,
+                session.auth = Storage(user=user, last_visit=request.utcnow,
                                    expiration=self.settings.expiration)
                 self.user = user
                 session.flash = self.messages.logged_in
@@ -490,6 +491,35 @@ class AuthS3(Auth):
                     last_name = form.vars.last_name,
                     email = form.vars.email
                 )
+                
+    def requires_membership(self, role):
+        """
+        decorator that prevents access to action if not logged in or
+        if user logged in is not a member of group_id.
+        If role is provided instead of group_id then the group_id is calculated.
+        
+        Overrides Web2Py's requires_membership() to add new functionality:
+            * Custom Flash style
+        """
+
+        def decorator(action):
+            group_id = self.id_group(role)
+
+            def f(*a, **b):
+                if not self.basic() and not self.is_logged_in():
+                    args = self.environment.request.args
+                    redirect(self.settings.login_url + \
+                                 '?_next='+urllib.quote(self.url(args=args)))
+                if not self.has_membership(group_id):
+                    self.environment.session.error = \
+                        self.messages.access_denied
+                    next = self.settings.on_failed_authorization
+                    redirect(next)
+                return action(*a, **b)
+
+            return f
+
+        return decorator
 
 class CrudS3(Crud):
     """

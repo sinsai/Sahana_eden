@@ -177,7 +177,7 @@ def groups():
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='user_remove_groups', args=[user])))
         
     subtitle = T("Roles")
-    crud.messages.submit_button=T('Add')
+    crud.messages.submit_button = T('Add')
     crud.messages.record_created = T('User Updated')
     form = crud.create(table, next=URL(r=request, args=[user]))
     addtitle = T("Add New Role to User")
@@ -208,6 +208,17 @@ def import_data():
     title = T('Import Data')
     return dict(module_name=module_name, title=title)
 
+@auth.requires_membership('Administrator')
+def import_csv():
+    "Import CSV data via POST upload to Database."
+    file = request.vars.multifile.file
+    try:
+        import_csv(file)
+        session.flash = T('Data uploaded')
+    except: 
+        session.error = T('Unable to parse CSV file!')
+    redirect(URL(r=request))
+
 # Export Data
 @auth.requires_login()
 def export_data():
@@ -215,6 +226,21 @@ def export_data():
     title = T('Export Data')
     return dict(module_name=module_name, title=title)
 
+@auth.requires_login()
+def export_csv():
+    "Export entire database as CSV"
+    import StringIO
+    output = StringIO.StringIO()
+    
+    db.export_to_csv_file(output)
+    
+    output.seek(0)
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+    filename = "%s_database.csv" % (request.env.server_name)
+    response.headers['Content-disposition'] = "attachment; filename=%s" % filename
+    return output.read()
+    
 #
 # Sync
 #
@@ -237,11 +263,11 @@ def sync_settings():
         options.remove(row.uuid)
 
     form = FORM(TABLE(
-            #TR('Uuid',SELECT(*options, _name='uuid', requires=IS_IN_SET(options))),
-            TR('Sync Policy',SELECT('Newer Timestamp', 'Keep All', 'Replace All', _name="policy")), #if this set is changed, then its corresponding set in admin model should also be changed
-            TR('',INPUT(_name = 'submit',_type = 'submit', _value='Submit'))
+            #TR('Uuid', SELECT(*options, _name='uuid', requires=IS_IN_SET(options))),
+            TR('Sync Policy', SELECT('Newer Timestamp', 'Keep All', 'Replace All', _name="policy")), #if this set is changed, then its corresponding set in admin model should also be changed
+            TR('', INPUT(_name = 'submit', _type = 'submit', _value='Submit'))
             ))
-    if form.accepts(request.vars,session):
+    if form.accepts(request.vars, session):
         db.sync_setting.insert(uuid = form.vars.uuid,
                                     policy = form.vars.policy
                                     )
@@ -404,7 +430,7 @@ def putdata(uuid, username, password, nicedbdump): #uuid of the system which is 
     db[logtable].insert(
         uuid=uuid,
         function='putdata',
-        timestamp=request.now,
+        timestamp=request.utcnow,
         )
     
     return True
@@ -482,7 +508,7 @@ def getdata(uuid, username, password, timestamp = None): #if no timestamp is pas
     db[logtable].insert(
         uuid=uuid,
         function='getdata',
-        timestamp=request.now,
+        timestamp=request.utcnow,
         )
     
     return nicedbdump
@@ -532,8 +558,8 @@ def handleResults():
 
     # We want to store results separately for each browser
     browserName = getBrowserName(request.env.http_user_agent)
-    date = str(request.now)[:-16]
-    time = str(request.now)[11:-10]
+    date = str(request.utcnow)[:-16]
+    time = str(request.utcnow)[11:-10]
     time = time.replace(':','-')
 
     # Write out results

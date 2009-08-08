@@ -83,7 +83,7 @@ def export_pdf(table, query):
         class band_page_footer(ReportBand):
             height = 0.5*cm
             elements = [
-                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                Label(text='%s' % request.utcnow.date(), top=0.1*cm, left=0),
                 SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
                     width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
             ]
@@ -122,7 +122,7 @@ def export_rss(module, resource, query, main='name', extra='description'):
             entries.append(dict(title=row[main], link=server + link + '/%d' % row.id, description='', created_on=row.created_on))
     import gluon.contrib.rss2 as rss2
     items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
-    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.now, items = items)
+    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.utcnow, items = items)
     response.headers['Content-Type'] = 'application/rss+xml'
     return rss2.dumps(rss)
 
@@ -173,9 +173,13 @@ def export_xml(table, query):
     response.headers['Content-Type'] = 'text/xml'
     return str(gluon.serializers.xml(items))
     
-def import_csv(table, file):
-    "Import CSV file into Database. Comes from appadmin.py. Modified to do Validation on UUIDs"
-    table.import_from_csv_file(file)
+def import_csv(file, table=None):
+    "Import CSV file into Database"
+    if table:
+        table.import_from_csv_file(file)
+    else:
+        # This is the preferred method as it updates reference fields
+        db.import_from_csv_file(file)
 
 def import_json(method):
     """Import GET vars into Database & respond in JSON
@@ -227,7 +231,8 @@ def shn_has_permission(name, table_name, record_id = 0):
     Designed to be called from the RESTlike controller
     """
     security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 'simple':
+    if security == 1:
+        # Simple policy
         # Anonymous users can Read.
         if name == 'read':
             authorised = True
@@ -235,6 +240,7 @@ def shn_has_permission(name, table_name, record_id = 0):
             # Authentication required for Create/Update/Delete.
             authorised = auth.is_logged_in()
     else:
+        # Full policy
         # Administrators are always authorised
         if auth.has_membership(1):
             authorised = True
@@ -446,18 +452,30 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
     return pagenav
     
 # Main controller function
-def shn_rest_controller(module, resource, deletable=True, listadd=True, main='name', extra=None, onvalidation=None, onaccept=None):
+def shn_rest_controller(module, resource,
+    deletable=True,
+    editable=True,          # by nursix
+    listadd=True,
+    main='name',
+    extra=None,
+    onvalidation=None,
+    onaccept=None):
     """
     RESTlike controller function.
     
     Provides CRUD operations for the given module/resource.
     Optional parameters:
     deletable=False: don't provide visible options for deletion
+    editable=False: don't provide visible options for editing
     listadd=False: don't provide an add form in the list view
     main='field': the field used for the title in RSS output
     extra='field': the field used for the description in RSS output & in Search AutoComplete
     onvalidation=lambda form: function(form)    callback processed *before* DB IO
     onaccept=lambda form: function(form)        callback processed *after* DB IO
+
+    Request options:
+
+        request.filter              contains custom query to filter list views
     
     Customisable Security Policy
 
@@ -471,7 +489,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
         JSON (designed to be accessed via JavaScript)
          - responses in JSON format
          - create/update/delete done via simple GET vars (no form displayed)
-        CSV (useful for synchronization)
+        CSV (useful for synchronization / database migration)
          - List/Display/Create for now
         RSS (list only)
         XML (list/read only)
@@ -516,6 +534,9 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
             # Filter Search List to remove entries which have been deleted
             if 'deleted' in table:
                 query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
+            # Filter Search List for custom query
+            if request.filter:
+                query = request.filter & query
             # list_create if have permissions
             authorised = shn_has_permission('create', table)
             # Audit
@@ -666,7 +687,10 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         title = s3.crud_strings.title_display
                     except:
                         title = T('Details')
-                    edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', record]), _id='edit-btn')
+                    if editable:
+                        edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', record]), _id='edit-btn')
+                    else:
+                        edit = ''
                     if deletable:
                         delete = A(T("Delete"), _href=URL(r=request, f=resource, args=['delete', record]), _id='delete-btn')
                     else:
@@ -750,7 +774,7 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                         # Read in POST
                         file = request.vars.filename.file
                         try:
-                            import_csv(table, file)
+                            import_csv(file, table)
                             session.flash = T('Data uploaded')
                         except: 
                             session.error = T('Unable to parse CSV file!')
@@ -807,12 +831,15 @@ def shn_rest_controller(module, resource, deletable=True, listadd=True, main='na
                     if "deleted" in db[table]:
                         # Mark as deleted rather than really deleting
                         db(db[table].id == record).update(deleted = True)
+                        # Nevertheless: call crud.delete_onvalidation if set
+                        if crud.settings.delete_onvalidation:
+                            crud.settings.delete_onvalidation(db(db[table].id == record).select()[0])
+                        redirect(URL(r=request))
                     else:
                         # Delete properly
+                        if representation == "ajax":
+                            crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
                         crud.delete(table, record)
-                    if representation == "ajax":
-                        crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
-                    crud.delete(table, record)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))

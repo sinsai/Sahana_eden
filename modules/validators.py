@@ -108,31 +108,74 @@ class IS_PE_ID(object):
         else:
             self.dbset = dbset
 
+    def pentity_represent(self,pentity):
+        if pentity and pentity.opt_pr_pentity_class==1:
+            subentity_record=self.dbset(self.dbset._db['pr_person']['pr_pe_id']==pentity.id).select()[0]
+            if subentity_record:
+                pentity_str = '%s %s [%s] (%s %s)' % (
+                    subentity_record.first_name,
+                    subentity_record.last_name or '',
+                    subentity_record.pr_pe_label or 'no label',
+                    self.class_opts[1],
+                    subentity_record.id
+                )
+            else:
+                pentity_str = '[%s] (%s PE=%s)' % (
+                    pentity.label or 'no label',
+                    self.class_opts[1],
+                    pentity.id
+                )
+        elif pentity and pentity.opt_pr_pentity_class==2:
+            subentity_record=self.dbset(self.dbset._db['pr_group']['pr_pe_id']==pentity.id).select()[0]
+            if subentity_record:
+                pentity_str = '%s (%s %s)' % (
+                    subentity_record.group_name,
+                    self.class_opts[2],
+                    subentity_record.id
+                )
+            else:
+                pentity_str = '(%s PE=%s)' % (
+                    pr_pentity_class_opts[2],
+                    pentity.id
+                )
+        elif pentity and pentity.opt_pr_pentity_class==3:
+            subentity_record=self.dbset(self.dbset._db['hrm_body']['pr_pe_id']==pentity.id).select()[0]
+            if subentity_record:
+                pentity_str = '[%s] (%s %s)' % (
+                    subentity_record.pr_pe_label or 'no label',
+                    self.class_opts[3],
+                    subentity_record.id
+                )
+            else:
+                pentity_str = '[%s] (%s PE=%s)' % (
+                    pentity.label or 'no label',
+                    self.class_opts[3],
+                    pentity.id
+                )
+        elif pentity:
+            pentity_str = '[%s] (%s PE=%s)' % (
+                pentity.label or 'no label',
+                self.class_opts[pentity.opt_pr_pentity_class],
+                pentity.id
+            )
+        return pentity_str
+
     def options(self):
+        query = self.dbset._db['pr_pentity']['deleted']==False
         if self.filter_opts:
-            query = self.dbset._db['pr_pentity'].opt_pr_pentity_class.belongs(self.filter_opts)
-            records = self.dbset(query).select(
-                self.dbset._db['pr_pentity'].id,
-                self.dbset._db['pr_pentity'].opt_pr_pentity_class,
-                self.dbset._db['pr_pentity'].label
-                )
-        else:
-            query = None
-            records = self.dbset.select(
-                self.dbset._db['pr_pentity'].id,
-                self.dbset._db['pr_pentity'].opt_pr_pentity_class,
-                self.dbset._db['pr_pentity'].label
-                )
-        if (self.class_opts):
-            set = [ ( r.id , str(self.class_opts[r.opt_pr_pentity_class]) + ' ' + str(r.id)) for r in records ]
-        else:
-            set = [ ( r.id , str(r.id)) for r in records ]
+            query = (self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts)) & query
+        records = self.dbset(query).select(orderby=self.dbset._db['pr_pentity'].opt_pr_pentity_class)
+        set = []
+        for r in records:
+            set.append((r.id,  self.pentity_represent(r)))
         return( set )
 
     def __call__(self,value):
         try:
-            field = self.dbset._db['pr_pentity']['id']
-            if self.dbset(field == value).count():
+            query = self.dbset._db['pr_pentity']['deleted']==False
+            if self.filter_opts:
+                query = (self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts)) & query
+            if self.dbset(query).count():
                 return (value, None)
             else:
                 pass

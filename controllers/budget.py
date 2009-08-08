@@ -131,7 +131,7 @@ def item_export_pdf():
         class band_page_footer(ReportBand):
             height = 0.5*cm
             elements = [
-                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                Label(text='%s' % request.utcnow.date(), top=0.1*cm, left=0),
                 SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
                     width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
             ]
@@ -189,22 +189,15 @@ def kit_item():
         elif request.vars.format == 'pdf':
             redirect(URL(r=request, f='kit_export_pdf'))
         elif request.vars.format == 'csv':
-            if str.lower(request.args(0)) == 'list':
-                redirect(URL(r=request, f='kit_export_csv'))
-            elif str.lower(request.args(0)) == 'create':
-                resource = request.function
-                table = db[module + '_' + resource]
-                # Read in POST
-                file = request.vars.filename.file
-                try:
-                    import_csv(table, file)
-                    session.flash = T('Data uploaded')
-                except: 
-                    session.error = T('Unable to parse CSV file!')
-                redirect(URL(r=request))
+            if request.args(0):
+                if str.lower(request.args(0)) == 'create':
+                    return kit_import_csv()
+                else:
+                    session.error = BADMETHOD
+                    redirect(URL(r=request))
             else:
-                session.error = BADMETHOD
-                redirect(URL(r=request))
+                # List
+                redirect(URL(r=request, f='kit_export_csv'))
         else:
             session.error = BADFORMAT
             redirect(URL(r=request))
@@ -510,7 +503,7 @@ def kit_export_pdf():
         class band_page_footer(ReportBand):
             height = 0.5*cm
             elements = [
-                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                Label(text='%s' % request.utcnow.date(), top=0.1*cm, left=0),
                 SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
                     width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
             ]
@@ -565,18 +558,43 @@ def kit_export_pdf():
     
 def kit_export_csv():
     """
-    Export kit_item in CSV format
-    Currently this just exports kit_item (kit needs to be done separately via main RESTlike controller)
+    Export kits in CSV format
+    Concatenates: kits, items & kit_item
     """
-    resource = 'kit_item'
+    output = ''
     
-    table = db[module + '_' + resource]
-    # Filter Search list to just those records which user can read
-    query = shn_accessible_query('read', table)
-    # Filter Search List to remove entries which have been deleted
-    if 'deleted' in table:
-        query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
-    return export_csv(resource, query, record=None)
+    for resource in ['kit', 'item', 'kit_item']:
+        _table = module + '_' + resource
+        table = db[_table]
+        # Filter Search list to just those records which user can read
+        query = shn_accessible_query('read', table)
+        # Filter Search List to remove entries which have been deleted
+        if 'deleted' in table:
+            query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
+        output += 'TABLE ' + _table + '\n'
+        output += str(db(query).select())
+        output += '\n\n'
+        
+    import gluon.contenttype
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+    filename = "%s_kits.csv" % (request.env.server_name)
+    response.headers['Content-disposition'] = "attachment; filename=%s" % filename
+    return output
+    
+def kit_import_csv():
+    """
+    Import kits in CSV format
+    Assumes concatenated: kits, items & kit_item
+    """
+    # Read in POST
+    file = request.vars.filename.file
+    try:
+        # Assumes that it is a concatenation of tables
+        import_csv(file)
+        session.flash = T('Data uploaded')
+    except: 
+        session.error = T('Unable to parse CSV file!')
+    redirect(URL(r=request, f='kit'))
     
 def bundle():
     "RESTlike CRUD controller"

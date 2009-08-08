@@ -1,4 +1,10 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+#
+# DVR Disaster Victim Registry (Sahana Legacy)
+#
+# created 2009-08-06 by nursix
+#
 
 module = 'dvr'
 

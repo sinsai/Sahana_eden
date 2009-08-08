@@ -16,7 +16,7 @@ def test():
     items = None
     form = None
     return dict(items=items, form=form)
-    
+
 @service.rss
 def rss(resource):
     " http://127.0.0.1:8000/sahana/test/call/rss/rss/resource "
@@ -30,7 +30,7 @@ def rss(resource):
     rows = db(db[table].id>0).select()
     for row in rows:
         entries.append(dict(title=row.name, link=server+link+'/%d' % row.id, description=row.description or '', created_on=row.created_on))
-    return dict(title=str(s3.crud_strings[table].subtitle_list), link=server+link, description='', created_on=request.now, entries=entries)
+    return dict(title=str(s3.crud_strings[table].subtitle_list), link=server+link, description='', created_on=request.utcnow, entries=entries)
 
 def post():
     """Test for JSON POST
@@ -63,6 +63,10 @@ def refresh():
     response.refresh = '<noscript><meta http-equiv="refresh" content="2; url=' + URL(r=request, c='budget', f='item') + '" /></noscript>' 
     return dict()
 
+def photo():
+    form = crud.create(db.test_photo)
+    return dict(form=form)
+    
 def css():
     items = crud.select(db.pr_person, _id='myid', _class='myclass')
     form = crud.create(db.pr_person)

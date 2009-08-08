@@ -313,7 +313,7 @@ class AuthS3(Auth):
         # process authenticated users
         if user:
             user = Storage(table_user._filter_fields(user, id=True))
-            session.auth = Storage(user=user, last_visit=request.utcnow,
+            session.auth = Storage(user=user, last_visit=request.now,
                                    expiration=self.settings.expiration)
             self.user = user
             session.confirmation = self.messages.logged_in
@@ -439,7 +439,7 @@ class AuthS3(Auth):
                     .select()
                 user = users[0]
                 user = Storage(table_user._filter_fields(user, id=True))
-                session.auth = Storage(user=user, last_visit=request.utcnow,
+                session.auth = Storage(user=user, last_visit=request.now,
                                    expiration=self.settings.expiration)
                 self.user = user
                 session.flash = self.messages.logged_in

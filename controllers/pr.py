@@ -14,42 +14,31 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
-    [T('Persons'), False, URL(r=request, f='person'),[
-        [T('Persons'), False, URL(r=request, f='person'),[
-            [T('Add Person'), False, URL(r=request, f='person', args='create')],
-            [T('List Persons'), False, URL(r=request, f='person')],
-        ]],
-        [T('Person Details'), False, URL(r=request, f='person_details'),[
-            [T('Add Details'), False, URL(r=request, f='person_details', args='create')],
-            [T('List Details'), False, URL(r=request, f='person_details')],
-        ]],
-        [T('Images'), False, URL(r=request, f='image_person'),[
-            [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
-            [T('List Images'), False, URL(r=request, f='image_person')],
-        ]],
-        [T('Identities'), False, URL(r=request, f='identity'),[
-            [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
-            [T('List Identities'), False, URL(r=request, f='identity')],
-        ]],
-        [T('Presence'), False, URL(r=request, f='presence_person'),[
-            [T('Register Presence'), False, URL(r=request, f='presence_person', args='create')],
-            [T('List Presence Records'), False, URL(r=request, f='presence_person')],
-        ]],
+    [T('Search for a Person'), False, URL(r=request, f='person_search')],
+    [T('Register Persons'), False, URL(r=request, f='person'),[
+        [T('Add Individual'), False, URL(r=request, f='person', args='create')],
+        [T('Register Presence'), False, URL(r=request, f='presence_person', args='create')],
+        [T('Add Group'), False, URL(r=request, f='group', args='create')],
+        [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
+    ]],
+    [T('Person Details'), False, URL(r=request, f='person_details'),[
+        [T('Add Details'), False, URL(r=request, f='person_details', args='create')],
+        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
+        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+    ]],
 #        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
 #        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
 #        [T('List Persons'), False, URL(r=request, f='person')],
 #        [T('List Images'), False, URL(r=request, f='image_person')],
 #        [T('List Identities'), False, URL(r=request, f='identity')]
-    ]],
-    [T('Groups'), False, URL(r=request, f='group'),[
-        [T('Groups'), False, URL(r=request, f='group'),[
-            [T('Add Group'), False, URL(r=request, f='group', args='create')],
-            [T('List Groups'), False, URL(r=request, f='group')],
-        ]],
-        [T('Group Memberships'), False, URL(r=request, f='group_membership'),[
-            [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
-            [T('List Group Memberships'), False, URL(r=request, f='group_membership')],
-        ]],
+    [T('List Persons'), False, URL(r=request, f='person'),[
+        [T('List Individuals'), False, URL(r=request, f='person')],
+        [T('List Person Details'), False, URL(r=request, f='person_details')],
+        [T('List Person Images'), False, URL(r=request, f='image_person')],
+        [T('List Identities'), False, URL(r=request, f='identity')],
+        [T('List Groups'), False, URL(r=request, f='group')],
+        [T('List Group Memberships'), False, URL(r=request, f='group_membership')],
+        [T('List Presence Records'), False, URL(r=request, f='presence_person')],
     ]],
     # Person Entities Menu is to be removed!
 #    [T('Person Entities'), False, '#',[
@@ -114,3 +103,42 @@ def download():
     "Download a file."
     return response.download(request, db) 
 
+def person_search():
+    "Find a person by name or ID tag label."
+
+    response.view = '%s/person_search.html' % module
+
+    title = T('Search for a Person')
+    subtitle = T('Matching Records')
+
+    form = FORM(TABLE(
+            TR(T('Tag Label'),INPUT(_type="text",_name="label")),
+            TR(T('First Name'),INPUT(_type="text",_name="first_name")),
+            TR(T('Last Name'),INPUT(_type="text",_name="last_name")),
+            TR("",INPUT(_type="submit",_value="Search"))
+            ))
+
+    items = None
+    
+    if form.accepts(request.vars,session):
+        rows = shn_pr_person_find(form.vars.label, form.vars.first_name, form.vars.last_name)
+        if rows:
+            records = []
+            for row in rows:
+                records.append(TR(
+                    row.id,
+                    row.pr_pe_label or '[no label]',
+                    row.first_name,
+                    row.middle_name,
+                    row.last_name
+                    ))
+                
+            items=DIV(TABLE(THEAD(TR(
+                TH("ID"),
+                TH("Tag Label"),
+                TH("First Name"),
+                TH("Middle Name"),
+                TH("Last Name"))),
+                TBODY(records), _id='list', _class="display"))
+
+    return dict(title=title,subtitle=subtitle,form=form,vars=form.vars,items=items)

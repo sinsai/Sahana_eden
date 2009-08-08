@@ -276,11 +276,34 @@ db.define_table(table, timestamp, deletion_status,
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
                 Field('preferred_name'),                # how the person uses to be called
+#                Field('local_name'),                    # Name in local language and script, Sahana legacy
                 opt_pr_gender,
                 opt_pr_age_group,
                 Field('email', unique=True),            # Needed for AAA (change this!)
                 Field('mobile_phone','integer'),        # Needed for SMS (change this!)
                 Field('comment'),                       # comment
+                # Person Details
+#                Field('date_of_birth','date'),          # Sahana legacy
+#                Field('country'),                       # Sahana legacy
+                opt_pr_nationality,                     # by nursix
+#                Field('state'),                         # State of Origin, Sahana legacy
+#                Field('town'),                          # Town of Origin, Sahana legacy
+#                Field('race'),                          # Sahana legacy
+#                Field('ethnicity'),                     # by nursix
+#                Field('religion'),                      # Sahana legacy - TODO: make option field
+#                Field('marital_status'),                # Sahana legacy - TODO: make option field
+#                Field('occupation'),                    # Sahana legacy
+#                # Physical Details
+#                Field('eye_color'),                     # Sahana legacy
+#                Field('skin_color'),                    # Sahana legacy
+#                Field('hair_color'),                    # Sahana legacy
+#                Field('height'),                        # Sahana legacy
+#                Field('weight'),                        # Sahana legacy
+#                Field('distinctive_features','text'),   # Sahana legacy
+#                Field('blood_type'),                    # Sahana legacy
+#                Field('last_seen_location'),            # Sahana legacy
+#                Field('last_seen_clothing'),            # Sahana legacy
+#                Field('other_information','text'),      # Sahana legacy
                 migrate=migrate)
 
 db[table].opt_pr_gender.label = T('Gender')
@@ -514,7 +537,20 @@ db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [
 resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,                               # Person Entity ID
                 Field('name'),                          # Contact type
+                Field('method'),                        # Contact Methods
+                Field('address_street_1'),              # Street Address 1
+                Field('address_street_2'),              # Street Address 2
+                Field('address_postcode'),              # ZIP code or postal code
+                Field('address_town'),                  # Town for address
+                Field('address_state'),                 # State/Province for address
+                Field('address_country'),               # Country for Address
+                Field('phone_home'),                    # Home telephone number
+                Field('phone_office'),                  # Office telephone number
+                Field('phone_mobile'),                  # Mobile telephone number
+                Field('email'),                         # E-Mail-Address
+                Field('webaddress'),                    # Website
                 Field('value', notnull=True),
                 migrate=migrate)
 
@@ -624,3 +660,27 @@ def shn_pentity_onvalidation(form, table=None, entity_class=1):
             if subentity_record and subentity_record.pr_pe_id:
                 db(db.pr_pentity.id==subentity_record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
     return
+
+#
+# Other functions
+#
+
+def shn_pr_person_find(label, first_name, last_name):
+
+    if label or first_name or last_name:
+        query = db.pr_person.id
+        if label and isinstance(label,str) and label!='':
+            query=(db.pr_person.pr_pe_label.lower().like(label.lower())) & query
+        if first_name and isinstance(first_name,str) and first_name!='':
+            query=(db.pr_person.first_name.lower().like(first_name.lower())) & query
+        if last_name and isinstance(last_name,str) and last_name!='':
+            query=(db.pr_person.last_name.lower().like(last_name.lower())) & query
+
+        return(db(query).select(
+            db.pr_person.id,
+            db.pr_person.first_name,
+            db.pr_person.middle_name,
+            db.pr_person.last_name,
+            db.pr_person.pr_pe_label))
+    else:
+        return None

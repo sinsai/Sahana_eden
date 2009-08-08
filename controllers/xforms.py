@@ -62,6 +62,12 @@ def create():
             elif 'IS_IN_DB' in str(table[field].requires):
                 # ToDo (similar to IS_IN_SET)
                 pass
+            elif 'IS_IN_SET' in str(table[field].requires):
+                pass
+#                items_list=[] 
+#               for option in table[field].requires.theset:
+#                    items_list.append(TAG['item'](TAG['label'](option), TAG['value'](option)))
+#                controllers_list.append(TAG['select1'](items_list, _ref=field))
             else:
                 # Normal Input field
                 controllers_list.append(TAG['input'](TAG['label'](table[field].label), _ref=field))

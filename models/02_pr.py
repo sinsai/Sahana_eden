@@ -70,17 +70,12 @@ opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
 # Nationalities -----------------------
 #
 
-pr_nationality_opts = { # TODO: add all major nationalities
-    1:T('unknown'),
-    2:T('Germany'),
-    3:T('Great Britain'),
-    4:T('India')
-    }
+pr_nationality_opts = shn_list_of_nations
 
 opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
                         db.Field('opt_pr_nationality','integer',
                         requires = IS_IN_SET(pr_nationality_opts),
-                        default = 1,
+                        default = 999, # unknown
                         label = T('Nationality'),
                         represent = lambda opt: opt and pr_nationality_opts[opt]))
 
@@ -538,7 +533,7 @@ resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                               # Person Entity ID
-                Field('name'),                          # Contact type
+                Field('name'),                          # Contact name (if different from PE)
                 Field('method'),                        # Contact Methods
                 Field('address_street_1'),              # Street Address 1
                 Field('address_street_2'),              # Street Address 2
@@ -557,6 +552,21 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_IN_SET(['phone', 'fax', 'skype', 'msn', 'yahoo'])
 db[table].value.requires = IS_NOT_EMPTY()
+
+title_create = T('Add Contact')
+title_display = T('Contact Details')
+title_list = T('List Contacts')
+title_update = T('Edit Contact')
+title_search = T('Search Contacts')
+subtitle_create = T('Add New Contact')
+subtitle_list = T('Contacts')
+label_list_button = T('List Contacts')
+label_create_button = T('Add Contact')
+msg_record_created = T('Contact added')
+msg_record_modified = T('Contact updated')
+msg_record_deleted = T('Contact deleted')
+msg_list_empty = T('No Contacts currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
 # Contacts to People ----------------------------------------------------------

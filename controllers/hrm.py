@@ -16,9 +16,17 @@ response.menu_options = [
         [T('Register to Location'), False, URL(r=request, f='presence_body', args='create')],
         [T('List Bodies'), False, URL(r=request, f='body')],
         [T('List Images'), False, URL(r=request, f='image_body')],
-        [T('List Locations'), False, URL(r=request, f='presence_body')],
+        [T('List Locations'), False, URL(r=request, f='presence_body')]
     ]],
-    [T('Checklist Of Operations'), False, URL(r=request, f='operation_checklist')]
+    [T('Checklist Of Operations'), False, URL(r=request, f='operation_checklist'),[
+        [T('Personal Effects'), False, URL(r=request, f='personal_effects')],
+        [T('Radiology'), False, URL(r=request, f='radiology')],
+        [T('Fingerprints'), False, URL(r=request, f='fingerprints')],
+        [T('Anthropology'), False, URL(r=request, f='anthropology')],
+        [T('Pathology'), False, URL(r=request, f='pathology')],
+        [T('DNA'), False, URL(r=request, f='dna')],
+        [T('Dental'), False, URL(r=request, f='dental')],
+    ]]
 ]
 
 # S3 framework functions
@@ -79,5 +87,3 @@ def presence_body():
     request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==3)
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', 'presence')
-
-

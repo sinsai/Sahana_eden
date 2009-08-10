@@ -66,6 +66,10 @@ def refresh():
 def photo():
     form = crud.create(db.test_photo)
     return dict(form=form)
+
+def user():
+    user = auth.user.id if session.auth else 0
+    return user
     
 def css():
     items = crud.select(db.pr_person, _id='myid', _class='myclass')

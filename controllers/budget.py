@@ -131,7 +131,7 @@ def item_export_pdf():
         class band_page_footer(ReportBand):
             height = 0.5*cm
             elements = [
-                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                Label(text='%s' % request.utcnow.date(), top=0.1*cm, left=0),
                 SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
                     width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
             ]
@@ -503,7 +503,7 @@ def kit_export_pdf():
         class band_page_footer(ReportBand):
             height = 0.5*cm
             elements = [
-                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                Label(text='%s' % request.utcnow.date(), top=0.1*cm, left=0),
                 SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
                     width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
             ]

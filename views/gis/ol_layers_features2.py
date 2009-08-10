@@ -1,11 +1,11 @@
 ﻿ol_layers_features.js old:
-    {{if feature.type=='point':}}
+    {{if feature.type==1:}}
         var geom = new OpenLayers.Geometry.Point((new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lat));
     //ToDo: make work for more than just points!
-    {{elif feature.type=='line':}}
+    {{elif feature.type==2:}}
         coords = 
         var geom = new OpenLayers.Geometry.LineString(coords);
-    {{elif feature.type=='polygon':}}
+    {{elif feature.type==3:}}
         var geom = new OpenLayers.Geometry.Polygon(new Array(new OpenLayers.Geometry.LinearRing(coords)));
     {{pass}}
     

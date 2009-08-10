@@ -58,6 +58,7 @@ opt_msg_group_type = SQLTable(None, 'opt_msg_group_type',
                     db.Field('group_type', 'integer', notnull=True,
                     requires = IS_IN_SET(msg_group_type_opts),
                     default = 1,
+                    label = T('Type'),
                     represent = lambda opt: opt and msg_group_type_opts[opt]))
 
 resource = 'group'
@@ -69,7 +70,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+db[table].comments.label = T('Comments')
 title_create = T('Add Group')
 title_display = T('Group Details')
 title_list = T('List Groups')
@@ -89,6 +92,7 @@ group_id = SQLTable(None, 'group_id',
             Field('group_id', db.msg_group,
                 requires = IS_IN_DB(db, 'msg_group.id', 'msg_group.name'),
                 represent = lambda id: (id and [db(db.msg_group.id==id).select()[0].name] or ["None"])[0],
+                label = T('Group'),
                 comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='msg', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Distribution Group|The Group of People to whom this Message should be sent."))),
                 ondelete = 'RESTRICT'
                 ))
@@ -101,7 +105,6 @@ db.define_table(table, timestamp, deletion_status,
                 person_id,
                 migrate=migrate)
 db[table].group_id.requires = IS_IN_DB(db, 'msg_group.id', 'msg_group.name')
-db[table].group_id.label = T('Group')
 db[table].group_id.represent = lambda group_id: db(db.msg_group.id==group_id).select()[0].name
 db[table].person_id.label = T('User')
 
@@ -115,7 +118,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].phone_number.requires = IS_NOT_EMPTY()
+db[table].phone_number.label = T('Phone Number')
 #db[table].phone_number.comment = SPAN("*", _class="req")
+db[table].contents.label = T('Contents')
 #title_create = T('Add Incoming SMS')
 title_display = T('SMS Details')
 title_list = T('View SMS InBox')
@@ -144,6 +149,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].phone_number.comment = SPAN("*", _class="req")
 db[table].contents.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contents|If this is over 140 characters then it will be split into Multiple SMS's."))
 db[table].group_id.label = T('Recipients')
+db[table].contents.label = T('Contents')
 title_create = T('Send SMS')
 title_display = T('SMS Details')
 title_list = T('View SMS OutBox')
@@ -171,6 +177,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].phone_number.requires = IS_NOT_EMPTY()
 #db[table].phone_number.comment = SPAN("*", _class="req")
 db[table].group_id.label = T('Recipients')
+db[table].contents.label = T('Contents')
 #title_create = T('Send SMS')
 title_display = T('SMS Details')
 title_list = T('View Sent SMS')
@@ -196,7 +203,10 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].sender.requires = IS_EMAIL()
+db[table].sender.label = T('Sender')
 #db[table].sender.comment = SPAN("*", _class="req")
+db[table].subject.label = T('Subject')
+db[table].body.label = T('Body')
 #title_create = T('Add Incoming Email')
 title_display = T('Email Details')
 title_list = T('View Email InBox')
@@ -224,6 +234,8 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].recipient.requires = IS_EMAIL()
 #db[table].recipient.comment = SPAN("*", _class="req")
 db[table].group_id.label = T('Recipients')
+db[table].subject.label = T('Subject')
+db[table].body.label = T('Body')
 title_create = T('Send Email')
 title_display = T('Email Details')
 title_list = T('View Email OutBox')
@@ -251,6 +263,8 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].recipient.requires = IS_EMAIL()
 #db[table].recipient.comment = SPAN("*", _class="req")
 db[table].group_id.label = T('Recipients')
+db[table].subject.label = T('Subject')
+db[table].body.label = T('Body')
 #title_create = T('Send Email')
 title_display = T('Email Details')
 title_list = T('View Sent Email')

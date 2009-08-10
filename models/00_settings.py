@@ -24,17 +24,22 @@ auth.settings.registration_requires_verification = False
 auth.settings.mailer = mail
 # ** Amend this to your Publically-accessible URL ***
 auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s to verify your email'
+auth.settings.on_failed_authorization = URL(r=request, c='default', f='user', args='not_authorized')
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = False
 # Notify UserAdmin of new pending user registration to action
 # auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='adminwithapprovalpower@admindomain', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap.' % form.email)
 # Allow use of LDAP accounts for login
+# NB Currently this means that change password should be disabled:
+#auth.settings.actions_disabled.append('change_password')
 # (NB These are not automatically added to PR or to Authenticated role since they enter via the login() method not register())
 #from gluon.contrib.login_methods.ldap_auth import ldap_auth
+# Require even alternate login methods to register users 1st
+#auth.settings.alternate_requires_registration = True
 # Active Directory
 #auth.settings.login_methods.append(ldap_auth(mode='ad', server='dc.domain.org', base_dn='ou=Users,dc=domain,dc=org'))
 # or if not wanting local users at all (no passwords saved within DB):
-#auth.settings.login_methods=[ldap_auth(mode='ad', server='dc.domain.org', base_dn='ou=Users,dc=domain,dc=org')]
+#auth.settings.login_methods = [ldap_auth(mode='ad', server='dc.domain.org', base_dn='ou=Users,dc=domain,dc=org')]
 # Domino
 #auth.settings.login_methods.append(ldap_auth(mode='domino', server='domino.domain.org'))
 # OpenLDAP
@@ -58,12 +63,12 @@ timestamp = SQLTable(None, 'timestamp',
             Field('created_on', 'datetime',
                           readable=False,
                           writable=False,
-                          default=request.now),
+                          default=request.utcnow),
             Field('modified_on', 'datetime',
                           readable=False,
                           writable=False,
-                          default=request.now,
-                          update=request.now)
+                          default=request.utcnow,
+                          update=request.utcnow)
             ) 
 
 # Reusable author fields
@@ -193,35 +198,44 @@ db.define_table(table,timestamp,
 db[table].operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list', 'search'])
 
 # Settings - systemwide
+s3_setting_security_policy_opts = {
+    1:T('simple'),
+    2:T('full')
+    }
 resource = 'setting'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 Field('admin_name'),
                 Field('admin_email'),
                 Field('admin_tel'),
-                Field('debug', 'boolean'),
-                Field('security_policy'),
-                Field('self_registration', 'boolean'),
-                Field('audit_read', 'boolean'),
-                Field('audit_write', 'boolean'),
+                Field('debug', 'boolean', default=False),
+                Field('security_policy', 'integer', default=1),
+                Field('self_registration', 'boolean', default=True),
+                Field('archive_not_delete', 'boolean', default=True),
+                Field('audit_read', 'boolean', default=False),
+                Field('audit_write', 'boolean', default=False),
                 migrate=migrate)
-db[table].security_policy.requires = IS_IN_SET(['simple', 'full'])
+db[table].security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
+db[table].security_policy.represent = lambda opt: opt and s3_setting_security_policy_opts[opt]
+db[table].security_policy.label = T('Security Policy')
+db[table].security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
+db[table].debug.label = T('Debug')
+db[table].debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
+db[table].self_registration.label = T('Self Registration')
+db[table].self_registration.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Self-registration|Can users register themselves for authenticated login access?"))
+db[table].archive_not_delete.label = T('Archive not Delete')
+db[table].archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Archive not Delete|If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
+db[table].audit_read.label = T('Audit Read')
+db[table].audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Read|If enabled then a log is maintained of all records a user accesses. If disabled then it can still be enabled on a per-module basis."))
+db[table].audit_write.label = T('Audit Write')
+db[table].audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Write|If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
     db[table].insert(
         admin_name = T("Sahana Administrator"),
         admin_email = T("support@Not Set"),
-        admin_tel = T("Not Set"),
-        # Debug => Load all JS/CSS independently & uncompressed. Change to True for Production deployments (& hence stable branches)
-        debug = True,
-        # Change to enable a customised security policy
-        security_policy = 'simple',
-        # Change to False to disable Self-Registration
-        self_registration = True,
-        # Change to True to enable Auditing at the Global level (if False here, individual Modules can still enable it for them)
-        audit_read = False,
-        audit_write = False
+        admin_tel = T("Not Set")
     )
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
 title_create = T('Add Setting')

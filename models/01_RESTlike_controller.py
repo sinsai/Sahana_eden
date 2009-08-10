@@ -83,7 +83,7 @@ def export_pdf(table, query):
         class band_page_footer(ReportBand):
             height = 0.5*cm
             elements = [
-                Label(text='%s' % request.now.date(), top=0.1*cm, left=0),
+                Label(text='%s' % request.utcnow.date(), top=0.1*cm, left=0),
                 SystemField(expression='Page # %(page_number)d of %(page_count)d', top=0.1*cm,
                     width=BAND_WIDTH, style={'alignment': TA_RIGHT}),
             ]
@@ -122,7 +122,7 @@ def export_rss(module, resource, query, main='name', extra='description'):
             entries.append(dict(title=row[main], link=server + link + '/%d' % row.id, description='', created_on=row.created_on))
     import gluon.contrib.rss2 as rss2
     items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
-    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.now, items = items)
+    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.utcnow, items = items)
     response.headers['Content-Type'] = 'application/rss+xml'
     return rss2.dumps(rss)
 
@@ -231,7 +231,8 @@ def shn_has_permission(name, table_name, record_id = 0):
     Designed to be called from the RESTlike controller
     """
     security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 'simple':
+    if security == 1:
+        # Simple policy
         # Anonymous users can Read.
         if name == 'read':
             authorised = True
@@ -239,6 +240,7 @@ def shn_has_permission(name, table_name, record_id = 0):
             # Authentication required for Create/Update/Delete.
             authorised = auth.is_logged_in()
     else:
+        # Full policy
         # Administrators are always authorised
         if auth.has_membership(1):
             authorised = True

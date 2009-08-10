@@ -29,7 +29,9 @@ db.define_table(table, timestamp,
                 Field('image', 'upload', autodelete = True),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+db[table].image.label = T('Image')
 # Populate table with Default options
 if not len(db().select(db[table].ALL)):
     # We want to start at ID 1
@@ -66,6 +68,7 @@ marker_id = SQLTable(None, 'marker_id',
             Field('marker', db.gis_marker,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'gis_marker.id', 'gis_marker.name')),
                 represent = lambda id: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden')),
+                label = T('Marker'),
                 comment = DIV(A(T('Add Marker'), _class='popup', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'
                 ))
@@ -82,17 +85,19 @@ db.define_table(table, timestamp, uuidstamp,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].epsg.requires = IS_NOT_EMPTY()
 db[table].epsg.label = "EPSG"
 db[table].epsg.comment = SPAN("*", _class="req")
 db[table].maxExtent.requires = IS_NOT_EMPTY()
-db[table].maxExtent.label = "maxExtent"
+db[table].maxExtent.label = T('maxExtent')
 db[table].maxExtent.comment = SPAN("*", _class="req")
 db[table].maxResolution.requires = IS_NOT_EMPTY()
-db[table].maxResolution.label = "maxResolution"
+db[table].maxResolution.label = T('maxResolution')
 db[table].maxResolution.comment = SPAN("*", _class="req")
 db[table].units.requires = IS_IN_SET(['m', 'degrees'])
+db[table].units.label = T('Units')
 # Populate table with Default options
 if not len(db().select(db[table].ALL)): 
    # We want to start at ID 1
@@ -132,6 +137,7 @@ projection_id = SQLTable(None, 'projection_id',
             Field('projection', db.gis_projection,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'gis_projection.id', 'gis_projection.name')),
                 represent = lambda id: db(db.gis_projection.id==id).select()[0].name,
+                label = T('Projection'),
                 comment = '',
                 ondelete = 'RESTRICT'    
                 ))
@@ -153,17 +159,20 @@ db.define_table(table, timestamp, uuidstamp,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].lat.requires = IS_LAT()
-db[table].lat.label = T("Latitude")
+db[table].lat.label = T('Latitude')
 db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 db[table].lon.requires = IS_LON()
-db[table].lon.label = T("Longitude")
+db[table].lon.label = T('Longitude')
 db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 db[table].zoom.requires = IS_INT_IN_RANGE(0,19)
+db[table].zoom.label = T('Zoom')
 db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
 db[table].marker.label = T('Default Marker')
 db[table].map_height.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+db[table].map_height.label = T('Map Height')
 db[table].map_height.comment = SPAN("*", _class="req")
 db[table].map_width.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+db[table].map_width.label = T('Map Width')
 db[table].map_width.comment = SPAN("*", _class="req")
 # Populate table with Default options
 if not len(db().select(db[table].ALL)): 
@@ -206,9 +215,14 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
 db[table].module.requires = IS_IN_DB(db((db.s3_module.enabled=='True') & (~db.s3_module.name.like('default'))),'s3_module.name','s3_module.name_nice')
+db[table].module.label = T('Module')
+# FIXME!
 db[table].resource.requires = IS_NULL_OR(IS_IN_SET(['resource']))
+db[table].resource.label = T('Resource')
 title_create = T('Add Feature Class')
 title_display = T('Feature Class Details')
 title_list = T('List Feature Classes')
@@ -228,6 +242,7 @@ feature_class_id = SQLTable(None, 'feature_class_id',
             Field('feature_class', db.gis_feature_class,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'gis_feature_class.id', 'gis_feature_class.name')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
+                label = T('Feature Class'),
                 comment = DIV(A(T('Add Feature Class'), _class='popup', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = 'RESTRICT'
                 ))
@@ -254,12 +269,19 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('image', 'upload'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].description.label = T('Description')
 db[table].person_id.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
 db[table].person_id.label = T("Contact")
+db[table].source.label = T('Source')
+db[table].accuracy.label = T('Accuracy')
+db[table].sensitivity.label = T('Sensitivity')
 db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
+db[table].event_time.label = T('Event Time')
 db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())
+db[table].expiry_time.label = T('Expiry Time')
 db[table].url.requires = IS_NULL_OR(IS_URL())
 db[table].url.label = 'URL'
+db[table].image.label = T('Image')
 title_create = T('Add Feature Metadata')
 title_display = T('Feature Metadata Details')
 title_list = T('List Feature Metadata')
@@ -275,6 +297,11 @@ msg_record_deleted = T('Feature Metadata deleted')
 msg_list_empty = T('No Feature Metadata currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+gis_feature_type_opts = {
+    1:T('Point'),
+    2:T('Line'),
+    3:T('Polygon')
+    }
 resource = 'feature'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -282,7 +309,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 feature_class_id,
                 marker_id,
                 Field('metadata', db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
-                Field('type', default='point', notnull=True),
+                Field('type', 'integer', default=1, notnull=True),
                 Field('lat', 'double'),    # Only needed for Points
                 Field('lon', 'double'),    # Only needed for Points
                 Field('wkt', length=256),  # WKT is auto-calculated from lat/lon for Points
@@ -290,20 +317,24 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].metadata.requires = IS_NULL_OR(IS_IN_DB(db, 'gis_feature_metadata.id'))
 db[table].metadata.represent = lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
+db[table].metadata.label = T('Metadata')
 db[table].metadata.comment = DIV(A(T('Add Metadata'), _class='popup', _href=URL(r=request, c='gis', f='feature_metadata', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Metadata|Additional attributes associated with this Feature.")))
-db[table].type.requires = IS_IN_SET(['point', 'line', 'polygon'])
+db[table].type.requires = IS_IN_SET(gis_feature_type_opts)
+db[table].type.represent = lambda opt: opt and gis_feature_type_opts[opt]
+db[table].type.label = T('Type')
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
-db[table].lat.label = T("Latitude")
+db[table].lat.label = T('Latitude')
 db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 db[table].lon.requires = IS_NULL_OR(IS_LON())
-db[table].lon.label = T("Longitude")
+db[table].lon.label = T('Longitude')
 db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 # WKT validation is done in the onvalidation callback
 #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
-db[table].wkt.label = T("Well-Known Text")
+db[table].wkt.label = T('Well-Known Text')
 db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]") ,_class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 title_create = T('Add Feature')
 title_display = T('Feature Details')
@@ -324,6 +355,7 @@ feature_id = SQLTable(None, 'feature_id',
             Field('feature', db.gis_feature,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'gis_feature.id', 'gis_feature.name')),
                 represent = lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
+                label = T('Feature'),
                 comment = DIV(A(T('Add Feature'), _class='popup', _href=URL(r=request, c='gis', f='feature', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature|The centre Point or Polygon used to display this Location on a Map."))),
                 ondelete = 'RESTRICT'
                 ))
@@ -342,9 +374,12 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].author.requires = IS_IN_DB(db, 'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
 #db[table].features.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 #db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+db[table].display.label = T('Display?')
 title_create = T('Add Feature Group')
 title_display = T('Feature Group Details')
 title_list = T('List Feature Groups')
@@ -364,13 +399,13 @@ feature_group_id = SQLTable(None, 'feature_group_id',
             Field('feature_group', db.gis_feature_group,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'gis_feature_group.id', 'gis_feature_group.name')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
+                label = T('Feature Group'),
                 comment = '',
                 ondelete = 'RESTRICT'
                 ))
 
             
 # Many-to-Many tables
-# are we using these or a tag-like pseudo M2M?
 resource = 'feature_to_feature_group'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
@@ -385,20 +420,31 @@ db.define_table(table, timestamp, deletion_status,
                 feature_class_id,
                 migrate=migrate)
 
+gis_landmark_type_opts = {
+    1:T('Church'),
+    2:T('School'),
+    3:T('Hospital')
+    }
 resource = 'landmark'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True),
-                Field('type'),
+                Field('type', 'integer'),
                 Field('description', length=256),
                 Field('url'),
                 Field('image', 'upload'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
+db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(['church', 'school', 'hospital']))
+db[table].type.requires = IS_NULL_OR(IS_IN_SET(gis_landmark_type_opts))
+db[table].type.represent = lambda opt: opt and gis_landmark_type_opts[opt]
+db[table].type.label = T('Type')
+db[table].description.label = T('Description')
 db[table].url.requires = IS_NULL_OR(IS_URL())
+db[table].url.label = "URL"
+db[table].image.label = T('Image')
 title_create = T('Add Landmark')
 title_display = T('Landmark Details')
 title_list = T('List Landmarks')
@@ -415,23 +461,39 @@ msg_list_empty = T('No Landmarks currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # GIS Locations
+gis_sector_opts = {
+    1:T('Government'),
+    2:T('Health')
+    }
+gis_level_opts = {
+    1:T('Country'),
+    2:T('Region'),
+    3:T('District'),
+    4:T('Town')
+    }
 resource = 'location'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 feature_id,         # Either just a Point or a Polygon
-                Field('sector'), # Government, Health
-                Field('level'),  # Region, Country, District
+                Field('sector', 'integer'),
+                Field('level', 'integer'),
                 admin_id,
                 Field('parent', 'reference gis_location', ondelete = 'RESTRICT'),   # This form of hierarchy may not work on all Databases
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()       # Placenames don't have to be unique
-db[table].feature.label = T("GIS Feature")
-db[table].sector.requires = IS_NULL_OR(IS_IN_SET(['Government', 'Health']))
-db[table].level.requires = IS_NULL_OR(IS_IN_SET(['Country', 'Region', 'District', 'Town']))
+db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+db[table].name.label = T('Name')
+db[table].feature.label = T('GIS Feature')
+db[table].sector.requires = IS_NULL_OR(IS_IN_SET(gis_sector_opts))
+db[table].sector.represent = lambda opt: opt and gis_sector_opts[opt]
+db[table].sector.label = T('Sector')
+db[table].level.requires = IS_NULL_OR(IS_IN_SET(gis_level_opts))
+db[table].level.represent = lambda opt: opt and gis_level_opts[opt]
+db[table].level.label = T('Level')
 db[table].parent.requires = IS_NULL_OR(IS_IN_DB(db, 'gis_location.id', 'gis_location.name'))
 db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+db[table].parent.label = T('Parent')
 title_create = T('Add Location')
 title_display = T('Location Details')
 title_list = T('List Locations')
@@ -451,6 +513,7 @@ location_id = SQLTable(None, 'location_id',
             Field('location', db.gis_location,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'gis_location.id', 'gis_location.name')),
                 represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
+                label = T('Location'),
                 comment = DIV(A(s3.crud_strings.gis_location.label_create_button, _class='popup', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
@@ -513,10 +576,10 @@ gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
 # Base table from which the rest inherit
 gis_layer = SQLTable(db, 'gis_layer', timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
-            Field('name', notnull=True),
-            Field('description', length=256),
-            #Field('priority', 'integer'),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
-            Field('enabled', 'boolean', default=True))
+            Field('name', notnull=True, label=T('Name')),
+            Field('description', length=256, label=T('Description')),
+            #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
+            Field('enabled', 'boolean', default=True, label=T('Enabled?')))
 gis_layer.name.requires = IS_NOT_EMPTY()
 for layertype in gis_layer_types:
     resource = 'layer_' + layertype
@@ -537,7 +600,7 @@ for layertype in gis_layer_types:
     # Create Type-specific Layer tables
     if layertype == "openstreetmap":
         t = SQLTable(db, table,
-            Field('subtype'),
+            Field('subtype', label=T('Sub-type')),
             gis_layer)
         t.subtype.requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)
         db.define_table(table, t)
@@ -554,7 +617,7 @@ for layertype in gis_layer_types:
         s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     if layertype == "google":
         t = SQLTable(db, table,
-            Field('subtype'),
+            Field('subtype', label=T('Sub-type')),
             gis_layer)
         t.subtype.requires = IS_IN_SET(gis_layer_google_subtypes)
         db.define_table(table, t)
@@ -572,7 +635,7 @@ for layertype in gis_layer_types:
         s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     if layertype == "yahoo":
         t = SQLTable(db, table,
-            Field('subtype'),
+            Field('subtype', label=T('Sub-type')),
             gis_layer)
         t.subtype.requires = IS_IN_SET(gis_layer_yahoo_subtypes)
         db.define_table(table, t)
@@ -590,7 +653,7 @@ for layertype in gis_layer_types:
         s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     if layertype == "bing":
         t = SQLTable(db, table,
-            Field('subtype'),
+            Field('subtype', label=T('Sub-type')),
             gis_layer)
         t.subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
         db.define_table(table, t)
@@ -627,7 +690,10 @@ def wkt_centroid(form):
     Centroid calculation is done using Shapely, which wraps Geos.
     A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
     """
-    if form.vars.type == 'point':
+    #shapely_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + str(T(" library not found, so can't find centroid!"))
+    shapely_error = T("Shapely library not found, so can't find centroid!")
+    if form.vars.type == 1:
+        # Point
         if form.vars.lon == None:
             form.errors['lon'] = T("Invalid: Longitude can't be empty!")
             return
@@ -635,7 +701,8 @@ def wkt_centroid(form):
             form.errors['lat'] = T("Invalid: Latitude can't be empty!")
             return
         form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
-    elif form.vars.type == 'line':
+    elif form.vars.type == 2:
+        # Line
         try:
             from shapely.wkt import loads
             try:
@@ -647,9 +714,9 @@ def wkt_centroid(form):
             form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
             form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
         except:
-            #form.errors['type'] = str(A('Shapely',_href='http://pypi.python.org/pypi/Shapely/',_target='_blank'))+str(T(" library not found, so can't find centroid!"))
-            form.errors['type'] = T("Shapely library not found, so can't find centroid!")
-    elif form.vars.type == 'polygon':
+            form.errors['type'] = shapely_error
+    elif form.vars.type == 3:
+        # Polygon
         try:
             from shapely.wkt import loads
             try:
@@ -661,7 +728,7 @@ def wkt_centroid(form):
             form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
             form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
         except:
-            form.errors['type'] = T("Shapely library not found, so can't find centroid!")
+            form.errors['type'] = shapely_error
     else:
         form.errors['type'] = T('Unknown type!')
     return

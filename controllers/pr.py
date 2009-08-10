@@ -68,14 +68,23 @@ def group():
 def person_details():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'person_details')
+
+def image():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'image')
 def image_person():
     db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(1,)))
     request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')
+
 def identity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'identity')
+
+def presence():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'presence')
 def presence_person():
     db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(1,)))
     request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)

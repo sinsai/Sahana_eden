@@ -135,3 +135,6 @@ db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name)
 # Callback functions ----------------------------------------------------------
 #
 
+#
+# Other functions -------------------------------------------------------------
+#

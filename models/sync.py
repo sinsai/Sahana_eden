@@ -22,7 +22,7 @@ db.define_table(table,
                 Field('password'),  # Default login password for new partners
                 Field('zeroconfig_port', 'integer', default = 2972),
                 Field('zeroconf_description', 'string', default = "This is a SahanaPy instance, see http://www.sahanapy.org" ),
-                Field('rpc_service_url' , 'string', default = "/admin/call/jsonrpc"),
+                Field('rpc_service_url' , 'string', default = "/sync/call/jsonrpc"),
                 migrate=migrate)
 # Populate table with Default options
 # - deployments can change these live via appadmin

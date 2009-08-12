@@ -11,9 +11,8 @@ import logging, logging.handlers
 from ConfigParser import RawConfigParser
 import pickle
 import shutil
-exec('import applications.%s.modules.Zeroconf' % request.application)
-# Faster for Production (where app-name won't change):
-#import applications.sahana.modules.Zeroconf
+# Change this if application name changes!
+import applications.sahana.modules.Zeroconf
 import socket
 import time
 from jsonrpc import ServiceProxy, JSONRPCException

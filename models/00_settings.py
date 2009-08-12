@@ -522,3 +522,25 @@ if not len(db().select(db[table].ALL)):
         audit_read = False,
         audit_write = False
     )
+
+admin_menu_options = [
+    [T('Home'), False, URL(r=request, c='admin', f='index')],
+    [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1])],
+    [T('User Management'), False, '#', [
+        [T('Users'), False, URL(r=request, c='admin', f='user')],
+        [T('Roles'), False, URL(r=request, c='admin', f='group')],
+        #[T('Membership'), False, URL(r=request, c='admin', f='membership')]
+    ]],
+    [T('Database'), False, '#', [
+        [T('Import'), False, URL(r=request, c='admin', f='import_data')],
+        [T('Export'), False, URL(r=request, c='admin', f='export_data')],
+        [T('Raw Database access'), False, URL(r=request, c='appadmin', f='index')]
+    ]],
+    [T('Synchronisation'), False, '#', [
+            [T('Sync History'), False, URL(r=request, c='sync', f='history')],
+            [T('Sync Partners'), False, URL(r=request, c='sync', f='partner')],
+            [T('Sync Settings'), False, URL(r=request, c='sync', f='setting', args=['update', 1])]
+    ]],
+    [T('Edit Application'), False, URL(r=request, a='admin', c='default', f='design', args=['sahana'])],
+    [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
+]

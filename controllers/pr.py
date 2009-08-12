@@ -121,33 +121,49 @@ def person_search():
     subtitle = T('Matching Records')
 
     form = FORM(TABLE(
-            TR(T('Tag Label'),INPUT(_type="text",_name="label")),
-            TR(T('First Name'),INPUT(_type="text",_name="first_name")),
-            TR(T('Last Name'),INPUT(_type="text",_name="last_name")),
+            TR(T('Name and/or Label'),INPUT(_type="text",_name="label",_size="40")),
             TR("",INPUT(_type="submit",_value="Search"))
             ))
 
     items = None
     
     if form.accepts(request.vars,session):
-        rows = shn_pr_person_find(form.vars.label, form.vars.first_name, form.vars.last_name)
+        #rows = shn_pr_person_find(form.vars.label, form.vars.first_name, form.vars.last_name)
+        results = shn_pr_get_person_id(form.vars.label)
+        rows = None
+        if results:
+            rows = db(db.pr_person.id.belongs(results)).select(
+                db.pr_person.id,
+                db.pr_person.pr_pe_label,
+                db.pr_person.first_name,
+                db.pr_person.middle_name,
+                db.pr_person.last_name,
+                db.pr_person.opt_pr_gender,
+                db.pr_person.opt_pr_age_group,
+                db.pr_person.date_of_birth)
         if rows:
             records = []
             for row in rows:
                 records.append(TR(
-                    row.id,
+#                    row.id,
                     row.pr_pe_label or '[no label]',
-                    row.first_name,
+                    A(row.first_name, _href=URL(r=request, c='pr', f='person', args='%s' % row.id)),
                     row.middle_name,
-                    row.last_name
+                    row.last_name,
+                    row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
+                    row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                    row.date_of_birth or 'unknown'
                     ))
                 
             items=DIV(TABLE(THEAD(TR(
-                TH("ID"),
-                TH("Tag Label"),
+#                TH("ID"),
+                TH("ID Label"),
                 TH("First Name"),
                 TH("Middle Name"),
-                TH("Last Name"))),
+                TH("Last Name"),
+                TH("Gender"),
+                TH("Age Group"),
+                TH("Date of Birth"))),
                 TBODY(records), _id='list', _class="display"))
 
     return dict(title=title,subtitle=subtitle,form=form,vars=form.vars,items=items)

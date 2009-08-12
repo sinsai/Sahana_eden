@@ -536,7 +536,7 @@ admin_menu_options = [
         [T('Export'), False, URL(r=request, c='admin', f='export_data')],
         [T('Raw Database access'), False, URL(r=request, c='appadmin', f='index')]
     ]],
-    [T('Synchronisation'), False, '#', [
+    [T('Synchronisation'), False, URL(r=request, c='sync', f='index'), [
             [T('Sync History'), False, URL(r=request, c='sync', f='history')],
             [T('Sync Partners'), False, URL(r=request, c='sync', f='partner')],
             [T('Sync Settings'), False, URL(r=request, c='sync', f='setting', args=['update', 1])]

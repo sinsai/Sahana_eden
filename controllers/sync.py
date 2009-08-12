@@ -77,7 +77,7 @@ def history():
         del synced[each]
     synced = synced.values()
     syncedids = [i.id for i in synced]
-    #sort by time
+    # Sort by time
     timestamps = [i.timestamp for i in synced]
 
     # insertion_sort
@@ -93,7 +93,7 @@ def history():
         synced[j] = saverow
     synced.reverse()
     
-    #SQLRows to list so that we can reverse it
+    # SQLRows to list so that we can reverse it
     history = [i for i in history]
     history.reverse()
     return dict(title=title, synced=synced, syncedids=syncedids, history=history)
@@ -108,6 +108,7 @@ def getconf():
     Used by local DaemonX
     """
     if not request.client == "127.0.0.1":
+        # Only accept calls from localhost
         return
     temp = db().select(db.sync_setting.ALL)[0]
     toreturn = {}
@@ -144,14 +145,28 @@ def getAuthCred(uuid):
 def putdata(uuid, username, password, nicedbdump):
     """
     Import data using webservices
-    uuid is that of the calling system, wrong uuid can be provided?
+    uuid is that of the calling system
+    username/password must be valid in our local auth_user table
+    nicedbdump is a properly-formatted data dump
     """
+    # 1st determine if the UUID is valid
+    sync_partners = db().select(db.sync_partner.uuid)
+    for partner in sync_partners:
+        if uuid == partner[0].uuid:
+            sync_policy = db(db.sync_setting.uuid==uuid).select()[0].policy
+            # no need to carry on looping
+            break
+    if not sync_policy:
+        return T("Invalid UUID!")
+    
+    if sync_policy == 1:
+        # No Sync
+        return T("No sync permitted!")
+    
     # Authentication is mandatory here
     user = auth.login_bare(username, password)
     if not user:
-        return "authentication failed"
-    if uuid == None: #this should be extended and uuid should be made standard, like 16 bit blah blah
-        return "invalid uuid"
+        return T("Authentication failed!")
     
     # Parsing nicedbdump to see if it valid, otherwise we will throw error    
     # validator: validates if nicedbdump adhears to protocol defined by us
@@ -231,12 +246,8 @@ def putdata(uuid, username, password, nicedbdump):
                     rowid = db[tablename].insert(**vals)
                     shn_audit_noform(resource = tablename, record = rowid, operation='create', representation='json')
                 elif uuidcount == 1 and canupdate:
-                    # This particular tuple is present but might need modification, lets set to the one which has newer timestamp
-                    sync_policy_temp = db(db.sync_setting.uuid=='testing').select(db.sync_setting.policy)
-                    if not len(sync_policy_temp) == 0:
-                        sync_policy = sync_policy_temp[0].policy
-                    
-                    if sync_policy == 1:
+                    # We have a Duplicate record, so need to know which record to use, according to policy
+                    if sync_policy == 2:
                         # Newer Timestamp: Update only if given row is newer
                         a = row[tableattrib.index('modified_on')]
                         a = datetime.strptime(a, "%Y-%m-%d %H:%M:%S")
@@ -245,7 +256,7 @@ def putdata(uuid, username, password, nicedbdump):
                         if a > b:
                             rowid = db(query).update(**vals)
                             shn_audit_noform(resource = tablename, record = rowid, operation='update', representation='json')
-                    elif sync_policy == 3:
+                    elif sync_policy == 4:
                         # Replace All
                         rowid = db(query).update(**vals)
                         shn_audit_noform(resource = tablename, record = rowid, operation='update', representation='json')

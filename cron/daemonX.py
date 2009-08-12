@@ -12,10 +12,14 @@ from ConfigParser import RawConfigParser
 import pickle
 import shutil
 # Change this if application name changes!
-import applications.sahana.modules.Zeroconf
+#import applications.sahana.modules.Zeroconf
+import Zeroconf
 import socket
 import time
-from jsonrpc import ServiceProxy, JSONRPCException
+try:
+    from jsonrpc import ServiceProxy, JSONRPCException
+except ImportError:
+    print 'JSONRPC module not available within the running Python - this needs installing for AutoSync!'
 
 class LogManager(object):
     """ Manages error logs """
@@ -66,18 +70,18 @@ class Config(object):
             settings = server.execute('getconf')
             serveritems = {}
             serveritems['uuid'] = settings['uuid']
-            serveritems['zeroconfig_lookuport'] = settings['zeroconfig_lookuport']
+            serveritems['zeroconfig_port'] = settings['zeroconfig_port']
             
             zeroconfproperties = {}
-            zeroconfproperties['discription'] = settings['zeroconf_discription']
+            zeroconfproperties['description'] = settings['zeroconf_description']
             zeroconfproperties['uuid'] = settings['uuid']
             zeroconfproperties['serverport'] = self.items['localhost-port']
-            zeroconfproperties['zeroconfig_lookuport'] = settings['zeroconfig_lookuport']
+            zeroconfproperties['zeroconfig_port'] = settings['zeroconfig_port']
             serveritems['zeroconfproperties'] = zeroconfproperties
             
             self.items.update(serveritems)
         except:
-            raise Exception("invalid settings called form server, or server may be down")
+            raise Exception("invalid settings called from server, or server may be down")
 
 class DumpManager(object):
     """ All data dump related operations are performed by this """
@@ -178,7 +182,8 @@ class ZeroConfExpose(object):
                                       'Database 1._durus._tcp.local.',
                                       address = local_ip,
                                       port = self.conf.items['zeroconfig_port'],
-                                      weight = 0, priority=0,
+                                      weight = 0,
+                                      priority=0,
                                       properties = self.conf.items['zeroconfproperties']
                                      )
         if not self.logger == None:
@@ -251,21 +256,21 @@ class ServerManager(object):
             for i in self.cue:
                 try:
                     url = "http://"+i[0]+":" + str(i[1]) + i[2]['rpc_service_url']
-                    foriegnrpc = RpcManager(self.conf, self.logger, server = url)
-                    foriegnrpc.open_server()
+                    foreignrpc = RpcManager(self.conf, self.logger, server = url)
+                    foreignrpc.open_server()
                     
                     cred = self.localrpc.execute("getAuthCred", i[2]['uuid'])
-                    dataforiegn = foriegnrpc.execute("getdata", self.conf.uuid, cred[0], cred[1])
-                    ref1 = self.dumpmanager.createdump(dataforiegn)
-                    self.localrpc.execute("putdata", "","", dataforiegn)
+                    dataforeign = foreignrpc.execute("getdata", self.conf.uuid, cred[0], cred[1])
+                    ref1 = self.dumpmanager.createdump(dataforeign)
+                    self.localrpc.execute("putdata", "","", dataforeign)
                     
-                    datalocal = self.localrpc.execture("getdata", i[2]['uuid'], "", "")
+                    datalocal = self.localrpc.execute("getdata", i[2]['uuid'], "", "")
                     ref2 = self.dumpmanager.createdump(datalocal)
-                    foriegnrpc.execute("putdata",cred[0], cred[1], datalocal)
+                    foreignrpc.execute("putdata", cred[0], cred[1], datalocal)
                     self.dumpmanager.cleardump()
                 except Exception, e:
                     if not self.logger == None:
-                        self.logger.log('ServerManager', logging.ERROR, "error occured while processing: " + e )
+                        self.logger.log('ServerManager', logging.ERROR, "error occured while processing: " + str(e) )
             
             pausetime = 30 * 60 # 30 mins
             if int(time.time()) - self.starttime < pausetime:
@@ -286,7 +291,7 @@ class RpcManager(object):
     def open_server(self):
         if self.server == None:
             try:
-                url = "http://"+self.conf.items['localhost']+":"+ str(self.conf.items['localhost-port']) +"/"+ self.conf.items['servername'] +"/admin/call/jsonrpc"
+                url = "http://" + self.conf.items['localhost'] + ":" + str(self.conf.items['localhost-port']) + "/" + self.conf.items['servername'] + "/sync/call/jsonrpc"
             except:
                 raise Exception("Configuration file seems to be corrupt. Delete it, system will regenerate new for you, you can edit it later on")
             try:
@@ -296,12 +301,12 @@ class RpcManager(object):
 
     def execute(self, function, *args):
         try:
-            toreturn = eval('self.server.'+str(function))(*args)
-            message = "function "+str(function)+" sucessfull with arguments: " + str(*args)
+            toreturn = eval('self.server.' + str(function))(*args)
+            message = "function " + str(function) + " sucessful with arguments: " + str(*args)
             if not self.logger == None:
                 self.logger.log('RpcManager', logging.INFO, message)
         except:
-            message = "function "+str(function)+" failed with arguments: " + str(*args)
+            message = "function " + str(function)+" failed with arguments: " + str(*args)
             if not self.logger == None:
                 self.logger.log('RpcManager', logging.ERROR, message)
             raise Exception(message)
@@ -320,7 +325,7 @@ class init(object):
                 c.getConfFromServer(r)
                 break
             except Exception, e:
-                print "Couldn't call local server. " + e
+                print "Couldn't call local server. " + str(e)
                 # Try it after a minute
                 time.sleep(60)
         d = DumpManager(logger = logger)

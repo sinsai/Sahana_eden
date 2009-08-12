@@ -3,9 +3,10 @@
 module = 'sync'
 
 sync_policy_opts = {
-    1:T('Newer Timestamp'),
-    2:T('Keep All'),
-    3:T('Replace All')
+    1:T('No Sync'),
+    2:T('Newer Timestamp'),
+    3:T('Keep All'),
+    4:T('Replace All')
     }
 opt_sync_policy = SQLTable(None, 'sync_policy',
                         Field('policy', 'integer', notnull=True,

@@ -1,6 +1,6 @@
 /*
  * File:        jquery.dataTables.js
- * Version:     1.5.0 beta 10
+ * Version:     1.5.0
  * CVS:         $Id$
  * Description: Paginate, search and sort HTML tables
  * Author:      Allan Jardine (www.sprymedia.co.uk)
@@ -67,7 +67,7 @@
 	 * Purpose:  Version string for plug-ins to check compatibility
 	 * Scope:    jQuery.fn.dataTableExt
 	 */
-	_oExt.sVersion = "1.5.b10d";
+	_oExt.sVersion = "1.5.0";
 	
 	/*
 	 * Variable: iApiIndex
@@ -102,7 +102,7 @@
 	_oExt.aoFeatures = [ ];
 	
 	/*
-	 * Variable: ofnFilterFormat
+	 * Variable: ofnSearch
 	 * Purpose:  Container for custom filtering functions
 	 * Scope:    jQuery.fn.dataTableExt
 	 * Notes:    This is an object (the name should match the type) for custom filtering function,
@@ -192,6 +192,11 @@
 			 */
 			"fnUpdate": function ( oSettings, fnCallbackDraw )
 			{
+				if ( !oSettings.anFeatures.p )
+				{
+					return;
+				}
+				
 				oSettings.nPrevious.className = 
 					( oSettings._iDisplayStart === 0 ) ? 
 					"paginate_disabled_previous" : "paginate_enabled_previous";
@@ -307,10 +312,15 @@
 			 */
 			"fnUpdate": function ( oSettings, fnCallbackDraw )
 			{
+				if ( !oSettings.anFeatures.p )
+				{
+					return;
+				}
+				
 				var iPageCount = jQuery.fn.dataTableExt.oPagination.iFullNumbersShowPages;
 				var iPageCountHalf = Math.floor(iPageCount / 2);
-				var iPages = parseInt( (oSettings.fnRecordsDisplay()-1) / oSettings._iDisplayLength, 10 ) + 1;
-				var iCurrentPage = parseInt( oSettings._iDisplayStart / oSettings._iDisplayLength, 10 ) + 1;
+				var iPages = Math.ceil((oSettings.fnRecordsDisplay()-1) / oSettings._iDisplayLength) + 1;
+				var iCurrentPage = Math.ceil(oSettings._iDisplayStart / oSettings._iDisplayLength) + 1;
 				var sList = "";
 				var iStartButton;
 				var iEndButton;
@@ -494,6 +504,16 @@
 		 */
 		function ( sData )
 		{
+			/* Snaity check that we are dealing with a string or quick return for a number */
+			if ( typeof sData == 'number' )
+			{
+				return 'numeric';
+			}
+			else if ( typeof sData.charAt != 'function' )
+			{
+				return null;
+			}
+			
 			var sValidFirstChars = "0123456789-";
 			var sValidChars = "0123456789.";
 			var Char;
@@ -1283,6 +1303,7 @@
 					{
 						if ( oSettings.aoColumns[j].bVisible )
 						{
+							//$('>td', oSettings.aoData[i].nTr)[j-iCorrector] == nNode )
 							if ( oSettings.aoData[i].nTr.getElementsByTagName('td')[j-iCorrector] == nNode )
 							{
 								return [ i, j-iCorrector, j ];
@@ -1683,7 +1704,7 @@
 				"bVisible": true,
 				"bSearchable": true,
 				"bSortable": true,
-				"sTitle": null,
+				"sTitle": nTh ? nTh.innerHTML : '',
 				"sName": '',
 				"sWidth": null,
 				"sClass": null,
@@ -1719,12 +1740,18 @@
 			}
 			
 			/* Add a column specific filter */
-			if ( typeof oSettings.aoPreSearchCols[ iLength ] == 'undefined' )
+			if ( typeof oSettings.aoPreSearchCols[ iLength ] == 'undefined' ||
+			     oSettings.aoPreSearchCols[ iLength ] === null )
 			{
 				oSettings.aoPreSearchCols[ iLength ] = {
 					"sSearch": "",
 					"bEscapeRegex": true
 				};
+			}
+			else if ( typeof oSettings.aoPreSearchCols[ iLength ].bEscapeRegex == 'undefined' )
+			{
+				/* Don't require that the user must specify bEscapeRegex */
+				oSettings.aoPreSearchCols[ iLength ].bEscapeRegex = true;
 			}
 		}
 		
@@ -2133,10 +2160,16 @@
 			var nTfoot = oSettings.nTable.getElementsByTagName('tfoot');
 			if ( nTfoot.length !== 0 )
 			{
+				iCorrector = 0;
 				var nTfs = nTfoot[0].getElementsByTagName('th');
 				for ( i=0, iLen=nTfs.length ; i<iLen ; i++ )
 				{
-					oSettings.aoColumns[i].nTf = nTfs[i];
+					oSettings.aoColumns[i].nTf = nTfs[i-iCorrector];
+					if ( !oSettings.aoColumns[i].bVisible )
+					{
+						nTfs[i-iCorrector].parentNode.removeChild( nTfs[i-iCorrector] );
+						iCorrector++;
+					}
 				}
 			}
 		}
@@ -2236,14 +2269,14 @@
 			if ( typeof oSettings.fnHeaderCallback == 'function' )
 			{
 				oSettings.fnHeaderCallback( $('thead tr', oSettings.nTable)[0], 
-					_fnGetDataMaster( oSettings ), oSettings._iDisplayStart, oSettings._iDisplayEnd,
+					_fnGetDataMaster( oSettings ), oSettings._iDisplayStart, oSettings.fnDisplayEnd(),
 					oSettings.aiDisplay );
 			}
 			
 			if ( typeof oSettings.fnFooterCallback == 'function' )
 			{
 				oSettings.fnFooterCallback( $('tfoot tr', oSettings.nTable)[0], 
-					_fnGetDataMaster( oSettings ), oSettings._iDisplayStart, oSettings._iDisplayEnd,
+					_fnGetDataMaster( oSettings ), oSettings._iDisplayStart, oSettings.fnDisplayEnd(),
 					oSettings.aiDisplay );
 			}
 			
@@ -2262,9 +2295,12 @@
 			
 			/* Put the draw table into the dom */
 			var nBody = $('tbody:eq(0)', oSettings.nTable);
-			for ( i=0 ; i<anRows.length ; i++ )
+			if ( nBody[0] )
 			{
-				nBody[0].appendChild( anRows[i] );
+				for ( i=0 ; i<anRows.length ; i++ )
+				{
+					nBody[0].appendChild( anRows[i] );
+				}
 			}
 			
 			/* Update the pagination display buttons */
@@ -2277,7 +2313,7 @@
 			}
 			
 			/* Show information about the table */
-			if ( oSettings.oFeatures.bInfo )
+			if ( oSettings.oFeatures.bInfo && oSettings.anFeatures.i )
 			{
 				/* Update the information */
 				if ( oSettings.fnRecordsDisplay() === 0 && 
@@ -2374,32 +2410,39 @@
 				aoData.push( { "name": "sEcho",          "value": oSettings.iServerDraw } );
 				aoData.push( { "name": "iColumns",       "value": iColumns } );
 				aoData.push( { "name": "sColumns",       "value": _fnColumnOrdering(oSettings) } );
-				aoData.push( { "name": "iDisplayLength", "value": oSettings._iDisplayLength } );
 				aoData.push( { "name": "iDisplayStart",  "value": oSettings._iDisplayStart } );
+				aoData.push( { "name": "iDisplayLength", "value": oSettings.oFeatures.bPaginate !== false ?
+					oSettings._iDisplayLength : -1 } );
 				
 				/* Filtering */
-				aoData.push( { "name": "sSearch",        "value": oSettings.oPreviousSearch.sSearch } );
-				aoData.push( { "name": "bEscapeRegex",   "value": oSettings.oPreviousSearch.bEscapeRegex } );
-				for ( i=0 ; i<iColumns ; i++ )
+				if ( oSettings.oFeatures.bFilter !== false )
 				{
-					aoData.push( { "name": "sSearch_"+i,      "value": oSettings.aoPreSearchCols[i].sSearch } );
-					aoData.push( { "name": "bEscapeRegex_"+i, "value": oSettings.aoPreSearchCols[i].bEscapeRegex } );
+					aoData.push( { "name": "sSearch",        "value": oSettings.oPreviousSearch.sSearch } );
+					aoData.push( { "name": "bEscapeRegex",   "value": oSettings.oPreviousSearch.bEscapeRegex } );
+					for ( i=0 ; i<iColumns ; i++ )
+					{
+						aoData.push( { "name": "sSearch_"+i,      "value": oSettings.aoPreSearchCols[i].sSearch } );
+						aoData.push( { "name": "bEscapeRegex_"+i, "value": oSettings.aoPreSearchCols[i].bEscapeRegex } );
+					}
 				}
 				
 				/* Sorting */
-				var iFixed = oSettings.aaSortingFixed !== null ? oSettings.aaSortingFixed.length : 0;
-				var iUser = oSettings.aaSorting.length;
-				aoData.push( { "name": "iSortingCols",   "value": iFixed+iUser } );
-				for ( i=0 ; i<iFixed ; i++ )
+				if ( oSettings.oFeatures.bSort !== false )
 				{
-					aoData.push( { "name": "iSortCol_"+i,  "value": oSettings.aaSortingFixed[i][0] } );
-					aoData.push( { "name": "iSortDir_"+i,  "value": oSettings.aaSortingFixed[i][1] } );
-				}
-				
-				for ( i=0 ; i<iUser ; i++ )
-				{
-					aoData.push( { "name": "iSortCol_"+(i+iFixed),  "value": oSettings.aaSorting[i][0] } );
-					aoData.push( { "name": "iSortDir_"+(i+iFixed),  "value": oSettings.aaSorting[i][1] } );
+					var iFixed = oSettings.aaSortingFixed !== null ? oSettings.aaSortingFixed.length : 0;
+					var iUser = oSettings.aaSorting.length;
+					aoData.push( { "name": "iSortingCols",   "value": iFixed+iUser } );
+					for ( i=0 ; i<iFixed ; i++ )
+					{
+						aoData.push( { "name": "iSortCol_"+i,  "value": oSettings.aaSortingFixed[i][0] } );
+						aoData.push( { "name": "iSortDir_"+i,  "value": oSettings.aaSortingFixed[i][1] } );
+					}
+					
+					for ( i=0 ; i<iUser ; i++ )
+					{
+						aoData.push( { "name": "iSortCol_"+(i+iFixed),  "value": oSettings.aaSorting[i][0] } );
+						aoData.push( { "name": "iSortDir_"+(i+iFixed),  "value": oSettings.aaSorting[i][1] } );
+					}
 				}
 				
 				oSettings.fnServerData( oSettings.sAjaxSource, aoData, function(json) {
@@ -2624,7 +2667,8 @@
 				nFilter.setAttribute( 'id', oSettings.sTableId+'_filter' );
 			}
 			nFilter.className = "dataTables_filter";
-			nFilter.innerHTML = oSettings.oLanguage.sSearch+' <input type="text" />';
+			var sSpace = oSettings.oLanguage.sSearch==="" ? "" : " ";
+			nFilter.innerHTML = oSettings.oLanguage.sSearch+sSpace+'<input type="text" />';
 			
 			var jqFilter = $("input", nFilter);
 			jqFilter.val( oSettings.oPreviousSearch.sSearch.replace('"','&quot;') );
@@ -2748,7 +2792,6 @@
 			}
 			nProcessing.innerHTML = oSettings.oLanguage.sProcessing;
 			nProcessing.className = "dataTables_processing";
-			nProcessing.style.visibility = "hidden";
 			oSettings.nTable.parentNode.insertBefore( nProcessing, oSettings.nTable );
 			
 			return nProcessing;
@@ -3960,7 +4003,7 @@
 			}
 			
 			/* Convert the layout array into a node array */
-			for ( i=0, iLen=aLayout[0].length ; i<iLen ; i++ )
+			for ( i=0, iLen=aLayout.length ; i<iLen ; i++ )
 			{
 				for ( j=0, jLen=aLayout.length ; j<jLen ; j++ )
 				{
@@ -4094,19 +4137,19 @@
 				_fnMap( oSettings.oFeatures, oInit, "bSortClasses" );
 				_fnMap( oSettings.oFeatures, oInit, "bServerSide" );
 				_fnMap( oSettings, oInit, "asStripClasses" );
-				_fnMap( oSettings, oInit, "fnRowCallback" ); /* to test */
-				_fnMap( oSettings, oInit, "fnHeaderCallback" ); /* to test */
-				_fnMap( oSettings, oInit, "fnFooterCallback" ); /* to test */
-				_fnMap( oSettings, oInit, "fnDrawCallback" ); /* to test */
-				_fnMap( oSettings, oInit, "fnInitComplete" ); /* to test */
-				_fnMap( oSettings, oInit, "fnServerData" ); /* to test */
+				_fnMap( oSettings, oInit, "fnRowCallback" );
+				_fnMap( oSettings, oInit, "fnHeaderCallback" );
+				_fnMap( oSettings, oInit, "fnFooterCallback" );
+				_fnMap( oSettings, oInit, "fnDrawCallback" );
+				_fnMap( oSettings, oInit, "fnInitComplete" );
+				_fnMap( oSettings, oInit, "fnServerData" );
 				_fnMap( oSettings, oInit, "aaSorting" );
 				_fnMap( oSettings, oInit, "aaSortingFixed" );
 				_fnMap( oSettings, oInit, "sPaginationType" );
 				_fnMap( oSettings, oInit, "sAjaxSource" );
-				_fnMap( oSettings, oInit, "sDom", "sDomPositioning" ); /* to test */
-				_fnMap( oSettings, oInit, "oSearch", "oPreviousSearch" ); /* to test */
-				_fnMap( oSettings, oInit, "aoSearchCols", "aoPreSearchCols" ); /* to test */
+				_fnMap( oSettings, oInit, "sDom", "sDomPositioning" );
+				_fnMap( oSettings, oInit, "oSearch", "oPreviousSearch" );
+				_fnMap( oSettings, oInit, "aoSearchCols", "aoPreSearchCols" );
 				_fnMap( oSettings, oInit, "iDisplayLength", "_iDisplayLength" );
 				
 				if ( typeof oInit.iDisplayStart != 'undefined' && 

@@ -22,7 +22,7 @@ response.menu_options = [
     [T('Synchronisation'), False, '#', [
             [T('Sync History'), False, URL(r=request, c='admin', f='autosync')],
             [T('Sync Partners'), False, URL(r=request, c='admin', f='sync_partners')],
-            [T('Sync Settings'), False, URL(r=request, c='admin', f='sync_settings')]
+            [T('Sync Settings'), False, URL(r=request, c='admin', f='sync_setting', args=['update', 1])]
     ]],
     [T('Edit Application'), False, URL(r=request, a='admin', c='default', f='design', args=['sahana'])],
     [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
@@ -256,27 +256,19 @@ def sync_partners():
     return dict(form = form, records = records)
 
 @auth.requires_membership('Administrator')
-def sync_settings():
-    #avoiding joins, for GAE
-    rows = db().select(db.sync_partner.uuid)
-    options = [row.uuid for row in rows]
-    rows = db().select(db.sync_setting.uuid)
-    for row in rows:
-        options.remove(row.uuid)
-
-    form = FORM(TABLE(
-            #TR('Uuid', SELECT(*options, _name='uuid', requires=IS_IN_SET(options))),
-            TR('Sync Policy', SELECT('Newer Timestamp', 'Keep All', 'Replace All', _name="policy")), #if this set is changed, then its corresponding set in admin model should also be changed
-            TR('', INPUT(_name = 'submit', _type = 'submit', _value='Submit'))
-            ))
-    if form.accepts(request.vars, session):
-        db.sync_setting.insert(uuid = form.vars.uuid,
-                                    policy = form.vars.policy
-                                    )
-        response.flash = 'Inserted'
-
-    records = db().select(db.sync_setting.ALL)
-    return dict(form = form, records = records)
+def sync_setting():
+    "RESTlike CRUD controller"
+    db.sync_setting.uuid.writable = False
+    db.sync_setting.uuid.label = 'UUID'
+    db.sync_setting.uuid.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("UUID|The unique identifier which identifies this server to other instances."))
+    db.sync_setting.policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Policy|The default Sync Policy for new Partners."))
+    db.sync_setting.rpc_service_url.writable = False
+    db.sync_setting.rpc_service_url.label = T('RPC Service URL')
+    s3.crud_strings.setting.title_update = T('Edit Sync Settings')
+    s3.crud_strings.setting.msg_record_modified = T('Sync Settings updated')
+    s3.crud_strings.setting.label_list_button = None
+    crud.settings.update_next = URL(r=request, args=['update', 1])
+    return shn_rest_controller('sync', 'setting', deletable=False, listadd=False)
 
 @auth.requires_login()
 def autosync():
@@ -288,8 +280,8 @@ def autosync():
     functions = ['getdata', 'putdata'] #as of two, only two funtions require for true syncing
     synced = {}
     for i in history:
-        synced[i.uuid+i.function] = i
-    todel = [i for i,j in synced.iteritems() if not ( j.uuid+functions[0] in synced.keys() and j.uuid+functions[1] in synced.keys() )]
+        synced[i.uuid + i.function] = i
+    todel = [i for i, j in synced.iteritems() if not ( j.uuid + functions[0] in synced.keys() and j.uuid + functions[1] in synced.keys() )]
     for each in todel:
         del synced[each]
     synced = synced.values()
@@ -319,34 +311,78 @@ def autosync():
 @service.xml
 @service.jsonrpc
 @service.xmlrpc
-def putdata(uuid, username, password, nicedbdump): #uuid of the system which is calling, wrong uuid can be provided?
-    "Import data using weservices"
-    #authentication is must here
+def getconf():
+    """
+    Returns configurations of the system.
+    Used by local DaemonX
+    """
+    if not request.client == "127.0.0.1":
+        return
+    temp = db().select(db.sync_setting.ALL)[0]
+    toreturn = {}
+    for i in temp:
+        if not i is "update_record":
+            toreturn[str(i)] = temp[str(i)]
+    return toreturn
+    
+@service.json
+@service.xml
+@service.jsonrpc
+@service.xmlrpc
+def getAuthCred(uuid):
+    """
+    Returns configurations of the system.
+    Used by local DaemonX
+    """
+    if not request.client == "127.0.0.1":
+        return
+    temp = db(db.sync_partner.uuid == uuid).select()
+    toreturn = {}
+    if len(temp) is 0:
+        toreturn['username'] = "username"
+        toreturn['password'] = "password"
+    else:
+        toreturn['username'] = temp[0].username
+        toreturn['password'] = temp[0].password
+    return toreturn
+
+@service.json
+@service.xml
+@service.jsonrpc
+@service.xmlrpc
+def putdata(uuid, username, password, nicedbdump):
+    """
+    Import data using webservices
+    uuid is that of the calling system, wrong uuid can be provided?
+    """
+    # Authentication is mandatory here
     user = auth.login_bare(username, password)
     if not user:
         return "authentication failed"
     if uuid == None: #this should be extended and uuid should be made standard, like 16 bit blah blah
         return "invalid uuid"
     
-    #parsing nicedbdump to see if it valid, unless we will throw error    
-    #validator: validates if nicedbdump adhears to protocol defined by us
-    #we never check nicedbdump size because its size reflects number of tables to be synced, as sahana is developing fastly so syncable tables can increase, moreover it doesnt fixin sync protocol
+    # Parsing nicedbdump to see if it valid, otherwise we will throw error    
+    # validator: validates if nicedbdump adhears to protocol defined by us
+    # we never check nicedbdump size because its size reflects number of tables to be synced, as sahana is developing fastly so syncable tables can increase, moreover it doesnt fixin sync protocol
     if type(nicedbdump) == list:
         for nicetabledump in nicedbdump:
             if type(nicetabledump) == list:
-                if len(nicetabledump) == 3: #size of this must be three
-                    #table, table_attributes, table_data = nicetabledump #this gives same result as line under this
+                if len(nicetabledump) == 3:
+                    # we have the right number of options & can proceed
                     table, table_attributes, table_data = nicetabledump[0], nicetabledump[1], nicetabledump[2]
+                    # This gives the same result as above:
+                    #table, table_attributes, table_data = nicetabledump
                     if (type(table) == str or type(table) == unicode) and type(table_attributes) == list and type(table_data) == list:
                         for attrib in table_attributes:
                             if not (type(attrib) == str or type(attrib) == unicode):
-                                return 'atleast one attribute name is not of string type'
+                                return 'at least one attribute name is not of string type'
                         if not 'uuid' in table_attributes:
-                            return 'atleast one table doesnt have "uuid" as attribute'
+                            return 'at least one table doesnt have "uuid" as attribute'
                         if not 'modified_on' in table_attributes:
-                            return 'atleast one table doesnt have "modified_on" attribute'
+                            return 'at least one table doesnt have "modified_on" attribute'
                         if not 'id' in table_attributes:
-                            return 'atleast one table doesnt have "id" attribute'
+                            return 'at least one table doesnt have "id" attribute'
                         size = 0
                         isfirstiter = True
                         for row in table_data:
@@ -357,78 +393,77 @@ def putdata(uuid, username, password, nicedbdump): #uuid of the system which is 
                                 if not size == len(row):
                                     return 'all rows in ' + table + ' dont have same length'
                             else:
-                                return 'row type can only be a list, atleast one element in ' + table + ' isnt of list type'
+                                return 'row type can only be a list, at least one element in ' + table + ' isnt of list type'
                         if not((size == 0) or (size == len(table_attributes))):
                             return 'you havent stated exact number of attribute names as attributes present in ' + table
                     else:
                         #return str(type(table)), str(type(table_attributes)), str(type(table_data))
                         return 'first element is each table is name of table(string), second is attribute names(list), third is data(list of list), atleast one of them in ' + table + ' is not of accepted data type'
                 else:
-                    return 'each table must have three elements, you havnt passed three'
+                    return 'each table must have three elements, you havent passed three'
             else:
-                return 'each table is a list, you havnt passed atleast one table as list'
+                return 'each table is a list, you havent passed atleast one table as list'
     else:
         return 'data can only in form of list'
 
-    #now data object is validated, lets put it in object
+    # Now data object is validated, lets put it in object
     for table in nicedbdump:
         tablename = str(table[0]) #it might be unicode here
         tableattrib = table[1]
         tablerows = table[2]
             
-        if tablename in db: #if a table in sent data is not present in local database, it is simply ignored
-            ##check if user has right to insert in this table
+        if tablename in db:
+            # If a table in sent data is not present in the local database, it is simply ignored
             canupdate = shn_has_permission('update', tablename)
             caninsert = shn_has_permission('insert', tablename)
             if not (canupdate or caninsert):
                 #build error return if required
                 continue
-            indexesavaliable = []
+            indexesavailable = []
             for anattrib in tableattrib:
                 if anattrib in db[tablename]["fields"]:
-                    indexesavaliable.append(tableattrib.index(anattrib))
+                    indexesavailable.append(tableattrib.index(anattrib))
             for row in tablerows:
                 rowuuid = row[tableattrib.index('uuid')]
-                #rowid = row[tableattrib.index('id')]
                 query = (db[tablename]['uuid'] == rowuuid)
                 uuidcount = db(query).count()
                 vals = {}
-                for eachattribindex in indexesavaliable:
+                for eachattribindex in indexesavailable:
                     vals[tableattrib[eachattribindex]] = row[eachattribindex]
-                if 'id' in vals: #ids are assigned by web2py itself
+                # ids are assigned by web2py itself
+                if 'id' in vals:
                     del vals['id']
-                #now vals has insert dictionary
+                # vals now has dictionary ready for insert/update
                 
-                if uuidcount == 0 and caninsert: #it means this row isnt present in current database
-                    #direct db insert call
+                if uuidcount == 0 and caninsert:
+                    # This row isn't present in current database
                     rowid = db[tablename].insert(**vals)
                     shn_audit_noform(resource = tablename, record = rowid, operation='create', representation='json')
-                    #which audit function to call here?
-                elif uuidcount == 1 and canupdate: #it means this particular tuple is present but might need modification, lets set to the one which has newer timestamp
-                    security_policy_temp = db(db.sync_setting.uuid=='testing').select(db.sync_setting.policy)#[0].policy
-                    if not len(security_policy_temp) == 0:
-                        security_policy = security_policy_temp[0].policy
+                elif uuidcount == 1 and canupdate:
+                    # This particular tuple is present but might need modification, lets set to the one which has newer timestamp
+                    sync_policy_temp = db(db.sync_setting.uuid=='testing').select(db.sync_setting.policy)
+                    if not len(sync_policy_temp) == 0:
+                        sync_policy = sync_policy_temp[0].policy
                     
-                    if security_policy == 'Newer Timestamp':
-                        #update only if given row is newer
+                    if sync_policy == 1:
+                        # Newer Timestamp: Update only if given row is newer
                         a = row[tableattrib.index('modified_on')]
                         a = datetime.strptime(a, "%Y-%m-%d %H:%M:%S")
                         b = db(db[tablename].uuid == row[tableattrib.index('uuid')]).select(db[tablename].modified_on)                
                         b = b[0].modified_on
                         if a > b:
                             rowid = db(query).update(**vals)
-                            #shn_audit_update_m2m(resource = tablename, record = rowid, representation='json')
                             shn_audit_noform(resource = tablename, record = rowid, operation='update', representation='json')
-                    elif security_policy == 'Replace All':
+                    elif sync_policy == 3:
+                        # Replace All
                         rowid = db(query).update(**vals)
-                        #shn_audit_update_m2m(resource = tablename, record = rowid, representation='json')
                         shn_audit_noform(resource = tablename, record = rowid, operation='update', representation='json')
                 else:
                     #uuidcount can never be more than 2, if we reach this place it means user is restricted by authentication
                     #if interpreter reached this line then either I am bad coder or you are hacker
                     return "error code number ..."
     
-    #logging (not auditing)
+    # Logging (not auditing)
     db[logtable].insert(
         uuid=uuid,
         function='putdata',
@@ -438,44 +473,38 @@ def putdata(uuid, username, password, nicedbdump): #uuid of the system which is 
     return True
 
 #function will take a date and uuid to caller and return new data only
-#this is build on S3 (?)
 #service.json traslates SQL into json but json-rpc doesnt, so we convert it into lists
 @service.json
 @service.xml
 @service.jsonrpc
 @service.xmlrpc
-def getdata(uuid, username, password, timestamp = None): #if no timestamp is passed, system will return new data after last sync operation
-    "Export data using webserices"
-    "this funtion will never be called by foriegn service, so it doesnt requires authentication, but for the sack of API, we add this facility"
-    "http://localhost:8000/sahana/admin/call/json/getdata?timestamp=0&uuid=asd&username=hasanatkazmi@gmail.com&password=asdfadsf"
-    
-    #we use this if we want to use export_json or export_xml functions
-    #if 'json' in request['args'] or 'jsonrpc' in request['args']:
-    #    function = export_json
-    #    format ='json'
-    #elif 'xml' in request['args'] or 'xmlrpc' in request['args']:
-    #    function = export_xml
-    #    format ='xml'
-    #else:
-    #    return "invalid call -- json/xml?" #invalid call
+def getdata(uuid, username, password, timestamp = None):
+    """
+    Export data using webservices
+    This function will never be called by foreign service, so it doesn't require authentication, but for the sake of API, we add this facility
+    http://localhost:8000/sahana/admin/call/json/getdata?timestamp=0&uuid=asd&username=hasanatkazmi@gmail.com&password=asdfadsf
+    If no timestamp is passed, system will return new data since the last sync operation
+    """
     
     if not IS_DATETIME(timestamp):
-        return "invalid call -- time?" #invalid call
+        return "invalid call -- time?"
 
-    #authentication across username and password, if local service calls the service, this shouldnt be raised
-    if not request.client == "127.0.0.1": #local machine gets exzeption
+    # Authentication using username and password unless on localhost
+    if not request.client == "127.0.0.1":
         user = auth.login_bare(username, password)
         if not user:
             return "authentication failed"
     
-    
-    #this is bugy, check it
-    #timestamp detemination
+    #this is buggy, check it
+    #timestamp determination
     if timestamp == None:
         lastsynctime = db(db[logtable].uuid == uuid).select(db[logtable].timestamp, orderby=~db[logtable].id)
-        if len(lastsynctime) == 0: #there is no sync operation with this uuid
-            timestamp = 0 # so return every thing
+        if len(lastsynctime) == 0:
+            # There is no sync operation with this uuid
+            # so return everything
+            timestamp = 0
         else:
+            # The date since last sync
             timestamp = lastsynctime[0] 
 
     tables = [['budget', 'item'],
@@ -492,7 +521,7 @@ def getdata(uuid, username, password, timestamp = None): #if no timestamp is pas
         _table = '%s_%s' % (module, resource)
         table = db[_table]
         query = shn_accessible_query('read', table)
-        query = query & (db[_table].modified_on > timestamp) #the date after last sync
+        query = query & (db[_table].modified_on > timestamp)
         sqltabledump = db(query).select(db[_table].ALL) 
         nicetabledump = []
         nicetabledump.append(_table)
@@ -501,12 +530,12 @@ def getdata(uuid, username, password, timestamp = None): #if no timestamp is pas
         for row in sqltabledump:
             temp = [row[col] for col in db[_table]["fields"]]
             nicetabledumpdata.append(temp)
-        shn_audit_read(operation = 'read', resource = _table, record=None, representation= 'json') #this json must be replaced with generic term
+        shn_audit_read(operation = 'read', resource = _table, record=None, representation= 'json')
         nicetabledump.append(nicetabledumpdata)
-        #nicetabledump.append(function(table, query)) #we arent using this function because then we will have to manually translate json back into objects, lets web2py do it for ourlselves
+        #nicetabledump.append(function(table, query)) # we aren't using this function because then we will have to manually translate json back into objects, let web2py do it for us
         nicedbdump.append(nicetabledump)
     
-    #logging (not auditing)
+    # Logging (not auditing)
     db[logtable].insert(
         uuid=uuid,
         function='getdata',

@@ -1,0 +1,29 @@
+{{extend 'layout.html'}}
+{{=H3(T("Complete Database Synchronized"))}}
+<div id='table-container'>
+<table><thead><tr><th>Id</th><th>Time Stamp</th><th>UUID of machine</th><th>Operation</th></tr></thead>
+{{for i in synced:}}
+ <tr>
+ <td>&nbsp;{{=A(T(str(i.id)),_href=URL(r=request, c='appadmin', f='update/db/admin_synclog', args = i.id))}}&nbsp;</td>
+ <td>&nbsp;{{=i.timestamp}}&nbsp;</td>
+ <td>&nbsp;{{=i.uuid}}&nbsp;</td>
+ <td>&nbsp;{{=i.function}}&nbsp;</td>
+ </tr>
+{{pass}}
+</table>
+<p>&nbsp;</p>
+{{=H3(T("Partial Database Synchronization"))}}
+<div id='table-container'>
+<table><thead><tr><th>Id</th><th>Time Stamp</th><th>UUID of machine</th><th>Operation</th></tr></thead>
+{{for i in history:}}
+ {{if i.id not in syncedids:}}
+ <tr>
+ <td>&nbsp;{{=A(T(str(i.id)),_href=URL(r=request, c='appadmin', f='update/db/admin_synclog', args = i.id))}}&nbsp;</td>
+ <td>&nbsp;{{=i.timestamp}}&nbsp;</td>
+ <td>&nbsp;{{=i.uuid}}&nbsp;</td>
+ <td>&nbsp;{{=i.function}}&nbsp;</td>
+ </tr>
+ {{pass}}
+{{pass}}
+</table>
+</div>

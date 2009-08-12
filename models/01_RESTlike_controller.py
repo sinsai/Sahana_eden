@@ -256,13 +256,17 @@ def shn_accessible_query(name, table):
     """
     # If using the 'simple' security policy then show all records
     security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 'simple':
+    if security == 1:
+        # simple
         return table.id > 0
     # Administrators can see all data
     if auth.has_membership(1):
         return table.id > 0
     # If there is access to the entire table then show all records
-    user_id = auth.user.id
+    try:
+        user_id = auth.user.id
+    except:
+        user_id = 0
     if auth.has_permission(name, table, 0, user_id):
         return table.id > 0
     # Filter Records to show only those to which the user has access
@@ -450,11 +454,90 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
     pagenav.append(delim)
     pagenav.append(lastlink)
     return pagenav
+
+# Subroutines broken out for maintainability (DRY, easier to follow flow of main function)
+def shn_read(module, table, resource, record, representation, deletable, editable):
+    authorised = shn_has_permission('read', table, record)
+    if authorised:
+        # Audit
+        shn_audit_read(operation='read', resource=resource, record=record, representation=representation)
+        if representation == "html":
+            item = crud.read(table, record)
+            # Check for presence of Custom View
+            custom_view = '%s_display.html' % resource
+            _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+            if os.path.exists(_custom_view):
+                response.view = module + '/' + custom_view
+            else:
+                response.view = 'display.html'
+            try:
+                title = s3.crud_strings.title_display
+            except:
+                title = T('Details')
+            if editable:
+                edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', record]), _id='edit-btn')
+            else:
+                edit = ''
+            if deletable:
+                delete = A(T("Delete"), _href=URL(r=request, f=resource, args=['delete', record]), _id='delete-btn')
+            else:
+                delete = ''
+            try:
+                label_list_button = s3.crud_strings.label_list_button
+            except:
+                label_list_button = T('List All')
+            list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
+            return dict(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
+        elif representation == "plain":
+            item = crud.read(table, record)
+            response.view = 'plain.html'
+            return dict(item=item)
+        elif representation == "csv":
+            query = db[table].id == record
+            return export_csv(resource, query)
+        elif representation == "json":
+            query = db[table].id == record
+            return export_json(table, query)
+        elif representation == "pdf":
+            query = db[table].id == record
+            return export_pdf(table, query)
+        elif representation == "rss":
+            query = db[table].id == record
+            return export_rss(module, resource, query, main, extra)
+        elif representation == "xls":
+            query = db[table].id == record
+            return export_xls(table, query)
+        elif representation == "xml":
+            query = db[table].id == record
+            return export_xml(table, query)
+        else:
+            session.error = BADFORMAT
+            redirect(URL(r=request))
+    else:
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['read', record])}))
+
+def shn_delete(table, resource, record, representation):
+    # Audit
+    shn_audit_delete(resource, record, representation)
+    if "deleted" in db[table] and db(db.s3_setting.id==1).select()[0].archive_not_delete:
+        # Mark as deleted rather than really deleting
+        db(db[table].id == record).update(deleted = True)
+        # Nevertheless: call crud.delete_onvalidation if set
+        if crud.settings.delete_onvalidation:
+            crud.settings.delete_onvalidation(db(db[table].id == record).select()[0])
+        session.confirmation = s3.crud_strings.msg_record_deleted
+        redirect(URL(r=request))
+    else:
+        # Delete properly
+        if representation == "ajax":
+            crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
+        crud.delete(table, record)
     
 # Main controller function
 def shn_rest_controller(module, resource,
     deletable=True,
-    editable=True,          # by nursix
+    editable=True,
     listadd=True,
     main='name',
     extra=None,
@@ -647,20 +730,15 @@ def shn_rest_controller(module, resource,
         if request.args[0].isdigit():
             # 1st argument is ID not method
             record = request.args[0]
-            if request.env.request_method == 'DELETE':
-                # This client is using REST
+            if request.env.request_method == 'GET':
+                # Read
+                return shn_read(module, table, resource, record, representation, deletable, editable)
+            elif request.env.request_method == 'DELETE':
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7
                 if db(db[table].id == record).select():
                     authorised = shn_has_permission('delete', table, record)
                     if authorised:
-                        # Audit
-                        shn_audit_delete(resource, record, representation)
-                        if "deleted" in db[table] and db(db.s3_setting.id==1).select()[0].archive_not_delete:
-                            # Mark as deleted rather than really deleting
-                            db(db[table].id == record).update(deleted = True)
-                        else:
-                            # Delete properly
-                            crud.delete(table, record)
+                        shn_delete(table, resource, record, representation)
                         item = '{"Status":"OK","Error":{"StatusCode":200}}'
                         response.view = 'plain.html'
                         return dict(item=item)
@@ -671,9 +749,8 @@ def shn_rest_controller(module, resource,
                     # Not found
                     raise HTTP(404)
             elif request.env.request_method == 'PUT':
-                # This client is using REST
-                # We don't yet implement PUT for create/update, although Web2Py does now support it
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+                # We don't yet implement PUT for create/update, although Web2Py does now support it
                 if db(db[table].id == record).select():
                     # resource exists, so update
                     authorised = shn_has_permission('update', table, record)
@@ -686,67 +763,10 @@ def shn_rest_controller(module, resource,
                         pass
                 # Not implemented
                 raise HTTP(501)
-            elif request.env.request_method == 'GET':
-                # Read
-                authorised = shn_has_permission('read', table, record)
-                if authorised:
-                    # Audit
-                    shn_audit_read(operation='read', resource=resource, record=record, representation=representation)
-                    if representation == "html":
-                        item = crud.read(table, record)
-                        # Check for presence of Custom View
-                        custom_view = '%s_display.html' % resource
-                        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
-                        if os.path.exists(_custom_view):
-                            response.view = module + '/' + custom_view
-                        else:
-                            response.view = 'display.html'
-                        try:
-                            title = s3.crud_strings.title_display
-                        except:
-                            title = T('Details')
-                        if editable:
-                            edit = A(T("Edit"), _href=URL(r=request, f=resource, args=['update', record]), _id='edit-btn')
-                        else:
-                            edit = ''
-                        if deletable:
-                            delete = A(T("Delete"), _href=URL(r=request, f=resource, args=['delete', record]), _id='delete-btn')
-                        else:
-                            delete = ''
-                        try:
-                            label_list_button = s3.crud_strings.label_list_button
-                        except:
-                            label_list_button = T('List All')
-                        list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
-                        return dict(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
-                    elif representation == "plain":
-                        item = crud.read(table, record)
-                        response.view = 'plain.html'
-                        return dict(item=item)
-                    elif representation == "csv":
-                        query = db[table].id == record
-                        return export_csv(resource, query)
-                    elif representation == "json":
-                        query = db[table].id == record
-                        return export_json(table, query)
-                    elif representation == "pdf":
-                        query = db[table].id == record
-                        return export_pdf(table, query)
-                    elif representation == "rss":
-                        query = db[table].id == record
-                        return export_rss(module, resource, query, main, extra)
-                    elif representation == "xls":
-                        query = db[table].id == record
-                        return export_xls(table, query)
-                    elif representation == "xml":
-                        query = db[table].id == record
-                        return export_xml(table, query)
-                    else:
-                        session.error = BADFORMAT
-                        redirect(URL(r=request))
-                else:
-                    session.error = UNAUTHORISED
-                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['read', record])}))
+            else:
+                # Unsupported HTTP method: POST, HEAD, OPTIONS, TRACE, CONNECT
+                # Not implemented
+                raise HTTP(501)
         else:
             method = str.lower(request.args[0])
             try:
@@ -844,20 +864,7 @@ def shn_rest_controller(module, resource,
             elif method == "delete":
                 authorised = shn_has_permission(method, table, record)
                 if authorised:
-                    # Audit
-                    shn_audit_delete(resource, record, representation)
-                    if "deleted" in db[table] and db(db.s3_setting.id==1).select()[0].archive_not_delete:
-                        # Mark as deleted rather than really deleting
-                        db(db[table].id == record).update(deleted = True)
-                        # Nevertheless: call crud.delete_onvalidation if set
-                        if crud.settings.delete_onvalidation:
-                            crud.settings.delete_onvalidation(db(db[table].id == record).select()[0])
-                        redirect(URL(r=request))
-                    else:
-                        # Delete properly
-                        if representation == "ajax":
-                            crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
-                        crud.delete(table, record)
+                    return shn_delete(table, resource, record, representation)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))

@@ -31,6 +31,8 @@ response.menu_options = [
 # Web2Py Tools functions
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
+    # Sync webservices don't use sessions, so avoid cluttering up the storage
+    session.forget()
     return service()
 
 # S3 framework functions

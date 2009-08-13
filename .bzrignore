@@ -1,7 +1,7 @@
 databases/*
-modules/ldapconnect.*
 errors/*
 sessions/*
+uploads/*
 docs/*
 .raw/*
 static/.mfexamples/*
@@ -23,5 +23,3 @@ static/selenium/results/*
 static/*/.svn/*
 static/*test*
 tests/.cherrypy/*
-errors/*
-uploads/*

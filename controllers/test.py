@@ -54,7 +54,10 @@ def photo():
     return dict(form=form)
 
 def user():
-    user = auth.user.id if session.auth else 0
+    if auth.is_logged_in() or auth.basic():
+        user = auth.user.id if session.auth else 0
+    else:
+        user = None
     return user
     
 def css():

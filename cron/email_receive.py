@@ -6,6 +6,7 @@
 
 import sys, socket, email, uuid
 
+# Read-in configuration from Database
 host = db(db.msg_setting.id==1).select()[0].inbound_mail_server
 server_type = db(db.msg_setting.id==1).select()[0].inbound_mail_type
 ssl = db(db.msg_setting.id==1).select()[0].inbound_mail_ssl

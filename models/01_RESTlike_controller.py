@@ -238,15 +238,19 @@ def shn_has_permission(name, table_name, record_id = 0):
             authorised = True
         else:
             # Authentication required for Create/Update/Delete.
-            authorised = auth.is_logged_in()
+            authorised = auth.is_logged_in() or auth.basic()
     else:
         # Full policy
-        # Administrators are always authorised
-        if auth.has_membership(1):
-            authorised = True
+        if auth.is_logged_in() or auth.basic():
+            # Administrators are always authorised
+            if auth.has_membership(1):
+                authorised = True
+            else:
+                # Require records in auth_permission to specify access
+                authorised = auth.has_permission(name, table_name, record_id)
         else:
-            # Require records in auth_permission to specify access
-            authorised = auth.has_permission(name, table_name, record_id)
+            # No access for anonymous
+            authorised = False
     return authorised
 
 def shn_accessible_query(name, table):

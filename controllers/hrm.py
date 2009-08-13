@@ -17,15 +17,6 @@ response.menu_options = [
         [T('List Bodies'), False, URL(r=request, f='body')],
         [T('List Images'), False, URL(r=request, f='image_body')],
         [T('List Locations'), False, URL(r=request, f='presence_body')]
-    ]],
-    [T('Checklist Of Operations'), False, URL(r=request, f='operation_checklist'),[
-        [T('Personal Effects'), False, URL(r=request, f='personal_effects')],
-        [T('Radiology'), False, URL(r=request, f='radiology')],
-        [T('Fingerprints'), False, URL(r=request, f='fingerprints')],
-        [T('Anthropology'), False, URL(r=request, f='anthropology')],
-        [T('Pathology'), False, URL(r=request, f='pathology')],
-        [T('DNA'), False, URL(r=request, f='dna')],
-        [T('Dental'), False, URL(r=request, f='dental')],
     ]]
 ]
 
@@ -48,39 +39,6 @@ def image_body():
     request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==3)
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', 'image')
-
-def personal_effects():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'personal_effects')
-
-def radiology():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'radiology')
-
-def fingerprints():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'fingerprints')
-
-def anthropology():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'anthropology')
-
-def pathology():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'pathology')
-
-def dna():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'dna')
-
-def dental():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'dental')
-
-
-def operation_checklist():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'operation_checklist')
 
 def presence_body():
     db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(3,)))

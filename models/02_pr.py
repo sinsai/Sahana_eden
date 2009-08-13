@@ -720,6 +720,64 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
     else:
         # no label given or wrong parameter type
         return None
+#
+# shn_pr_select_person --------------------------------------------------------
+#
+
+def shn_pr_select_person(id):
+    if id and isinstance(id,str) and id.isdigit():
+        # Clear record
+        session.pr_person = None
+        # Load new person record
+        print "loading new record %s" % id
+        records = db(db.pr_person.id==id).select(db.pr_person.id)
+        if records:
+            print "loaded record %s" % records[0].id
+            session.pr_person = records[0].id
+    
+    return
+
+#
+# shn_pr_person_header --------------------------------------------------------
+#
+
+def shn_pr_person_header(id):
+    if id and isinstance(id,int):
+        try:
+            record = db(db.pr_person.id==id).select()[0]
+        except:
+            return None
+
+        pheader = TABLE(
+            TR(
+                TH("Name: "),
+                "%s %s %s" % (
+                    record.first_name,
+                    record.middle_name or '',
+                    record.last_name or ''
+                    ),
+                TH("ID Label: "),
+                "%(pr_pe_label)s" % record,
+                TH(A("Clear", _href=URL(r=request, c='pr', f='person', args='clear')))
+                ),
+            TR(
+                TH("Date of Birth: "),
+                "%s" % (record.date_of_birth or 'unknown'),
+                TH("Gender: "),
+                "%s" % pr_person_gender_opts[record.opt_pr_gender],
+                TH("")
+                ),
+            TR(
+                TH("Nationality"),
+                "%s" % pr_nationality_opts[record.opt_pr_nationality],
+                TH("Age Group: "),
+                "%s" % pr_person_age_group_opts[record.opt_pr_age_group],
+                TH("")
+                )
+        )
+        return pheader
+    else:
+        return None
 
 #
 #

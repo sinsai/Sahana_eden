@@ -49,7 +49,7 @@ def xforms():
             bindings_list.append(TAG['bind'](_nodeset=field, _type=_type, _required=required))
             
             # Controllers
-            if hasattr(table[field].requires,'options'):
+            if hasattr(table[field].requires, 'options'):
                 items_list = []
                 for option in table[field].requires.theset:
                     items_list.append(TAG['item'](TAG['label'](option), TAG['value'](option)))

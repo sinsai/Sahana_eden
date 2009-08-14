@@ -16,7 +16,7 @@ $(document).ready(function() {
          inputField:this.id, ifFormat:"{{=T('%Y-%m-%d')}}", showsTime:false
     }); }); } catch(e) {};
     try { $("input.datetime").focus( function() {Calendar.setup({
-         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M:%S')}}", showsTime: true,timeFormat: "24"
+         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M')}}", showsTime: true,timeFormat: "24"
     }); }); } catch(e) {};
     try { $("input.time").clockpick({
          starthour:0, endhour:23, showminutes:true, military:true

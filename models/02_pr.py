@@ -127,7 +127,7 @@ pr_id_type_opts = {
     1:T('Passport'),
     2:T('National ID Card'),
     3:T('Driving License'),
-    4:T('other')
+    99:T('other')
     }
 
 opt_pr_id_type = SQLTable(None, 'opt_pr_id_type',
@@ -153,6 +153,24 @@ opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
                     default = 4,
                     label = T('Group Type'),
                     represent = lambda opt: opt and pr_group_type_opts[opt]))
+
+#
+# Contact Methods -------------------------------------------------------------
+#
+pr_contact_method_opts = {
+    1:T('E-Mail'),
+    2:T('Telephone'),
+    3:T('Mobile Phone'),
+    4:T('Fax'),
+    99:T('other')
+    }
+
+opt_pr_contact_method = SQLTable(None, 'opt_pr_contact_method',
+                        db.Field('opt_pr_contact_method','integer',
+                        requires = IS_IN_SET(pr_contact_method_opts),
+                        default = 99,
+                        label = T('Contact Method'),
+                        represent = lambda opt: opt and pr_contact_method_opts[opt]))
 
 #
 # PersonEntity classes --------------------------------------------------------
@@ -253,7 +271,7 @@ pr_pe_id = SQLTable(None, 'pe_id',
                 requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
                 represent = lambda id: (id and [shn_pentity_represent(db(db.pr_pentity.id==id).select()[0])] or ["None"])[0],
                 ondelete = 'RESTRICT',
-                label = T('Entity ID')
+                label = T('ID')
                 ))
 
 #
@@ -532,25 +550,18 @@ resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                               # Person Entity ID
-                Field('name'),                          # Contact name (if different from PE)
-                Field('method'),                        # Contact Methods
-                Field('address_street_1'),              # Street Address 1
-                Field('address_street_2'),              # Street Address 2
-                Field('address_postcode'),              # ZIP code or postal code
-                Field('address_town'),                  # Town for address
-                Field('address_state'),                 # State/Province for address
-                Field('address_country'),               # Country for Address
-                Field('phone_home'),                    # Home telephone number
-                Field('phone_office'),                  # Office telephone number
-                Field('phone_mobile'),                  # Mobile telephone number
-                Field('email'),                         # E-Mail-Address
-                Field('webaddress'),                    # Website
+                Field('name'),                          # Contact name (optional)
+                opt_pr_contact_method,                  # Contact Method
+                Field('person_name'),                   # Contact person name
+                Field('priority'),                      # Priority
                 Field('value', notnull=True),
+                Field('comment'),                       # Comment
                 migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_IN_SET(['phone', 'fax', 'skype', 'msn', 'yahoo'])
 db[table].value.requires = IS_NOT_EMPTY()
+
+db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
 
 title_create = T('Add Contact')
 title_display = T('Contact Details')
@@ -723,16 +734,11 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 #
 # shn_pr_select_person --------------------------------------------------------
 #
-
 def shn_pr_select_person(id):
     if id and isinstance(id,str) and id.isdigit():
-        # Clear record
         session.pr_person = None
-        # Load new person record
-        print "loading new record %s" % id
         records = db(db.pr_person.id==id).select(db.pr_person.id)
         if records:
-            print "loaded record %s" % records[0].id
             session.pr_person = records[0].id
     
     return
@@ -740,13 +746,16 @@ def shn_pr_select_person(id):
 #
 # shn_pr_person_header --------------------------------------------------------
 #
-
-def shn_pr_person_header(id):
+def shn_pr_person_header(id, next=None):
     if id and isinstance(id,int):
         try:
             record = db(db.pr_person.id==id).select()[0]
         except:
             return None
+
+        if next: request.vars.next=next
+
+        redirect = { "_next" : "%s" % URL(r=request, args=request.args, vars=request.vars)}
 
         pheader = TABLE(
             TR(
@@ -758,7 +767,7 @@ def shn_pr_person_header(id):
                     ),
                 TH("ID Label: "),
                 "%(pr_pe_label)s" % record,
-                TH(A("Clear", _href=URL(r=request, c='pr', f='person', args='clear')))
+                TH(A("Clear", _href=URL(r=request, c='pr', f='person', args='clear', vars=request.vars)))
                 ),
             TR(
                 TH("Date of Birth: "),
@@ -772,12 +781,91 @@ def shn_pr_person_header(id):
                 "%s" % pr_nationality_opts[record.opt_pr_nationality],
                 TH("Age Group: "),
                 "%s" % pr_person_age_group_opts[record.opt_pr_age_group],
-                TH("")
+                TH(A("Edit", _href=URL(r=request, c='pr', f='person', args='update/%s' % id, vars=redirect)))
                 )
         )
         return pheader
     else:
         return None
+
+#
+# shn_pr_person_sublist -------------------------------------------------------
+#
+def shn_pr_person_sublist_linkto(field):
+    return URL(r=request, f=request.args[0], args="update/%s" % field, vars=dict(_next=URL(r=request, args=request.args, vars=request.vars)))
+
+def shn_pr_person_sublist(request, subentity, person_id, fields=None, representation='html'):
+
+    subresource = "%s_%s" % (module, subentity)
+    subtable = db[subresource]
+
+    output = dict(items=None)
+
+    # Check for authorization
+    if shn_has_permission('read',db.pr_person) & shn_has_permission('read',subtable):
+        query = (db.pr_person.id==person_id)
+        if 'pr_pe_id' in subtable.fields:
+            query = ((db.pr_person.pr_pe_id==subtable.pr_pe_id) & query)
+        elif 'person_id' in subtable.fields:
+            query = ((db.pr_person.id==subtable.person_id) & query)
+
+        query = ((db.pr_person.deleted==False) & (subtable.deleted==False)) & query
+
+        # Audit
+        shn_audit_read(operation='list', resource=subresource, representation=representation)
+
+        # Pagination
+        if 'page' in request.vars:
+            # Pagination at server-side (since no JS available)
+            page = int(request.vars.page)
+            start_record = (page - 1) * ROWSPERPAGE
+            end_record = start_record + ROWSPERPAGE
+            limitby = start_record, end_record
+            totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
+            label_search_button = T('Search')
+            search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
+            output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
+        else:
+            # No Pagination server-side (to allow it to be done client-side)
+            limitby = ''
+            # Redirect to a paginated version if JS not-enabled
+            request.vars['page'] = 1
+            response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>'
+
+        if not fields:
+            fields = [subtable[f] for f in subtable.fields if subtable[f].readable]
+
+        # Column labels
+        headers = {}
+        for field in fields:
+            # Use custom or prettified label
+            headers[str(field)] = field.label
+    
+        if shn_has_permission('update',subtable):
+            linkto=shn_pr_person_sublist_linkto
+        else:
+            linkto=None
+
+        items = crud.select(
+            subtable,
+            query=query,
+            fields=fields,
+            limitby=limitby,
+            headers=headers,
+            truncate=48,
+            linkto=linkto,
+            _id='list', _class='display')
+
+    else:
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args=request.args, vars=request.vars)}))
+
+    if not items:
+        items = T('None')
+
+    output.update(items=items)
+
+    return output
 
 #
 #

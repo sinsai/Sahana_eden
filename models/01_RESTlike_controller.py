@@ -772,6 +772,7 @@ def shn_rest_controller(module, resource,
             try:
                 record = request.args[1]
             except:
+                record = None
                 pass
             if method == "create":
                 authorised = shn_has_permission(method, table)
@@ -844,7 +845,7 @@ def shn_rest_controller(module, resource,
                             title = s3.crud_strings.title_update
                         except:
                             title = T('Edit')
-                        if s3.crud_strings.label_list_button:
+                        if s3.crud_strings and s3.crud_strings.label_list_button:
                             list_btn = A(s3.crud_strings.label_list_button, _href=URL(r=request, f=resource),_id='list-btn')
                             return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
                         else:

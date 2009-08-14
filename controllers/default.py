@@ -12,6 +12,8 @@ response.menu_options = [
 # (replaces T2)
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
+    # If webservices don't use sessions, avoid cluttering up the storage
+    #session.forget()
     return service()
     
 def download():

@@ -1,0 +1,37 @@
+{{extend 'layout.html'}}
+
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function() {
+	$('#list').dataTable();
+} );
+//]]></script>
+
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='pheader'>
+{{try:}}
+ {{=pheader}}
+{{except:}}
+ {{pass}}
+</div>
+<div><br /></div>
+<div id='table-container'>
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+</div>
+</div>
+{{include 'pagenav.html'}}
+{{include 'searchbox.html'}}

@@ -69,6 +69,9 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                         # Personal Entity Reference
                 location_id,                        # Location
+                Field('location_details'),          # Details on Location
+                Field('lat'),                       # Latitude
+                Field('lon'),                       # Longitude
                 Field('time_start', 'datetime'),    # Start time
 #                Field('time_end', 'datetime'),      # End time
                 Field('description'),               # Short Description
@@ -77,6 +80,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].time_start.label = T('Date and Time')
+
+db[table].lat.requires = IS_NULL_OR(IS_LAT())
+db[table].lon.requires = IS_NULL_OR(IS_LON())
 
 title_create = T('Presence')
 title_display = T('Presence Details')
@@ -92,6 +98,53 @@ msg_record_modified = T('Presence Record updated')
 msg_record_deleted = T('Presence Record deleted')
 msg_list_empty = T('No presence records currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+#
+# Address ---------------------------------------------------------------------
+#
+resource = 'address'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,                               # Person Entity ID
+                Field('address_type'),                  # TODO: make option field
+                Field('co_name'),                       # c/o Name
+                Field('street1'),                       # Street Address 1
+                Field('street2'),                       # Street Address 2
+                Field('postcode'),                      # ZIP or postal code
+                Field('city'),                          # City
+                Field('state'),                         # State or Province
+                Field('country'),                       # Country TODO: make option field
+                location_id,                            # Link to GIS location
+                Field('lat'),                           # Latitude
+                Field('lon'),                           # Longitude
+                Field('comment'),                       # Comment
+                migrate=migrate)
+
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+db[table].co_name.label = T('c/o Name')
+db[table].street1.label = T('Street')
+db[table].street2.label = T('Street (add.)')
+db[table].postcode.label = T('ZIP/Postcode')
+
+db[table].lat.requires = IS_NULL_OR(IS_LAT())
+db[table].lon.requires = IS_NULL_OR(IS_LON())
+
+title_create = T('Add Address')
+title_display = T('Address Details')
+title_list = T('List Addresses')
+title_update = T('Edit Address')
+title_search = T('Search Addresses')
+subtitle_create = T('Add New Address')
+subtitle_list = T('Addresses')
+label_list_button = T('List Addresses')
+label_create_button = T('Add Address')
+msg_record_created = T('Address added')
+msg_record_modified = T('Address updated')
+msg_record_deleted = T('Address deleted')
+msg_list_empty = T('No Addresses currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
 #
 # Case ------------------------------------------------------------------------
 #

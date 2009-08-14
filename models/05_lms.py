@@ -1,5 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
-
+#
+# LMS Logistics Management System
+#
+# created 2009-07-08 by ajuonline
+#
 module = 'lms'
 
 # Settings

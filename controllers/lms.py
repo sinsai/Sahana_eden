@@ -1,4 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
+#
+# LMS Logistics Management System
+#
+# created 2009-07-08 by ajuonline
+#
 
 module = 'lms'
 # Current Module (for sidebar title)
@@ -22,7 +27,11 @@ response.menu_options = [
 			[T('List Bins'), False, URL(r=request, f='storage_bin')],
 			[T('Search Bins'), False, URL(r=request, f='storage_bin', args='search')]
 		]],			
-        [T('Relief Item Catalogue'), False, URL(r=request, f='catalogue', args='create')],             
+        [T('Relief Item Catalogue'), False, '#',[
+			[T('Add Category'), False, URL(r=request, f='catalogue_cat', args='create')],
+			[T('Add Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='create')],
+			[T('List Category'), False, URL(r=request, f='catalogue_cat', args='search')]
+		]],
     ]],
     [T('Intake System'), False, '#',[
         [T('Add Item (s)'), False, URL(r=request, f='item', args='create')],
@@ -57,11 +66,14 @@ def storage_bin():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'storage_bin')	
 
-def catalogue():
+def catalogue_cat():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'item')
+    return shn_rest_controller(module, 'catalogue_cat')
 
-
+def catalogue_subcat():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'catalogue_subcat')
+	
 def inventory():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'inventory')

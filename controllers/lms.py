@@ -29,14 +29,17 @@ response.menu_options = [
 		]],			
         [T('Relief Item Catalogue'), False, '#',[
 			[T('Add Category'), False, URL(r=request, f='catalogue_cat', args='create')],
+			[T('Search & Edit Category'), False, URL(r=request, f='catalogue_cat', args='search')],
 			[T('Add Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='create')],
-			[T('List Category'), False, URL(r=request, f='catalogue_cat', args='search')]
+			[T('Search & Edit Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='search')],
+			[T('List Sub-Category'), False, URL(r=request, f='catalogue_subcat')],
+			[T('List Category'), False, URL(r=request, f='catalogue_cat')]
 		]],
     ]],
     [T('Intake System'), False, '#',[
         [T('Add Item (s)'), False, URL(r=request, f='item', args='create')],
         [T('Search & Edit Item (s)'), False, URL(r=request, f='item', args='search')],
-        [T('List Items (Reports)'), False, URL(r=request, f='item', args='list')]
+        [T('List Items (Reports)'), False, URL(r=request, f='item')]
     ]],
     [T('Inventory Management'), False, '#',[
         [T('Adjust Item(s) Quantity'), False, URL(r=request, f='inventory', args='adjust')],

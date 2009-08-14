@@ -149,3 +149,60 @@ msg_record_modified = T('Storage Bin updated')
 msg_record_deleted = T('Storage Bin deleted')
 msg_list_empty = T('No Storage Bins currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Relief Item Catalogue Category
+resource = 'catalogue_cat'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                db.Field('name'),
+                db.Field('description'),
+				db.Field('comments', 'text'),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires = IS_NOT_EMPTY()
+db[table].name.label = T("Relief Item Category")
+db[table].name.comment = SPAN("*", _class="req")
+title_create = T('Add Relief Item Category ')
+title_display = T('Relief Item Category Details')
+title_list = T('List Relief Item Categories')
+title_update = T('Edit Relief Item Categories')
+title_search = T('Search Relief Item Category(s)')
+subtitle_create = T('Add New Relief Item Category')
+subtitle_list = T('Relief Item Categories')
+label_list_button = T('List Relief Item Categories')
+label_create_button = T('Add Relief Item Categories')
+msg_record_created = T('Relief Item Category added')
+msg_record_modified = T('Relief Item Category updated')
+msg_record_deleted = T('Relief Item Category deleted')
+msg_list_empty = T('No Relief Item Category currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Relief Item Catalogue Sub-Category
+resource = 'catalogue_subcat'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                db.Field('parent_category', db.lms_catalogue_cat),
+				db.Field('name'),
+                db.Field('description'),
+				db.Field('comments', 'text'),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].name.requires = IS_NOT_EMPTY()
+db[table].name.label = T("Relief Item Sub-Category")
+db[table].name.comment = SPAN("*", _class="req")
+db[table].parent_category.requires = IS_IN_DB(db, 'lms_catalogue_cat.id', 'lms_catalogue_cat.name')
+db[table].parent_category.comment = DIV(A(T('Add Relief Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalogue_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Relief Item Category.")))
+title_create = T('Add Relief Item Sub-Category ')
+title_display = T('Relief Item Sub-Category Details')
+title_list = T('List Relief Item Sub-Categories')
+title_update = T('Edit Relief Item Sub-Categories')
+title_search = T('Search Relief Item Sub-Category(s)')
+subtitle_create = T('Add New Relief Item Sub-Category')
+subtitle_list = T('Relief Item Sub-Categories')
+label_list_button = T('List Relief Item Sub-Categories')
+label_create_button = T('Add Relief Item Sub-Categories')
+msg_record_created = T('Relief Item Sub-Category added')
+msg_record_modified = T('Relief Item Sub-Category updated')
+msg_record_deleted = T('Relief Item Sub-Category deleted')
+msg_list_empty = T('No Relief Item Sub-Category currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)

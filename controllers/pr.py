@@ -15,35 +15,29 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Search for a Person'), False, URL(r=request, f='person', args='search_simple')],
-    [T('Person Details'), False, URL(r=request, f='person', args='view'),[
+    [T('View/Edit Person Details'), False, URL(r=request, f='person', args='view'),[
 #        [T('Basic Details'), False, URL(r=request, f='person', args='view')],
-        [T('Presence Data'), False, URL(r=request, f='person', args='presence')],
         [T('Images'), False, URL(r=request, f='person', args='image')],
         [T('Identity'), False, URL(r=request, f='person', args='identity')],
         [T('Address'), False, URL(r=request, f='person', args='address')],
         [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+        [T('Presence Data'), False, URL(r=request, f='person', args='presence')],
 #        [T('Roles'), False, URL(r=request, f='person', args='role')],
 #        [T('Status'), False, URL(r=request, f='person', args='status')],
 #        [T('Groups'), False, URL(r=request, f='person', args='group')],
     ]],
-    [T('Register Persons'), False, URL(r=request, f='person'),[
-        [T('Add Individual'), False, URL(r=request, f='person', args='create')],
-        [T('Register Presence'), False, URL(r=request, f='presence_person', args='create')],
-        [T('Add Group'), False, URL(r=request, f='group', args='create')],
+    [T('Add Person'), False, URL(r=request, f='person', args='create')],
+    [T('Add Person Details'), False, URL(r=request, f='person'),[
+        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
+        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+        [T('Add Address'), False, URL(r=request, f='address', args='create')],
+        [T('Add Contact Information'), False, URL(r=request, f='contact', args='create')],
+        [T('Register Appearance'), False, URL(r=request, f='presence', args='create')],
         [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
     ]],
-    [T('List Persons'), False, URL(r=request, f='person'),[
-        [T('List Persons'), False, URL(r=request, f='person')],
-        [T('List Presence Records'), False, URL(r=request, f='presence_person')],
-        [T('List Person Images'), False, URL(r=request, f='image_person')],
-        [T('List Identities'), False, URL(r=request, f='identity')],
-        [T('List Contacts'), False, URL(r=request, f='contact')],
-        [T('List Addresses'), False, URL(r=request, f='address')],
-    ]],
-    [T('List Groups'), False, URL(r=request, f='group'),[
-        [T('List Groups'), False, URL(r=request, f='group')],
-        [T('List Group Memberships'), False, URL(r=request, f='group_membership')],
-    ]],
+    [T('Add Group'), False, URL(r=request, f='group', args='create')],
+    [T('List Persons'), False, URL(r=request, f='person')],
+    [T('List Groups'), False, URL(r=request, f='group')]
 ]
 
 # S3 framework functions
@@ -88,7 +82,7 @@ def person():
 
                 # Select form
                 form = FORM(TABLE(
-                        TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40")),
+                        TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
                         TR("",INPUT(_type="submit",_value="Search"))
                         ))
 

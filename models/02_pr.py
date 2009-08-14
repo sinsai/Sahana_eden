@@ -767,7 +767,7 @@ def shn_pr_person_header(id, next=None):
                     ),
                 TH("ID Label: "),
                 "%(pr_pe_label)s" % record,
-                TH(A("Clear", _href=URL(r=request, c='pr', f='person', args='clear', vars=request.vars)))
+                TH(A("Clear Selection", _href=URL(r=request, c='pr', f='person', args='clear', vars=request.vars)))
                 ),
             TR(
                 TH("Date of Birth: "),
@@ -781,7 +781,7 @@ def shn_pr_person_header(id, next=None):
                 "%s" % pr_nationality_opts[record.opt_pr_nationality],
                 TH("Age Group: "),
                 "%s" % pr_person_age_group_opts[record.opt_pr_age_group],
-                TH(A("Edit", _href=URL(r=request, c='pr', f='person', args='update/%s' % id, vars=redirect)))
+                TH(A("Edit Person", _href=URL(r=request, c='pr', f='person', args='update/%s' % id, vars=redirect)))
                 )
         )
         return pheader

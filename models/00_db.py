@@ -1,4 +1,3 @@
-<<<<<<< TREE
 # -*- coding: utf-8 -*-
 
 import os, traceback, datetime
@@ -278,7 +277,7 @@ shn_list_of_nations = {
     201:T('Transnistria'),
     999:T('unknown')
     }
-=======
+
 # -*- coding: utf-8 -*-
 
 import os, traceback, datetime
@@ -351,4 +350,3 @@ response._caller = lambda f: shn_sessions(f)
 #
 
 # See test.py
->>>>>>> MERGE-SOURCE

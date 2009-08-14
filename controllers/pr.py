@@ -15,30 +15,29 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Search for a Person'), False, URL(r=request, f='person', args='search_simple')],
-    [T('Person Details'), False, URL(r=request, f='person_details'),[
-        [T('Basic Details'), False, URL(r=request, f='person', args='view')],
-        [T('Adress'), False, URL(r=request, f='person', args='address')],
-        [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+    [T('View/Edit Person Details'), False, URL(r=request, f='person', args='view'),[
+#        [T('Basic Details'), False, URL(r=request, f='person', args='view')],
         [T('Images'), False, URL(r=request, f='person', args='image')],
-        [T('Groups'), False, URL(r=request, f='person', args='group')],
-        [T('Status'), False, URL(r=request, f='person', args='status')],
-        [T('Presence'), False, URL(r=request, f='person', args='presence')],
+        [T('Identity'), False, URL(r=request, f='person', args='identity')],
+        [T('Address'), False, URL(r=request, f='person', args='address')],
+        [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+        [T('Presence Data'), False, URL(r=request, f='person', args='presence')],
+#        [T('Roles'), False, URL(r=request, f='person', args='role')],
+#        [T('Status'), False, URL(r=request, f='person', args='status')],
+#        [T('Groups'), False, URL(r=request, f='person', args='group')],
     ]],
-    [T('Register Persons'), False, URL(r=request, f='person'),[
-        [T('Add Individual'), False, URL(r=request, f='person', args='create')],
-        [T('Register Presence'), False, URL(r=request, f='presence_person', args='create')],
-        [T('Add Group'), False, URL(r=request, f='group', args='create')],
+    [T('Add Person'), False, URL(r=request, f='person', args='create')],
+    [T('Add Person Details'), False, URL(r=request, f='person'),[
+        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
+        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+        [T('Add Address'), False, URL(r=request, f='address', args='create')],
+        [T('Add Contact Information'), False, URL(r=request, f='contact', args='create')],
+        [T('Register Appearance'), False, URL(r=request, f='presence', args='create')],
         [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
     ]],
-    [T('List Persons'), False, URL(r=request, f='person'),[
-        [T('List Individuals'), False, URL(r=request, f='person')],
-#        [T('List Person Details'), False, URL(r=request, f='person_details')],
-        [T('List Person Images'), False, URL(r=request, f='image_person')],
-        [T('List Identities'), False, URL(r=request, f='identity')],
-        [T('List Groups'), False, URL(r=request, f='group')],
-        [T('List Group Memberships'), False, URL(r=request, f='group_membership')],
-        [T('List Presence Records'), False, URL(r=request, f='presence_person')],
-    ]],
+    [T('Add Group'), False, URL(r=request, f='group', args='create')],
+    [T('List Persons'), False, URL(r=request, f='person')],
+    [T('List Groups'), False, URL(r=request, f='group')]
 ]
 
 # S3 framework functions
@@ -54,183 +53,414 @@ def person():
     else:
         representation = "html"
 
-    if representation=="html":
-        if len(request.args) > 0:
-            if not request.args[0].isdigit():
-                method = str.lower(request.args[0])
-                try:
-                    record_id = request.args[1]
-                except:
-                    record_id = None
-                if method=="search_simple":
-                    if request.vars.next:
-                        next = str.lower(request.vars.next)
-                    else:
-                        next = "view"
-                    response.view = '%s/person_search.html' % module
-                    title = T('Search for a Person')
-                    subtitle = T('Matching Records')
-                    form = FORM(TABLE(
-                            TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40")),
-                            TR("",INPUT(_type="submit",_value="Search"))
-                            ))
-                    items = None
-                    if form.accepts(request.vars,session):
-                        results = shn_pr_get_person_id(form.vars.label)
-                        rows = None
-                        if results:
-                            rows = db(db.pr_person.id.belongs(results)).select(
-                                db.pr_person.id,
-                                db.pr_person.pr_pe_label,
-                                db.pr_person.first_name,
-                                db.pr_person.middle_name,
-                                db.pr_person.last_name,
-                                db.pr_person.opt_pr_gender,
-                                db.pr_person.opt_pr_age_group,
-                                db.pr_person.date_of_birth)
-                        if rows:
-                            records = []
-                            for row in rows:
-                                records.append(TR(
-                                    row.pr_pe_label or '[no label]',
-                                    A(row.first_name, _href=URL(r=request, c='pr', f='person', args='%s/%s' % (next, row.id))),
-                                    row.middle_name,
-                                    row.last_name,
-                                    row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
-                                    row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
-                                    row.date_of_birth or 'unknown'
-                                    ))
-                            items=DIV(TABLE(THEAD(TR(
-                                TH("ID Label"),
-                                TH("First Name"),
-                                TH("Middle Name"),
-                                TH("Last Name"),
-                                TH("Gender"),
-                                TH("Age Group"),
-                                TH("Date of Birth"))),
-                                TBODY(records), _id='list', _class="display"))
-                    return dict(title=title,subtitle=subtitle,form=form,vars=form.vars,items=items)
+    if len(request.args) > 0 and not request.args[0].isdigit():
+        # Check method
+        method = str.lower(request.args[0])
 
-                elif method=="clear":
-                    # Clear current selection
-                    del session['pr_person']
-                    redirect(URL(r=request, c='pr', f='person', args='search_simple'))
-                elif method=="view":
-                    # view person record (the most interesting information)
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple'))
+        # Check if record_id is submitted
+        try:
+            record_id = request.args[1]
+        except:
+            record_id = None
 
-                    response.view = '%s/person.html' % module
+        # Simple search and select --------------------------------------------
+        if method=="search_simple":
+            if representation=="html":
 
-                    title='Personal Data'
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="edit":
-                    # Edit basic details
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Person Details')
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="presence":
-                    # View, edit or add presence information
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Tracing data of Person %s' % session.pr_person)
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="image":
-                    # View, edit or add images
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Images of Person %s' % session.pr_person)
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="identity":
-                    # View, edit or add identities
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Identities of Person %s' % session.pr_person)
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="address":
-                    # View, edit or add addresses
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Addresses of Person %s' % session.pr_person)
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="contact":
-                    # View, edit or add contact information
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Contact information of Person %s' % session.pr_person)
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="status":
-                    # View, edit or add status information
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Status information of Person %s' % session.pr_person)
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
-                elif method=="group":
-                    # View, edit or add group memberships
-                    shn_pr_select_person(record_id)
-                    if not session.pr_person:
-                        request.vars.next=method
-                        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-                    response.view = '%s/person.html' % module
-
-                    title=('Group Memberships of Person %s' % session.pr_person)
-                    subtitle='Details'
-                    return dict(title=title, subtitle=subtitle, pheader=shn_pr_person_header(session.pr_person))
+                # Check for redirection
+                if request.vars.next:
+                    next = str.lower(request.vars.next)
                 else:
-                    # other method => fallback to Rest controller
-                    pass
-        else:
-            # no method => default to list action via REST
+                    next = "view"
+
+                # Custom view
+                response.view = '%s/person_search.html' % module
+
+                # Title and subtitle
+                title = T('Search for a Person')
+                subtitle = T('Matching Records')
+
+                # Select form
+                form = FORM(TABLE(
+                        TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
+                        TR("",INPUT(_type="submit",_value="Search"))
+                        ))
+
+                # Accept action
+                items = None
+                if form.accepts(request.vars,session):
+
+                    # Get matching person ID's
+                    results = shn_pr_get_person_id(form.vars.label)
+
+                    # Read records for matching ID's
+                    rows = None
+                    if results:
+                        rows = db(db.pr_person.id.belongs(results)).select(
+                            db.pr_person.id,
+                            db.pr_person.pr_pe_label,
+                            db.pr_person.first_name,
+                            db.pr_person.middle_name,
+                            db.pr_person.last_name,
+                            db.pr_person.opt_pr_gender,
+                            db.pr_person.opt_pr_age_group,
+                            db.pr_person.date_of_birth)
+
+                    # Build table rows from matching records
+                    if rows:
+                        records = []
+                        for row in rows:
+                            records.append(TR(
+                                row.pr_pe_label or '[no label]',
+                                A(row.first_name, _href=URL(r=request, c='pr', f='person', args='%s/%s' % (next, row.id))),
+                                row.middle_name,
+                                row.last_name,
+                                row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
+                                row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                                row.date_of_birth or 'unknown'
+                                ))
+                        items=DIV(TABLE(THEAD(TR(
+                            TH("ID Label"),
+                            TH("First Name"),
+                            TH("Middle Name"),
+                            TH("Last Name"),
+                            TH("Gender"),
+                            TH("Age Group"),
+                            TH("Date of Birth"))),
+                            TBODY(records), _id='list', _class="display"))
+
+                # Return to the view
+                return dict(title=title,subtitle=subtitle,form=form,vars=form.vars,items=items)
+
+            else: # other representation
+                pass
+
+        # Clear current selection ---------------------------------------------
+        elif method=="clear":
+
+            del session['pr_person']
+            redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+
+        # View or edit basic person data --------------------------------------
+        elif method=="view":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Basic Details')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                items=None
+
+                output.update(dict(items=items))
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit presence information ------------------------------
+        elif method=="presence":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Registered Appearances')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                # Which fields?
+                fields = [
+                        db.pr_presence.id,
+                        db.pr_presence.time_start,
+                        db.pr_presence.location,
+                        db.pr_presence.location_details,
+                        db.pr_presence.lat,
+                        db.pr_presence.lon,
+                        db.pr_presence.description,
+                ]
+
+                # Get list
+                sublist = shn_pr_person_sublist(request, 'presence', session.pr_person, fields=fields)
+
+                if sublist:
+                    output.update(sublist)
+
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit images --------------------------------------------
+        elif method=="image":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Images')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                # Which fields?
+                fields = [
+                        db.pr_image.id,
+                        db.pr_image.opt_pr_image_type,
+                        db.pr_image.image,
+                        db.pr_image.title,
+                        db.pr_image.description,
+                ]
+
+                # Get list
+                sublist = shn_pr_person_sublist(request, 'image', session.pr_person, fields=fields)
+
+                if sublist:
+                    output.update(sublist)
+
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit identity information ------------------------------
+        elif method=="identity":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Identities')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                # Which fields?
+                fields = [
+                        db.pr_identity.id,
+                        db.pr_identity.opt_pr_id_type,
+                        db.pr_identity.type,
+                        db.pr_identity.value,
+                        db.pr_identity.country_code,
+                        db.pr_identity.ia_name,
+                ]
+
+                # Get list
+                sublist = shn_pr_person_sublist(request, 'identity', session.pr_person, fields=fields)
+
+                if sublist:
+                    output.update(sublist)
+
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit addresses -----------------------------------------
+        elif method=="address":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Addresses')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                # Which fields?
+                fields = [
+                        db.pr_address.id,
+                        db.pr_address.co_name,
+                        db.pr_address.street1,
+                        db.pr_address.postcode,
+                        db.pr_address.city,
+                        db.pr_address.country,
+                ]
+
+                # Get list
+                sublist = shn_pr_person_sublist(request, 'address', session.pr_person, fields=fields)
+
+                if sublist:
+                    output.update(sublist)
+
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit contact information -------------------------------
+        elif method=="contact":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Basic Details')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                # Which fields?
+                fields = [
+                        db.pr_contact.id,
+                        db.pr_contact.name,
+                        db.pr_contact.person_name,
+                        db.pr_contact.opt_pr_contact_method,
+                        db.pr_contact.value,
+                        db.pr_contact.priority,
+                ]
+
+                # Get list
+                sublist = shn_pr_person_sublist(request, 'contact', session.pr_person, fields=fields)
+
+                if sublist:
+                    output.update(sublist)
+
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit roles ---------------------------------------------
+        elif method=="role":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Roles')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                items=None
+
+                output.update(dict(items=items))
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit status information --------------------------------
+        elif method=="status":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Status Information')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                items=None
+                form=None
+
+                output.update(dict(items=items, form=form))
+                return output
+
+            else: # other representation
+                pass
+
+        # View, add or edit group memberships ---------------------------------
+        elif method=="group":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Group Memberships')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                items=None
+
+                output.update(dict(items=items))
+                return output
+
+            else: # other representation
+                pass
+
+        else: # other method
             pass
-    else:
-        # representation other than HTML
-        pass
 
     # Default CRUD action: forward to REST controller
     crud.settings.delete_onvalidation=shn_pentity_ondelete
@@ -257,6 +487,14 @@ def image_person():
 def identity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'identity')
+
+def contact():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'contact')
+
+def address():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'address')
 
 def presence():
     "RESTlike CRUD controller"

@@ -181,11 +181,17 @@ class SQLTABLE2(TABLE):
                     r = ur[:truncate - 3].encode('utf8') + '...'
                 if id and linkto and field.type == 'id':
                     link_id = sqlrows._db[tablename][r][id]
-                    row.append(TD(A(link_id, _href='%s/%s' % (linkto,
-                               link_id))))
+                    try:
+                        href = linkto(link_id)
+                    except TypeError:
+                        href = '%s/%s' % (linkto, link_id)
+                    row.append(TD(A(link_id, _href=href)))
                 elif linkto and field.type == 'id':
-                    row.append(TD(A(r, _href='%s/%s' % (linkto,
-                               r))))
+                    try:
+                        href = linkto(r)
+                    except TypeError:
+                        href = '%s/%s' % (linkto, r)
+                    row.append(TD(A(r, _href=href)))
                 elif linkto and field.type[:9] == 'reference':
                     row.append(TD(A(r, _href='%s/%s/%s' % (linkto,
                                field.type[10:], r))))

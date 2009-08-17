@@ -17,7 +17,8 @@ pr_image_type_opts = {
     2:T('Sketch'),
     3:T('Fingerprint'),
     4:T('X-Ray'),
-    5:T('Document Scan')
+    5:T('Document Scan'),
+    99:T('other')
     }
 
 opt_pr_image_type = SQLTable(None, 'opt_pr_image_type',
@@ -26,6 +27,27 @@ opt_pr_image_type = SQLTable(None, 'opt_pr_image_type',
                     default = 1,
                     label = T('Image Type'),
                     represent = lambda opt: opt and pr_image_type_opts[opt]))
+
+pr_presence_condition_opts = {
+    1:T('Check-In'),                # Don't change - VITA: Check-In to a location (e.g. accommodation/storage)
+    2:T('Check-Out'),               # Don't change - VITA: Check-Out from a location
+    3:T('Reconfirmation'),          # Don't change - VITA: Reconfirmation of continuous presence
+    4:T('Procedure'),               # Don't change - VITA: Presence for a procedure (temporary)
+    5:T('Transfer'),                # Don't change - VITA: Transfer from/to different location
+    6:T('Transit'),                 # Don't change - VITA: Transit via the current location
+    7:T('Missing'),                 # Don't change - VITA: Missing from a location
+    8:T('Lost'),                    # Don't change - VITA: Finally lost, e.g. destroyed/disposed
+    9:T('Changed'),                 # Don't change - VITA: Changed tracking item (e.g. Person deceased)
+    10:T('Checkpoint'),             # Don't change - VITA: Passing a checkpoint
+    99:T('Found')                   # Don't change - VITA: Found (general presence)
+    }
+
+opt_pr_presence_condition = SQLTable(None, 'opt_pr_presence_condition',
+                        db.Field('opt_pr_presence_condition','integer',
+                        requires = IS_IN_SET(pr_presence_condition_opts),
+                        default = 99,
+                        label = T('Presence Condition'),
+                        represent = lambda opt: opt and pr_presence_condition_opts[opt]))
 
 #
 # Images ----------------------------------------------------------------------
@@ -67,18 +89,35 @@ resource = 'presence'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                           # Personal Entity Reference
+                Field('observer'),                  # Person observing
+                Field('reporter'),                  # Person reporting
                 location_id,                        # Named Location Reference
                 Field('location_details'),          # Details on Location
                 Field('lat'),                       # Latitude
                 Field('lon'),                       # Longitude
-                Field('time', 'datetime'),          # Time of Sighting
-                Field('description'),               # Short Description
+                Field('time', 'datetime'),          # Time
+                opt_pr_presence_condition,          # Presence Condition
+                Field('procedure'),                 # Procedure description (for procedure) TODO: replace by option field?
+                Field('origin'),                    # Origin (for transfer and transit) TODO: replace by location reference?
+                Field('destination'),               # Destination (for transfer and transit) TODO: replace by location reference?
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 #
 # Settings and Restrictions
 #
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+# Observer
+db[table].observer.requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
+db[table].observer.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
+db[table].observer.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+db[table].observer.ondelete = 'RESTRICT'
+
+# Reporter
+db[table].reporter.requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
+db[table].reporter.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
+db[table].reporter.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+db[table].reporter.ondelete = 'RESTRICT'
 
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lon.requires = IS_NULL_OR(IS_LON())

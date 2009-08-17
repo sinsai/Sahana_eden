@@ -186,7 +186,7 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Registered Appearances')
+                subtitle=T('Presence Log')
                 output=dict(title=title, subtitle=subtitle, pheader=pheader)
 
                 # Which fields?

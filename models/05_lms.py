@@ -242,8 +242,6 @@ db[table].name.label = T("Product Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].description.label = T("Product Description")
 db[table].person_id.label = T("Sender/Donor/Consignor")
-db[table].person_id.label = T("Designated for")
-
 title_create = T('Add Relief Item')
 title_display = T('Relief Item Details')
 title_list = T('List Relief Item(s)')

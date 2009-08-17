@@ -77,6 +77,10 @@ def catalogue_subcat():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'catalogue_subcat')
 	
+def item():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'item')
+	
 def inventory():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'inventory')

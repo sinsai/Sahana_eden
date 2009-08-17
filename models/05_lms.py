@@ -206,3 +206,55 @@ msg_record_modified = T('Relief Item Sub-Category updated')
 msg_record_deleted = T('Relief Item Sub-Category deleted')
 msg_list_empty = T('No Relief Item Sub-Category currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Items
+resource = 'item'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                db.Field('ordered_list_item'),
+				db.Field('airway_bill'),
+				db.Field('name'),
+                db.Field('description'),
+				person_id,
+				db.Field('recipient'),
+				db.Field('designated'),
+				db.Field('quantity', 'double', default=0.00),
+				db.Field('shortage', 'double', default=0.00),
+				db.Field('net_quantity'),
+				db.Field('measure_unit'),
+				db.Field('specifications'),
+				db.Field('unit_size', 'integer', default=1, notnull=True),
+				db.Field('weight', 'double', default=0.00),
+				db.Field('date', 'datetime'),
+				db.Field('time', 'datetime'),
+				db.Field('comments', 'text'),
+				db.Field('attachment', 'upload', autodelete=True),
+				db.Field('price', 'double', default=0.00),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].ordered_list_item.requires = IS_NOT_EMPTY()
+db[table].name.requires = IS_NOT_EMPTY()
+db[table].ordered_list_item.label = T("Ordered List Item")
+db[table].ordered_list_item.comment = SPAN("*", _class="req")
+db[table].airway_bill.label = T("Air Way Bill (AWB)")
+db[table].airway_bill.comment = SPAN("*", _class="req")
+db[table].name.label = T("Product Name")
+db[table].name.comment = SPAN("*", _class="req")
+db[table].description.label = T("Product Description")
+db[table].person_id.label = T("Sender/Donor/Consignor")
+db[table].person_id.label = T("Designated for")
+
+title_create = T('Add Relief Item')
+title_display = T('Relief Item Details')
+title_list = T('List Relief Item(s)')
+title_update = T('Edit Relief Item(s)')
+title_search = T('Search Relief Item(s)')
+subtitle_create = T('Add New Relief Item')
+subtitle_list = T('Relief Items')
+label_list_button = T('List Relief Item')
+label_create_button = T('Add Relief Item')
+msg_record_created = T('Relief Item added')
+msg_record_modified = T('Relief Item updated')
+msg_record_deleted = T('Relief Item deleted')
+msg_list_empty = T('No Relief Item currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)

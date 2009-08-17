@@ -63,27 +63,34 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 # Presence --------------------------------------------------------------------
 #
-
 resource = 'presence'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                pr_pe_id,                         # Personal Entity Reference
-                location_id,                        # Location
+                pr_pe_id,                           # Personal Entity Reference
+                location_id,                        # Named Location Reference
                 Field('location_details'),          # Details on Location
                 Field('lat'),                       # Latitude
                 Field('lon'),                       # Longitude
-                Field('time_start', 'datetime'),    # Start time
-#                Field('time_end', 'datetime'),      # End time
+                Field('time', 'datetime'),          # Time of Sighting
                 Field('description'),               # Short Description
-#                Field('details','text'),            # Detailed Description
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
+#
+# Settings and Restrictions
+#
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].time_start.label = T('Date and Time')
 
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lon.requires = IS_NULL_OR(IS_LON())
 
+#
+# Labels
+#
+db[table].time.label = T('Date/Time')
+
+#
+# CRUD Strings
+#
 title_create = T('Presence')
 title_display = T('Presence Details')
 title_list = T('List Presence Records')

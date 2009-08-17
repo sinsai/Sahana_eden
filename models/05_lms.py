@@ -215,12 +215,13 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('airway_bill'),
 				db.Field('name'),
                 db.Field('description'),
+				db.Field('category', db.lms_catalogue_subcat),
 				person_id,
 				db.Field('recipient'),
 				db.Field('designated'),
 				db.Field('quantity', 'double', default=0.00),
 				db.Field('shortage', 'double', default=0.00),
-				db.Field('net_quantity'),
+				db.Field('net_quantity', writable=False),
 				db.Field('measure_unit'),
 				db.Field('specifications'),
 				db.Field('unit_size', 'integer', default=1, notnull=True),
@@ -240,7 +241,10 @@ db[table].airway_bill.comment = SPAN("*", _class="req")
 db[table].name.label = T("Product Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].description.label = T("Product Description")
+db[table].category.requires = IS_IN_DB(db, 'lms_catalogue_cat.id', 'lms_catalogue_cat.name')
+db[table].category.comment = DIV(A(T('Add Relief Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalogue_subcat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Relief Item Category.")))
 db[table].person_id.label = T("Sender/Donor/Consignor")
+db[table].designated.label = T("Designated for")
 title_create = T('Add Relief Item')
 title_display = T('Relief Item Details')
 title_list = T('List Relief Item(s)')

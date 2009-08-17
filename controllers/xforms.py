@@ -91,7 +91,7 @@ def csvdata(nodelist):
                 data = data + "," + subnode.childNodes[0].data
             except:
                 data = data+ ","
-    return data[1:]+"\n"
+    return data[1:] + "\n"
 
 def csvheader(parent,nodelist):
     """Gives the header for the csv"""
@@ -108,12 +108,12 @@ def importxml(db,xmlinput):
     web2py"""
     doc = xml.dom.minidom.parseString(xmlinput)
     parent = doc.childNodes[0].tagName
-    csvout = csvheader(parent,doc.childNodes[0].childNodes)
+    csvout = csvheader(parent, doc.childNodes[0].childNodes)
     for subnode in doc.childNodes:
-        csvout=csvout+csvdata(subnode.childNodes)
+        csvout = csvout + csvdata(subnode.childNodes)
     fh = StringIO.StringIO()
     fh.write(csvout)
-    fh.seek(0,0)
+    fh.seek(0, 0)
     try:
         db[parent].import_from_csv_file(fh)
         return 1

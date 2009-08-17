@@ -58,6 +58,9 @@ crud = CrudS3(globals(),db)
 from gluon.tools import Service
 service = Service(globals())
 
+# VITA
+vita = Vita(globals(),db)
+
 # Reusable timestamp fields
 timestamp = SQLTable(None, 'timestamp',
             Field('created_on', 'datetime',

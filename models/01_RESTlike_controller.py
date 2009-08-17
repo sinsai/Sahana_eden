@@ -238,15 +238,19 @@ def shn_has_permission(name, table_name, record_id = 0):
             authorised = True
         else:
             # Authentication required for Create/Update/Delete.
-            authorised = auth.is_logged_in()
+            authorised = auth.is_logged_in() or auth.basic()
     else:
         # Full policy
-        # Administrators are always authorised
-        if auth.has_membership(1):
-            authorised = True
+        if auth.is_logged_in() or auth.basic():
+            # Administrators are always authorised
+            if auth.has_membership(1):
+                authorised = True
+            else:
+                # Require records in auth_permission to specify access
+                authorised = auth.has_permission(name, table_name, record_id)
         else:
-            # Require records in auth_permission to specify access
-            authorised = auth.has_permission(name, table_name, record_id)
+            # No access for anonymous
+            authorised = False
     return authorised
 
 def shn_accessible_query(name, table):
@@ -455,7 +459,55 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
     pagenav.append(lastlink)
     return pagenav
 
-# Subroutines broken out for maintainability (DRY, easier to follow flow of main function)
+# CRUD subroutines broken out for maintainability, easier to follow flow of main function
+# Create
+def shn_create(module, table, resource, representation, main, onvalidation, onaccept):
+    # Audit
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
+    if representation == "html":
+        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+        # Check for presence of Custom View
+        custom_view = '%s_create.html' % resource
+        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+        if os.path.exists(_custom_view):
+            response.view = module + '/' + custom_view
+        else:
+            response.view = 'create.html'
+        try:
+            title = s3.crud_strings.title_create
+        except:
+            title = T('Add')
+        try:
+            label_list_button = s3.crud_strings.label_list_button
+        except:
+            label_list_button = T('List All')
+        list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
+        return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
+    elif representation == "plain":
+        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        response.view = 'plain.html'
+        return dict(item=form)
+    elif representation == "popup":
+        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        response.view = 'popup.html'
+        return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
+    elif representation == "json":
+        return import_json(method='create')
+    elif representation == "csv":
+        # Read in POST
+        file = request.vars.filename.file
+        try:
+            import_csv(file, table)
+            session.flash = T('Data uploaded')
+        except: 
+            session.error = T('Unable to parse CSV file!')
+        redirect(URL(r=request))
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Read
 def shn_read(module, table, resource, record, representation, deletable, editable):
     authorised = shn_has_permission('read', table, record)
     if authorised:
@@ -517,6 +569,40 @@ def shn_read(module, table, resource, record, representation, deletable, editabl
         session.error = UNAUTHORISED
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['read', record])}))
 
+# Update
+def shn_update(module, table, resource, record, representation, deletable, onvalidation, onaccept):
+    # Audit
+    crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
+    crud.settings.update_deletable = deletable
+    if representation == "html":
+        form = crud.update(table, record, onvalidation=onvalidation, onaccept=onaccept)
+        # Check for presence of Custom View
+        custom_view = '%s_update.html' % resource
+        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+        if os.path.exists(_custom_view):
+            response.view = module + '/' + custom_view
+        else:
+            response.view = 'update.html'
+        try:
+            title = s3.crud_strings.title_update
+        except:
+            title = T('Edit')
+        if s3.crud_strings and s3.crud_strings.label_list_button:
+            list_btn = A(s3.crud_strings.label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
+            return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
+        else:
+            return dict(module_name=module_name, form=form, title=title)
+    elif representation == "plain":
+        form = crud.update(table, record, onvalidation=onvalidation, onaccept=onaccept)
+        response.view = 'plain.html'
+        return dict(item=form)
+    elif representation == "json":
+        return import_json(method='update')
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Delete
 def shn_delete(table, resource, record, representation):
     # Audit
     shn_audit_delete(resource, record, representation)
@@ -752,17 +838,29 @@ def shn_rest_controller(module, resource,
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
                 # We don't yet implement PUT for create/update, although Web2Py does now support it
                 if db(db[table].id == record).select():
-                    # resource exists, so update
+                    # resource exists: Update
+                    # Not implemented
+                    raise HTTP(501)
                     authorised = shn_has_permission('update', table, record)
                     if authorised:
+                        #return shn_update(module, table, resource, record, representation, deletable, onvalidation, onaccept)
+                        # need to parse entity: http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7
                         pass
+                    else:
+                        # Unauthorised
+                        raise HTTP(401)
                 else:
-                    # resource doesn't exist, so create
+                    # resource doesn't exist: Create
+                    # Not implemented
+                    raise HTTP(501)
                     authorised = shn_has_permission('create', table)
                     if authorised:
+                        #return shn_create(module, table, resource, representation, main, onvalidation, onaccept)
+                        # need to parse entity: http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7
                         pass
-                # Not implemented
-                raise HTTP(501)
+                    else:
+                        # Unauthorised
+                        raise HTTP(401)
             else:
                 # Unsupported HTTP method: POST, HEAD, OPTIONS, TRACE, CONNECT
                 # Not implemented
@@ -773,95 +871,25 @@ def shn_rest_controller(module, resource,
                 record = request.args[1]
             except:
                 record = None
-                pass
             if method == "create":
                 authorised = shn_has_permission(method, table)
                 if authorised:
-                    # Audit
-                    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
-                    if representation == "html":
-                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
-                        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
-                        # Check for presence of Custom View
-                        custom_view = '%s_create.html' % resource
-                        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
-                        if os.path.exists(_custom_view):
-                            response.view = module + '/' + custom_view
-                        else:
-                            response.view = 'create.html'
-                        try:
-                            title = s3.crud_strings.title_create
-                        except:
-                            title = T('Add')
-                        try:
-                            label_list_button = s3.crud_strings.label_list_button
-                        except:
-                            label_list_button = T('List All')
-                        list_btn = A(label_list_button, _href=URL(r=request, f=resource), _id='list-btn')
-                        return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
-                    elif representation == "plain":
-                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
-                        response.view = 'plain.html'
-                        return dict(item=form)
-                    elif representation == "popup":
-                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
-                        response.view = 'popup.html'
-                        return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
-                    elif representation == "json":
-                        return import_json(method='create')
-                    elif representation == "csv":
-                        # Read in POST
-                        file = request.vars.filename.file
-                        try:
-                            import_csv(file, table)
-                            session.flash = T('Data uploaded')
-                        except: 
-                            session.error = T('Unable to parse CSV file!')
-                        redirect(URL(r=request))
-                    else:
-                        session.error = BADFORMAT
-                        redirect(URL(r=request))
+                    return shn_create(module, table, resource, representation, main, onvalidation, onaccept)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args='create')}))
-            elif method == "display" or method == "read":
+
+            elif method == "read" or method == "display":
                 redirect(URL(r=request, args=record))
+
             elif method == "update":
                 authorised = shn_has_permission(method, table, record)
                 if authorised:
-                    # Audit
-                    crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
-                    crud.settings.update_deletable = deletable
-                    if representation == "html":
-                        form = crud.update(table, record, onvalidation=onvalidation, onaccept=onaccept)
-                        # Check for presence of Custom View
-                        custom_view = '%s_update.html' % resource
-                        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
-                        if os.path.exists(_custom_view):
-                            response.view = module + '/' + custom_view
-                        else:
-                            response.view = 'update.html'
-                        try:
-                            title = s3.crud_strings.title_update
-                        except:
-                            title = T('Edit')
-                        if s3.crud_strings and s3.crud_strings.label_list_button:
-                            list_btn = A(s3.crud_strings.label_list_button, _href=URL(r=request, f=resource),_id='list-btn')
-                            return dict(module_name=module_name, form=form, title=title, list_btn=list_btn)
-                        else:
-                            return dict(module_name=module_name, form=form, title=title)
-                    elif representation == "plain":
-                        form = crud.update(table, record, onvalidation=onvalidation, onaccept=onaccept)
-                        response.view = 'plain.html'
-                        return dict(item=form)
-                    elif representation == "json":
-                        return import_json(method='update')
-                    else:
-                        session.error = BADFORMAT
-                        redirect(URL(r=request))
+                    return shn_update(module, table, resource, record, representation, deletable, onvalidation, onaccept)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['update', record])}))
+
             elif method == "delete":
                 authorised = shn_has_permission(method, table, record)
                 if authorised:
@@ -869,6 +897,7 @@ def shn_rest_controller(module, resource,
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record])}))
+            
             elif method == "search":
                 authorised = shn_has_permission('read', table)
                 if authorised:

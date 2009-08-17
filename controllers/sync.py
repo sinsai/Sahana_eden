@@ -123,7 +123,7 @@ def getconf():
 @service.xmlrpc
 def getAuthCred(uuid):
     """
-    Returns configurations of the system.
+    Returns authentication information for servers, if server isn't present in db, it adds it assigning default properties
     Used by local DaemonX
     """
     if not request.client == "127.0.0.1":
@@ -131,9 +131,13 @@ def getAuthCred(uuid):
     temp = db(db.sync_partner.uuid == uuid).select()
     toreturn = {}
     if len(temp) is 0:
-        toreturn['username'] = "username"
-        toreturn['password'] = "password"
+        # This is a new partner, so add to database
+        defaultsyncpolicy = db().select(db.sync_setting.policy)[0].policy
+        db.sync_partner.insert(uuid = uuid, policy = defaultsyncpolicy, username = None, password = None)
+        toreturn['username'] = None
+        toreturn['password'] = None
     else:
+        # This is an existing partner 
         toreturn['username'] = temp[0].username
         toreturn['password'] = temp[0].password
     return toreturn
@@ -153,7 +157,7 @@ def putdata(uuid, username, password, nicedbdump):
     sync_partners = db().select(db.sync_partner.uuid)
     for partner in sync_partners:
         if uuid == partner[0].uuid:
-            sync_policy = db(db.sync_setting.uuid==uuid).select()[0].policy
+            sync_policy = db(db.sync_partner.uuid==uuid).select()[0].policy
             # no need to carry on looping
             break
     if not sync_policy:
@@ -275,7 +279,7 @@ def putdata(uuid, username, password, nicedbdump):
     return True
 
 #function will take a date and uuid to caller and return new data only
-#service.json traslates SQL into json but json-rpc doesnt, so we convert it into lists
+#service.json translates SQL into json but json-rpc doesnt, so we convert it into lists
 @service.json
 @service.xml
 @service.jsonrpc

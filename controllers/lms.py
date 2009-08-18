@@ -23,17 +23,19 @@ response.menu_options = [
 			[T('Search Locations'), False, URL(r=request, f='storage_loc', args='search')]
 		]],
         [T('Storage Bins'), False, '#',[
+			[T('Add Bin Type'), False, URL(r=request, f='storage_bin_type', args='create')],
 			[T('Add Bins'), False, URL(r=request, f='storage_bin', args='create')],
 			[T('List Bins'), False, URL(r=request, f='storage_bin')],
+			[T('List Bin Types'), False, URL(r=request, f='storage_bin_type')],
 			[T('Search Bins'), False, URL(r=request, f='storage_bin', args='search')]
 		]],			
         [T('Relief Item Catalogue'), False, '#',[
 			[T('Add Category'), False, URL(r=request, f='catalogue_cat', args='create')],
+			[T('List Category'), False, URL(r=request, f='catalogue_cat')],
 			[T('Search & Edit Category'), False, URL(r=request, f='catalogue_cat', args='search')],
 			[T('Add Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='create')],
-			[T('Search & Edit Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='search')],
 			[T('List Sub-Category'), False, URL(r=request, f='catalogue_subcat')],
-			[T('List Category'), False, URL(r=request, f='catalogue_cat')]
+			[T('Search & Edit Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='search')]
 		]],
     ]],
     [T('Intake System'), False, '#',[
@@ -65,6 +67,10 @@ def storage_loc():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'storage_loc')
 
+def storage_bin_type():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'storage_bin_type')	
+	
 def storage_bin():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'storage_bin')	

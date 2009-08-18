@@ -56,9 +56,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('description', length=256),
 				db.Field('category'),
                 admin_id,
-                location_id,
                 person_id,
                 db.Field('address', 'text'),
+				location_id,
 				db.Field('attachment', 'upload', autodelete=True),
                 db.Field('comments'),
                 migrate=migrate)
@@ -71,6 +71,7 @@ db[table].name.label = T("Site Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].admin.label = T("Site Manager")
 db[table].person_id.label = T("Contact Person")
+db[table].person_id.represent = lambda id: (id and [(db(db.pr_person.id==id).select()[0].first_name) + (db(db.pr_person.id==id).select()[0].last_name)] or ["None"])[0]
 db[table].attachment.label = T("Image/Other Attachment")
 title_create = T('Add Site ')
 title_display = T('Site Details')
@@ -91,9 +92,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'storage_loc'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
+                db.Field('site_id', db.lms_site),
                 db.Field('name', notnull=True),
                 db.Field('description', length=256),
-				db.Field('site_id', db.lms_site),
                 location_id,
                 db.Field('dimension'),
                 db.Field('area'),
@@ -102,6 +103,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
+db[table].site_id.label = T("Site")
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
 db[table].name.label = T("Storage Location Name")

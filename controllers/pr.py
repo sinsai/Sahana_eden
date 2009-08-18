@@ -317,11 +317,12 @@ def person():
                 # Which fields?
                 fields = [
                         db.pr_address.id,
+                        db.pr_address.opt_pr_address_type,
                         db.pr_address.co_name,
                         db.pr_address.street1,
                         db.pr_address.postcode,
                         db.pr_address.city,
-                        db.pr_address.country,
+                        db.pr_address.opt_pr_country,
                 ]
 
                 # Get list

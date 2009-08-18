@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 
 #
-# Sahanapy VITA - Part 02_pr: Person Registry
+# Sahanapy VITA - Part 02_pr: Person Tracking and Tracing
 #
 # created 2009-07-15 by nursix
 #
+# This part defines:
+#       - PersonEntity (pentity)    - a person entity
+#       - Person (person)           - an individual person
+#       - Group (group)             - a group of persons
+#       - Network (network)         - a social network layer of a person
 
 module = 'pr'
-#
-# Settings --------------------------------------------------------------------
+
+# *****************************************************************************
+# Settings
 #
 resource = 'setting'
 table = module + '_' + resource
@@ -25,161 +31,18 @@ if not len(db().select(db[table].ALL)):
         audit_write = False
     )
 
+# *****************************************************************************
+# PersonEntity (pentity)
 #
-# Gender ----------------------------------------------------------------------
-#
-pr_person_gender_opts = {
-    1:T('unknown'),
-    2:T('female'),
-    3:T('male')
-    }
-
-opt_pr_gender = SQLTable(None, 'opt_pr_gender',
-                    db.Field('opt_pr_gender','integer',
-                    requires = IS_IN_SET(pr_person_gender_opts),
-                    default = 1,
-                    label = T('Gender'),
-                    represent = lambda opt: opt and pr_person_gender_opts[opt]))
-
-#
-# Age Group -------------------------------------------------------------------
-#
-pr_person_age_group_opts = {
-    1:T('unknown'),
-    2:T('Infant (0-1)'),
-    3:T('Child (2-11)'),
-    4:T('Adolescent (12-20)'),
-    5:T('Adult (21-50)'),
-    6:T('Senior (50+)')
-    }
-
-opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
-                    db.Field('opt_pr_age_group','integer',
-                    requires = IS_IN_SET(pr_person_age_group_opts),
-                    default = 1,
-                    label = T('Age Group'),
-                    represent = lambda opt: opt and pr_person_age_group_opts[opt]))
-
-#
-# Marital Status --------------------------------------------------------------
-#
-
-pr_marital_status_opts = {
-    1:T('unknown'),
-    2:T('single'),
-    3:T('married'),
-    4:T('separated'),
-    5:T('divorced'),
-    6:T('widowed'),
-    99:T('other')
-}
-
-opt_pr_marital_status = SQLTable(None, 'opt_pr_marital_status',
-                        db.Field('opt_pr_marital_status','integer',
-                        requires = IS_IN_SET(pr_marital_status_opts),
-                        default = 1,
-                        label = T('Marital Status'),
-                        represent = lambda opt: opt and pr_marital_status_opts[opt]))
-
-#
-# Religion --------------------------------------------------------------------
-#
-pr_religion_opts = {
-    1:T('none'),
-    2:T('Christian'),
-    3:T('Muslim'),
-    4:T('Jew'),
-    5:T('Bhuddist'),
-    6:T('Hindu'),
-    99:T('other')
-    }
-
-opt_pr_religion = SQLTable(None, 'opt_pr_religion',
-                    db.Field('opt_pr_religion','integer',
-                    requires = IS_IN_SET(pr_religion_opts),
-                    default = 1,
-                    label = T('Religion'),
-                    represent = lambda opt: opt and pr_religion_opts[opt]))
-
-#
-# Nationality and Country of Residence ----------------------------------------
-#
-pr_nationality_opts = shn_list_of_nations
-
-opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
-                        db.Field('opt_pr_nationality','integer',
-                        requires = IS_IN_SET(pr_nationality_opts),
-                        default = 999, # unknown
-                        label = T('Nationality'),
-                        represent = lambda opt: opt and pr_nationality_opts[opt]))
-
-opt_pr_country = SQLTable(None, 'opt_pr_country',
-                        db.Field('opt_pr_country','integer',
-                        requires = IS_IN_SET(pr_nationality_opts),
-                        default = 999, # unknown
-                        label = T('Country of Residence'),
-                        represent = lambda opt: opt and pr_nationality_opts[opt]))
-
-#
-# ID Types --------------------------------------------------------------------
-#
-pr_id_type_opts = {
-    1:T('Passport'),
-    2:T('National ID Card'),
-    3:T('Driving License'),
-    99:T('other')
-    }
-
-opt_pr_id_type = SQLTable(None, 'opt_pr_id_type',
-                    db.Field('opt_pr_id_type','integer',
-                    requires = IS_IN_SET(pr_id_type_opts),
-                    default = 1,
-                    label = T('ID type'),
-                    represent = lambda opt: opt and pr_id_type_opts[opt]))
-
-#
-# Group types -----------------------------------------------------------------
-#
-pr_group_type_opts = {
-    1:T('Family'),
-    2:T('Tourist Group'),
-    3:T('Relief Team'),
-    4:T('other')
-    }
-
-opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
-                    db.Field('opt_pr_group_type','integer',
-                    requires = IS_IN_SET(pr_group_type_opts),
-                    default = 4,
-                    label = T('Group Type'),
-                    represent = lambda opt: opt and pr_group_type_opts[opt]))
-
-#
-# Contact Methods -------------------------------------------------------------
-#
-pr_contact_method_opts = {
-    1:T('E-Mail'),
-    2:T('Telephone'),
-    3:T('Mobile Phone'),
-    4:T('Fax'),
-    99:T('other')
-    }
-
-opt_pr_contact_method = SQLTable(None, 'opt_pr_contact_method',
-                        db.Field('opt_pr_contact_method','integer',
-                        requires = IS_IN_SET(pr_contact_method_opts),
-                        default = 99,
-                        label = T('Contact Method'),
-                        represent = lambda opt: opt and pr_contact_method_opts[opt]))
 
 #
 # PersonEntity classes --------------------------------------------------------
 #
 pr_pentity_class_opts = {
-    1:T('Person'),                  # used in PR  - don't change
-    2:T('Group'),                   # used in PR  - don't change
-    3:T('Body'),                    # used in HRM - don't change
-    4:T('Object')                   # used in HRM - don't change
+    1:T('Person'),                  # used in VITA - don't change
+    2:T('Group'),                   # used in VITA - don't change
+    3:T('Body'),
+    4:T('Object')
     }
 
 opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
@@ -190,7 +53,7 @@ opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
                     represent = lambda opt: opt and pr_pentity_class_opts[opt]))
 
 #
-# Person-Entity ---------------------------------------------------------------
+# pentity table ---------------------------------------------------------------
 #
 resource = 'pentity'
 table = module + '_' + resource
@@ -206,7 +69,7 @@ db[table].parent.label = T('belongs to')
 db[table].deleted.readable = True
 
 #
-# shn_pentity_represent
+# shn_pentity_represent -------------------------------------------------------
 #
 def shn_pentity_represent(pentity):
     """
@@ -264,7 +127,7 @@ def shn_pentity_represent(pentity):
     return pentity_str
 
 #
-# Reusable field for other tables to reference
+# Reusable field for other tables to reference --------------------------------
 #
 pr_pe_id = SQLTable(None, 'pe_id',
                 Field('pr_pe_id', db.pr_pentity,
@@ -275,9 +138,7 @@ pr_pe_id = SQLTable(None, 'pe_id',
                 ))
 
 #
-# Person Entity Field Set
-#
-# for Person Entity Tables
+# Person Entity Field Set -----------------------------------------------------
 #
 pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
                     Field('pr_pe_id', db.pr_pentity,
@@ -300,8 +161,106 @@ pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
                     requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
                     ))
 
+# *****************************************************************************
+# Person (person)
 #
-# Person ----------------------------------------------------------------------
+
+#
+# Gender ----------------------------------------------------------------------
+#
+pr_person_gender_opts = {
+    1:T('unknown'),
+    2:T('female'),
+    3:T('male')
+    }
+
+opt_pr_gender = SQLTable(None, 'opt_pr_gender',
+                    db.Field('opt_pr_gender','integer',
+                    requires = IS_IN_SET(pr_person_gender_opts),
+                    default = 1,
+                    label = T('Gender'),
+                    represent = lambda opt: opt and pr_person_gender_opts[opt]))
+
+#
+# Age Group -------------------------------------------------------------------
+#
+pr_person_age_group_opts = {
+    1:T('unknown'),
+    2:T('Infant (0-1)'),
+    3:T('Child (2-11)'),
+    4:T('Adolescent (12-20)'),
+    5:T('Adult (21-50)'),
+    6:T('Senior (50+)')
+    }
+
+opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
+                    db.Field('opt_pr_age_group','integer',
+                    requires = IS_IN_SET(pr_person_age_group_opts),
+                    default = 1,
+                    label = T('Age Group'),
+                    represent = lambda opt: opt and pr_person_age_group_opts[opt]))
+
+#
+# Marital Status --------------------------------------------------------------
+#
+pr_marital_status_opts = {
+    1:T('unknown'),
+    2:T('single'),
+    3:T('married'),
+    4:T('separated'),
+    5:T('divorced'),
+    6:T('widowed'),
+    99:T('other')
+}
+
+opt_pr_marital_status = SQLTable(None, 'opt_pr_marital_status',
+                        db.Field('opt_pr_marital_status','integer',
+                        requires = IS_IN_SET(pr_marital_status_opts),
+                        default = 1,
+                        label = T('Marital Status'),
+                        represent = lambda opt: opt and pr_marital_status_opts[opt]))
+
+#
+# Religion --------------------------------------------------------------------
+#
+pr_religion_opts = {
+    1:T('none'),
+    2:T('Christian'),
+    3:T('Muslim'),
+    4:T('Jew'),
+    5:T('Bhuddist'),
+    6:T('Hindu'),
+    99:T('other')
+    }
+
+opt_pr_religion = SQLTable(None, 'opt_pr_religion',
+                    db.Field('opt_pr_religion','integer',
+                    requires = IS_IN_SET(pr_religion_opts),
+                    default = 1,
+                    label = T('Religion'),
+                    represent = lambda opt: opt and pr_religion_opts[opt]))
+
+#
+# Nationality and Country of Residence ----------------------------------------
+#
+pr_nationality_opts = shn_list_of_nations
+
+opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
+                        db.Field('opt_pr_nationality','integer',
+                        requires = IS_IN_SET(pr_nationality_opts),
+                        default = 999, # unknown
+                        label = T('Nationality'),
+                        represent = lambda opt: opt and pr_nationality_opts[opt]))
+
+opt_pr_country = SQLTable(None, 'opt_pr_country',
+                        db.Field('opt_pr_country','integer',
+                        requires = IS_IN_SET(pr_nationality_opts),
+                        default = 999, # unknown
+                        label = T('Country of Residence'),
+                        represent = lambda opt: opt and pr_nationality_opts[opt]))
+
+#
+# person table ----------------------------------------------------------------
 #
 resource = 'person'
 table = module + '_' + resource
@@ -369,7 +328,9 @@ msg_record_deleted = T('Person deleted')
 msg_list_empty = T('No Persons currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Reusable field for other tables to reference
+#
+# person_id: reusable field for other tables to reference ---------------------
+#
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
                 requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
@@ -378,101 +339,29 @@ person_id = SQLTable(None, 'person_id',
                 ondelete = 'RESTRICT'
                 ))
 
+# *****************************************************************************
+# Group (group)
 #
-# Person Details (Sahana legacy) ----------------------------------------------
-#
-resource = 'person_details'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                person_id,
-                Field('birth_date','date'),             # Sahana legacy
-#                Field('country'),                       # Sahana legacy
-                opt_pr_nationality,                     # by nursix
-#                Field('race'),                          # Sahana legacy
-                Field('ethnicity'),                     # by nursix
-                Field('religion'),                      # Sahana legacy - TODO: make option field
-                Field('marital_status'),                # Sahana legacy - TODO: make option field
-                Field('occupation'),                    # Sahana legacy
-#                # Physical Details
-#                Field('eye_color'),                     # Sahana legacy - MPR
-#                Field('skin_color'),                    # Sahana legacy - MPR
-#                Field('hair_color'),                    # Sahana legacy - MPR
-#                Field('height'),                        # Sahana legacy - MPR
-#                Field('weight'),                        # Sahana legacy - MPR
-#                Field('distinctive_features','text'),   # Sahana legacy - MPR
-#                Field('blood_type'),                    # Sahana legacy - MPR
-#                Field('last_seen_location'),            # Sahana legacy - MPR
-#                Field('last_seen_clothing'),            # Sahana legacy - MPR
-#                Field('other_information','text'),      # Sahana legacy - MPR
-                # consciousness
-                Field('unconscious', 'boolean', default=False),
-                # senses
-                Field('blind', 'boolean', default=False),
-                Field('deaf', 'boolean', default=False),
-                # acute injuries and diseases
-                Field('injured', 'boolean', default=False),
-                Field('injuries'),
-                Field('diseased', 'boolean', default=False),
-                Field('acute_diseases'),
-                # handicaps
-                Field('physically_handicapped', 'boolean', default=False),
-                Field('physical_handicaps'),
-                Field('mentally_handicapped', 'boolean', default=False),
-                Field('mental_handicaps'),
-                # chronical diseases
-                Field('chronically_ill', 'boolean', default=False),
-                Field('chronic_diseases'),
-                # support needed
-                Field('needs_assistance', 'boolean', default=False),
-                Field('assistance_needed', 'text'),
-                Field('needs_medicine', 'boolean', default=False),
-                Field('medicine_needed', 'text'),
-                Field('needs_medical_support', 'boolean', default=False),
-                Field('medical_support_needed'),
-                Field('needs_special_transport', 'boolean', default=False),
-                Field('transport_requirements'),
-                Field('needs_attendance', 'boolean', default=False),
-                Field('needs_supervision', 'boolean', default=False),
-                migrate=migrate)
-
-db[table].birth_date.requires=IS_NULL_OR(IS_DATE())
-title_create = T('Add Person Details')
-title_display = T('Person Details')
-title_list = T('List Person Details')
-title_update = T('Edit Person Details')
-title_search = T('Search Person Details')
-subtitle_create = T('Add Person Details')
-subtitle_list = T('Person Details')
-label_list_button = T('List Person Details')
-label_create_button = T('Add Person Details')
-msg_record_created = T('Person Details added')
-msg_record_modified = T('Person Details updated')
-msg_record_deleted = T('Person Details deleted')
-msg_list_empty = T('No Person Details currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
-# Identitiy -------------------------------------------------------------------
+# Group types -----------------------------------------------------------------
 #
-resource = 'identity'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                person_id,                          # Reference to person
-                opt_pr_id_type,                     # ID type
-                Field('type'),                      # Description for type 'Other'
-                Field('value'),                     # ID value
-                Field('country_code', length=4),    # Country Code (for National ID Cards)
-                Field('ia_name'),                   # Name of issuing authority
-#                Field('ia_subdivision'),            # Name of issuing authority subdivision
-#                Field('ia_code'),                   # Code of issuing authority (if any)
-                Field('comment'))                   # a comment (optional)
+pr_group_type_opts = {
+    1:T('Family'),
+    2:T('Tourist Group'),
+    3:T('Relief Team'),
+    4:T('other')
+    }
 
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].ia_name.label = T("Issuing Authority")
+opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
+                    db.Field('opt_pr_group_type','integer',
+                    requires = IS_IN_SET(pr_group_type_opts),
+                    default = 4,
+                    label = T('Group Type'),
+                    represent = lambda opt: opt and pr_group_type_opts[opt]))
 
 #
-# Group -----------------------------------------------------------------------
-# TODO: elaborate!
+# group table -----------------------------------------------------------------
 #
 resource = 'group'
 table = module + '_' + resource
@@ -520,7 +409,7 @@ msg_list_empty = T('No Groups currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
-# Reusable field for other tables to reference
+# group_id: reusable field for other tables to reference ----------------------
 #
 group_id = SQLTable(None, 'group_id',
                 Field('group_id', db.pr_group,
@@ -530,104 +419,48 @@ group_id = SQLTable(None, 'group_id',
                 ondelete = 'RESTRICT'
                 ))
 
+# *****************************************************************************
+# Network (network)
 #
-# Group membership ------------------------------------------------------------
+pr_network_type_opts = {
+    1:T('Family'),
+    2:T('Friends'),
+    3:T('Colleagues'),
+    99:T('other')
+    }
+
+opt_pr_network_type = SQLTable(None, 'opt_pr_network_type',
+                    db.Field('opt_pr_network_type','integer',
+                    requires = IS_IN_SET(pr_network_type_opts),
+                    default = 99,
+                    label = T('Network Type'),
+                    represent = lambda opt: opt and pr_network_type_opts[opt]))
 #
-resource = 'group_membership'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                group_id,
-                person_id,
-                Field('group_head', 'boolean', default=False),
-                Field('description'),
-                Field('comment'),
-                migrate=migrate)
-
-db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [""])[0]
-
-#
-# Contact ---------------------------------------------------------------------
-#
-resource = 'contact'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                pr_pe_id,                               # Person Entity ID
-                Field('name'),                          # Contact name (optional)
-                opt_pr_contact_method,                  # Contact Method
-                Field('person_name'),                   # Contact person name
-                Field('priority'),                      # Priority
-                Field('value', notnull=True),
-                Field('comment'),                       # Comment
-                migrate=migrate)
-
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].value.requires = IS_NOT_EMPTY()
-
-db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
-
-title_create = T('Add Contact')
-title_display = T('Contact Details')
-title_list = T('List Contacts')
-title_update = T('Edit Contact')
-title_search = T('Search Contacts')
-subtitle_create = T('Add New Contact')
-subtitle_list = T('Contacts')
-label_list_button = T('List Contacts')
-label_create_button = T('Add Contact')
-msg_record_created = T('Contact added')
-msg_record_modified = T('Contact updated')
-msg_record_deleted = T('Contact deleted')
-msg_list_empty = T('No Contacts currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-#
-# Contacts to People ----------------------------------------------------------
-#
-resource = 'contact_to_person'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                person_id,                              # current, too keep it working
-#                pentity_id,                            # future
-                Field('contact_id', db.pr_contact),     # modify into reusable field
-                migrate=migrate)
-db[table].person_id.label = 'Person'
-db[table].contact_id.requires = IS_IN_DB(db, 'pr_contact.id', 'pr_contact.name')
-db[table].contact_id.label = 'Contact Detail'
-
-#
-# Network ---------------------------------------------------------------------
-#
-resource='sn_type' # TODO: make option field
-table=module+'_'+resource
-db.define_table(table,
-                db.Field('name')
-               )
-db[table].name.requires=IS_NOT_IN_DB(db, '%s.name' % table)
-
-if not len(db().select(db[table].ALL)):
-    db[table].insert(name = "Family")
-    db[table].insert(name = "Friends")
-    db[table].insert(name = "Colleagues")
-
-# Reusable field for other tables to reference
-opt_sn_type = SQLTable(None, 'opt_sn_type',
-                db.Field('network_type', db.pr_sn_type,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_sn_type.id', 'pr_sn_type.name')),
-                represent = lambda id: (id and [db(db.pr_sn_type.id==id).select()[0].name] or ["None"])[0],
-                comment = None,
-                ondelete = 'RESTRICT'
-                ))
-
-#
-# Network
+# network table ---------------------------------------------------------------
 #
 resource = 'network'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                person_id,                          # Reference to person
-                opt_sn_type,                        # ID type
-                Field('comment'))                   # a comment (optional)
+                person_id,                          # Reference to person (owner)
+                opt_pr_network_type,                # Network type
+                Field('comment'),                   # a comment (optional)
+                migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+#
+# network_id: reusable field for other tables to reference ----------------------
+#
+network_id = SQLTable(None, 'network_id',
+                Field('network_id', db.pr_network,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_network.id', '%(id)s')),
+                represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
+                comment = DIV(A(T('Add Network'), _class='popup', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
+                ondelete = 'RESTRICT'
+                ))
+
+# *****************************************************************************
+# Functions:
+#
 
 #
 # shn_pentity_ondelete --------------------------------------------------------
@@ -875,4 +708,5 @@ def shn_pr_person_sublist(request, subentity, person_id, fields=None, representa
 
 #
 #
-# END -------------------------------------------------------------------------
+# END
+# *****************************************************************************

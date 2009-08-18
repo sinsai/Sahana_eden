@@ -1,0 +1,31 @@
+{{extend 'layout.html'}}
+<h1>{{=T("Synchronization")}}</h1>
+{{=T("This page provides you with information about how to use the automatic synchronization feature of Sahana")}}.<br /> {{=T("For more information, see ")}}<a href="http://trac.sahanapy.org/wiki/BluePrintSynchronisation">{{=T("this")}}</a>.
+<br />
+{{=T("Right now, your system is set default synchronization scheme. You are currently able to synchronize your server with other servers.")}}
+<h3>{{=T("Important")}}</h3>
+<b> {{=T("For enhanced security, you are recommended to enter a username and password, and notify administrators of other machines in your organization to add this username and password against your UUID in Synchronization -> Sync Partners")}}</b>
+<h3>{{=T("How does it work?")}}</h3>
+{{=T("Your system has been assigned a unique identification (UUID), which other computers around you can use to identify you. To view your UUID, you may go to Synchronization -> Sync Settings.
+You can also see other settings on that page.")}}<br /><br />
+<h4>{{=T("Sync Settings")}}</h4>
+<b>UUID:</b> {{=T("Your unique identification key. It is a 16 character word (aka string). Other servers in your organization will recognize you from this.")}}<br/>
+<b>{{=T("Policy")}}:</b> {{=T("Refers to default syncronization policy adopted if data entry recieved from other machine is already present in your machine.")}}
+		<br/> {{=T("It gives four options: No Sync, Newer Timestamp, Keep All, Replace All")}}
+		<br/> {{=T("A practical example can be of a report of lost person. Now if one machine register him to be found on 16th August and another machine registers him to found on 17th August, then e.g. Newer timestamp will replace data entry of your machine with that of foriegn machine because that is newer one.")}}<br/>
+<b>{{=T("Username & Password")}}:</b> {{=T("Currently your system has default username and password. Username and Password are required by foriegn machines to sync data with your computer. You may set a username and password so that only those machines can fetch and submit data to your machines which your grant access by sharing your password.")}}<br />
+<b>{{=T("Zeroconf Port")}}:</b> {{=T("Sahana has to hook to a network port other than port being used by website (normally port 80). If your firewall blocks this port you have change it to any other free port. For information on eligible ports, see")}} <a href="http://www.iana.org/assignments/port-numbers">{{=T("this")}}</a><br/>
+<b>{{=T("Zeroconf Description")}}:</b> {{=T("You can add information about your organization here. It is the information which other servers can read about you.")}}<br/>
+<b>{{=T("RPC Service URL")}}:</b> {{=T("Required by other servers.")}}<br/><br/>
+
+<h4>{{=T("Sync Partners")}}</h4>
+{{=T("If you run multiple servers in a network, you would probably see this place listing some other machines. Sahana can automatically pick servers in your organization (if they have sync username and password of your machine or if it is set to default) and add them to your list of machines to perform synchronization with. You can modify individual sync policy for each server. You can also add username and password of that server to retrieve and send data to that server. You can also manually add other servers.")}} <br />
+<b>UUID:</b> {{=T("UUID of foreign Sahana server")}}<br />
+<b>{{=T("Policy")}}:</b> {{=T("how to deal with duplicate data found between your machine and that particular sahana instance.")}}<br />
+<b>{{=T("Username & Password")}}:</b> {{=T("Authentication information of foreign server.")}}<br /><br />
+
+<h4>{{=T("Sync History")}}</h4>
+{{=T("Here you will find all synchronization attempts made by either your machine or foreign machines for data exchange. This also lists data exchanges made using Sahana API.")}}<br/>
+<b>{{=T("Operation")}}:</b> {{=T("Which API function was called, it can only have two values: getdata refers to data export operation and putdata refers to data import operation.")}}<br/>
+<b>{{=T("Time Stamp")}}:</b> {{=T("Time at which data was exchanged.")}}<br/>
+<b>UUID:</b> {{=T("Machine with which data was exchanged.")}}

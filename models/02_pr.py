@@ -307,6 +307,7 @@ resource = 'person'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 pr_pe_fieldset,                         # Person Entity Field Set
+#                Field('name_unknown', 'boolean', default=False),
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
@@ -330,6 +331,7 @@ db.define_table(table, timestamp, deletion_status,
                 migrate=migrate)
 
 db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
+#db[table].name_unknown.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Name unknown|Please tag here if the name of the person is unknown (e.g. due to unconsciousness), and repeat the ID label or enter a placeholder (e.g. [unknown]) into the first name field."))
 
 db[table].opt_pr_gender.label = T('Gender')
 db[table].opt_pr_age_group.label = T('Age group')
@@ -642,10 +644,14 @@ def shn_pentity_ondelete(record):
 
     Also called by the shn_pentity_onvalidation function on deletion from update form
     """
-    if record.get('pr_pe_id'):
-        # del db.pr_pentity[record.pr_pe_id]
-        # Mark as deleted rather than really deleting
-        db(db.pr_pentity.id == record.pr_pe_id).update(deleted = True)
+    if request.vars.format:
+        representation = str.lower(request.vars.format)
+    else:
+        representation = "html"
+
+    if 'pr_pe_id' in record:
+        pr_pe_id = record.pr_pe_id
+        shn_delete('pr_pentity', 'pentity', pr_pe_id, representation)
     return
 
 #
@@ -774,7 +780,7 @@ def shn_pr_person_header(id, next=None):
                 "%s" % (record.date_of_birth or 'unknown'),
                 TH("Gender: "),
                 "%s" % pr_person_gender_opts[record.opt_pr_gender],
-                TH("")
+                "",
                 ),
             TR(
                 TH("Nationality"),

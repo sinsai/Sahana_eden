@@ -71,7 +71,7 @@ db[table].name.label = T("Site Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].admin.label = T("Site Manager")
 db[table].person_id.label = T("Contact Person")
-db[table].person_id.represent = lambda id: (id and [(db(db.pr_person.id==id).select()[0].first_name) + (db(db.pr_person.id==id).select()[0].last_name)] or ["None"])[0]
+db[table].person_id.represent = lambda id: (id and [(db(db.pr_person.id==id).select()[0].first_name)+' '+(db(db.pr_person.id==id).select()[0].last_name)] or ["None"])[0]
 db[table].attachment.label = T("Image/Other Attachment")
 title_create = T('Add Site ')
 title_display = T('Site Details')

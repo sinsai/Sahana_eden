@@ -496,6 +496,10 @@ def address():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'address')
 
+def pentity():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pentity')
+
 def presence():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')

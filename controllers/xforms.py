@@ -23,7 +23,7 @@ def create():
     controllers_list = []
 
     for field in table.fields:
-        if field in ['id','created_on','modified_on','uuid'] :
+        if field in ['id', 'created_on', 'modified_on', 'uuid'] :
             # This will get added server-side
             pass
         else:
@@ -54,7 +54,7 @@ def create():
             bindings_list.append(TAG['bind'](_nodeset=field, _type=_type, _required=required))
 
             # Controllers
-            if hasattr(table[field].requires, 'options'):
+            if hasattr(table[field].requires, 'option'):
                 items_list = []
                 for option in table[field].requires.theset:
                     items_list.append(TAG['item'](TAG['label'](option), TAG['value'](option)))
@@ -91,7 +91,7 @@ def csvdata(nodelist):
                 data = data + "," + subnode.childNodes[0].data
             except:
                 data = data+ ","
-    return data[1:]+"\n"
+    return data[1:] + "\n"
 
 def csvheader(parent,nodelist):
     """Gives the header for the csv"""
@@ -99,7 +99,7 @@ def csvheader(parent,nodelist):
     for subnode in nodelist:
         if (subnode.nodeType == subnode.ELEMENT_NODE):
             header = header + "," + parent + "." + subnode.tagName
-    return header[1:]+"\n"
+    return header[1:] + "\n"
 
 
 
@@ -108,9 +108,9 @@ def importxml(db,xmlinput):
     web2py"""
     doc = xml.dom.minidom.parseString(xmlinput)
     parent = doc.childNodes[0].tagName
-    csvout = csvheader(parent,doc.childNodes[0].childNodes)
+    csvout = csvheader(parent, doc.childNodes[0].childNodes)
     for subnode in doc.childNodes:
-        csvout=csvout+csvdata(subnode.childNodes)
+        csvout = csvout + csvdata(subnode.childNodes)
     fh = StringIO.StringIO()
     fh.write(csvout)
     fh.seek(0,0)
@@ -121,5 +121,5 @@ def importxml(db,xmlinput):
         return 0
 
 def post():
-    data = importxml(db,request.body.read())
+    data = importxml(db, request.body.read())
     return data

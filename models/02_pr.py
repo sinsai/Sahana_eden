@@ -68,7 +68,7 @@ pr_marital_status_opts = {
     1:T('unknown'),
     2:T('single'),
     3:T('married'),
-    4:T('departed'),
+    4:T('separated'),
     5:T('divorced'),
     6:T('widowed'),
     99:T('other')

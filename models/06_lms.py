@@ -104,7 +104,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('description', length=256),
                 location_id,
                 db.Field('capacity'),
-                db.Field('dimension'),
+                db.Field('max_weight'),
 				db.Field('attachment', 'upload', autodelete=True),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
@@ -115,10 +115,9 @@ db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=req
 db[table].name.label = T("Storage Location Name")
 db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Name|A place within a Site like a Shelf, room, bin number etc."))
 db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Description|Use this space to add a description about the site location."))
-db[table].capacity.label = T("Capacity (cubic meters)")
-db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Warehouse capacity is typically measured in cubic meters."))
-db[table].dimension.label = T("Dimensions (LxBxH)")
-db[table].dimension.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Dimensions|Dimensions of the storage location. Input in the following format 1x2x3 followed by choosing the unit from the drop down list."))
+db[table].capacity.label = T("Capacity (W x D X H)")
+db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage location. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
+db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the Storage Location followed by choosing the unit from the drop down list."))
 db[table].attachment.label = T("Image/Other Attachment")
 db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site Location can be uploaded here."))
 title_create = T('Add Storage Location ')
@@ -169,7 +168,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('number', notnull=True),
 				db.Field('storage_id', db.lms_storage_loc),
                 db.Field('bin_type', db.lms_storage_bin_type),
-                db.Field('total_capacity', length=256),
+                db.Field('capacity', length=256),
 				db.Field('max_weight'),
 				db.Field('attachment', 'upload', autodelete=True),
 				db.Field('comments', 'text'),
@@ -184,7 +183,8 @@ db[table].number.label = T("Storage Bin Number")
 db[table].number.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Number|Identification label of the Storage bin."))
 db[table].storage_id.label = T("Storage Location ID")
 db[table].attachment.label = T("Image/Other Attachment")
-db[table].total_capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Total Capacity|Total Volume of the Storage Bin. Capacity is typically measured in cubic meters. For e.g. 600 cu m"))
+db[table].capacity.label = T("Capacity (W x D X H)")
+db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage bin. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
 db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the items the storage bin can contain. followed by choosing the unit from the drop down list."))
 db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the bin or additional documents that contain supplementary information about it can be uploaded here."))
 title_create = T('Add Storage Bin ')
@@ -304,6 +304,10 @@ db[table].recipient.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisati
 db[table].recipient.comment = DIV(A(T('Add Recipient/Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient.")))
 db[table].designated.label = T("Designated for")
 db[table].measure_unit.label = T("Unit of measure")
+db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
+db[table].measure_unit.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Unit of Measure|Packing Type/Unit Size for e.g. A Case, A ton, Dozen etc."))
+db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Specifications|additional quantity quantifier – i.e. “4mx5m”."))
+db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
 title_create = T('Add Relief Item')
 title_display = T('Relief Item Details')
 title_list = T('List Relief Item(s)')

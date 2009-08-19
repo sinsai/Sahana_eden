@@ -218,6 +218,133 @@ class AuthS3(Auth):
         self.messages.registration_disabled = 'Registration Disabled!'
         self.messages.lock_keys = True
                 
+    def __get_migrate(self, tablename, migrate=True):
+
+        if type(migrate).__name__=='str':
+            return (migrate+tablename+'.table')
+        elif migrate==False:
+            return False
+        else:
+            return True
+
+    def define_tables(self, migrate=True):
+        """
+        to be called unless tables are defined manually
+
+        usages::
+
+            # defines all needed tables and table files
+            # UUID+'_auth_user.table', ...
+            auth.define_tables()
+
+            # defines all needed tables and table files
+            # 'myprefix_auth_user.table', ...
+            auth.define_tables(migrate='myprefix_')
+
+            # defines all needed tables without migration/table files
+            auth.define_tables(migrate=False)
+
+        """
+
+        db = self.db
+        if not self.settings.table_user:
+            passfield = self.settings.password_field
+            self.settings.table_user = db.define_table(
+                self.settings.table_user_name,
+                db.Field('first_name', length=128, default=''),
+                db.Field('last_name', length=128, default=''),
+
+                # add UTC Offset (in seconds) to specify the user's timezone
+                # TODO:
+                #   - this could need a nice label and context help
+                #   - entering timezone from a drop-down would be more comfortable
+                #   - automatic DST adjustment could be nice
+                #   - should have server timezone as default
+                db.Field('utc_offset', 'integer', default=None),
+
+                # db.Field('username', length=128, default=''),
+                db.Field('email', length=128, default=''),
+                db.Field(passfield, 'password', readable=False,
+                         label='Password'),
+                db.Field('registration_key', length=128,
+                         writable=False, readable=False, default=''),
+                migrate=\
+                    self.__get_migrate(self.settings.table_user_name, migrate))
+            table = self.settings.table_user
+            table.first_name.requires = \
+                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            table.last_name.requires = \
+                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            table[passfield].requires = [CRYPT()]
+            table.email.requires = \
+                [IS_EMAIL(error_message=self.messages.invalid_email),
+                 IS_NOT_IN_DB(db, '%s.email'
+                     % self.settings.table_user._tablename)]
+            table.registration_key.default = ''
+        if not self.settings.table_group:
+            self.settings.table_group = db.define_table(
+                self.settings.table_group_name,
+                db.Field('role', length=128, default=''),
+                db.Field('description', 'text'),
+                migrate=self.__get_migrate(
+                    self.settings.table_group_name, migrate))
+            table = self.settings.table_group
+            table.role.requires = IS_NOT_IN_DB(db, '%s.role'
+                 % self.settings.table_group._tablename)
+        if not self.settings.table_membership:
+            self.settings.table_membership = db.define_table(
+                self.settings.table_membership_name,
+                db.Field('user_id',
+                self.settings.table_user),
+                db.Field('group_id',
+                self.settings.table_group),
+                migrate=self.__get_migrate(
+                    self.settings.table_membership_name, migrate))
+            table = self.settings.table_membership
+            table.user_id.requires = IS_IN_DB(db, '%s.id'
+                 % self.settings.table_user._tablename,
+                '%(id)s: %(first_name)s %(last_name)s\
+')
+            table.group_id.requires = IS_IN_DB(db, '%s.id'
+                 % self.settings.table_group._tablename,
+                '%(id)s: %(role)s')
+        if not self.settings.table_permission:
+            self.settings.table_permission = db.define_table(
+                self.settings.table_permission_name,
+                db.Field('group_id', self.settings.table_group),
+                db.Field('name', default='default'),
+                db.Field('table_name'),
+                db.Field('record_id', 'integer'),
+                migrate=self.__get_migrate(
+                    self.settings.table_permission_name, migrate))
+            table = self.settings.table_permission
+            table.group_id.requires = IS_IN_DB(db, '%s.id'
+                 % self.settings.table_group._tablename,
+                '%(id)s: %(role)s')
+            table.name.requires = IS_NOT_EMPTY()
+            table.table_name.requires = IS_IN_SET(self.db.tables)
+            table.record_id.requires = IS_INT_IN_RANGE(0, 10 ** 9)
+        if not self.settings.table_event:
+            self.settings.table_event = db.define_table(
+                self.settings.table_event_name,
+                db.Field('time_stamp', 'datetime',
+                         default=self.environment.request.now),
+                db.Field('client_ip',
+                         default=self.environment.request.client),
+                db.Field('user_id', self.settings.table_user,
+                         default=None),
+                db.Field('origin', default='auth'),
+                db.Field('description', 'text', default=''),
+                migrate=self.__get_migrate(
+                    self.settings.table_event_name, migrate))
+            table = self.settings.table_event
+            table.user_id.requires = IS_IN_DB(db, '%s.id'
+                 % self.settings.table_user._tablename,
+                '%(id)s: %(first_name)s %(last_name)s\
+')
+            table.origin.requires = IS_NOT_EMPTY()
+            table.description.requires = IS_NOT_EMPTY()
+
     def login(
         self,
         next=DEFAULT,

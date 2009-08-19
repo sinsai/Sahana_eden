@@ -285,3 +285,41 @@ shn_list_of_nations = {
     201:T('Transnistria'),
     999:T('unknown')
     }
+
+# User Time Zone Operations:
+# TODO: don't know if that fits here, should perhaps be moved into sahana.py
+
+from datetime import timedelta
+import time
+
+def shn_user_utc_offset():
+    """
+        returns the UTC offset of the current user or None, if not logged in
+    """
+
+    if auth.is_logged_in():
+        return db(db.auth_user.id==session.auth.user.id).select()[0].utc_offset
+    else:
+        return None
+
+def shn_as_local_time(value):
+    """
+        represents a given UTC datetime.datetime object as string:
+
+        with the UTC offset of the user, if logged in
+        with the UTC offset of the server, if not logged in
+    """
+
+    format='%Y-%m-%d %H:%M:%S'
+
+    offset = shn_user_utc_offset()
+
+    if offset:
+        dt = value + timedelta(seconds=offset)
+    else:
+        if time.daylight:
+            dt = value + timedelta(seconds=-time.altzone)
+        else:
+            dt = value + timedelta(seconds=-time.timezone)
+
+    return dt.strftime(str(format))

@@ -230,8 +230,7 @@ def shn_has_permission(name, table_name, record_id = 0):
     S3 framework function to define whether a user can access a record
     Designed to be called from the RESTlike controller
     """
-    security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 1:
+    if session.s3.security_policy == 1:
         # Simple policy
         # Anonymous users can Read.
         if name == 'read':
@@ -259,8 +258,7 @@ def shn_accessible_query(name, table):
     This method does not work on GAE because uses JOIN and IN
     """
     # If using the 'simple' security policy then show all records
-    security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 1:
+    if session.s3.security_policy == 1:
         # simple
         return table.id > 0
     # Administrators can see all data
@@ -627,6 +625,8 @@ def shn_rest_controller(module, resource,
     listadd=True,
     main='name',
     extra=None,
+    orderby=None,
+    sortby=None,
     onvalidation=None,
     onaccept=None):
     """
@@ -639,6 +639,9 @@ def shn_rest_controller(module, resource,
     listadd=False: don't provide an add form in the list view
     main='field': the field used for the title in RSS output
     extra='field': the field used for the description in RSS output & in Search AutoComplete
+    orderby=expression: the sort order for server-side paginated list views e.g: db.mytable.myfield1|db.mytable.myfield2
+    sortby=list: the sort order for client-side paginated list views e.g: [[1, "asc"], [2, "desc"]]
+        see: http://datatables.net/examples/basic_init/table_sorting.html
     onvalidation=lambda form: function(form)    callback processed *before* DB IO
     onaccept=lambda form: function(form)        callback processed *after* DB IO
 
@@ -725,10 +728,12 @@ def shn_rest_controller(module, resource,
                     output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
                 else:
                     # No Pagination server-side (to allow it to be done client-side)
-                    limitby = ''
+                    limitby = None
+                    orderby = None
                     # Redirect to a paginated version if JS not-enabled
                     request.vars['page'] = 1
                     response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>' 
+                    output.update(dict(sortby=sortby))
                 # Which fields do we display?
                 fields = [table[f] for f in table.fields if table[f].readable]
                 # Column labels
@@ -736,7 +741,7 @@ def shn_rest_controller(module, resource,
                 for field in fields:
                    # Use custom or prettified label
                    headers[str(field)] = field.label
-                items = crud.select(table, query=query, fields=fields, limitby=limitby, headers=headers, truncate=48, _id='list', _class='display')
+                items = crud.select(table, query=query, fields=fields, limitby=limitby, orderby=orderby, headers=headers, truncate=48, _id='list', _class='display')
                 if not items:
                     try:
                         items = s3.crud_strings.msg_list_empty

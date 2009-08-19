@@ -80,10 +80,10 @@ opt_budget_category_type = SQLTable(None, 'budget_category_type',
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
+                opt_budget_category_type,
                 Field('code', notnull=True, unique=True),
                 Field('description', length=256, notnull=True),
                 opt_budget_cost_type,
-                opt_budget_category_type,
                 Field('unit_cost', 'double', default=0.00),
                 Field('monthly_cost', 'double', default=0.00),
                 Field('minute_cost', 'double', default=0.00),

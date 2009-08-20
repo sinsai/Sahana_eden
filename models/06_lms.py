@@ -105,7 +105,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 location_id,
                 db.Field('capacity'),
                 db.Field('max_weight'),
-				db.Field('attachment', 'upload', autodelete=True),
+                db.Field('attachment', 'upload', autodelete=True),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
@@ -165,8 +165,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'storage_bin'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                db.Field('number', notnull=True),
-				db.Field('storage_id', db.lms_storage_loc),
+                db.Field('site_id', db.lms_site),
+				db.Field('storage_id', db.lms_storage_loc),                
+				db.Field('number', notnull=True),
                 db.Field('bin_type', db.lms_storage_bin_type),
                 db.Field('capacity', length=256),
 				db.Field('max_weight'),
@@ -174,11 +175,17 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('comments', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+db[table].site_id.label = T("Site/Warehouse")
+db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Bin belongs to.")))
+db[table].storage_id.label = T("Storage Location")
+db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
+db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this this Bin belongs to.")))
 db[table].number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names
 db[table].bin_type.requires = IS_IN_DB(db, 'lms_storage_bin_type.id', 'lms_storage_bin_type.name')
 db[table].bin_type.comment = DIV(A(T('Add Storage Bin Type'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin_type', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin Type.")))
 db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
-db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the Storage Location where this bin is located.")))
+db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this bin is located.")))
 db[table].number.label = T("Storage Bin Number")
 db[table].number.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Number|Identification label of the Storage bin."))
 db[table].storage_id.label = T("Storage Location ID")
@@ -263,7 +270,10 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                db.Field('ordered_list_item'),
+                db.Field('site_id', db.lms_site),
+				db.Field('storage_id', db.lms_storage_loc),
+				db.Field('bin_id', db.lms_storage_bin),
+				db.Field('ordered_list_item'),
 				db.Field('airway_bill'),
 				db.Field('name'),
                 db.Field('description'),
@@ -285,6 +295,15 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('price', 'double', default=0.00),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+db[table].site_id.label = T("Site/Warehouse")
+db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
+db[table].storage_id.label = T("Storage Location")
+db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
+db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this Item is located.")))
+db[table].bin_id.requires = IS_IN_DB(db, 'lms_storage_bin.id', 'lms_storage_bin.number')
+db[table].bin_id.label = T("Storage Bin #")
+db[table].bin_id.comment = DIV(A(T('Add Storage Bin'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin details where this Item is to be stored.")))
 db[table].ordered_list_item.requires = IS_NOT_EMPTY()
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].ordered_list_item.label = T("Ordered List Item")

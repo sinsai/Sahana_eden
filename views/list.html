@@ -2,8 +2,16 @@
 
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
-	$('#list').dataTable();
-} );
+	$('#list').dataTable(
+    {{try:}}
+        {{if sortby:}}
+            {"aaSorting": {{=sortby}}}
+        {{else:}}
+        {{pass}}
+    {{except:}}
+    {{pass}}
+    );
+});
 //]]></script>
 
 {{try:}}

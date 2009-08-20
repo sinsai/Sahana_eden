@@ -21,33 +21,33 @@ if not len(db().select(db[table].ALL)):
         audit_read = False,
         audit_write = False
     )
-''' Sites Category
-resource = 'site_category'
-table = module + '_' + resource
-db.define_table(table,timestamp,uuidstamp,
-                db.Field('name', notnull=True),
-                db.Field('description', length=256),
-                db.Field('comments', 'text'),
-                migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
-db[table].name.label = T("Site Category")
-db[table].name.comment = SPAN("*", _class="req")
-title_create = T('Add Site Category')
-title_display = T('Site Category Details')
-title_list = T('List Categories')
-title_update = T('Edit Category')
-title_search = T('Search Category(s)')
-subtitle_create = T('Add New Site Category')
-subtitle_list = T('Site Categories')
-label_list_button = T('List Categories')
-label_create_button = T('Add Site Category')
-msg_record_created = T('Category  added')
-msg_record_modified = T('Category updated')
-msg_record_deleted = T('Category deleted')
-msg_list_empty = T('No Categories currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-'''
+#
+# Unit Option fields for both Length and Weight used throughout LMS
+#
+lms_unit_length_opts = {
+	'mi':'Mile',
+    'm':'Meter',
+    'km':'Kilometer',
+    'ft':'Foot'
+    }
+	
+opt_lms_unit_length = SQLTable(None, 'opt_lms_unit_length',
+                    db.Field('opt_lms_unit_length',
+                    requires = IS_IN_SET(lms_unit_length_opts),
+                    label = T('Unit'),
+                    represent = lambda opt: opt and lms_unit_length_opts[opt]))
+					
+lms_unit_weight_opts = {
+	'lb':'Pound',
+    'kg':'Kilo Gram',
+    'gm':'Gram',
+    }
+	
+opt_lms_unit_weight = SQLTable(None, 'opt_lms_unit_weight',
+                    db.Field('opt_lms_unit_weight',
+                    requires = IS_IN_SET(lms_unit_weight_opts),
+                    label = T('Unit'),
+                    represent = lambda opt: opt and lms_unit_weight_opts[opt]))					
 # Sites
 resource = 'site'
 table = module + '_' + resource
@@ -104,7 +104,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('description', length=256),
                 location_id,
                 db.Field('capacity'),
+				opt_lms_unit_length,
                 db.Field('max_weight'),
+				opt_lms_unit_weight,
 				db.Field('attachment', 'upload', autodelete=True),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
@@ -170,7 +172,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('number', notnull=True),
                 db.Field('bin_type', db.lms_storage_bin_type),
                 db.Field('capacity', length=256),
+				opt_lms_unit_length,
 				db.Field('max_weight'),
+				opt_lms_unit_weight,
 				db.Field('attachment', 'upload', autodelete=True),
 				db.Field('comments', 'text'),
                 migrate=migrate)
@@ -287,8 +291,11 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('net_quantity', default=0.00, writable=False),
 				db.Field('measure_unit'),
 				db.Field('specifications'),
+				opt_lms_unit_length,
 				db.Field('unit_size', 'integer', default=1, notnull=True),
+				opt_lms_unit_length,
 				db.Field('weight', 'double', default=0.00),
+				opt_lms_unit_weight,
 				db.Field('date_time', 'datetime'),
 				db.Field('comments', 'text'),
 				db.Field('attachment', 'upload', autodelete=True),

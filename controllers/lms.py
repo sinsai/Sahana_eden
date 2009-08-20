@@ -30,12 +30,16 @@ response.menu_options = [
 			[T('Advanced Bin Search'), False, URL(r=request, f='storage_bin', args='search')]
 		]],			
         [T('Relief Item Catalogue'), False, '#',[
-			[T('Add Category'), False, URL(r=request, f='catalogue_cat', args='create')],
-			[T('Search & List Category'), False, URL(r=request, f='catalogue_cat')],
-			[T('Advanced Category Search'), False, URL(r=request, f='catalogue_cat', args='search')],
-			[T('Add Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='create')],
-			[T('Search & List Sub-Category'), False, URL(r=request, f='catalogue_subcat')],
-			[T('Advanced Sub-Category Search'), False, URL(r=request, f='catalogue_subcat', args='search')]
+			[T('Manage Category'), False, '#',[
+				[T('Add Category'), False, URL(r=request, f='catalogue_cat', args='create')],
+				[T('Search & List Category'), False, URL(r=request, f='catalogue_cat')],
+				[T('Advanced Category Search'), False, URL(r=request, f='catalogue_cat', args='search')]
+			]],
+			[T('Manage Sub-Category'), False, '#',[
+				[T('Add Sub-Category'), False, URL(r=request, f='catalogue_subcat', args='create')],
+				[T('Search & List Sub-Category'), False, URL(r=request, f='catalogue_subcat')],
+				[T('Advanced Sub-Category Search'), False, URL(r=request, f='catalogue_subcat', args='search')]
+			]]
 		]],
     ]],
     [T('Intake System'), False, '#',[

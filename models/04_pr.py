@@ -260,6 +260,8 @@ db[table].reporter.ondelete = 'RESTRICT'
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lon.requires = IS_NULL_OR(IS_LON())
 
+db[table].time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
+db[table].time.represent = lambda value: shn_as_local_time(value)
 db[table].time.label = T('Date/Time')
 
 title_create = T('Presence')

@@ -306,20 +306,17 @@ def shn_as_local_time(value):
     """
         represents a given UTC datetime.datetime object as string:
 
-        with the UTC offset of the user, if logged in
-        with the UTC offset of the server, if not logged in
+        - for the local time of the user, if logged in
+        - as it is in UTC, if not logged in, marked by trailing +0000
     """
 
     format='%Y-%m-%d %H:%M:%S'
 
-    offset = shn_user_utc_offset()
+    offset = IS_UTC_OFFSET.get_offset_value(shn_user_utc_offset())
 
     if offset:
         dt = value + timedelta(seconds=offset)
+        return dt.strftime(str(format))
     else:
-        if time.daylight:
-            dt = value + timedelta(seconds=-time.altzone)
-        else:
-            dt = value + timedelta(seconds=-time.timezone)
-
-    return dt.strftime(str(format))
+        dt = value
+        return dt.strftime(str(format))+' +0000'

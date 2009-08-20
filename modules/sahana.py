@@ -254,13 +254,12 @@ class AuthS3(Auth):
                 db.Field('first_name', length=128, default=''),
                 db.Field('last_name', length=128, default=''),
 
-                # add UTC Offset (in seconds) to specify the user's timezone
+                # add UTC Offset (+/-HHMM) to specify the user's timezone
                 # TODO:
                 #   - this could need a nice label and context help
                 #   - entering timezone from a drop-down would be more comfortable
                 #   - automatic DST adjustment could be nice
-                #   - should have server timezone as default
-                db.Field('utc_offset', 'integer', default=None),
+                db.Field('utc_offset'),
 
                 # db.Field('username', length=128, default=''),
                 db.Field('email', length=128, default=''),
@@ -275,6 +274,13 @@ class AuthS3(Auth):
                 IS_NOT_EMPTY(error_message=self.messages.is_empty)
             table.last_name.requires = \
                 IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            table.utc_offset.label = "UTC Offset"
+            table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
+            try:
+                from applications.sahana.modules.validators import IS_UTC_OFFSET
+                table.utc_offset.requires = IS_UTC_OFFSET()
+            except:
+                pass
             table[passfield].requires = [CRYPT()]
             table.email.requires = \
                 [IS_EMAIL(error_message=self.messages.invalid_email),

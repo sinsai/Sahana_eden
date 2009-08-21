@@ -11,25 +11,30 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
-    [T('Administration'), False, '#',[
-        [T('Warehouse/Sites Registry'), False, '#',[
+    [T('Administration'), False, URL(r=request, f='admin'), [
+        [T('Warehouse/Sites Registry'), False, 'site',[
 			[T('Add Site'), False, URL(r=request, f='site', args='create')],
 			[T('Search & List Site'), False, URL(r=request, f='site')],
 			[T('Advanced Site Search'), False, URL(r=request, f='site', args='search')]
 		]],
-        [T('Storage Locations'), False, '#',[
+        [T('Storage Locations'), False, 'storage_loc',[
 			[T('Add Locations'), False, URL(r=request, f='storage_loc', args='create')],
 			[T('Search & List Locations'), False, URL(r=request, f='storage_loc')],
 			[T('Advanced Location Search'), False, URL(r=request, f='storage_loc', args='search')]
 		]],
-        [T('Storage Bins'), False, '#',[
+        [T('Storage Bins'), False, 'storage_bin',[
 			[T('Add Bin Type'), False, URL(r=request, f='storage_bin_type', args='create')],
 			[T('Add Bins'), False, URL(r=request, f='storage_bin', args='create')],
 			[T('Search & List Bins'), False, URL(r=request, f='storage_bin')],
 			[T('Search & List Bin Types'), False, URL(r=request, f='storage_bin_type')],
 			[T('Advanced Bin Search'), False, URL(r=request, f='storage_bin', args='search')]
 		]],			
-        [T('Relief Item Catalogue'), False, '#',[
+        [T('Relief Item Catalogue'), False, 'catalogue',[
+			[T('Manage Item Catalogue'), False, '#',[
+				[T('Add Catalogue'), False, URL(r=request, f='catalogue', args='create')],
+				[T('Search & List Catalogue'), False, URL(r=request, f='catalogue')],
+				[T('Advanced Catalogue Search'), False, URL(r=request, f='catalogue', args='search')]
+			]],
 			[T('Manage Category'), False, '#',[
 				[T('Add Category'), False, URL(r=request, f='catalogue_cat', args='create')],
 				[T('Search & List Category'), False, URL(r=request, f='catalogue_cat')],
@@ -42,12 +47,12 @@ response.menu_options = [
 			]]
 		]],
     ]],
-    [T('Intake System'), False, '#',[
+    [T('Intake System'), False, 'intake',[
         [T('Add Item (s)'), False, URL(r=request, f='item', args='create')],
         [T('Advanced Item Search'), False, URL(r=request, f='item', args='search')],
         [T('Search & List Items'), False, URL(r=request, f='item')]
     ]],
-    [T('Inventory Management'), False, '#',[
+    [T('Inventory Management'), False, 'inventory',[
         [T('Adjust Item(s) Quantity'), False, URL(r=request, f='inventory', args='adjust')],
         [T('Kitting of Items'), False, URL(r=request, f='inventory', args='kitting')],
         [T('De-kitting of Items'), False, URL(r=request, f='inventory', args='dekitting')],
@@ -58,6 +63,12 @@ response.menu_options = [
 def index():
     "Module's Home Page"
     return dict(module_name=module_name)
+	
+# Administration Index Page
+def admin():
+    " Simple page for showing links "
+    title = T('LMS Administration')
+    return dict(module_name=module_name, title=title)	
 
 def site():
     "RESTlike CRUD controller"
@@ -78,6 +89,10 @@ def storage_bin_type():
 def storage_bin():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'storage_bin')	
+
+def catalogue():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'catalogue')
 
 def catalogue_cat():
     "RESTlike CRUD controller"

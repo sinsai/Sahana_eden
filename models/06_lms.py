@@ -23,7 +23,7 @@ if not len(db().select(db[table].ALL)):
     )
 #
 # Unit Option fields for both Length and Weight used throughout LMS
-#
+# Also an arbitrary measure of unit
 lms_unit_length_opts = {
 	'mi':'Mile',
     'm':'Meter',
@@ -47,7 +47,19 @@ opt_lms_unit_weight = SQLTable(None, 'opt_lms_unit_weight',
                     db.Field('opt_lms_unit_weight',
                     requires = IS_IN_SET(lms_unit_weight_opts),
                     label = T('Unit'),
-                    represent = lambda opt: opt and lms_unit_weight_opts[opt]))					
+                    represent = lambda opt: opt and lms_unit_weight_opts[opt]))
+lms_unit_measure_opts = {
+	1:'Dozen',
+    2:'Tonne',
+    3:'Case',
+    4:'Box'
+    }
+	
+opt_lms_unit_measure = SQLTable(None, 'opt_lms_unit_measure',
+                    db.Field('opt_lms_unit_measure',
+                    requires = IS_IN_SET(lms_unit_measure_opts),
+                    label = T('Unit of Measure'),
+                    represent = lambda opt: opt and lms_unit_measure_opts[opt]))					
 # Sites
 resource = 'site'
 table = module + '_' + resource
@@ -213,6 +225,36 @@ msg_record_deleted = T('Storage Bin deleted')
 msg_list_empty = T('No Storage Bins currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+# Relief Item Catalogue Master
+resource = 'catalogue'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                db.Field('organisation', db.or_organisation),
+				db.Field('name'),
+                db.Field('description'),
+				db.Field('comments', 'text'),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
+db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|Add the name and additional information about the Organisation if it does not exists already.")))
+db[table].name.requires = IS_NOT_EMPTY()
+db[table].name.label = T("Catalogue Name")
+db[table].name.comment = SPAN("*", _class="req")
+title_create = T('Add Relief Item Category ')
+title_display = T('Relief Item Category Details')
+title_list = T('List Relief Item Categories')
+title_update = T('Edit Relief Item Categories')
+title_search = T('Search Relief Item Category(s)')
+subtitle_create = T('Add New Relief Item Category')
+subtitle_list = T('Relief Item Categories')
+label_list_button = T('List Relief Item Categories')
+label_create_button = T('Add Relief Item Categories')
+msg_record_created = T('Relief Item Category added')
+msg_record_modified = T('Relief Item Category updated')
+msg_record_deleted = T('Relief Item Category deleted')
+msg_list_empty = T('No Relief Item Category currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
 # Relief Item Catalogue Category
 resource = 'catalogue_cat'
 table = module + '_' + resource
@@ -275,8 +317,8 @@ resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
-				db.Field('storage_id', db.lms_storage_loc),
-				db.Field('bin_id', db.lms_storage_bin),
+				#db.Field('storage_id', db.lms_storage_loc),
+				#db.Field('bin_id', db.lms_storage_bin),
 				db.Field('ordered_list_item'),
 				db.Field('airway_bill'),
 				db.Field('name'),
@@ -288,11 +330,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('designated'),
 				db.Field('quantity', 'double', default=0.00),
 				db.Field('shortage', 'double', default=0.00),
-				db.Field('net_quantity', default=0.00, writable=False),
-				db.Field('measure_unit'),
+				db.Field('net_quantity', default=0.00),
+				opt_lms_unit_measure,
 				db.Field('specifications'),
-				opt_lms_unit_length,
-				db.Field('unit_size', 'integer', default=1, notnull=True),
 				opt_lms_unit_length,
 				db.Field('weight', 'double', default=0.00),
 				opt_lms_unit_weight,
@@ -305,12 +345,13 @@ db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
 db[table].site_id.label = T("Site/Warehouse")
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
-db[table].storage_id.label = T("Storage Location")
+'''db[table].storage_id.label = T("Storage Location")
 db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
 db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this Item is located.")))
 db[table].bin_id.requires = IS_IN_DB(db, 'lms_storage_bin.id', 'lms_storage_bin.number')
 db[table].bin_id.label = T("Storage Bin #")
 db[table].bin_id.comment = DIV(A(T('Add Storage Bin'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin details where this Item is to be stored.")))
+'''
 db[table].ordered_list_item.requires = IS_NOT_EMPTY()
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].ordered_list_item.label = T("Ordered List Item")
@@ -329,10 +370,9 @@ db[table].sender.comment = DIV(A(T('Add Sender Organisation'), _class='popup', _
 db[table].recipient.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
 db[table].recipient.comment = DIV(A(T('Add Recipient/Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient.")))
 db[table].designated.label = T("Designated for")
-db[table].measure_unit.label = T("Unit of measure")
+db[table].specifications.label = T("Volume/Dimensions")
 db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
-db[table].measure_unit.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Unit of Measure|Packing Type/Unit Size for e.g. A Case, A ton, Dozen etc."))
-db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Specifications|additional quantity quantifier – i.e. “4mx5m”."))
+db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume/Dimensions|Additional quantity quantifier – i.e. “4x5”."))
 db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
 title_create = T('Add Relief Item')
 title_display = T('Relief Item Details')

@@ -38,7 +38,8 @@ def parameter():
 def item():
     "RESTlike CRUD controller"
     response.pdf = URL(r=request, f='item_export_pdf')
-    return shn_rest_controller(module, 'item', main='code', extra='description', onaccept=lambda form: item_cascade(form))
+    return shn_rest_controller(module, 'item', main='code', extra='description', orderby=db.budget_item.category_type, sortby=[[1, "asc"]], onaccept=lambda form: item_cascade(form))
+    #return shn_rest_controller(module, 'item', main='code', extra='description', orderby=db.budget_item.category_type, onaccept=lambda form: item_cascade(form))
 
 def item_cascade(form):
     """

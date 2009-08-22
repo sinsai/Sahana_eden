@@ -65,18 +65,18 @@ class Config(object):
         "gets configurations by calling server (localhost)"
         if not isinstance(server, RpcManager):
             raise
-        # getting congis from server
+        # get config from server
         try:
             settings = server.execute('getconf')
             serveritems = {}
             serveritems['uuid'] = settings['uuid']
-            serveritems['zeroconfig_port'] = settings['zeroconfig_port']
+            serveritems['webservice_port'] = settings['webservice_port']
             
             zeroconfproperties = {}
             zeroconfproperties['description'] = settings['zeroconf_description']
             zeroconfproperties['uuid'] = settings['uuid']
             zeroconfproperties['serverport'] = self.items['localhost-port']
-            zeroconfproperties['zeroconfig_port'] = settings['zeroconfig_port']
+            zeroconfproperties['zeroconfig_port'] = settings['webservice_port']
             serveritems['zeroconfproperties'] = zeroconfproperties
             
             self.items.update(serveritems)
@@ -178,10 +178,10 @@ class ZeroConfExpose(object):
         local_ip = socket.gethostbyname(socket.gethostname())
         local_ip = socket.inet_aton(local_ip)
 
-        svc1 = Zeroconf.ServiceInfo('_durus._tcp.local.',
-                                      'Database 1._durus._tcp.local.',
+        svc1 = Zeroconf.ServiceInfo('_sahana._tcp.local.',
+                                      self.conf.items['uuid'] + '._sahana._tcp.local.',
                                       address = local_ip,
-                                      port = self.conf.items['zeroconfig_port'],
+                                      port = self.conf.items['webservice_port'],
                                       weight = 0,
                                       priority=0,
                                       properties = self.conf.items['zeroconfproperties']
@@ -227,7 +227,7 @@ class ZeroConfSearch(object):
         
         server = Zeroconf.Zeroconf()
         listener = self.MyListener(self.conf, self.servermanager, self.localrpc, logger = self.logger)
-        browser = Zeroconf.ServiceBrowser(server, "_durus._tcp.local.", listener)
+        browser = Zeroconf.ServiceBrowser(server, "_sahana._tcp.local.", listener)
 
 class ServerManager(object):
     """ gets server object as parameter, it calls local server json rpc service through RpcManager. When it gets data from rpcManager, it calls local server for data, if it gets error, it logs that in error log using errorLogManager or if it gets successful, it calls another dumpManager's instance and stores data and gets reference id, then foreign server's postdata through rpcManager  """

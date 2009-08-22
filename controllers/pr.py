@@ -186,18 +186,20 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Registered Appearances')
+                subtitle=T('Presence Log')
                 output=dict(title=title, subtitle=subtitle, pheader=pheader)
 
                 # Which fields?
                 fields = [
                         db.pr_presence.id,
-                        db.pr_presence.time_start,
+                        db.pr_presence.time,
                         db.pr_presence.location,
                         db.pr_presence.location_details,
                         db.pr_presence.lat,
                         db.pr_presence.lon,
-                        db.pr_presence.description,
+                        db.pr_presence.opt_pr_presence_condition,
+                        db.pr_presence.origin,
+                        db.pr_presence.destination,
                 ]
 
                 # Get list
@@ -315,11 +317,12 @@ def person():
                 # Which fields?
                 fields = [
                         db.pr_address.id,
+                        db.pr_address.opt_pr_address_type,
                         db.pr_address.co_name,
                         db.pr_address.street1,
                         db.pr_address.postcode,
                         db.pr_address.city,
-                        db.pr_address.country,
+                        db.pr_address.opt_pr_country,
                 ]
 
                 # Get list

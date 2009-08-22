@@ -68,11 +68,18 @@ db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique nam
 db[table].category.requires=IS_IN_SET(['warehouse'])
 # db[table].site_category_id.comment = DIV(A(T('Add Category'), _class='popup', _href=URL(r=request, c='lms', f='site_category', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Category|The Category of Site.")))
 db[table].name.label = T("Site Name")
-db[table].name.comment = SPAN("*", _class="req")
+DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
+db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Name|A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar."))
+db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Description|Use this space to add a description about the warehouse/site."))
+#db[table].name.comment = SPAN("*", _class="req")
 db[table].admin.label = T("Site Manager")
 db[table].person_id.label = T("Contact Person")
+#db[table].person_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contact Person|The point of contact for this Site. You can create a contact entry by clicking 'Add Person' and enter more details about the person if it does not exists."))
 db[table].person_id.represent = lambda id: (id and [(db(db.pr_person.id==id).select()[0].first_name)+' '+(db(db.pr_person.id==id).select()[0].last_name)] or ["None"])[0]
+db[table].address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Address|Detailed address of the site for informational/logistics purpose. Please note that you can add GIS/Mapping data about this site in the 'Location' field mentioned below."))
 db[table].attachment.label = T("Image/Other Attachment")
+db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
+db[table].comments.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Additional Comments|Use this space to add additional comments and notes about the Site/Warehouse."))
 title_create = T('Add Site ')
 title_display = T('Site Details')
 title_list = T('List Sites')
@@ -97,8 +104,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('description', length=256),
                 location_id,
                 db.Field('capacity'),
-                db.Field('dimension'),
-				db.Field('attachment', 'upload', autodelete=True),
+                db.Field('max_weight'),
+                db.Field('attachment', 'upload', autodelete=True),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
@@ -106,10 +113,13 @@ db[table].site_id.label = T("Site")
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
 db[table].name.label = T("Storage Location Name")
-db[table].name.comment = SPAN("*", _class="req")
-db[table].capacity.label = T("Capacity (cubic meters)")
-db[table].dimension.label = T("Dimensions (LxBxH)")
+db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Name|A place within a Site like a Shelf, room, bin number etc."))
+db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Description|Use this space to add a description about the site location."))
+db[table].capacity.label = T("Capacity (W x D X H)")
+db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage location. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
+db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the Storage Location followed by choosing the unit from the drop down list."))
 db[table].attachment.label = T("Image/Other Attachment")
+db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site Location can be uploaded here."))
 title_create = T('Add Storage Location ')
 title_display = T('Storage Location Details')
 title_list = T('List Storage Location')
@@ -134,7 +144,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.comment = SPAN("*", _class="req")
+db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Type|Name of Storage Bin Type."))
+db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Description of Bin Type|Use this space to add a description about the Bin Type."))
 title_create = T('Add Storage Bin Type')
 title_display = T('Storage Bin Type Details')
 title_list = T('List Storage Bin Type(s)')
@@ -154,24 +165,35 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'storage_bin'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                db.Field('number', notnull=True),
-				db.Field('storage_id', db.lms_storage_loc),
+                db.Field('site_id', db.lms_site),
+				db.Field('storage_id', db.lms_storage_loc),                
+				db.Field('number', notnull=True),
                 db.Field('bin_type', db.lms_storage_bin_type),
-                db.Field('total_capacity', length=256),
+                db.Field('capacity', length=256),
 				db.Field('max_weight'),
 				db.Field('attachment', 'upload', autodelete=True),
 				db.Field('comments', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+db[table].site_id.label = T("Site/Warehouse")
+db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Bin belongs to.")))
+db[table].storage_id.label = T("Storage Location")
+db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
+db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this this Bin belongs to.")))
 db[table].number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names
 db[table].bin_type.requires = IS_IN_DB(db, 'lms_storage_bin_type.id', 'lms_storage_bin_type.name')
 db[table].bin_type.comment = DIV(A(T('Add Storage Bin Type'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin_type', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin Type.")))
 db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
-db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the Storage Location where this bin is located.")))
+db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this bin is located.")))
 db[table].number.label = T("Storage Bin Number")
-db[table].number.comment = SPAN("*", _class="req")
+db[table].number.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Number|Identification label of the Storage bin."))
 db[table].storage_id.label = T("Storage Location ID")
 db[table].attachment.label = T("Image/Other Attachment")
+db[table].capacity.label = T("Capacity (W x D X H)")
+db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage bin. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
+db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the items the storage bin can contain. followed by choosing the unit from the drop down list."))
+db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the bin or additional documents that contain supplementary information about it can be uploaded here."))
 title_create = T('Add Storage Bin ')
 title_display = T('Storage Bin Details')
 title_list = T('List Storage Bins')
@@ -248,7 +270,10 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                db.Field('ordered_list_item'),
+                db.Field('site_id', db.lms_site),
+				db.Field('storage_id', db.lms_storage_loc),
+				db.Field('bin_id', db.lms_storage_bin),
+				db.Field('ordered_list_item'),
 				db.Field('airway_bill'),
 				db.Field('name'),
                 db.Field('description'),
@@ -270,6 +295,15 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('price', 'double', default=0.00),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+db[table].site_id.label = T("Site/Warehouse")
+db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
+db[table].storage_id.label = T("Storage Location")
+db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
+db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this Item is located.")))
+db[table].bin_id.requires = IS_IN_DB(db, 'lms_storage_bin.id', 'lms_storage_bin.number')
+db[table].bin_id.label = T("Storage Bin #")
+db[table].bin_id.comment = DIV(A(T('Add Storage Bin'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin details where this Item is to be stored.")))
 db[table].ordered_list_item.requires = IS_NOT_EMPTY()
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].ordered_list_item.label = T("Ordered List Item")
@@ -289,6 +323,10 @@ db[table].recipient.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisati
 db[table].recipient.comment = DIV(A(T('Add Recipient/Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient.")))
 db[table].designated.label = T("Designated for")
 db[table].measure_unit.label = T("Unit of measure")
+db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
+db[table].measure_unit.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Unit of Measure|Packing Type/Unit Size for e.g. A Case, A ton, Dozen etc."))
+db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Specifications|additional quantity quantifier – i.e. “4mx5m”."))
+db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
 title_create = T('Add Relief Item')
 title_display = T('Relief Item Details')
 title_list = T('List Relief Item(s)')

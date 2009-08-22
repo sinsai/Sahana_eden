@@ -44,6 +44,7 @@ def shn_sessions(f):
         Multiple flash classes
         Settings
             Debug mode
+            Security mode
             Audit modes
     """
     response.error = session.error
@@ -57,6 +58,8 @@ def shn_sessions(f):
         session.s3 = Storage()
     # Are we running in debug mode?
     session.s3.debug = db().select(db.s3_setting.debug)[0].debug
+    # Which security policy are we running?
+    session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
         session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
@@ -282,3 +285,41 @@ shn_list_of_nations = {
     201:T('Transnistria'),
     999:T('unknown')
     }
+
+# User Time Zone Operations:
+# TODO: don't know if that fits here, should perhaps be moved into sahana.py
+
+from datetime import timedelta
+import time
+
+def shn_user_utc_offset():
+    """
+        returns the UTC offset of the current user or None, if not logged in
+    """
+
+    if auth.is_logged_in():
+        return db(db.auth_user.id==session.auth.user.id).select()[0].utc_offset
+    else:
+        return None
+
+def shn_as_local_time(value):
+    """
+        represents a given UTC datetime.datetime object as string:
+
+        with the UTC offset of the user, if logged in
+        with the UTC offset of the server, if not logged in
+    """
+
+    format='%Y-%m-%d %H:%M:%S'
+
+    offset = shn_user_utc_offset()
+
+    if offset:
+        dt = value + timedelta(seconds=offset)
+    else:
+        if time.daylight:
+            dt = value + timedelta(seconds=-time.altzone)
+        else:
+            dt = value + timedelta(seconds=-time.timezone)
+
+    return dt.strftime(str(format))

@@ -41,8 +41,6 @@ __all__ = ['Vita','IS_PE_ID']
 #
 # VITA Toolkit ----------------------------------------------------------------
 #
-
-
 class Vita(object):
     """
         Toolkit for Person Identification, Tracking and Tracing
@@ -56,6 +54,37 @@ class Vita(object):
     def __init__(self, environment, db=None):
         self.environment = Storage(environment)
         self.db = db
+
+    def persons(self,**attr):
+        """
+            Find all persons with the given attributes
+        """
+        query = (self.db.pr_person.deleted==False)
+
+        if not len(attr):
+            # No attributes = return all persons
+            return self.db(query).select(self.db.pr_person.ALL)
+        else:
+            return None
+
+    def get_pentity_id(self,entity):
+        if entity:
+            if isinstance(entity, int):
+                # Entity ID is given as int, just return it
+                return None
+            elif isinstance(entity, dict):
+                # Entity ID is given as either .id or .pr_pe_id in the dict
+                return None
+            elif isinstance(entity, string):
+                # Tag Label given => find corresponding entity and return id
+                return None
+            elif isinstance(entity, (list,tuple)):
+                # List of entities given, return a list of ID's
+                return None
+            else:
+                return None
+        else:
+            return None
 
     def identity(self,entity):
         """
@@ -107,11 +136,61 @@ class Vita(object):
         """
         return None
 
-    def members(self,group):
+    #
+    # members -----------------------------------------------------------------
+    #
+    def members(self,group,filterby=None,inclusive=False):
         """
-            Returns a list of all members of a group, or, if a list
-            of groups is given, all members that belong to all groups
+            Returns a list of all members of a group (a list of Person ID's),
+            or, if a list of groups is given, a list of persons that are members
+            to at least one (inclusive=True) or to all of the groups (inclusive=False)
         """
+
+        if group and isinstance(group, int):
+
+            query = (self.db.pr_group.deleted==False) & (self.db.pr_group.id==group)
+            try:
+                group_record = self.db(query).select(self.db.pr_group.ALL)[0]
+                return self.members(group_record, filterby=filterby, inclusive=inclusive)
+            except:
+                # No such group or group deleted
+                return None
+
+        elif group and isinstance(group, dict) and 'id' in group:
+
+            query = (self.db.pr_group_membership.deleted==False) & (self.db.pr_group_membership.group_id==group.id)
+
+            if filterby and inclusive:
+                query = (not(self.db.pr_group_membership.person_id.belongs(filterby))) & query
+            elif filterby:
+                query = (self.db.pr_group_membership.person_id.belongs(filterby)) & query
+
+            rows = self.db(query).select(self.db.pr_group_membership.person_id)
+
+            members = [row.person_id for row in rows]
+
+            if len(members):
+                return members
+            else:
+                return None
+
+        elif group and isinstance(group, (list, tuple)):
+
+            _filterby = filterby
+
+            for _group in group:
+
+                memberlist = self.members(_group, filterby=_filterby, inclusive=inclusive)
+
+                if memberlist and inclusive:
+                    _filterby.extend(memberlist)
+                elif memberlist:
+                    _filterby = memberlist
+                elif not inclusive:
+                    return None
+
+            return memberlist
+
         return None
 
     def presence_before(self,entity,when):
@@ -138,8 +217,12 @@ class Vita(object):
     def locate(self,entity,now):
         """
             Finds the latest registered appearance of the given entity
-            before 'now'
+            before 'now'. If 'now' is omitted, it defaults to the current
+            server time.
         """
+
+        pentity_id = self.pentity_id( entity )
+
         return None
 
     def locate_all(self,entity,now):
@@ -163,11 +246,31 @@ class Vita(object):
         """
         return None
 
-    def persons(self,**attr):
+    def missing(self,entity):
         """
-            Finds all persons in the registry with the given attributes
+            Finds all "Missing" entries for the given entity
         """
-        return None
+
+        MISSING = 7
+
+        if entity and isinstance(entity,int):
+            pe_id = entity
+        elif entity and isinstance(entity,dict):
+            if pr_pe_id in entity and entity.pr_pe_id:
+                pe_id = entity.pr_pe_id
+            elif id in entity and entity.id:
+                pe_id = entity.id
+            else:
+                return None
+        else:
+            return None
+
+        query = (self.db.pr_presence.deleted==False) & (self.db.pr_presence.pr_pe_id==pe_id)
+        query = (self.db.pr_presence.opt_pr_presence_condition==MISSING) & (query)
+
+        records = self.db(query).select(self.db.pr_presence.ALL)
+
+        return records
 
 #
 # Validators ------------------------------------------------------------------

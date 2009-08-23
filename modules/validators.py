@@ -16,7 +16,7 @@ This file was developed by Fran Boon as a web2py extension.
 import time
 from datetime import datetime, timedelta
 
-__all__ = ['IS_LAT', 'IS_LON', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME']
+__all__ = ['IS_LAT', 'IS_LON', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF']
 
 class IS_LAT(object):
     """
@@ -86,6 +86,112 @@ class THIS_NOT_IN_DB(object):
         if len(rows)>0 and str(rows[0].id) != str(self.record_id):
             return (self.value, self.error_message)
         return (value, None)
+
+# IS_ONE_OF -------------------------------------------------------------------
+# added 2009-08-23 by nursix
+#
+class IS_ONE_OF(object):
+    """
+        Filtered version of IS_IN_DB():
+
+        validates a given value as id in another table, filtered by the 'filterby'
+        field for one of the 'filter_opts' options (=a selective IS_IN_DB())
+
+        For the dropdown representation:
+
+        'represent' can be a string template for the record, or a set of field
+        names of the fields to be used as option labels, or a function or lambda
+        to create an option label from the respective record (which has to return
+        a string, of course)
+    """
+
+    def __init__(
+        self,
+        dbset,
+        table,
+        represent,
+        filterby=None,
+        filter_opts=None,
+        error_message='invalid value!',
+        multiple=False
+        ):
+
+        self.error_message = error_message
+
+        self.table = table
+        self.represent = represent or '%(id)s'
+        self.filterby = filterby
+        self.filter_opts = filter_opts
+
+        self.multiple = False # ignore multiple
+
+        if hasattr(dbset, 'define_table'):
+            self.dbset = dbset()
+        else:
+            self.dbset = dbset
+
+    def options(self):
+
+        if self.table in self.dbset._db:
+
+            _table = self.dbset._db[self.table]
+
+            if 'deleted' in _table:
+                query = ((_table['deleted']==False) | (_table['deleted']==None))
+            else:
+                query = (_table['id'])
+
+            if self.filterby and self.filterby in _table:
+                if self.filter_opts:
+                    query = (_table[self.filterby].belongs(self.filter_opts)) & query
+                records = self.dbset(query).select(orderby=_table[self.filterby])
+            else:
+                records = self.dbset(query).select()
+
+            set = []
+            for r in records:
+                try:
+                    set.append((r.id, self.represent(r)))
+                except TypeError:
+                    if isinstance(self.represent, str):
+                        set.append((r.id, self.represent %r))
+                    elif isinstance(self.represent, (list,tuple)):
+                        _label = ""
+                        for l in self.represent:
+                            if l in r:
+                                _label = '%s %s' % ( _label, r[l] )
+                        set.append((r.id,  _label))
+                    elif 'name' in _table:
+                        set.append((r.id, r.name))
+                    else:
+                        set.append(( r.id, r.id ))
+
+            return( set )
+
+        else:
+            return None
+
+    def __call__(self,value):
+
+        try:
+            _table = self.dbset._db[self.table]
+
+            if 'deleted' in _table:
+                query = ((_table['deleted']==False) | (_table['deleted']==None))
+            else:
+                query = (_table['id'])
+
+            if self.filterby and self.filterby in _table:
+                if self.filter_opts:
+                    query = (_table[self.filterby].belongs(self.filter_opts)) & query
+
+            if self.dbset(query).count():
+                return (value, None)
+
+        except:
+            pass
+
+        return (value, self.error_message)
 
 # IS_UTC_OFFSET ---------------------------------------------------------------
 # added 2009-08-20 by nursix

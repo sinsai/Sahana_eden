@@ -633,7 +633,7 @@ def shn_pr_person_header(id, next=None):
 def shn_pr_person_sublist_linkto(field):
     return URL(r=request, f=request.args[0], args="update/%s" % field, vars=dict(_next=URL(r=request, args=request.args, vars=request.vars)))
 
-def shn_pr_person_sublist(request, subentity, person_id, fields=None, representation='html'):
+def shn_pr_person_sublist(request, subentity, person_id, fields=None, representation='html', orderby=None):
 
     subresource = "%s_%s" % (module, subentity)
     subtable = db[subresource]
@@ -693,6 +693,7 @@ def shn_pr_person_sublist(request, subentity, person_id, fields=None, representa
             headers=headers,
             truncate=48,
             linkto=linkto,
+            orderby=orderby,
             _id='list', _class='display')
 
     else:

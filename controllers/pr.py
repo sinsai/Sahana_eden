@@ -203,7 +203,7 @@ def person():
                 ]
 
                 # Get list
-                sublist = shn_pr_person_sublist(request, 'presence', session.pr_person, fields=fields)
+                sublist = shn_pr_person_sublist(request, 'presence', session.pr_person, fields=fields, orderby=~db.pr_presence.time)
 
                 if sublist:
                     output.update(sublist)
@@ -462,6 +462,46 @@ def person():
             else: # other representation
                 pass
 
+        # Test ----------------------------------------------------------------
+        elif method=="missing":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(record_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                subtitle=T('Missing Reports')
+                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+
+                record = db(db.pr_person.id==session.pr_person).select()[0]
+
+                fields = [db.pr_presence[f] for f in db.pr_presence.fields if db.pr_presence[f].readable]
+
+                # Column labels
+                headers = {}
+                for field in fields:
+                    # Use custom or prettified label
+                    headers[str(field)] = field.label
+
+                items=SQLTABLE(
+                    vita.missing(record.pr_pe_id), fields=fields, headers=headers, _id='list', _class='display')
+    
+
+                output.update(dict(items=items))
+                return output
+
+            else: # other representation
+                pass
+
         else: # other method
             pass
 
@@ -470,6 +510,81 @@ def person():
     return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1))
 
 def group():
+    if request.vars.format:
+        representation = str.lower(request.vars.format)
+    else:
+        representation = "html"
+
+    if len(request.args) > 0 and not request.args[0].isdigit():
+        # Check method
+        method = str.lower(request.args[0])
+
+        # Check if record_id is submitted
+        try:
+            record_id = request.args[1]
+        except:
+            record_id = None
+
+        if method=="members":
+            if representation=="html":
+                if record_id:
+
+                    # Set response view
+                    response.view = '%s/person.html' % module
+
+                    # Add title and subtitle
+                    title=T('Group')
+                    subtitle=T('Members')
+
+                    memberlist = vita.members(int(record_id))
+
+                    if memberlist:
+                        table = db.pr_person
+                        query = table.id.belongs(memberlist)
+
+                        fields = [
+                            db.pr_person.id,
+                            db.pr_person.pr_pe_label,
+                            db.pr_person.first_name,
+                            db.pr_person.middle_name,
+                            db.pr_person.last_name,
+                            db.pr_person.opt_pr_gender,
+                            db.pr_person.opt_pr_age_group,
+                            db.pr_person.date_of_birth
+                        ]
+
+                        # Column labels
+                        headers = {}
+                        for field in fields:
+                            # Use custom or prettified label
+                            headers[str(field)] = field.label
+
+                        items = crud.select(
+                            table,
+                            query=query,
+                            fields=fields,
+#                            limitby=limitby,
+                            headers=headers,
+                            truncate=48,
+#                            orderby=orderby,
+                            linkto=None,
+                            _id='list', _class='display')
+
+                    else:
+                        items=T('None')
+
+                    return(dict(title=title, subtitle=subtitle, items=items))
+
+                else:
+                    # no record ID given
+                    pass
+            else:
+                # other representation
+                pass
+        else:
+            # other method
+            pass
+
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2))

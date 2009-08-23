@@ -111,7 +111,7 @@ class IS_UNIT(object):
         records = self.dbset(query).select(orderby=self.dbset._db['lms_unit'].opt_lms_unit_type)
         set = []
         for r in records:
-            set.append((r.id, r.label+' '+r.name))
+            set.append((r.id, r.label))
         return( set )
 
     def __call__(self,value):

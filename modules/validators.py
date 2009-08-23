@@ -84,6 +84,7 @@ class THIS_NOT_IN_DB(object):
             return (self.value, self.error_message)
         return (value, None)
 
+#added by Dominic König
 
 class IS_UNIT(object):
 

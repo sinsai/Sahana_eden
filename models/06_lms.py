@@ -370,8 +370,8 @@ resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
-				db.Field('storage_id', db.lms_storage_loc, writable=False), #, db.lms_storage_loc),
-				db.Field('bin_id', db.lms_storage_bin, writable=False), #, db.lms_storage_bin, readable=False),
+				db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #, db.lms_storage_loc),
+				db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #, db.lms_storage_bin, readable=False),
 				db.Field('catalogue', db.lms_catalogue, writable=False, default=1),
 				db.Field('ordered_list_item'),
 				db.Field('airway_bill'),

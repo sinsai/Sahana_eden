@@ -54,14 +54,19 @@ response.menu_options = [
     ]],
     [T('Intake System'), False, 'intake',[
         [T('Add Item (s)'), False, URL(r=request, f='item', args='create')],
-        [T('Advanced Item Search'), False, URL(r=request, f='item', args='search')],
-        [T('Search & List Items'), False, URL(r=request, f='item')]
+        [T('Search & List Items'), False, URL(r=request, f='item')],
+		[T('Advanced Item Search'), False, URL(r=request, f='item', args='search')],
+		[T('Inventory Management'), False, 'inventory',[
+				[T('Adjust Item(s) Quantity'), False, URL(r=request, f='item', args='adjust')],
+				[T('Kitting of Items'), False, URL(r=request, f='item', args='kit')],
+				[T('De-kitting of Items'), False, URL(r=request, f='item', args='dekit')],
+				[T('Aggregate Items'), False, URL(r=request, f='item', args='aggregate')],
+				[T('Assign Storage Location'), False, URL(r=request, f='item', args='assign_storage')],
+				[T('Add to Catalogue'), False, URL(r=request, f='item', args='assign_catalogue')],
+				[T('Adjust Items due to Theft/Loss'), False, URL(r=request, f='item', args='adjust_theft')],
+				[T('Dispatch Items'), False, URL(r=request, f='item', args='dispatch')],
+				[T('Dispose Expired/Unusable Items'), False, URL(r=request, f='item', args='dispose')],
     ]],
-    [T('Inventory Management'), False, 'inventory',[
-        [T('Adjust Item(s) Quantity'), False, URL(r=request, f='inventory', args='adjust')],
-        [T('Kitting of Items'), False, URL(r=request, f='inventory', args='kitting')],
-        [T('De-kitting of Items'), False, URL(r=request, f='inventory', args='dekitting')],
-        [T('Aggregate Items'), False, URL(r=request, f='inventory', args='aggregate')]        
     ]]
 ]
 
@@ -115,5 +120,6 @@ def item():
     return shn_rest_controller(module, 'item')
 	
 def inventory():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'inventory')
+    " Simple page for showing links "
+    title = T('Inventory Management')
+    return dict(module_name=module_name, title=title)

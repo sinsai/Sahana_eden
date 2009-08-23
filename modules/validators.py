@@ -13,7 +13,7 @@ This file was developed by Fran Boon as a web2py extension.
 #    have_hashlib = False
 #from gluon.storage import Storage
 
-__all__ = ['IS_LAT', 'IS_LON', 'THIS_NOT_IN_DB']
+__all__ = ['IS_LAT', 'IS_LON', 'THIS_NOT_IN_DB', 'IS_UNIT']
 
 class IS_LAT(object):
     """
@@ -84,3 +84,45 @@ class THIS_NOT_IN_DB(object):
             return (self.value, self.error_message)
         return (value, None)
 
+
+class IS_UNIT(object):
+
+    def __init__(
+        self,
+        dbset,
+        filter_opts=None,
+        error_message='not a unit!',
+        multiple=False
+        ):
+        self.error_message = error_message
+        self.filter_opts = filter_opts
+        self.multiple = multiple
+
+        if hasattr(dbset, 'define_table'):
+            self.dbset = dbset()
+        else:
+            self.dbset = dbset
+
+    def options(self):
+        query = self.dbset._db['lms_unit']['deleted']==False
+        if self.filter_opts:
+            query = (self.dbset._db['lms_unit']['opt_lms_unit_type'].belongs(self.filter_opts)) & query
+        records = self.dbset(query).select(orderby=self.dbset._db['lms_unit'].opt_lms_unit_type)
+        set = []
+        for r in records:
+            set.append((r.id, r.label+' '+r.name))
+        return( set )
+
+    def __call__(self,value):
+        try:
+            query = self.dbset._db['lms_unit']['deleted']==False
+            if self.filter_opts:
+                query = (self.dbset._db['lms_unit']['opt_lms_unit_type'].belongs(self.filter_opts)) & query
+            if self.dbset(query).count():
+                return (value, None)
+            else:
+                pass
+        except ValueError:
+            pass
+        return (value, self.error_message)
+	

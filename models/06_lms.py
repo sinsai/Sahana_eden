@@ -24,42 +24,81 @@ if not len(db().select(db[table].ALL)):
 #
 # Unit Option fields for both Length and Weight used throughout LMS
 # Also an arbitrary measure of unit
-lms_unit_length_opts = {
-	'mi':'Mile',
-    'm':'Meter',
-    'km':'Kilometer',
-    'ft':'Foot'
+
+# This part defines the types of Units we deal here. Categories of Units.
+lms_unit_type_opts = {
+    1:T('Length'),
+    2:T('Weight'),
+    3:T('Volume - Fluids'),
+    4:T('Volume - Solids'),
+	5:T('Real World Arbitrary Units')
     }
+
+opt_lms_unit_type = SQLTable(None, 'opt_lms_unit_type',
+                    db.Field('opt_lms_unit_type','integer',
+                    requires = IS_IN_SET(lms_unit_type_opts),
+                    default = 1,
+                    label = T('Unit Set'),
+                    represent = lambda opt: opt and lms_unit_type_opts[opt]))
+
+resource = 'unit'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status,
+                opt_lms_unit_type, #lms_unit_type_opts --> Type of Unit
+                Field('label'), #short code of Unit for e.g. "m" for "meter"
+                Field('name'),  #complete Unit - "meter" for "m"
+                Field('base_unit'), #links to which unit
+                Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links 
+                migrate=migrate)
+
+if not len(db().select(db[table].ALL)):
+    db[table].insert(
+        opt_lms_unit_type=1,
+        label="m",
+        name="Meters"
+    )
+    db[table].insert(
+        opt_lms_unit_type=2,
+        label="kg",
+        name="Kilograms"
+    )
+    db[table].insert(
+        opt_lms_unit_type=3,
+        label="l",
+        name="Litres"
+    )
+    db[table].insert(
+        opt_lms_unit_type=4,
+        label="cbm",
+        name="Cubic Meters"
+    )
+    db[table].insert(
+        opt_lms_unit_type=5,
+        label="ton",
+        name="Tonne"
+    )	
+db[table].base_unit.requires=IS_NULL_OR(IS_UNIT(db))
+db[table].label.requires=IS_NOT_IN_DB(db, '%s.label' % table)
+db[table].label.label = T('Unit')
+db[table].label.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Label| Unit Short Code for e.g. m for meter."))
+db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Unit Name| Complete Unit Label for e.g. meter for m."))
+db[table].base_unit.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Base Unit| The entered unit links to this unit. For e.g. if you are entering m for meter then choose kilometer(if it exists) and enter the value 0.001 as multiplicator."))
+db[table].multiplicator.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Multiplicator| If Unit = m, Base Unit = Km, then multiplicator is 0.0001 since 1m = 0.001 km."))
+title_create = T('Add Unit ')
+title_display = T('Unit Details')
+title_list = T('List Units')
+title_update = T('Edit Unit')
+title_search = T('Search Unit(s)')
+subtitle_create = T('Add New Unit')
+subtitle_list = T('Units of Measure')
+label_list_button = T('List Units')
+label_create_button = T('Add Unit')
+msg_record_created = T('Unit added')
+msg_record_modified = T('Unit updated')
+msg_record_deleted = T('Unit deleted')
+msg_list_empty = T('No Units currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 	
-opt_lms_unit_length = SQLTable(None, 'opt_lms_unit_length',
-                    db.Field('opt_lms_unit_length',
-                    requires = IS_IN_SET(lms_unit_length_opts),
-                    label = T('Unit'),
-                    represent = lambda opt: opt and lms_unit_length_opts[opt]))
-					
-lms_unit_weight_opts = {
-	'lb':'Pound',
-    'kg':'Kilo Gram',
-    'gm':'Gram',
-    }
-	
-opt_lms_unit_weight = SQLTable(None, 'opt_lms_unit_weight',
-                    db.Field('opt_lms_unit_weight',
-                    requires = IS_IN_SET(lms_unit_weight_opts),
-                    label = T('Unit'),
-                    represent = lambda opt: opt and lms_unit_weight_opts[opt]))
-lms_unit_measure_opts = {
-	1:'Dozen',
-    2:'Tonne',
-    3:'Case',
-    4:'Box'
-    }
-	
-opt_lms_unit_measure = SQLTable(None, 'opt_lms_unit_measure',
-                    db.Field('opt_lms_unit_measure',
-                    requires = IS_IN_SET(lms_unit_measure_opts),
-                    label = T('Unit of Measure'),
-                    represent = lambda opt: opt and lms_unit_measure_opts[opt]))					
 # Sites
 resource = 'site'
 table = module + '_' + resource
@@ -76,7 +115,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
-# db[table].site_category_id.requires = IS_IN_DB(db, 'lms_site_category.id', 'lms_site_category.name')
+# db[table].category.requires = IS_IN_DB(db, 'lms_site_category.id', 'lms_site_category.name')
 db[table].category.requires=IS_IN_SET(['warehouse'])
 # db[table].site_category_id.comment = DIV(A(T('Add Category'), _class='popup', _href=URL(r=request, c='lms', f='site_category', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Category|The Category of Site.")))
 db[table].name.label = T("Site Name")
@@ -116,15 +155,19 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('description', length=256),
                 location_id,
                 db.Field('capacity'),
-				opt_lms_unit_length,
+				db.Field('capacity_unit'),
                 db.Field('max_weight'),
-				opt_lms_unit_weight,
+				db.Field('weight_unit'),
 				db.Field('attachment', 'upload', autodelete=True),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
 db[table].site_id.label = T("Site")
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+db[table].capacity_unit.requires=IS_UNIT(db, filter_opts=[1])
+db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].weight_unit.requires=IS_UNIT(db, filter_opts=[2])
+db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
 db[table].name.label = T("Storage Location Name")
 db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Name|A place within a Site like a Shelf, room, bin number etc."))
@@ -184,9 +227,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('number', notnull=True),
                 db.Field('bin_type', db.lms_storage_bin_type),
                 db.Field('capacity', length=256),
-				opt_lms_unit_length,
+				db.Field('capacity_unit'),
 				db.Field('max_weight'),
-				opt_lms_unit_weight,
+				db.Field('weight_unit'),
 				db.Field('attachment', 'upload', autodelete=True),
 				db.Field('comments', 'text'),
                 migrate=migrate)
@@ -198,6 +241,10 @@ db[table].storage_id.label = T("Storage Location")
 db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
 db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this this Bin belongs to.")))
 db[table].number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names
+db[table].capacity_unit.requires=IS_UNIT(db, filter_opts=[1])
+db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].weight_unit.requires=IS_UNIT(db, filter_opts=[2])
+db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].bin_type.requires = IS_IN_DB(db, 'lms_storage_bin_type.id', 'lms_storage_bin_type.name')
 db[table].bin_type.comment = DIV(A(T('Add Storage Bin Type'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin_type', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin Type.")))
 db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
@@ -234,6 +281,12 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
+if not len(db().select(db[table].ALL)):
+    db[table].insert(
+        name="Default",
+        description="Default Catalogue",
+		comments="All items are by default added to this catalogue"
+    )				
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
 db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|Add the name and additional information about the Organisation if it does not exists already.")))
@@ -317,8 +370,9 @@ resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
-				#db.Field('storage_id', db.lms_storage_loc),
-				#db.Field('bin_id', db.lms_storage_bin),
+				db.Field('storage_id', db.lms_storage_loc, writable=False), #, db.lms_storage_loc),
+				db.Field('bin_id', db.lms_storage_bin, writable=False), #, db.lms_storage_bin, readable=False),
+				db.Field('catalogue', db.lms_catalogue, writable=False, default=1),
 				db.Field('ordered_list_item'),
 				db.Field('airway_bill'),
 				db.Field('name'),
@@ -331,11 +385,11 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('quantity', 'double', default=0.00),
 				db.Field('shortage', 'double', default=0.00),
 				db.Field('net_quantity', default=0.00),
-				opt_lms_unit_measure,
+				db.Field('quantity_unit'),
 				db.Field('specifications'),
-				opt_lms_unit_length,
+				db.Field('specifications_unit'),
 				db.Field('weight', 'double', default=0.00),
-				opt_lms_unit_weight,
+				db.Field('weight_unit'),
 				db.Field('date_time', 'datetime'),
 				db.Field('comments', 'text'),
 				db.Field('attachment', 'upload', autodelete=True),
@@ -343,6 +397,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+db[table].storage_id.readable=False
+db[table].bin_id.readable=False
+db[table].catalogue.readable=False
 db[table].site_id.label = T("Site/Warehouse")
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
 '''db[table].storage_id.label = T("Storage Location")
@@ -352,6 +409,12 @@ db[table].bin_id.requires = IS_IN_DB(db, 'lms_storage_bin.id', 'lms_storage_bin.
 db[table].bin_id.label = T("Storage Bin #")
 db[table].bin_id.comment = DIV(A(T('Add Storage Bin'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin details where this Item is to be stored.")))
 '''
+db[table].quantity_unit.requires=IS_UNIT(db, filter_opts=[5])
+db[table].quantity_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].specifications_unit.requires=IS_UNIT(db, filter_opts=[1])
+db[table].specifications_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].weight_unit.requires=IS_UNIT(db, filter_opts=[2])
+db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].ordered_list_item.requires = IS_NOT_EMPTY()
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].ordered_list_item.label = T("Ordered List Item")

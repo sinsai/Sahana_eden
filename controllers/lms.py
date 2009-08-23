@@ -12,6 +12,11 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Administration'), False, URL(r=request, f='admin'), [
+        [T('Units of Measure'), False, 'unit',[
+			[T('Add Unit'), False, URL(r=request, f='unit', args='create')],
+			[T('Search & List Unit'), False, URL(r=request, f='unit')],
+			[T('Advanced Unit Search'), False, URL(r=request, f='unit', args='search')]
+		]],	
         [T('Warehouse/Sites Registry'), False, 'site',[
 			[T('Add Site'), False, URL(r=request, f='site', args='create')],
 			[T('Search & List Site'), False, URL(r=request, f='site')],
@@ -70,6 +75,9 @@ def admin():
     title = T('LMS Administration')
     return dict(module_name=module_name, title=title)	
 
+def unit():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'unit')
 def site():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'site')

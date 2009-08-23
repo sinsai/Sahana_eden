@@ -36,7 +36,7 @@ def getBrowserName(userAgent):
 
 from gluon.html import *
 
-__all__ = ['Vita','IS_PE_ID']
+__all__ = ['Vita']
 
 #
 # VITA Toolkit ----------------------------------------------------------------

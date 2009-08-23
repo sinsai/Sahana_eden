@@ -94,7 +94,7 @@ class IS_ONE_OF(object):
     """
         Filtered version of IS_IN_DB():
 
-        validates a given value as id in another table, filtered by the 'filterby'
+        validates a given value as key of another table, filtered by the 'filterby'
         field for one of the 'filter_opts' options (=a selective IS_IN_DB())
 
         For the dropdown representation:
@@ -108,7 +108,7 @@ class IS_ONE_OF(object):
     def __init__(
         self,
         dbset,
-        table,
+        field,
         represent,
         filterby=None,
         filter_opts=None,
@@ -118,10 +118,22 @@ class IS_ONE_OF(object):
 
         self.error_message = error_message
 
-        self.table = table
-        self.represent = represent or '%(id)s'
+        self.field = field
+        (ktable, kfield) = str(self.field).split('.')
+
+        self.ktable = ktable
+
+        if not kfield or not len(kfield):
+            self.kfield = 'id'
+        else:
+            self.kfield = kfield
+
+        self.represent = represent or ('%%(%s)s' % self.kfield)
+
         self.filterby = filterby
         self.filter_opts = filter_opts
+
+        self.error_message = error_message
 
         self.multiple = False # ignore multiple
 
@@ -132,9 +144,9 @@ class IS_ONE_OF(object):
 
     def options(self):
 
-        if self.table in self.dbset._db:
+        if self.ktable in self.dbset._db:
 
-            _table = self.dbset._db[self.table]
+            _table = self.dbset._db[self.ktable]
 
             if 'deleted' in _table:
                 query = ((_table['deleted']==False) | (_table['deleted']==None))
@@ -151,20 +163,20 @@ class IS_ONE_OF(object):
             set = []
             for r in records:
                 try:
-                    set.append((r.id, self.represent(r)))
+                    set.append((r[self.kfield], self.represent(r)))
                 except TypeError:
                     if isinstance(self.represent, str):
-                        set.append((r.id, self.represent %r))
+                        set.append((r[self.kfield], self.represent %dict(r)))
                     elif isinstance(self.represent, (list,tuple)):
                         _label = ""
                         for l in self.represent:
                             if l in r:
                                 _label = '%s %s' % ( _label, r[l] )
-                        set.append((r.id,  _label))
+                        set.append((r[self.kfield],  _label))
                     elif 'name' in _table:
-                        set.append((r.id, r.name))
+                        set.append((r[self.kfield], r.name))
                     else:
-                        set.append(( r.id, r.id ))
+                        set.append(( r[self.kfield], r[self.kfield] ))
 
             return( set )
 
@@ -174,12 +186,12 @@ class IS_ONE_OF(object):
     def __call__(self,value):
 
         try:
-            _table = self.dbset._db[self.table]
+            _table = self.dbset._db[self.ktable]
+
+            query = (_table[self.kfield]==value)
 
             if 'deleted' in _table:
-                query = ((_table['deleted']==False) | (_table['deleted']==None))
-            else:
-                query = (_table['id'])
+                query = ((_table['deleted']==False) | (_table['deleted']==None)) & query
 
             if self.filterby and self.filterby in _table:
                 if self.filter_opts:

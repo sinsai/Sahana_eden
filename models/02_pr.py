@@ -53,6 +53,90 @@ opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
                     represent = lambda opt: opt and pr_pentity_class_opts[opt]))
 
 #
+# shn_pentity_represent -------------------------------------------------------
+#
+def shn_pentity_represent(pentity):
+    """
+        Represent a Person Entity in option fields or list views
+    """
+
+    default = "None"
+
+    try:
+        if not pentity: return default
+
+        if isinstance(pentity,dict):
+            if 'pr_pe_id' in pentity:
+                pentity_id = pentity.pr_pe_id
+                pe_record = db((db.pr_pentity.id==pentity_id) & (db.pr_pentity.deleted==False)).select()[0]
+            else:
+                pentity_id = pentity.id
+                pe_record = pentity
+        else:
+            pentity_id = pentity
+            pe_record = db((db.pr_pentity.id==pentity_id) & (db.pr_pentity.deleted==False)).select()[0]
+
+        if pe_record and pe_record.opt_pr_pentity_class==1:
+            subentity_record=db(db.pr_person.pr_pe_id==pe_record.id).select()[0]
+            if subentity_record:
+                pentity_str = '%s %s [%s] (%s %s)' % (
+                    subentity_record.first_name,
+                    subentity_record.last_name or '',
+                    subentity_record.pr_pe_label or 'no label',
+                    pr_pentity_class_opts[1],
+                    subentity_record.id
+                )
+            else:
+                pentity_str = '[%s] (%s PE=%s)' % (
+                    pe_record.label or 'no label',
+                    pr_pentity_class_opts[1],
+                    pe_record.id
+                )
+
+        elif pe_record and pe_record.opt_pr_pentity_class==2:
+            subentity_record=db(db.pr_group.pr_pe_id==pe_record.id).select()[0]
+            if subentity_record:
+                pentity_str = '%s (%s %s)' % (
+                    subentity_record.group_name,
+                    pr_pentity_class_opts[2],
+                    subentity_record.id
+                )
+            else:
+                pentity_str = '(%s PE=%s)' % (
+                    pr_pentity_class_opts[2],
+                    pe_record.id
+                )
+
+        elif pe_record and pe_record.opt_pr_pentity_class==3:
+            subentity_record=db(db.hrm_body.pr_pe_id==pe_record.id).select()[0]
+            if subentity_record:
+                pentity_str = '[%s] (%s %s)' % (
+                    subentity_record.pr_pe_label or 'no label',
+                    pr_pentity_class_opts[3],
+                    subentity_record.id
+                )
+            else:
+                pentity_str = '[%s] (%s PE=%s)' % (
+                    pe_record.label or 'no label',
+                    pr_pentity_class_opts[3],
+                    pe_record.id
+                )
+        elif pe_record:
+            pentity_str = '[%s] (%s PE=%s)' % (
+                pe_record.label or 'no label',
+                pr_pentity_class_opts[pe_record.opt_pr_pentity_class],
+                pe_record.id
+            )
+
+        else: return default
+
+        return pentity_str
+
+    except:
+        # No such record
+        return default
+
+#
 # pentity table ---------------------------------------------------------------
 #
 resource = 'pentity'
@@ -64,75 +148,17 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-db[table].parent.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts))
+db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
 db[table].parent.label = T('belongs to')
 db[table].deleted.readable = True
-
-#
-# shn_pentity_represent -------------------------------------------------------
-#
-def shn_pentity_represent(pentity):
-    """
-        Represent a Person Entity ID in list views
-    """
-    if pentity and pentity.opt_pr_pentity_class==1:
-        subentity_record=db(db.pr_person.pr_pe_id==pentity.id).select()[0]
-        if subentity_record:
-            pentity_str = '%s %s [%s] (%s %s)' % (
-                subentity_record.first_name,
-                subentity_record.last_name or '',
-                subentity_record.pr_pe_label or 'no label',
-                pr_pentity_class_opts[1],
-                subentity_record.id
-            )
-        else:
-            pentity_str = '[%s] (%s PE=%s)' % (
-                pentity.label or 'no label',
-                pr_pentity_class_opts[1],
-                pentity.id
-            )
-    elif pentity and pentity.opt_pr_pentity_class==2:
-        subentity_record=db(db.pr_group.pr_pe_id==pentity.id).select()[0]
-        if subentity_record:
-            pentity_str = '%s (%s %s)' % (
-                subentity_record.group_name,
-                pr_pentity_class_opts[2],
-                subentity_record.id
-            )
-        else:
-            pentity_str = '(%s PE=%s)' % (
-                pr_pentity_class_opts[2],
-                pentity.id
-            )
-    elif pentity and pentity.opt_pr_pentity_class==3:
-        subentity_record=db(db.hrm_body.pr_pe_id==pentity.id).select()[0]
-        if subentity_record:
-            pentity_str = '[%s] (%s %s)' % (
-                subentity_record.pr_pe_label or 'no label',
-                pr_pentity_class_opts[3],
-                subentity_record.id
-            )
-        else:
-            pentity_str = '[%s] (%s PE=%s)' % (
-                pentity.label or 'no label',
-                pr_pentity_class_opts[3],
-                pentity.id
-            )
-    elif pentity:
-        pentity_str = '[%s] (%s PE=%s)' % (
-            pentity.label or 'no label',
-            pr_pentity_class_opts[pentity.opt_pr_pentity_class],
-            pentity.id
-        )
-    return pentity_str
 
 #
 # Reusable field for other tables to reference --------------------------------
 #
 pr_pe_id = SQLTable(None, 'pe_id',
                 Field('pr_pe_id', db.pr_pentity,
-                requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
-                represent = lambda id: (id and [shn_pentity_represent(db(db.pr_pentity.id==id).select()[0])] or ["None"])[0],
+                requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+                represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
                 ondelete = 'RESTRICT',
                 label = T('ID')
                 ))
@@ -142,15 +168,15 @@ pr_pe_id = SQLTable(None, 'pe_id',
 #
 pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
                     Field('pr_pe_id', db.pr_pentity,
-                    requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
-                    represent = lambda id: (id and [shn_pentity_represent(db(db.pr_pentity.id==id).select()[0])] or ["None"])[0],
+                    requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+                    represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
                     ondelete = 'RESTRICT',
                     readable = False,   # should be invisible in (most) forms
                     writable = False    # should be invisible in (most) forms
                     ),
                     Field('pr_pe_parent', db.pr_pentity,
-                    requires =  IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts)),
-                    represent =  lambda id: (id and [shn_pentity_represent(db(db.pr_pentity.id==id).select()[0])] or ["None"])[0],
+                    requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+                    represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
                     ondelete = 'RESTRICT',
                     label = T('belongs to'),
                     readable = False,   # should be invisible in (most) forms

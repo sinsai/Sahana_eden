@@ -32,7 +32,7 @@ response.menu_options = [
         [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
         [T('Add Address'), False, URL(r=request, f='address', args='create')],
         [T('Add Contact Information'), False, URL(r=request, f='contact', args='create')],
-        [T('Register Appearance'), False, URL(r=request, f='presence', args='create')],
+        [T('Add Presence Log Entry'), False, URL(r=request, f='presence_person', args='create')],
         [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
     ]],
     [T('Add Group'), False, URL(r=request, f='group', args='create')],
@@ -597,7 +597,7 @@ def image():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')
 def image_person():
-    db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(1,)))
+    db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,)))
     request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')
@@ -622,7 +622,7 @@ def presence():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
 def presence_person():
-    db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(1,)))
+    db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,)))
     request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')

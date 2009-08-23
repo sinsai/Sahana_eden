@@ -59,6 +59,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
+db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,2))
+
 db[table].co_name.label = T('c/o Name')
 db[table].street1.label = T('Street')
 db[table].street2.label = T('Street (add.)')
@@ -121,6 +123,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,2))
+
 db[table].value.requires = IS_NOT_EMPTY()
 
 db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])

@@ -366,14 +366,24 @@ msg_list_empty = T('No Relief Item Sub-Category currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Items
+budget_cost_type_opts = {
+    1:T('One-time'),
+    2:T('Recurring')
+    }
+opt_budget_cost_type = SQLTable(None, 'budget_cost_type',
+                        Field('cost_type', 'integer', notnull=True,
+                            requires = IS_IN_SET(budget_cost_type_opts),
+                            default = 1,
+                            label = T('Cost Type'),
+                            represent = lambda opt: opt and budget_cost_type_opts[opt]))
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
-				db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #, db.lms_storage_loc),
-				db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #, db.lms_storage_bin, readable=False),
-				db.Field('catalogue', db.lms_catalogue, writable=False, default=1),
-				db.Field('ordered_list_item'),
+				db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #No storage location assigned
+				db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #No Storage Bin assigned
+				db.Field('catalogue', db.lms_catalogue, writable=False, default=1), #default catalogue assigned
+				db.Field('ordered_list_item', notnull=True, unique=True),
 				db.Field('airway_bill'),
 				db.Field('name'),
                 db.Field('description'),
@@ -393,13 +403,18 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('date_time', 'datetime'),
 				db.Field('comments', 'text'),
 				db.Field('attachment', 'upload', autodelete=True),
-				db.Field('price', 'double', default=0.00),
+				opt_budget_cost_type,
+                db.Field('unit_cost', 'double', default=0.00),
+                db.Field('monthly_cost', 'double', default=0.00),
+                db.Field('minute_cost', 'double', default=0.00),
+                db.Field('megabyte_cost', 'double', default=0.00),
+                db.Field('comments', length=256),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
-db[table].storage_id.readable=False
-db[table].bin_id.readable=False
-db[table].catalogue.readable=False
+#db[table].storage_id.readable=False
+#db[table].bin_id.readable=False
+#db[table].catalogue.readable=False
 db[table].site_id.label = T("Site/Warehouse")
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
 '''db[table].storage_id.label = T("Storage Location")
@@ -437,6 +452,10 @@ db[table].specifications.label = T("Volume/Dimensions")
 db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
 db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume/Dimensions|Additional quantity quantifier – i.e. “4x5”."))
 db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
+db[table].unit_cost.label = T('Unit Cost')
+db[table].monthly_cost.label = T('Monthly Cost')
+db[table].minute_cost.label = T('Cost per Minute')
+db[table].megabyte_cost.label = T('Cost per Megabyte')
 title_create = T('Add Relief Item')
 title_display = T('Relief Item Details')
 title_list = T('List Relief Item(s)')
@@ -451,3 +470,57 @@ msg_record_modified = T('Relief Item updated')
 msg_record_deleted = T('Relief Item deleted')
 msg_list_empty = T('No Relief Item currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Kits
+resource = 'kit'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('code', notnull=True, unique=True),
+                Field('description', length=256),
+                Field('total_unit_cost', 'double', writable=False),
+                Field('total_monthly_cost', 'double', writable=False),
+                Field('total_minute_cost', 'double', writable=False),
+                Field('total_megabyte_cost', 'double', writable=False),
+                Field('comments', length=256),
+                migrate=migrate)
+db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
+db[table].code.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
+db[table].total_unit_cost.label = T('Total Unit Cost')
+db[table].total_monthly_cost.label = T('Total Monthly Cost')
+db[table].total_minute_cost.label = T('Total Cost per Minute')
+db[table].total_megabyte_cost.label = T('Total Cost per Megabyte')
+db[table].comments.label = T('Comments')
+title_create = T('Add Kit')
+title_display = T('Kit Details')
+title_list = T('List Kits')
+title_update = T('Edit Kit')
+title_search = T('Search Kits')
+subtitle_create = T('Add New Kit')
+subtitle_list = T('Kits')
+label_list_button = T('List Kits')
+label_create_button = T('Add Kit')
+msg_record_created = T('Kit added')
+msg_record_modified = T('Kit updated')
+msg_record_deleted = T('Kit deleted')
+msg_list_empty = T('No Kits currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Kit<>Item Many2Many
+resource = 'kit_item'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('kit_id', db.lms_kit),
+                Field('item_id', db.lms_item, ondelete='RESTRICT'),
+                Field('quantity', 'integer', default=1, notnull=True),
+                migrate=migrate)
+db[table].kit_id.requires = IS_IN_DB(db, 'lms_kit.id', 'lms_kit.code')
+db[table].kit_id.label = T('Kit')
+db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.description')
+db[table].item_id.label = T('Item')
+db[table].item_id.represent = lambda item_id: db(db.lms_item.id==item_id).select()[0].description
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")

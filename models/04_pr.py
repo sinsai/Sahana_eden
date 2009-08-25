@@ -85,6 +85,18 @@ msg_record_deleted = T('Address deleted')
 msg_list_empty = T('No Addresses currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+#
+# Add address to PE form ------------------------------------------------------
+#
+def shn_pr_add_address_to_pe_form(pentity):
+
+    db.pr_address.pr_pe_id.default  = pentity
+    db.pr_address.pr_pe_id.writable = False
+
+    form = SQLFORM( db.pr_address )
+
+    return form
+
 # *****************************************************************************
 # Contact (contact)
 #
@@ -145,6 +157,18 @@ msg_record_deleted = T('Contact deleted')
 msg_list_empty = T('No Contacts currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+#
+# Add contact to PE form ------------------------------------------------------
+#
+def shn_pr_add_contact_to_pe_form(pentity):
+
+    db.pr_contact.pr_pe_id.default  = pentity
+    db.pr_contact.pr_pe_id.writable = False
+
+    form = SQLFORM( db.pr_contact )
+
+    return form
+
 # *****************************************************************************
 # Image (image)
 #
@@ -200,6 +224,18 @@ msg_record_modified = T('Image updated')
 msg_record_deleted = T('Image deleted')
 msg_list_empty = T('No images currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+#
+# Add image to PE form --------------------------------------------------------
+#
+def shn_pr_add_image_to_pe_form(pentity):
+
+    db.pr_image.pr_pe_id.default  = pentity
+    db.pr_image.pr_pe_id.writable = False
+
+    form = SQLFORM( db.pr_image )
+
+    return form
 
 # *****************************************************************************
 # Presence Log (presence)
@@ -284,6 +320,18 @@ msg_record_deleted = T('Presence Record deleted')
 msg_list_empty = T('No presence records currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+#
+# Add presence to PE form -----------------------------------------------------
+#
+def shn_pr_add_presence_to_pe_form(pentity):
+
+    db.pr_presence.pr_pe_id.default  = pentity
+    db.pr_presence.pr_pe_id.writable = False
+
+    form = SQLFORM( db.pr_presence )
+
+    return form
+
 # *****************************************************************************
 # Identity (identity)
 #
@@ -324,6 +372,19 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].ia_name.label = T("Issuing Authority")
 
+#
+# Add identity to person form -------------------------------------------------
+#
+def shn_pr_add_identity_to_person_form(person):
+
+    db.pr_identity.person_id.default  = person
+    db.pr_identity.person_id.comment  = None
+    db.pr_identity.person_id.writable = False
+
+    form = SQLFORM( db.pr_identity )
+
+    return form
+
 # *****************************************************************************
 # Role (role)
 #
@@ -356,6 +417,19 @@ db.define_table(table, timestamp, deletion_status,
                 migrate=migrate)
 
 db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [""])[0]
+
+#
+# Add group_membership to person form -----------------------------------------
+#
+def shn_pr_add_group_membership_to_person_form(person):
+
+    db.pr_group_membership.person_id.default  = person
+    db.pr_group_membership.person_id.comment  = None
+    db.pr_group_membership.person_id.writable = False
+
+    form = SQLFORM( db.pr_group_membership )
+
+    return form
 
 # *****************************************************************************
 # Network membership (network_membership)

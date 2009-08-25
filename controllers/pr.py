@@ -24,17 +24,17 @@ response.menu_options = [
         [T('Presence Data'), False, URL(r=request, f='person', args='presence')],
 #        [T('Roles'), False, URL(r=request, f='person', args='role')],
 #        [T('Status'), False, URL(r=request, f='person', args='status')],
-#        [T('Groups'), False, URL(r=request, f='person', args='group')],
+        [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
     ]],
+#    [T('Add Person Details'), False, URL(r=request, f='person'),[
+#        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
+#        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
+#        [T('Add Address'), False, URL(r=request, f='address', args='create')],
+#        [T('Add Contact Information'), False, URL(r=request, f='contact', args='create')],
+#        [T('Add Presence Log Entry'), False, URL(r=request, f='presence_person', args='create')],
+#        [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
+#    ]],
     [T('Add Person'), False, URL(r=request, f='person', args='create')],
-    [T('Add Person Details'), False, URL(r=request, f='person'),[
-        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
-        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
-        [T('Add Address'), False, URL(r=request, f='address', args='create')],
-        [T('Add Contact Information'), False, URL(r=request, f='contact', args='create')],
-        [T('Add Presence Log Entry'), False, URL(r=request, f='presence_person', args='create')],
-        [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
-    ]],
     [T('Add Group'), False, URL(r=request, f='group', args='create')],
     [T('List Persons'), False, URL(r=request, f='person')],
     [T('List Groups'), False, URL(r=request, f='group')]
@@ -52,6 +52,9 @@ def person():
         representation = str.lower(request.vars.format)
     else:
         representation = "html"
+
+    # TODO: Check if the current person has been deleted
+    # TODO: Clear session if not logged in
 
     if len(request.args) > 0 and not request.args[0].isdigit():
         # Check method
@@ -202,6 +205,21 @@ def person():
                         db.pr_presence.destination,
                 ]
 
+                try:
+                    formtitle = T('Add Log Entry')
+                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
+                    form = shn_pr_add_presence_to_pe_form(pentity)
+                    if form.accepts(request.vars,session):
+                        response.flash="log entry added"
+                    elif form.errors:
+                        response.flash="error in the form"
+                    else:
+                        pass
+
+                    output.update(dict(formtitle=formtitle, form=form))
+                except:
+                    pass
+
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'presence', session.pr_person, fields=fields, orderby=~db.pr_presence.time)
 
@@ -230,7 +248,7 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Images')
+                subtitle=T('Available Images')
                 output=dict(title=title, subtitle=subtitle, pheader=pheader)
 
                 # Which fields?
@@ -241,6 +259,21 @@ def person():
                         db.pr_image.title,
                         db.pr_image.description,
                 ]
+
+                try:
+                    formtitle = T('Add Image')
+                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
+                    form = shn_pr_add_image_to_pe_form(pentity)
+                    if form.accepts(request.vars,session):
+                        response.flash="image added"
+                    elif form.errors:
+                        response.flash="error in the form"
+                    else:
+                        pass
+
+                    output.update(dict(formtitle=formtitle, form=form))
+                except:
+                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'image', session.pr_person, fields=fields)
@@ -270,7 +303,7 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Identities')
+                subtitle=T('Known Identities')
                 output=dict(title=title, subtitle=subtitle, pheader=pheader)
 
                 # Which fields?
@@ -282,6 +315,20 @@ def person():
                         db.pr_identity.country_code,
                         db.pr_identity.ia_name,
                 ]
+
+                try:
+                    formtitle = T('Add Identity')
+                    form = shn_pr_add_identity_to_person_form(session.pr_person)
+                    if form.accepts(request.vars,session):
+                        response.flash="identity added"
+                    elif form.errors:
+                        response.flash="error in the form"
+                    else:
+                        pass
+
+                    output.update(dict(formtitle=formtitle, form=form))
+                except:
+                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'identity', session.pr_person, fields=fields)
@@ -325,6 +372,21 @@ def person():
                         db.pr_address.opt_pr_country,
                 ]
 
+                try:
+                    formtitle = T('Add Address')
+                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
+                    form = shn_pr_add_address_to_pe_form(pentity)
+                    if form.accepts(request.vars,session):
+                        response.flash="address added"
+                    elif form.errors:
+                        response.flash="error in the form"
+                    else:
+                        pass
+
+                    output.update(dict(formtitle=formtitle, form=form))
+                except:
+                    pass
+
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'address', session.pr_person, fields=fields)
 
@@ -353,7 +415,7 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Basic Details')
+                subtitle=T('Contact Information')
                 output=dict(title=title, subtitle=subtitle, pheader=pheader)
 
                 # Which fields?
@@ -365,6 +427,21 @@ def person():
                         db.pr_contact.value,
                         db.pr_contact.priority,
                 ]
+
+                try:
+                    formtitle = T('Add Contact Information')
+                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
+                    form = shn_pr_add_contact_to_pe_form(pentity)
+                    if form.accepts(request.vars,session):
+                        response.flash="contact information added"
+                    elif form.errors:
+                        response.flash="error in the form"
+                    else:
+                        pass
+
+                    output.update(dict(formtitle=formtitle, form=form))
+                except:
+                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'contact', session.pr_person, fields=fields)
@@ -435,7 +512,7 @@ def person():
                 pass
 
         # View, add or edit group memberships ---------------------------------
-        elif method=="group":
+        elif method=="group_membership":
             if representation=="html":
 
                 # Check for selected person or redirect to search form
@@ -454,60 +531,47 @@ def person():
                 subtitle=T('Group Memberships')
                 output=dict(title=title, subtitle=subtitle, pheader=pheader)
 
-                items=None
+                # Which fields?
+                fields = [
+                        db.pr_group_membership.id,
+                        db.pr_group_membership.group_id,
+                        db.pr_group_membership.group_head,
+                        db.pr_group_membership.description,
+                ]
 
-                output.update(dict(items=items))
+                try:
+                    formtitle = T('Add Group Membership')
+                    form = shn_pr_add_group_membership_to_person_form(session.pr_person)
+                    if form.accepts(request.vars,session):
+                        response.flash="group membership added"
+                    elif form.errors:
+                        response.flash="error in the form"
+                    else:
+                        pass
+
+                    output.update(dict(formtitle=formtitle, form=form))
+                except:
+                    pass
+
+                # Get list
+                sublist = shn_pr_person_sublist(request, 'group_membership', session.pr_person, fields=fields)
+
+                if sublist:
+                    output.update(sublist)
+
                 return output
 
             else: # other representation
                 pass
 
-        # Test ----------------------------------------------------------------
-        elif method=="missing":
-            if representation=="html":
-
-                # Check for selected person or redirect to search form
-                shn_pr_select_person(record_id)
-                if not session.pr_person:
-                    request.vars.next=method
-                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-                else:
-                    pheader = shn_pr_person_header(session.pr_person, next=method)
-
-                # Set response view
-                response.view = '%s/person.html' % module
-
-                # Add title and subtitle
-                title=T('Person')
-                subtitle=T('Missing Reports')
-                output=dict(title=title, subtitle=subtitle, pheader=pheader)
-
-                record = db(db.pr_person.id==session.pr_person).select()[0]
-
-                fields = [db.pr_presence[f] for f in db.pr_presence.fields if db.pr_presence[f].readable]
-
-                # Column labels
-                headers = {}
-                for field in fields:
-                    # Use custom or prettified label
-                    headers[str(field)] = field.label
-
-                items=SQLTABLE(
-                    vita.missing(record.pr_pe_id), fields=fields, headers=headers, _id='list', _class='display')
-    
-
-                output.update(dict(items=items))
-                return output
-
-            else: # other representation
-                pass
-
-        else: # other method
+        else: # other method --------------------------------------------------
             pass
 
     # Default CRUD action: forward to REST controller
     crud.settings.delete_onvalidation=shn_pentity_ondelete
-    return shn_rest_controller(module, 'person', main='first_name', extra='last_name', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1))
+    return shn_rest_controller(module, 'person', main='first_name', extra='last_name',
+        onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1),
+        onaccept=lambda form: shn_pr_select_person(form.vars.id))
 
 def group():
     if request.vars.format:

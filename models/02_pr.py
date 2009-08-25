@@ -600,7 +600,7 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 # shn_pr_select_person --------------------------------------------------------
 #
 def shn_pr_select_person(id):
-    if id and isinstance(id,str) and id.isdigit():
+    if (id and isinstance(id,str) and id.isdigit()) or (id and isinstance(id,int)):
         session.pr_person = None
         records = db(db.pr_person.id==id).select(db.pr_person.id)
         if records:

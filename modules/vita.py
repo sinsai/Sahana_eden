@@ -41,6 +41,20 @@ __all__ = ['Vita']
 #
 # VITA Toolkit ----------------------------------------------------------------
 #
+class PersonEntity(object):
+
+    def __init__(self, db, table, id):
+        self.db = db
+        self.table = db[table]
+        self.id = id
+
+class Person(object):
+
+    def __init__(self, db, table, id):
+        self.db = db
+        self.table = db[table]
+        self.id = id
+
 class Vita(object):
     """
         Toolkit for Person Identification, Tracking and Tracing

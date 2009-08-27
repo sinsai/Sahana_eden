@@ -286,6 +286,16 @@ opt_pr_country = SQLTable(None, 'opt_pr_country',
                         represent = lambda opt: opt and pr_nationality_opts[opt]))
 
 #
+# shn_pr_person_represent -----------------------------------------------------
+#
+def shn_pr_person_represent(id):
+    person = vita.person(id)
+    if person:
+        return vita.fullname(person)
+    else:
+        return None
+
+#
 # person table ----------------------------------------------------------------
 #
 resource = 'person'
@@ -359,8 +369,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
-                represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0],
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
+                represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
                 comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
                 ondelete = 'RESTRICT'
                 ))
@@ -600,30 +610,25 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 # shn_pr_select_person --------------------------------------------------------
 #
 def shn_pr_select_person(id):
+    """
+        Selects a person for this session
+    """
+
+    if not ('pr_person' in session):
+        session.pr_person = None
 
     if id:
-        # Clear selection
-        if 'pr_person' in session:
-            del session['pr_person']
-        if isinstance(id,int) or (isinstance(id,str) and id.isdigit()):
-            record_id = id
-        else:
-            record_id = None
+        session.pr_person = None
+        person_id = id
     else:
-        if 'pr_person' in session:
-            record_id = session.pr_person
-        else:
-            record_id = None
+        person_id = session.pr_person
 
-    if record_id:
-        query = ((db.pr_person.deleted==False) | (db.pr_person.deleted==None))
-        query = (db.pr_person.id==record_id) & query
-        records = db(query).select(db.pr_person.id)
-        if records:
-            session.pr_person = records[0].id
-        else:
-            if 'pr_person' in session:
-                del session['pr_person']
+    person = vita.person(person_id)
+
+    if person:
+        session.pr_person = person.id
+    else:
+        session.pr_person = None
 
     return
 
@@ -631,40 +636,41 @@ def shn_pr_select_person(id):
 # shn_pr_person_header --------------------------------------------------------
 #
 def shn_pr_person_header(id, next=None):
-    if id and isinstance(id,int):
-        try:
-            record = db(db.pr_person.id==id).select()[0]
-        except:
-            return None
+    """
+        Builds a header for person detail pages
+    """
+
+    # TODO: This requires read permission to the person table and
+    #       audit/read for the person table
+    person = vita.person(id)
+
+    if person:
 
         if next: request.vars.next=next
 
         redirect = { "_next" : "%s" % URL(r=request, args=request.args, vars=request.vars)}
 
+        # TODO: Internationalization!
         pheader = TABLE(
             TR(
                 TH("Name: "),
-                "%s %s %s" % (
-                    record.first_name,
-                    record.middle_name or '',
-                    record.last_name or ''
-                    ),
+                vita.fullname(person),
                 TH("ID Label: "),
-                "%(pr_pe_label)s" % record,
+                "%(pr_pe_label)s" % person,
                 TH(A("Clear Selection", _href=URL(r=request, c='pr', f='person', args='clear', vars=request.vars)))
                 ),
             TR(
                 TH("Date of Birth: "),
-                "%s" % (record.date_of_birth or 'unknown'),
+                "%s" % (person.date_of_birth or 'unknown'),
                 TH("Gender: "),
-                "%s" % pr_person_gender_opts[record.opt_pr_gender],
+                "%s" % pr_person_gender_opts[person.opt_pr_gender],
                 "",
                 ),
             TR(
                 TH("Nationality"),
-                "%s" % pr_nationality_opts[record.opt_pr_nationality],
+                "%s" % pr_nationality_opts[person.opt_pr_nationality],
                 TH("Age Group: "),
-                "%s" % pr_person_age_group_opts[record.opt_pr_age_group],
+                "%s" % pr_person_age_group_opts[person.opt_pr_age_group],
                 TH(A("Edit Person", _href=URL(r=request, c='pr', f='person', args='update/%s' % id, vars=redirect)))
                 )
         )
@@ -751,6 +757,34 @@ def shn_pr_person_sublist(request, subentity, person_id, fields=None, representa
     output.update(items=items)
 
     return output
+
+#
+# shn_pr_add_details_to_person_form -------------------------------------------
+#
+def shn_pr_add_details_to_person_form(person_id, table):
+
+    if shn_has_permission('create',table):
+        try:
+            if 'pr_pe_id' in table:
+                person = vita.person(person_id)
+                pe_id = person.pr_pe_id
+                table.pr_pe_id.default = pe_id
+                table.pr_pe_id.writable = False
+
+            elif 'person_id' in table:
+                table.person_id.default = person_id
+                table.person_id.writable = False
+
+            else:
+                return None
+
+            form = SQLFORM( table )
+            return form
+
+        except:
+            return None
+    else:
+        return None
 
 #
 #

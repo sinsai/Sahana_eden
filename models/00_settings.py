@@ -50,6 +50,9 @@ auth.settings.registration_requires_approval = False
 auth.settings.create_user_groups = False
 # We need to allow basic logins for Webservices
 auth.settings.allow_basic_login = True
+# Logout session clearing
+auth.settings.logout_onlogout = shn_auth_on_logout
+auth.settings.login_onaccept = shn_auth_on_login
 
 crud = CrudS3(globals(),db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34

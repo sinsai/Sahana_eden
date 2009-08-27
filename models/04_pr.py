@@ -288,12 +288,12 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].observer.requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
+db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
 db[table].observer.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
 db[table].observer.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].observer.ondelete = 'RESTRICT'
 
-db[table].reporter.requires = IS_NULL_OR(IS_IN_DB(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
+db[table].reporter.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
 db[table].reporter.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
 db[table].reporter.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].reporter.ondelete = 'RESTRICT'
@@ -467,7 +467,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 # Reusable field for other tables to reference
 pcase_id = SQLTable(None, 'pcase_id',
                 Field('pcase_id', db.pr_case,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_case.id', '%(description)s')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_case.id', '%(description)s')),
                 represent = lambda id: (id and [db(db.pr_case.id==id).select()[0].description] or ["None"])[0],
                 comment = DIV(A(T('Add Case'), _class='popup', _href=URL(r=request, c='pr', f='case', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Case|Add new case."))),
                 ondelete = 'RESTRICT'

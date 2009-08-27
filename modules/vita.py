@@ -41,20 +41,6 @@ __all__ = ['Vita']
 #
 # VITA Toolkit ----------------------------------------------------------------
 #
-class PersonEntity(object):
-
-    def __init__(self, db, table, id):
-        self.db = db
-        self.table = db[table]
-        self.id = id
-
-class Person(object):
-
-    def __init__(self, db, table, id):
-        self.db = db
-        self.table = db[table]
-        self.id = id
-
 class Vita(object):
     """
         Toolkit for Person Identification, Tracking and Tracing
@@ -69,219 +55,131 @@ class Vita(object):
         self.environment = Storage(environment)
         self.db = db
 
-    def persons(self,**attr):
+    def pentity(self,entity):
         """
-            Find all persons with the given attributes
+            Get the PersonEntity record for the given ID, ID label, sub-entity or related record
         """
-        query = (self.db.pr_person.deleted==False)
 
-        if not len(attr):
-            # No attributes = return all persons
-            return self.db(query).select(self.db.pr_person.ALL)
-        else:
-            return None
+        table = self.db.pr_pentity
 
-    def get_pentity_id(self,entity):
         if entity:
-            if isinstance(entity, int):
-                # Entity ID is given as int, just return it
-                return None
-            elif isinstance(entity, dict):
-                # Entity ID is given as either .id or .pr_pe_id in the dict
-                return None
-            elif isinstance(entity, string):
-                # Tag Label given => find corresponding entity and return id
-                return None
-            elif isinstance(entity, (list,tuple)):
-                # List of entities given, return a list of ID's
-                return None
-            else:
-                return None
-        else:
-            return None
 
-    def identity(self,entity):
-        """
-            Returns the person_id to which this entity belongs,
-            or None, if the entity is unidentified
-        """
+            query = ((table.deleted==False) or (table.deleted==None))
 
-        if entity and isinstance(entity,int):
-            pr_pe_id = entity
-        elif entity and isinstance(entity,dict):
-            if 'pr_pe_id' in entity:
-                pr_pe_id = entity.pr_pe_id
-            elif 'id' in entity:
-                pr_pe_id = entity.id
-            else:
-                return None
-        else:
-            return None
+            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+                query = (table.id==entity) & query
 
-        query = (self.db.pr_pentity.deleted==False) & (self.db.pr_pentity.id==pr_pe_id)
+            elif isinstance(entity,str):
+                query = (table.label.strip().lower()==entity.strip().lower()) & query
 
-        try:
-            pentity = self.db(query).select(
-                self.db.pr_pentity.id,
-                self.db.pr_pentity.parent,
-                self.db.pr_pentity.opt_pr_pentity_class
-                )[0]
-            if pentity.opt_pr_pentity_class==1:
-                query = (self.db.pr_person.deleted==False) & (self.db.pr_person.pr_pe_id==pentity.id)
-                person = self.db(query).select(self.db.pr_person.id)[0]
-                return person.id
-            elif pentity.parent:
-                return( self.identify(pentity.parent))
-            else:
-                return None
-        except:
-            return None
-
-    def identify(self,entity,person):
-        """
-            Establishes the identity of an entity
-        """
-        return
-
-    def samples(self,entity,types=None):
-        """
-            Returns a list of all entities that belong to the given
-            entity (filtered by types, if given)
-        """
-        return None
-
-    #
-    # members -----------------------------------------------------------------
-    #
-    def members(self,group,filterby=None,inclusive=False):
-        """
-            Returns a list of all members of a group (a list of Person ID's),
-            or, if a list of groups is given, a list of persons that are members
-            to at least one (inclusive=True) or to all of the groups (inclusive=False)
-        """
-
-        if group and isinstance(group, int):
-
-            query = (self.db.pr_group.deleted==False) & (self.db.pr_group.id==group)
-            try:
-                group_record = self.db(query).select(self.db.pr_group.ALL)[0]
-                return self.members(group_record, filterby=filterby, inclusive=inclusive)
-            except:
-                # No such group or group deleted
-                return None
-
-        elif group and isinstance(group, dict) and 'id' in group:
-
-            query = (self.db.pr_group_membership.deleted==False) & (self.db.pr_group_membership.group_id==group.id)
-
-            if filterby and inclusive:
-                query = (not(self.db.pr_group_membership.person_id.belongs(filterby))) & query
-            elif filterby:
-                query = (self.db.pr_group_membership.person_id.belongs(filterby)) & query
-
-            rows = self.db(query).select(self.db.pr_group_membership.person_id)
-
-            members = [row.person_id for row in rows]
-
-            if len(members):
-                return members
-            else:
-                return None
-
-        elif group and isinstance(group, (list, tuple)):
-
-            _filterby = filterby
-
-            for _group in group:
-
-                memberlist = self.members(_group, filterby=_filterby, inclusive=inclusive)
-
-                if memberlist and inclusive:
-                    _filterby.extend(memberlist)
-                elif memberlist:
-                    _filterby = memberlist
-                elif not inclusive:
+            elif isinstance(entity,dict):
+                if 'pr_pe_id' in entity:
+                    query = (table.id==entity.pr_pe_id) & query
+                else:
                     return None
 
-            return memberlist
-
-        return None
-
-    def presence_before(self,entity,when):
-        """
-            Returns a list of all registered appearances of the given
-            entity before 'when'
-        """
-        return None
-
-    def presence_after(self,entity,when):
-        """
-            Returns a list of all registered appearances of the given
-            entity after 'when'
-        """
-        return None
-
-    def presence(self,entity,starttime,endtime):
-        """
-            Returns a list of all registered appearances of the given
-            entity between 'starttime' and 'endtime'
-        """
-        return None
-
-    def locate(self,entity,now):
-        """
-            Finds the latest registered appearance of the given entity
-            before 'now'. If 'now' is omitted, it defaults to the current
-            server time.
-        """
-
-        pentity_id = self.pentity_id( entity )
-
-        return None
-
-    def locate_all(self,entity,now):
-        """
-            Finds the lastest registered appearances of the given entity
-            and all belonging entities before 'now'
-        """
-        return None
-
-    def candidates(self,description,threshold=None):
-        """
-            Searches for persons in the database that match the given
-            description above a certain threshold, and returns a list
-            of candidates
-        """
-        return None
-
-    def count(self,**attr):
-        """
-            Counts registered persons with the given attributes
-        """
-        return None
-
-    def missing(self,entity):
-        """
-            Finds all "Missing" entries for the given entity
-        """
-
-        MISSING = 7
-
-        if entity and isinstance(entity,int):
-            pe_id = entity
-        elif entity and isinstance(entity,dict):
-            if pr_pe_id in entity and entity.pr_pe_id:
-                pe_id = entity.pr_pe_id
-            elif id in entity and entity.id:
-                pe_id = entity.id
             else:
                 return None
+
+            try:
+                record = self.db(query).select()[0]
+                return record
+            except:
+                return None
+
         else:
             return None
 
-        query = (self.db.pr_presence.deleted==False) & (self.db.pr_presence.pr_pe_id==pe_id)
-        query = (self.db.pr_presence.opt_pr_presence_condition==MISSING) & (query)
+    def person(self,entity):
+        """
+            Get the Person record for the given ID, PersonEntity record or Person-related record
+        """
 
-        records = self.db(query).select(self.db.pr_presence.ALL)
+        table = self.db.pr_person
 
-        return records
+        if entity:
+
+            query = ((table.deleted==False) or (table.deleted==None))
+
+            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+                query = (table.id==entity) & query
+
+            elif isinstance(entity,dict):
+                if 'pr_pe_id' in entity:
+                    query = (table.pr_pe_id==entity.pr_pe_id) & query
+                elif 'person_id' in entity:
+                    query = (table.id==entity.person_id) & query
+                elif 'id' in entity:
+                    query = (table.pr_pe_id==entity.id) & query
+                else:
+                    return None
+
+            else:
+                return None
+
+            try:
+                record = self.db(query).select()[0]
+                return record
+            except:
+                return None
+
+        else:
+            return None
+
+    def group(self,entity):
+        """
+            Get the Group record for the given ID, PersonEntity record or Group-related record
+        """
+
+        table = self.db.pr_group
+
+        if entity:
+
+            query = ((table.deleted==False) or (table.deleted==None))
+
+            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+                query = (table.id==entity) & query
+
+            elif isinstance(entity,dict):
+                if 'pr_pe_id' in entity:
+                    query = (table.pr_pe_id==entity.pr_pe_id) & query
+                elif 'group_id' in entity:
+                    query = (table.id==entity.group_id) & query
+                elif 'id' in entity:
+                    query = (table.pr_pe_id==entity.id) & query
+                else:
+                    return None
+
+            else:
+                return None
+
+            try:
+                record = self.db(query).select()[0]
+                return record
+            except:
+                return None
+
+        else:
+            return None
+
+
+    def fullname(self,record):
+        """
+            Returns the full name of a person
+        """
+
+        if record:
+            fname, mname, lname = '','',''
+            if record.first_name:
+                fname = "%s " % record.first_name.strip()
+            if record.middle_name:
+                mname = "%s " % record.middle_name.strip()
+            if record.last_name:
+                lname = record.last_name.strip()
+
+            if mname.isspace():
+                return "%s%s" % (fname, lname)
+            else:
+                return "%s%s%s" % (fname, mname, lname)
+        else:
+            return ''

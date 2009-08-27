@@ -21,7 +21,7 @@ response.menu_options = [
         [T('Identity'), False, URL(r=request, f='person', args='identity')],
         [T('Address'), False, URL(r=request, f='person', args='address')],
         [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
-        [T('Presence Data'), False, URL(r=request, f='person', args='presence')],
+        [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
 #        [T('Roles'), False, URL(r=request, f='person', args='role')],
 #        [T('Status'), False, URL(r=request, f='person', args='status')],
         [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
@@ -52,9 +52,6 @@ def person():
         representation = str.lower(request.vars.format)
     else:
         representation = "html"
-
-    # TODO: Check if the current person has been deleted
-    # TODO: Clear session if not logged in
 
     if len(request.args) > 0 and not request.args[0].isdigit():
         # Check method
@@ -205,20 +202,16 @@ def person():
                         db.pr_presence.destination,
                 ]
 
-                try:
+                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_presence)
+                if form:
                     formtitle = T('Add Log Entry')
-                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
-                    form = shn_pr_add_presence_to_pe_form(pentity)
                     if form.accepts(request.vars,session):
-                        response.flash="log entry added"
+                        shn_audit_create(form, 'pr_presence', representation)
+                        response.flash="Log Entry added"
                     elif form.errors:
-                        response.flash="error in the form"
-                    else:
-                        pass
+                        response.flash="Error in the form"
 
                     output.update(dict(formtitle=formtitle, form=form))
-                except:
-                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'presence', session.pr_person, fields=fields, orderby=~db.pr_presence.time)
@@ -260,20 +253,16 @@ def person():
                         db.pr_image.description,
                 ]
 
-                try:
+                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_image)
+                if form:
                     formtitle = T('Add Image')
-                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
-                    form = shn_pr_add_image_to_pe_form(pentity)
                     if form.accepts(request.vars,session):
-                        response.flash="image added"
+                        shn_audit_create(form, 'pr_image', representation)
+                        response.flash="Image added"
                     elif form.errors:
-                        response.flash="error in the form"
-                    else:
-                        pass
+                        response.flash="Error in the form"
 
                     output.update(dict(formtitle=formtitle, form=form))
-                except:
-                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'image', session.pr_person, fields=fields)
@@ -316,19 +305,16 @@ def person():
                         db.pr_identity.ia_name,
                 ]
 
-                try:
+                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_identity)
+                if form:
                     formtitle = T('Add Identity')
-                    form = shn_pr_add_identity_to_person_form(session.pr_person)
                     if form.accepts(request.vars,session):
-                        response.flash="identity added"
+                        shn_audit_create(form, 'pr_identity', representation)
+                        response.flash="Identity added"
                     elif form.errors:
-                        response.flash="error in the form"
-                    else:
-                        pass
+                        response.flash="Error in the form"
 
                     output.update(dict(formtitle=formtitle, form=form))
-                except:
-                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'identity', session.pr_person, fields=fields)
@@ -372,20 +358,16 @@ def person():
                         db.pr_address.opt_pr_country,
                 ]
 
-                try:
+                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_address)
+                if form:
                     formtitle = T('Add Address')
-                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
-                    form = shn_pr_add_address_to_pe_form(pentity)
                     if form.accepts(request.vars,session):
-                        response.flash="address added"
+                        shn_audit_create(form, 'pr_address', representation)
+                        response.flash="Address added"
                     elif form.errors:
-                        response.flash="error in the form"
-                    else:
-                        pass
+                        response.flash="Error in the form"
 
                     output.update(dict(formtitle=formtitle, form=form))
-                except:
-                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'address', session.pr_person, fields=fields)
@@ -428,20 +410,16 @@ def person():
                         db.pr_contact.priority,
                 ]
 
-                try:
+                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_contact)
+                if form:
                     formtitle = T('Add Contact Information')
-                    pentity = db(db.pr_person.id==session.pr_person).select(db.pr_person.pr_pe_id)[0].pr_pe_id
-                    form = shn_pr_add_contact_to_pe_form(pentity)
                     if form.accepts(request.vars,session):
-                        response.flash="contact information added"
+                        shn_audit_create(form, 'pr_contact', representation)
+                        response.flash="Contact Information added"
                     elif form.errors:
-                        response.flash="error in the form"
-                    else:
-                        pass
+                        response.flash="Error in the form"
 
                     output.update(dict(formtitle=formtitle, form=form))
-                except:
-                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'contact', session.pr_person, fields=fields)
@@ -539,19 +517,16 @@ def person():
                         db.pr_group_membership.description,
                 ]
 
-                try:
+                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_group_membership)
+                if form:
                     formtitle = T('Add Group Membership')
-                    form = shn_pr_add_group_membership_to_person_form(session.pr_person)
                     if form.accepts(request.vars,session):
-                        response.flash="group membership added"
+                        shn_audit_create(form, 'pr_group_membership', representation)
+                        response.flash="Group Membership added"
                     elif form.errors:
-                        response.flash="error in the form"
-                    else:
-                        pass
+                        response.flash="Error in the form"
 
                     output.update(dict(formtitle=formtitle, form=form))
-                except:
-                    pass
 
                 # Get list
                 sublist = shn_pr_person_sublist(request, 'group_membership', session.pr_person, fields=fields)
@@ -574,84 +549,34 @@ def person():
         onaccept=lambda form: shn_pr_select_person(form.vars.id))
 
 def group():
-    if request.vars.format:
-        representation = str.lower(request.vars.format)
-    else:
-        representation = "html"
+#    if request.vars.format:
+#        representation = str.lower(request.vars.format)
+#    else:
+#        representation = "html"
 
-    if len(request.args) > 0 and not request.args[0].isdigit():
+#    if len(request.args) > 0 and not request.args[0].isdigit():
         # Check method
-        method = str.lower(request.args[0])
+#        method = str.lower(request.args[0])
 
         # Check if record_id is submitted
-        try:
-            record_id = request.args[1]
-        except:
-            record_id = None
+#        try:
+#            record_id = request.args[1]
+#        except:
+#            record_id = None
 
-        if method=="members":
-            if representation=="html":
-                if record_id:
-
-                    # Set response view
-                    response.view = '%s/person.html' % module
-
-                    # Add title and subtitle
-                    title=T('Group')
-                    subtitle=T('Members')
-
-                    memberlist = vita.members(int(record_id))
-
-                    if memberlist:
-                        table = db.pr_person
-                        query = table.id.belongs(memberlist)
-
-                        fields = [
-                            db.pr_person.id,
-                            db.pr_person.pr_pe_label,
-                            db.pr_person.first_name,
-                            db.pr_person.middle_name,
-                            db.pr_person.last_name,
-                            db.pr_person.opt_pr_gender,
-                            db.pr_person.opt_pr_age_group,
-                            db.pr_person.date_of_birth
-                        ]
-
-                        # Column labels
-                        headers = {}
-                        for field in fields:
-                            # Use custom or prettified label
-                            headers[str(field)] = field.label
-
-                        items = crud.select(
-                            table,
-                            query=query,
-                            fields=fields,
-#                            limitby=limitby,
-                            headers=headers,
-                            truncate=48,
-#                            orderby=orderby,
-                            linkto=None,
-                            _id='list', _class='display')
-
-                    else:
-                        items=T('None')
-
-                    return(dict(title=title, subtitle=subtitle, items=items))
-
-                else:
-                    # no record ID given
-                    pass
-            else:
+#        if method=="members":
+#            if representation=="html":
+#                pass
+#            else:
                 # other representation
-                pass
-        else:
+#                pass
+#        else:
             # other method
-            pass
+#            pass
 
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2))
+    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2), deletable=False)
 
 def person_details():
     "RESTlike CRUD controller"
@@ -683,9 +608,11 @@ def pentity():
     return shn_rest_controller(module, 'pentity')
 
 def presence():
+    db.pr_presence.pr_pe_id.writable = False
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
 def presence_person():
+    db.pr_presence.pr_pe_id.writable = False
     db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,)))
     request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"

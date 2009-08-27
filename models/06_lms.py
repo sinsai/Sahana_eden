@@ -108,6 +108,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('category'),
                 admin_id,
                 person_id,
+				db.Field('organisation', db.or_organisation),
                 db.Field('address', 'text'),
 				location_id,
 				db.Field('attachment', 'upload', autodelete=True),
@@ -128,6 +129,8 @@ db[table].person_id.label = T("Contact Person")
 #db[table].person_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contact Person|The point of contact for this Site. You can create a contact entry by clicking 'Add Person' and enter more details about the person if it does not exists."))
 db[table].person_id.represent = lambda id: (id and [(db(db.pr_person.id==id).select()[0].first_name)+' '+(db(db.pr_person.id==id).select()[0].last_name)] or ["None"])[0]
 db[table].address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Address|Detailed address of the site for informational/logistics purpose. Please note that you can add GIS/Mapping data about this site in the 'Location' field mentioned below."))
+db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
+db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender|Add sender to which the site belongs to.")))
 db[table].attachment.label = T("Image/Other Attachment")
 db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
 db[table].comments.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Additional Comments|Use this space to add additional comments and notes about the Site/Warehouse."))
@@ -293,19 +296,19 @@ db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _h
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T("Catalogue Name")
 db[table].name.comment = SPAN("*", _class="req")
-title_create = T('Add Relief Item Category ')
-title_display = T('Relief Item Category Details')
-title_list = T('List Relief Item Categories')
-title_update = T('Edit Relief Item Categories')
-title_search = T('Search Relief Item Category(s)')
-subtitle_create = T('Add New Relief Item Category')
-subtitle_list = T('Relief Item Categories')
-label_list_button = T('List Relief Item Categories')
-label_create_button = T('Add Relief Item Categories')
-msg_record_created = T('Relief Item Category added')
-msg_record_modified = T('Relief Item Category updated')
-msg_record_deleted = T('Relief Item Category deleted')
-msg_list_empty = T('No Relief Item Category currently registered')
+title_create = T('Add Item Category ')
+title_display = T('Item Category Details')
+title_list = T('List Item Categories')
+title_update = T('Edit Item Categories')
+title_search = T('Search Item Category(s)')
+subtitle_create = T('Add New Item Category')
+subtitle_list = T('Item Categories')
+label_list_button = T('List Item Categories')
+label_create_button = T('Add Item Categories')
+msg_record_created = T('Item Category added')
+msg_record_modified = T('Item Category updated')
+msg_record_deleted = T('Item Category deleted')
+msg_list_empty = T('No Item Category currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Relief Item Catalogue Category
@@ -366,16 +369,6 @@ msg_list_empty = T('No Relief Item Sub-Category currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Items
-budget_cost_type_opts = {
-    1:T('One-time'),
-    2:T('Recurring')
-    }
-opt_budget_cost_type = SQLTable(None, 'budget_cost_type',
-                        Field('cost_type', 'integer', notnull=True,
-                            requires = IS_IN_SET(budget_cost_type_opts),
-                            default = 1,
-                            label = T('Cost Type'),
-                            represent = lambda opt: opt and budget_cost_type_opts[opt]))
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -383,8 +376,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #No storage location assigned
 				db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #No Storage Bin assigned
 				db.Field('catalogue', db.lms_catalogue, writable=False, default=1), #default catalogue assigned
-				db.Field('ordered_list_item', notnull=True, unique=True),
-				db.Field('airway_bill'),
+				#db.Field('ordered_list_item', notnull=True, unique=True),
+				db.Field('way_bill'),
 				db.Field('name'),
                 db.Field('description'),
 				db.Field('category', db.lms_catalogue_cat),
@@ -403,11 +396,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('date_time', 'datetime'),
 				db.Field('comments', 'text'),
 				db.Field('attachment', 'upload', autodelete=True),
-				opt_budget_cost_type,
                 db.Field('unit_cost', 'double', default=0.00),
-                db.Field('monthly_cost', 'double', default=0.00),
-                db.Field('minute_cost', 'double', default=0.00),
-                db.Field('megabyte_cost', 'double', default=0.00),
                 db.Field('comments', length=256),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
@@ -430,12 +419,12 @@ db[table].specifications_unit.requires=IS_UNIT(db, filter_opts=[1])
 db[table].specifications_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].weight_unit.requires=IS_UNIT(db, filter_opts=[2])
 db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].ordered_list_item.requires = IS_NOT_EMPTY()
+#db[table].ordered_list_item.requires = IS_NOT_EMPTY()
 db[table].name.requires = IS_NOT_EMPTY()
-db[table].ordered_list_item.label = T("Ordered List Item")
-db[table].ordered_list_item.comment = SPAN("*", _class="req")
-db[table].airway_bill.label = T("Air Way Bill (AWB)")
-db[table].airway_bill.comment = SPAN("*", _class="req")
+#db[table].ordered_list_item.label = T("Ordered List Item")
+#db[table].ordered_list_item.comment = SPAN("*", _class="req")
+#db[table].way_bill.label = T("Air Way Bill (AWB)")
+db[table].way_bill.comment = SPAN("*", _class="req")
 db[table].name.label = T("Product Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].description.label = T("Product Description")
@@ -453,9 +442,6 @@ db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Des
 db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume/Dimensions|Additional quantity quantifier – i.e. “4x5”."))
 db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
 db[table].unit_cost.label = T('Unit Cost')
-db[table].monthly_cost.label = T('Monthly Cost')
-db[table].minute_cost.label = T('Cost per Minute')
-db[table].megabyte_cost.label = T('Cost per Megabyte')
 title_create = T('Add Relief Item')
 title_display = T('Relief Item Details')
 title_list = T('List Relief Item(s)')

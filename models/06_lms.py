@@ -100,16 +100,32 @@ msg_list_empty = T('No Units currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 	
 # Sites
+site_category_opts = {
+    1:T('Donor'),
+    2:T('Miscellaneous'),
+	3:T('Office'),
+	4:T('Project'),
+	5:T('Vendor'),
+	6:T('Warehouse')
+    }
+opt_site_category = SQLTable(None, 'site_category_type',
+                        Field('category', 'integer', notnull=True,
+                            requires = IS_IN_SET(site_category_opts),
+                            default = 1,
+                            label = T('Category'),
+                            represent = lambda opt: opt and site_category_opts[opt]))
 resource = 'site'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('name', notnull=True),
                 db.Field('description', length=256),
-				db.Field('category'),
+				opt_site_category,
                 admin_id,
                 person_id,
 				db.Field('organisation', db.or_organisation),
                 db.Field('address', 'text'),
+				db.Field('site_phone'),
+				db.Field('site_fax'),
 				location_id,
 				db.Field('attachment', 'upload', autodelete=True),
                 db.Field('comments'),
@@ -117,7 +133,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
 # db[table].category.requires = IS_IN_DB(db, 'lms_site_category.id', 'lms_site_category.name')
-db[table].category.requires=IS_IN_SET(['warehouse'])
+#db[table].category.requires=IS_IN_SET(['warehouse'])
 # db[table].site_category_id.comment = DIV(A(T('Add Category'), _class='popup', _href=URL(r=request, c='lms', f='site_category', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Category|The Category of Site.")))
 db[table].name.label = T("Site Name")
 DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
@@ -271,12 +287,13 @@ label_list_button = T('List Storage Bins')
 label_create_button = T('Add Storage Bins')
 msg_record_created = T('Storage Bin added')
 msg_record_modified = T('Storage Bin updated')
+msg_record_modified = T('Storage Bin updated')
 msg_record_deleted = T('Storage Bin deleted')
 msg_list_empty = T('No Storage Bins currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Relief Item Catalogue Master
-resource = 'catalogue'
+# Item Catalog Master
+resource = 'catalog'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('organisation', db.or_organisation),
@@ -287,32 +304,32 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 if not len(db().select(db[table].ALL)):
     db[table].insert(
         name="Default",
-        description="Default Catalogue",
-		comments="All items are by default added to this catalogue"
-    )				
+        description="Default Catalog",
+		comments="All items are by default added to this Catalog"
+    )		
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
 db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|Add the name and additional information about the Organisation if it does not exists already.")))
 db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.label = T("Catalogue Name")
+db[table].name.label = T("Catalog Name")
 db[table].name.comment = SPAN("*", _class="req")
-title_create = T('Add Item Category ')
-title_display = T('Item Category Details')
-title_list = T('List Item Categories')
-title_update = T('Edit Item Categories')
-title_search = T('Search Item Category(s)')
-subtitle_create = T('Add New Item Category')
-subtitle_list = T('Item Categories')
-label_list_button = T('List Item Categories')
-label_create_button = T('Add Item Categories')
-msg_record_created = T('Item Category added')
-msg_record_modified = T('Item Category updated')
-msg_record_deleted = T('Item Category deleted')
-msg_list_empty = T('No Item Category currently registered')
+title_create = T('Add Item Catalog ')
+title_display = T('Item Catalog Details')
+title_list = T('List Item Catalogs')
+title_update = T('Edit Item Catalog')
+title_search = T('Search Item Catalog(s)')
+subtitle_create = T('Add New Item Catalog')
+subtitle_list = T('Item Catalogs')
+label_list_button = T('List Item Catalogs')
+label_create_button = T('Add Item Catalog')
+msg_record_created = T('Item Catalog added')
+msg_record_modified = T('Item Catalog updated')
+msg_record_deleted = T('Item Catalog deleted')
+msg_list_empty = T('No Item Catalog currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Relief Item Catalogue Category
-resource = 'catalogue_cat'
+# Item Catalog Category
+resource = 'catalog_cat'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('name'),
@@ -321,51 +338,124 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.label = T("Relief Item Category")
+db[table].name.label = T("Item Catalog Category")
 db[table].name.comment = SPAN("*", _class="req")
-title_create = T('Add Relief Item Category ')
-title_display = T('Relief Item Category Details')
-title_list = T('List Relief Item Categories')
-title_update = T('Edit Relief Item Categories')
-title_search = T('Search Relief Item Category(s)')
-subtitle_create = T('Add New Relief Item Category')
-subtitle_list = T('Relief Item Categories')
-label_list_button = T('List Relief Item Categories')
-label_create_button = T('Add Relief Item Categories')
-msg_record_created = T('Relief Item Category added')
-msg_record_modified = T('Relief Item Category updated')
-msg_record_deleted = T('Relief Item Category deleted')
-msg_list_empty = T('No Relief Item Category currently registered')
+title_create = T('Add Item Catalog Category ')
+title_display = T('Item Catalog Category Details')
+title_list = T('List Item Catalog Categories')
+title_update = T('Edit Item Catalog Categories')
+title_search = T('Search Item Catalog Category(s)')
+subtitle_create = T('Add New Item Catalog Category')
+subtitle_list = T('Item Catalog Categories')
+label_list_button = T('List Item Catalog Categories')
+label_create_button = T('Add Item Catalog Categories')
+msg_record_created = T('Item Catalog Category added')
+msg_record_modified = T('Item Catalog Category updated')
+msg_record_deleted = T('Item Catalog Category deleted')
+msg_list_empty = T('No Item Catalog Category currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Relief Item Catalogue Sub-Category
-resource = 'catalogue_subcat'
+# Item Catalog Sub-Category
+resource = 'catalog_subcat'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                db.Field('parent_category', db.lms_catalogue_cat),
+                db.Field('parent_category', db.lms_catalog_cat),
 				db.Field('name'),
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.label = T("Relief Item Sub-Category")
+db[table].name.label = T("Item Sub-Category")
 db[table].name.comment = SPAN("*", _class="req")
-db[table].parent_category.requires = IS_IN_DB(db, 'lms_catalogue_cat.id', 'lms_catalogue_cat.name')
-db[table].parent_category.comment = DIV(A(T('Add Relief Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalogue_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Relief Item Category.")))
-title_create = T('Add Relief Item Sub-Category ')
-title_display = T('Relief Item Sub-Category Details')
-title_list = T('List Relief Item Sub-Categories')
-title_update = T('Edit Relief Item Sub-Categories')
-title_search = T('Search Relief Item Sub-Category(s)')
-subtitle_create = T('Add New Relief Item Sub-Category')
-subtitle_list = T('Relief Item Sub-Categories')
-label_list_button = T('List Relief Item Sub-Categories')
-label_create_button = T('Add Relief Item Sub-Categories')
-msg_record_created = T('Relief Item Sub-Category added')
-msg_record_modified = T('Relief Item Sub-Category updated')
-msg_record_deleted = T('Relief Item Sub-Category deleted')
-msg_list_empty = T('No Relief Item Sub-Category currently registered')
+db[table].parent_category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
+db[table].parent_category.comment = DIV(A(T('Add Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+title_create = T('Add Item Sub-Category ')
+title_display = T('Item Sub-Category Details')
+title_list = T('List Item Sub-Categories')
+title_update = T('Edit Item Sub-Categories')
+title_search = T('Search Item Sub-Category(s)')
+subtitle_create = T('Add New Item Sub-Category')
+subtitle_list = T('Item Sub-Categories')
+label_list_button = T('List Item Sub-Categories')
+label_create_button = T('Add Item Sub-Categories')
+msg_record_created = T('Item Sub-Category added')
+msg_record_modified = T('Item Sub-Category updated')
+msg_record_deleted = T('Item Sub-Category deleted')
+msg_list_empty = T('No Item Sub-Category currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Category<>Sub-Category<>Catalog Relation between all three.
+
+resource = 'category_master'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('category_id', db.lms_catalog_cat),
+                Field('subcategory_id', db.lms_catalog_subcat),
+                Field('catalog_id', db.lms_catalog),
+                migrate=migrate)
+db[table].category_id.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
+db[table].category_id.label = T('Category')
+db[table].category_id.represent = lambda category_id: db(db.lms_catalog_cat.id==category_id).select()[0].name
+db[table].category_id.comment = DIV(A(T('Add Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+db[table].subcategory_id.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
+db[table].subcategory_id.label = T('Sub Category')
+db[table].subcategory_id.represent = lambda subcategory_id: db(db.lms_catalog_subcat.id==subcategory_id).select()[0].name
+db[table].subcategory_id.comment = DIV(A(T('Add Item Sub-Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
+db[table].catalog_id.requires = IS_IN_DB(db, 'lms_catalog.id', 'lms_catalog.name')
+db[table].catalog_id.label = T('Catalog')
+db[table].catalog_id.represent = lambda catalog_id: db(db.lms_catalog.id==catalog_id).select()[0].name
+db[table].catalog_id.comment = DIV(A(T('Add Item Catalog'), _class='popup', _href=URL(r=request, c='lms', f='catalog', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Catalog.")))
+title_create = T('Add Category<>Sub-Category<>Catalog Relation ')
+title_display = T('Category<>Sub-Category<>Catalog Relation')
+title_list = T('List Category<>Sub-Category<>Catalog Relation')
+title_update = T('Edit Category<>Sub-Category<>Catalog Relation')
+title_search = T('Search Category<>Sub-Category<>Catalog Relation')
+subtitle_create = T('Add Category<>Sub-Category<>Catalog Relation')
+subtitle_list = T('Category<>Sub-Category<>Catalog Relation')
+label_list_button = T('List Category<>Sub-Category<>Catalog Relation')
+label_create_button = T('Add Category<>Sub-Category<>Catalog Relation')
+msg_record_created = T('ICategory<>Sub-Category<>Catalog Relation added')
+msg_record_modified = T('Category<>Sub-Category<>Catalog Relation updated')
+msg_record_deleted = T('Category<>Sub-Category<>Catalog Relation deleted')
+msg_list_empty = T('No Category<>Sub-Category<>Catalog Relation currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Shipment 
+resource = 'shipment'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+				db.Field('way_bill', notnull=True),
+				db.Field('sender_site', db.lms_site),
+				db.Field('sender_person'),
+				db.Field('sent_date', 'datetime'),
+				db.Field('recipient_site', db.lms_site),
+				db.Field('recieving_person'),
+				db.Field('recieved_date', 'datetime'),
+				db.Field('cost', 'double', default=0.00),
+				db.Field('currency'),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].way_bill.requires = IS_NOT_EMPTY()
+db[table].way_bill.label = T("Shipment/Way Bills")
+db[table].way_bill.comment = SPAN("*", _class="req")
+db[table].sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+db[table].sender_site.comment = DIV(A(T('Add Sender Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
+db[table].recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient|Add a new Site where the Item is being sent to.")))
+title_create = T('Add Shipment/Way Bills')
+title_display = T('Shipment/Way Bills Details')
+title_list = T('List Shipment/Way Bills')
+title_update = T('Edit Shipment/Way Bills')
+title_search = T('Search Shipment/Way Bills')
+subtitle_create = T('Add Shipment/Way Bills')
+subtitle_list = T('Shipment/Way Bills')
+label_list_button = T('List Shipment/Way Bills')
+label_create_button = T('Add Shipment/Way Bills')
+msg_record_created = T('Shipment/Way Bill added')
+msg_record_modified = T('Shipment/Way Bills updated')
+msg_record_deleted = T('Shipment/Way Bills deleted')
+msg_list_empty = T('No Shipment/Way Bills currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Items
@@ -375,35 +465,38 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
 				db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #No storage location assigned
 				db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #No Storage Bin assigned
-				db.Field('catalogue', db.lms_catalogue, writable=False, default=1), #default catalogue assigned
+				db.Field('catalog', db.lms_catalog, writable=False, default=1), #default catalog assigned
 				#db.Field('ordered_list_item', notnull=True, unique=True),
+				#Shipment Details
 				db.Field('way_bill'),
-				db.Field('name'),
-                db.Field('description'),
-				db.Field('category', db.lms_catalogue_cat),
-				db.Field('sub_category', db.lms_catalogue_subcat),
-				db.Field('sender', db.or_organisation),
-				db.Field('recipient', db.or_organisation),
-				db.Field('designated'),
-				db.Field('quantity', 'double', default=0.00),
-				db.Field('shortage', 'double', default=0.00),
-				db.Field('net_quantity', default=0.00),
-				db.Field('quantity_unit'),
-				db.Field('specifications'),
-				db.Field('specifications_unit'),
-				db.Field('weight', 'double', default=0.00),
-				db.Field('weight_unit'),
+				db.Field('sender_site', db.lms_site),
+				db.Field('sender_person'),
+				db.Field('recipient_site', db.lms_site),
+				db.Field('recieving_person'),
+				#Item Details
+				db.Field('name'), #Item Catalog
+                db.Field('description'), #Item Catalog
+				db.Field('category', db.lms_catalog_cat), #Item Catalog
+				db.Field('sub_category', db.lms_catalog_subcat), #Item Catalog
+				db.Field('designated'), #More details to be added, maybe a new table.
+				db.Field('quantity_sent', 'double', default=0.00),
+				db.Field('quantity_received', 'double', default=0.00),
+				db.Field('quantity_shortage', default=0.00),
+				db.Field('quantity_unit'), #Item Catalog
+				db.Field('specifications'), #Item Catalog
+				db.Field('specifications_unit'), #Item Catalog
+				db.Field('weight', 'double', default=0.00), #Item Catalog
+				db.Field('weight_unit'), #Item Catalog
 				db.Field('date_time', 'datetime'),
 				db.Field('comments', 'text'),
 				db.Field('attachment', 'upload', autodelete=True),
                 db.Field('unit_cost', 'double', default=0.00),
-                db.Field('comments', length=256),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
 #db[table].storage_id.readable=False
 #db[table].bin_id.readable=False
-#db[table].catalogue.readable=False
+#db[table].catalog.readable=False
 db[table].site_id.label = T("Site/Warehouse")
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
 '''db[table].storage_id.label = T("Storage Location")
@@ -428,33 +521,33 @@ db[table].way_bill.comment = SPAN("*", _class="req")
 db[table].name.label = T("Product Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].description.label = T("Product Description")
-db[table].category.requires = IS_IN_DB(db, 'lms_catalogue_cat.id', 'lms_catalogue_cat.name')
-db[table].category.comment = DIV(A(T('Add Relief Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalogue_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Relief Item Category.")))
-db[table].sub_category.requires = IS_IN_DB(db, 'lms_catalogue_subcat.id', 'lms_catalogue_subcat.name')
-db[table].sub_category.comment = DIV(A(T('Add Relief Item Sub-Category'), _class='popup', _href=URL(r=request, c='lms', f='catalogue_subcat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Relief Item Sub-Category.")))
-db[table].sender.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
-db[table].sender.comment = DIV(A(T('Add Sender Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender.")))
-db[table].recipient.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
-db[table].recipient.comment = DIV(A(T('Add Recipient/Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient.")))
+db[table].category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
+db[table].category.comment = DIV(A(T('Add Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+db[table].sub_category.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
+db[table].sub_category.comment = DIV(A(T('Add Item Sub-Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
+db[table].sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+db[table].sender_site.comment = DIV(A(T('Add Sender Organisation'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender Site.")))
+db[table].recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient Site.")))
 db[table].designated.label = T("Designated for")
 db[table].specifications.label = T("Volume/Dimensions")
 db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
 db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume/Dimensions|Additional quantity quantifier – i.e. “4x5”."))
 db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
 db[table].unit_cost.label = T('Unit Cost')
-title_create = T('Add Relief Item')
-title_display = T('Relief Item Details')
-title_list = T('List Relief Item(s)')
-title_update = T('Edit Relief Item(s)')
-title_search = T('Search Relief Item(s)')
-subtitle_create = T('Add New Relief Item')
-subtitle_list = T('Relief Items')
-label_list_button = T('List Relief Item')
-label_create_button = T('Add Relief Item')
-msg_record_created = T('Relief Item added')
-msg_record_modified = T('Relief Item updated')
-msg_record_deleted = T('Relief Item deleted')
-msg_list_empty = T('No Relief Item currently registered')
+title_create = T('Add Item')
+title_display = T('Item Details')
+title_list = T('List Item(s)')
+title_update = T('Edit Item(s)')
+title_search = T('Search Item(s)')
+subtitle_create = T('Add New Item')
+subtitle_list = T('Items')
+label_list_button = T('List Item')
+label_create_button = T('Add Item')
+msg_record_created = T('Item added')
+msg_record_modified = T('Item updated')
+msg_record_deleted = T('Item deleted')
+msg_list_empty = T('No Item currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Kits

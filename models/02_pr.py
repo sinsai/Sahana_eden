@@ -582,13 +582,20 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
         labels = label.split()
         results = []
         query = None
+        # TODO: make a more sophisticated search function (levenshtein?)
         for l in labels:
+
+            # append wildcards
+            wc = "%"
+            _l = "%s%s%s" % (wc,l,wc)
+
             # build query
             for f in search_fields:
                 if query:
-                    query = (db.pr_person[f].like(l)) | query
+                    query = (db.pr_person[f].like(_l)) | query
                 else:
-                    query = (db.pr_person[f].like(l))
+                    query = (db.pr_person[f].like(_l))
+
             # undeleted records only
             query = (db.pr_person.deleted==False) & (query)
             # restrict to prior results (AND)

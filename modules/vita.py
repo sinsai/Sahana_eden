@@ -183,3 +183,37 @@ class Vita(object):
                 return "%s%s%s" % (fname, mname, lname)
         else:
             return ''
+
+    def rlevenshtein(self,str1,str2):
+        """
+            Returns a relative value for the Levenshtein distance of two strings
+
+            Levenshtein distance:
+            Number of character insertions/deletions/replacements necessary to
+            morph one string into the other. Here calculated in relation to the
+            maximum string length, hence 0.0 for identical and 1.0 for completely
+            different strings.
+
+            Note: Unfortunately, this doesn't work in SQL queries :(
+        """
+
+        matrix = {}
+        l1 = len(str1)
+        l2 = len(str2)
+
+        for i in range(0,l1+1): matrix[i,0] = i
+        for j in range(0,l2+1): matrix[0,j] = j 
+
+        for i in range(1,l1+1):
+            for j in range(1,l2+1):
+                x = matrix[i-1,j]+1
+                y = matrix[i,j-1]+1
+
+                if str1[i-1] == str2[j-1]:
+                    z = matrix[i-1,j-1]
+                else:
+                    z = matrix[i-1,j-1]+1
+
+                matrix[i,j] = min(x,y,z)
+
+        return float(matrix[l1,l2])/float(max(l1,l2))

@@ -76,6 +76,10 @@ def person():
         if method=="search_simple":
             if representation=="html":
 
+                if not shn_has_permission('read', db.pr_person):
+                    session.error = UNAUTHORISED
+                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
+
                 # Check for redirection
                 if request.vars.next:
                     next = str.lower(request.vars.next)
@@ -95,25 +99,18 @@ def person():
                         TR("",INPUT(_type="submit",_value="Search"))
                         ))
 
+                output = dict(title=title,subtitle=subtitle,form=form, vars=form.vars)
+
                 # Accept action
                 items = None
                 if form.accepts(request.vars,session):
 
-                    # Get matching person ID's
                     results = shn_pr_get_person_id(form.vars.label)
 
-                    # Read records for matching ID's
-                    rows = None
-                    if results:
-                        rows = db(db.pr_person.id.belongs(results)).select(
-                            db.pr_person.id,
-                            db.pr_person.pr_pe_label,
-                            db.pr_person.first_name,
-                            db.pr_person.middle_name,
-                            db.pr_person.last_name,
-                            db.pr_person.opt_pr_gender,
-                            db.pr_person.opt_pr_age_group,
-                            db.pr_person.date_of_birth)
+                    if results and len(results):
+                        rows = db(db.pr_person.id.belongs(results)).select()
+                    else:
+                        rows = None
 
                     # Build table rows from matching records
                     if rows:
@@ -121,25 +118,32 @@ def person():
                         for row in rows:
                             records.append(TR(
                                 row.pr_pe_label or '[no label]',
-                                A(row.first_name, _href=URL(r=request, c='pr', f='person', args='%s/%s' % (next, row.id))),
-                                row.middle_name,
-                                row.last_name,
+                                A(vita.fullname(row), _href=URL(r=request, c='pr', f='person', args='%s/%s' % (next, row.id))),
+#                                A(row.first_name, _href=URL(r=request, c='pr', f='person', args='%s/%s' % (next, row.id))),
+#                                row.middle_name,
+#                                row.last_name,
                                 row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
                                 row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                                row.opt_pr_nationality and pr_nationality_opts[row.opt_pr_nationality] or 'unknown',
                                 row.date_of_birth or 'unknown'
                                 ))
                         items=DIV(TABLE(THEAD(TR(
                             TH("ID Label"),
-                            TH("First Name"),
-                            TH("Middle Name"),
-                            TH("Last Name"),
+                            TH("Name"),
+#                            TH("First Name"),
+#                            TH("Middle Name"),
+#                            TH("Last Name"),
                             TH("Gender"),
                             TH("Age Group"),
+                            TH("Nationality"),
                             TH("Date of Birth"))),
                             TBODY(records), _id='list', _class="display"))
+                    else:
+                        items = T('None')
 
-                # Return to the view
-                return dict(title=title,subtitle=subtitle,form=form,vars=form.vars,items=items)
+                    output.update(dict(items=items))
+
+                return output
 
             else: # other representation
                 pass

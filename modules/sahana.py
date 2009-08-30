@@ -620,7 +620,7 @@ class AuthS3(Auth):
             pass
         else:
             # Insert Person Entity
-            pr_pe_id = db.pr_pentity.insert(opt_pr_pentity_class=1,label=None)
+            pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=1,label=None)
             # Link to Person Entity
             if pr_pe_id:
                 db.pr_person.insert(

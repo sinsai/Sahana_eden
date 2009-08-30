@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Sahanapy VITA - Part 04_pr: Person Tracking and Tracing
+# Sahanapy Person Registry
 #
 # created 2009-07-23 by nursix
 #
@@ -59,7 +59,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,2))
+db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(1,2))
 
 db[table].co_name.label = T('c/o Name')
 db[table].street1.label = T('Street')
@@ -136,7 +136,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,2))
+db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(1,2))
 
 db[table].value.requires = IS_NOT_EMPTY()
 
@@ -244,24 +244,12 @@ def shn_pr_add_image_to_pe_form(pentity):
 #
 # Presence Conditions ---------------------------------------------------------
 #
-pr_presence_condition_opts = {
-    1:T('Check-In'),                # Don't change - VITA: Check-In to a location (e.g. accommodation/storage)
-    2:T('Check-Out'),               # Don't change - VITA: Check-Out from a location
-    3:T('Reconfirmation'),          # Don't change - VITA: Reconfirmation of continuous presence
-    4:T('Procedure'),               # Don't change - VITA: Presence for a procedure (temporary)
-    5:T('Transfer'),                # Don't change - VITA: Transfer from/to different location
-    6:T('Transit'),                 # Don't change - VITA: Transit via the current location
-    7:T('Missing'),                 # Don't change - VITA: Missing from a location
-    8:T('Lost'),                    # Don't change - VITA: Finally lost, e.g. destroyed/disposed
-    9:T('Changed'),                 # Don't change - VITA: Changed tracking item (e.g. Person deceased)
-    10:T('Checkpoint'),             # Don't change - VITA: Passing a checkpoint
-    99:T('Found')                   # Don't change - VITA: Found (general presence)
-    }
+pr_presence_condition_opts = vita.presence_conditions
 
 opt_pr_presence_condition = SQLTable(None, 'opt_pr_presence_condition',
                         db.Field('opt_pr_presence_condition','integer',
                         requires = IS_IN_SET(pr_presence_condition_opts),
-                        default = 99,
+                        default = vita.DEFAULT_PRESENCE,
                         label = T('Presence Condition'),
                         represent = lambda opt: opt and pr_presence_condition_opts[opt]))
 
@@ -305,13 +293,13 @@ db[table].time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allo
 db[table].time.represent = lambda value: shn_as_local_time(value)
 db[table].time.label = T('Date/Time')
 
-title_create = T('Presence')
-title_display = T('Presence Details')
-title_list = T('List Presence Records')
-title_update = T('Edit Presence Details')
-title_search = T('Search Presence Records')
-subtitle_create = T('Add New Presence Record')
-subtitle_list = T('Presence Records')
+title_create = T('Add Log Entry')
+title_display = T('Log Entry Details')
+title_list = T('Presence Log')
+title_update = T('Edit Log Entry')
+title_search = T('Search Log Entry')
+subtitle_create = T('Add New Log Entry')
+subtitle_list = T('Current Log Entries')
 label_list_button = T('List Presence Records')
 label_create_button = T('Add Presence Record')
 msg_record_created = T('Presence Record added')
@@ -496,7 +484,7 @@ db[table].module.requires = IS_NULL_OR(IS_IN_DB(db, 's3_module.name', '%(name_ni
 db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name).select()[0].name_nice] or ["None"])[0]
 
 # *****************************************************************************
-# Functions
+# Functions:
 #
 
 #

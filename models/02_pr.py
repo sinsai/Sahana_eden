@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Sahanapy VITA - Part 02_pr: Person Tracking and Tracing
+# Sahanapy Person Registry
 #
 # created 2009-07-15 by nursix
 #
@@ -32,108 +32,65 @@ if not len(db().select(db[table].ALL)):
     )
 
 # *****************************************************************************
+# Import VITA
+#
+exec('from applications.%s.modules.vita import *' % request.application)
+# Faster for Production (where app-name won't change):
+#from applications.sahana.modules.vita import *
+
+vita = Vita(globals(),db)
+
+# *****************************************************************************
 # PersonEntity (pentity)
-#
 
+# -----------------------------------------------------------------------------
+# Entity types
 #
-# PersonEntity classes --------------------------------------------------------
-#
-pr_pentity_class_opts = {
-    1:T('Person'),                  # used in VITA - don't change
-    2:T('Group'),                   # used in VITA - don't change
-    3:T('Body'),
-    4:T('Object')
-    }
+opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
+                    db.Field('opt_pr_entity_type','integer',
+                    requires = IS_IN_SET(vita.trackable_types),
+                    default = vita.DEFAULT_TRACKABLE,
+                    label = T('Entity Type'),
+                    represent = lambda opt: opt and vita.trackable_types[opt]))
 
-opt_pr_pentity_class = SQLTable(None, 'opt_pr_pentity_class',
-                    db.Field('opt_pr_pentity_class','integer',
-                    requires = IS_IN_SET(pr_pentity_class_opts),
-                    default = 1,
-                    label = T('Entity Class'),
-                    represent = lambda opt: opt and pr_pentity_class_opts[opt]))
-
-#
-# shn_pentity_represent -------------------------------------------------------
+# -----------------------------------------------------------------------------
+# shn_pentity_represent
 #
 def shn_pentity_represent(pentity):
     """
         Represent a Person Entity in option fields or list views
     """
 
-    default = "None"
+    default = T('None (no such record)')
 
     try:
-        if not pentity: return default
+        record = vita.pentity(pentity)
+        entity_type = record.opt_pr_entity_type
 
-        if isinstance(pentity,dict):
-            if 'pr_pe_id' in pentity:
-                pentity_id = pentity.pr_pe_id
-                pe_record = db((db.pr_pentity.id==pentity_id) & (db.pr_pentity.deleted==False)).select()[0]
-            else:
-                pentity_id = pentity.id
-                pe_record = pentity
-        else:
-            pentity_id = pentity
-            pe_record = db((db.pr_pentity.id==pentity_id) & (db.pr_pentity.deleted==False)).select()[0]
-
-        if pe_record and pe_record.opt_pr_pentity_class==1:
-            subentity_record=db(db.pr_person.pr_pe_id==pe_record.id).select()[0]
-            if subentity_record:
-                pentity_str = '%s %s [%s] (%s %s)' % (
-                    subentity_record.first_name,
-                    subentity_record.last_name or '',
-                    subentity_record.pr_pe_label or 'no label',
-                    pr_pentity_class_opts[1],
-                    subentity_record.id
-                )
-            else:
-                pentity_str = '[%s] (%s PE=%s)' % (
-                    pe_record.label or 'no label',
-                    pr_pentity_class_opts[1],
-                    pe_record.id
-                )
-
-        elif pe_record and pe_record.opt_pr_pentity_class==2:
-            subentity_record=db(db.pr_group.pr_pe_id==pe_record.id).select()[0]
-            if subentity_record:
-                pentity_str = '%s (%s %s)' % (
-                    subentity_record.group_name,
-                    pr_pentity_class_opts[2],
-                    subentity_record.id
-                )
-            else:
-                pentity_str = '(%s PE=%s)' % (
-                    pr_pentity_class_opts[2],
-                    pe_record.id
-                )
-
-        elif pe_record and pe_record.opt_pr_pentity_class==3:
-            subentity_record=db(db.hrm_body.pr_pe_id==pe_record.id).select()[0]
-            if subentity_record:
-                pentity_str = '[%s] (%s %s)' % (
-                    subentity_record.pr_pe_label or 'no label',
-                    pr_pentity_class_opts[3],
-                    subentity_record.id
-                )
-            else:
-                pentity_str = '[%s] (%s PE=%s)' % (
-                    pe_record.label or 'no label',
-                    pr_pentity_class_opts[3],
-                    pe_record.id
-                )
-        elif pe_record:
-            pentity_str = '[%s] (%s PE=%s)' % (
-                pe_record.label or 'no label',
-                pr_pentity_class_opts[pe_record.opt_pr_pentity_class],
-                pe_record.id
+        if entity_type==1:
+            person=vita.person(record)
+            pentity_str = '%s [%s] (%s)' % (
+                vita.fullname(person),
+                record.label or 'no label',
+                vita.trackable_types[entity_type]
             )
 
-        else: return default
+        elif entity_type==2:
+            group=vita.group(record)
+            pentity_str = '%s (%s)' % (
+                group.group_name,
+                vita.trackable_types[entity_type]
+            )
+
+        else:
+            pentity_str = '[%s] (%s)' % (
+                record.label or 'no label',
+                vita.trackable_types[entity_type]
+            )
 
         return pentity_str
 
     except:
-        # No such record
         return default
 
 #
@@ -143,7 +100,7 @@ resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('parent'),                    # Parent Entity
-                opt_pr_pentity_class,               # Entity class
+                opt_pr_entity_type,                 # Entity class
                 Field('label', unique=True),        # Recognition Label
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -425,6 +382,9 @@ db.define_table(table, timestamp, deletion_status,
 db[table].pr_pe_label.readable=False
 db[table].pr_pe_label.writable=False
 
+db[table].system.readable = False
+db[table].system.writable = False
+
 db[table].opt_pr_group_type.label = T("Group type")
 
 db[table].group_name.label = T("Group name")
@@ -449,7 +409,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 group_id = SQLTable(None, 'group_id',
                 Field('group_id', db.pr_group,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_group.id', '%(id)s: %(group_name)s')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_group.id', '%(id)s: %(group_name)s', filterby='system', filter_opts=(False,))),
                 represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
                 comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
                 ondelete = 'RESTRICT'
@@ -503,7 +463,6 @@ network_id = SQLTable(None, 'network_id',
 #
 def shn_pentity_ondelete(record):
     """
-    VITA function:
     Minimalistic callback function for CRUD controller, deletes a pentity record
     when the corresponding subclass record gets deleted.
      
@@ -528,7 +487,6 @@ def shn_pentity_ondelete(record):
 #
 def shn_pentity_onvalidation(form, table=None, entity_class=1):
     """
-    VITA function:
     Callback function for RESTlike CRUD controller, creates or updates a pentity
     record when the corresponding subclass record gets created/updated.
      
@@ -538,13 +496,13 @@ def shn_pentity_onvalidation(form, table=None, entity_class=1):
 
     form            : the current form containing pr_pe_id and pr_pe_label (from pr_pe_fieldset)
     table           : the table containing the subclass entity
-    entity_class    : the class of pentity to be created (from pr_pentity_class_opts)
+    entity_class    : the class of pentity to be created (from vita.trackable_types)
     """
     if form.vars:
-        if (len(request.args) == 0 or request.args[0] == 'create') and entity_class in pr_pentity_class_opts.keys():
+        if (len(request.args) == 0 or request.args[0] == 'create') and entity_class in vita.trackable_types:
             # this is a create action either directly or from list view
             subentity_label = form.vars.get('pr_pe_label')
-            pr_pe_id = db['pr_pentity'].insert(opt_pr_pentity_class=entity_class,label=subentity_label)
+            pr_pe_id = db['pr_pentity'].insert(opt_pr_entity_type=entity_class,label=subentity_label)
             if pr_pe_id: form.vars.pr_pe_id = pr_pe_id
         elif len(request.args) > 1 and request.args[0] == 'update' and form.vars.delete_this_record and table:
             # this is a delete action from update
@@ -685,31 +643,86 @@ def shn_pr_person_header(id, next=None):
     else:
         return None
 
+# -----------------------------------------------------------------------------
+# shn_pr_pentity_details
 #
-# shn_pr_person_sublist -------------------------------------------------------
-#
-def shn_pr_person_sublist_linkto(field):
+def shn_pr_pentity_details_linkto(field):
+    """
+        Linkto helper for shn_pr_pentity_details
+    """
     return URL(r=request, f=request.args[0], args="update/%s" % field, vars=dict(_next=URL(r=request, args=request.args, vars=request.vars)))
 
-def shn_pr_person_sublist(request, subentity, person_id, fields=None, representation='html', orderby=None):
+def shn_pr_pentity_details(
+    request,
+    module,
+    entity,
+    record,
+    joinby='pr_pe_id',
+    fields=None,
+    representation='html',
+    orderby=None,
+    multiple=True):
+    """
+        Custom CRUD controller for person entity joined tables
+    """
 
-    subresource = "%s_%s" % (module, subentity)
-    subtable = db[subresource]
+    resource = "%s_%s" % (module, entity)
+    table = db[resource]
 
-    output = dict(items=None)
+    # Get CRUD Strings
+    try:
+        title_create = s3.crud_strings[resource].subtitle_create
+        title_display =  s3.crud_strings[resource].title_display
+        title_list =  s3.crud_strings[resource].subtitle_list
+        title_update =  s3.crud_strings[resource].title_update
+        msg_created = s3.crud_strings[resource].msg_record_created
+        msg_modified = s3.crud_strings[resource].msg_record_modified
+        msg_empty = s3.crud_strings[resource].msg_list_empty
+    except:
+        title_create = s3.crud_strings.title_create
+        title_display =  s3.crud_strings.title_display
+        title_list =  s3.crud_strings.title_list
+        title_update =  s3.crud_strings.title_update
+        msg_created = s3.crud_strings.msg_record_created
+        msg_modified = s3.crud_strings.msg_record_modified
+        msg_empty = s3.crud_strings.msg_list_empty
 
-    # Check for authorization
-    if shn_has_permission('read',db.pr_person) & shn_has_permission('read',subtable):
-        query = (db.pr_person.id==person_id)
-        if 'pr_pe_id' in subtable.fields:
-            query = ((db.pr_person.pr_pe_id==subtable.pr_pe_id) & query)
-        elif 'person_id' in subtable.fields:
-            query = ((db.pr_person.id==subtable.person_id) & query)
+    if not shn_has_permission('read',table):
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args=request.args, vars=request.vars)}))
 
-        query = ((db.pr_person.deleted==False) & (subtable.deleted==False)) & query
+    output = {}
 
-        # Audit
-        shn_audit_read(operation='list', resource=subresource, representation=representation)
+    # Query
+    if joinby=='pr_pe_id':
+        query = (table.pr_pe_id==record.pr_pe_id)
+        _id = record.pr_pe_id
+    else:
+        query = (table[joinby]==record.id)
+        _id = record.id
+
+    if multiple: # multiple records of that type allowed
+
+        # Filter for deletion status (not necessary if multiple==False)
+        if 'deleted' in table:
+            query = ((table.deleted==False) | (table.deleted==None)) & query
+
+        # Add form
+        if shn_has_permission('create',table):
+            try:
+                table[joinby].default = _id
+                table[joinby].writable = False
+                table[joinby].comment = None #avoid any Add XXXX links here
+
+                form = SQLFORM(table)
+                if form.accepts(request.vars,session):
+                    shn_audit_create(form, resource, representation)
+                    response.flash=msg_created
+                elif form.errors:
+                    response.flash="Error!" # should not happen
+                output.update(form=form, formtitle=title_create)
+            except:
+                pass
 
         # Pagination
         if 'page' in request.vars:
@@ -730,7 +743,7 @@ def shn_pr_person_sublist(request, subentity, person_id, fields=None, representa
             response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>'
 
         if not fields:
-            fields = [subtable[f] for f in subtable.fields if subtable[f].readable]
+            fields = [table[f] for f in table.fields if table[f].readable]
 
         # Column labels
         headers = {}
@@ -738,13 +751,17 @@ def shn_pr_person_sublist(request, subentity, person_id, fields=None, representa
             # Use custom or prettified label
             headers[str(field)] = field.label
     
-        if shn_has_permission('update',subtable):
-            linkto=shn_pr_person_sublist_linkto
+        if shn_has_permission('update',table):
+            linkto=shn_pr_pentity_details_linkto
         else:
             linkto=None
 
+        # Audit
+        shn_audit_read(operation='list', resource=resource, representation=representation)
+
+        # Get List
         items = crud.select(
-            subtable,
+            table,
             query=query,
             fields=fields,
             limitby=limitby,
@@ -754,44 +771,58 @@ def shn_pr_person_sublist(request, subentity, person_id, fields=None, representa
             orderby=orderby,
             _id='list', _class='display')
 
-    else:
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args=request.args, vars=request.vars)}))
+        if not items:
+            items = T('None')
 
-    if not items:
-        items = T('None')
+        output.update(items=items, subtitle=title_list)
+        return output
 
-    output.update(items=items)
-
-    return output
-
-#
-# shn_pr_add_details_to_person_form -------------------------------------------
-#
-def shn_pr_add_details_to_person_form(person_id, table):
-
-    if shn_has_permission('create',table):
+    else: # only one record of that type per entity ID
         try:
-            if 'pr_pe_id' in table:
-                person = vita.person(person_id)
-                pe_id = person.pr_pe_id
-                table.pr_pe_id.default = pe_id
-                table.pr_pe_id.writable = False
-
-            elif 'person_id' in table:
-                table.person_id.default = person_id
-                table.person_id.writable = False
-
-            else:
-                return None
-
-            form = SQLFORM( table )
-            return form
-
+            target_record = db(query).select(table.id)[0]
         except:
-            return None
-    else:
-        return None
+            target_record = None
+
+        if not target_record:
+            if shn_has_permission('create', table):
+                table[joinby].default = _id
+                table[joinby].writable = False
+                table[joinby].comment = None #avoid any Add XXXX links here
+                form = SQLFORM(table, showid=False)
+                if form.accepts(request.vars,session):
+                    shn_audit_create(form, resource, representation)
+                    response.flash=msg_created
+#                    form = SQLFORM(table, form.vars.id, showid=False)
+                    redirect(URL(r=request, args=request.args)) # redirect here for update
+                elif form.errors:
+                    response.flash="Error!" # should not happen
+                output.update(form=form, formtitle=title_create)
+            else:
+                # error message
+                items=T('No data available')
+                output.update(items=items, subtitle=title_display)
+            return output
+
+        if shn_has_permission('update', table):
+            # create update form for the record
+            table[joinby].default = _id
+            table[joinby].writable = False
+            table[joinby].comment = None #avoid any Add XXXX links here
+
+            form = SQLFORM(table, target_record.id, showid=False)
+            if form.accepts(request.vars,session):
+                shn_audit_update(form, resource, representation)
+                response.flash=msg_modified
+                form = SQLFORM(table, target_record.id, showid=False)
+            elif form.errors:
+                response.flash="Error!" # should not happen
+            output.update(form=form, formtitle=title_update)
+        else:
+            items = crud.read(table, target_record.id)
+            output.update(items=items,subtitle=title_display)
+        return output
+
+    return None
 
 #
 #

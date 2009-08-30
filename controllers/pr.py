@@ -199,10 +199,9 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Presence Log')
-                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+                output=dict(title=title, pheader=pheader)
 
-                # Which fields?
+                # Which fields into the list?
                 fields = [
                         db.pr_presence.id,
                         db.pr_presence.time,
@@ -215,22 +214,13 @@ def person():
                         db.pr_presence.destination,
                 ]
 
-                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_presence)
-                if form:
-                    formtitle = T('Add Log Entry')
-                    if form.accepts(request.vars,session):
-                        shn_audit_create(form, 'pr_presence', representation)
-                        response.flash="Log Entry added"
-                    elif form.errors:
-                        response.flash="Error in the form"
+                record = vita.person(session.pr_person)
 
-                    output.update(dict(formtitle=formtitle, form=form))
+                _output = shn_pr_pentity_details(
+                    request, 'pr', 'presence', record, joinby='pr_pe_id', fields=fields)
 
-                # Get list
-                sublist = shn_pr_person_sublist(request, 'presence', session.pr_person, fields=fields, orderby=~db.pr_presence.time)
-
-                if sublist:
-                    output.update(sublist)
+                if _output:
+                    output.update(_output)
 
                 return output
 
@@ -254,8 +244,7 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Available Images')
-                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+                output=dict(title=title, pheader=pheader)
 
                 # Which fields?
                 fields = [
@@ -266,22 +255,13 @@ def person():
                         db.pr_image.description,
                 ]
 
-                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_image)
-                if form:
-                    formtitle = T('Add Image')
-                    if form.accepts(request.vars,session):
-                        shn_audit_create(form, 'pr_image', representation)
-                        response.flash="Image added"
-                    elif form.errors:
-                        response.flash="Error in the form"
+                record = vita.person(session.pr_person)
 
-                    output.update(dict(formtitle=formtitle, form=form))
+                _output = shn_pr_pentity_details(
+                    request, 'pr', 'image', record, joinby='pr_pe_id', fields=fields)
 
-                # Get list
-                sublist = shn_pr_person_sublist(request, 'image', session.pr_person, fields=fields)
-
-                if sublist:
-                    output.update(sublist)
+                if _output:
+                    output.update(_output)
 
                 return output
 
@@ -303,10 +283,9 @@ def person():
                 # Set response view
                 response.view = '%s/person.html' % module
 
-                # Add title and subtitle
+                # Add title and header
                 title=T('Person')
-                subtitle=T('Known Identities')
-                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+                output=dict(title=title, pheader=pheader)
 
                 # Which fields?
                 fields = [
@@ -318,22 +297,13 @@ def person():
                         db.pr_identity.ia_name,
                 ]
 
-                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_identity)
-                if form:
-                    formtitle = T('Add Identity')
-                    if form.accepts(request.vars,session):
-                        shn_audit_create(form, 'pr_identity', representation)
-                        response.flash="Identity added"
-                    elif form.errors:
-                        response.flash="Error in the form"
+                record = vita.person(session.pr_person)
 
-                    output.update(dict(formtitle=formtitle, form=form))
+                _output = shn_pr_pentity_details(
+                    request, 'pr', 'identity', record, joinby='person_id', fields=fields)
 
-                # Get list
-                sublist = shn_pr_person_sublist(request, 'identity', session.pr_person, fields=fields)
-
-                if sublist:
-                    output.update(sublist)
+                if _output:
+                    output.update(_output)
 
                 return output
 
@@ -357,8 +327,7 @@ def person():
 
                 # Add title and subtitle
                 title=T('Person')
-                subtitle=T('Addresses')
-                output=dict(title=title, subtitle=subtitle, pheader=pheader)
+                output=dict(title=title, pheader=pheader)
 
                 # Which fields?
                 fields = [
@@ -371,22 +340,13 @@ def person():
                         db.pr_address.opt_pr_country,
                 ]
 
-                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_address)
-                if form:
-                    formtitle = T('Add Address')
-                    if form.accepts(request.vars,session):
-                        shn_audit_create(form, 'pr_address', representation)
-                        response.flash="Address added"
-                    elif form.errors:
-                        response.flash="Error in the form"
+                record = vita.person(session.pr_person)
 
-                    output.update(dict(formtitle=formtitle, form=form))
+                _output = shn_pr_pentity_details(
+                    request, 'pr', 'address', record, joinby='pr_pe_id', fields=fields, multiple=False)
 
-                # Get list
-                sublist = shn_pr_person_sublist(request, 'address', session.pr_person, fields=fields)
-
-                if sublist:
-                    output.update(sublist)
+                if _output:
+                    output.update(_output)
 
                 return output
 
@@ -423,22 +383,13 @@ def person():
                         db.pr_contact.priority,
                 ]
 
-                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_contact)
-                if form:
-                    formtitle = T('Add Contact Information')
-                    if form.accepts(request.vars,session):
-                        shn_audit_create(form, 'pr_contact', representation)
-                        response.flash="Contact Information added"
-                    elif form.errors:
-                        response.flash="Error in the form"
+                record = vita.person(session.pr_person)
 
-                    output.update(dict(formtitle=formtitle, form=form))
+                _output = shn_pr_pentity_details(
+                    request, 'pr', 'contact', record, joinby='pr_pe_id', fields=fields)
 
-                # Get list
-                sublist = shn_pr_person_sublist(request, 'contact', session.pr_person, fields=fields)
-
-                if sublist:
-                    output.update(sublist)
+                if _output:
+                    output.update(_output)
 
                 return output
 
@@ -530,22 +481,13 @@ def person():
                         db.pr_group_membership.description,
                 ]
 
-                form = shn_pr_add_details_to_person_form(session.pr_person,db.pr_group_membership)
-                if form:
-                    formtitle = T('Add Group Membership')
-                    if form.accepts(request.vars,session):
-                        shn_audit_create(form, 'pr_group_membership', representation)
-                        response.flash="Group Membership added"
-                    elif form.errors:
-                        response.flash="Error in the form"
+                record = vita.person(session.pr_person)
 
-                    output.update(dict(formtitle=formtitle, form=form))
+                _output = shn_pr_pentity_details(
+                    request, 'pr', 'group_membership', record, joinby='person_id', fields=fields)
 
-                # Get list
-                sublist = shn_pr_person_sublist(request, 'group_membership', session.pr_person, fields=fields)
-
-                if sublist:
-                    output.update(sublist)
+                if _output:
+                    output.update(_output)
 
                 return output
 
@@ -587,6 +529,7 @@ def group():
             # other method
 #            pass
 
+    request.filter = (db.pr_group.system==False) # do not show system groups
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2), deletable=False)

@@ -51,9 +51,45 @@ class Vita(object):
         vita = Vita(globals(),db)
     """
 
-    def __init__(self, environment, db=None):
+    trackable_types = None
+    presence_conditions = None
+
+    DEFAULT_TRACKABLE = 1
+    DEFAULT_PRESENCE = 4
+
+    def __init__(self, environment, db=None, T=None):
         self.environment = Storage(environment)
         self.db = db
+
+        if T:
+            self.T = T
+        elif 'T' in self.environment:
+            self.T = self.environment['T']
+
+        # -------------------------------------------------------------------------
+        # Trackable entity types
+        self.trackable_types = {
+            1:self.T('Person'),          # an individual
+            2:self.T('Group'),           # a group
+            3:self.T('Body'),            # a dead body or body part
+            4:self.T('Object')           # other objects belonging to persons
+        }
+        self.DEFAULT_TRACKABLE = 1
+
+        # -------------------------------------------------------------------------
+        # Presence Conditions
+        self.presence_conditions = {
+            1:self.T('Check-In'),        # Arriving at a location for accommodation/storage
+            2:self.T('Reconfirmation'),  # Reconfirmation of accomodation/storage at a location
+            3:self.T('Check-Out'),       # Leaving from a location after accommodation/storage
+            4:self.T('Found'),           # Temporarily at a location
+            5:self.T('Procedure'),       # Temporarily at a location for a procedure (checkpoint)
+            6:self.T('Transit'),         # Temporarily at a location between two transfers
+            7:self.T('Transfer'),        # On the way from one location to another
+            8:self.T('Missing'),         # Been at a location, and missing from there
+            9:self.T('Lost')             # Been at a location, and destroyed/disposed/deceased there
+        }
+        self.DEFAULT_PRESENCE = 4
 
     def pentity(self,entity):
         """
@@ -64,7 +100,7 @@ class Vita(object):
 
         if entity:
 
-            query = ((table.deleted==False) or (table.deleted==None))
+            query = ((table.deleted==False) | (table.deleted==None))
 
             if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
@@ -76,13 +112,13 @@ class Vita(object):
                 if 'pr_pe_id' in entity:
                     query = (table.id==entity.pr_pe_id) & query
                 else:
-                    return None
+                    return entity # entity already given?
 
             else:
                 return None
 
             try:
-                record = self.db(query).select()[0]
+                record = self.db(query).select(table.ALL)[0]
                 return record
             except:
                 return None
@@ -99,7 +135,7 @@ class Vita(object):
 
         if entity:
 
-            query = ((table.deleted==False) or (table.deleted==None))
+            query = ((table.deleted==False) | (table.deleted==None))
 
             if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
@@ -118,7 +154,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select()[0]
+                record = self.db(query).select(table.ALL)[0]
                 return record
             except:
                 return None
@@ -135,7 +171,7 @@ class Vita(object):
 
         if entity:
 
-            query = ((table.deleted==False) or (table.deleted==None))
+            query = ((table.deleted==False) | (table.deleted==None))
 
             if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
@@ -154,7 +190,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select()[0]
+                record = self.db(query).select(table.ALL)[0]
                 return record
             except:
                 return None

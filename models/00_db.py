@@ -33,11 +33,6 @@ exec('from applications.%s.modules.validators import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.validators import *
 
-# VITA
-exec('from applications.%s.modules.vita import *' % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.sahana.modules.vita import *
-
 def shn_sessions(f):
     """
     Extend session to support:

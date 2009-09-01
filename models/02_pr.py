@@ -32,6 +32,12 @@ if not len(db().select(db[table].ALL)):
     )
 
 # *****************************************************************************
+# Error messages
+#
+NONEXISTENT_RECORD = T('Nonexistent Record')
+INVALID_FUNCTION = T('Invalid Function')
+
+# *****************************************************************************
 # Import VITA
 #
 exec('from applications.%s.modules.vita import *' % request.application)
@@ -824,7 +830,402 @@ def shn_pr_pentity_details(
 
     return None
 
+# -----------------------------------------------------------------------------
+# shn_pr_rest_controller
 #
-#
+def shn_pr_rest_controller(module, resource,
+    deletable=True,
+    editable=True,
+    listadd=True,
+    main='name',
+    extra=None,
+    orderby=None,
+    sortby=None,
+    onvalidation=None,
+    onaccept=None):
+
+    jresources = dict(
+        address=True,
+        contact=True,
+        image=True,
+        identity=True,
+        presence=True,
+        role=False,
+        status=False,
+        network=True,
+        group_membership=True,
+        network_membership=False
+    )
+
+    # Get representation ------------------------------------------------------
+
+    if request.vars.format:
+        representation = str.lower(request.vars.format)
+    else:
+        representation = "html"
+
+    # Identify action ---------------------------------------------------------
+
+    if len(request.args)==0:
+
+        # this is a list or read action on the main resource
+        _method=None
+        _jresource=None
+        _id = None
+
+    else:
+
+        if request.args[0].isdigit():
+            _id = request.args[0]
+            if len(request.args)>1:
+                # this is an action on a joint resource
+                _jresource = str.lower(request.args[1])
+                if _jresource in jresources:
+                    if len(request.args)>2:
+                        _method = str.lower(request.args[2])
+                    else:
+                        _method = None
+                else:
+                    session.error = INVALID_FUNCTION
+                    redirect(URL(r=request, c=module, f='index'))
+            else:
+                # READ action on a main resource record
+                _jresource = None
+                _method = None
+
+        elif str.lower(request.args[0]) in jresources:
+            _id = None
+            _jresource = str.lower(request.args[0])
+            if len(request.args)>1:
+                # <method> on joint resource
+                _method = str.lower(request.args[1])
+            else:
+                # LIST action on joint resource
+                _method = None
+
+        else:
+            # <method> on main resource or main resource record
+            _method = str.lower(request.args[0])
+            _jresource = None
+            try:
+                _id = request.args[1]
+            except:
+                _id = None
+
+
+    # Identify main resource record -------------------------------------------
+
+    tablename = "%s_%s" % (module,resource)
+    table = db[tablename]
+
+    if _id:
+        query = (table.id==_id)
+        if 'deleted' in table:
+            query = ((table.deleted==False) | (table.deleted==None)) & query
+        records = db(query).select(table.id)
+        if records:
+            _id = records[0].id
+        else:
+            session.error = NONEXISTENT_RECORD
+            redirect(URL(r=request, c=module, f='index'))
+
+    if not _id:
+        if 'id_label' in request.vars:
+            id_label = str.strip(request.vars.id_label)
+            if 'pr_pe_label' in table:
+                query = (table.pr_pe_label==id_label)
+                if 'deleted' in table:
+                    query = ((table.deleted==False) | (table.deleted==None)) & query
+                records = db(query).select(table.id)
+                if records:
+                    _id = records[0].id
+                else:
+                    session.error = NONEXISTENT_RECORD
+                    redirect(URL(r=request, c=module, f='index'))
+
+    if not _id and _jresource:
+        # Try previous selection
+        if tablename in session:
+            _id = session[tablename]
+            query = (table.id==_id)
+            if 'deleted' in table:
+                query = ((table.deleted==False) | (table.deleted==None)) & query
+            records = db(query).select(table.id)
+            if records:
+                _id = records[0].id
+            else:
+                # selected entry has probably been deleted:
+                _id = None
+                # This should automatically redirect to a search form if suitable:
+                session[tablename] = None
+
+    # Save _id in session:
+    if _id:
+        session[tablename] = _id
+
+    # Identify join field -----------------------------------------------------
+
+    if _jresource:
+
+        jtablename = "pr_%s" % _jresource
+        jtable = db[jtablename]
+
+        if 'pr_pe_id' in table and 'pr_pe_id' in jtable:
+            joinby = 'pr_pe_id'
+        else:
+            joinby = '%s_id' % resource
+            if not joinby in jtable:
+                joinby = 'pr_%s_id' % resource
+                if not joinby in jtable:
+                    session.error = INVALID_FUNCTION
+                    redirect(URL(r=request, c=module, f='index'))
+
+    else:
+        jtablename = None
+        jtable = None
+        joinby = None
+
+#    print "Main Resource: %s" % tablename
+#    print "Joint Resource: %s" % (jtablename or "None")
+#    print "Join by: %s" % (joinby or "None")
+#    print "Main record ID: %s" % (_id or "None")
+#    print "Method: %s" % (_method or "None")
+
+    # Map action --------------------------------------------------------------
+
+    if not _jresource:
+
+        # Simple search and select on persons ---------------------------------
+        if _method=="search_simple" and resource=="person":
+            if representation=="html":
+
+                if not shn_has_permission('read', db.pr_person):
+                    session.error = UNAUTHORISED
+                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
+
+                # Check for redirection
+                if request.vars.next:
+                    next = str.lower(request.vars.next)
+                else:
+                    next = "view"
+
+                # Custom view
+                response.view = '%s/person_search.html' % module
+
+                # Title and subtitle
+                title = T('Search for a Person')
+                subtitle = T('Matching Records')
+
+                # Select form
+                form = FORM(TABLE(
+                        TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
+                        TR("",INPUT(_type="submit",_value="Search"))
+                        ))
+
+                output = dict(title=title,subtitle=subtitle,form=form, vars=form.vars)
+
+                # Accept action
+                items = None
+                if form.accepts(request.vars,session):
+
+                    results = shn_pr_get_person_id(form.vars.label)
+
+                    if results and len(results):
+                        rows = db(db.pr_person.id.belongs(results)).select()
+                    else:
+                        rows = None
+
+                    # Build table rows from matching records
+                    if rows:
+                        records = []
+                        for row in rows:
+                            records.append(TR(
+                                row.pr_pe_label or '[no label]',
+                                A(vita.fullname(row), _href=URL(r=request, c='pr', f='person', args='%s/%s' % (next, row.id))),
+#                                A(row.first_name, _href=URL(r=request, c='pr', f='person', args='%s/%s' % (next, row.id))),
+#                                row.middle_name,
+#                                row.last_name,
+                                row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
+                                row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                                row.opt_pr_nationality and pr_nationality_opts[row.opt_pr_nationality] or 'unknown',
+                                row.date_of_birth or 'unknown'
+                                ))
+                        items=DIV(TABLE(THEAD(TR(
+                            TH("ID Label"),
+                            TH("Name"),
+#                            TH("First Name"),
+#                            TH("Middle Name"),
+#                            TH("Last Name"),
+                            TH("Gender"),
+                            TH("Age Group"),
+                            TH("Nationality"),
+                            TH("Date of Birth"))),
+                            TBODY(records), _id='list', _class="display"))
+                    else:
+                        items = T('None')
+
+                    output.update(dict(items=items))
+
+                return output
+
+            else: # other representation
+                pass
+
+        # Clear current selection ---------------------------------------------
+        elif _method=="clear":
+
+            session_var = 'pr_%s' % resource
+
+            if session_var in session:
+                del session[session_var]
+
+            redirect(URL(r=request, c='pr', f=resource, args='search_simple', vars=request.vars))
+
+        # View or edit basic person data --------------------------------------
+        elif _method=="view" and resource=="person":
+            if representation=="html":
+
+                # Check for selected person or redirect to search form
+                shn_pr_select_person(_id)
+                if not session.pr_person:
+                    request.vars.next=method
+                    redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+                else:
+                    pheader = shn_pr_person_header(session.pr_person, next=_method)
+
+                # Set response view
+                response.view = '%s/person.html' % module
+
+                # Add title and subtitle
+                title=T('Person')
+                output=dict(title=title, pheader=pheader)
+
+                # Which fields into the list?
+                fields = [
+                        db.pr_person.id,
+                        db.pr_person.pr_pe_label,
+                        db.pr_person.first_name,
+                        db.pr_person.middle_name,
+                        db.pr_person.last_name
+                ]
+
+                record = vita.person(session.pr_person)
+
+                _output = shn_pr_pentity_details(
+                    request, 'pr', 'person', record, joinby='pr_pe_id', fields=fields, multiple=False)
+
+                if _output:
+                    output.update(_output)
+
+                pheader = shn_pr_person_header(session.pr_person)
+                output.update(pheader=pheader)
+
+                return output
+
+            else: # other representation
+                pass
+        else:
+            # other method on main resource
+            # Default CRUD action: forward to REST controller
+            return shn_rest_controller(module, resource, main=main, extra=extra,onvalidation=onvalidation,onaccept=onaccept)
+
+    else:
+        if resource=="person" and representation=="html":
+            # Check for selected person or redirect to search form
+#            shn_pr_select_person(_id)
+#            if not session.pr_person:
+            if not _id:
+                request.vars.next=_method
+                redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+            else:
+                pheader = shn_pr_person_header(_id, next=_method)
+
+            record = vita.person(_id)
+
+            # Set response view
+            response.view = '%s/person.html' % module
+
+            # Add title and subtitle
+            title=T('Person')
+            output=dict(title=title, pheader=pheader)
+        else:
+            # TODO: what comes here?
+            output={}
+            record=None
+
+        if _jresource=="presence":
+            # Which fields into the list?
+            fields = [
+                    db.pr_presence.id,
+                    db.pr_presence.time,
+                    db.pr_presence.location,
+                    db.pr_presence.location_details,
+                    db.pr_presence.lat,
+                    db.pr_presence.lon,
+                    db.pr_presence.opt_pr_presence_condition,
+                    db.pr_presence.origin,
+                    db.pr_presence.destination,
+            ]
+        elif _jresource=="image":
+            # Which fields?
+            fields = [
+                    db.pr_image.id,
+                    db.pr_image.opt_pr_image_type,
+                    db.pr_image.image,
+                    db.pr_image.title,
+                    db.pr_image.description,
+            ]
+        elif _jresource=="identity":
+            # Which fields?
+            fields = [
+                    db.pr_identity.id,
+                    db.pr_identity.opt_pr_id_type,
+                    db.pr_identity.type,
+                    db.pr_identity.value,
+                    db.pr_identity.country_code,
+                    db.pr_identity.ia_name,
+            ]
+        elif _jresource=="address":
+            # Which fields?
+            fields = [
+                    db.pr_address.id,
+                    db.pr_address.opt_pr_address_type,
+                    db.pr_address.co_name,
+                    db.pr_address.street1,
+                    db.pr_address.postcode,
+                    db.pr_address.city,
+                    db.pr_address.opt_pr_country,
+            ]
+        elif _jresource=="contact":
+            fields = [
+                    db.pr_contact.id,
+                    db.pr_contact.name,
+                    db.pr_contact.person_name,
+                    db.pr_contact.opt_pr_contact_method,
+                    db.pr_contact.value,
+                    db.pr_contact.priority,
+            ]
+        elif _jresource=="group_membership":
+            # Which fields?
+            fields = [
+                    db.pr_group_membership.id,
+                    db.pr_group_membership.group_id,
+                    db.pr_group_membership.group_head,
+                    db.pr_group_membership.description,
+            ]
+        else:
+            session.error = INVALID_FUNCTION
+            redirect(URL(r=request,c=module,f='index'))
+
+        _output = shn_pr_pentity_details(
+            request, module, _jresource, record, joinby=joinby, fields=fields)
+
+        if _output:
+            output.update(_output)
+
+        return output
+
+    redirect(URL(r=request, c=module, f='index'))
+
 # END
 # *****************************************************************************

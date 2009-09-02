@@ -16,7 +16,7 @@ response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Search for a Person'), False, URL(r=request, f='person', args='search_simple')],
     [T('View/Edit Person Details'), False, URL(r=request, f='person', args='view'),[
-#        [T('Basic Details'), False, URL(r=request, f='person', args='view')],
+        [T('Basic Details'), False, URL(r=request, f='person', args='view')],
         [T('Images'), False, URL(r=request, f='person', args='image')],
         [T('Identity'), False, URL(r=request, f='person', args='identity')],
         [T('Address'), False, URL(r=request, f='person', args='address')],
@@ -61,37 +61,11 @@ def person():
         onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1),
         onaccept=lambda form: shn_pr_select_person(form.vars.id))
 
-
 def group():
-#    if request.vars.format:
-#        representation = str.lower(request.vars.format)
-#    else:
-#        representation = "html"
-
-#    if len(request.args) > 0 and not request.args[0].isdigit():
-        # Check method
-#        method = str.lower(request.args[0])
-
-        # Check if record_id is submitted
-#        try:
-#            record_id = request.args[1]
-#        except:
-#            record_id = None
-
-#        if method=="members":
-#            if representation=="html":
-#                pass
-#            else:
-                # other representation
-#                pass
-#        else:
-            # other method
-#            pass
-
     request.filter = (db.pr_group.system==False) # do not show system groups
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2), deletable=False)
+    return shn_pr_rest_controller(module, 'group', main='group_name', extra='group_description', onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2), deletable=False)
 
 def person_details():
     "RESTlike CRUD controller"

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+S3_PUBLIC_URL = 'http://127.0.0.1:8000'
+
 # Default strings are in English
 T.current_languages = ['en', 'en-en']
 
@@ -22,8 +24,7 @@ auth.settings.expiration = 3600  # seconds
 auth.settings.registration_requires_verification = False
 # Email settings for registration verification
 auth.settings.mailer = mail
-# ** Amend this to your Publically-accessible URL ***
-auth.messages.verify_email = 'Click on the link http://.../verify_email/%(key)s to verify your email'
+auth.messages.verify_email = 'Click on the link ' + S3_PUBLIC_URL + '/verify_email/%(key)s to verify your email'
 auth.settings.on_failed_authorization = URL(r=request, c='default', f='user', args='not_authorized')
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = False

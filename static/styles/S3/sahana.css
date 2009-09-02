@@ -131,7 +131,7 @@ div#container { }
             */
              
             /* GIS module */
-            #btn-panel { padding: 2px; }
+            .btn-panel { padding: 2px; }
             
     div#footer { margin: 0; padding: 10px; clear: both; color: #666; background-color: #369; border-top: #058 1px solid; }
         a.help, a:link.help { color: #fff; text-decoration: none; }

@@ -975,4 +975,3 @@ def shn_rest_controller(module, resource,
             else:
                 session.error = BADMETHOD
                 redirect(URL(r=request))
-            

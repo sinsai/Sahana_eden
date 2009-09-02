@@ -5,7 +5,7 @@
 #
 # created 2009-07-23 by nursix
 #
-# This part defines:
+# This part defines PR joint resources:
 #       - Address
 #       - Contact
 #       - Image
@@ -13,6 +13,7 @@
 #       - Identity
 #       - Role
 #       - Group Membership
+#       - Network (network)         - a social network layer of a person
 #       - Network Membership
 #       - Case
 #       - Finding
@@ -57,19 +58,27 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                       # Comment
                 migrate=migrate)
 
+# PR Joint Resource
+pr_joint_resource[resource] = dict(
+    multiple=True,
+    fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
+
+# Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-
 db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(1,2))
+db[table].lat.requires = IS_NULL_OR(IS_LAT())
+db[table].lon.requires = IS_NULL_OR(IS_LON())
 
+# Field representation
+
+# Field labels
 db[table].co_name.label = T('c/o Name')
 db[table].street1.label = T('Street')
 db[table].street2.label = T('Street (add.)')
 db[table].postcode.label = T('ZIP/Postcode')
 db[table].opt_pr_country.label = T('Country')
 
-db[table].lat.requires = IS_NULL_OR(IS_LAT())
-db[table].lon.requires = IS_NULL_OR(IS_LON())
-
+# CRUD Strings
 title_create = T('Add Address')
 title_display = T('Address Details')
 title_list = T('List Addresses')
@@ -84,18 +93,6 @@ msg_record_modified = T('Address updated')
 msg_record_deleted = T('Address deleted')
 msg_list_empty = T('No Addresses currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-#
-# Add address to PE form ------------------------------------------------------
-#
-def shn_pr_add_address_to_pe_form(pentity):
-
-    db.pr_address.pr_pe_id.default  = pentity
-    db.pr_address.pr_pe_id.writable = False
-
-    form = SQLFORM( db.pr_address )
-
-    return form
 
 # *****************************************************************************
 # Contact (contact)
@@ -134,14 +131,22 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                       # Comment
                 migrate=migrate)
 
+# PR Joint Resource
+pr_joint_resource[resource]=dict(
+    multiple=True,
+    fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
+
+# Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-
 db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(1,2))
-
 db[table].value.requires = IS_NOT_EMPTY()
-
 db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
 
+# Field representation
+
+# Field labels
+
+# CRUD Strings
 title_create = T('Add Contact')
 title_display = T('Contact Details')
 title_list = T('List Contacts')
@@ -156,18 +161,6 @@ msg_record_modified = T('Contact updated')
 msg_record_deleted = T('Contact deleted')
 msg_list_empty = T('No Contacts currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-#
-# Add contact to PE form ------------------------------------------------------
-#
-def shn_pr_add_contact_to_pe_form(pentity):
-
-    db.pr_contact.pr_pe_id.default  = pentity
-    db.pr_contact.pr_pe_id.writable = False
-
-    form = SQLFORM( db.pr_contact )
-
-    return form
 
 # *****************************************************************************
 # Image (image)
@@ -206,10 +199,20 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
+# PR Joint Resource
+pr_joint_resource[resource]=dict(
+    multiple=True,
+    fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
+
+# Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
+# Field representation
 db[table].image.represent = lambda image: DIV(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60))
 
+# Field labels
+
+# CRUD Strings
 title_create = T('Image')
 title_display = T('Image Details')
 title_list = T('List Images')
@@ -224,18 +227,6 @@ msg_record_modified = T('Image updated')
 msg_record_deleted = T('Image deleted')
 msg_list_empty = T('No images currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-#
-# Add image to PE form --------------------------------------------------------
-#
-def shn_pr_add_image_to_pe_form(pentity):
-
-    db.pr_image.pr_pe_id.default  = pentity
-    db.pr_image.pr_pe_id.writable = False
-
-    form = SQLFORM( db.pr_image )
-
-    return form
 
 # *****************************************************************************
 # Presence Log (presence)
@@ -274,8 +265,17 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+# PR Joint Resource
+pr_joint_resource[resource]=dict(
+    multiple=True,
+    fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
+# Field validation
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].lat.requires = IS_NULL_OR(IS_LAT())
+db[table].lon.requires = IS_NULL_OR(IS_LON())
+
+# Field representation
 db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
 db[table].observer.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
 db[table].observer.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
@@ -286,13 +286,13 @@ db[table].reporter.represent = lambda id: (id and [db(db.pr_person.id==id).selec
 db[table].reporter.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].reporter.ondelete = 'RESTRICT'
 
-db[table].lat.requires = IS_NULL_OR(IS_LAT())
-db[table].lon.requires = IS_NULL_OR(IS_LON())
-
 db[table].time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 db[table].time.represent = lambda value: shn_as_local_time(value)
+
+# Field labels
 db[table].time.label = T('Date/Time')
 
+# CRUD Strings
 title_create = T('Add Log Entry')
 title_display = T('Log Entry Details')
 title_list = T('Presence Log')
@@ -307,18 +307,6 @@ msg_record_modified = T('Presence Record updated')
 msg_record_deleted = T('Presence Record deleted')
 msg_list_empty = T('No presence records currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-#
-# Add presence to PE form -----------------------------------------------------
-#
-def shn_pr_add_presence_to_pe_form(pentity):
-
-    db.pr_presence.pr_pe_id.default  = pentity
-    db.pr_presence.pr_pe_id.writable = False
-
-    form = SQLFORM( db.pr_presence )
-
-    return form
 
 # *****************************************************************************
 # Identity (identity)
@@ -357,21 +345,20 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                Field('ia_code'),                   # Code of issuing authority (if any)
                 Field('comment'))                   # a comment (optional)
 
+# PR Joint Resource
+pr_joint_resource[resource]=dict(
+    multiple=True,
+    fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
+
+# Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+# Field representation
+
+# Field labels
 db[table].ia_name.label = T("Issuing Authority")
 
-#
-# Add identity to person form -------------------------------------------------
-#
-def shn_pr_add_identity_to_person_form(person):
-
-    db.pr_identity.person_id.default  = person
-    db.pr_identity.person_id.comment  = None
-    db.pr_identity.person_id.writable = False
-
-    form = SQLFORM( db.pr_identity )
-
-    return form
+# CRUD Strings
 
 # *****************************************************************************
 # Role (role)
@@ -404,20 +391,72 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
+# PR Joint Resource
+pr_joint_resource[resource]=dict(
+    multiple=True,
+    fields = ['id','group_id','person_id','group_head','description'])
+
+# Field validation
+
+# Field representation
 db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [""])[0]
 
+# Field labels
+
+# CRUD Strings
+
+# *****************************************************************************
+# Network (network)
 #
-# Add group_membership to person form -----------------------------------------
+pr_network_type_opts = {
+    1:T('Family'),
+    2:T('Friends'),
+    3:T('Colleagues'),
+    99:T('other')
+    }
+
+opt_pr_network_type = SQLTable(None, 'opt_pr_network_type',
+                    db.Field('opt_pr_network_type','integer',
+                    requires = IS_IN_SET(pr_network_type_opts),
+                    default = 99,
+                    label = T('Network Type'),
+                    represent = lambda opt: opt and pr_network_type_opts[opt]))
+
 #
-def shn_pr_add_group_membership_to_person_form(person):
+# network table ---------------------------------------------------------------
+#
+resource = 'network'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                person_id,                          # Reference to person (owner)
+                opt_pr_network_type,                # Network type
+                Field('comment'),                   # a comment (optional)
+                migrate=migrate)
 
-    db.pr_group_membership.person_id.default  = person
-    db.pr_group_membership.person_id.comment  = None
-    db.pr_group_membership.person_id.writable = False
+# PR Joint Resource
+pr_joint_resource[resource]=dict(
+    multiple=True,
+    fields = ['id','opt_pr_network_type','comment'])
 
-    form = SQLFORM( db.pr_group_membership )
+# Field validation
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-    return form
+# Field representation
+
+# Field labels
+
+# CRUD Strings
+
+#
+# network_id: reusable field for other tables to reference ----------------------
+#
+network_id = SQLTable(None, 'network_id',
+                Field('network_id', db.pr_network,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_network.id', '%(id)s')),
+                represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
+                comment = DIV(A(T('Add Network'), _class='popup', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
+                ondelete = 'RESTRICT'
+                ))
 
 # *****************************************************************************
 # Network membership (network_membership)
@@ -431,10 +470,22 @@ table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 network_id,
                 person_id,
-                Field('group_head', 'boolean', default=False),
                 Field('description'),
                 Field('comment'),
                 migrate=migrate)
+
+# PR Joint Resource
+pr_joint_resource[resource]=dict(
+    multiple=True,
+    fields = ['id','network_id','person_id','description','comment'])
+
+# Field validation
+
+# Field representation
+
+# Field labels
+
+# CRUD Strings
 
 # *****************************************************************************
 # Case (case)

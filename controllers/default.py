@@ -61,5 +61,5 @@ def about_sahana():
     import sys
     python_version = sys.version
     web2py_version = open(apath('../VERSION'), 'r').read()[8:]
-    sahana_version = open(apath('sahana/VERSION'), 'r').read()
+    sahana_version = open(os.path.join(request.folder, 'VERSION'), 'r').read()
     return dict(module_name=module_name, python_version=python_version, sahana_version=sahana_version, web2py_version=web2py_version)

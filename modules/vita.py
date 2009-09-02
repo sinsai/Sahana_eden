@@ -36,13 +36,11 @@ def getBrowserName(userAgent):
 
 from gluon.html import *
 
-__all__ = ['Vita','IS_PE_ID']
+__all__ = ['Vita']
 
 #
 # VITA Toolkit ----------------------------------------------------------------
 #
-
-
 class Vita(object):
     """
         Toolkit for Person Identification, Tracking and Tracing
@@ -53,220 +51,205 @@ class Vita(object):
         vita = Vita(globals(),db)
     """
 
-    def __init__(self, environment, db=None):
+    trackable_types = None
+    presence_conditions = None
+
+    DEFAULT_TRACKABLE = 1
+    DEFAULT_PRESENCE = 4
+
+    def __init__(self, environment, db=None, T=None):
         self.environment = Storage(environment)
         self.db = db
 
-    def identity(self,entity):
+        if T:
+            self.T = T
+        elif 'T' in self.environment:
+            self.T = self.environment['T']
+
+        # -------------------------------------------------------------------------
+        # Trackable entity types
+        self.trackable_types = {
+            1:self.T('Person'),          # an individual
+            2:self.T('Group'),           # a group
+            3:self.T('Body'),            # a dead body or body part
+            4:self.T('Object')           # other objects belonging to persons
+        }
+        self.DEFAULT_TRACKABLE = 1
+
+        # -------------------------------------------------------------------------
+        # Presence Conditions
+        self.presence_conditions = {
+            1:self.T('Check-In'),        # Arriving at a location for accommodation/storage
+            2:self.T('Reconfirmation'),  # Reconfirmation of accomodation/storage at a location
+            3:self.T('Check-Out'),       # Leaving from a location after accommodation/storage
+            4:self.T('Found'),           # Temporarily at a location
+            5:self.T('Procedure'),       # Temporarily at a location for a procedure (checkpoint)
+            6:self.T('Transit'),         # Temporarily at a location between two transfers
+            7:self.T('Transfer'),        # On the way from one location to another
+            8:self.T('Missing'),         # Been at a location, and missing from there
+            9:self.T('Lost')             # Been at a location, and destroyed/disposed/deceased there
+        }
+        self.DEFAULT_PRESENCE = 4
+
+    def pentity(self,entity):
         """
-            Returns the person_id to which this entity belongs,
-            or None, if the entity is unidentified
+            Get the PersonEntity record for the given ID, ID label, sub-entity or related record
         """
 
-        if entity and isinstance(entity,int):
-            pr_pe_id = entity
-        elif entity and isinstance(entity,dict):
-            if 'pr_pe_id' in entity:
-                pr_pe_id = entity.pr_pe_id
-            elif 'id' in entity:
-                pr_pe_id = entity.id
+        table = self.db.pr_pentity
+
+        if entity:
+
+            query = ((table.deleted==False) | (table.deleted==None))
+
+            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+                query = (table.id==entity) & query
+
+            elif isinstance(entity,str):
+                query = (table.label.strip().lower()==entity.strip().lower()) & query
+
+            elif isinstance(entity,dict):
+                if 'pr_pe_id' in entity:
+                    query = (table.id==entity.pr_pe_id) & query
+                else:
+                    return entity # entity already given?
+
             else:
                 return None
+
+            try:
+                record = self.db(query).select(table.ALL)[0]
+                return record
+            except:
+                return None
+
         else:
             return None
 
-        query = (self.db.pr_pentity.deleted==False) & (self.db.pr_pentity.id==pr_pe_id)
+    def person(self,entity):
+        """
+            Get the Person record for the given ID, PersonEntity record or Person-related record
+        """
 
-        try:
-            pentity = self.db(query).select(
-                self.db.pr_pentity.id,
-                self.db.pr_pentity.parent,
-                self.db.pr_pentity.opt_pr_pentity_class
-                )[0]
-            if pentity.opt_pr_pentity_class==1:
-                query = (self.db.pr_person.deleted==False) & (self.db.pr_person.pr_pe_id==pentity.id)
-                person = self.db(query).select(self.db.pr_person.id)[0]
-                return person.id
-            elif pentity.parent:
-                return( self.identify(pentity.parent))
+        table = self.db.pr_person
+
+        if entity:
+
+            query = ((table.deleted==False) | (table.deleted==None))
+
+            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+                query = (table.id==entity) & query
+
+            elif isinstance(entity,dict):
+                if 'pr_pe_id' in entity:
+                    query = (table.pr_pe_id==entity.pr_pe_id) & query
+                elif 'person_id' in entity:
+                    query = (table.id==entity.person_id) & query
+                elif 'id' in entity:
+                    query = (table.pr_pe_id==entity.id) & query
+                else:
+                    return None
+
             else:
                 return None
-        except:
+
+            try:
+                record = self.db(query).select(table.ALL)[0]
+                return record
+            except:
+                return None
+
+        else:
             return None
 
-    def identify(self,entity,person):
+    def group(self,entity):
         """
-            Establishes the identity of an entity
+            Get the Group record for the given ID, PersonEntity record or Group-related record
         """
-        return
 
-    def samples(self,entity,types=None):
-        """
-            Returns a list of all entities that belong to the given
-            entity (filtered by types, if given)
-        """
-        return None
+        table = self.db.pr_group
 
-    def members(self,group):
-        """
-            Returns a list of all members of a group, or, if a list
-            of groups is given, all members that belong to all groups
-        """
-        return None
+        if entity:
 
-    def presence_before(self,entity,when):
-        """
-            Returns a list of all registered appearances of the given
-            entity before 'when'
-        """
-        return None
+            query = ((table.deleted==False) | (table.deleted==None))
 
-    def presence_after(self,entity,when):
-        """
-            Returns a list of all registered appearances of the given
-            entity after 'when'
-        """
-        return None
+            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+                query = (table.id==entity) & query
 
-    def presence(self,entity,starttime,endtime):
-        """
-            Returns a list of all registered appearances of the given
-            entity between 'starttime' and 'endtime'
-        """
-        return None
+            elif isinstance(entity,dict):
+                if 'pr_pe_id' in entity:
+                    query = (table.pr_pe_id==entity.pr_pe_id) & query
+                elif 'group_id' in entity:
+                    query = (table.id==entity.group_id) & query
+                elif 'id' in entity:
+                    query = (table.pr_pe_id==entity.id) & query
+                else:
+                    return None
 
-    def locate(self,entity,now):
-        """
-            Finds the latest registered appearance of the given entity
-            before 'now'
-        """
-        return None
+            else:
+                return None
 
-    def locate_all(self,entity,now):
-        """
-            Finds the lastest registered appearances of the given entity
-            and all belonging entities before 'now'
-        """
-        return None
+            try:
+                record = self.db(query).select(table.ALL)[0]
+                return record
+            except:
+                return None
 
-    def candidates(self,description,threshold=None):
-        """
-            Searches for persons in the database that match the given
-            description above a certain threshold, and returns a list
-            of candidates
-        """
-        return None
-
-    def count(self,**attr):
-        """
-            Counts registered persons with the given attributes
-        """
-        return None
-
-    def persons(self,**attr):
-        """
-            Finds all persons in the registry with the given attributes
-        """
-        return None
-
-#
-# Validators ------------------------------------------------------------------
-#
-
-class IS_PE_ID(object):
-    """
-        PersonEntity ID validator, to be used in DB definition
-    """
-
-    def __init__(
-        self,
-        dbset,
-        class_opts=None,
-        filter_opts=None,
-        error_message='not a person entity!', # CAVE: Internationalization!
-        multiple=False
-        ):
-        self.error_message = error_message
-        self.class_opts = class_opts
-        self.filter_opts = filter_opts
-        self.multiple = multiple
-
-        if hasattr(dbset, 'define_table'):
-            self.dbset = dbset()
         else:
-            self.dbset = dbset
+            return None
 
-    def pentity_represent(self,pentity):
-        if pentity and pentity.opt_pr_pentity_class==1:
-            subentity_record=self.dbset(self.dbset._db['pr_person']['pr_pe_id']==pentity.id).select()[0]
-            if subentity_record:
-                pentity_str = '%s %s [%s] (%s %s)' % (
-                    subentity_record.first_name,
-                    subentity_record.last_name or '',
-                    subentity_record.pr_pe_label or 'no label',
-                    self.class_opts[1],
-                    subentity_record.id
-                )
-            else:
-                pentity_str = '[%s] (%s PE=%s)' % (
-                    pentity.label or 'no label',
-                    self.class_opts[1],
-                    pentity.id
-                )
-        elif pentity and pentity.opt_pr_pentity_class==2:
-            subentity_record=self.dbset(self.dbset._db['pr_group']['pr_pe_id']==pentity.id).select()[0]
-            if subentity_record:
-                pentity_str = '%s (%s %s)' % (
-                    subentity_record.group_name,
-                    self.class_opts[2],
-                    subentity_record.id
-                )
-            else:
-                pentity_str = '(%s PE=%s)' % (
-                    pr_pentity_class_opts[2],
-                    pentity.id
-                )
-        elif pentity and pentity.opt_pr_pentity_class==3:
-            subentity_record=self.dbset(self.dbset._db['hrm_body']['pr_pe_id']==pentity.id).select()[0]
-            if subentity_record:
-                pentity_str = '[%s] (%s %s)' % (
-                    subentity_record.pr_pe_label or 'no label',
-                    self.class_opts[3],
-                    subentity_record.id
-                )
-            else:
-                pentity_str = '[%s] (%s PE=%s)' % (
-                    pentity.label or 'no label',
-                    self.class_opts[3],
-                    pentity.id
-                )
-        elif pentity:
-            pentity_str = '[%s] (%s PE=%s)' % (
-                pentity.label or 'no label',
-                self.class_opts[pentity.opt_pr_pentity_class],
-                pentity.id
-            )
-        return pentity_str
 
-    def options(self):
-        query = self.dbset._db['pr_pentity']['deleted']==False
-        if self.filter_opts:
-            query = (self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts)) & query
-        records = self.dbset(query).select(orderby=self.dbset._db['pr_pentity'].opt_pr_pentity_class)
-        set = []
-        for r in records:
-            set.append((r.id,  self.pentity_represent(r)))
-        return( set )
+    def fullname(self,record):
+        """
+            Returns the full name of a person
+        """
 
-    def __call__(self,value):
-        try:
-            query = self.dbset._db['pr_pentity']['deleted']==False
-            if self.filter_opts:
-                query = (self.dbset._db['pr_pentity']['opt_pr_pentity_class'].belongs(self.filter_opts)) & query
-            if self.dbset(query).count():
-                return (value, None)
+        if record:
+            fname, mname, lname = '','',''
+            if record.first_name:
+                fname = "%s " % record.first_name.strip()
+            if record.middle_name:
+                mname = "%s " % record.middle_name.strip()
+            if record.last_name:
+                lname = record.last_name.strip()
+
+            if mname.isspace():
+                return "%s%s" % (fname, lname)
             else:
-                pass
-        except ValueError:
-            pass
-        return (value, self.error_message)
+                return "%s%s%s" % (fname, mname, lname)
+        else:
+            return ''
+
+    def rlevenshtein(self,str1,str2):
+        """
+            Returns a relative value for the Levenshtein distance of two strings
+
+            Levenshtein distance:
+            Number of character insertions/deletions/replacements necessary to
+            morph one string into the other. Here calculated in relation to the
+            maximum string length, hence 0.0 for identical and 1.0 for completely
+            different strings.
+
+            Note: Unfortunately, this doesn't work in SQL queries :(
+        """
+
+        matrix = {}
+        l1 = len(str1)
+        l2 = len(str2)
+
+        for i in range(0,l1+1): matrix[i,0] = i
+        for j in range(0,l2+1): matrix[0,j] = j 
+
+        for i in range(1,l1+1):
+            for j in range(1,l2+1):
+                x = matrix[i-1,j]+1
+                y = matrix[i,j-1]+1
+
+                if str1[i-1] == str2[j-1]:
+                    z = matrix[i-1,j-1]
+                else:
+                    z = matrix[i-1,j-1]+1
+
+                matrix[i,j] = min(x,y,z)
+
+        return float(matrix[l1,l2])/float(max(l1,l2))

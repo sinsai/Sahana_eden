@@ -120,7 +120,7 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
 # Settings and Restrictions
 db[table].pr_pe_parent.readable = True         # not visible in body registration form
 db[table].pr_pe_parent.writable = True         # not visible in body registration form
-db[table].pr_pe_parent.requires = IS_NULL_OR(IS_PE_ID(db, pr_pentity_class_opts, filter_opts=(3,)))
+db[table].pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
 
 # Labels
 db[table].hrm_find_id.label = T('Find report')

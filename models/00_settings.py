@@ -51,6 +51,9 @@ auth.settings.registration_requires_approval = False
 auth.settings.create_user_groups = False
 # We need to allow basic logins for Webservices
 auth.settings.allow_basic_login = True
+# Logout session clearing
+auth.settings.logout_onlogout = shn_auth_on_logout
+auth.settings.login_onaccept = shn_auth_on_login
 
 crud = CrudS3(globals(),db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
@@ -58,9 +61,6 @@ crud = CrudS3(globals(),db)
 
 from gluon.tools import Service
 service = Service(globals())
-
-# VITA
-vita = Vita(globals(),db)
 
 # Reusable timestamp fields
 timestamp = SQLTable(None, 'timestamp',
@@ -121,7 +121,22 @@ from gluon.storage import Storage
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
 s3 = Storage()
+
 s3.crud_strings = Storage()
+s3.crud_strings.title_create = T('Add Record')
+s3.crud_strings.title_display = T('Record Details')
+s3.crud_strings.title_list = T('List Records')
+s3.crud_strings.title_update = T('Edit Record')
+s3.crud_strings.title_search = T('Search Records')
+s3.crud_strings.subtitle_create = T('Add New Record')
+s3.crud_strings.subtitle_list = T('Available Records')
+s3.crud_strings.label_list_button = T('List Records')
+s3.crud_strings.label_create_button = T('Add Record')
+s3.crud_strings.msg_record_created = T('Record added')
+s3.crud_strings.msg_record_modified = T('Record updated')
+s3.crud_strings.msg_record_deleted = T('Record deleted')
+s3.crud_strings.msg_list_empty = T('No Records currently available')
+
 s3.display = Storage()
 
 table = 'auth_user'

@@ -5,7 +5,7 @@
 #
 # created 2009-07-23 by nursix
 #
-# This part defines PR joint resources:
+# This part defines PR joined resources:
 #       - Address
 #       - Contact
 #       - Image
@@ -58,8 +58,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                       # Comment
                 migrate=migrate)
 
-# PR Joint Resource
-pr_joint_resource[resource] = dict(
+# PR Joined Resource
+pr_joined_resource[resource] = dict(
     multiple=True,
     fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
 
@@ -131,8 +131,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                       # Comment
                 migrate=migrate)
 
-# PR Joint Resource
-pr_joint_resource[resource]=dict(
+# PR Joined Resource
+pr_joined_resource[resource]=dict(
     multiple=True,
     fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
 
@@ -199,8 +199,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
-# PR Joint Resource
-pr_joint_resource[resource]=dict(
+# PR Joined Resource
+pr_joined_resource[resource]=dict(
     multiple=True,
     fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
 
@@ -265,8 +265,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
-# PR Joint Resource
-pr_joint_resource[resource]=dict(
+# PR Joined Resource
+pr_joined_resource[resource]=dict(
     multiple=True,
     fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
@@ -345,8 +345,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                Field('ia_code'),                   # Code of issuing authority (if any)
                 Field('comment'))                   # a comment (optional)
 
-# PR Joint Resource
-pr_joint_resource[resource]=dict(
+# PR Joined Resource
+pr_joined_resource[resource]=dict(
     multiple=True,
     fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
 
@@ -391,8 +391,8 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
-# PR Joint Resource
-pr_joint_resource[resource]=dict(
+# PR Joined Resource
+pr_joined_resource[resource]=dict(
     multiple=True,
     fields = ['id','group_id','person_id','group_head','description'])
 
@@ -433,8 +433,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
-# PR Joint Resource
-pr_joint_resource[resource]=dict(
+# PR Joined Resource
+pr_joined_resource[resource]=dict(
     multiple=True,
     fields = ['id','opt_pr_network_type','comment'])
 
@@ -474,8 +474,8 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
-# PR Joint Resource
-pr_joint_resource[resource]=dict(
+# PR Joined Resource
+pr_joined_resource[resource]=dict(
     multiple=True,
     fields = ['id','network_id','person_id','description','comment'])
 

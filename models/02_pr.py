@@ -40,19 +40,19 @@ exec('from applications.%s.modules.vita import *' % request.application)
 vita = Vita(globals(),db)
 
 # *****************************************************************************
-# Joint resources
+# Joined resources
 #   empty here, add to the resource definition instead:
 #
-#   pr_joint_resource[resource]=dict(
+#   pr_joined_resource[resource]=dict(
 #       multiple=True|False, module='modulename',
 #       fields = ['field1_name','field2_name'...])
 #
 #   where:
-#       multiple        whether or not multiple joint records are allowed
-#       module          the name of the module where the joint resource is defined (defaults to 'pr')
+#       multiple        whether or not multiple joined records are allowed
+#       module          the name of the module where the joined resource is defined (defaults to 'pr')
 #       fields          list of field names, which fields to be displayed in list views
 #
-pr_joint_resource = {}
+pr_joined_resource = {}
 
 # *****************************************************************************
 # PersonEntity (pentity)
@@ -469,7 +469,7 @@ def shn_pentity_ondelete(record):
         pr_pe_id = record.pr_pe_id
         shn_delete('pr_pentity', 'pentity', pr_pe_id, representation)
 
-        # TODO: delete joint resources!?
+        # TODO: delete joined resources!?
 
     return
 
@@ -809,7 +809,7 @@ def shn_pr_rest_parse_request():
             record_id = request.args[0]
             if len(request.args)>1:
                 jresource = str.lower(request.args[1])
-                if jresource in pr_joint_resource:
+                if jresource in pr_joined_resource:
                     if len(request.args)>2:
                         method = str.lower(request.args[2])
                     else:
@@ -820,7 +820,7 @@ def shn_pr_rest_parse_request():
             else:
                 jresource = None
                 method = None
-        elif str.lower(request.args[0]) in pr_joint_resource:
+        elif str.lower(request.args[0]) in pr_joined_resource:
             record_id = None
             jresource = str.lower(request.args[0])
             if len(request.args)>1:
@@ -1007,7 +1007,7 @@ def shn_pr_person_view(record_id):
 #
 def shn_pr_rest_jresource_list(module,resource,record_id,jresource,joinby,multiple,representation):
     """
-        Returns a list/add form for PR joint resources
+        Returns a list/add form for PR joined resources
     """
 
     if module=="pr" and resource=="person":
@@ -1072,8 +1072,8 @@ def shn_pr_rest_jresource_list(module,resource,record_id,jresource,joinby,multip
         output={}
 
     # Get module for jresource (defaults to 'pr')
-    if 'module' in pr_joint_resource[jresource]:
-        jmodule = pr_joint_resource[jresource]['module']
+    if 'module' in pr_joined_resource[jresource]:
+        jmodule = pr_joined_resource[jresource]['module']
     else:
         jmodule = 'pr'
 
@@ -1081,8 +1081,8 @@ def shn_pr_rest_jresource_list(module,resource,record_id,jresource,joinby,multip
     jtablename = "%s_%s" % (jmodule,jresource)
     jtable = db[jtablename]
     
-    if 'fields' in pr_joint_resource[jresource]:
-        fields = [jtable[f] for f in pr_joint_resource[jresource]['fields']]
+    if 'fields' in pr_joined_resource[jresource]:
+        fields = [jtable[f] for f in pr_joined_resource[jresource]['fields']]
     else:
         fields = None # default
 
@@ -1110,7 +1110,7 @@ def shn_pr_rest_controller(module, resource,
     onaccept=None):
     """
         Extension to the standard REST controller to add capability
-        to handle joint resources.
+        to handle joined resources.
     """
 
     # Get representation ------------------------------------------------------
@@ -1169,10 +1169,10 @@ def shn_pr_rest_controller(module, resource,
     # request, module, resource, record_id, method, jresource, joinby
 
     if jresource:
-        # Action on joint resource
+        # Action on joined resource
         if method==None or method=="list":
 
-            multiple = pr_joint_resource[jresource]['multiple']
+            multiple = pr_joined_resource[jresource]['multiple']
             return shn_pr_rest_jresource_list(
                 module,
                 resource,

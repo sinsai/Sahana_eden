@@ -60,7 +60,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # PR Joined Resource
 pr_joined_resource[resource] = dict(
-    multiple=False,
+    multiple=True,
     fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
 
 # Field validation

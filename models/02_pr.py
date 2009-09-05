@@ -443,6 +443,7 @@ PR_INVALID_FUNCTION = T('Invalid Function!')
 PR_UNSUPPORTED_METHOD = T('Unsupported Method!')
 PR_NO_SUCH_RECORD = T('No Such Record!')
 PR_UNAUTHORIZED = T('Not Authorized!')
+PR_BADFORMAT = T('Unsupported Format!')
 
 # *****************************************************************************
 # Functions:
@@ -467,6 +468,7 @@ def shn_pentity_ondelete(record):
 
     if 'pr_pe_id' in record:
         pr_pe_id = record.pr_pe_id
+        # TODO: This doesn't actually work! (contains redirect)
         shn_delete('pr_pentity', 'pentity', pr_pe_id, representation)
 
         # TODO: delete joined resources!?
@@ -608,187 +610,6 @@ def shn_pr_person_header(id, next=None):
         return pheader
     else:
         return None
-
-#
-# shn_pr_pentity_details ------------------------------------------------------
-#
-def shn_pr_pentity_details_linkto(field):
-    """
-        Linkto helper for shn_pr_pentity_details
-    """
-    return URL(r=request, f=request.args[0], args="update/%s" % field, vars=dict(_next=URL(r=request, args=request.args, vars=request.vars)))
-
-def shn_pr_pentity_details(
-    request,
-    module,
-    entity,
-    record,
-    joinby='pr_pe_id',
-    fields=None,
-    representation='html',
-    orderby=None,
-    multiple=True):
-    """
-        Custom CRUD controller for person entity joined tables
-    """
-
-    resource = "%s_%s" % (module, entity)
-    table = db[resource]
-
-    # Get CRUD Strings
-    try:
-        title_create = s3.crud_strings[resource].subtitle_create
-        title_display =  s3.crud_strings[resource].title_display
-        title_list =  s3.crud_strings[resource].subtitle_list
-        title_update =  s3.crud_strings[resource].title_update
-        msg_created = s3.crud_strings[resource].msg_record_created
-        msg_modified = s3.crud_strings[resource].msg_record_modified
-        msg_empty = s3.crud_strings[resource].msg_list_empty
-    except:
-        title_create = s3.crud_strings.title_create
-        title_display =  s3.crud_strings.title_display
-        title_list =  s3.crud_strings.title_list
-        title_update =  s3.crud_strings.title_update
-        msg_created = s3.crud_strings.msg_record_created
-        msg_modified = s3.crud_strings.msg_record_modified
-        msg_empty = s3.crud_strings.msg_list_empty
-
-    if not shn_has_permission('read',table):
-        session.error = PR_UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args=request.args, vars=request.vars)}))
-
-    output = {}
-
-    # Query
-    if joinby=='pr_pe_id':
-        query = (table.pr_pe_id==record.pr_pe_id)
-        _id = record.pr_pe_id
-    else:
-        query = (table[joinby]==record.id)
-        _id = record.id
-
-    if multiple: # multiple records of that type allowed
-
-        # Filter for deletion status (not necessary if multiple==False)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
-
-        # Add form
-        if shn_has_permission('create',table):
-            try:
-                table[joinby].default = _id
-                table[joinby].writable = False
-                table[joinby].comment = None # avoid any Add XXXX links here
-
-                form = SQLFORM(table)
-                if form.accepts(request.vars,session):
-                    shn_audit_create(form, resource, representation)
-                    response.flash=msg_created
-                elif form.errors:
-                    response.flash="Error!" # this should not happen
-                output.update(form=form, formtitle=title_create)
-            except:
-                pass
-
-        # Pagination
-        if 'page' in request.vars:
-            # Pagination at server-side (since no JS available)
-            page = int(request.vars.page)
-            start_record = (page - 1) * ROWSPERPAGE
-            end_record = start_record + ROWSPERPAGE
-            limitby = start_record, end_record
-            totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
-            label_search_button = T('Search')
-            search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
-            output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
-        else:
-            # No Pagination server-side (to allow it to be done client-side)
-            limitby = ''
-            # Redirect to a paginated version if JS not-enabled
-            request.vars['page'] = 1
-            response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>'
-
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
-
-        # Column labels
-        headers = {}
-        for field in fields:
-            # Use custom or prettified label
-            headers[str(field)] = field.label
-
-        if shn_has_permission('update',table):
-            linkto=shn_pr_pentity_details_linkto
-        else:
-            linkto=None
-
-        # Audit
-        shn_audit_read(operation='list', resource=resource, representation=representation)
-
-        # Get List
-        items = crud.select(
-            table,
-            query=query,
-            fields=fields,
-            limitby=limitby,
-            headers=headers,
-            truncate=48,
-            linkto=linkto,
-            orderby=orderby,
-            _id='list', _class='display')
-
-        if not items:
-            items = T('None')
-
-        output.update(items=items, subtitle=title_list)
-        return output
-
-    else: # only one record of that type per entity ID
-        try:
-            target_record = db(query).select(table.id)[0]
-        except:
-            target_record = None
-
-        if not target_record:
-            if shn_has_permission('create', table):
-                table[joinby].default = _id
-                table[joinby].writable = False
-                table[joinby].comment = None #avoid any Add XXXX links here
-                form = SQLFORM(table, showid=False)
-                if form.accepts(request.vars,session):
-                    shn_audit_create(form, resource, representation)
-                    response.flash=msg_created
-#                    form = SQLFORM(table, form.vars.id, showid=False)
-                    redirect(URL(r=request, args=request.args)) # redirect here for update
-                elif form.errors:
-                    response.flash="Error!" # should not happen
-                output.update(form=form, formtitle=title_create)
-            else:
-                # error message
-                items=T('No data available')
-                output.update(items=items, subtitle=title_display)
-            return output
-
-        if shn_has_permission('update', table):
-            # create update form for the record
-            table[joinby].default = _id
-            table[joinby].writable = False
-            table[joinby].comment = None # avoid any Add XXXX links here
-
-            form = SQLFORM(table, target_record.id, showid=False)
-            if form.accepts(request.vars,session):
-                shn_audit_update(form, resource, representation)
-                response.flash=msg_modified
-                form = SQLFORM(table, target_record.id, showid=False)
-            elif form.errors:
-                response.flash="Error!" # should not happen
-            output.update(form=form, formtitle=title_update)
-        else:
-            items = crud.read(table, target_record.id)
-            output.update(items=items,subtitle=title_display)
-        return output
-
-    return None
 
 #
 # shn_pr_rest_parse_request ---------------------------------------------------
@@ -975,6 +796,7 @@ def shn_pr_person_view(record_id):
     """
         Simple view/edit form for person records
     """
+    # TODO: This doesn't work! Redo in rest controller
 
     if not record_id:
         request.vars._next=URL(r=request, f='person', args='view/[id]')
@@ -1003,96 +825,486 @@ def shn_pr_person_view(record_id):
     return output
 
 #
-# shn_pr_rest_jresource_list --------------------------------------------------
+# shn_pr_pheader --------------------------------------------------------------
 #
-def shn_pr_rest_jresource_list(module,resource,record_id,jresource,joinby,multiple,representation):
-    """
-        Returns a list/add form for PR joined resources
-    """
+def shn_pr_pheader(resource, record_id, representation):
 
-    if module=="pr" and resource=="person":
-        next = URL(r=request, f='person', args='[id]/%s' % jresource)
-        if not record_id:
-            request.vars._next = next
-            redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
+    if resource=="person":
+
+        if representation=="html":
+
+            # TODO: fix the backlinks
+            redirect={}
+
+            person = vita.person(record_id)
+
+            if person:
+                # TODO: Internationalization!
+                pheader = TABLE(
+                    TR(
+                        TH("Name: "),
+                        vita.fullname(person),
+                        TH("ID Label: "),
+                        "%(pr_pe_label)s" % person,
+                        TH(A("Clear Selection", _href=URL(r=request, c='pr', f='person', args='clear', vars=redirect)))
+                        ),
+                    TR(
+                        TH("Date of Birth: "),
+                        "%s" % (person.date_of_birth or 'unknown'),
+                        TH("Gender: "),
+                        "%s" % pr_person_gender_opts[person.opt_pr_gender],
+                        "",
+                        ),
+                    TR(
+                        TH("Nationality"),
+                        "%s" % pr_nationality_opts[person.opt_pr_nationality],
+                        TH("Age Group: "),
+                        "%s" % pr_person_age_group_opts[person.opt_pr_age_group],
+                        TH(A("Edit Person", _href=URL(r=request, c='pr', f='person', args=[record_id, 'update'], vars=redirect)))
+                        )
+                )
+                return pheader
+
         else:
-            pheader = shn_pr_person_header(record_id, next=next)
-
-        # Get record
-        record = vita.person(record_id)
-
-        # Set response view
-        response.view = '%s/person.html' % module
-
-        # Add title and subtitle
-        title=T('Person')
-        output=dict(title=title, pheader=pheader)
-    elif module=="pr" and resource=="group":
-        if not record_id:
-            redirect(URL(r=request, c=module, f='index'))
-        else:
-            # TODO: Add page header
-            #pheader = ???
             pass
 
-        # Get record
-        record = vita.group(record_id)
-
-        # Set response view
-        response.view = '%s/person.html' % module
-
-        # Add title
-        title=T('Group')
-        output=dict(title=title)
+    elif resource=="group":
+        pass
     else:
-        if not record_id:
-            redirect(URL(r=request, c=module, f='index'))
-        else:
-            # TODO: Add page header
-            #pheader = ???
-            pass
+        pass
 
-        # Get record
-        tablename = "%s_%s" % (module, resource)
-        table = db[tablename]
-        query = (table.id==record_id)
+    return None
+
+#
+# shn_pr_pentity_details ------------------------------------------------------
+# TODO: Remove!
+def shn_pr_pentity_details_linkto(field):
+    """
+        Linkto helper for shn_pr_pentity_details
+    """
+    return URL(r=request, f=request.args[0], args="update/%s" % field, vars=dict(_next=URL(r=request, args=request.args, vars=request.vars)))
+
+def shn_pr_pentity_details(
+    request,
+    module,
+    entity,
+    record,
+    joinby='pr_pe_id',
+    fields=None,
+    representation='html',
+    orderby=None,
+    multiple=True):
+    """
+        Custom CRUD controller for person entity joined tables
+    """
+
+    resource = "%s_%s" % (module, entity)
+    table = db[resource]
+
+    # Get CRUD Strings
+    try:
+        title_create = s3.crud_strings[resource].subtitle_create
+        title_display =  s3.crud_strings[resource].title_display
+        title_list =  s3.crud_strings[resource].subtitle_list
+        title_update =  s3.crud_strings[resource].title_update
+        msg_created = s3.crud_strings[resource].msg_record_created
+        msg_modified = s3.crud_strings[resource].msg_record_modified
+        msg_empty = s3.crud_strings[resource].msg_list_empty
+    except:
+        title_create = s3.crud_strings.title_create
+        title_display =  s3.crud_strings.title_display
+        title_list =  s3.crud_strings.title_list
+        title_update =  s3.crud_strings.title_update
+        msg_created = s3.crud_strings.msg_record_created
+        msg_modified = s3.crud_strings.msg_record_modified
+        msg_empty = s3.crud_strings.msg_list_empty
+
+#    if not shn_has_permission('read',table):
+#        session.error = PR_UNAUTHORISED
+#        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args=request.args, vars=request.vars)}))
+
+    output = {}
+
+    # Query
+    if joinby=='pr_pe_id':
+        query = (table.pr_pe_id==record.pr_pe_id)
+        _id = record.pr_pe_id
+    else:
+        query = (table[joinby]==record.id)
+        _id = record.id
+
+    if multiple: # multiple records of that type allowed
+
+        # Filter for deletion status (not necessary if multiple==False)
         if 'deleted' in table:
             query = ((table.deleted==False) | (table.deleted==None)) & query
+
+        # Add form
+#        if shn_has_permission('create',table):
+#            try:
+#                table[joinby].default = _id
+#                table[joinby].writable = False
+#                table[joinby].comment = None # avoid any Add XXXX links here
+
+#                form = SQLFORM(table)
+#                if form.accepts(request.vars,session):
+#                    shn_audit_create(form, resource, representation)
+#                    response.flash=msg_created
+#                elif form.errors:
+#                    response.flash="Error!" # this should not happen
+#                output.update(form=form, formtitle=title_create)
+#            except:
+#                pass
+
+        # Pagination
+        if 'page' in request.vars:
+            # Pagination at server-side (since no JS available)
+            page = int(request.vars.page)
+            start_record = (page - 1) * ROWSPERPAGE
+            end_record = start_record + ROWSPERPAGE
+            limitby = start_record, end_record
+            totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
+            label_search_button = T('Search')
+            search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
+            output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
+        else:
+            # No Pagination server-side (to allow it to be done client-side)
+            limitby = ''
+            # Redirect to a paginated version if JS not-enabled
+            request.vars['page'] = 1
+            response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>'
+
+        if not fields:
+            fields = [table[f] for f in table.fields if table[f].readable]
+
+        # Column labels
+        headers = {}
+        for field in fields:
+            # Use custom or prettified label
+            headers[str(field)] = field.label
+
+        if shn_has_permission('update',table):
+            linkto=shn_pr_pentity_details_linkto
+        else:
+            linkto=None
+
+        # Audit
+        shn_audit_read(operation='list', resource=resource, representation=representation)
+
+        # Get List
+        items = crud.select(
+            table,
+            query=query,
+            fields=fields,
+            limitby=limitby,
+            headers=headers,
+            truncate=48,
+            linkto=linkto,
+            orderby=orderby,
+            _id='list', _class='display')
+
+        if not items:
+            items = T('None')
+
+        output.update(items=items, subtitle=title_list)
+        return output
+
+    else: # only one record of that type per entity ID
         try:
-            record = db(query).select()[0]
+            target_record = db(query).select(table.id)[0]
         except:
-            session.error = PR_NO_SUCH_RECORD
-            redirect(URL(r=request, c=module, f='index'))
+            target_record = None
 
-        # TODO: Set response view
-        response.view = 'pr/person.html'
+#        if not target_record:
+#            if shn_has_permission('create', table):
+#                table[joinby].default = _id
+#                table[joinby].writable = False
+#                table[joinby].comment = None #avoid any Add XXXX links here
+#                form = SQLFORM(table, showid=False)
+#                if form.accepts(request.vars,session):
+#                    shn_audit_create(form, resource, representation)
+#                    response.flash=msg_created
+#                    form = SQLFORM(table, form.vars.id, showid=False)
+#                    redirect(URL(r=request, args=request.args)) # redirect here for update
+#                elif form.errors:
+#                    response.flash="Error!" # should not happen
+#                output.update(form=form, formtitle=title_create)
+#            else:
+#                # error message
+#                items=T('No data available')
+#                output.update(items=items, subtitle=title_display)
+#            return output
 
-        # Add title
-        #title=T('???')
-        output={}
+#        if shn_has_permission('update', table):
+            # create update form for the record
+#            table[joinby].default = _id
+#            table[joinby].writable = False
+#            table[joinby].comment = None # avoid any Add XXXX links here
 
-    # Get module for jresource (defaults to 'pr')
-    if 'module' in pr_joined_resource[jresource]:
-        jmodule = pr_joined_resource[jresource]['module']
-    else:
-        jmodule = 'pr'
+#            form = SQLFORM(table, target_record.id, showid=False)
+#            if form.accepts(request.vars,session):
+#                shn_audit_update(form, resource, representation)
+#                response.flash=msg_modified
+#                form = SQLFORM(table, target_record.id, showid=False)
+#            elif form.errors:
+#                response.flash="Error!" # should not happen
+#            output.update(form=form, formtitle=title_update)
+#        else:
+        try:
+            items = crud.read(table, target_record.id)
+        except:
+            items = T('No data available')
+        output.update(items=items,subtitle=title_display)
+        return output
+
+    return None
+
+#
+# shn_pr_jselect --------------------------------------------------------------
+#
+def shn_pr_jselect(module, resource, table, joinby, record, representation="html", multiple=True, next=None):
 
     # Get fields to include in the list view
-    jtablename = "%s_%s" % (jmodule,jresource)
-    jtable = db[jtablename]
-    
-    if 'fields' in pr_joined_resource[jresource]:
-        fields = [jtable[f] for f in pr_joined_resource[jresource]['fields']]
+    if 'fields' in pr_joined_resource[resource]:
+        fields = [table[f] for f in pr_joined_resource[resource]['fields']]
     else:
         fields = None # default
 
-    # Go!
-    _output = shn_pr_pentity_details(
-        request, jmodule, jresource, record, joinby=joinby, multiple=multiple, fields=fields)
+    _table = "%s_%s" % (module, resource)
 
-    if _output:
-        output.update(_output)
+    # Get CRUD Strings, TODO: optimize!
+    try:
+        title_display =  s3.crud_strings[_table].title_display
+        title_list =  s3.crud_strings[_table].subtitle_list
+        msg_empty = s3.crud_strings[_table].msg_list_empty
+    except:
+        title_display =  s3.crud_strings.title_display
+        title_list =  s3.crud_strings.title_list
+        msg_empty = s3.crud_strings.msg_list_empty
 
+    output = {}
+
+    # Query
+    if joinby=='pr_pe_id':
+        query = (table.pr_pe_id==record.pr_pe_id)
+        _id = record.pr_pe_id
+    else:
+        query = (table[joinby]==record.id)
+        _id = record.id
+
+    if multiple: # multiple records of that type allowed
+
+        subtitle = title_list
+
+        # Filter for deletion status (not necessary if multiple==False)
+        if 'deleted' in table:
+            query = ((table.deleted==False) | (table.deleted==None)) & query
+
+        # Pagination
+        if 'page' in request.vars:
+            # Pagination at server-side (since no JS available)
+            page = int(request.vars.page)
+            start_record = (page - 1) * ROWSPERPAGE
+            end_record = start_record + ROWSPERPAGE
+            limitby = start_record, end_record
+            totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
+            label_search_button = T('Search')
+            search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
+            output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
+        else:
+            # No Pagination server-side (to allow it to be done client-side)
+            limitby = ''
+            # Redirect to a paginated version if JS not-enabled
+            request.vars['page'] = 1
+            response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>'
+
+        if not fields:
+            fields = [table[f] for f in table.fields if table[f].readable]
+
+        # Column labels
+        headers = {}
+        for field in fields:
+            # Use custom or prettified label
+            headers[str(field)] = field.label
+
+
+        #TODO: fix this!
+        #if shn_has_permission('update',jtable):
+        #    linkto=shn_pr_pentity_details_linkto
+        #else:
+        #    linkto=None
+
+        # Audit
+        shn_audit_read(operation='list', resource=resource, representation=representation)
+
+        # Get List
+        items = crud.select(
+            table,
+            query=query,
+            fields=fields,
+            limitby=limitby,
+            headers=headers,
+            truncate=48,
+#            linkto=linkto,
+            linkto=None,
+#            orderby=orderby,
+            _id='list', _class='display')
+
+        if not items:
+            items = msg_empty
+
+    else: # only one record of that type per entity ID
+
+        subtitle = title_display
+
+        try:
+            target_record = db(query).select(table.id)[0]
+        except:
+            target_record = None
+
+        # Audit TODO: fix!
+        #shn_audit_read(operation='read', resource=resource, record=record.id, representation=representation)
+
+        try:
+            items = crud.read(table, target_record.id)
+        except:
+            items = msg_empty
+
+    output.update(items=items,subtitle=subtitle)
+    return output
+
+#
+# shn_pr_jcreate --------------------------------------------------------------
+#
+def shn_pr_jcreate(module, resource, table, joinby, record, representation="html", multiple=True, next=None):
+
+    # In 1:1 relations, create=update
+    if not multiple:
+        return shn_pr_jupdate(module, resource, table, joinby, record,
+            representation=representation, multiple=multiple, next=next)
+
+    output = {}
+
+    if representation == "html":
+
+        # Get CRUD Strings
+        try:
+            _table = "%s_%s" % (module, resource)
+            formtitle = s3.crud_strings[_table].subtitle_create
+        except:
+            formtitle = s3.crud_strings.subtitle_create
+
+        # Lock join field
+        if joinby=='pr_pe_id':
+            table[joinby].default = record.pr_pe_id
+        else:
+            table[joinby].default = record.id
+        table[joinby].writable = False
+
+        # Audit
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
+
+        # Get form
+        # TODO: fix callbacks
+        #form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        form = crud.create(table, next=next)
+
+        output = dict(form=form, formtitle=formtitle)
+
+    else:
+        session.error = PR_BADFORMAT
+        redirect(URL(r=request))
+
+    return output
+
+#
+# shn_pr_jupdate --------------------------------------------------------------
+#
+def shn_pr_jupdate(module, resource, table, joinby, record, representation="html", multiple=True, next=None):
+
+    # In 1:N relations, update=create
+    if multiple:
+        return shn_pr_jcreate(module, resource, table, joinby, record,
+            representation=representation, multiple=multiple, next=next)
+
+    output = {}
+
+    #TODO: what here?
+    session.error = PR_UNSUPPORTED_METHOD
+    redirect(URL(r=request, c=module, f='index'))
+
+    return output
+
+#
+# shn_pr_jdelete --------------------------------------------------------------
+#
+def shn_pr_jdelete(resource, table, joinby, record, representation):
+    """
+        Deletes all matching records in the joined resource.
+
+        resource:           the name of the joined resource
+        table:              the table of the joined resource
+        joinby:             name of the join key
+        record:             record of the primary resource to join to
+        representation:     data format
+    """
+
+    # IMPORTANT: Never redirect from here!
+
+    output = {}
+
+    # Query
+    if joinby=='pr_pe_id':
+        query = (table.pr_pe_id==record.pr_pe_id)
+    else:
+        query = (table[joinby]==record.id)
+
+    # TODO:
+    # Attempt to even delete previously archived records, if archive_not_delete is not set?
+    if 'deleted' in jtable:
+        query = ((table.deleted==False) | (table.deleted==None)) & query
+
+    # Get target records
+    rows = db(query).select(table.ALL)
+
+    # Save callback settings
+    delete_onvalidation = crud.settings.delete_onvalidation
+    delete_onaccept = crud.settings.delete_onaccept
+
+    # Set resource specific callbacks, if any
+    if 'delete_onvalidation' in pr_joined_resource[resource]:
+        crud.settings.delete_onvalidation = pr_joined_resource[resource]['delete_onvalidation']
+    else:
+        crud.settings.delete_onvalidation = None
+
+    if 'delete_onaccept' in pr_joined_resource[resource]:
+        crud.settings.delete_onaccept = pr_joined_resource[resource]['delete_onaccept']
+    else:
+        crud.settings.delete_onaccept = None
+
+    # Delete all accessible records
+    numrows = 0
+    for row in rows:
+        if shn_has_permission('delete', table, row.id):
+            numrows += 1
+            shn_audit_delete(resource, row.id, representation)
+            if "deleted" in db[table] and db(db.s3_setting.id==1).select()[0].archive_not_delete:
+                if crud.settings.delete_onvalidation:
+                    crud.settings.delete_onvalidation(row)
+                db(db[table].id == row.id).update(deleted = True)
+                if crud.settings.delete_onaccept:
+                    crud.settings.delete_onaccept(row)
+            else:
+                crud.delete(table, row.id)
+        else:
+            continue
+
+    # Restore callback settings
+    crud.settings.delete_onvalidation = delete_onvalidation
+    crud.settings.delete_onaccept = delete_onaccept
+
+    # Confirm and return
+    session.confirmation = "%s %s" % ( numrows, T('records deleted'))
     return output
 
 #
@@ -1133,12 +1345,37 @@ def shn_pr_rest_controller(module, resource,
 
     # Identify main resource record -------------------------------------------
 
+    # Get primary table
+    tablename = "%s_%s" % (module,resource)
+    table = db[tablename]
+
+    # Check read permission on primary table
+    if not shn_has_permission('read', table):
+        session.error = PR_UNAUTHORIZED
+        redirect(URL(r=request, c='default', f='user', args='login',
+            vars={'_next':URL(r=request, c=module, f=resource, args=[record_id, jresource, method])}))
+
+    # Try to identify record
     record_id = shn_pr_rest_identify_record(module, resource, _request['record_id'], jresource)
 
     if record_id==0:
         session.error = PR_NO_SUCH_RECORD
         redirect(URL(r=request, c=module, f='index'))
 
+    # Record ID is required in joined-table operations
+    if jresource and not record_id:
+        if module=="pr" and resource=="person" and representation=='html':
+            next_args = "[id]/%s" % jresource
+            if method:
+                next_args="%s/%s" % (next_args, method)
+            next = URL(r=request, c=module, f=resource, args=next_args)
+            back = { "_next" : next }
+            redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=back))
+        else:
+            session.error = PR_NO_SUCH_RECORD
+            redirect(URL(r=request, c=module, f='index'))
+
+    # Append record ID to request
     if (('id_label' in request.vars) or method ) and record_id and len(request.args)<2:
         request.args.append(str(record_id))
 
@@ -1146,12 +1383,16 @@ def shn_pr_rest_controller(module, resource,
 
     if jresource:
 
-        tablename = "%s_%s" % (module,resource)
-        table = db[tablename]
+        # Get joined table
+        if 'module' in pr_joined_resource[jresource]:
+            jmodule = pr_joined_resource[jresource]['module']
+        else:
+            jmodule = 'pr'
 
-        jtablename = "pr_%s" % jresource
+        jtablename = "%s_%s" % (jmodule, jresource)
         jtable = db[jtablename]
 
+        # Get join key
         if 'pr_pe_id' in table and 'pr_pe_id' in jtable:
             joinby = 'pr_pe_id'
         else:
@@ -1166,27 +1407,131 @@ def shn_pr_rest_controller(module, resource,
         joinby = None
 
     # Map action --------------------------------------------------------------
-    # request, module, resource, record_id, method, jresource, joinby
+    # Available variables beyond this point:
+    # request, module, resource, tablename, table, record_id, method, jresource, joinby
+    # additionally:
+    #  if jresource: jmodule, jtablename, jtable
 
     if jresource:
         # Action on joined resource
-        if method==None or method=="list":
 
-            multiple = pr_joined_resource[jresource]['multiple']
-            return shn_pr_rest_jresource_list(
-                module,
-                resource,
-                record_id,
-                jresource,
-                joinby,
-                multiple,
-                representation)
+        output = {}
+        multiple = pr_joined_resource[jresource]['multiple']
 
-#        elif method=="create":
-#           TODO: what here?
+        # Get page title from CRUD strings
+        try:
+            page_title = s3.crud_strings[tablename].title_display
+        except:
+            page_title = s3.crud_strings.title_display
 
-#        elif method=="update":
-#           TODO: what here?
+        output.update(title=page_title)
+
+        # Get pageheader (if any)
+        shn_audit_read(operation='read', resource=resource, record=record_id, representation=representation)
+
+        pheader = shn_pr_pheader(resource, record_id, representation)
+
+        if pheader:
+            output.update(pheader=pheader)
+
+        # Get primary table
+        tablename = "%s_%s" % (module, resource)
+        table = db[tablename]
+
+        # Get primary record
+        query = (table.id==record_id)
+        if 'deleted' in table:
+            query = ((table.deleted==False) | (table.deleted==None)) & query
+        try:
+            record = db(query).select()[0]
+        except:
+            session.error = PR_NO_SUCH_RECORD
+            redirect(URL(r=request, c=module, f='index'))
+
+        # Get module for jresource (defaults to 'pr')
+        if 'module' in pr_joined_resource[jresource]:
+            jmodule = pr_joined_resource[jresource]['module']
+        else:
+            jmodule = 'pr'
+
+        # Get joined table
+        jtablename = "%s_%s" % (jmodule, jresource)
+        jtable = db[jtablename]
+
+        # TODO: check for custom view or use PR custom views
+        response.view = 'pr/person.html'
+
+        # Backlink
+        if method:
+            here = URL(r=request, f=resource, args=[record_id, jresource, method])
+        else:
+            here = URL(r=request, f=resource, args=[record_id, jresource])
+
+        if method==None or method=="list" or method=="read" or method=="display":
+
+            if shn_has_permission('read', jtable):
+                if multiple:
+                    if representation=="html" and shn_has_permission('create', jtable):
+                        _output = shn_pr_jcreate(jmodule, jresource, jtable, joinby, record,
+                            representation=representation, multiple=multiple, next=here)
+                        if _output:
+                            output.update(_output)
+                    _output = shn_pr_jselect(jmodule, jresource, jtable, joinby, record,
+                            representation=representation, multiple=multiple, next=here)
+                    if _output:
+                        output.update(_output)
+                else:
+                    if representation=="html" and shn_has_permission('update', jtable):
+                        _output = shn_pr_jupdate(jmodule, jresource, jtable, joinby, record,
+                            representation=representation, multiple=multiple, next=here)
+                    else:
+                        _output = shn_pr_jselect(jmodule, jresource, jtable, joinby, record,
+                            representation=representation, multiple=multiple, next=here)
+                    if _output:
+                        output.update(_output)
+                return output
+
+            else:
+                session.error = PR_UNAUTHORIZED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args=[record_id, jresource, method])}))
+
+        elif method=="create":
+            authorized = shn_has_permission(method, jtable)
+            if authorized:
+                _output = shn_pr_jcreate(jmodule, jresource, jtable, joinby, record,
+                                representation=representation, multiple=multiple, next=here)
+                if _output:
+                    output.update(_output)
+                return output
+            else:
+                session.error = PR_UNAUTHORIZED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args=[record_id, jresource, method])}))
+
+        elif method=="update":
+            authorized = shn_has_permission(method, jtable)
+            if authorized:
+                _output = shn_pr_jupdate(jmodule, jresource, jtable, joinby, record,
+                                representation=representation, multiple=multiple, next=here)
+                if _output:
+                    output.update(_output)
+                return output
+            else:
+                session.error = PR_UNAUTHORIZED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args=[record_id, jresource, method])}))
+
+        elif method=="delete":
+            authorized = shn_has_permission(method, jtable)
+            if authorized:
+                shn_pr_jdelete(jresource, jtable, joinby, record, representation)
+                # Redirect to list view
+                redirect(URL(r=request, f=resource, args=[record_id, jresource]))
+            else:
+                session.error = PR_UNAUTHORIZED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args=[record_id, jresource, method])}))
 
         else:
             session.error = PR_UNSUPPORTED_METHOD
@@ -1195,12 +1540,12 @@ def shn_pr_rest_controller(module, resource,
     else:
         # Action on main resource
         if method=="search_simple":
+
             if resource=="person":
 
+                # TODO: pass representation to search_simple!
                 if representation=="html":
-
                     return shn_pr_person_search_simple()
-
                 else:
                     session.error = PR_UNSUPPORTED_FORMAT
                     redirect(URL(r=request, c=module, f='index'))
@@ -1212,10 +1557,9 @@ def shn_pr_rest_controller(module, resource,
         elif method=="view":
             if resource=="person":
 
+                # TODO: pass representation to view
                 if representation=="html":
-
                     return shn_pr_person_view(record_id)
-
                 else:
                     session.error = PR_UNSUPPORTED_FORMAT
                     redirect(URL(r=request, c=module, f='index'))

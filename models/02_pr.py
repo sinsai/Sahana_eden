@@ -468,10 +468,24 @@ def shn_pentity_ondelete(record):
 
     if 'pr_pe_id' in record:
         pr_pe_id = record.pr_pe_id
-        # TODO: This doesn't actually work! (contains redirect)
-        shn_delete('pr_pentity', 'pentity', pr_pe_id, representation)
+
+        delete_onvalidation = crud.settings.delete_onvalidation
+        delete_onaccept = crud.settings.delete_onaccept
+
+        crud.settings.delete_onvalidation = None
+        crud.settings.delete_onaccept = None
+
+        if shn_has_permission('delete', db.pr_pentity, pr_pe_id):
+            shn_audit_delete('pr_pentity', pr_pe_id, 'plain')
+            if db(db.s3_setting.id==1).select()[0].archive_not_delete:
+                db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
+            else:
+                crud.delete(db.pr_pentity, pr_pe_id)
 
         # TODO: delete joined resources!?
+
+        crud.settings.delete_onvalidation = delete_onvalidation
+        crud.settings.delete_onaccept = delete_onaccept
 
     return
 
@@ -567,7 +581,7 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 
 #
 # shn_pr_person_header --------------------------------------------------------
-#
+# TODO: Remove
 def shn_pr_person_header(id, next=None):
     """
         Builds a header for person detail pages
@@ -613,7 +627,7 @@ def shn_pr_person_header(id, next=None):
 
 #
 # shn_pr_rest_parse_request ---------------------------------------------------
-#
+# TODO: rename into pr_parse_request
 def shn_pr_rest_parse_request():
     """
         Request Parser for the shn_pr_rest_controller
@@ -662,7 +676,7 @@ def shn_pr_rest_parse_request():
 
 #
 # shn_pr_rest_identify_record -------------------------------------------------
-#
+# TODO: rename into shn_pr_identify_precord
 def shn_pr_rest_identify_record(module, resource, _id, jresource):
     """
         Helper function for shn_pr_rest_controller:
@@ -1064,6 +1078,8 @@ def shn_pr_pentity_details(
 #
 def shn_pr_jselect(module, resource, table, joinby, record, representation="html", multiple=True, next=None):
 
+    # IMPORTANT: Never redirect from here!
+
     # Get fields to include in the list view
     if 'fields' in pr_joined_resource[resource]:
         fields = [table[f] for f in pr_joined_resource[resource]['fields']]
@@ -1178,6 +1194,8 @@ def shn_pr_jselect(module, resource, table, joinby, record, representation="html
 #
 def shn_pr_jcreate(module, resource, table, joinby, record, representation="html", multiple=True, next=None):
 
+    # IMPORTANT: Never redirect from here!
+
     # In 1:1 relations, create=update
     if not multiple:
         return shn_pr_jupdate(module, resource, table, joinby, record,
@@ -1219,8 +1237,10 @@ def shn_pr_jcreate(module, resource, table, joinby, record, representation="html
 
 #
 # shn_pr_jupdate --------------------------------------------------------------
-#
+# TODO: fix this!
 def shn_pr_jupdate(module, resource, table, joinby, record, representation="html", multiple=True, next=None):
+
+    # IMPORTANT: Never redirect from here!
 
     # In 1:N relations, update=create
     if multiple:
@@ -1229,9 +1249,41 @@ def shn_pr_jupdate(module, resource, table, joinby, record, representation="html
 
     output = {}
 
-    #TODO: what here?
-    session.error = PR_UNSUPPORTED_METHOD
-    redirect(URL(r=request, c=module, f='index'))
+    if representation == "html":
+
+        # Get CRUD Strings
+        try:
+            _table = "%s_%s" % (module, resource)
+            formtitle = s3.crud_strings[_table].subtitle_update
+        except:
+            formtitle = s3.crud_strings.subtitle_update
+
+        # Get target record
+        try:
+            target_record = db(query).select(table.id)[0]
+        except:
+            target_record = None
+
+        # Lock join field
+        if joinby=='pr_pe_id':
+            table[joinby].default = record.pr_pe_id
+        else:
+            table[joinby].default = record.id
+        table[joinby].writable = False
+
+        # Audit
+        crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
+
+        # Get form
+        # TODO: fix callbacks
+        #form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        form = crud.update(table, target_record.id, next=next)
+
+        output = dict(form=form, formtitle=formtitle)
+
+    else:
+        session.error = PR_BADFORMAT
+        redirect(URL(r=request))
 
     return output
 
@@ -1365,6 +1417,7 @@ def shn_pr_rest_controller(module, resource,
     # Record ID is required in joined-table operations
     if jresource and not record_id:
         if module=="pr" and resource=="person" and representation=='html':
+            # TODO: make this nicer:
             next_args = "[id]/%s" % jresource
             if method:
                 next_args="%s/%s" % (next_args, method)

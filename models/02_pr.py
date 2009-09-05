@@ -580,9 +580,9 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
         return None
 
 #
-# shn_pr_rest_parse_request ---------------------------------------------------
-# TODO: rename into pr_parse_request
-def shn_pr_rest_parse_request():
+# shn_pr_parse_request --------------------------------------------------------
+#
+def shn_pr_parse_request():
     """
         Request Parser for the shn_pr_rest_controller
     """
@@ -635,9 +635,9 @@ def shn_pr_rest_parse_request():
     return _request
 
 #
-# shn_pr_rest_identify_record -------------------------------------------------
-# TODO: rename into shn_pr_identify_precord
-def shn_pr_rest_identify_record(module, resource, _id, jresource):
+# shn_pr_identify_precord -----------------------------------------------------
+#
+def shn_pr_identify_precord(module, resource, _id, jresource):
     """
         Helper function for shn_pr_rest_controller:
         Identifies the record_id of the main resource
@@ -694,7 +694,7 @@ def shn_pr_rest_identify_record(module, resource, _id, jresource):
 #
 # shn_pr_person_search_simple -------------------------------------------------
 #
-def shn_pr_person_search_simple():
+def shn_pr_person_search_simple(representation="html"):
     """
         Simple search form for persons
     """
@@ -703,65 +703,69 @@ def shn_pr_person_search_simple():
         session.error = PR_UNAUTHORISED
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
 
-    # Check for redirection
-    if request.vars._next:
-        next = str.lower(request.vars._next)
+    if representation=="html":
+        # Check for redirection
+        if request.vars._next:
+            next = str.lower(request.vars._next)
+        else:
+            next = str.lower(URL(r=request, f='person', args='[id]'))
+
+        # Custom view
+        response.view = '%s/person_search.html' % module
+
+        # Title and subtitle
+        title = T('Search for a Person')
+        subtitle = T('Matching Records')
+
+        # Select form
+        form = FORM(TABLE(
+                TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
+                TR("",INPUT(_type="submit",_value="Search"))
+                ))
+
+        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            results = shn_pr_get_person_id(form.vars.label)
+
+            if results and len(results):
+                rows = db(db.pr_person.id.belongs(results)).select()
+            else:
+                rows = None
+
+            # Build table rows from matching records
+            if rows:
+                records = []
+                for row in rows:
+                    href = next.replace('%5bid%5d', '%s' % row.id)
+                    records.append(TR(
+                        row.pr_pe_label or '[no label]',
+                        A(vita.fullname(row), _href=href),
+                        row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
+                        row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                        row.opt_pr_nationality and pr_nationality_opts[row.opt_pr_nationality] or 'unknown',
+                        row.date_of_birth or 'unknown'
+                        ))
+                items=DIV(TABLE(THEAD(TR(
+                    TH("ID Label"),
+                    TH("Name"),
+                    TH("Gender"),
+                    TH("Age Group"),
+                    TH("Nationality"),
+                    TH("Date of Birth"))),
+                    TBODY(records), _id='list', _class="display"))
+            else:
+                items = T('None')
+
+            output.update(dict(items=items))
+
+        return output
     else:
-        next = str.lower(URL(r=request, f='person', args='[id]'))
-
-    # Custom view
-    response.view = '%s/person_search.html' % module
-
-    # Title and subtitle
-    title = T('Search for a Person')
-    subtitle = T('Matching Records')
-
-    # Select form
-    form = FORM(TABLE(
-            TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
-            TR("",INPUT(_type="submit",_value="Search"))
-            ))
-
-    output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-    # Accept action
-    items = None
-    if form.accepts(request.vars, session):
-
-        results = shn_pr_get_person_id(form.vars.label)
-
-        if results and len(results):
-            rows = db(db.pr_person.id.belongs(results)).select()
-        else:
-            rows = None
-
-        # Build table rows from matching records
-        if rows:
-            records = []
-            for row in rows:
-                href = next.replace('%5bid%5d', '%s' % row.id)
-                records.append(TR(
-                    row.pr_pe_label or '[no label]',
-                    A(vita.fullname(row), _href=href),
-                    row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
-                    row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
-                    row.opt_pr_nationality and pr_nationality_opts[row.opt_pr_nationality] or 'unknown',
-                    row.date_of_birth or 'unknown'
-                    ))
-            items=DIV(TABLE(THEAD(TR(
-                TH("ID Label"),
-                TH("Name"),
-                TH("Gender"),
-                TH("Age Group"),
-                TH("Nationality"),
-                TH("Date of Birth"))),
-                TBODY(records), _id='list', _class="display"))
-        else:
-            items = T('None')
-
-        output.update(dict(items=items))
-
-    return output
+        session.error = PR_BADFORMAT
+        redirect(URL(r=request))
 
 #
 # shn_pr_pheader --------------------------------------------------------------
@@ -785,28 +789,29 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
             person = vita.person(record_id)
 
             if person:
-                # TODO: Internationalization!
                 pheader = TABLE(
                     TR(
-                        TH("Name: "),
+                        TH(T('Name: ')),
                         vita.fullname(person),
-                        TH("ID Label: "),
+                        TH(T('ID Label: ')),
                         "%(pr_pe_label)s" % person,
-                        TH(A("Clear Selection", _href=URL(r=request, c='pr', f='person', args='clear', vars={'_next': _same})))
+                        TH(A(T('Clear Selection'),
+                            _href=URL(r=request, c='pr', f='person', args='clear', vars={'_next': _same})))
                         ),
                     TR(
-                        TH("Date of Birth: "),
-                        "%s" % (person.date_of_birth or 'unknown'),
-                        TH("Gender: "),
+                        TH(T('Date of Birth: ')),
+                        "%s" % (person.date_of_birth or T('unknown')),
+                        TH(T('Gender: ')),
                         "%s" % pr_person_gender_opts[person.opt_pr_gender],
-                        "",
+                        TH(""),
                         ),
                     TR(
-                        TH("Nationality"),
+                        TH(T('Nationality: ')),
                         "%s" % pr_nationality_opts[person.opt_pr_nationality],
-                        TH("Age Group: "),
+                        TH(T('Age Group: ')),
                         "%s" % pr_person_age_group_opts[person.opt_pr_age_group],
-                        TH(A("Edit Person", _href=URL(r=request, c='pr', f='person', args=['update', record_id], vars={'_next': _next})))
+                        TH(A(T('Edit Person'),
+                            _href=URL(r=request, c='pr', f='person', args=['update', record_id], vars={'_next': _next})))
                         )
                 )
                 return pheader
@@ -824,7 +829,11 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
 #
 # shn_pr_jselect --------------------------------------------------------------
 #
-def shn_pr_jselect(module, resource, table, joinby, record, representation="html", multiple=True, next=None):
+def shn_pr_jselect_linkto(field):
+    return URL(r=request, args=[request.args[0], request.args[1], 'read', field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+
+def shn_pr_jselect(module, resource, table, joinby, record, representation="html", multiple=True, next=None, jrecord=None):
 
     # IMPORTANT: Never redirect from here!
 
@@ -856,13 +865,15 @@ def shn_pr_jselect(module, resource, table, joinby, record, representation="html
         query = (table[joinby]==record.id)
         _id = record.id
 
-    if multiple: # multiple records of that type allowed
+    if jrecord:
+        query = (table.id==jrecord) & query
+
+    if 'deleted' in table:
+        query = ((table.deleted==False) | (table.deleted==None)) & query
+
+    if multiple and not jrecord: # multiple records of that type allowed
 
         subtitle = title_list
-
-        # Filter for deletion status (not necessary if multiple==False)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
 
         # Pagination
         if 'page' in request.vars:
@@ -891,13 +902,6 @@ def shn_pr_jselect(module, resource, table, joinby, record, representation="html
             # Use custom or prettified label
             headers[str(field)] = field.label
 
-
-        #TODO: fix this!
-        #if shn_has_permission('update',jtable):
-        #    linkto=shn_pr_pentity_details_linkto
-        #else:
-        #    linkto=None
-
         # Audit
         shn_audit_read(operation='list', resource=resource, representation=representation)
 
@@ -909,8 +913,7 @@ def shn_pr_jselect(module, resource, table, joinby, record, representation="html
             limitby=limitby,
             headers=headers,
             truncate=48,
-#            linkto=linkto,
-            linkto=None,
+            linkto=shn_pr_jselect_linkto,
 #            orderby=orderby,
             _id='list', _class='display')
 
@@ -926,10 +929,8 @@ def shn_pr_jselect(module, resource, table, joinby, record, representation="html
         except:
             target_record = None
 
-        # Audit TODO: fix!
-        #shn_audit_read(operation='read', resource=resource, record=record.id, representation=representation)
-
         try:
+            shn_audit_read(operation='read', resource=resource, record=target_record.id, representation=representation)
             items = crud.read(table, target_record.id)
         except:
             items = msg_empty
@@ -1037,12 +1038,11 @@ def shn_pr_jupdate(module, resource, table, joinby, record, representation="html
         # TODO: fix callbacks
         #form = crud.update(table, record, onvalidation=onvalidation, onaccept=onaccept)
 
-        # TODO: fix callbacks
+        # Lock join field
+        table[joinby].default = target_record[joinby]
+        table[joinby].writable = False
 
         form = crud.update(table, target_record.id, next=next)
-
-        # TODO: restore callbacks
-
         output = dict(form=form, formtitle=formtitle)
 
     else:
@@ -1160,7 +1160,7 @@ def shn_pr_rest_controller(module, resource,
 
     # Identify action ---------------------------------------------------------
 
-    _request = shn_pr_rest_parse_request()
+    _request = shn_pr_parse_request()
 
     if not _request:
         session.error = PR_INVALID_FUNCTION
@@ -1184,7 +1184,7 @@ def shn_pr_rest_controller(module, resource,
             vars={'_next':URL(r=request, c=module, f=resource, args=[record_id, jresource, method])}))
 
     # Try to identify record
-    record_id = shn_pr_rest_identify_record(module, resource, _request['record_id'], jresource)
+    record_id = shn_pr_identify_precord(module, resource, _request['record_id'], jresource)
 
     if record_id==0:
         session.error = PR_NO_SUCH_RECORD
@@ -1205,10 +1205,10 @@ def shn_pr_rest_controller(module, resource,
             redirect(URL(r=request, c=module, f='index'))
 
     # Append record ID to request
-    if record_id and len(request.args)>0 and not (str(record_id) in request.args):
-        if jresource:
+    if record_id and len(request.args)>0:
+        if jresource and not request.args[0].isdigit():
             request.args.insert(0, str(record_id))
-        else:
+        elif not jresource and not (str(record_id) in request.args):
             request.args.append(str(record_id))
 
     # Identify join field -----------------------------------------------------
@@ -1267,7 +1267,7 @@ def shn_pr_rest_controller(module, resource,
         else:
             here = URL(r=request, f=resource, args=[record_id, jresource])
 
-        there =  URL(r=request, f=resource, args=[record_id, jresource])
+        there = URL(r=request, f=resource, args=[record_id, jresource])
         same = URL(r=request, f=resource, args=['[id]', jresource])
 
         # Get pageheader (if any)
@@ -1277,6 +1277,14 @@ def shn_pr_rest_controller(module, resource,
 
         if pheader:
             output.update(pheader=pheader)
+
+        # List-All button?
+        try:
+            label_list_button = s3.crud_strings[jtablename].label_list_button
+        except:
+            label_list_button = s3.crud_strings.label_list_button
+        list_btn = A(label_list_button, _href=there, _id='list-btn')
+        output.update(list_btn=list_btn)
 
         # Get primary table
         tablename = "%s_%s" % (module, resource)
@@ -1308,7 +1316,9 @@ def shn_pr_rest_controller(module, resource,
         if method==None or method=="list" or method=="read" or method=="display":
 
             if shn_has_permission('read', jtable):
-                if multiple:
+                if multiple and not jrecord_id:
+                    if 'list_btn' in output: # this is already a list action, so forget about list_btn
+                        del output['list_btn']
                     if representation=="html" and shn_has_permission('create', jtable):
                         _output = shn_pr_jcreate(jmodule, jresource, jtable, joinby, record,
                             representation=representation, multiple=multiple, next=there)
@@ -1321,10 +1331,10 @@ def shn_pr_rest_controller(module, resource,
                 else:
                     if representation=="html" and shn_has_permission('update', jtable):
                         _output = shn_pr_jupdate(jmodule, jresource, jtable, joinby, record,
-                            representation=representation, multiple=multiple, next=there)
+                            representation=representation, multiple=multiple, next=there, jrecord=jrecord_id)
                     else:
                         _output = shn_pr_jselect(jmodule, jresource, jtable, joinby, record,
-                            representation=representation, multiple=multiple, next=here)
+                            representation=representation, multiple=multiple, next=here, jrecord=jrecord_id)
                     if _output:
                         output.update(_output)
                 return output
@@ -1375,32 +1385,11 @@ def shn_pr_rest_controller(module, resource,
         if method=="search_simple":
 
             if resource=="person":
-
-                # TODO: pass representation to search_simple!
-                if representation=="html":
-                    return shn_pr_person_search_simple()
-                else:
-                    session.error = PR_UNSUPPORTED_FORMAT
-                    redirect(URL(r=request, c=module, f='index'))
+                return shn_pr_person_search_simple(representation=representation)
 
             else:
                 session.error = PR_UNSUPPORTED_METHOD
                 redirect(URL(r=request, c=module, f='index'))
-
-# TODO: this doesn't quite work
-#        elif method=="view":
-#            if resource=="person":
-
-                # TODO: pass representation to view
-#                if representation=="html":
-#                    return shn_pr_person_view(record_id)
-#                else:
-#                    session.error = PR_UNSUPPORTED_FORMAT
-#                    redirect(URL(r=request, c=module, f='index'))
-
-#            else:
-#                session.error = PR_UNSUPPORTED_METHOD
-#                redirect(URL(r=request, c=module, f='index'))
 
         elif method=="clear":
 

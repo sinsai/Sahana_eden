@@ -15,8 +15,8 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Search for a Person'), False, URL(r=request, f='person', args='search_simple')],
-    [T('View/Edit Person Details'), False, URL(r=request, f='person', args='view'),[
-        [T('Basic Details'), False, URL(r=request, f='person', args='view')],
+    [T('View/Edit Person Details'), False, URL(r=request, f='person', args='read'),[
+#        [T('Basic Details'), False, URL(r=request, f='person', args='view')],
         [T('Images'), False, URL(r=request, f='person', args='image')],
         [T('Identity'), False, URL(r=request, f='person', args='identity')],
         [T('Address'), False, URL(r=request, f='person', args='address')],

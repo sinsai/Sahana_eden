@@ -318,7 +318,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].metadata.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_metadata.id'))
+db[table].metadata.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_metadata.id', 'gis_feature_metadata.id'))
 db[table].metadata.represent = lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
 db[table].metadata.label = T('Metadata')
 db[table].metadata.comment = DIV(A(T('Add Metadata'), _class='popup', _href=URL(r=request, c='gis', f='feature_metadata', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Metadata|Additional attributes associated with this Feature.")))

@@ -276,13 +276,14 @@ db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lon.requires = IS_NULL_OR(IS_LON())
 
 # Field representation
-db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
-db[table].observer.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
+db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
+db[table].observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
+
 db[table].observer.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].observer.ondelete = 'RESTRICT'
 
-db[table].reporter.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s'))
-db[table].reporter.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
+db[table].reporter.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
+db[table].reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 db[table].reporter.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].reporter.ondelete = 'RESTRICT'
 

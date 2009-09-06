@@ -343,7 +343,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
                 represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
                 comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
                 ondelete = 'RESTRICT'

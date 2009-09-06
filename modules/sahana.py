@@ -1065,11 +1065,13 @@ class JoinedResource(object):
 class JRLayer(object):
 
     jresources = {}
+    settings = {}
 
     def __init__(self, db):
 
         self.db = db
         self.jresources = {}
+        self.settings = {}
 
     def add_jresource(self, prefix, name, joinby=None, multiple=True, fields=None, **attr):
 

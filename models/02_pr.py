@@ -343,7 +343,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
                 represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
                 comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
                 ondelete = 'RESTRICT'
@@ -1313,7 +1313,15 @@ def shn_pr_rest_controller(module, resource,
         # TODO: check for custom view or use PR custom views
         response.view = 'pr/person.html'
 
-        if method==None or method=="list" or method=="read" or method=="display":
+        if method==None and request.env.request_method=='PUT':
+            # Not implemented
+            raise HTTP(501)
+        elif method==None and request.env.request_method=='DELETE':
+            # Not implemented
+            raise HTTP(501)
+        elif (method==None and request.env.request_method=='GET') or \
+            (method==None and request.env.request_method=='POST') or \
+            method=="list" or method=="read" or method=="display":
 
             if shn_has_permission('read', jtable):
                 if multiple and not jrecord_id:
@@ -1410,7 +1418,6 @@ def shn_pr_rest_controller(module, resource,
                 redirect(URL(r=request, c='pr', f=resource))
 
         else:
-            # Default CRUD action - forward to standard REST controller
             return shn_rest_controller(module, resource, main=main, extra=extra, onvalidation=onvalidation, onaccept=onaccept)
 
 # END

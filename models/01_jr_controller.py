@@ -6,13 +6,20 @@
 # created 2009-09-06 by nursix
 #
 
+# *****************************************************************************
+# Joint Resource Layer
 jrlayer = JRLayer(db)
 
-# Make these constants to ensure consistency
+# *****************************************************************************
+# Error messages
+#   - make these constants to ensure consistency
 UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported format!')
 BADMETHOD = T('Unsupported method!')
 BADRECORD = T('No such record!')
+
+# *****************************************************************************
+# Helper functions
 
 #
 # shn_jr_identify_precord -----------------------------------------------------
@@ -69,7 +76,31 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
     if record_id:
         session[tablename] = record_id
 
+        if 'jrvars' in session:
+            if not tablename in session['jrvars']:
+                session['jrvars'].append( tablename )
+        else:
+            session['jrvars'] = [tablename]
+
     return record_id
+
+#
+# shn_jr_clear_session --------------------------------------------------------
+#
+def shn_jr_clear_session(session_var):
+
+    if not session_var:
+        if 'jrvars' in session:
+            for r in session['jrvars']:
+                if r in session:
+                    del session[r]
+            session['jrvars'] = []
+    else:
+        if session_var in session:
+            del session[session_var]
+        if 'jrvars' in session:
+            if session_var in session['jrvars']:
+                session['jrvars'].remove(session_var)
 
 #
 # shn_jr_select ---------------------------------------------------------------
@@ -353,6 +384,9 @@ def shn_jr_delete(resource, table, joinby, record, pkey, representation, jrecord
     session.confirmation = "%s %s" % ( numrows, T('records deleted'))
     return output
 
+# *****************************************************************************
+# Main controller function
+
 #
 # shn_jr_rest_controller ------------------------------------------------------
 #
@@ -617,11 +651,7 @@ def shn_jr_rest_controller(module, resource,
 
         elif method=="clear":
 
-            # TODO: proper cleanup of session_var at login/logout
-            session_var = '%s_%s' % (module, resource)
-
-            if session_var in session:
-                del session[session_var]
+            shn_jr_clear_session('%s_%s' % (module, resource))
 
             if '_next' in request.vars:
                 request_vars = dict(_next=request.vars._next)

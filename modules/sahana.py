@@ -421,43 +421,47 @@ class AuthS3(Auth):
                 users = self.db(table_user[username] == form.vars[username]).select()
                 if users:
                     # user in db, check if registration pending or disabled
-                    user = users[0]
-                    if user.registration_key == 'pending':
+                    temp_user = users[0]
+                    if temp_user.registration_key == 'pending':
                         response.warning = self.messages.registration_pending
                         return form
-                    elif user.registration_key == 'disabled':
+                    elif temp_user.registration_key == 'disabled':
                         response.error = self.messages.login_disabled
                         return form
-                    elif user.registration_key:
+                    elif temp_user.registration_key:
                         response.warning = \
                             self.messages.registration_verifying
                         return form
-                    if self.settings.login_methods[0] == self:
-                        # check password locally
-                        if user[passfield] != form.vars.get(passfield, ''):
-                            user = None
-                    if self.settings.alternate_requires_registration:
-                        # try alternate logins
-                        for login_method in self.settings.login_methods:
-                            if login_method != self and \
-                                    login_method(request.vars[username],
-                                                 request.vars[passfield]):
-                                if not self in self.settings.login_methods:
-                                    # do not store password
-                                    form.vars[passfield] = None
-                                user = self.get_or_create_user(form.vars)
-                                break
-                if not user and not self.settings.alternate_requires_registration:
-                    # try alternate logins
+                    # try alternate logins 1st as these have the current version of the password
                     for login_method in self.settings.login_methods:
                         if login_method != self and \
                                 login_method(request.vars[username],
                                              request.vars[passfield]):
                             if not self in self.settings.login_methods:
-                                # do not store password
+                                # do not store password in db
                                 form.vars[passfield] = None
                             user = self.get_or_create_user(form.vars)
                             break
+                    if not user:
+                        # alternates have failed, maybe because service inaccessible
+                        if self.settings.login_methods[0] == self:
+                            # try logging in locally using cached credentials
+                            if temp_user[passfield] == form.vars.get(passfield, ''):
+                                # success
+                                user = temp_user
+                else:
+                    # user not in db
+                    if not self.settings.alternate_requires_registration:
+                        # we're allowed to auto-register users from external systems
+                        for login_method in self.settings.login_methods:
+                            if login_method != self and \
+                                    login_method(request.vars[username],
+                                                 request.vars[passfield]):
+                                if not self in self.settings.login_methods:
+                                    # do not store password in db
+                                    form.vars[passfield] = None
+                                user = self.get_or_create_user(form.vars)
+                                break
                 if not user:
                     # invalid login
                     session.error = self.messages.invalid_login

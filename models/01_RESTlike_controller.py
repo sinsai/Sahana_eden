@@ -699,7 +699,8 @@ def shn_rest_controller(module, resource,
     
     if len(request.args) == 0:
         # No arguments
-        if request.env.request_method == 'GET':
+        # nursix says: POST must be accepted here: CREATE forms under the list view!
+        if request.env.request_method == 'GET' or request.env.request_method == 'POST':
             # default to List
             authorised = shn_has_permission('read', table)
             if authorised:

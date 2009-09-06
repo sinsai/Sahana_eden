@@ -1313,7 +1313,15 @@ def shn_pr_rest_controller(module, resource,
         # TODO: check for custom view or use PR custom views
         response.view = 'pr/person.html'
 
-        if method==None or method=="list" or method=="read" or method=="display":
+        if method==None and request.env.request_method=='PUT':
+            # Not implemented
+            raise HTTP(501)
+        elif method==None and request.env.request_method=='DELETE':
+            # Not implemented
+            raise HTTP(501)
+        elif (method==None and request.env.request_method=='GET') or \
+            (method==None and request.env.request_method=='POST') or \
+            method=="list" or method=="read" or method=="display":
 
             if shn_has_permission('read', jtable):
                 if multiple and not jrecord_id:
@@ -1410,8 +1418,11 @@ def shn_pr_rest_controller(module, resource,
                 redirect(URL(r=request, c='pr', f=resource))
 
         else:
+            print ( request.args, module, resource, tablename, record_id, method, jresource, joinby )
+            print ( module, resource, main, extra, onvalidation, onaccept)
             # Default CRUD action - forward to standard REST controller
-            return shn_rest_controller(module, resource, main=main, extra=extra, onvalidation=onvalidation, onaccept=onaccept)
+#            return shn_rest_controller(module, resource, main=main, extra=extra, onvalidation=onvalidation, onaccept=onaccept)
+            return shn_rest_controller(module, resource, main=main, extra=extra)
 
 # END
 # *****************************************************************************

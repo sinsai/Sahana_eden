@@ -564,7 +564,15 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 #
 # shn_pr_person_search_simple -------------------------------------------------
 #
-def shn_pr_person_search_simple(representation="html"):
+def shn_pr_person_search_simple(module, resource, record_id, method,
+    jmodule=None,
+    jresource=None,
+    jrecord_id=None,
+    joinby=None,
+    multiple=True,
+    representation="html",
+    onvalidation=None,
+    onaccept=None):
     """
         Simple search form for persons
     """

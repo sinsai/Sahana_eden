@@ -451,13 +451,11 @@ def shn_jr_rest_controller(module, resource,
     if jresource and not record_id:
         # TODO: Cleanup - this is PR specific
         if module=="pr" and resource=="person" and representation=='html':
-            # TODO: make this nicer:
-            next_args = "[id]/%s" % jresource
+            _args = ['[id]', jresource]
             if method:
-                next_args="%s/%s" % (next_args, method)
-            next = URL(r=request, c=module, f=resource, args=next_args)
-            back = { "_next" : next }
-            redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=back))
+                _args.append(method)
+            same = URL(r=request, c=module, f=resource, args=_args)
+            redirect(URL(r=request, c='pr', f='person', args='search_simple', vars={"_next":same}))
         else:
             session.error = BADRECORD
             redirect(URL(r=request, c=module, f='index'))
@@ -494,6 +492,9 @@ def shn_jr_rest_controller(module, resource,
     # request, module, resource, tablename, table, record_id, method, jresource, joinby
     # additionally:
     #  if jresource: jmodule, jtablename, jtable
+
+    # Get custom action (if any)
+    custom_action = jrlayer.get_method(module, resource, jmodule, jresource, method)
 
     if jresource:
         # Action on joined resource
@@ -561,6 +562,12 @@ def shn_jr_rest_controller(module, resource,
         # TODO: select proper default or custom view
         response.view = 'pr/person.html'
 
+        if method and custom_action:
+            try:
+                #TODO: revise parameter list
+                return(custom_action(representation=representation))
+            except:
+                raise HTTP(501)
         if method==None and request.env.request_method=='PUT':
             # Not implemented
             raise HTTP(501)
@@ -638,16 +645,12 @@ def shn_jr_rest_controller(module, resource,
 
     else:
         # Action on main resource
-
-        #TODO: make generic (this here is PR specific) or pluggable
-        if method=="search_simple":
-
-            if module=="pr" and resource=="person" and representation=="html":
-                return shn_pr_person_search_simple(representation=representation)
-
-            else:
-                session.error = BADMETHOD
-                redirect(URL(r=request, c=module, f='index'))
+        if method and custom_action:
+            try:
+                #TODO: revise parameter list
+                return(custom_action(representation=representation))
+            except:
+                raise HTTP(501)
 
         elif method=="clear":
 

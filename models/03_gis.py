@@ -270,7 +270,6 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].description.label = T('Description')
-db[table].person_id.represent = lambda id: (id and [db(db.pr_person.id==id).select()[0].first_name] or ["None"])[0]
 db[table].person_id.label = T("Contact")
 db[table].source.label = T('Source')
 db[table].accuracy.label = T('Accuracy')

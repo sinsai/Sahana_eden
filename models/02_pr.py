@@ -1418,11 +1418,7 @@ def shn_pr_rest_controller(module, resource,
                 redirect(URL(r=request, c='pr', f=resource))
 
         else:
-            print ( request.args, module, resource, tablename, record_id, method, jresource, joinby )
-            print ( module, resource, main, extra, onvalidation, onaccept)
-            # Default CRUD action - forward to standard REST controller
-#            return shn_rest_controller(module, resource, main=main, extra=extra, onvalidation=onvalidation, onaccept=onaccept)
-            return shn_rest_controller(module, resource, main=main, extra=extra)
+            return shn_rest_controller(module, resource, main=main, extra=extra, onvalidation=onvalidation, onaccept=onaccept)
 
 # END
 # *****************************************************************************

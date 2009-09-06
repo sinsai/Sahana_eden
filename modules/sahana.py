@@ -1160,7 +1160,7 @@ class JRLayer(object):
 
     def set_method(self, prefix, resource, jprefix, jresource, method, action):
 
-        if not method or not action:
+        if not method:
             return None
 
         if prefix and resource:

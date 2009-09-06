@@ -564,8 +564,15 @@ def shn_jr_rest_controller(module, resource,
 
         if method and custom_action:
             try:
-                #TODO: revise parameter list
-                return(custom_action(representation=representation))
+                return(custom_action(module, resource, record_id, method,
+                    jmodule=jmodule,
+                    jresource=jresource,
+                    jrecord_id=jrecord_id,
+                    joinby=joinby,
+                    multiple=multiple,
+                    representation=representation,
+                    onvalidation=None,
+                    onaccept=None))
             except:
                 raise HTTP(501)
         if method==None and request.env.request_method=='PUT':
@@ -647,8 +654,16 @@ def shn_jr_rest_controller(module, resource,
         # Action on main resource
         if method and custom_action:
             try:
-                #TODO: revise parameter list
-                return(custom_action(representation=representation))
+                return(custom_action(module, resource, record_id, method,
+                    #jmodule=None,
+                    #jresource=None,
+                    #jrecord_id=None,
+                    #joinby=None,
+                    #multiple=True,
+                    representation=representation,
+                    onvalidation=onvalidation,
+                    onaccept=onaccept))
+
             except:
                 raise HTTP(501)
 

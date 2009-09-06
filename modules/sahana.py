@@ -1025,3 +1025,190 @@ class S3:
             session.t2.query = []
         return DIV(TABLE(TR(form)), _class='t2-search')
 
+# *****************************************************************************
+# Joined Resources
+#
+# added by nursix
+#
+class JoinedResource(object):
+
+    def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, attr=None):
+
+        self.prefix = prefix
+        self.name = name
+        self.joinby = joinby
+        self.multiple = multiple
+        self.fields = fields
+        if attr:
+            self.attr = attr
+        else:
+            self.attr = {}
+
+    def get_prefix(self):
+        return self.prefix
+
+    def is_multiple(self):
+        return self.multiple
+
+    def list_fields(self):
+        return self.fields
+
+    def delete_onvalidation(self):
+        if 'delete_onvalidation' in self.attr:
+            return self.attr['delete_onvalidation']
+        else:
+            return None
+
+    def delete_onaccept(self):
+        if 'delete_onaccept' in self.attr:
+            return self.attr['delete_onaccept']
+        else:
+            return None
+
+    def get_join_key(self, module, resource):
+
+        tablename = "%s_%s" % (module, resource)
+
+        if self.joinby:
+
+            if isinstance(self.joinby, str):
+                # natural join
+                return (self.joinby, self.joinby)
+
+            elif isinstance(self.joinby, dict):
+                # primary/foreign key join
+                if tablename in self.joinby:
+                    return ('id', self.joinby[tablename])
+                else:
+                    # Not joined with this table
+                    return None
+            else:
+                # Invalid definition
+                return None
+        else:
+            # No join_key defined
+            return None
+
+class JRLayer(object):
+
+    jresources = {}
+
+    def __init__(self, db):
+
+        self.db = db
+        self.jresources = {}
+
+    def add_jresource(self, prefix, name, joinby=None, multiple=True, fields=None, **attr):
+
+        _table = "%s_%s" % (prefix, name)
+
+        if fields:
+            list_fields = [self.db[_table][f] for f in fields]
+
+        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, fields=list_fields, attr=attr)
+        self.jresources[name] = jr
+
+    def get_prefix(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].get_prefix()
+        else:
+            return None
+
+    def is_multiple(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].is_multiple()
+        else:
+            return True
+
+    def get_join_key(self, name, module, resource):
+
+        if name in self.jresources:
+            return self.jresources[name].get_join_key(module, resource)
+        else:
+            return None
+
+    def list_fields(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].list_fields()
+        else:
+            return None
+
+    def delete_onvalidation(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].delete_onvalidation()
+        else:
+            return None
+
+    def delete_onaccept(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].delete_onaccept()
+        else:
+            return None
+
+    # -------------------------------------------------------------------------
+    # Request Parser
+
+    def parse_request(self, request):
+
+        _request = {}
+
+        if len(request.args)==0:
+            record_id= None
+            jresource=None
+            method=None
+        else:
+            if request.args[0].isdigit():
+                record_id = request.args[0]
+                if len(request.args)>1:
+                    jresource = str.lower(request.args[1])
+                    if jresource in self.jresources:
+                        if len(request.args)>2:
+                            method = str.lower(request.args[2])
+                        else:
+                            method = None
+                    else:
+                        # Error: INVALID FUNCTION
+                        return None
+                else:
+                    jresource = None
+                    method = None
+            elif str.lower(request.args[0]) in self.jresources:
+                record_id = None
+                jresource = str.lower(request.args[0])
+                if len(request.args)>1:
+                    method = str.lower(request.args[1])
+                else:
+                    method = None
+            else:
+                method = str.lower(request.args[0])
+                jresource = None
+                if len(request.args)>1 and request.args[1].isdigit():
+                    record_id = request.args[1]
+                else:
+                    record_id = None
+
+        jrecord_id = None
+
+        if jresource:
+            jmodule = self.get_prefix(jresource)
+            multiple = self.is_multiple(jresource)
+            if request.args[len(request.args)-1].isdigit():
+                jrecord_id = request.args[len(request.args)-1]
+        else:
+            jmodule = None
+            multiple = True
+
+        _request.update(
+            record_id=record_id,
+            jmodule=jmodule,
+            jresource=jresource,
+            jrecord_id=jrecord_id,
+            multiple=multiple,
+            method=method)
+
+        return _request

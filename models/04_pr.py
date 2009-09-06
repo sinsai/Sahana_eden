@@ -460,7 +460,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #
 network_id = SQLTable(None, 'network_id',
                 Field('network_id', db.pr_network,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_network.id', '%(id)s')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_network.id', '%(id)s')),
                 represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
                 comment = DIV(A(T('Add Network'), _class='popup', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
                 ondelete = 'RESTRICT'
@@ -540,7 +540,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].module.requires = IS_NULL_OR(IS_IN_DB(db, 's3_module.name', '%(name_nice)s'))
+db[table].module.requires = IS_NULL_OR(IS_ONE_OF(db, 's3_module.name', '%(name_nice)s'))
 db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name).select()[0].name_nice] or ["None"])[0]
 
 # *****************************************************************************

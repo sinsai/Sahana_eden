@@ -1097,6 +1097,8 @@ class JRLayer(object):
 
     jresources = {}
     settings = {}
+    methods = {}
+    jmethods = {}
 
     def __init__(self, db):
 
@@ -1153,6 +1155,55 @@ class JRLayer(object):
 
         if name in self.jresources:
             return self.jresources[name].delete_onaccept()
+        else:
+            return None
+
+    def set_method(self, prefix, resource, jprefix, jresource, method, action):
+
+        if not method or not action:
+            return None
+
+        if prefix and resource:
+            tablename = "%s_%s" % (prefix, resource)
+
+            if jprefix and jresource:
+                jtablename = "%s_%s" % (jprefix, jresource)
+                if not (method in self.jmethods):
+                    self.jmethods[method] = {}
+                if not (jtablename in self.jmethods[method]):
+                    self.jmethods[method][jtablename] = {}
+                self.jmethods[method][jtablename][tablename] = action
+                return action
+            else:
+                if not (method in self.methods):
+                    self.methods[method] = {}
+                self.methods[method][tablename] = action
+                return action
+
+        else:
+            return None
+
+    def get_method(self, prefix, resource, jprefix, jresource, method):
+
+        if not method:
+            return None
+
+        if prefix and resource:
+            tablename = "%s_%s" % (prefix, resource)
+
+            if jprefix and jresource:
+                jtablename = "%s_%s" % (jprefix, jresource)
+                if method in self.jmethods and \
+                    jtablename in self.jmethods[method] and \
+                    tablename in self.jmethods[method][jtablename]:
+                    return self.jmethods[method][jtablename][tablename]
+                else:
+                    return None
+            else:
+                if method in self.methods and tablename in self.methods[method]:
+                    return self.methods[method][tablename]
+                else:
+                    return None
         else:
             return None
 

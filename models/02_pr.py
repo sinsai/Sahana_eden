@@ -637,6 +637,9 @@ def shn_pr_person_search_simple(representation="html"):
         session.error = PR_BADFORMAT
         redirect(URL(r=request))
 
+# Plug into REST controller
+jrlayer.set_method(module, 'person', None, None, 'search_simple', shn_pr_person_search_simple )
+
 #
 # shn_pr_pheader --------------------------------------------------------------
 #

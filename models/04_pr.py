@@ -58,7 +58,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                       # Comment
                 migrate=migrate)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
@@ -132,7 +132,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                       # Comment
                 migrate=migrate)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
@@ -201,7 +201,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
@@ -268,7 +268,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
@@ -350,7 +350,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                Field('ia_code'),                   # Code of issuing authority (if any)
                 Field('comment'))                   # a comment (optional)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
@@ -397,7 +397,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_group='group_id', pr_person='person_id'),
@@ -440,7 +440,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
@@ -482,7 +482,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),
                 migrate=migrate)
 
-# VR Joined Resource
+# Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),

@@ -16,7 +16,7 @@ mail.settings.sender = 'sahana@sahanapy.org'
 
 auth = AuthS3(globals(),db)
 auth.define_tables()
-db.auth_user.password.requires = CRYPT(key='akeytochange')
+auth.settings.hmac_key = 'akeytochange'
 auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key='PUBLIC_KEY', private_key='PRIVATE_KEY')

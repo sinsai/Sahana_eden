@@ -251,8 +251,10 @@ class AuthS3(Auth):
             passfield = self.settings.password_field
             self.settings.table_user = db.define_table(
                 self.settings.table_user_name,
-                db.Field('first_name', length=128, default=''),
-                db.Field('last_name', length=128, default=''),
+                db.Field('first_name', length=128, default='',
+                        label=self.messages.label_first_name),
+                db.Field('last_name', length=128, default='',
+                        label=self.messages.label_last_name),
 
                 # add UTC Offset (+/-HHMM) to specify the user's timezone
                 # TODO:
@@ -262,11 +264,13 @@ class AuthS3(Auth):
                 db.Field('utc_offset'),
 
                 # db.Field('username', length=128, default=''),
-                db.Field('email', length=128, default=''),
-                db.Field(passfield, 'password', readable=False,
-                         label='Password'),
-                db.Field('registration_key', length=128,
-                         writable=False, readable=False, default=''),
+                db.Field('email', length=512, default='',
+                        label=self.messages.label_email),
+                db.Field(passfield, 'password', length=512,
+                         readable=False, label=self.messages.label_password),
+                db.Field('registration_key', length=512,
+                        writable=False, readable=False, default='',
+                        label=self.messages.label_registration_key),
                 migrate=\
                     self.__get_migrate(self.settings.table_user_name, migrate))
             table = self.settings.table_user
@@ -281,7 +285,7 @@ class AuthS3(Auth):
                 table.utc_offset.requires = IS_UTC_OFFSET()
             except:
                 pass
-            table[passfield].requires = [CRYPT()]
+            table[passfield].requires = [CRYPT(key=self.settings.hmac_key)]
             table.email.requires = \
                 [IS_EMAIL(error_message=self.messages.invalid_email),
                  IS_NOT_IN_DB(db, '%s.email'
@@ -290,8 +294,10 @@ class AuthS3(Auth):
         if not self.settings.table_group:
             self.settings.table_group = db.define_table(
                 self.settings.table_group_name,
-                db.Field('role', length=128, default=''),
-                db.Field('description', 'text'),
+                db.Field('role', length=512, default='',
+                        label=self.messages.label_role),
+                db.Field('description', 'text',
+                        label=self.messages.label_description),
                 migrate=self.__get_migrate(
                     self.settings.table_group_name, migrate))
             table = self.settings.table_group
@@ -300,33 +306,36 @@ class AuthS3(Auth):
         if not self.settings.table_membership:
             self.settings.table_membership = db.define_table(
                 self.settings.table_membership_name,
-                db.Field('user_id',
-                self.settings.table_user),
-                db.Field('group_id',
-                self.settings.table_group),
+                db.Field('user_id', self.settings.table_user,
+                        label=self.messages.label_user_id),
+                db.Field('group_id', self.settings.table_group,
+                        label=self.messages.label_group_id),
                 migrate=self.__get_migrate(
                     self.settings.table_membership_name, migrate))
             table = self.settings.table_membership
-            table.user_id.requires = IS_IN_DB(db, '%s.id'
-                 % self.settings.table_user._tablename,
-                '%(id)s: %(first_name)s %(last_name)s\
-')
-            table.group_id.requires = IS_IN_DB(db, '%s.id'
-                 % self.settings.table_group._tablename,
-                '%(id)s: %(role)s')
+            table.user_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_user._tablename,
+                    '%(id)s: %(first_name)s %(last_name)s')
+            table.group_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_group._tablename,
+                    '%(id)s: %(role)s')
         if not self.settings.table_permission:
             self.settings.table_permission = db.define_table(
                 self.settings.table_permission_name,
-                db.Field('group_id', self.settings.table_group),
-                db.Field('name', default='default'),
-                db.Field('table_name'),
-                db.Field('record_id', 'integer'),
+                db.Field('group_id', self.settings.table_group,
+                        label=self.messages.label_group_id),
+                db.Field('name', default='default', length=512,
+                        label=self.messages.label_name),
+                db.Field('table_name', length=512,
+                        label=self.messages.label_table_name),
+                db.Field('record_id', 'integer',
+                        label=self.messages.label_record_id),
                 migrate=self.__get_migrate(
                     self.settings.table_permission_name, migrate))
             table = self.settings.table_permission
-            table.group_id.requires = IS_IN_DB(db, '%s.id'
-                 % self.settings.table_group._tablename,
-                '%(id)s: %(role)s')
+            table.group_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_group._tablename,
+                    '%(id)s: %(role)s')
             table.name.requires = IS_NOT_EMPTY()
             table.table_name.requires = IS_IN_SET(self.db.tables)
             table.record_id.requires = IS_INT_IN_RANGE(0, 10 ** 9)
@@ -334,20 +343,23 @@ class AuthS3(Auth):
             self.settings.table_event = db.define_table(
                 self.settings.table_event_name,
                 db.Field('time_stamp', 'datetime',
-                         default=self.environment.request.now),
+                        default=self.environment.request.now,
+                        label=self.messages.label_time_stamp),
                 db.Field('client_ip',
-                         default=self.environment.request.client),
-                db.Field('user_id', self.settings.table_user,
-                         default=None),
-                db.Field('origin', default='auth'),
-                db.Field('description', 'text', default=''),
+                        default=self.environment.request.client,
+                        label=self.messages.label_client_ip),
+                db.Field('user_id', self.settings.table_user, default=None,
+                        label=self.messages.label_user_id),
+                db.Field('origin', default='auth', length=512,
+                        label=self.messages.label_origin),
+                db.Field('description', 'text', default='',
+                        label=self.messages.label_description),
                 migrate=self.__get_migrate(
                     self.settings.table_event_name, migrate))
             table = self.settings.table_event
-            table.user_id.requires = IS_IN_DB(db, '%s.id'
-                 % self.settings.table_user._tablename,
-                '%(id)s: %(first_name)s %(last_name)s\
-')
+            table.user_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_user._tablename,
+                    '%(id)s: %(first_name)s %(last_name)s')
             table.origin.requires = IS_NOT_EMPTY()
             table.description.requires = IS_NOT_EMPTY()
 
@@ -401,40 +413,53 @@ class AuthS3(Auth):
                 delete_label=self.messages.delete_label,
                 )
             accepted_form = False
-            if FORM.accepts(form, request.vars, session,
-                            formname='login',
+            if form.accepts(request.vars, session,
+                            formname='login', dbio=False,
                             onvalidation=onvalidation):
                 accepted_form = True
-                if self.settings.login_methods[0] == self:
-                    users = self.db(table_user[username] == \
-                        form.vars[username]).select()
-                    if users:
-                        ## user in db, check if registration pending or disabled
-                        user = users[0]
-                        if user.registration_key == 'pending':
-                            response.warning = self.messages.registration_pending
-                            return form
-                        elif user.registration_key == 'disabled':
-                            response.error = self.messages.login_disabled
-                            return form
-                        elif user.registration_key:
-                            response.warning = \
-                                self.messages.registration_verifying
-                            return form
+                # check for username in db
+                users = self.db(table_user[username] == form.vars[username]).select()
+                if users:
+                    # user in db, check if registration pending or disabled
+                    user = users[0]
+                    if user.registration_key == 'pending':
+                        response.warning = self.messages.registration_pending
+                        return form
+                    elif user.registration_key == 'disabled':
+                        response.error = self.messages.login_disabled
+                        return form
+                    elif user.registration_key:
+                        response.warning = \
+                            self.messages.registration_verifying
+                        return form
+                    if self.settings.login_methods[0] == self:
+                        # check password locally
                         if user[passfield] != form.vars.get(passfield, ''):
                             user = None
-                if not user:
-                    ## try alternate login methods
+                    if self.settings.alternate_requires_registration:
+                        # try alternate logins
+                        for login_method in self.settings.login_methods:
+                            if login_method != self and \
+                                    login_method(request.vars[username],
+                                                 request.vars[passfield]):
+                                if not self in self.settings.login_methods:
+                                    # do not store password
+                                    form.vars[passfield] = None
+                                user = self.get_or_create_user(form.vars)
+                                break
+                if not user and not self.settings.alternate_requires_registration:
+                    # try alternate logins
                     for login_method in self.settings.login_methods:
                         if login_method != self and \
                                 login_method(request.vars[username],
                                              request.vars[passfield]):
                             if not self in self.settings.login_methods:
-                                form.vars[passfield]=None #do not store password
+                                # do not store password
+                                form.vars[passfield] = None
                             user = self.get_or_create_user(form.vars)
                             break
                 if not user:
-                    ## invalid login
+                    # invalid login
                     session.error = self.messages.invalid_login
                     redirect(self.url(args=request.args))
         else:
@@ -464,7 +489,8 @@ class AuthS3(Auth):
             if accepted_form:
                 if onaccept:
                     onaccept(form)
-                if isinstance(next, (list, tuple)): ### fix issue with 2.6
+                if isinstance(next, (list, tuple)):
+                    # fix issue with 2.6
                     next = next[0]
                 if next and not next[0] == '/' and next[:4] != 'http':
                     next = self.url(next.replace('[id]', str(form.vars.id)))
@@ -529,7 +555,7 @@ class AuthS3(Auth):
             item = row[1][0]
             if isinstance(item, INPUT) and item['_name'] == passfield:
                 form[0].insert(i+1, TR(
-                        LABEL(self.messages.verify_password+':'),
+                        LABEL(self.messages.verify_password + ':'),
                         INPUT(_name="password_two",
 
 
@@ -589,7 +615,8 @@ class AuthS3(Auth):
                 onaccept(form)
             if not next:
                 next = self.url(args = request.args)
-            elif isinstance(next, (list, tuple)): ### fix issue with 2.6
+            elif isinstance(next, (list, tuple)):
+                # fix issue with 2.6
                 next = next[0]
 
             elif next and not next[0] == '/' and next[:4] != 'http':

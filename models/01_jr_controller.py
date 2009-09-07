@@ -61,8 +61,8 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
                     return 0
 
     if not record_id:
-        if tablename in session:
-            record_id = session[tablename]
+        if session.jrvars and tablename in session.jrvars:
+            record_id = session.jrvars[tablename]
             query = (table.id==record_id)
             if 'deleted' in table:
                 query = ((table.deleted==False) | (table.deleted==None)) & query
@@ -74,13 +74,11 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
                 session[tablename] = None
 
     if record_id:
-        session[tablename] = record_id
+        if not session.jrvars:
+            session.jrvars = Storage()
 
-        if 'jrvars' in session:
-            if not tablename in session['jrvars']:
-                session['jrvars'].append( tablename )
-        else:
-            session['jrvars'] = [tablename]
+        if not tablename in session.jrvars:
+            session.jrvars[tablename] = record_id
 
     return record_id
 
@@ -89,18 +87,12 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
 #
 def shn_jr_clear_session(session_var):
 
-    if not session_var:
-        if 'jrvars' in session:
-            for r in session['jrvars']:
-                if r in session:
-                    del session[r]
-            session['jrvars'] = []
-    else:
-        if session_var in session:
-            del session[session_var]
-        if 'jrvars' in session:
-            if session_var in session['jrvars']:
-                session['jrvars'].remove(session_var)
+    if session_var and session.jrvars:
+        if session_var and session_var in session.jrvars:
+            del session.jrvars[session_var]
+    elif session.jrvars:
+        del session['jrvars']
+        #session.jrvars = Storage()
 
 #
 # shn_jr_select ---------------------------------------------------------------

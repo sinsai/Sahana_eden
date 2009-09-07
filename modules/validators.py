@@ -109,7 +109,7 @@ class IS_ONE_OF(object):
         self,
         dbset,
         field,
-        represent,
+        represent=None,
         filterby=None,
         filter_opts=None,
         error_message='invalid value!',

@@ -26,14 +26,6 @@ response.menu_options = [
 #        [T('Status'), False, URL(r=request, f='person', args='status')],
         [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
     ]],
-#    [T('Add Person Details'), False, URL(r=request, f='person'),[
-#        [T('Add Image'), False, URL(r=request, f='image_person', args='create')],
-#        [T('Add Identity'), False, URL(r=request, f='identity', args='create')],
-#        [T('Add Address'), False, URL(r=request, f='address', args='create')],
-#        [T('Add Contact Information'), False, URL(r=request, f='contact', args='create')],
-#        [T('Add Presence Log Entry'), False, URL(r=request, f='presence_person', args='create')],
-#        [T('Add Group Membership'), False, URL(r=request, f='group_membership', args='create')],
-#    ]],
     [T('Add Person'), False, URL(r=request, f='person', args='create')],
     [T('Add Group'), False, URL(r=request, f='group', args='create')],
     [T('List Persons'), False, URL(r=request, f='person')],
@@ -99,11 +91,9 @@ def pentity():
     return shn_rest_controller(module, 'pentity')
 
 def presence():
-    db.pr_presence.pr_pe_id.writable = False
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
 def presence_person():
-    db.pr_presence.pr_pe_id.writable = False
     db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,)))
     request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"

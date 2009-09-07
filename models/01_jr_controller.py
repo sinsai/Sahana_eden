@@ -61,8 +61,8 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
                     return 0
 
     if not record_id:
-        if tablename in session:
-            record_id = session[tablename]
+        if session.jrvars and tablename in session.jrvars:
+            record_id = session.jrvars[tablename]
             query = (table.id==record_id)
             if 'deleted' in table:
                 query = ((table.deleted==False) | (table.deleted==None)) & query
@@ -74,13 +74,11 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
                 session[tablename] = None
 
     if record_id:
-        session[tablename] = record_id
+        if not session.jrvars:
+            session.jrvars = Storage()
 
-        if 'jrvars' in session:
-            if not tablename in session['jrvars']:
-                session['jrvars'].append( tablename )
-        else:
-            session['jrvars'] = [tablename]
+        if not tablename in session.jrvars:
+            session.jrvars[tablename] = record_id
 
     return record_id
 
@@ -89,18 +87,12 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
 #
 def shn_jr_clear_session(session_var):
 
-    if not session_var:
-        if 'jrvars' in session:
-            for r in session['jrvars']:
-                if r in session:
-                    del session[r]
-            session['jrvars'] = []
-    else:
-        if session_var in session:
-            del session[session_var]
-        if 'jrvars' in session:
-            if session_var in session['jrvars']:
-                session['jrvars'].remove(session_var)
+    if session_var and session.jrvars:
+        if session_var and session_var in session.jrvars:
+            del session.jrvars[session_var]
+    elif session.jrvars:
+        del session['jrvars']
+        #session.jrvars = Storage()
 
 #
 # shn_jr_select ---------------------------------------------------------------
@@ -421,6 +413,7 @@ def shn_jr_rest_controller(module, resource,
         session.error = BADMETHOD
         redirect(URL(r=request, c=module, f='index'))
 
+    # TODO: make this more python-like
     jmodule = _request['jmodule']
     jresource = _request['jresource']
     jrecord_id = _request['jrecord_id']
@@ -443,17 +436,23 @@ def shn_jr_rest_controller(module, resource,
     # Try to identify record
     record_id = shn_jr_identify_precord(module, resource, _request['record_id'], jresource)
 
-    if record_id==0:
+    if record_id and record_id==0:
         session.error = BADRECORD
         redirect(URL(r=request, c=module, f='index'))
 
     # Record ID is required in joined-table operations
-    if jresource and not record_id:
+    # TODO: "read" here is a workaround: the standard rest controller doesn't
+    # redirect to search when called for "read" without record ID, but returns
+    # a BADMETHOD instead (the mere redirection of read there is not nice)
+    if (method=="read" or jresource) and not record_id:
         # TODO: Cleanup - this is PR specific
         if module=="pr" and resource=="person" and representation=='html':
-            _args = ['[id]', jresource]
-            if method:
-                _args.append(method)
+            if jresource:
+                _args = ['[id]', jresource]
+                if method:
+                    _args.append(method)
+            else:
+                _args = [method, '[id]']
             same = URL(r=request, c=module, f=resource, args=_args)
             redirect(URL(r=request, c='pr', f='person', args='search_simple', vars={"_next":same}))
         else:
@@ -461,7 +460,9 @@ def shn_jr_rest_controller(module, resource,
             redirect(URL(r=request, c=module, f='index'))
 
     # Append record ID to request
-    if record_id and len(request.args)>0:
+    # TODO: make this nicer
+    if (record_id and len(request.args)>0) or \
+        (record_id and len(request.args)==0 and ('id_label' in request.vars)):
         if jresource and not request.args[0].isdigit():
             request.args.insert(0, str(record_id))
         elif not jresource and not (str(record_id) in request.args):

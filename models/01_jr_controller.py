@@ -421,6 +421,7 @@ def shn_jr_rest_controller(module, resource,
         session.error = BADMETHOD
         redirect(URL(r=request, c=module, f='index'))
 
+    # TODO: make this more python-like
     jmodule = _request['jmodule']
     jresource = _request['jresource']
     jrecord_id = _request['jrecord_id']
@@ -443,17 +444,23 @@ def shn_jr_rest_controller(module, resource,
     # Try to identify record
     record_id = shn_jr_identify_precord(module, resource, _request['record_id'], jresource)
 
-    if record_id==0:
+    if record_id and record_id==0:
         session.error = BADRECORD
         redirect(URL(r=request, c=module, f='index'))
 
     # Record ID is required in joined-table operations
-    if jresource and not record_id:
+    # TODO: "read" here is a workaround: the standard rest controller doesn't
+    # redirect to search when called for "read" without record ID, but returns
+    # a BADMETHOD instead (the mere redirection of read there is not nice)
+    if (method=="read" or jresource) and not record_id:
         # TODO: Cleanup - this is PR specific
         if module=="pr" and resource=="person" and representation=='html':
-            _args = ['[id]', jresource]
-            if method:
-                _args.append(method)
+            if jresource:
+                _args = ['[id]', jresource]
+                if method:
+                    _args.append(method)
+            else:
+                _args = [method, '[id]']
             same = URL(r=request, c=module, f=resource, args=_args)
             redirect(URL(r=request, c='pr', f='person', args='search_simple', vars={"_next":same}))
         else:
@@ -461,7 +468,9 @@ def shn_jr_rest_controller(module, resource,
             redirect(URL(r=request, c=module, f='index'))
 
     # Append record ID to request
-    if record_id and len(request.args)>0:
+    # TODO: make this nicer
+    if (record_id and len(request.args)>0) or \
+        (record_id and len(request.args)==0 and ('id_label' in request.vars)):
         if jresource and not request.args[0].isdigit():
             request.args.insert(0, str(record_id))
         elif not jresource and not (str(record_id) in request.args):

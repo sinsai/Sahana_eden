@@ -99,11 +99,9 @@ def pentity():
     return shn_rest_controller(module, 'pentity')
 
 def presence():
-    db.pr_presence.pr_pe_id.writable = False
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
 def presence_person():
-    db.pr_presence.pr_pe_id.writable = False
     db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,)))
     request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"

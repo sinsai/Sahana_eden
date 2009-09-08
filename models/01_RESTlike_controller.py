@@ -50,21 +50,20 @@ def shn_jr_identify_precord(module, resource, _id, jresource):
             # Error: NO SUCH RECORD
             return 0
 
-    if not record_id: # TODO: make this more generic! (e.g. replace pr_pe_label by id_label)
-        if 'id_label' in request.vars:
-            id_label = str.strip(request.vars.id_label)
-            if 'pr_pe_label' in table:
-                query = (table.pr_pe_label==id_label)
-                if 'deleted' in table:
-                    query = ((table.deleted==False) | (table.deleted==None)) & query
-                records = db(query).select(table.id)
-                if records:
-                    record_id = records[0].id
-                else:
-                    # Error: NO SUCH RECORD
-                    return 0
+    if not record_id and 'id_label' in request.vars:
+        id_label = str.strip(request.vars.id_label)
+        if 'pr_pe_label' in table:
+            query = (table.pr_pe_label==id_label)
+            if 'deleted' in table:
+                query = ((table.deleted==False) | (table.deleted==None)) & query
+            records = db(query).select(table.id)
+            if records:
+                record_id = records[0].id
+            else:
+                # Error: NO SUCH RECORD
+                return 0
 
-    if not record_id:
+    if not record_id and len(request.args)>0:
         if session.jrvars and tablename in session.jrvars:
             record_id = session.jrvars[tablename]
             query = (table.id==record_id)
@@ -770,11 +769,11 @@ def shn_jr_select(module, resource, table, joinby, record, pkey, representation=
         except:
             target_record = None
 
-        try:
-            shn_audit_read(operation='read', resource=resource, record=target_record.id, representation=representation)
-            items = crud.read(table, target_record.id)
-        except:
-            items = msg_empty
+        _output = shn_read(module, table, resource, target_record.id)
+
+        if _output:
+            output.update(_output)
+        return output
 
     output.update(items=items,subtitle=subtitle)
     return output
@@ -1085,28 +1084,29 @@ def shn_rest_controller(module, resource,
 
     # Get representation ------------------------------------------------------
 
-    if request.vars.format:
-        representation = str.lower(request.vars.format)
-    else:
-        representation = "html"
+    #if request.vars.format:
+    #    representation = str.lower(request.vars.format)
+    #else:
+    #    representation = "html"
 
     # Identify action ---------------------------------------------------------
 
-    _request = jrlayer.parse_request(request)
+    _request = JRequest(jrlayer, request)
 
     # Invalid request?
-    if not _request:
+    if _request.invalid:
         session.error = BADMETHOD
         redirect(URL(r=request, c=module, f='index'))
 
     # Get method
-    method = _request['method']
+    method = _request.method
+    representation = _request.representation
 
     # Get joined resource parameters
-    jmodule = _request['jmodule']
-    jresource = _request['jresource']
-    jrecord_id = _request['jrecord_id']
-    multiple = _request['multiple']
+    jmodule = _request.jmodule
+    jresource = _request.jresource
+    jrecord_id = _request.jrecord_id
+    multiple = _request.multiple
 
     # Identify main resource record -------------------------------------------
 
@@ -1121,7 +1121,7 @@ def shn_rest_controller(module, resource,
             vars={'_next':URL(r=request, c=module, f=resource, args=request.args)}))
 
     # Try to identify record
-    record_id = shn_jr_identify_precord(module, resource, _request['record_id'], jresource)
+    record_id = shn_jr_identify_precord(module, resource, _request.record_id, jresource)
 
     # Returns 0 if the specified record doesn't exist (anymore)
     if record_id==0:

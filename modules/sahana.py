@@ -1034,6 +1034,10 @@ class S3:
 #
 # added by nursix
 #
+
+#
+# Joined Resource -------------------------------------------------------------
+#
 class JoinedResource(object):
 
     def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, attr=None):
@@ -1093,6 +1097,9 @@ class JoinedResource(object):
             # No join_key defined
             return None
 
+#
+# JRLayer ---------------------------------------------------------------------
+#
 class JRLayer(object):
 
     jresources = {}
@@ -1207,66 +1214,89 @@ class JRLayer(object):
         else:
             return None
 
-    # -------------------------------------------------------------------------
-    # Request Parser
+#
+# JRequest --------------------------------------------------------------------
+#
+class JRequest(object):
+    """
+        Request Parser for Joined Resource REST
+    """
 
-    def parse_request(self, request):
+    invalid = True
 
-        module = request.controller
-        resource = request.function
+    module = None
+    resource = None
+    record_id = None
+
+    jmodule = None
+    jresource = None
+    jrecord_id = None
+
+    method = None
+    representation = None
+
+    multiple = True
+
+    def __init__(self, jrlayer, request):
+
+        self.module = request.controller
+        self.resource = request.function
+
+        # Get representation (and remove the extension from the last argument)
+        self.representation = request.extension
+
+        if len(request.args)>0:
+            last_arg = request.args[len(request.args)-1]
+            if '.' in last_arg:
+                last_arg, self.representation = last_arg.rsplit('.',1)
+                request.args[len(request.args)-1] = last_arg
 
         if len(request.args)==0:
-            record_id= None
-            jresource=None
-            method=None
+            self.record_id= None
+            self.jresource=None
+            self.method=None
+
         else:
             if request.args[0].isdigit():
-                record_id = request.args[0]
+                self.record_id = request.args[0]
                 if len(request.args)>1:
-                    jresource = str.lower(request.args[1])
-                    if jresource in self.jresources:
+                    self.jresource = str.lower(request.args[1])
+                    if self.jresource in jrlayer.jresources:
                         if len(request.args)>2:
-                            method = str.lower(request.args[2])
+                            self.method = str.lower(request.args[2])
                         else:
-                            method = None
+                            self.method = None
                     else:
-                        # Error: INVALID FUNCTION
-                        return None
+                        self.invalid = True
                 else:
-                    jresource = None
-                    method = None
-            elif str.lower(request.args[0]) in self.jresources:
-                record_id = None
-                jresource = str.lower(request.args[0])
+                    self.jresource = None
+                    self.method = None
+            elif str.lower(request.args[0]) in jrlayer.jresources:
+                self.record_id = None
+                self.jresource = str.lower(request.args[0])
                 if len(request.args)>1:
-                    method = str.lower(request.args[1])
+                    self.method = str.lower(request.args[1])
                 else:
-                    method = None
+                    self.method = None
             else:
-                method = str.lower(request.args[0])
-                jresource = None
+                self.method = str.lower(request.args[0])
+                self.jresource = None
                 if len(request.args)>1 and request.args[1].isdigit():
-                    record_id = request.args[1]
+                    self.record_id = request.args[1]
                 else:
-                    record_id = None
+                    self.record_id = None
 
-        jrecord_id = None
+        # Get Joined Resource record ID, if any
+        self.jrecord_id = None
 
-        if jresource:
-            jmodule = self.get_prefix(jresource)
-            multiple = self.is_multiple(jresource)
+        if self.jresource:
+            self.jmodule = jrlayer.get_prefix(self.jresource)
+            self.multiple = jrlayer.is_multiple(self.jresource)
             if request.args[len(request.args)-1].isdigit():
-                jrecord_id = request.args[len(request.args)-1]
+                self.jrecord_id = request.args[len(request.args)-1]
         else:
-            jmodule = None
-            multiple = True
+            self.jmodule = None
+            self.multiple = True
 
-        return dict(
-            module=module,
-            resource=resource,
-            record_id=record_id,
-            jmodule=jmodule,
-            jresource=jresource,
-            jrecord_id=jrecord_id,
-            multiple=multiple,
-            method=method)
+        # Okay!
+        self.invalid = False

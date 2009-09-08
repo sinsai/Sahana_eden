@@ -415,7 +415,7 @@ subtitle_create = T('Add Category<>Sub-Category<>Catalog Relation')
 subtitle_list = T('Category<>Sub-Category<>Catalog Relation')
 label_list_button = T('List Category<>Sub-Category<>Catalog Relation')
 label_create_button = T('Add Category<>Sub-Category<>Catalog Relation')
-msg_record_created = T('ICategory<>Sub-Category<>Catalog Relation added')
+msg_record_created = T('Category<>Sub-Category<>Catalog Relation added')
 msg_record_modified = T('Category<>Sub-Category<>Catalog Relation updated')
 msg_record_deleted = T('Category<>Sub-Category<>Catalog Relation deleted')
 msg_list_empty = T('No Category<>Sub-Category<>Catalog Relation currently registered')
@@ -434,6 +434,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('recieved_date', 'datetime'),
 				db.Field('cost', 'double', default=0.00),
 				db.Field('currency'),
+				db.Field('track_status', readable='False'), #Linked to Shipment Transit Log table
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].way_bill.requires = IS_NOT_EMPTY()
@@ -493,19 +494,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('unit_cost', 'double', default=0.00),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
-#db[table].storage_id.readable=False
-#db[table].bin_id.readable=False
-#db[table].catalog.readable=False
+db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name') #this should be automatically done. Using LMS User Preferences
 db[table].site_id.label = T("Site/Warehouse")
 db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
-'''db[table].storage_id.label = T("Storage Location")
-db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
-db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this Item is located.")))
-db[table].bin_id.requires = IS_IN_DB(db, 'lms_storage_bin.id', 'lms_storage_bin.number')
-db[table].bin_id.label = T("Storage Bin #")
-db[table].bin_id.comment = DIV(A(T('Add Storage Bin'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin details where this Item is to be stored.")))
-'''
 db[table].quantity_unit.requires=IS_UNIT(db, filter_opts=[5])
 db[table].quantity_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].specifications_unit.requires=IS_UNIT(db, filter_opts=[1])
@@ -548,6 +539,60 @@ msg_record_created = T('Item added')
 msg_record_modified = T('Item updated')
 msg_record_deleted = T('Item deleted')
 msg_list_empty = T('No Item currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Shipment<>Item - A shipment can have many items under it. 
+# And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
+
+resource = 'shipment_item'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+				db.Field('shipment_id', db.lms_shipment),
+				db.Field('item_id', db.lms_item),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
+db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
+title_create = T('Link Item & Shipment')
+title_display = T('Shipment<>Item Relations Details')
+title_list = T('List Shipment<>Item Relation')
+title_update = T('Edit Shipment<>Item Relation')
+title_search = T('Search Shipment<>Item Relation')
+subtitle_create = T('Link Item & Shipment')
+subtitle_list = T('Shipment/Way Bills')
+label_list_button = T('Shipment<>Item Relations')
+label_create_button = T('Link an Item & Shipment')
+msg_record_created = T('Shipment<>Item Relation added')
+msg_record_modified = T('Shipment<>Item Relation updated')
+msg_record_deleted = T('Shipment<>Item Relation deleted')
+msg_list_empty = T('No Shipment<>Item Relation currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# Shipment<>Item - A shipment can have many items under it. 
+# And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
+
+resource = 'shipment_transit_logs'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+				db.Field('shipment_id', db.lms_shipment),
+				db.Field('item_id', db.lms_item),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
+db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
+title_create = T('Link Item & Shipment')
+title_display = T('Shipment<>Item Relations Details')
+title_list = T('List Shipment<>Item Relation')
+title_update = T('Edit Shipment<>Item Relation')
+title_search = T('Search Shipment<>Item Relation')
+subtitle_create = T('Link Item & Shipment')
+subtitle_list = T('Shipment/Way Bills')
+label_list_button = T('Shipment<>Item Relations')
+label_create_button = T('Link an Item & Shipment')
+msg_record_created = T('Shipment<>Item Relation added')
+msg_record_modified = T('Shipment<>Item Relation updated')
+msg_record_deleted = T('Shipment<>Item Relation deleted')
+msg_list_empty = T('No Shipment<>Item Relation currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Kits

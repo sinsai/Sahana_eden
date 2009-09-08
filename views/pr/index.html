@@ -1,10 +1,49 @@
 {{extend 'layout.html'}}
 
+{{if session.s3.debug:}}
+ <script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.jqplot.js"></script>
+{{else:}}
+ <script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.jqplot.min.js"></script>
+{{pass}}
+<script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jqplot_plugins/jqplot.pieRenderer.js"></script>
+
+<script type="text/javascript" language="javascript">//<![CDATA[
+$(document).ready(function(){
+    gender = {{try:}}{{=gender}}{{except:}}{{pass}}
+    age = {{try:}}{{=age}}{{except:}}{{pass}}
+
+    plot1 = $.jqplot('chart1', [gender], {
+      title: 'Persons by Gender',
+      seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{diameter:120}},
+      legend:{show:true, escapeHtml:true}
+    });
+
+    plot2 = $.jqplot('chart2', [age], {
+      title: 'Persons by Age Group',
+      seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{diameter:120}},
+      legend:{show:true, escapeHtml:true}
+    });
+});
+//]]></script>
+
 <div id="home">
 {{=H2(T(module_name))}}
 <p>
 {{=T("The")}} {{=T(module_name)}} {{=T("is a central online repository where information on all the people can be stored.")}}
 </p>
+<h3>Total Persons: {{try:}}{{=total}}{{except:}}?{{pass}}</h3>
+<div id="charts">
+<table>
+<tr>
+<td>
+<div id="chart1" style="width:320px; height:180px;"></div>
+</td>
+<td>
+<div id="chart2" style="width:320px; height:180px;"></div>
+</td>
+</tr>
+</table>
+</div>
 <h3>{{=T("Features Include")}}:</h3>
 <ul>
 <li>{{=T("Tracking and Tracing of Persons and Groups")}}</li>

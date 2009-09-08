@@ -21,9 +21,6 @@ response.menu_options = [
     ]]
 ]
 
-        [T('List Locations'), False, URL(r=request, f='presence_body')]
-
-
 def index():
     "Module's Home Page"
     return dict(module_name=module_name)

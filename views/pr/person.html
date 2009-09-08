@@ -26,12 +26,21 @@ $(document).ready(function() {
  {{=items}}
 {{except:}}
 {{pass}}
+</div>
+<div><br /></div>
 <div class='form-container'>
+{{try:}}
+ {{=H3(formtitle)}}
+{{except:}}
+ {{pass}}
 {{try:}}
  {{=form}}
 {{except:}}
-{{pass}}
-</div>
+ {{pass}}
+{{try:}}
+ {{=list_btn}}
+{{except:}}
+ {{pass}}
 </div>
 {{include 'pagenav.html'}}
 {{include 'searchbox.html'}}

@@ -230,8 +230,7 @@ def shn_has_permission(name, table_name, record_id = 0):
     S3 framework function to define whether a user can access a record
     Designed to be called from the RESTlike controller
     """
-    security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 1:
+    if session.s3.security_policy == 1:
         # Simple policy
         # Anonymous users can Read.
         if name == 'read':
@@ -259,8 +258,7 @@ def shn_accessible_query(name, table):
     This method does not work on GAE because uses JOIN and IN
     """
     # If using the 'simple' security policy then show all records
-    security = db().select(db.s3_setting.security_policy)[0].security_policy
-    if security == 1:
+    if session.s3.security_policy == 1:
         # simple
         return table.id > 0
     # Administrators can see all data
@@ -627,6 +625,8 @@ def shn_rest_controller(module, resource,
     listadd=True,
     main='name',
     extra=None,
+    orderby=None,
+    sortby=None,
     onvalidation=None,
     onaccept=None):
     """
@@ -639,6 +639,9 @@ def shn_rest_controller(module, resource,
     listadd=False: don't provide an add form in the list view
     main='field': the field used for the title in RSS output
     extra='field': the field used for the description in RSS output & in Search AutoComplete
+    orderby=expression: the sort order for server-side paginated list views e.g: db.mytable.myfield1|db.mytable.myfield2
+    sortby=list: the sort order for client-side paginated list views e.g: [[1, "asc"], [2, "desc"]]
+        see: http://datatables.net/examples/basic_init/table_sorting.html
     onvalidation=lambda form: function(form)    callback processed *before* DB IO
     onaccept=lambda form: function(form)        callback processed *after* DB IO
 
@@ -695,123 +698,146 @@ def shn_rest_controller(module, resource,
         representation = "html"
     
     if len(request.args) == 0:
-        # No arguments => default to List
-        authorised = shn_has_permission('read', table)
-        if authorised:
-            # Filter Search list to just those records which user can read
-            query = shn_accessible_query('read', table)
-            # Filter Search List to remove entries which have been deleted
-            if 'deleted' in table:
-                query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
-            # Filter Search List for custom query
-            if request.filter:
-                query = request.filter & query
-            # list_create if have permissions
-            authorised = shn_has_permission('create', table)
-            # Audit
-            shn_audit_read(operation='list', resource=resource, representation=representation)
-            if representation == "html":
-                # Start building the Return
-                output = dict(module_name=module_name, main=main, extra=extra)
-                if 'page' in request.vars:
-                    # Pagination at server-side (since no JS available)
-                    page = int(request.vars.page)
-                    start_record = (page - 1) * ROWSPERPAGE
-                    end_record = start_record + ROWSPERPAGE
-                    limitby = start_record, end_record
-                    totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
-                    label_search_button = T('Search')
-                    search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
-                    output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
-                else:
-                    # No Pagination server-side (to allow it to be done client-side)
-                    limitby = ''
-                    # Redirect to a paginated version if JS not-enabled
-                    request.vars['page'] = 1
-                    response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>' 
-                # Which fields do we display?
-                fields = [table[f] for f in table.fields if table[f].readable]
-                # Column labels
-                headers = {}
-                for field in fields:
-                   # Use custom or prettified label
-                   headers[str(field)] = field.label
-                items = crud.select(table, query=query, fields=fields, limitby=limitby, headers=headers, truncate=48, _id='list', _class='display')
-                if not items:
-                    try:
-                        items = s3.crud_strings.msg_list_empty
-                    except:
-                        items = T('None')
-                try:
-                    title = s3.crud_strings.title_list
-                except:
-                    title = T('List')
-                try:
-                    subtitle = s3.crud_strings.subtitle_list
-                except:
-                    subtitle = ''
-                # Update the Return with common items
-                output.update(dict(items=items, title=title, subtitle=subtitle))
-                if authorised and listadd:
-                    # Audit
-                    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
-                    # Display the Add form below List
-                    form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
-                    try:
-                        addtitle = s3.crud_strings.subtitle_create
-                    except:
-                        addtitle = T('Add New')
-                    # Check for presence of Custom View
-                    custom_view = '%s_list_create.html' % resource
-                    _custom_view = os.path.join(request.folder, 'views', module, custom_view)
-                    if os.path.exists(_custom_view):
-                        response.view = module + '/' + custom_view
+        # No arguments
+        # nursix says: POST must be accepted here: CREATE forms under the list view!
+        if request.env.request_method == 'GET' or request.env.request_method == 'POST':
+            # default to List
+            authorised = shn_has_permission('read', table)
+            if authorised:
+                # Filter Search list to just those records which user can read
+                query = shn_accessible_query('read', table)
+                # Filter Search List to remove entries which have been deleted
+                if 'deleted' in table:
+                    query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
+                # Filter Search List for custom query
+                if request.filter:
+                    query = request.filter & query
+                # list_create if have permissions
+                authorised = shn_has_permission('create', table)
+                # Audit
+                shn_audit_read(operation='list', resource=resource, representation=representation)
+                if representation == "html":
+                    # Start building the Return
+                    output = dict(module_name=module_name, main=main, extra=extra)
+                    if 'page' in request.vars:
+                        # Pagination at server-side (since no JS available)
+                        page = int(request.vars.page)
+                        start_record = (page - 1) * ROWSPERPAGE
+                        end_record = start_record + ROWSPERPAGE
+                        limitby = start_record, end_record
+                        totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
+                        label_search_button = T('Search')
+                        search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
+                        output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
                     else:
-                        response.view = 'list_create.html'
-                    # Add specificities to Return
-                    output.update(dict(form=form, addtitle=addtitle))
-                else:
-                    # List only
-                    if listadd:
+                        # No Pagination server-side (to allow it to be done client-side)
+                        limitby = None
+                        orderby = None
+                        # Redirect to a paginated version if JS not-enabled
+                        request.vars['page'] = 1
+                        response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>' 
+                        output.update(dict(sortby=sortby))
+                    # Which fields do we display?
+                    fields = [table[f] for f in table.fields if table[f].readable]
+                    # Column labels
+                    headers = {}
+                    for field in fields:
+                       # Use custom or prettified label
+                       headers[str(field)] = field.label
+                    items = crud.select(table, query=query, fields=fields, limitby=limitby, orderby=orderby, headers=headers, truncate=48, _id='list', _class='display')
+                    if not items:
                         try:
-                            label_create_button = s3.crud_strings.label_create_button
+                            items = s3.crud_strings.msg_list_empty
                         except:
-                            label_create_button = T('Add')
-                        add_btn = A(label_create_button, _href=URL(r=request, f=resource, args='create'), _id='add-btn')
+                            items = T('None')
+                    try:
+                        title = s3.crud_strings.title_list
+                    except:
+                        title = T('List')
+                    try:
+                        subtitle = s3.crud_strings.subtitle_list
+                    except:
+                        subtitle = ''
+                    # Update the Return with common items
+                    output.update(dict(items=items, title=title, subtitle=subtitle))
+                    if authorised and listadd:
+                        # Audit
+                        crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
+                        # Display the Add form below List
+                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+                        try:
+                            addtitle = s3.crud_strings.subtitle_create
+                        except:
+                            addtitle = T('Add New')
+                        # Check for presence of Custom View
+                        custom_view = '%s_list_create.html' % resource
+                        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+                        if os.path.exists(_custom_view):
+                            response.view = module + '/' + custom_view
+                        else:
+                            response.view = 'list_create.html'
+                        # Add specificities to Return
+                        output.update(dict(form=form, addtitle=addtitle))
                     else:
-                        add_btn = ''
-                    # Check for presence of Custom View
-                    custom_view = '%s_list.html' % resource
-                    _custom_view = os.path.join(request.folder, 'views', module, custom_view)
-                    if os.path.exists(_custom_view):
-                        response.view = module + '/' + custom_view
-                    else:
-                        response.view = 'list.html'
-                    # Add specificities to Return
-                    output.update(dict(add_btn=add_btn))
-                return output
-            elif representation == "plain":
-                items = crud.select(table, query, truncate=24)
-                response.view = 'plain.html'
-                return dict(item=items)
-            elif representation == "csv":
-                return export_csv(resource, query)
-            elif representation == "json":
-                return export_json(table, query)
-            elif representation == "pdf":
-                return export_pdf(table, query)
-            elif representation == "rss":
-                return export_rss(module, resource, query, main, extra)
-            elif representation == "xls":
-                return export_xls(table, query)
-            elif representation == "xml":
-                return export_xml(table, query)
+                        # List only
+                        if listadd:
+                            try:
+                                label_create_button = s3.crud_strings.label_create_button
+                            except:
+                                label_create_button = T('Add')
+                            add_btn = A(label_create_button, _href=URL(r=request, f=resource, args='create'), _id='add-btn')
+                        else:
+                            add_btn = ''
+                        # Check for presence of Custom View
+                        custom_view = '%s_list.html' % resource
+                        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+                        if os.path.exists(_custom_view):
+                            response.view = module + '/' + custom_view
+                        else:
+                            response.view = 'list.html'
+                        # Add specificities to Return
+                        output.update(dict(add_btn=add_btn))
+                    return output
+                elif representation == "plain":
+                    items = crud.select(table, query, truncate=24)
+                    response.view = 'plain.html'
+                    return dict(item=items)
+                elif representation == "csv":
+                    return export_csv(resource, query)
+                elif representation == "json":
+                    return export_json(table, query)
+                elif representation == "pdf":
+                    return export_pdf(table, query)
+                elif representation == "rss":
+                    return export_rss(module, resource, query, main, extra)
+                elif representation == "xls":
+                    return export_xls(table, query)
+                elif representation == "xml":
+                    return export_xml(table, query)
+                else:
+                    session.error = BADFORMAT
+                    redirect(URL(r=request))
             else:
-                session.error = BADFORMAT
-                redirect(URL(r=request))
+                session.error = UNAUTHORISED
+                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource)}))
+        elif request.env.request_method == 'PUT':
+            # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+            # We don't yet implement PUT for create/update, although Web2Py does now support it
+            # resource doesn't exist: Create using next available ID
+            # Not implemented
+            raise HTTP(501)
+            authorised = shn_has_permission('create', table)
+            if authorised:
+                #return shn_create(module, table, resource, representation, main, onvalidation, onaccept)
+                # need to parse entity: http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7
+                pass
+            else:
+                # Unauthorised
+                raise HTTP(401)
         else:
-            session.error = UNAUTHORISED
-            redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, c=module, f=resource)}))
+            # Unsupported HTTP method for this context: POST, DELETE, HEAD, OPTIONS, TRACE, CONNECT
+            # Not implemented
+            raise HTTP(501)
     else:
         if request.args[0].isdigit():
             # 1st argument is ID not method
@@ -850,7 +876,7 @@ def shn_rest_controller(module, resource,
                         # Unauthorised
                         raise HTTP(401)
                 else:
-                    # resource doesn't exist: Create
+                    # resource doesn't exist: Create at this ID
                     # Not implemented
                     raise HTTP(501)
                     authorised = shn_has_permission('create', table)
@@ -862,7 +888,7 @@ def shn_rest_controller(module, resource,
                         # Unauthorised
                         raise HTTP(401)
             else:
-                # Unsupported HTTP method: POST, HEAD, OPTIONS, TRACE, CONNECT
+                # Unsupported HTTP method for this context: POST, HEAD, OPTIONS, TRACE, CONNECT
                 # Not implemented
                 raise HTTP(501)
         else:
@@ -945,8 +971,8 @@ def shn_rest_controller(module, resource,
                         session.error = BADFORMAT
                         redirect(URL(r=request))
                 else:
-                    session.error = BADMETHOD
-                    redirect(URL(r=request))
+                    session.error = UNAUTHORISED
+                    redirect(URL(r=request, c='default', f='user', args='login' ,vars={'_next':URL(r=request, c=module, f=resource, args=['search'])}))
             else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login' ,vars={'_next':URL(r=request, c=module, f=resource, args=['search'])}))
+                session.error = BADMETHOD
+                redirect(URL(r=request))

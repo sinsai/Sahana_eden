@@ -33,17 +33,14 @@ exec('from applications.%s.modules.validators import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.validators import *
 
-# VITA
-exec('from applications.%s.modules.vita import *' % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.sahana.modules.vita import *
-
 def shn_sessions(f):
     """
     Extend session to support:
         Multiple flash classes
         Settings
             Debug mode
+            Security mode
+            Theme
             Audit modes
     """
     response.error = session.error
@@ -57,6 +54,10 @@ def shn_sessions(f):
         session.s3 = Storage()
     # Are we running in debug mode?
     session.s3.debug = db().select(db.s3_setting.debug)[0].debug
+    # Which security policy are we running?
+    session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy
+    # Select the theme
+    session.s3.theme = db().select(db.s3_setting.theme)[0].theme
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
         session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
@@ -68,6 +69,26 @@ def shn_sessions(f):
         session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write
     return f()
 response._caller = lambda f: shn_sessions(f)
+
+# shn_on_login ----------------------------------------------------------------
+# added 2009-08-27 by nursix
+def shn_auth_on_login(form):
+    """
+        Actions that need to be performed on successful login (Do not redirect from here!)
+    """
+
+    # JR controller
+    shn_jr_clear_session(None)
+
+# shn_on_logout ---------------------------------------------------------------
+# added 2009-08-27 by nursix
+def shn_auth_on_logout(user):
+    """
+        Actions that need to be performed on logout (Do not redirect from here!)
+    """
+
+    # JR controller
+    shn_jr_clear_session(None)
 
 #
 # Widgets
@@ -282,3 +303,38 @@ shn_list_of_nations = {
     201:T('Transnistria'),
     999:T('unknown')
     }
+
+# User Time Zone Operations:
+# TODO: don't know if that fits here, should perhaps be moved into sahana.py
+
+from datetime import timedelta
+import time
+
+def shn_user_utc_offset():
+    """
+        returns the UTC offset of the current user or None, if not logged in
+    """
+
+    if auth.is_logged_in():
+        return db(db.auth_user.id==session.auth.user.id).select()[0].utc_offset
+    else:
+        return None
+
+def shn_as_local_time(value):
+    """
+        represents a given UTC datetime.datetime object as string:
+
+        - for the local time of the user, if logged in
+        - as it is in UTC, if not logged in, marked by trailing +0000
+    """
+
+    format='%Y-%m-%d %H:%M:%S'
+
+    offset = IS_UTC_OFFSET.get_offset_value(shn_user_utc_offset())
+
+    if offset:
+        dt = value + timedelta(seconds=offset)
+        return dt.strftime(str(format))
+    else:
+        dt = value
+        return dt.strftime(str(format))+' +0000'

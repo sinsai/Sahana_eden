@@ -218,6 +218,151 @@ class AuthS3(Auth):
         self.messages.registration_disabled = 'Registration Disabled!'
         self.messages.lock_keys = True
                 
+    def __get_migrate(self, tablename, migrate=True):
+
+        if type(migrate).__name__=='str':
+            return (migrate+tablename+'.table')
+        elif migrate==False:
+            return False
+        else:
+            return True
+
+    def define_tables(self, migrate=True):
+        """
+        to be called unless tables are defined manually
+
+        usages::
+
+            # defines all needed tables and table files
+            # UUID+'_auth_user.table', ...
+            auth.define_tables()
+
+            # defines all needed tables and table files
+            # 'myprefix_auth_user.table', ...
+            auth.define_tables(migrate='myprefix_')
+
+            # defines all needed tables without migration/table files
+            auth.define_tables(migrate=False)
+
+        """
+
+        db = self.db
+        if not self.settings.table_user:
+            passfield = self.settings.password_field
+            self.settings.table_user = db.define_table(
+                self.settings.table_user_name,
+                db.Field('first_name', length=128, default='',
+                        label=self.messages.label_first_name),
+                db.Field('last_name', length=128, default='',
+                        label=self.messages.label_last_name),
+
+                # add UTC Offset (+/-HHMM) to specify the user's timezone
+                # TODO:
+                #   - this could need a nice label and context help
+                #   - entering timezone from a drop-down would be more comfortable
+                #   - automatic DST adjustment could be nice
+                db.Field('utc_offset'),
+
+                # db.Field('username', length=128, default=''),
+                db.Field('email', length=512, default='',
+                        label=self.messages.label_email),
+                db.Field(passfield, 'password', length=512,
+                         readable=False, label=self.messages.label_password),
+                db.Field('registration_key', length=512,
+                        writable=False, readable=False, default='',
+                        label=self.messages.label_registration_key),
+                migrate=\
+                    self.__get_migrate(self.settings.table_user_name, migrate))
+            table = self.settings.table_user
+            table.first_name.requires = \
+                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            table.last_name.requires = \
+                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            table.utc_offset.label = "UTC Offset"
+            table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
+            try:
+                from applications.sahana.modules.validators import IS_UTC_OFFSET
+                table.utc_offset.requires = IS_UTC_OFFSET()
+            except:
+                pass
+            table[passfield].requires = [CRYPT(key=self.settings.hmac_key)]
+            table.email.requires = \
+                [IS_EMAIL(error_message=self.messages.invalid_email),
+                 IS_NOT_IN_DB(db, '%s.email'
+                     % self.settings.table_user._tablename)]
+            table.registration_key.default = ''
+        if not self.settings.table_group:
+            self.settings.table_group = db.define_table(
+                self.settings.table_group_name,
+                db.Field('role', length=512, default='',
+                        label=self.messages.label_role),
+                db.Field('description', 'text',
+                        label=self.messages.label_description),
+                migrate=self.__get_migrate(
+                    self.settings.table_group_name, migrate))
+            table = self.settings.table_group
+            table.role.requires = IS_NOT_IN_DB(db, '%s.role'
+                 % self.settings.table_group._tablename)
+        if not self.settings.table_membership:
+            self.settings.table_membership = db.define_table(
+                self.settings.table_membership_name,
+                db.Field('user_id', self.settings.table_user,
+                        label=self.messages.label_user_id),
+                db.Field('group_id', self.settings.table_group,
+                        label=self.messages.label_group_id),
+                migrate=self.__get_migrate(
+                    self.settings.table_membership_name, migrate))
+            table = self.settings.table_membership
+            table.user_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_user._tablename,
+                    '%(id)s: %(first_name)s %(last_name)s')
+            table.group_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_group._tablename,
+                    '%(id)s: %(role)s')
+        if not self.settings.table_permission:
+            self.settings.table_permission = db.define_table(
+                self.settings.table_permission_name,
+                db.Field('group_id', self.settings.table_group,
+                        label=self.messages.label_group_id),
+                db.Field('name', default='default', length=512,
+                        label=self.messages.label_name),
+                db.Field('table_name', length=512,
+                        label=self.messages.label_table_name),
+                db.Field('record_id', 'integer',
+                        label=self.messages.label_record_id),
+                migrate=self.__get_migrate(
+                    self.settings.table_permission_name, migrate))
+            table = self.settings.table_permission
+            table.group_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_group._tablename,
+                    '%(id)s: %(role)s')
+            table.name.requires = IS_NOT_EMPTY()
+            table.table_name.requires = IS_IN_SET(self.db.tables)
+            table.record_id.requires = IS_INT_IN_RANGE(0, 10 ** 9)
+        if not self.settings.table_event:
+            self.settings.table_event = db.define_table(
+                self.settings.table_event_name,
+                db.Field('time_stamp', 'datetime',
+                        default=self.environment.request.now,
+                        label=self.messages.label_time_stamp),
+                db.Field('client_ip',
+                        default=self.environment.request.client,
+                        label=self.messages.label_client_ip),
+                db.Field('user_id', self.settings.table_user, default=None,
+                        label=self.messages.label_user_id),
+                db.Field('origin', default='auth', length=512,
+                        label=self.messages.label_origin),
+                db.Field('description', 'text', default='',
+                        label=self.messages.label_description),
+                migrate=self.__get_migrate(
+                    self.settings.table_event_name, migrate))
+            table = self.settings.table_event
+            table.user_id.requires = IS_IN_DB(db, '%s.id' %
+                    self.settings.table_user._tablename,
+                    '%(id)s: %(first_name)s %(last_name)s')
+            table.origin.requires = IS_NOT_EMPTY()
+            table.description.requires = IS_NOT_EMPTY()
+
     def login(
         self,
         next=DEFAULT,
@@ -268,40 +413,57 @@ class AuthS3(Auth):
                 delete_label=self.messages.delete_label,
                 )
             accepted_form = False
-            if FORM.accepts(form, request.vars, session,
-                            formname='login',
+            if form.accepts(request.vars, session,
+                            formname='login', dbio=False,
                             onvalidation=onvalidation):
                 accepted_form = True
-                if self.settings.login_methods[0] == self:
-                    users = self.db(table_user[username] == \
-                        form.vars[username]).select()
-                    if users:
-                        ## user in db, check if registration pending or disabled
-                        user = users[0]
-                        if user.registration_key == 'pending':
-                            response.warning = self.messages.registration_pending
-                            return form
-                        elif user.registration_key == 'disabled':
-                            response.error = self.messages.login_disabled
-                            return form
-                        elif user.registration_key:
-                            response.warning = \
-                                self.messages.registration_verifying
-                            return form
-                        if user[passfield] != form.vars.get(passfield, ''):
-                            user = None
-                if not user:
-                    ## try alternate login methods
+                # check for username in db
+                users = self.db(table_user[username] == form.vars[username]).select()
+                if users:
+                    # user in db, check if registration pending or disabled
+                    temp_user = users[0]
+                    if temp_user.registration_key == 'pending':
+                        response.warning = self.messages.registration_pending
+                        return form
+                    elif temp_user.registration_key == 'disabled':
+                        response.error = self.messages.login_disabled
+                        return form
+                    elif temp_user.registration_key:
+                        response.warning = \
+                            self.messages.registration_verifying
+                        return form
+                    # try alternate logins 1st as these have the current version of the password
                     for login_method in self.settings.login_methods:
                         if login_method != self and \
                                 login_method(request.vars[username],
                                              request.vars[passfield]):
                             if not self in self.settings.login_methods:
-                                form.vars[passfield]=None #do not store password
+                                # do not store password in db
+                                form.vars[passfield] = None
                             user = self.get_or_create_user(form.vars)
                             break
+                    if not user:
+                        # alternates have failed, maybe because service inaccessible
+                        if self.settings.login_methods[0] == self:
+                            # try logging in locally using cached credentials
+                            if temp_user[passfield] == form.vars.get(passfield, ''):
+                                # success
+                                user = temp_user
+                else:
+                    # user not in db
+                    if not self.settings.alternate_requires_registration:
+                        # we're allowed to auto-register users from external systems
+                        for login_method in self.settings.login_methods:
+                            if login_method != self and \
+                                    login_method(request.vars[username],
+                                                 request.vars[passfield]):
+                                if not self in self.settings.login_methods:
+                                    # do not store password in db
+                                    form.vars[passfield] = None
+                                user = self.get_or_create_user(form.vars)
+                                break
                 if not user:
-                    ## invalid login
+                    # invalid login
                     session.error = self.messages.invalid_login
                     redirect(self.url(args=request.args))
         else:
@@ -331,7 +493,8 @@ class AuthS3(Auth):
             if accepted_form:
                 if onaccept:
                     onaccept(form)
-                if isinstance(next, (list, tuple)): ### fix issue with 2.6
+                if isinstance(next, (list, tuple)):
+                    # fix issue with 2.6
                     next = next[0]
                 if next and not next[0] == '/' and next[:4] != 'http':
                     next = self.url(next.replace('[id]', str(form.vars.id)))
@@ -396,7 +559,7 @@ class AuthS3(Auth):
             item = row[1][0]
             if isinstance(item, INPUT) and item['_name'] == passfield:
                 form[0].insert(i+1, TR(
-                        LABEL(self.messages.verify_password+':'),
+                        LABEL(self.messages.verify_password + ':'),
                         INPUT(_name="password_two",
 
 
@@ -456,7 +619,8 @@ class AuthS3(Auth):
                 onaccept(form)
             if not next:
                 next = self.url(args = request.args)
-            elif isinstance(next, (list, tuple)): ### fix issue with 2.6
+            elif isinstance(next, (list, tuple)):
+                # fix issue with 2.6
                 next = next[0]
 
             elif next and not next[0] == '/' and next[:4] != 'http':
@@ -487,7 +651,7 @@ class AuthS3(Auth):
             pass
         else:
             # Insert Person Entity
-            pr_pe_id = db.pr_pentity.insert(opt_pr_pentity_class=1,label=None)
+            pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=1,label=None)
             # Link to Person Entity
             if pr_pe_id:
                 db.pr_person.insert(
@@ -865,3 +1029,243 @@ class S3:
             session.t2.query = []
         return DIV(TABLE(TR(form)), _class='t2-search')
 
+# *****************************************************************************
+# Joined Resources
+#
+# added by nursix
+#
+class JoinedResource(object):
+
+    def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, attr=None):
+
+        self.prefix = prefix
+        self.name = name
+        self.joinby = joinby
+        self.multiple = multiple
+        self.fields = fields
+        if attr:
+            self.attr = attr
+        else:
+            self.attr = {}
+
+    def get_prefix(self):
+        return self.prefix
+
+    def is_multiple(self):
+        return self.multiple
+
+    def list_fields(self):
+        return self.fields
+
+    def delete_onvalidation(self):
+        if 'delete_onvalidation' in self.attr:
+            return self.attr['delete_onvalidation']
+        else:
+            return None
+
+    def delete_onaccept(self):
+        if 'delete_onaccept' in self.attr:
+            return self.attr['delete_onaccept']
+        else:
+            return None
+
+    def get_join_key(self, module, resource):
+
+        tablename = "%s_%s" % (module, resource)
+
+        if self.joinby:
+
+            if isinstance(self.joinby, str):
+                # natural join
+                return (self.joinby, self.joinby)
+
+            elif isinstance(self.joinby, dict):
+                # primary/foreign key join
+                if tablename in self.joinby:
+                    return ('id', self.joinby[tablename])
+                else:
+                    # Not joined with this table
+                    return None
+            else:
+                # Invalid definition
+                return None
+        else:
+            # No join_key defined
+            return None
+
+class JRLayer(object):
+
+    jresources = {}
+    settings = {}
+    methods = {}
+    jmethods = {}
+
+    def __init__(self, db):
+
+        self.db = db
+        self.jresources = {}
+        self.settings = {}
+
+    def add_jresource(self, prefix, name, joinby=None, multiple=True, fields=None, **attr):
+
+        _table = "%s_%s" % (prefix, name)
+
+        if fields:
+            list_fields = [self.db[_table][f] for f in fields]
+
+        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, fields=list_fields, attr=attr)
+        self.jresources[name] = jr
+
+    def get_prefix(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].get_prefix()
+        else:
+            return None
+
+    def is_multiple(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].is_multiple()
+        else:
+            return True
+
+    def get_join_key(self, name, module, resource):
+
+        if name in self.jresources:
+            return self.jresources[name].get_join_key(module, resource)
+        else:
+            return None
+
+    def list_fields(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].list_fields()
+        else:
+            return None
+
+    def delete_onvalidation(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].delete_onvalidation()
+        else:
+            return None
+
+    def delete_onaccept(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name].delete_onaccept()
+        else:
+            return None
+
+    def set_method(self, prefix, resource, jprefix, jresource, method, action):
+
+        if not method:
+            return None
+
+        if prefix and resource:
+            tablename = "%s_%s" % (prefix, resource)
+
+            if jprefix and jresource:
+                jtablename = "%s_%s" % (jprefix, jresource)
+                if not (method in self.jmethods):
+                    self.jmethods[method] = {}
+                if not (jtablename in self.jmethods[method]):
+                    self.jmethods[method][jtablename] = {}
+                self.jmethods[method][jtablename][tablename] = action
+                return action
+            else:
+                if not (method in self.methods):
+                    self.methods[method] = {}
+                self.methods[method][tablename] = action
+                return action
+
+        else:
+            return None
+
+    def get_method(self, prefix, resource, jprefix, jresource, method):
+
+        if not method:
+            return None
+
+        if prefix and resource:
+            tablename = "%s_%s" % (prefix, resource)
+
+            if jprefix and jresource:
+                jtablename = "%s_%s" % (jprefix, jresource)
+                if method in self.jmethods and \
+                    jtablename in self.jmethods[method] and \
+                    tablename in self.jmethods[method][jtablename]:
+                    return self.jmethods[method][jtablename][tablename]
+                else:
+                    return None
+            else:
+                if method in self.methods and tablename in self.methods[method]:
+                    return self.methods[method][tablename]
+                else:
+                    return None
+        else:
+            return None
+
+    # -------------------------------------------------------------------------
+    # Request Parser
+
+    def parse_request(self, request):
+
+        _request = {}
+
+        if len(request.args)==0:
+            record_id= None
+            jresource=None
+            method=None
+        else:
+            if request.args[0].isdigit():
+                record_id = request.args[0]
+                if len(request.args)>1:
+                    jresource = str.lower(request.args[1])
+                    if jresource in self.jresources:
+                        if len(request.args)>2:
+                            method = str.lower(request.args[2])
+                        else:
+                            method = None
+                    else:
+                        # Error: INVALID FUNCTION
+                        return None
+                else:
+                    jresource = None
+                    method = None
+            elif str.lower(request.args[0]) in self.jresources:
+                record_id = None
+                jresource = str.lower(request.args[0])
+                if len(request.args)>1:
+                    method = str.lower(request.args[1])
+                else:
+                    method = None
+            else:
+                method = str.lower(request.args[0])
+                jresource = None
+                if len(request.args)>1 and request.args[1].isdigit():
+                    record_id = request.args[1]
+                else:
+                    record_id = None
+
+        jrecord_id = None
+
+        if jresource:
+            jmodule = self.get_prefix(jresource)
+            multiple = self.is_multiple(jresource)
+            if request.args[len(request.args)-1].isdigit():
+                jrecord_id = request.args[len(request.args)-1]
+        else:
+            jmodule = None
+            multiple = True
+
+        _request.update(
+            record_id=record_id,
+            jmodule=jmodule,
+            jresource=jresource,
+            jrecord_id=jrecord_id,
+            multiple=multiple,
+            method=method)
+
+        return _request

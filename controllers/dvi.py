@@ -14,6 +14,7 @@ response.menu_options = [
         [T('Pathology'), False, URL(r=request, f='pathology')],
         [T('DNA'), False, URL(r=request, f='dna')],
         [T('Dental'), False, URL(r=request, f='dental')],
+        [T('Identification'), False, URL(r=request, f='identification')]
     ]]
 ]
 
@@ -24,6 +25,11 @@ def index():
 def personal_effects():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'personal_effects')
+
+def case():
+
+    "Restlike CRUD controller"
+    return shn_rest_controller(module, 'case')
 
 def radiology():
     "RESTlike CRUD controller"
@@ -54,3 +60,6 @@ def operation_checklist():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'operation_checklist')
 
+def identification():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'identification')

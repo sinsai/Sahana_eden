@@ -1212,7 +1212,8 @@ class JRLayer(object):
 
     def parse_request(self, request):
 
-        _request = {}
+        module = request.controller
+        resource = request.function
 
         if len(request.args)==0:
             record_id= None
@@ -1260,12 +1261,12 @@ class JRLayer(object):
             jmodule = None
             multiple = True
 
-        _request.update(
+        return dict(
+            module=module,
+            resource=resource,
             record_id=record_id,
             jmodule=jmodule,
             jresource=jresource,
             jrecord_id=jrecord_id,
             multiple=multiple,
             method=method)
-
-        return _request

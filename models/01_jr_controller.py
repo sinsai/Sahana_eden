@@ -409,17 +409,19 @@ def shn_jr_rest_controller(module, resource,
 
     _request = jrlayer.parse_request(request)
 
+    # Invalid request?
     if not _request:
         session.error = BADMETHOD
         redirect(URL(r=request, c=module, f='index'))
 
-    # TODO: make this more python-like
+    # Get method
+    method = _request['method']
+
+    # Get joined resource parameters
     jmodule = _request['jmodule']
     jresource = _request['jresource']
     jrecord_id = _request['jrecord_id']
     multiple = _request['multiple']
-
-    method = _request['method']
 
     # Identify main resource record -------------------------------------------
 
@@ -431,20 +433,19 @@ def shn_jr_rest_controller(module, resource,
     if not shn_has_permission('read', table):
         session.error = UNAUTHORIZED
         redirect(URL(r=request, c='default', f='user', args='login',
-            vars={'_next':URL(r=request, c=module, f=resource, args=[record_id, jresource, method])}))
+            vars={'_next':URL(r=request, c=module, f=resource, args=request.args)}))
 
     # Try to identify record
     record_id = shn_jr_identify_precord(module, resource, _request['record_id'], jresource)
 
-    if record_id and record_id==0:
+    # Returns 0 if the specified record doesn't exist (anymore)
+    if record_id==0:
         session.error = BADRECORD
         redirect(URL(r=request, c=module, f='index'))
 
-    # Record ID is required in joined-table operations
-    # TODO: "read" here is a workaround: the standard rest controller doesn't
-    # redirect to search when called for "read" without record ID, but returns
-    # a BADMETHOD instead (the mere redirection of read there is not nice)
-    if (method=="read" or jresource) and not record_id:
+    # Record ID is required in joined-table operations and read action:
+    if not record_id and (jresource or method=="read"):
+
         # TODO: Cleanup - this is PR specific
         if module=="pr" and resource=="person" and representation=='html':
             if jresource:
@@ -455,18 +456,18 @@ def shn_jr_rest_controller(module, resource,
                 _args = [method, '[id]']
             same = URL(r=request, c=module, f=resource, args=_args)
             redirect(URL(r=request, c='pr', f='person', args='search_simple', vars={"_next":same}))
+
         else:
             session.error = BADRECORD
             redirect(URL(r=request, c=module, f='index'))
 
-    # Append record ID to request
-    # TODO: make this nicer
-    if (record_id and len(request.args)>0) or \
-        (record_id and len(request.args)==0 and ('id_label' in request.vars)):
-        if jresource and not request.args[0].isdigit():
-            request.args.insert(0, str(record_id))
-        elif not jresource and not (str(record_id) in request.args):
-            request.args.append(str(record_id))
+    # Append record ID to request as necessary
+    if record_id:
+        if len(request.args)>0 or len(request.args)==0 and ('id_label' in request.vars):
+            if jresource and not request.args[0].isdigit():
+                request.args.insert(0, str(record_id))
+            elif not jresource and not (str(record_id) in request.args):
+                request.args.append(str(record_id))
 
     # Identify join field -----------------------------------------------------
 
@@ -488,17 +489,15 @@ def shn_jr_rest_controller(module, resource,
         pkey = None
         joinby = None
 
-    # Map action --------------------------------------------------------------
-    # Available variables beyond this point:
-    # request, module, resource, tablename, table, record_id, method, jresource, joinby
-    # additionally:
-    #  if jresource: jmodule, jtablename, jtable
+    # Arrange action ----------------------------------------------------------
 
     # Get custom action (if any)
     custom_action = jrlayer.get_method(module, resource, jmodule, jresource, method)
 
+    # *************************************************************************
+    # Joined Table Operation
+    #
     if jresource:
-        # Action on joined resource
 
         output = {}
 
@@ -539,12 +538,9 @@ def shn_jr_rest_controller(module, resource,
             label_list_button = s3.crud_strings[jtablename].label_list_button
         except:
             label_list_button = s3.crud_strings.label_list_button
+
         list_btn = A(label_list_button, _href=there, _id='list-btn')
         output.update(list_btn=list_btn)
-
-        # Get primary table
-        tablename = "%s_%s" % (module, resource)
-        table = db[tablename]
 
         # Get primary record
         query = (table.id==record_id)
@@ -555,10 +551,6 @@ def shn_jr_rest_controller(module, resource,
         except:
             session.error = BADRECORD
             redirect(URL(r=request, c=module, f='index'))
-
-        # Get joined table
-        jtablename = "%s_%s" % (jmodule, jresource)
-        jtable = db[jtablename]
 
         # TODO: select proper default or custom view
         response.view = 'pr/person.html'
@@ -576,12 +568,15 @@ def shn_jr_rest_controller(module, resource,
                     onaccept=None))
             except:
                 raise HTTP(501)
+
         if method==None and request.env.request_method=='PUT':
             # Not implemented
             raise HTTP(501)
+
         elif method==None and request.env.request_method=='DELETE':
             # Not implemented
             raise HTTP(501)
+
         elif (method==None and request.env.request_method=='GET') or \
             (method==None and request.env.request_method=='POST') or \
             method=="list" or method=="read" or method=="display":
@@ -651,25 +646,44 @@ def shn_jr_rest_controller(module, resource,
             session.error = BADMETHOD
             redirect(URL(r=request, c=module, f='index'))
 
+    # *************************************************************************
+    # Single Table Operation
+    #
     else:
-        # Action on main resource
+
+        # from shn_rest_controller:
+        # Look up CRUD strings for a given resource based on the definitions in models/module.py
+        if resource == 'setting':
+            s3.crud_strings = getattr(s3.crud_strings, resource)
+        else:
+            s3.crud_strings = getattr(s3.crud_strings, str(table))
+
+        try:
+            crud.messages.record_created = s3.crud_strings.msg_record_created
+            crud.messages.record_updated = s3.crud_strings.msg_record_modified
+            crud.messages.record_deleted = s3.crud_strings.msg_record_deleted
+        except:
+            pass
+
+        # Custom Method *******************************************************
         if method and custom_action:
             try:
                 return(custom_action(module, resource, record_id, method,
-                    #jmodule=None,
-                    #jresource=None,
-                    #jrecord_id=None,
-                    #joinby=None,
-                    #multiple=True,
+                    jmodule=None,
+                    jresource=None,
+                    jrecord_id=None,
+                    joinby=None,
+                    multiple=True,
                     representation=representation,
                     onvalidation=onvalidation,
                     onaccept=onaccept))
-
             except:
                 raise HTTP(501)
 
+        # Clear Session *******************************************************
         elif method=="clear":
 
+            # Clear session
             shn_jr_clear_session('%s_%s' % (module, resource))
 
             if '_next' in request.vars:
@@ -677,14 +691,368 @@ def shn_jr_rest_controller(module, resource,
             else:
                 request_vars = {}
 
+            # Redirect to search
             # TODO: build a generic search function, this here is PR specific
             if module=="pr" and resource=="person" and representation=="html":
                 redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request_vars))
             else:
                 redirect(URL(r=request, c='pr', f=resource))
 
+        # HTTP Multi-Record Operation *****************************************
+        elif not method and not record_id:
+
+            # HTTP List or List-Add -------------------------------------------
+            if request.env.request_method == 'GET' or request.env.request_method == 'POST':
+
+                # default to List, TODO: DRY
+
+                # Query
+                # Filter Search list to just those records which user can read
+                # Filter Search List to remove entries which have been deleted
+                # Filter Search List for custom query
+                query = shn_accessible_query('read', table)
+
+                if 'deleted' in table:
+                    query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
+
+                if request.filter:
+                    query = request.filter & query
+
+                # list_create if have permissions
+                authorised = shn_has_permission('create', table)
+
+                # Audit
+                shn_audit_read(operation='list', resource=resource, representation=representation)
+
+                if representation == "html":
+                    # Start building the Return
+                    output = dict(module_name=module_name, main=main, extra=extra)
+
+                    # TODO: DRY
+                    if 'page' in request.vars:
+                        # Pagination at server-side (since no JS available)
+                        page = int(request.vars.page)
+                        start_record = (page - 1) * ROWSPERPAGE
+                        end_record = start_record + ROWSPERPAGE
+                        limitby = start_record, end_record
+                        totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
+                        label_search_button = T('Search')
+                        search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
+                        output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
+                    else:
+                        # No Pagination server-side (to allow it to be done client-side)
+                        limitby = None
+                        orderby = None
+                        # Redirect to a paginated version if JS not-enabled
+                        request.vars['page'] = 1
+                        response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>'
+                        output.update(dict(sortby=sortby))
+
+                    # Which fields do we display?
+                    fields = [table[f] for f in table.fields if table[f].readable]
+
+                    # Column labels
+                    headers = {}
+                    for field in fields:
+                        # Use custom or prettified label
+                        headers[str(field)] = field.label
+
+                    items = crud.select(table, query=query, fields=fields, limitby=limitby, orderby=orderby, headers=headers, truncate=48, _id='list', _class='display')
+
+                    # Additional CRUD strings?
+                    if not items:
+                        try:
+                            items = s3.crud_strings.msg_list_empty
+                        except:
+                            items = T('None')
+
+                    try:
+                        title = s3.crud_strings.title_list
+                    except:
+                        title = T('List')
+
+                    try:
+                        subtitle = s3.crud_strings.subtitle_list
+                    except:
+                        subtitle = ''
+
+                    # Update the Return with common items
+                    output.update(dict(items=items, title=title, subtitle=subtitle))
+
+                    if authorised and listadd:
+                        # Audit
+                        crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
+
+                        # Display the Add form below List
+                        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+                        try:
+                            addtitle = s3.crud_strings.subtitle_create
+                        except:
+                            addtitle = T('Add New')
+
+                        # Check for presence of Custom View
+                        custom_view = '%s_list_create.html' % resource
+                        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+                        if os.path.exists(_custom_view):
+                            response.view = module + '/' + custom_view
+                        else:
+                            response.view = 'list_create.html'
+
+                        # Add specificities to Return
+                        output.update(dict(form=form, addtitle=addtitle))
+
+                    else:
+                        # List only with create button below
+                        if listadd:
+                            try:
+                                label_create_button = s3.crud_strings.label_create_button
+                            except:
+                                label_create_button = T('Add')
+                            add_btn = A(label_create_button, _href=URL(r=request, f=resource, args='create'), _id='add-btn')
+                        else:
+                            add_btn = ''
+
+                        # Check for presence of Custom View
+                        custom_view = '%s_list.html' % resource
+                        _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+                        if os.path.exists(_custom_view):
+                            response.view = module + '/' + custom_view
+                        else:
+                            response.view = 'list.html'
+
+                        # Add specificities to Return
+                        output.update(dict(add_btn=add_btn))
+
+                    return output
+
+                elif representation == "plain":
+                    items = crud.select(table, query, truncate=24)
+                    response.view = 'plain.html'
+                    return dict(item=items)
+
+                elif representation == "csv":
+                    return export_csv(resource, query)
+
+                elif representation == "json":
+                    return export_json(table, query)
+
+                elif representation == "pdf":
+                    return export_pdf(table, query)
+
+                elif representation == "rss":
+                    return export_rss(module, resource, query, main, extra)
+
+                elif representation == "xls":
+                    return export_xls(table, query)
+
+                elif representation == "xml":
+                    return export_xml(table, query)
+
+                else:
+                    session.error = BADFORMAT
+                    redirect(URL(r=request))
+
+            # HTTP Create -----------------------------------------------------
+            elif request.env.request_method == 'PUT':
+                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+                # We don't yet implement PUT for create/update, although Web2Py does now support it
+                # resource doesn't exist: Create using next available ID
+                # Not implemented
+                raise HTTP(501)
+                authorised = shn_has_permission('create', table)
+                if authorised:
+                    #return shn_create(module, table, resource, representation, main, onvalidation, onaccept)
+                    # need to parse entity: http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7
+                    pass
+                else:
+                    # Unauthorised
+                    raise HTTP(401)
+
+            # Unsupported HTTP method -----------------------------------------
+            else:
+                # Unsupported HTTP method for this context:
+                # DELETE, HEAD, OPTIONS, TRACE, CONNECT
+                # Not implemented
+                raise HTTP(501)
+
+        # HTTP Single Record Operation ****************************************
+        elif record_id and not method:
+
+            # HTTP Read (single record) ---------------------------------------
+            if request.env.request_method == 'GET':
+                return shn_read(module, table, resource, record_id, representation, deletable, editable)
+
+            # HTTP Delete (single record) -------------------------------------
+            elif request.env.request_method == 'DELETE':
+                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7
+                if db(db[table].id == record_id).select():
+                    authorised = shn_has_permission('delete', table, record_id)
+                    if authorised:
+                        shn_delete(table, resource, record_id, representation)
+                        item = '{"Status":"OK","Error":{"StatusCode":200}}'
+                        response.view = 'plain.html'
+                        return dict(item=item)
+                    else:
+                        # Unauthorised
+                        raise HTTP(401)
+                else:
+                    # Not found
+                    raise HTTP(404)
+
+            # HTTP Create/Update (single record) ------------------------------
+            elif request.env.request_method == 'PUT':
+                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+                # We don't yet implement PUT for create/update, although Web2Py does now support it
+
+                # HTTP Update (single record) ---------------------------------
+                if db(db[table].id == record_id).select():
+                    # resource exists: Update
+                    # Not implemented
+                    raise HTTP(501)
+                    authorised = shn_has_permission('update', table, record_id)
+                    if authorised:
+                        #return shn_update(module, table, resource, record_id, representation, deletable, onvalidation, onaccept)
+                        # need to parse entity: http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7
+                        pass
+                    else:
+                        # Unauthorised
+                        raise HTTP(401)
+
+                # HTTP Create (single record) ---------------------------------
+                else:
+                    # resource doesn't exist: Create at this ID
+                    # Not implemented
+                    raise HTTP(501)
+                    authorised = shn_has_permission('create', table)
+                    if authorised:
+                        #return shn_create(module, table, resource, representation, main, onvalidation, onaccept)
+                        # need to parse entity: http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7
+                        pass
+                    else:
+                        # Unauthorised
+                        raise HTTP(401)
+
+            # Unsupported HTTP method -----------------------------------------
+            else:
+                # Unsupported HTTP method for this context:
+                # POST, HEAD, OPTIONS, TRACE, CONNECT
+                # Not implemented
+                raise HTTP(501)
+
+        # Create (single table) ***********************************************
+        elif method == "create":
+            authorised = shn_has_permission(method, table)
+            if authorised:
+                return shn_create(module, table, resource, representation, main, onvalidation, onaccept)
+            else:
+                session.error = UNAUTHORISED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args='create')}))
+
+        # Read (single table) *************************************************
+        elif method == "read" or method == "display":
+            redirect(URL(r=request, args=record_id))
+
+        # Update (single table) ***********************************************
+        elif method == "update":
+            authorised = shn_has_permission(method, table, record_id)
+            if authorised:
+                return shn_update(module, table, resource, record_id, representation, deletable, onvalidation, onaccept)
+            else:
+                session.error = UNAUTHORISED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args=['update', record_id])}))
+
+        # Delete (single table) ***********************************************
+        elif method == "delete":
+            authorised = shn_has_permission(method, table, record_id)
+            if authorised:
+                return shn_delete(table, resource, record_id, representation)
+            else:
+                session.error = UNAUTHORISED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args=['delete', record_id])}))
+
+        # Search (single table) ***********************************************
+        elif method == "search":
+            authorised = shn_has_permission('read', table)
+            if authorised:
+                # Filter Search list to just those records which user can read
+                #query = shn_accessible_query('read', table)
+                # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
+
+                # Audit
+                shn_audit_read(operation='search', resource=resource, representation=representation)
+
+                if representation == "html":
+
+                    shn_represent(table, module, resource, deletable, main, extra)
+                    #search = t2.search(table, query)
+                    search = t2.search(table)
+
+                    # Check for presence of Custom View
+                    custom_view = '%s_search.html' % resource
+                    _custom_view = os.path.join(request.folder, 'views', module, custom_view)
+                    if os.path.exists(_custom_view):
+                        response.view = module + '/' + custom_view
+                    else:
+                        response.view = 'search.html'
+
+                    # CRUD Strings
+                    title = s3.crud_strings.title_search
+
+                    return dict(module_name=module_name, search=search, title=title)
+
+                if representation == "json":
+                    # JQuery Autocomplete uses 'q' instead of 'value'
+                    value = request.vars.value or request.vars.q or None
+                    if request.vars.field and request.vars.filter and value:
+                        field = str.lower(request.vars.field)
+                        filter = request.vars.filter
+                        if filter == '=':
+                            query = (table[field]==value)
+                            item = db(query).select().json()
+                        elif filter == '~':
+                            query = (table[field].like('%' + value + '%'))
+                            limit = int(request.vars.limit) or None
+                            if limit:
+                                item = db(query).select(limitby=(0, limit)).json()
+                            else:
+                                item = db(query).select().json()
+                        else:
+                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: =, ~"}}'
+                    else:
+                        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
+                    response.view = 'plain.html'
+                    return dict(item=item)
+
+                else:
+                    session.error = BADFORMAT
+                    redirect(URL(r=request))
+            else:
+                session.error = UNAUTHORISED
+                redirect(URL(r=request, c='default', f='user', args='login',
+                    vars={'_next':URL(r=request, c=module, f=resource, args=['search'])}))
+
+        # Unsupported Method **************************************************
         else:
-            return shn_rest_controller(module, resource, main=main, extra=extra, onvalidation=onvalidation, onaccept=onaccept)
+            session.error = BADMETHOD
+            redirect(URL(r=request))
+
+        # --------------------------------- old: ------------------------------
+        #else:
+
+            # Forward to single-table REST controller
+            #return shn_rest_controller(module, resource,
+            #    deletable=deletable,
+            #    editable=editable,
+            #    listadd=listadd,
+            #    main=main,
+            #    extra=extra,
+            #    orderby=orderby,
+            #    sortby=sortby,
+            #    onvalidation=onvalidation,
+            #    onaccept=onaccept)
 
 # END
 # *****************************************************************************

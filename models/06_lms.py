@@ -145,7 +145,6 @@ db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Si
 db[table].admin.label = T("Site Manager")
 db[table].person_id.label = T("Contact Person")
 #db[table].person_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contact Person|The point of contact for this Site. You can create a contact entry by clicking 'Add Person' and enter more details about the person if it does not exists."))
-db[table].person_id.represent = lambda id: (id and [(db(db.pr_person.id==id).select()[0].first_name)+' '+(db(db.pr_person.id==id).select()[0].last_name)] or ["None"])[0]
 db[table].address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Address|Detailed address of the site for informational/logistics purpose. Please note that you can add GIS/Mapping data about this site in the 'Location' field mentioned below."))
 db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
 db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender|Add sender to which the site belongs to.")))

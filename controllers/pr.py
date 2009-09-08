@@ -49,7 +49,7 @@ def index():
 # Main controller functions
 def person():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
-    return shn_jr_rest_controller(module, 'person', main='first_name', extra='last_name',
+    return shn_rest_controller(module, 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1))
 
@@ -57,7 +57,7 @@ def group():
     request.filter = (db.pr_group.system==False) # do not show system groups
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_jr_rest_controller(module, 'group', main='group_name', extra='group_description',
+    return shn_rest_controller(module, 'group', main='group_name', extra='group_description',
         pheader=shn_pr_pheader,
         onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2), deletable=False)
 

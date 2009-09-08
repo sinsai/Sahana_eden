@@ -131,9 +131,9 @@ def category_master():
 	
 def item():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'item', main='ordered_list_item', extra='description', onaccept=lambda form: item_cascade(form))
+    return shn_rest_controller(module, 'item')
 
-def item_cascade(form):
+'''def item_cascade(form):
     """
     When an Item is updated, then also need to update all Kits, Bundles & Budgets which contain this item
     Called as an onaccept from the RESTlike controller
@@ -145,7 +145,7 @@ def item_cascade(form):
         table = db.lms_kit_item
         query = table.item_id==item
         rows = db(query).select()
-    return
+    return'''
 	
 def inventory():
     " Simple page for showing links "

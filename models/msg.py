@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'msg'
 
@@ -90,7 +90,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 group_id = SQLTable(None, 'group_id',
             Field('group_id', db.msg_group,
-                requires = IS_IN_DB(db, 'msg_group.id', 'msg_group.name'),
+                requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s'),
                 represent = lambda id: (id and [db(db.msg_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Group'),
                 comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='msg', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Distribution Group|The Group of People to whom this Message should be sent."))),
@@ -104,7 +104,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('group_id', db.msg_group),
                 person_id,
                 migrate=migrate)
-db[table].group_id.requires = IS_IN_DB(db, 'msg_group.id', 'msg_group.name')
+db[table].group_id.requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s')
 db[table].group_id.represent = lambda group_id: db(db.msg_group.id==group_id).select()[0].name
 db[table].person_id.label = T('User')
 

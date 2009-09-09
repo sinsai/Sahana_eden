@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'budget'
 
@@ -161,10 +161,10 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
                 migrate=migrate)
-db[table].kit_id.requires = IS_IN_DB(db, 'budget_kit.id', 'budget_kit.code')
+db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
 db[table].kit_id.label = T('Kit')
 db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
-db[table].item_id.requires = IS_IN_DB(db, 'budget_item.id', 'budget_item.description')
+db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
 db[table].item_id.label = T('Item')
 db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
 db[table].quantity.requires = IS_NOT_EMPTY()
@@ -213,10 +213,10 @@ db.define_table(table, timestamp, deletion_status,
                 Field('minutes', 'integer', default=0, notnull=True),
                 Field('megabytes', 'integer', default=0, notnull=True),
                 migrate=migrate)
-db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.description')
+db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
 db[table].bundle_id.label = T('Bundle')
 db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
-db[table].kit_id.requires = IS_IN_DB(db, 'budget_kit.id', 'budget_kit.code')
+db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
 db[table].kit_id.label = T('Kit')
 db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
 db[table].quantity.requires = IS_NOT_EMPTY()
@@ -239,10 +239,10 @@ db.define_table(table, timestamp, deletion_status,
                 Field('minutes', 'integer', default=0, notnull=True),
                 Field('megabytes', 'integer', default=0, notnull=True),
                 migrate=migrate)
-db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.description')
+db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
 db[table].bundle_id.label = T('Bundle')
 db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
-db[table].item_id.requires = IS_IN_DB(db, 'budget_item.id', 'budget_item.description')
+db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
 db[table].item_id.label = T('Item')
 db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
 db[table].quantity.requires = IS_NOT_EMPTY()
@@ -413,16 +413,16 @@ db.define_table(table, timestamp, deletion_status,
                 Field('quantity', 'integer', default=1, notnull=True),
                 Field('months', 'integer', default=3, notnull=True),
                 migrate=migrate)
-db[table].budget_id.requires = IS_IN_DB(db, 'budget_budget.id', 'budget_budget.name')
+db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
 db[table].budget_id.label = T('Budget')
 db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
-db[table].project_id.requires = IS_IN_DB(db,'budget_project.id', 'budget_project.code')
+db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
 db[table].project_id.label = T('Project')
 db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
-db[table].location_id.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
+db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
 db[table].location_id.label = T('Location')
 db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
-db[table].bundle_id.requires = IS_IN_DB(db, 'budget_bundle.id', 'budget_bundle.name')
+db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(name)s')
 db[table].bundle_id.label = T('Bundle')
 db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].name
 db[table].quantity.requires = IS_NOT_EMPTY()
@@ -443,16 +443,16 @@ db.define_table(table, timestamp, deletion_status,
                 Field('quantity', 'integer', default=1, notnull=True),
                 Field('months', 'integer', default=3, notnull=True),
                 migrate=migrate)
-db[table].budget_id.requires = IS_IN_DB(db, 'budget_budget.id', 'budget_budget.name')
+db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
 db[table].budget_id.label = T('Budget')
 db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
-db[table].project_id.requires = IS_IN_DB(db,'budget_project.id', 'budget_project.code')
+db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
 db[table].project_id.label = T('Project')
 db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
-db[table].location_id.requires = IS_IN_DB(db, 'budget_location.id', 'budget_location.code')
+db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
 db[table].location_id.label = T('Location')
 db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
-db[table].staff_id.requires = IS_IN_DB(db, 'budget_staff.id', 'budget_staff.name')
+db[table].staff_id.requires = IS_ONE_OF(db, 'budget_staff.id', '%(name)s')
 db[table].staff_id.label = T('Staff')
 db[table].staff_id.represent = lambda bundle_id: db(db.budget_staff.id==staff_id).select()[0].description
 db[table].quantity.requires = IS_NOT_EMPTY()

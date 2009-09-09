@@ -111,7 +111,7 @@ deletion_status = SQLTable(None, 'deletion_status',
 # Reusable Admin field
 admin_id = SQLTable(None, 'admin_id',
             Field('admin', db.auth_group,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', 'auth_group.role')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
                 comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
                 ondelete='RESTRICT'

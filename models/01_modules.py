@@ -14,7 +14,7 @@ db.define_table(table,
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
-db[table].access.requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', 'auth_group.role', multiple=True))
+db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True)) # IS_ONE_OF ignores multiple!
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 # Populate table with Default modules
 if not len(db().select(db[table].ALL)):

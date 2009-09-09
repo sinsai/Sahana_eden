@@ -66,7 +66,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 marker_id = SQLTable(None, 'marker_id',
             Field('marker', db.gis_marker,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', 'gis_marker.name')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
                 represent = lambda id: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden')),
                 label = T('Marker'),
                 comment = DIV(A(T('Add Marker'), _class='popup', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
@@ -135,7 +135,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 projection_id = SQLTable(None, 'projection_id',
             Field('projection', db.gis_projection,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_projection.id', 'gis_projection.name')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_projection.id', '%(name)s')),
                 represent = lambda id: db(db.gis_projection.id==id).select()[0].name,
                 label = T('Projection'),
                 comment = '',
@@ -218,7 +218,7 @@ db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].description.label = T('Description')
-db[table].module.requires = IS_ONE_OF(db((db.s3_module.enabled=='True') & (~db.s3_module.name.like('default'))),'s3_module.name','s3_module.name_nice')
+db[table].module.requires = IS_ONE_OF(db((db.s3_module.enabled=='True') & (~db.s3_module.name.like('default'))),'s3_module.name','%(name_nice)s')
 db[table].module.label = T('Module')
 # FIXME!
 db[table].resource.requires = IS_NULL_OR(IS_IN_SET(['resource']))
@@ -240,7 +240,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 feature_class_id = SQLTable(None, 'feature_class_id',
             Field('feature_class', db.gis_feature_class,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', 'gis_feature_class.name')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Class'),
                 comment = DIV(A(T('Add Feature Class'), _class='popup', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
@@ -318,7 +318,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].metadata.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_metadata.id', 'gis_feature_metadata.id'))
+db[table].metadata.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_metadata.id', '%(id)s'))
 db[table].metadata.represent = lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
 db[table].metadata.label = T('Metadata')
 db[table].metadata.comment = DIV(A(T('Add Metadata'), _class='popup', _href=URL(r=request, c='gis', f='feature_metadata', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Metadata|Additional attributes associated with this Feature.")))
@@ -352,7 +352,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 feature_id = SQLTable(None, 'feature_id',
             Field('feature', db.gis_feature,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature.id', 'gis_feature.name')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature'),
                 comment = DIV(A(T('Add Feature'), _class='popup', _href=URL(r=request, c='gis', f='feature', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature|The centre Point or Polygon used to display this Location on a Map."))),
@@ -396,7 +396,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 feature_group_id = SQLTable(None, 'feature_group_id',
             Field('feature_group', db.gis_feature_group,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', 'gis_feature_group.name')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Group'),
                 comment = '',
@@ -490,7 +490,7 @@ db[table].sector.label = T('Sector')
 db[table].level.requires = IS_NULL_OR(IS_IN_SET(gis_level_opts))
 db[table].level.represent = lambda opt: opt and gis_level_opts[opt]
 db[table].level.label = T('Level')
-db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', 'gis_location.name'))
+db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
 db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
 db[table].parent.label = T('Parent')
 title_create = T('Add Location')
@@ -510,7 +510,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # Reusable field for other tables to reference
 location_id = SQLTable(None, 'location_id',
             Field('location', db.gis_location,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', 'gis_location.name')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
                 label = T('Location'),
                 comment = DIV(A(s3.crud_strings.gis_location.label_create_button, _class='popup', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
@@ -679,7 +679,7 @@ for layertype in gis_layer_types:
 # GIS Config's Defaults should just be the version for user=0?
 #db.define_table('gis_webmapcontext', timestamp,
 #                Field('user', db.auth_user))
-#db.gis_webmapcontext.user.requires = IS_ONE_OF(db, 'auth_user.id', 'auth_user.email')
+#db.gis_webmapcontext.user.requires = IS_ONE_OF(db, 'auth_user.id', '%(email)s')
 
 # Onvalidation callbacks
 def wkt_centroid(form):

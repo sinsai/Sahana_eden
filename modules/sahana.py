@@ -1214,79 +1214,79 @@ class JRLayer(object):
         else:
             return None
 
+    def store_session(self, session, module, resource, record_id):
+
+        if session and not ('jrvars' in session):
+            session.jrvars = Storage()
+
+        if session and 'jrvars' in session:
+            tablename = "%s_%s" % (module, resource)
+            session.jrvars[tablename] = record_id
+
+    def clear_session(self, session, module=None, resource=None):
+
+        if session:
+
+            if module and resource:
+                tablename = "%s_%s" % (module, resource)
+                if ('jrvars' in session) and (tablename in session.jrvars):
+                    del session.jrvars[tablename]
+
+            else:
+                if 'jrvars' in session:
+                    del session['jrvars']
+
 #
 # JRequest --------------------------------------------------------------------
 #
 class JRequest(object):
     """
-        Request Parser for Joined Resource REST
+        Class handling requests to joined resources REST controller.
     """
 
-    invalid = True
-
-    module = None
-    resource = None
-    record_id = None
-
-    jmodule = None
-    jresource = None
-    jrecord_id = None
-
-    method = None
-    representation = None
-
-    multiple = True
-
-    def __init__(self, jrlayer, request):
+    def __init__(self, jrlayer, request, session=None):
 
         self.module = request.controller
         self.resource = request.function
+        self.record_id = None
+        self.record = None
 
-        # Get representation (and remove the extension from the last argument)
+        self.jmodule = None
+        self.jresource = None
+        self.jrecord_id = None
+
+        self.method = None
         self.representation = request.extension
 
-        if len(request.args)>0:
-            last_arg = request.args[len(request.args)-1]
-            if '.' in last_arg:
-                last_arg, self.representation = last_arg.rsplit('.',1)
-                request.args[len(request.args)-1] = last_arg
+        self.multiple = True
 
-        if len(request.args)==0:
-            self.record_id= None
-            self.jresource=None
-            self.method=None
+        self.invalid = False
+        self.badmethod = False
+        self.badrecord = False
 
-        else:
-            if request.args[0].isdigit():
-                self.record_id = request.args[0]
-                if len(request.args)>1:
-                    self.jresource = str.lower(request.args[1])
-                    if self.jresource in jrlayer.jresources:
-                        if len(request.args)>2:
-                            self.method = str.lower(request.args[2])
-                        else:
-                            self.method = None
-                    else:
-                        self.invalid = True
-                else:
-                    self.jresource = None
-                    self.method = None
-            elif str.lower(request.args[0]) in jrlayer.jresources:
-                self.record_id = None
-                self.jresource = str.lower(request.args[0])
-                if len(request.args)>1:
-                    self.method = str.lower(request.args[1])
-                else:
-                    self.method = None
-            else:
-                self.method = str.lower(request.args[0])
-                self.jresource = None
-                if len(request.args)>1 and request.args[1].isdigit():
-                    self.record_id = request.args[1]
-                else:
-                    self.record_id = None
+        self.http = request.env.request_method
 
-        # Get Joined Resource record ID, if any
+        # Parse original request
+        if not self.__parse(jrlayer, request):
+            return self
+
+        # Check for primary record
+        if not self.__record(jrlayer, session, request):
+            return self
+
+        # Remember primary record ID for further requests
+        if self.record_id and session:
+            jrlayer.store_session(session, self.module, self.resource, self.record_id)
+
+        # Representation override
+        if 'format' in request.vars:
+            self.representation = request.vars.format
+
+        # Representation fallback
+        if not self.representation:
+            self.representation = "html"
+
+        #  Get Joined Resource parameters, if any
         self.jrecord_id = None
 
         if self.jresource:
@@ -1298,5 +1298,119 @@ class JRequest(object):
             self.jmodule = None
             self.multiple = True
 
-        # Okay!
-        self.invalid = False
+    # *************************************************************************
+    def __parse(self, jrlayer, request):
+        """
+            Parse the original request
+        """
+
+        if len(request.args)>0:
+
+            if request.args[0].isdigit():
+                self.record_id = request.args[0]
+                if len(request.args)>1:
+                    _arg = str.lower(request.args[1])
+                    if '.' in _arg:
+                        self.jresource, _e = _arg.rsplit('.',1)
+                    else:
+                        self.jresource, _e = _arg, None
+                    if self.jresource in jrlayer.jresources:
+                        if _e and len(_e) > 0:
+                            self.representation = _e
+                        if len(request.args)>2:
+                            self.method = str.lower(request.args[2])
+                        else:
+                            self.method = None
+                    else:
+                        # Error: bad method
+                        self.badmethod = True
+                        self.invalid = True
+                        return False
+                else:
+                    self.jresource = None
+                    self.method = None
+            else:
+                _arg = str.lower(request.args[0])
+                if '.' in _arg:
+                    self.jresource, _e = _arg.rsplit('.',1)
+                else:
+                    self.jresource, _e = _arg, None
+                if self.jresource in jrlayer.jresources:
+                    if _e and len(_e) > 0:
+                        self.representation = _e
+                    self.record_id = None
+                    self.jresource = str.lower(request.args[0])
+                    if len(request.args)>1:
+                        self.method = str.lower(request.args[1])
+                    else:
+                        self.method = None
+                else:
+                    self.method = str.lower(request.args[0])
+                    self.jresource = None
+                    if len(request.args)>1 and request.args[1].isdigit():
+                        self.record_id = request.args[1]
+                    else:
+                        self.record_id = None
+
+        return True
+
+    # *************************************************************************
+    def __record(self, jrlayer, session, request):
+        """
+            Check primary record ID
+        """
+
+        # Get primary table
+        self.tablename = "%s_%s" % (self.module, self.resource)
+        self.table = jrlayer.db[self.tablename]
+
+        # Check record ID passed in the request
+        if self.record_id:
+            query = (self.table.id==self.record_id)
+            if 'deleted' in self.table:
+                query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+            records = jrlayer.db(query).select(self.table.ALL)
+            if records:
+                self.record = records[0]
+                self.record_id = self.record.id
+            else:
+                # Error: NO SUCH RECORD
+                self.record_id = 0
+                self.badrecord = True
+                self.invalid = True
+                return False
+
+        # Check for ?id_label=
+        if not self.record_id and 'id_label' in request.vars:
+            id_label = str.strip(request.vars.id_label)
+            if 'pr_pe_label' in self.table:
+                query = (self.table.pr_pe_label==id_label)
+                if 'deleted' in self.table:
+                    query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+                records = jrlayer.db(query).select(self.table.ALL)
+                if records:
+                    self.record = records[0]
+                    self.record_id = self.record.id
+                else:
+                    # Error: NO SUCH RECORD
+                    self.record_id = 0
+                    self.badrecord = True
+                    self.invalid = True
+                    return False
+
+        # Retrieve prior selected ID, if any
+        if not self.record_id and len(request.args)>0:
+            if session and session.jrvars and self.tablename in session.jrvars:
+                self.record_id = session.jrvars[self.tablename]
+                query = (self.table.id==self.record_id)
+                if 'deleted' in self.table:
+                    query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+                records = jrlayer.db(query).select(self.table.ALL)
+                if records:
+                    self.record = records[0]
+                    self.record_id = self.record.id
+                else:
+                    self.record_id = None
+                    session.jrvars[self.tablename] = None
+
+        return True

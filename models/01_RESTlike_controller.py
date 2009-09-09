@@ -5,6 +5,14 @@
 #
 # created by Fran Boon, amendments by nursix
 #
+# TODO:
+#  unify shn_list and shn_jr_list
+#  unify shn_read and shn_jr_read
+#  unify shn_create and shn_jr_create
+#  unify shn_update and shn_jr_update
+#  unify shn_delete and shn_jr_delete
+# and then:
+#  reorder options
 
 # *****************************************************************************
 # Joint Resource Layer
@@ -18,84 +26,13 @@ UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported format!')
 BADMETHOD = T('Unsupported method!')
 BADRECORD = T('No such record!')
+INVALIDREQUEST = T('Invalid request!')
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
 
 # *****************************************************************************
 # DB helper functions
-
-#
-# shn_jr_identify_precord -----------------------------------------------------
-#
-def shn_jr_identify_precord(module, resource, _id, jresource):
-    """
-        Helper function for shn_rest_controller:
-        Identifies the record_id of the main resource
-    """
-
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
-
-    record_id = _id
-
-    if record_id:
-        query = (table.id==record_id)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
-        records = db(query).select(table.id)
-        if records:
-            record_id = records[0].id
-        else:
-            # Error: NO SUCH RECORD
-            return 0
-
-    if not record_id and 'id_label' in request.vars:
-        id_label = str.strip(request.vars.id_label)
-        if 'pr_pe_label' in table:
-            query = (table.pr_pe_label==id_label)
-            if 'deleted' in table:
-                query = ((table.deleted==False) | (table.deleted==None)) & query
-            records = db(query).select(table.id)
-            if records:
-                record_id = records[0].id
-            else:
-                # Error: NO SUCH RECORD
-                return 0
-
-    if not record_id and len(request.args)>0:
-        if session.jrvars and tablename in session.jrvars:
-            record_id = session.jrvars[tablename]
-            query = (table.id==record_id)
-            if 'deleted' in table:
-                query = ((table.deleted==False) | (table.deleted==None)) & query
-            records = db(query).select(table.id)
-            if records:
-                record_id = records[0].id
-            else:
-                record_id = None
-                session[tablename] = None
-
-    if record_id:
-        if not session.jrvars:
-            session.jrvars = Storage()
-
-        if not tablename in session.jrvars:
-            session.jrvars[tablename] = record_id
-
-    return record_id
-
-#
-# shn_jr_clear_session --------------------------------------------------------
-#
-def shn_jr_clear_session(session_var):
-
-    if session_var and session.jrvars:
-        if session_var and session_var in session.jrvars:
-            del session.jrvars[session_var]
-    elif session.jrvars:
-        del session['jrvars']
-        #session.jrvars = Storage()
 
 # *****************************************************************************
 # Data conversion
@@ -677,6 +614,8 @@ def shn_read(module, table, resource, record, representation, deletable, editabl
 #
 # shn_jr_select ---------------------------------------------------------------
 #
+
+# TODO: make this two functions: shn_jr_list and shn_jr_read
 def shn_jr_select_linkto(field):
     return URL(r=request, args=[request.args[0], request.args[1], 'read', field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
@@ -1078,55 +1017,95 @@ def shn_rest_controller(module, resource,
     onvalidation=None,
     onaccept=None):
     """
-        Extension to the standard REST controller to add capability
-        to handle joined resources.
+    RESTlike controller function.
+
+    Provides CRUD operations for the given module/resource.
+
+    Optional parameters:
+        deletable=False                 don't provide visible options for deletion
+        editable=False                  don't provide visible options for editing
+        listadd=False                   don't provide an add form in the list view
+        main='field'                    the field used for the title in RSS output
+        extra='field'                   the field used for the description in RSS output & in Search AutoComplete
+        orderby=expression              the sort order for server-side paginated list views e.g: db.mytable.myfield1|db.mytable.myfield2
+        sortby=list                     the sort order for client-side paginated list views e.g: [[1, "asc"], [2, "desc"]]
+            see: http://datatables.net/examples/basic_init/table_sorting.html
+
+        onvalidation=lambda form: function(form)    callback processed *before* DB IO
+        onaccept=lambda form: function(form)        callback processed *after* DB IO
+
+        pheader=function(resource, record_id, representation, next=there, same=same)
+                                        function to produce a page header for the primary resource
+
+    Request options:
+
+        request.filter              contains custom query to filter list views
+
+    Customisable Security Policy
+    Auditing options for Read &/or Write.
+
+    Representation is recognized from the extension of the target resource.
+    You can still pass a "?format=" to override this.
+
+    Supported Representations:
+        HTML                        is the default (including full Layout)
+        PLAIN                       is HTML with no layout
+                                        - can be inserted into DIVs via AJAX calls
+                                        - can be useful for clients on low-bandwidth or small screen sizes
+        JSON                        designed to be accessed via JavaScript
+                                        - responses in JSON format
+                                        - create/update/delete done via simple GET vars (no form displayed)
+        CSV                         useful for synchronization / database migration
+                                        - List/Display/Create for now
+        RSS (list only)
+        XML (list/read only)
+        AJAX (designed to be run asynchronously to refresh page elements)
+        POPUP
+        XLS (list/read only)
+        PDF (list/read only)
+
+    ToDo:
+        Alternate Representations
+            CSV update
+            SMS, LDIF
     """
-
-    # Get representation ------------------------------------------------------
-
-    #if request.vars.format:
-    #    representation = str.lower(request.vars.format)
-    #else:
-    #    representation = "html"
 
     # Identify action ---------------------------------------------------------
 
-    _request = JRequest(jrlayer, request)
+    jr = JRequest(jrlayer, request, session=session)
 
     # Invalid request?
-    if _request.invalid:
-        session.error = BADMETHOD
+    if jr.invalid:
+        if jr.badmethod:
+            session.error = BADMETHOD
+        elif jr.badrecord:
+            session.error = BADRECORD
+        else:
+            session.error = INVALIDREQUEST
         redirect(URL(r=request, c=module, f='index'))
 
     # Get method
-    method = _request.method
-    representation = _request.representation
+    method = jr.method
+    representation = jr.representation
+
+    # Get primary resource parameters
+    table = jr.table
+    tablename = jr.tablename
 
     # Get joined resource parameters
-    jmodule = _request.jmodule
-    jresource = _request.jresource
-    jrecord_id = _request.jrecord_id
-    multiple = _request.multiple
-
-    # Identify main resource record -------------------------------------------
-
-    # Get primary table
-    tablename = "%s_%s" % (module,resource)
-    table = db[tablename]
+    jmodule = jr.jmodule
+    jresource = jr.jresource
+    jrecord_id = jr.jrecord_id
+    multiple = jr.multiple
 
     # Check read permission on primary table
-    if not shn_has_permission('read', table):
+    if not shn_has_permission('read', jr.table):
         session.error = UNAUTHORIZED
         redirect(URL(r=request, c='default', f='user', args='login',
             vars={'_next':URL(r=request, c=module, f=resource, args=request.args)}))
 
-    # Try to identify record
-    record_id = shn_jr_identify_precord(module, resource, _request.record_id, jresource)
-
-    # Returns 0 if the specified record doesn't exist (anymore)
-    if record_id==0:
-        session.error = BADRECORD
-        redirect(URL(r=request, c=module, f='index'))
+    # Get primary record ID
+    record_id = jr.record_id
 
     # Record ID is required in joined-table operations and read action:
     if not record_id and (jresource or method=="read"):
@@ -1146,7 +1125,7 @@ def shn_rest_controller(module, resource,
             session.error = BADRECORD
             redirect(URL(r=request, c=module, f='index'))
 
-    # Append record ID to request as necessary
+    # Append record ID to request as necessary TODO: move into jr
     if record_id:
         if len(request.args)>0 or len(request.args)==0 and ('id_label' in request.vars):
             if jresource and not request.args[0].isdigit():
@@ -1156,7 +1135,7 @@ def shn_rest_controller(module, resource,
 
     # Identify join field -----------------------------------------------------
 
-    if jresource:
+    if jresource: # TODO: move into jr
 
         # Get joined table
         jtablename = "%s_%s" % (jmodule, jresource)
@@ -1176,7 +1155,7 @@ def shn_rest_controller(module, resource,
 
     # Arrange action ----------------------------------------------------------
 
-    # Get custom action (if any)
+    # Get custom action (if any) TODO: move into jr
     custom_action = jrlayer.get_method(module, resource, jmodule, jresource, method)
 
     # *************************************************************************
@@ -1194,7 +1173,7 @@ def shn_rest_controller(module, resource,
 
         output.update(title=page_title)
 
-        # Backlinks TODO: make this nicer!
+        # Backlinks TODO: move into jr
         if method:
             if jrecord_id:
                 here = URL(r=request, f=resource, args=[record_id, jresource, method, jrecord_id])
@@ -1228,14 +1207,7 @@ def shn_rest_controller(module, resource,
         output.update(list_btn=list_btn)
 
         # Get primary record
-        query = (table.id==record_id)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
-        try:
-            record = db(query).select()[0]
-        except:
-            session.error = BADRECORD
-            redirect(URL(r=request, c=module, f='index'))
+        record = jr.record
 
         # TODO: select proper default or custom view
         response.view = 'pr/person.html'
@@ -1254,6 +1226,7 @@ def shn_rest_controller(module, resource,
             except:
                 raise HTTP(501)
 
+        # TODO: reorder HTTP methods properly as in Single-Table
         if method==None and request.env.request_method=='PUT':
             # Not implemented
             raise HTTP(501)
@@ -1262,6 +1235,9 @@ def shn_rest_controller(module, resource,
             # Not implemented
             raise HTTP(501)
 
+        # TODO: omit "list"
+        # TODO: make this two options: "read"+"display" and None
+        # TODO: rewrite with shn_jr_read and shn_jr_list (write those functions first!)
         elif (method==None and request.env.request_method=='GET') or \
             (method==None and request.env.request_method=='POST') or \
             method=="list" or method=="read" or method=="display":
@@ -1369,7 +1345,7 @@ def shn_rest_controller(module, resource,
         elif method=="clear":
 
             # Clear session
-            shn_jr_clear_session('%s_%s' % (module, resource))
+            jrlayer.clear_session(session, module, resource)
 
             if '_next' in request.vars:
                 request_vars = dict(_next=request.vars._next)
@@ -1389,7 +1365,7 @@ def shn_rest_controller(module, resource,
             # HTTP List or List-Add -------------------------------------------
             if request.env.request_method == 'GET' or request.env.request_method == 'POST':
 
-                # default to List, TODO: DRY
+                # default to List, TODO: make this a function shn_list
 
                 # Query
                 # Filter Search list to just those records which user can read

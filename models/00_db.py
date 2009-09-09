@@ -33,11 +33,6 @@ exec('from applications.%s.modules.validators import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.validators import *
 
-# VITA
-exec('from applications.%s.modules.vita import *' % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.sahana.modules.vita import *
-
 def shn_sessions(f):
     """
     Extend session to support:
@@ -71,6 +66,26 @@ def shn_sessions(f):
         session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write
     return f()
 response._caller = lambda f: shn_sessions(f)
+
+# shn_on_login ----------------------------------------------------------------
+# added 2009-08-27 by nursix
+def shn_auth_on_login(form):
+    """
+        Actions that need to be performed on successful login (Do not redirect from here!)
+    """
+
+    # Person Registry:
+    session.pr_person = None
+
+# shn_on_logout ---------------------------------------------------------------
+# added 2009-08-27 by nursix
+def shn_auth_on_logout(user):
+    """
+        Actions that need to be performed on logout (Do not redirect from here!)
+    """
+
+    # Person Registry:
+    session.pr_person = None
 
 #
 # Widgets
@@ -306,20 +321,17 @@ def shn_as_local_time(value):
     """
         represents a given UTC datetime.datetime object as string:
 
-        with the UTC offset of the user, if logged in
-        with the UTC offset of the server, if not logged in
+        - for the local time of the user, if logged in
+        - as it is in UTC, if not logged in, marked by trailing +0000
     """
 
     format='%Y-%m-%d %H:%M:%S'
 
-    offset = shn_user_utc_offset()
+    offset = IS_UTC_OFFSET.get_offset_value(shn_user_utc_offset())
 
     if offset:
         dt = value + timedelta(seconds=offset)
+        return dt.strftime(str(format))
     else:
-        if time.daylight:
-            dt = value + timedelta(seconds=-time.altzone)
-        else:
-            dt = value + timedelta(seconds=-time.timezone)
-
-    return dt.strftime(str(format))
+        dt = value
+        return dt.strftime(str(format))+' +0000'

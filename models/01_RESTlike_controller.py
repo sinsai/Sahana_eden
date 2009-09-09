@@ -970,8 +970,9 @@ def shn_rest_controller(module, resource,
                         session.error = BADFORMAT
                         redirect(URL(r=request))
                 else:
-                    session.error = BADMETHOD
-                    redirect(URL(r=request))
+                    session.error = UNAUTHORISED
+                    redirect(URL(r=request, c='default', f='user', args='login' ,vars={'_next':URL(r=request, c=module, f=resource, args=['search'])}))
             else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login' ,vars={'_next':URL(r=request, c=module, f=resource, args=['search'])}))
+                session.error = BADMETHOD
+                redirect(URL(r=request))
+            

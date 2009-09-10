@@ -1236,8 +1236,8 @@ class JRLayer(object):
                 if 'jrvars' in session:
                     del session['jrvars']
 
-#
-# JRequest --------------------------------------------------------------------
+# *****************************************************************************
+# JRequest
 #
 class JRequest(object):
     """
@@ -1246,130 +1246,167 @@ class JRequest(object):
 
     def __init__(self, jrlayer, request, session=None):
 
-        self.module = request.controller
-        self.resource = request.function
-        self.record_id = None
-        self.record = None
-
-        self.jmodule = None
-        self.jresource = None
-        self.jrecord_id = None
-
-        self.method = None
-        self.representation = request.extension
-
-        self.multiple = True
+        self.default_representation = 'html'
+        self.request = request
+        self.jrlayer = jrlayer
+        self.session = session
 
         self.invalid = False
         self.badmethod = False
         self.badrecord = False
+        self.badformat = False
 
+        self.representation = request.extension
         self.http = request.env.request_method
+        self.extension = False
+
+        self.module = request.controller
+        self.resource = request.function
+        self.method = None
+        self.record_id = None
+        self.jresource = None
 
         # Parse original request
-        if not self.__parse(jrlayer, request):
-            return self
+        if not self.__parse():
+            return None
+
+        self.tablename = None
+        self.table = None
+        self.record = None
 
         # Check for primary record
-        if not self.__record(jrlayer, session, request):
-            return self
+        if not self.__record():
+            return None
 
-        # Remember primary record ID for further requests
-        if self.record_id and session:
-            jrlayer.store_session(session, self.module, self.resource, self.record_id)
-
-        # Representation override
-        if 'format' in request.vars:
-            self.representation = request.vars.format
-
-        # Representation fallback
-        if not self.representation:
-            self.representation = "html"
-
-        #  Get Joined Resource parameters, if any
+        self.jmodule = None
+        self.jtablename = None
+        self.jtable = None
         self.jrecord_id = None
+        self.pkey = None
+        self.fkey = None
+        self.multiple = True
 
+        #  Get Joined Resource parameters (if any)
         if self.jresource:
-            self.jmodule = jrlayer.get_prefix(self.jresource)
-            self.multiple = jrlayer.is_multiple(self.jresource)
-            if request.args[len(request.args)-1].isdigit():
-                self.jrecord_id = request.args[len(request.args)-1]
-        else:
-            self.jmodule = None
-            self.multiple = True
+            self.jmodule = self.jrlayer.get_prefix(self.jresource)
+            self.multiple = self.jrlayer.is_multiple(self.jresource)
+            if self.args[len(self.args)-1].isdigit():
+                self.jrecord_id = self.args[len(self.args)-1]
 
-    # *************************************************************************
-    def __parse(self, jrlayer, request):
+            self.jtablename = "%s_%s" % (self.jmodule, self.jresource)
+            self.jtable = self.jrlayer.db[self.jtablename]
+
+            # Get join key
+            join_keys = self.jrlayer.get_join_key(self.jresource, self.module, self.resource)
+            if not join_keys:
+                self.badmethod = True
+                self.invalid = True
+                return self
+            else:
+                self.pkey, self.fkey = join_keys
+
+        # Get custom action (if any)
+        self.custom_action = self.jrlayer.get_method(
+            self.module,
+            self.resource,
+            self.jmodule,
+            self.jresource,
+            self.method)
+
+        # Append record ID to request as necessary
+        if self.record_id:
+            if len(self.args)>0 or len(self.args)==0 and ('id_label' in self.request.vars):
+                if self.jresource and not self.args[0].isdigit():
+                    self.args.insert(0, str(self.record_id))
+                    if self.representation==self.default_representation or self.extension:
+                        self.request.args.insert(0, str(self.record_id))
+                    else:
+                        self.request.args.insert(0, '%s.%s' % (self.record_id, self.representation))
+                elif not self.jresource and not (str(self.record_id) in self.args):
+                    self.args.append(self.record_id)
+                    if self.representation==self.default_representation or self.extension:
+                        self.request.args.append(self.record_id)
+                    else:
+                        self.request.args.append('%s.%s' % (self.record_id, self.representation))
+    # -------------------------------------------------------------------------
+    def __parse(self):
         """
             Parse the original request
         """
 
-        if len(request.args)>0:
+        self.args = []
 
-            if request.args[0].isdigit():
-                self.record_id = request.args[0]
-                if len(request.args)>1:
-                    _arg = str.lower(request.args[1])
-                    if '.' in _arg:
-                        self.jresource, _e = _arg.rsplit('.',1)
-                    else:
-                        self.jresource, _e = _arg, None
-                    if self.jresource in jrlayer.jresources:
-                        if _e and len(_e) > 0:
-                            self.representation = _e
-                        if len(request.args)>2:
-                            self.method = str.lower(request.args[2])
+        if len(self.request.args)>0:
+
+            # Check for extensions
+            for arg in self.request.args:
+                if '.' in arg:
+                    arg, ext = arg.rsplit('.',1)
+                    if ext and len(ext)>0:
+                        self.representation = str.lower(ext)
+                        self.extension = True
+                self.args.append(str.lower(arg))
+
+            # Parse arguments
+            if self.args[0].isdigit():
+                self.record_id = self.args[0]
+                if len(self.args)>1:
+                    self.jresource = self.args[1]
+                    if self.jresource in self.jrlayer.jresources:
+                        if len(self.args)>2:
+                            self.method = self.args[2]
                         else:
                             self.method = None
                     else:
-                        # Error: bad method
-                        self.badmethod = True
+                        # Error: BAD FORMAT
+                        self.badformat = True
                         self.invalid = True
                         return False
                 else:
                     self.jresource = None
                     self.method = None
             else:
-                _arg = str.lower(request.args[0])
-                if '.' in _arg:
-                    self.jresource, _e = _arg.rsplit('.',1)
-                else:
-                    self.jresource, _e = _arg, None
-                if self.jresource in jrlayer.jresources:
-                    if _e and len(_e) > 0:
-                        self.representation = _e
+                if self.args[0] in self.jrlayer.jresources:
+                    self.jresource = self.args[0]
                     self.record_id = None
-                    self.jresource = str.lower(request.args[0])
-                    if len(request.args)>1:
-                        self.method = str.lower(request.args[1])
+                    if len(self.args)>1:
+                        self.method = self.args[1]
                     else:
                         self.method = None
                 else:
-                    self.method = str.lower(request.args[0])
+                    self.method = self.args[0]
                     self.jresource = None
-                    if len(request.args)>1 and request.args[1].isdigit():
-                        self.record_id = request.args[1]
+                    if len(self.args)>1 and self.args[1].isdigit():
+                        self.record_id = self.args[1]
                     else:
                         self.record_id = None
 
+        # Check format option
+        if 'format' in self.request.vars:
+            self.representation = str.lower(self.request.vars.format)
+
+        # Representation fallback
+        if not self.representation:
+            self.representation = self.default_representation
+
         return True
 
-    # *************************************************************************
-    def __record(self, jrlayer, session, request):
+    # -------------------------------------------------------------------------
+    def __record(self):
         """
             Check primary record ID
         """
 
         # Get primary table
         self.tablename = "%s_%s" % (self.module, self.resource)
-        self.table = jrlayer.db[self.tablename]
+        self.table = self.jrlayer.db[self.tablename]
 
         # Check record ID passed in the request
         if self.record_id:
             query = (self.table.id==self.record_id)
             if 'deleted' in self.table:
                 query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
-            records = jrlayer.db(query).select(self.table.ALL)
+            records = self.jrlayer.db(query).select(self.table.ALL)
             if records:
                 self.record = records[0]
                 self.record_id = self.record.id
@@ -1381,13 +1418,13 @@ class JRequest(object):
                 return False
 
         # Check for ?id_label=
-        if not self.record_id and 'id_label' in request.vars:
-            id_label = str.strip(request.vars.id_label)
+        if not self.record_id and 'id_label' in self.request.vars:
+            id_label = str.strip(self.request.vars.id_label)
             if 'pr_pe_label' in self.table:
                 query = (self.table.pr_pe_label==id_label)
                 if 'deleted' in self.table:
                     query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
-                records = jrlayer.db(query).select(self.table.ALL)
+                records = self.jrlayer.db(query).select(self.table.ALL)
                 if records:
                     self.record = records[0]
                     self.record_id = self.record.id
@@ -1399,18 +1436,117 @@ class JRequest(object):
                     return False
 
         # Retrieve prior selected ID, if any
-        if not self.record_id and len(request.args)>0:
-            if session and session.jrvars and self.tablename in session.jrvars:
-                self.record_id = session.jrvars[self.tablename]
+        if not self.record_id and len(self.request.args)>0:
+            if self.session and self.session.jrvars and self.tablename in self.session.jrvars:
+                self.record_id = self.session.jrvars[self.tablename]
                 query = (self.table.id==self.record_id)
                 if 'deleted' in self.table:
                     query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
-                records = jrlayer.db(query).select(self.table.ALL)
+                records = self.jrlayer.db(query).select(self.table.ALL)
                 if records:
                     self.record = records[0]
                     self.record_id = self.record.id
                 else:
                     self.record_id = None
-                    session.jrvars[self.tablename] = None
+                    self.session.jrvars[self.tablename] = None
+
+        # Remember primary record ID for further requests
+        if self.record_id and self.session:
+            self.jrlayer.store_session(self.session, self.module, self.resource, self.record_id)
 
         return True
+
+    # -------------------------------------------------------------------------
+    def here(self):
+        """
+            Backlink producing the same request
+        """
+
+        args = []
+
+        f = self.resource
+
+        if self.jresource:
+            args = [self.record_id]
+            if not self.representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, self.representation))
+            else:
+                args.append(self.jresource)
+            if self.method:
+                args.append(self.method)
+                if self.jrecord_id:
+                    args.append(self.jrecord_id)
+        else:
+            if self.method:
+                args.append(self.method)
+            if self.record_id:
+                if not self.representation==self.default_representation:
+                    args.append('%s.%s' % (self.record_id, self.representation))
+                else:
+                    args.append(self.record_id)
+            else:
+                if not self.representation==self.default_representation:
+                    f='%s.%s' % (self.resource, self.representation)
+                else:
+                    f=self.resource
+
+        return(URL(r=self.request, c=self.module, f=f, args=args, vars=self.request.vars))
+
+    # -------------------------------------------------------------------------
+    def there(self):
+        """
+            Backlink producing a HTTP/list request to the same resource
+        """
+        args = []
+
+        f = self.resource
+
+        if self.jresource:
+            args = [self.record_id]
+            if not self.representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, self.representation))
+            else:
+                args.append(self.jresource)
+        else:
+            if not self.representation==self.default_representation:
+                f='%s.%s' % (self.resource, self.representation)
+            else:
+                f=self.resource
+
+        return(URL(r=self.request, c=self.module, f=f, args=args, vars=self.request.vars))
+
+    # -------------------------------------------------------------------------
+    def same(self):
+        """
+            Backlink producing the same request with neutralized primary record ID
+        """
+
+        args = []
+
+        f = self.resource
+
+        if self.jresource:
+            args = ['[id]']
+            if not self.representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, self.representation))
+            else:
+                args.append(self.jresource)
+            if self.method:
+                args.append(self.method)
+                #if self.jrecord_id:
+                #    args.append(self.jrecord_id)
+        else:
+            if self.method:
+                args.append(self.method)
+            if self.record_id:
+                if not self.representation==self.default_representation:
+                    args.append('[id].%s' % self.representation)
+                else:
+                    args.append('[id]')
+            else:
+                if not self.representation==self.default_representation:
+                    f='%s.%s' % (self.resource, self.representation)
+                else:
+                    f=self.resource
+
+        return(URL(r=self.request, c=self.module, f=f, args=args, vars=self.request.vars))

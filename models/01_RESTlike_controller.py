@@ -26,6 +26,7 @@ UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported format!')
 BADMETHOD = T('Unsupported method!')
 BADRECORD = T('No such record!')
+BADFORMAT = T('Bad request format!')
 INVALIDREQUEST = T('Invalid request!')
 
 # How many rows to show per page in list outputs
@@ -1080,6 +1081,8 @@ def shn_rest_controller(module, resource,
             session.error = BADMETHOD
         elif jr.badrecord:
             session.error = BADRECORD
+        elif jr.badformat:
+            session.error = BADFORMAT
         else:
             session.error = INVALIDREQUEST
         redirect(URL(r=request, c=module, f='index'))
@@ -1097,6 +1100,11 @@ def shn_rest_controller(module, resource,
     jresource = jr.jresource
     jrecord_id = jr.jrecord_id
     multiple = jr.multiple
+
+    # Get backlinks
+    here = jr.here()
+    there = jr.there()
+    same = jr.same()
 
     # Check read permission on primary table
     if not shn_has_permission('read', jr.table):
@@ -1125,38 +1133,18 @@ def shn_rest_controller(module, resource,
             session.error = BADRECORD
             redirect(URL(r=request, c=module, f='index'))
 
-    # Append record ID to request as necessary TODO: move into jr
-    if record_id:
-        if len(request.args)>0 or len(request.args)==0 and ('id_label' in request.vars):
-            if jresource and not request.args[0].isdigit():
-                request.args.insert(0, str(record_id))
-            elif not jresource and not (str(record_id) in request.args):
-                request.args.append(str(record_id))
-
     # Identify join field -----------------------------------------------------
 
-    if jresource: # TODO: move into jr
+    jtablename = jr.jtablename
+    jtable = jr.jtable
 
-        # Get joined table
-        jtablename = "%s_%s" % (jmodule, jresource)
-        jtable = db[jtablename]
-
-        # Get join key
-        join_keys = jrlayer.get_join_key(jresource, module, resource)
-        if not join_keys:
-            session.error = BADMETHOD
-            redirect(URL(r=request, c=module, f='index'))
-        else:
-            pkey, joinby = join_keys
-
-    else:
-        pkey = None
-        joinby = None
+    pkey = jr.pkey
+    joinby = jr.fkey
 
     # Arrange action ----------------------------------------------------------
 
-    # Get custom action (if any) TODO: move into jr
-    custom_action = jrlayer.get_method(module, resource, jmodule, jresource, method)
+    # Get custom action (if any)
+    custom_action = jr.custom_action
 
     # *************************************************************************
     # Joined Table Operation
@@ -1172,18 +1160,6 @@ def shn_rest_controller(module, resource,
             page_title = s3.crud_strings.title_display
 
         output.update(title=page_title)
-
-        # Backlinks TODO: move into jr
-        if method:
-            if jrecord_id:
-                here = URL(r=request, f=resource, args=[record_id, jresource, method, jrecord_id])
-            else:
-                here = URL(r=request, f=resource, args=[record_id, jresource, method])
-        else:
-            here = URL(r=request, f=resource, args=[record_id, jresource])
-
-        there = URL(r=request, f=resource, args=[record_id, jresource])
-        same = URL(r=request, f=resource, args=['[id]', jresource])
 
         # Get pageheader (if any)
         shn_audit_read(operation='read', resource=resource, record=record_id, representation=representation)
@@ -1612,7 +1588,8 @@ def shn_rest_controller(module, resource,
 
         # Read (single table) *************************************************
         elif method == "read" or method == "display":
-            redirect(URL(r=request, args=record_id))
+            request.args.remove(method)
+            redirect(URL(r=request, args=request.args))
 
         # Update (single table) ***********************************************
         elif method == "update":

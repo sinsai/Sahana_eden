@@ -1290,9 +1290,9 @@ class JRequest(object):
         if self.jresource:
             self.jmodule = self.jrlayer.get_prefix(self.jresource)
             self.multiple = self.jrlayer.is_multiple(self.jresource)
-            if self.args[len(self.args)-1].isdigit():
-                self.jrecord_id = self.args[len(self.args)-1]
-
+            if not self.jrecord_id:
+                if self.args[len(self.args)-1].isdigit():
+                    self.jrecord_id = self.args[len(self.args)-1]
             self.jtablename = "%s_%s" % (self.jmodule, self.jresource)
             self.jtable = self.jrlayer.db[self.jtablename]
 
@@ -1354,7 +1354,10 @@ class JRequest(object):
                     self.jresource = self.args[1]
                     if self.jresource in self.jrlayer.jresources:
                         if len(self.args)>2:
-                            self.method = self.args[2]
+                            if self.args[2].isdigit():
+                                self.jrecord_id = self.args[2]
+                            else:
+                                self.method = self.args[2]
                         else:
                             self.method = None
                     else:
@@ -1370,7 +1373,10 @@ class JRequest(object):
                     self.jresource = self.args[0]
                     self.record_id = None
                     if len(self.args)>1:
-                        self.method = self.args[1]
+                        if self.args[1].isdigit():
+                            self.jrecord_id = self.args[1]
+                        else:
+                            self.method = self.args[1]
                     else:
                         self.method = None
                 else:

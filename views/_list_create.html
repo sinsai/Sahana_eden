@@ -16,6 +16,12 @@ $(document).ready(function() {
  {{=H2(title)}}
 {{except:}}
 {{pass}}
+<div id='pheader'>
+{{try:}}
+ {{=pheader}}
+{{except:}}
+ {{pass}}
+</div>
 {{include 'formats.html'}}
 {{try:}}
  {{=H3(subtitle)}}

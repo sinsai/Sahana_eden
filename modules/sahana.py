@@ -1035,8 +1035,8 @@ class S3:
 # added by nursix
 #
 
-#
-# Joined Resource -------------------------------------------------------------
+# *****************************************************************************
+# Joined Resource
 #
 class JoinedResource(object):
 
@@ -1052,27 +1052,50 @@ class JoinedResource(object):
         else:
             self.attr = {}
 
+        if not 'deletable' in self.attr:
+            self.set_attr('deletable', True)
+
+        if not 'editable' in self.attr:
+            self.set_attr('editable', True)
+
+    # get_prefix --------------------------------------------------------------
     def get_prefix(self):
         return self.prefix
 
+    # is_multiple -------------------------------------------------------------
     def is_multiple(self):
         return self.multiple
 
+    # list_fields -------------------------------------------------------------
     def list_fields(self):
         return self.fields
 
-    def delete_onvalidation(self):
-        if 'delete_onvalidation' in self.attr:
-            return self.attr['delete_onvalidation']
+    # head_fields -------------------------------------------------------------
+    def head_fields(self):
+        if 'main' in self.attr:
+            main = self.attr['main']
+        else:
+            main = 'id'
+
+        if 'extra' in self.attr:
+            extra = self.attr['extra']
+        else:
+            extra = main
+
+        return (main, extra)
+
+    # set_attr ----------------------------------------------------------------
+    def set_attr(self, name, value):
+        self.attr.update(name, value)
+
+    # get_attr ----------------------------------------------------------------
+    def get_attr(self, name):
+        if name in self.attr:
+            return self.attr[name]
         else:
             return None
 
-    def delete_onaccept(self):
-        if 'delete_onaccept' in self.attr:
-            return self.attr['delete_onaccept']
-        else:
-            return None
-
+    # get_join_key ------------------------------------------------------------
     def get_join_key(self, module, resource):
 
         tablename = "%s_%s" % (module, resource)
@@ -1097,8 +1120,8 @@ class JoinedResource(object):
             # No join_key defined
             return None
 
-#
-# JRLayer ---------------------------------------------------------------------
+# *****************************************************************************
+# JRLayer
 #
 class JRLayer(object):
 
@@ -1113,6 +1136,7 @@ class JRLayer(object):
         self.jresources = {}
         self.settings = {}
 
+    # add_jresource -----------------------------------------------------------
     def add_jresource(self, prefix, name, joinby=None, multiple=True, fields=None, **attr):
 
         _table = "%s_%s" % (prefix, name)
@@ -1123,6 +1147,7 @@ class JRLayer(object):
         jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, fields=list_fields, attr=attr)
         self.jresources[name] = jr
 
+    # get_prefix --------------------------------------------------------------
     def get_prefix(self, name):
 
         if name in self.jresources:
@@ -1130,6 +1155,7 @@ class JRLayer(object):
         else:
             return None
 
+    # is_multiple -------------------------------------------------------------
     def is_multiple(self, name):
 
         if name in self.jresources:
@@ -1137,6 +1163,7 @@ class JRLayer(object):
         else:
             return True
 
+    # get_join_key ------------------------------------------------------------
     def get_join_key(self, name, module, resource):
 
         if name in self.jresources:
@@ -1144,6 +1171,7 @@ class JRLayer(object):
         else:
             return None
 
+    # list_fields -------------------------------------------------------------
     def list_fields(self, name):
 
         if name in self.jresources:
@@ -1151,20 +1179,29 @@ class JRLayer(object):
         else:
             return None
 
-    def delete_onvalidation(self, name):
+    # head_fields -------------------------------------------------------------
+    def head_fields(self, resource):
 
-        if name in self.jresources:
-            return self.jresources[name].delete_onvalidation()
+        if resource in self.jresources:
+            return self.jresources[resource].head_fields()
+        else:
+            return (None, None)
+
+    # set_attr ----------------------------------------------------------------
+    def set_attr(self, resource, name, value):
+
+        if resource in self.jresources:
+            self.jresources[resource].set_attr(name, value)
+
+    # get_attr ----------------------------------------------------------------
+    def get_attr(self, resource, name):
+
+        if resource in self.jresources:
+            return self.jresources[resource].get_attr(name)
         else:
             return None
 
-    def delete_onaccept(self, name):
-
-        if name in self.jresources:
-            return self.jresources[name].delete_onaccept()
-        else:
-            return None
-
+    # set_method --------------------------------------------------------------
     def set_method(self, prefix, resource, jprefix, jresource, method, action):
 
         if not method:
@@ -1190,6 +1227,7 @@ class JRLayer(object):
         else:
             return None
 
+    # get_method --------------------------------------------------------------
     def get_method(self, prefix, resource, jprefix, jresource, method):
 
         if not method:
@@ -1214,6 +1252,7 @@ class JRLayer(object):
         else:
             return None
 
+    # store_session -----------------------------------------------------------
     def store_session(self, session, module, resource, record_id):
 
         if session and not ('jrvars' in session):
@@ -1223,6 +1262,7 @@ class JRLayer(object):
             tablename = "%s_%s" % (module, resource)
             session.jrvars[tablename] = record_id
 
+    # clear_session -----------------------------------------------------------
     def clear_session(self, session, module=None, resource=None):
 
         if session:
@@ -1244,7 +1284,7 @@ class JRequest(object):
         Class handling requests to joined resources REST controller.
     """
 
-    def __init__(self, jrlayer, request, session=None):
+    def __init__(self, jrlayer, module, resource, request, session=None):
 
         self.default_representation = 'html'
         self.request = request
@@ -1254,14 +1294,14 @@ class JRequest(object):
         self.invalid = False
         self.badmethod = False
         self.badrecord = False
-        self.badformat = False
+        self.badrequest = False
 
         self.representation = request.extension
         self.http = request.env.request_method
         self.extension = False
 
-        self.module = request.controller
-        self.resource = request.function
+        self.module = module or request.controller
+        self.resource = resource or request.function
         self.method = None
         self.record_id = None
         self.jresource = None
@@ -1361,8 +1401,8 @@ class JRequest(object):
                         else:
                             self.method = None
                     else:
-                        # Error: BAD FORMAT
-                        self.badformat = True
+                        # Error: BAD REQUEST
+                        self.badrequest = True
                         self.invalid = True
                         return False
                 else:

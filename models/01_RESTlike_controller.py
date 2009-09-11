@@ -15,10 +15,9 @@ jrlayer = JRLayer(db)
 
 # Error messages
 UNAUTHORISED = T('Not authorised!')
-BADFORMAT = T('Unsupported format!')
+BADFORMAT = T('Unsupported data format!')
 BADMETHOD = T('Unsupported method!')
 BADRECORD = T('No such record!')
-BADFORMAT = T('Bad request format!')
 INVALIDREQUEST = T('Invalid request!')
 
 # How many rows to show per page in list outputs
@@ -142,7 +141,7 @@ def export_rss(module, resource, query, main='name', extra='description'):
     rows = db(query).select()
     try:
         for row in rows:
-            entries.append(dict(title=row[main], link=server + link + '/%d' % row.id, description=row[extra], created_on=row.created_on))
+            entries.append(dict(title=str(row[main]), link=server + link + '/%d' % row.id, description=str(row[extra]), created_on=row.created_on))
     except:
         for row in rows:
             entries.append(dict(title=row[main], link=server + link + '/%d' % row.id, description='', created_on=row.created_on))
@@ -564,26 +563,137 @@ def shn_custom_view(jr, default_name):
 #
 # shn_read --------------------------------------------------------------------
 #
-def shn_read(jr, editable=True, deletable=True):
+def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=True):
     """
         Read a single record
     """
-    # No next, since no submit
-    print "audit_read"
-    if jr.representation=="html":
-        shn_custom_view(jr, 'display.html')
-        # Takes:
-        #  title, pheader, subtitle, edit, item, delete, list_btn
-        item = 'read %s %s' % (jr.resource, jr.jresource)
-        return dict(item=item)
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request, f='index'))
 
+    if jr.jresource:
+        module = jr.jmodule
+        resource = jr.jresource
+        table = jr.jtable
+        tablename = jr.jtablename
+
+        query = (table[jr.fkey]==jr.record[jr.pkey])
+        if jr.jrecord_id:
+            query = (table.id==jr.jrecord_id) & query
+        if 'deleted' in table:
+            query = ((table.deleted==False) | (table.deleted==None)) & query
+
+        try:
+            record_id = db(query).select(table.id)[0].id
+            href_delete = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'delete', record_id])
+            href_edit = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'update', record_id])
+        except:
+            record_id = None
+            href_delete = None
+            href_edit = None
+            session.error = BADRECORD
+            redirect(jr.there())
+
+        _main, _extra = jrlayer.head_fields(resource)
+
+        _editable = jrlayer.get_attr(resource, 'editable')
+        _deletable = jrlayer.get_attr(resource, 'deletable')
+
+    else:
+        module = jr.module
+        resource = jr.resource
+        table = jr.table
+        tablename = jr.tablename
+
+        record_id = jr.record_id
+        href_delete = URL(r=jr.request, c=jr.module, f=jr.resource, args=['delete', record_id])
+        href_edit = URL(r=jr.request, c=jr.module, f=jr.resource, args=['update', record_id])
+
+        _editable = editable
+        _deletable = deletable
+        _main = main
+        _extra = extra
+
+    authorised = shn_has_permission('read', table, record_id)
+    if authorised:
+
+        shn_audit_read(operation='read', resource=resource, record=record_id, representation=jr.representation)
+
+        if jr.representation=="html":
+            shn_custom_view(jr, 'display.html')
+            try:
+                title = s3.crud_strings[jr.tablename].title_display
+            except:
+                title = s3.crud_strings.title_display
+            output = dict(title=title)
+            if jr.jresource:
+                try:
+                    subtitle = s3.crud_strings[tablename].title_display
+                except:
+                    subtitle = s3.crud_strings.title_display
+                output.update(subtitle=subtitle)
+                if pheader:
+                    try:
+                        _pheader = pheader(jr.resource, jr.record_id, jr.representation, next=jr.there(), same=jr.same())
+                    except:
+                        _pheader = pheader
+                    if _pheader:
+                        output.update(pheader=_pheader)
+            item = crud.read(table, record_id)
+            if href_edit and _editable:
+                edit = A(T("Edit"), _href=href_edit, _id='edit-btn')
+            else:
+                edit = ''
+            if href_delete and _deletable:
+                delete = A(T("Delete"), _href=href_delete, _id='delete-btn')
+            else:
+                delete = ''
+            try:
+                label_list_button = s3.crud_strings[tablename].label_list_button
+            except:
+                label_list_button = s3.crud_strings.label_list_button
+            list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
+
+            output.update(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
+
+            return(output)
+
+        elif jr.representation == "plain":
+            item = crud.read(table, record_id)
+            response.view = 'plain.html'
+            return dict(item=item)
+
+        elif jr. representation == "csv":
+            query = db[table].id == record_id
+            return export_csv(resource, query)
+
+        elif jr.representation == "json": # TODO: encoding problems, output contains Python-strings
+            query = db[table].id == record_id
+            return export_json(table, query)
+
+        elif jr.representation == "pdf": # TODO: encoding problems, doesn't quite work
+            query = db[table].id == record_id
+            return export_pdf(table, query)
+
+        elif jr.representation == "rss": # TODO: encoding problems, doesn't quite work
+            query = db[table].id == record_id
+            return export_rss(module, resource, query, _main, _extra)
+
+        elif jr.representation == "xls":
+            query = db[table].id == record_id
+            return export_xls(table, query)
+
+        elif jr.representation == "xml":
+            query = db[table].id == record_id
+            return export_xml(table, query)
+
+        else:
+            session.error = BADFORMAT
+            redirect(URL(r=request, f='index'))
+    else:
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': jr.here()}))
 #
 # shn_list --------------------------------------------------------------------
 #
-def shn_list(jr, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None):
+def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None):
     """
         List records matching the request
     """
@@ -604,7 +714,7 @@ def shn_list(jr, listadd=True, main=None, extra=None, orderby=None, sortby=None,
 #
 # shn_create ------------------------------------------------------------------
 #
-def shn_create(jr, onvalidation=None, onaccept=None, next=None):
+def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, next=None):
     """
         Create a new record
     """
@@ -622,7 +732,7 @@ def shn_create(jr, onvalidation=None, onaccept=None, next=None):
 #
 # shn_update ------------------------------------------------------------------
 #
-def shn_update(jr, deletable=True, onvalidation=None, onaccept=None, next=None):
+def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=None, next=None):
     """
         Update an existing record
     """
@@ -640,7 +750,7 @@ def shn_update(jr, deletable=True, onvalidation=None, onaccept=None, next=None):
 #
 # shn_delete ------------------------------------------------------------------
 #
-def shn_delete(jr, onvalidation, onaccept):
+def shn_delete(jr, onvalidation=None, onaccept=None):
     """
         Delete record(s)
     """
@@ -722,7 +832,7 @@ def shn_rest_controller(module, resource,
 
     # Parse original request --------------------------------------------------
 
-    jr = JRequest(jrlayer, request, session=session)
+    jr = JRequest(jrlayer, module, resource, request, session=session)
 
     # Invalid request?
     if jr.invalid:
@@ -730,8 +840,6 @@ def shn_rest_controller(module, resource,
             session.error = BADMETHOD
         elif jr.badrecord:
             session.error = BADRECORD
-        elif jr.badformat:
-            session.error = BADFORMAT
         else:
             session.error = INVALIDREQUEST
         redirect(URL(r=request, c=module, f='index'))
@@ -755,7 +863,7 @@ def shn_rest_controller(module, resource,
 
         else:
             session.error = BADRECORD
-            redirect(URL(r=request, c=module, f='index'))
+            redirect(URL(r=request, c=jr.module, f='index'))
 
     # *************************************************************************
     # Joined Table Operation
@@ -815,7 +923,7 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET':
                 authorised = shn_has_permission('read', jr.jtable)
                 if authorised:
-                    return shn_read(jr)
+                    return shn_read(jr, pheader=pheader)
                 else:
                     session.error = UNAUTHORIZED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))

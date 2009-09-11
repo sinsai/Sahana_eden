@@ -62,6 +62,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
     fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
 
 # Field validation
@@ -136,6 +138,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
     fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
 
 # Field validation
@@ -205,6 +209,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
     fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
 
 # Field validation
@@ -272,6 +278,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
     fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation
@@ -354,6 +362,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
 
 # Field validation
@@ -401,6 +411,8 @@ db.define_table(table, timestamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_group='group_id', pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id','group_id','person_id','group_head','description'])
 
 # Field validation
@@ -444,6 +456,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id','opt_pr_network_type','comment'])
 
 # Field validation
@@ -486,6 +500,8 @@ db.define_table(table, timestamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id','network_id','person_id','description','comment'])
 
 # Field validation

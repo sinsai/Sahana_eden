@@ -332,13 +332,13 @@ def shn_accessible_query(name, table):
 #
 # shn_audit_read --------------------------------------------------------------
 #
-def shn_audit_read(operation, resource, record=None, representation=None):
+def shn_audit_read(operation, module, resource, record=None, representation=None):
     "Called during Read operations to enable optional Auditing"
     if session.s3.audit_read:
         db.s3_audit.insert(
                 person = auth.user.id if session.auth else 0,
                 operation = operation,
-                module = request.controller,
+                module = module,
                 resource = resource,
                 record = record,
                 representation = representation,
@@ -348,7 +348,7 @@ def shn_audit_read(operation, resource, record=None, representation=None):
 #
 # shn_audit_create ------------------------------------------------------------
 #
-def shn_audit_create(form, resource, representation=None):
+def shn_audit_create(form, module, resource, representation=None):
     """
     Called during Create operations to enable optional Auditing
     Called as an onaccept so that it only takes effect when saved & can read the new values in:
@@ -362,7 +362,7 @@ def shn_audit_create(form, resource, representation=None):
         db.s3_audit.insert(
                 person = auth.user.id if session.auth else 0,
                 operation = 'create',
-                module = request.controller,
+                module = module,
                 resource = resource,
                 record = record,
                 representation = representation,
@@ -373,7 +373,7 @@ def shn_audit_create(form, resource, representation=None):
 #
 # shn_audit_update ------------------------------------------------------------
 #
-def shn_audit_update(form, resource, representation=None):
+def shn_audit_update(form, module, resource, representation=None):
     """
     Called during Update operations to enable optional Auditing
     Called as an onaccept so that it only takes effect when saved & can read the new values in:
@@ -387,7 +387,7 @@ def shn_audit_update(form, resource, representation=None):
         db.s3_audit.insert(
                 person = auth.user.id if session.auth else 0,
                 operation = 'update',
-                module = request.controller,
+                module = module,
                 resource = resource,
                 record = record,
                 representation = representation,
@@ -399,7 +399,7 @@ def shn_audit_update(form, resource, representation=None):
 #
 # shn_audit_update_m2m --------------------------------------------------------
 #
-def shn_audit_update_m2m(resource, record, representation=None):
+def shn_audit_update_m2m(module, resource, record, representation=None):
     """
     Called during Update operations to enable optional Auditing
     Designed for use in M2M 'Update Qty/Delete' (which can't use crud.settings.update_onaccept)
@@ -409,7 +409,7 @@ def shn_audit_update_m2m(resource, record, representation=None):
         db.s3_audit.insert(
                 person = auth.user.id if session.auth else 0,
                 operation = 'update',
-                module = request.controller,
+                module = module,
                 resource = resource,
                 record = record,
                 representation = representation,
@@ -421,10 +421,10 @@ def shn_audit_update_m2m(resource, record, representation=None):
 #
 # shn_audit_delete ------------------------------------------------------------
 #
-def shn_audit_delete(resource, record, representation=None):
+def shn_audit_delete(module, resource, record, representation=None):
     "Called during Delete operations to enable optional Auditing"
     if session.s3.audit_write:
-        module = request.controller
+        module = module
         table = '%s_%s' % (module, resource)
         old_value = []
         _old_value = db(db[table].id==record).select()[0]
@@ -591,10 +591,10 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
             session.error = BADRECORD
             redirect(jr.there())
 
-        _main, _extra = jrlayer.head_fields(resource)
+        main, extra = jrlayer.head_fields(resource)
 
-        _editable = jrlayer.get_attr(resource, 'editable')
-        _deletable = jrlayer.get_attr(resource, 'deletable')
+        editable = jrlayer.get_attr(resource, 'editable')
+        deletable = jrlayer.get_attr(resource, 'deletable')
 
     else:
         module = jr.module
@@ -606,15 +606,10 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
         href_delete = URL(r=jr.request, c=jr.module, f=jr.resource, args=['delete', record_id])
         href_edit = URL(r=jr.request, c=jr.module, f=jr.resource, args=['update', record_id])
 
-        _editable = editable
-        _deletable = deletable
-        _main = main
-        _extra = extra
-
     authorised = shn_has_permission('read', table, record_id)
     if authorised:
 
-        shn_audit_read(operation='read', resource=resource, record=record_id, representation=jr.representation)
+        shn_audit_read(operation='read', module=module, resource=resource, record=record_id, representation=jr.representation)
 
         if jr.representation=="html":
             shn_custom_view(jr, 'display.html')
@@ -637,11 +632,11 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
                     if _pheader:
                         output.update(pheader=_pheader)
             item = crud.read(table, record_id)
-            if href_edit and _editable:
+            if href_edit and editable:
                 edit = A(T("Edit"), _href=href_edit, _id='edit-btn')
             else:
                 edit = ''
-            if href_delete and _deletable:
+            if href_delete and deletable:
                 delete = A(T("Delete"), _href=href_delete, _id='delete-btn')
             else:
                 delete = ''
@@ -674,7 +669,7 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
 
         elif jr.representation == "rss": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
-            return export_rss(module, resource, query, _main, _extra)
+            return export_rss(module, resource, query, main, extra)
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
@@ -693,20 +688,195 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
 #
 # shn_list --------------------------------------------------------------------
 #
+def shn_list_linkto(field):
+    return URL(r=request, args=[field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+
+def shn_list_jlinkto(field):
+    return URL(r=request, args=[request.args[0], request.args[1], field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+
 def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None):
     """
         List records matching the request
     """
-    # No next, since always returning to itself
-    print "audit_list"
+
+    if jr.jresource:
+        module = jr.jmodule
+        resource = jr.jresource
+        table = jr.jtable
+        tablename = jr.jtablename
+
+        listadd = jrlayer.get_attr(resource, 'listadd')
+        if listadd==None: listadd=True
+
+        main, extra = jrlayer.head_fields(resource)
+        orderby = jrlayer.get_attr(resource, 'orderby')
+        sortby = jrlayer.get_attr(resource, 'sortby')
+        onvalidation =  jrlayer.get_attr(resource, 'onvalidation')
+        onaccept =  jrlayer.get_attr(resource, 'onaccept')
+ 
+        query = shn_accessible_query('read', table)
+        query = (table[jr.fkey]==jr.record[jr.pkey]) & query
+
+        if jr.jrecord_id:
+            query = (table.id==jr.jrecord_id) & query
+
+        href_add = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'create'])
+
+    else:
+        module = jr.module
+        resource = jr.resource
+        table = jr.table
+        tablename = jr.tablename
+
+        query = shn_accessible_query('read', table)
+
+        if request.filter:
+            query = request.filter & query
+
+        href_add = URL(r=jr.request, c=jr.module, f=jr.resource, args=['create'])
+
+    if 'deleted' in table:
+        query = ((table.deleted == False) | (table.deleted == None)) & query
+
+    shn_audit_read(operation='list', module=module, resource=resource, representation=jr.representation)
+
     if jr.representation=="html":
-        shn_custom_view(jr, 'list.html')
-        # Takes (list.html):
-        #  title, pheader, subtitle, items, add_btn
-        # Takes (list_create.html):
-        #  title, pheader, subtitle, items, addtitle, form
-        items = 'list %s %s' % (jr.resource, jr.jresource)
-        return dict(items=items)
+        output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
+
+        if jr.jresource:
+            try:
+                title = s3.crud_strings[jr.tablename].title_display
+            except:
+                title = s3.crud_strings.title_display
+            try:
+                subtitle = s3.crud_strings[tablename].subtitle_list
+            except:
+                subtitle = s3.crud_strings.subtitle_list
+
+            if pheader:
+                try:
+                    _pheader = pheader(jr.resource, jr.record_id, jr.representation, next=jr.there(), same=jr.same())
+                except:
+                    _pheader = pheader
+                if _pheader:
+                    output.update(pheader=_pheader)
+        else:
+            try:
+                title = s3.crud_strings[tablename].title_list
+            except:
+                title = s3.crud_strings.title_list
+            try:
+                subtitle = s3.crud_strings[tablename].subtitle_list
+            except:
+                subtitle = s3.crud_strings.subtitle_list
+
+        output.update(title=title, subtitle=subtitle)
+
+        # Which fields do we display?
+        fields = None
+        if jr.jresource:
+            fields = jrlayer.list_fields(resource)
+        if not fields:
+            fields = [table[f] for f in table.fields if table[f].readable]
+
+        # Column labels
+        headers = {}
+        for field in fields:
+            # Use custom or prettified label
+            headers[str(field)] = field.label
+
+        if jr.jresource:
+            linkto = shn_list_jlinkto
+        else:
+            linkto = shn_list_linkto
+
+        items = crud.select(table, query=query,
+            fields=fields,
+            orderby=orderby,
+            headers=headers,
+            linkto=linkto,
+            truncate=48, _id='list', _class='display')
+
+        if not items:
+            try:
+                items = s3.crud_strings[tablename].msg_list_empty
+            except:
+                items = s3.crud_strings.msg_list_empty
+
+        # Update the Return with common items
+        output.update(dict(items=items))
+
+        authorised = shn_has_permission('create', table)
+        if authorised and listadd:
+
+            # Audit
+            crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation)
+
+            # Block join field
+            if jr.jresource:
+                table[jr.fkey].default = jr.record[jr.pkey]
+                table[jr.fkey].writable = False
+
+            # TODO: Save crud.create_onvalidation/crud.create_onaccept?
+
+            # Display the Add form below List
+            form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept, next=jr.there())
+
+            try:
+                addtitle = s3.crud_strings[tablename].subtitle_create
+            except:
+                addtitle = s3.crud_strings.subtitle_create
+
+            # Check for presence of Custom View
+            shn_custom_view(jr, 'list_create.html')
+
+            # Add specificities to Return
+            output.update(dict(form=form, addtitle=addtitle))
+
+        else:
+            # List only with create button below
+            if listadd:
+                try:
+                    label_create_button = s3.crud_strings[tablename].label_create_button
+                except:
+                    label_create_button = s3.crud_strings.label_create_button
+                add_btn = A(label_create_button, _href=href_add, _id='add-btn')
+            else:
+                add_btn = ''
+
+            # Check for presence of Custom View
+            shn_custom_view(jr, 'list.html')
+
+            # Add specificities to Return
+            output.update(dict(add_btn=add_btn))
+
+        return output
+
+    elif jr.representation == "plain":
+        items = crud.select(table, query, truncate=24)
+        response.view = 'plain.html'
+        return dict(item=items)
+
+    elif jr.representation == "csv":
+        return export_csv(resource, query)
+
+    elif jr.representation == "json":
+        return export_json(table, query)
+
+    elif jr.representation == "pdf":
+        return export_pdf(table, query)
+
+    elif jr.representation == "rss":
+        return export_rss(module, resource, query, main, extra)
+
+    elif jr.representation == "xls":
+        return export_xls(table, query)
+
+    elif jr.representation == "xml":
+        return export_xml(table, query)
+
     else:
         session.error = BADFORMAT
         redirect(URL(r=request, f='index'))
@@ -894,7 +1064,7 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET' or jr.http=='POST':
                 authorised = shn_has_permission('read', jr.jtable)
                 if authorised:
-                    return shn_list(jr)
+                    return shn_list(jr, pheader)
                 else:
                     session.error = UNAUTHORIZED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -960,10 +1130,10 @@ def shn_rest_controller(module, resource,
             if authorised:
                 if jr.multiple and not jr.jrecord_id:
                     # This is a list action
-                    return shn_list(jr)
+                    return shn_list(jr, pheader)
                 else:
                     # This is a read action
-                    return shn_read(jr)
+                    return shn_read(jr, pheader)
             else:
                 session.error = UNAUTHORIZED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -1039,8 +1209,8 @@ def shn_rest_controller(module, resource,
 
             # HTTP List or List-Add -------------------------------------------
             if jr.http == 'GET' or request.env.request_method == 'POST':
-                return shn_list(jr)
-
+                return shn_list(jr, pheader, listadd=listadd, main=main, extra=extra,
+                    orderby=orderby, sortby=sortby, onvalidation=onvalidation, onaccept=onaccept)
             # HTTP Create -----------------------------------------------------
             elif jr.http == 'PUT':
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
@@ -1059,7 +1229,7 @@ def shn_rest_controller(module, resource,
 
             # HTTP Read (single record) ---------------------------------------
             if jr.http == 'GET':
-                return shn_read(jr)
+                return shn_read(jr, pheader=pheader, main=main, extra=extra, editable=editable, deletable=deletable)
 
             # HTTP Delete (single record) -------------------------------------
             elif jr.http == 'DELETE':
@@ -1140,7 +1310,7 @@ def shn_rest_controller(module, resource,
                 # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
 
                 # Audit
-                shn_audit_read(operation='search', resource=jr.resource, representation=jr.representation)
+                shn_audit_read(operation='search', module=jr.module, resource=jr.resource, representation=jr.representation)
 
                 if jr.representation == "html":
 

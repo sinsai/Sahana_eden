@@ -895,6 +895,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         onvalidation = jrlayer.get_attr(resource, 'onvalidation')
         onaccept = jrlayer.get_attr(resource, 'onaccept')
+        main = jrlayer.get_attr(resource, 'main')
     else:
         module = jr.module
         resource = jr.resource
@@ -1524,7 +1525,7 @@ def shn_rest_controller(module, resource,
         elif jr.method == "create":
             authorised = shn_has_permission(jr.method, jr.table)
             if authorised:
-                return shn_create(jr, pheader, onvalidation=onvalidation, onaccept=onaccept)
+                return shn_create(jr, pheader, onvalidation=onvalidation, onaccept=onaccept, main=main)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
@@ -1578,7 +1579,7 @@ def shn_rest_controller(module, resource,
 
                     return dict(module_name=module_name, search=search, title=title)
 
-                if representation == "json":
+                if jr.representation == "json":
                     # JQuery Autocomplete uses 'q' instead of 'value'
                     value = request.vars.value or request.vars.q or None
                     if request.vars.field and request.vars.filter and value:

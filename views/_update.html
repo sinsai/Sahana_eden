@@ -5,15 +5,15 @@
 <div id='pheader'>
 {{try:}}
  {{=pheader}}
+<p>&nbsp;</p>
 {{except:}}
  {{pass}}
 </div>
-<p>&nbsp;</p>
-{{include 'key.html'}}
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
+{{include 'key.html'}}
 <div class='form-container'>
 {{try:}}
  {{=form}}

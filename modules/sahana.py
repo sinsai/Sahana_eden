@@ -1552,7 +1552,7 @@ class JRequest(object):
                 else:
                     f=self.resource
 
-        return(URL(r=self.request, c=self.module, f=f, args=args))
+        return(URL(r=self.request, c=self.request.module, f=f, args=args))
 
     # -------------------------------------------------------------------------
     def there(self, representation=None):
@@ -1578,7 +1578,7 @@ class JRequest(object):
             else:
                 f=self.resource
 
-        return(URL(r=self.request, c=self.module, f=f, args=args))
+        return(URL(r=self.request, c=self.request.module, f=f, args=args))
 
     # -------------------------------------------------------------------------
     def same(self, representation=None):
@@ -1617,4 +1617,4 @@ class JRequest(object):
                 else:
                     f=self.resource
 
-        return(URL(r=self.request, c=self.module, f=f, args=args))
+        return(URL(r=self.request, c=self.request.module, f=f, args=args))

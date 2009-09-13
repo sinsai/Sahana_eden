@@ -1078,6 +1078,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
         deletable = jrlayer.get_attr(resource, 'deletable')
 
     else:
+
         module = jr.module
         resource = jr.resource
         table = jr.table

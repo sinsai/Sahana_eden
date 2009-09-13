@@ -133,11 +133,13 @@ div#container { }
             /* GIS module */
             .btn-panel { padding: 2px; }
             
-    div#footer { margin: 0; padding: 10px; clear: both; color: #666; background-color: #369; border-top: #058 1px solid; }
+    div#footer { margin: 0 auto; padding: 10px; clear: both; float: left; width:100%; text-align: center; color: #666; background-color: #369; border-top: #058 1px solid; }
         a.help, a:link.help { color: #fff; text-decoration: none; }
         a:hover.help { background-color: #369; text-decoration: underline; }
         a:visited.help { font-weight: normal; color: #aaa; }
-
+        p { padding:10px; margin:0; }
+}
+        
 /* Form Layout styles */
 p.legend { margin-bottom: 1em; }
 p.legend em { color: #C00; font-style: normal; }

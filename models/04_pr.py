@@ -281,6 +281,10 @@ jrlayer.add_jresource(module, resource,
     deletable=True,
     editable=True,
     main='time', extra='location_details',
+    rss=dict(
+        title="%(time)s",
+        description="%(location_details)s: %(procedure)s"
+    ),
     fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation

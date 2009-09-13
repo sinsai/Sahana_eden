@@ -1040,13 +1040,14 @@ class S3:
 #
 class JoinedResource(object):
 
-    def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, attr=None):
+    def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, rss=None, attr=None):
 
         self.prefix = prefix
         self.name = name
         self.joinby = joinby
         self.multiple = multiple
         self.fields = fields
+        self.rss = rss
         if attr:
             self.attr = attr
         else:
@@ -1069,6 +1070,10 @@ class JoinedResource(object):
     # list_fields -------------------------------------------------------------
     def list_fields(self):
         return self.fields
+
+    # rss ---------------------------------------------------------------------
+    def _rss(self):
+        return self.rss
 
     # head_fields -------------------------------------------------------------
     def head_fields(self):
@@ -1137,14 +1142,14 @@ class JRLayer(object):
         self.settings = {}
 
     # add_jresource -----------------------------------------------------------
-    def add_jresource(self, prefix, name, joinby=None, multiple=True, fields=None, **attr):
+    def add_jresource(self, prefix, name, joinby=None, multiple=True, rss=None, fields=None, **attr):
 
         _table = "%s_%s" % (prefix, name)
 
         if fields:
             list_fields = [self.db[_table][f] for f in fields]
 
-        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, fields=list_fields, attr=attr)
+        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, rss=rss, fields=list_fields, attr=attr)
         self.jresources[name] = jr
 
     # get_prefix --------------------------------------------------------------
@@ -1176,6 +1181,14 @@ class JRLayer(object):
 
         if name in self.jresources:
             return self.jresources[name].list_fields()
+        else:
+            return None
+
+    # rss ---------------------------------------------------------------------
+    def rss(self, name):
+
+        if name in self.jresources:
+            return self.jresources[name]._rss()
         else:
             return None
 

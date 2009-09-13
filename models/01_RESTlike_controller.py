@@ -130,7 +130,7 @@ def export_pdf(table, query):
 #
 # export_rss ------------------------------------------------------------------
 #
-def export_rss(module, resource, query, main='name', extra='description', linkto=None):
+def export_rss(module, resource, query, rss=None, linkto=None):
     """Export record(s) as RSS feed
     main='field': the field used for the title
     extra='field': the field used for the description
@@ -142,32 +142,48 @@ def export_rss(module, resource, query, main='name', extra='description', linkto
     #else:
         #server = 'http://' + request.env.server_name + ':' + request.env.server_port
 
+    tablename = "%s_%s" % (module, resource)
+    try:
+        title_list = s3.crud_strings[tablename].subtitle_list
+    except:
+        title_list =  s3.crud_strings.subtitle_list
+
     server = S3_PUBLIC_URL
+
     if not linkto:
         link = '/%s/%s/%s' % (request.application, module, resource)
     else:
         link = linkto
+
     entries = []
     rows = db(query).select()
     if rows:
-        try:
-            for row in rows:
-                entries.append(dict(
-                    title=str(row[main]).decode('utf-8'),
-                    link=server + link + '/%d' % row.id,
-                    description=str(row[extra]).decode('utf-8'),
-                    created_on=row.created_on))
-        except:
-            for row in rows:
-                entries.append(dict(
-                    title=str(row[main]).decode('utf-8'),
-                    link=server + link + '/%d' % row.id,
-                    description=str('').decode('utf-8'),
-                    created_on=row.created_on))
+        for row in rows:
+            if rss and 'title' in rss:
+                try:
+                    title = rss['title'](row)
+                except TypeError:
+                    title = rss['title'] % row
+            else:
+                title = row['id']
+
+            if rss and 'description' in rss:
+                try:
+                    description = rss['description'](row)
+                except TypeError:
+                    description = rss['description'] % row
+            else:
+                description = ''
+
+            entries.append(dict(
+                title=str(title).decode('utf-8'),
+                link=server + link + '/%d' % row.id,
+                description=str(description).decode('utf-8'),
+                created_on=row.created_on))
+
     import gluon.contrib.rss2 as rss2
-    items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
-#    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.utcnow, items = items)
-    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link, description = '', lastBuildDate = request.utcnow, items = items)
+    items = [rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
+    rss = rss2.RSS2(title = str(title_list).decode('utf-8'), link = server + link, description = '', lastBuildDate = request.utcnow, items = items)
     response.headers['Content-Type'] = 'application/rss+xml'
     return rss2.dumps(rss)
 
@@ -583,7 +599,7 @@ def shn_custom_view(jr, default_name):
 #
 # shn_read --------------------------------------------------------------------
 #
-def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=True):
+def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
     """
         Read a single record
     """
@@ -611,10 +627,10 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
             session.error = BADRECORD
             redirect(jr.there())
 
-        main, extra = jrlayer.head_fields(resource)
-
         editable = jrlayer.get_attr(resource, 'editable')
         deletable = jrlayer.get_attr(resource, 'deletable')
+
+        rss = jrlayer.rss(resource)
 
     else:
         module = jr.module
@@ -689,7 +705,7 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
 
         elif jr.representation == "rss": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
-            return export_rss(module, resource, query, main, extra, linkto=jr.here('html'))
+            return export_rss(module, resource, query, rss=rss, linkto=jr.here('html'))
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
@@ -716,7 +732,7 @@ def shn_list_jlinkto(field):
     return URL(r=request, args=[request.args[0], request.args[1], field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
-def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None):
+def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None, rss=None):
     """
         List records matching the request
     """
@@ -735,7 +751,8 @@ def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None
         sortby = jrlayer.get_attr(resource, 'sortby')
         onvalidation =  jrlayer.get_attr(resource, 'onvalidation')
         onaccept =  jrlayer.get_attr(resource, 'onaccept')
- 
+        rss = jrlayer.rss(resource)
+
         query = shn_accessible_query('read', table)
         query = (table[jr.fkey]==jr.record[jr.pkey]) & query
 
@@ -893,7 +910,7 @@ def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None
         return export_pdf(table, query)
 
     elif jr.representation == "rss":
-        return export_rss(module, resource, query, main, extra, linkto=jr.there('html'))
+        return export_rss(module, resource, query, rss=rss, linkto=jr.there('html'))
 
     elif jr.representation == "xls":
         return export_xls(table, query)
@@ -1233,6 +1250,7 @@ def shn_rest_controller(module, resource,
     orderby=None,
     sortby=None,
     pheader=None,
+    rss=None,
     onvalidation=None,
     onaccept=None):
     """
@@ -1353,7 +1371,7 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET' or jr.http=='POST':
                 authorised = shn_has_permission('read', jr.jtable)
                 if authorised:
-                    return shn_list(jr, pheader)
+                    return shn_list(jr, pheader, rss=rss)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -1382,7 +1400,7 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET':
                 authorised = shn_has_permission('read', jr.jtable)
                 if authorised:
-                    return shn_read(jr, pheader=pheader)
+                    return shn_read(jr, pheader=pheader, rss=rss)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -1419,10 +1437,10 @@ def shn_rest_controller(module, resource,
             if authorised:
                 if jr.multiple and not jr.jrecord_id:
                     # This is a list action
-                    return shn_list(jr, pheader)
+                    return shn_list(jr, pheader, rss=rss)
                 else:
                     # This is a read action
-                    return shn_read(jr, pheader)
+                    return shn_read(jr, pheader, rss=rss)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -1499,7 +1517,7 @@ def shn_rest_controller(module, resource,
             # HTTP List or List-Add -------------------------------------------
             if jr.http == 'GET' or request.env.request_method == 'POST':
                 return shn_list(jr, pheader, listadd=listadd, main=main, extra=extra,
-                    orderby=orderby, sortby=sortby, onvalidation=onvalidation, onaccept=onaccept)
+                    orderby=orderby, sortby=sortby, onvalidation=onvalidation, onaccept=onaccept, rss=rss)
             # HTTP Create -----------------------------------------------------
             elif jr.http == 'PUT':
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
@@ -1518,7 +1536,7 @@ def shn_rest_controller(module, resource,
 
             # HTTP Read (single record) ---------------------------------------
             if jr.http == 'GET':
-                return shn_read(jr, pheader=pheader, main=main, extra=extra, editable=editable, deletable=deletable)
+                return shn_read(jr, pheader=pheader, editable=editable, deletable=deletable, rss=rss)
 
             # HTTP Delete (single record) -------------------------------------
             elif jr.http == 'DELETE':

@@ -51,6 +51,10 @@ def person():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     return shn_rest_controller(module, 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
+        rss=dict(
+            title=shn_pr_person_represent,
+            description="ID Label: %(pr_pe_label)s\n%(comment)s"
+        ),
         onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1))
 
 def group():

@@ -72,7 +72,7 @@ def export_pdf(table, query):
     if not objects_list:
         session.warning = T('No data in this table - cannot create PDF!')
         redirect(URL(r=request))
-    
+
     import StringIO
     output = StringIO.StringIO()
     
@@ -87,9 +87,12 @@ def export_pdf(table, query):
         _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split('.')
         #db[table][col].represent = 'foo'
-        detailElements.append(ObjectValue(attribute_name=col, left=LEFTMARGIN*cm, width=COLWIDTH*cm))
+        detailElements.append(ObjectValue(
+            attribute_name=col,
+            left=LEFTMARGIN*cm, width=COLWIDTH*cm,
+            get_value=lambda instance: str(instance).decode('utf-8')))
         LEFTMARGIN += COLWIDTH
-    
+
     mod, res = str(table).split('_', 1)
     mod_nice = db(db.s3_module.name==mod).select()[0].name_nice
     _title = mod_nice + ': ' + res.capitalize()
@@ -141,10 +144,18 @@ def export_rss(module, resource, query, main='name', extra='description'):
     rows = db(query).select()
     try:
         for row in rows:
-            entries.append(dict(title=str(row[main]), link=server + link + '/%d' % row.id, description=str(row[extra]), created_on=row.created_on))
+            entries.append(dict(
+                title=str(row[main]).decode('utf-8'),
+                link=server + link + '/%d' % row.id,
+                description=str(row[extra]).decode('utf-8'),
+                created_on=row.created_on))
     except:
         for row in rows:
-            entries.append(dict(title=row[main], link=server + link + '/%d' % row.id, description='', created_on=row.created_on))
+            entries.append(dict(
+                title=str(row[main]).decode('utf-8'),
+                link=server + link + '/%d' % row.id,
+                description=str('').decode('utf-8'),
+                created_on=row.created_on))
     import gluon.contrib.rss2 as rss2
     items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
     rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.utcnow, items = items)
@@ -816,12 +827,17 @@ def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None
 
             # Block join field
             if jr.jresource:
+                _comment = table[jr.fkey].comment
+                table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
                 table[jr.fkey].writable = False
 
             # Display the Add form below List
             form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept, next=jr.there())
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+
+            if jr.jresource:
+                table[jr.fkey].comment = _comment
 
             try:
                 addtitle = s3.crud_strings[tablename].subtitle_create
@@ -895,7 +911,8 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         onvalidation = jrlayer.get_attr(resource, 'onvalidation')
         onaccept = jrlayer.get_attr(resource, 'onaccept')
-        main = jrlayer.get_attr(resource, 'main')
+        main, extra = jrlayer.head_fields(resource)
+
     else:
         module = jr.module
         resource = jr.resource
@@ -946,11 +963,16 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         # Block join field
         if jr.jresource:
+            _comment = table[jr.fkey].comment
+            table[jr.fkey].comment = None
             table[jr.fkey].default = jr.record[jr.pkey]
             table[jr.fkey].writable = False
 
         form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept, next=jr.there())
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+
+        if jr.jresource:
+            table[jr.fkey].comment = _comment
 
         output.update(form=form)
 
@@ -1076,11 +1098,16 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
             # Block join field
             if jr.jresource:
+                _comment = table[jr.fkey].comment
+                table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
                 table[jr.fkey].writable = False
 
             form = crud.update(table, record_id, onvalidation=onvalidation, onaccept=onaccept, next=jr.there())
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+
+            if jr.jresource:
+                table[jr.fkey].comment = _comment
 
             output.update(form=form)
 

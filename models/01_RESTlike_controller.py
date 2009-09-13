@@ -130,7 +130,7 @@ def export_pdf(table, query):
 #
 # export_rss ------------------------------------------------------------------
 #
-def export_rss(module, resource, query, main='name', extra='description'):
+def export_rss(module, resource, query, main='name', extra='description', linkto=None):
     """Export record(s) as RSS feed
     main='field': the field used for the title
     extra='field': the field used for the description
@@ -139,26 +139,31 @@ def export_rss(module, resource, query, main='name', extra='description'):
         server = 'http://127.0.0.1:' + request.env.server_port
     else:
         server = 'http://' + request.env.server_name + ':' + request.env.server_port
-    link = '/%s/%s/%s' % (request.application, module, resource)
+    if not linkto:
+        link = '/%s/%s/%s' % (request.application, module, resource)
+    else:
+        link = linkto
     entries = []
     rows = db(query).select()
-    try:
-        for row in rows:
-            entries.append(dict(
-                title=str(row[main]).decode('utf-8'),
-                link=server + link + '/%d' % row.id,
-                description=str(row[extra]).decode('utf-8'),
-                created_on=row.created_on))
-    except:
-        for row in rows:
-            entries.append(dict(
-                title=str(row[main]).decode('utf-8'),
-                link=server + link + '/%d' % row.id,
-                description=str('').decode('utf-8'),
-                created_on=row.created_on))
+    if rows:
+        try:
+            for row in rows:
+                entries.append(dict(
+                    title=str(row[main]).decode('utf-8'),
+                    link=server + link + '/%d' % row.id,
+                    description=str(row[extra]).decode('utf-8'),
+                    created_on=row.created_on))
+        except:
+            for row in rows:
+                entries.append(dict(
+                    title=str(row[main]).decode('utf-8'),
+                    link=server + link + '/%d' % row.id,
+                    description=str('').decode('utf-8'),
+                    created_on=row.created_on))
     import gluon.contrib.rss2 as rss2
     items = [ rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
-    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.utcnow, items = items)
+#    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link + '/%d' % row.id, description = '', lastBuildDate = request.utcnow, items = items)
+    rss = rss2.RSS2(title = str(s3.crud_strings.subtitle_list), link = server + link, description = '', lastBuildDate = request.utcnow, items = items)
     response.headers['Content-Type'] = 'application/rss+xml'
     return rss2.dumps(rss)
 
@@ -680,7 +685,7 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
 
         elif jr.representation == "rss": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
-            return export_rss(module, resource, query, main, extra)
+            return export_rss(module, resource, query, main, extra, linkto=jr.here())
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
@@ -884,7 +889,7 @@ def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None
         return export_pdf(table, query)
 
     elif jr.representation == "rss":
-        return export_rss(module, resource, query, main, extra)
+        return export_rss(module, resource, query, main, extra, linkto=jr.there())
 
     elif jr.representation == "xls":
         return export_xls(table, query)

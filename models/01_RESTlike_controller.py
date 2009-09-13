@@ -131,24 +131,23 @@ def export_pdf(table, query):
 # export_rss ------------------------------------------------------------------
 #
 def export_rss(module, resource, query, rss=None, linkto=None):
-    """Export record(s) as RSS feed
-    main='field': the field used for the title
-    extra='field': the field used for the description
+    """
+        Export record(s) as RSS feed
     """
 
-    # This can not work when proxied through Apache:
+    # This can not work when proxied through Apache (since it's always a local request):
     #if request.env.remote_addr == '127.0.0.1':
         #server = 'http://127.0.0.1:' + request.env.server_port
     #else:
         #server = 'http://' + request.env.server_name + ':' + request.env.server_port
+
+    server = S3_PUBLIC_URL
 
     tablename = "%s_%s" % (module, resource)
     try:
         title_list = s3.crud_strings[tablename].subtitle_list
     except:
         title_list =  s3.crud_strings.subtitle_list
-
-    server = S3_PUBLIC_URL
 
     if not linkto:
         link = '/%s/%s/%s' % (request.application, module, resource)
@@ -161,17 +160,17 @@ def export_rss(module, resource, query, rss=None, linkto=None):
         for row in rows:
             if rss and 'title' in rss:
                 try:
-                    title = rss['title'](row)
+                    title = rss.get('title')(row)
                 except TypeError:
-                    title = rss['title'] % row
+                    title = rss.get('title') % row
             else:
                 title = row['id']
 
             if rss and 'description' in rss:
                 try:
-                    description = rss['description'](row)
+                    description = rss.get('description')(row)
                 except TypeError:
-                    description = rss['description'] % row
+                    description = rss.get('description') % row
             else:
                 description = ''
 
@@ -182,8 +181,20 @@ def export_rss(module, resource, query, rss=None, linkto=None):
                 created_on=row.created_on))
 
     import gluon.contrib.rss2 as rss2
-    items = [rss2.RSSItem(title = entry['title'], link = entry['link'], description = entry['description'], pubDate = entry['created_on']) for entry in entries]
-    rss = rss2.RSS2(title = str(title_list).decode('utf-8'), link = server + link, description = '', lastBuildDate = request.utcnow, items = items)
+
+    items = [rss2.RSSItem(
+        title = entry['title'],
+        link = entry['link'],
+        description = entry['description'],
+        pubDate = entry['created_on']) for entry in entries]
+
+    rss = rss2.RSS2(
+        title = str(title_list).decode('utf-8'),
+        link = server + link,
+        description = '',
+        lastBuildDate = request.utcnow,
+        items = items)
+
     response.headers['Content-Type'] = 'application/rss+xml'
     return rss2.dumps(rss)
 

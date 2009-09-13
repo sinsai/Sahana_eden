@@ -274,6 +274,24 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
+# RSS
+def shn_pr_presence_rss(record):
+    if record:
+        if record.location_details and len(record.location_details.strip())>0:
+            location_details = record.location_details.strip()
+        else:
+            location_details = None
+        return "<b>%s</b>: %s %s<br/>[Lat: %s Lon: %s]<br/>%s" % (
+            pr_presence_condition_opts[record.opt_pr_presence_condition],
+            record.location and location_id.location.represent(record.location) or "Unknown location",
+            location_details and "/ %s" % location_details or "",
+            record.lat and "Lat: %s " % record.lat or "",
+            record.lon and "Lon: %s " % record.lon or "",
+#            opt_pr_presence_condition.opt_pr_presence_condition.represent(record.opt_pr_presence_condition),
+            record.procedure or "-")
+    else:
+        return None
+
 # Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
@@ -283,7 +301,7 @@ jrlayer.add_jresource(module, resource,
     main='time', extra='location_details',
     rss=dict(
         title="%(time)s",
-        description="%(location_details)s: %(procedure)s"
+        description=shn_pr_presence_rss
     ),
     fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 

@@ -280,6 +280,7 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
+    main='time', extra='location_details',
     fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation

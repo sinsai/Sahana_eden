@@ -1503,19 +1503,22 @@ class JRequest(object):
         return True
 
     # -------------------------------------------------------------------------
-    def here(self):
+    def here(self, representation=None):
         """
             Backlink producing the same request
         """
 
         args = []
 
+        if not representation:
+            representation = self.representation
+
         f = self.resource
 
         if self.jresource:
             args = [self.record_id]
-            if not self.representation==self.default_representation:
-                args.append('%s.%s' % (self.jresource, self.representation))
+            if not representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, representation))
             else:
                 args.append(self.jresource)
             if self.method:
@@ -1526,55 +1529,61 @@ class JRequest(object):
             if self.method:
                 args.append(self.method)
             if self.record_id:
-                if not self.representation==self.default_representation:
-                    args.append('%s.%s' % (self.record_id, self.representation))
+                if not representation==self.default_representation:
+                    args.append('%s.%s' % (self.record_id, representation))
                 else:
                     args.append(self.record_id)
             else:
-                if not self.representation==self.default_representation:
-                    f='%s.%s' % (self.resource, self.representation)
+                if not representation==self.default_representation:
+                    f='%s.%s' % (self.resource, representation)
                 else:
                     f=self.resource
 
         return(URL(r=self.request, c=self.module, f=f, args=args))
 
     # -------------------------------------------------------------------------
-    def there(self):
+    def there(self, representation=None):
         """
             Backlink producing a HTTP/list request to the same resource
         """
         args = []
 
+        if not representation:
+            representation = self.representation
+
         f = self.resource
 
         if self.jresource:
             args = [self.record_id]
-            if not self.representation==self.default_representation:
-                args.append('%s.%s' % (self.jresource, self.representation))
+            if not representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, representation))
             else:
                 args.append(self.jresource)
         else:
-            if not self.representation==self.default_representation:
-                f='%s.%s' % (self.resource, self.representation)
+            if not representation==self.default_representation:
+                f='%s.%s' % (self.resource, representation)
             else:
                 f=self.resource
 
         return(URL(r=self.request, c=self.module, f=f, args=args))
 
     # -------------------------------------------------------------------------
-    def same(self):
+    def same(self, representation=None):
         """
             Backlink producing the same request with neutralized primary record ID
         """
 
         args = []
 
+        if not representation:
+            representation = self.representation
+
         f = self.resource
 
         if self.jresource:
             args = ['[id]']
-            if not self.representation==self.default_representation:
-                args.append('%s.%s' % (self.jresource, self.representation))
+            if not representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, representation))
             else:
                 args.append(self.jresource)
             if self.method:
@@ -1585,13 +1594,13 @@ class JRequest(object):
             if self.method:
                 args.append(self.method)
             if self.record_id:
-                if not self.representation==self.default_representation:
-                    args.append('[id].%s' % self.representation)
+                if not representation==self.default_representation:
+                    args.append('[id].%s' % representation)
                 else:
                     args.append('[id]')
             else:
-                if not self.representation==self.default_representation:
-                    f='%s.%s' % (self.resource, self.representation)
+                if not representation==self.default_representation:
+                    f='%s.%s' % (self.resource, representation)
                 else:
                     f=self.resource
 

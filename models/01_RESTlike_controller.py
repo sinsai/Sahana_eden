@@ -135,10 +135,14 @@ def export_rss(module, resource, query, main='name', extra='description', linkto
     main='field': the field used for the title
     extra='field': the field used for the description
     """
-    if request.env.remote_addr == '127.0.0.1':
-        server = 'http://127.0.0.1:' + request.env.server_port
-    else:
-        server = 'http://' + request.env.server_name + ':' + request.env.server_port
+
+    # This can not work when proxied through Apache:
+    #if request.env.remote_addr == '127.0.0.1':
+        #server = 'http://127.0.0.1:' + request.env.server_port
+    #else:
+        #server = 'http://' + request.env.server_name + ':' + request.env.server_port
+
+    server = S3_PUBLIC_URL
     if not linkto:
         link = '/%s/%s/%s' % (request.application, module, resource)
     else:
@@ -685,7 +689,7 @@ def shn_read(jr, pheader=None, main=None, extra=None, editable=True, deletable=T
 
         elif jr.representation == "rss": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
-            return export_rss(module, resource, query, main, extra, linkto=jr.here())
+            return export_rss(module, resource, query, main, extra, linkto=jr.here('html'))
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
@@ -889,7 +893,7 @@ def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None
         return export_pdf(table, query)
 
     elif jr.representation == "rss":
-        return export_rss(module, resource, query, main, extra, linkto=jr.there())
+        return export_rss(module, resource, query, main, extra, linkto=jr.there('html'))
 
     elif jr.representation == "xls":
         return export_xls(table, query)

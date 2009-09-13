@@ -1445,7 +1445,7 @@ def shn_rest_controller(module, resource,
 
         # Read (joined table) *************************************************
         elif jr.method=="read" or jr.method=="display":
-            authorised = shn_had_permission('read', jr.jtable)
+            authorised = shn_has_permission('read', jr.jtable)
             if authorised:
                 if jr.multiple and not jr.jrecord_id:
                     # This is a list action

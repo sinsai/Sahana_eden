@@ -16,7 +16,7 @@ $(function() {
         // FIXME: How to get it to keep the rest of the form fields? (Read them in & re-populate?)
         self.opener.location.reload(true);
         // find which ID we need to make active
-        {{field='%s_%s_%s' % (module,resource,main)}}
+        {{field = '%s_%s_%s' % (module, resource, main)}}
         value=$('input#{{=field}}').val();
         $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}"+"&value="+value,
         function(data){

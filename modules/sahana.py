@@ -711,22 +711,28 @@ class CrudS3(Crud):
         **attr
         ):
         request = self.environment.request
-        if isinstance(table, str):
-            if not table in self.db.tables:
-                raise HTTP(404)
+        if not (isinstance(table, self.db.Table) or table in self.db.tables):
+            raise HTTP(404)
+        if not self.has_permission('select', table):
+            redirect(self.settings.auth.settings.on_failed_authorization)
+        #if record_id and not self.has_permission('select', table):
+        #    redirect(self.settings.auth.settings.on_failed_authorization)
+        if not isinstance(table, self.db.Table):
             table = self.db[table]
         if not query:
             query = table.id > 0
         if not fields:
             fields = [table.ALL]
-        rows = self.db(query).select(*fields,
-            **dict(orderby=orderby, limitby=limitby))
+        rows = self.db(query).select(*fields, **dict(orderby=orderby,
+            limitby=limitby))
         if not rows:
             return None # Nicer than an empty table.
         if not 'linkto' in attr:
-            attr['linkto'] = URL(r=request, args='read')
+            attr['linkto'] = self.url(args='read')
         if not 'upload' in attr:
-            attr['upload'] = URL(r=request, f='download')
+            attr['upload'] = self.url('download')
+        if request.extension != 'html':
+            return rows.as_list()
         return SQLTABLE2(rows, headers=headers, **attr)
 
 #from applications.t3.modules.t2 import T2

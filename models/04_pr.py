@@ -62,6 +62,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
     fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
 
 # Field validation
@@ -136,6 +138,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
     fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
 
 # Field validation
@@ -205,6 +209,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
     fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
 
 # Field validation
@@ -268,10 +274,35 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
+# RSS
+def shn_pr_presence_rss(record):
+    if record:
+        if record.location_details and len(record.location_details.strip())>0:
+            location_details = record.location_details.strip()
+        else:
+            location_details = None
+        return "<b>%s</b>: %s %s<br/>[Lat: %s Lon: %s]<br/>%s" % (
+            pr_presence_condition_opts[record.opt_pr_presence_condition],
+            record.location and location_id.location.represent(record.location) or "Unknown location",
+            location_details and "/ %s" % location_details or "",
+            record.lat and "Lat: %s " % record.lat or "",
+            record.lon and "Lon: %s " % record.lon or "",
+#            opt_pr_presence_condition.opt_pr_presence_condition.represent(record.opt_pr_presence_condition),
+            record.procedure or "-")
+    else:
+        return None
+
 # Joined Resource
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
+    main='time', extra='location_details',
+    rss=dict(
+        title="%(time)s",
+        description=shn_pr_presence_rss
+    ),
     fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation
@@ -354,6 +385,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
 
 # Field validation
@@ -401,6 +434,8 @@ db.define_table(table, timestamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_group='group_id', pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id','group_id','person_id','group_head','description'])
 
 # Field validation
@@ -444,6 +479,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id','opt_pr_network_type','comment'])
 
 # Field validation
@@ -486,6 +523,8 @@ db.define_table(table, timestamp, deletion_status,
 jrlayer.add_jresource(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
+    deletable=True,
+    editable=True,
     fields = ['id','network_id','person_id','description','comment'])
 
 # Field validation

@@ -21,11 +21,18 @@ $(document).ready(function() {
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-{{include 'formats.html'}}
+<div id='pheader'>
+{{try:}}
+ {{=pheader}}
+<p>&nbsp;</p>
+{{except:}}
+ {{pass}}
+</div>
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
+{{include 'formats.html'}}
 <div id='table-container'>
 {{try:}}
  {{=items}}
@@ -39,10 +46,10 @@ $(document).ready(function() {
  {{=H3(addtitle)}}
 {{except:}}
 {{pass}}
+{{include 'key.html'}}
 <div class='form-container'>
 {{try:}}
  {{=form}}
 {{except:}}
 {{pass}}
 </div>
-{{include 'key.html'}}

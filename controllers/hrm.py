@@ -32,16 +32,16 @@ def find():
 def body():
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'body', onvalidation=lambda form: shn_pentity_onvalidation(form, table='hrm_body', entity_class=3))
+    return shn_pr_rest_controller(module, 'body', onvalidation=lambda form: shn_pentity_onvalidation(form, table='hrm_body', entity_class=3))
 
 def image_body():
-    db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(3,)))
-    request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==3)
+    db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
+    request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_entity_type==3)
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', 'image')
 
 def presence_body():
-    db.pr_presence.pr_pe_id.requires =  IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(3,)))
-    request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==3)
+    db.pr_presence.pr_pe_id.requires =  IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
+    request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_entity_type==3)
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', 'presence')

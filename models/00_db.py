@@ -40,6 +40,7 @@ def shn_sessions(f):
         Settings
             Debug mode
             Security mode
+            Theme
             Audit modes
     """
     response.error = session.error
@@ -55,6 +56,8 @@ def shn_sessions(f):
     session.s3.debug = db().select(db.s3_setting.debug)[0].debug
     # Which security policy are we running?
     session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy
+    # Select the theme
+    session.s3.theme = db().select(db.s3_setting.theme)[0].theme
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
         session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
@@ -74,8 +77,8 @@ def shn_auth_on_login(form):
         Actions that need to be performed on successful login (Do not redirect from here!)
     """
 
-    # Person Registry:
-    session.pr_person = None
+    # JR controller
+    shn_jr_clear_session(None)
 
 # shn_on_logout ---------------------------------------------------------------
 # added 2009-08-27 by nursix
@@ -84,8 +87,8 @@ def shn_auth_on_logout(user):
         Actions that need to be performed on logout (Do not redirect from here!)
     """
 
-    # Person Registry:
-    session.pr_person = None
+    # JR controller
+    shn_jr_clear_session(None)
 
 #
 # Widgets

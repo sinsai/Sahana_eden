@@ -9,7 +9,6 @@
 #       - PersonEntity (pentity)    - a person entity
 #       - Person (person)           - an individual person
 #       - Group (group)             - a group of persons
-#       - Network (network)         - a social network layer of a person
 
 module = 'pr'
 
@@ -30,13 +29,6 @@ if not len(db().select(db[table].ALL)):
         audit_read = False,
         audit_write = False
     )
-
-# *****************************************************************************
-# Error messages
-#
-PR_INVALID_FUNCTION = T('Invalid Function')
-PR_UNSUPPORTED_METHOD = T('Unsupported Method')
-PR_NO_SUCH_RECORD = T('No Such Record')
 
 # *****************************************************************************
 # Import VITA
@@ -110,16 +102,24 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 opt_pr_entity_type,                 # Entity class
                 Field('label', unique=True),        # Recognition Label
                 migrate=migrate)
+
+# Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
+
+# Field representation
+#db[table].deleted.readable = True
+
+# Field labels
 db[table].parent.label = T('belongs to')
-db[table].deleted.readable = True
+
+# CRUD Strings
 
 #
 # Reusable field for other tables to reference --------------------------------
 #
-pr_pe_id = SQLTable(None, 'pe_id',
+pr_pe_id = SQLTable(None, 'pr_pe_id',
                 Field('pr_pe_id', db.pr_pentity,
                 requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
                 represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -130,7 +130,7 @@ pr_pe_id = SQLTable(None, 'pe_id',
 #
 # Person Entity Field Set -----------------------------------------------------
 #
-pr_pe_fieldset = SQLTable(None, 'pe_fieldset',
+pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
                     Field('pr_pe_id', db.pr_pentity,
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
                     represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -266,7 +266,6 @@ resource = 'person'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 pr_pe_fieldset,                         # Person Entity Field Set
-#                Field('name_unknown', 'boolean', default=False),
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
@@ -280,39 +279,35 @@ db.define_table(table, timestamp, deletion_status,
                 Field('date_of_birth','date'),          # Sahana legacy
                 opt_pr_nationality,                     # Nationality
                 opt_pr_country,                         # Country of residence
-#                Field('town'),                          # Town of Origin, Sahana legacy
-#                Field('race'),                          # Sahana legacy
-#                Field('ethnicity'),                     # by nursix - TODO: add option field
                 opt_pr_religion,                        # Sahana legacy
                 opt_pr_marital_status,                  # Sahana legacy
                 Field('occupation'),                    # Sahana legacy
                 Field('comment'),                       # comment
                 migrate=migrate)
 
-db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
-#db[table].name_unknown.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Name unknown|Please tag here if the name of the person is unknown (e.g. due to unconsciousness), and repeat the ID label or enter a placeholder (e.g. [unknown]) into the first name field."))
-
-db[table].opt_pr_gender.label = T('Gender')
-db[table].opt_pr_age_group.label = T('Age group')
-
+# Field validation
 db[table].date_of_birth.requires = IS_NULL_OR(IS_DATE())
-
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
-db[table].first_name.comment = SPAN(SPAN("*", _class="req"),A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
-
-db[table].preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
-db[table].local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
-
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
-db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
 db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
-db[table].mobile_phone.label = T("Mobile Phone #")
-db[table].mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
 
+# Field representation
+db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
+db[table].first_name.comment = SPAN(SPAN("*", _class="req"),A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
+db[table].preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
+db[table].local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
+db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
+db[table].mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
 db[table].opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
 db[table].opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
 
+# Field labels
+db[table].opt_pr_gender.label = T('Gender')
+db[table].opt_pr_age_group.label = T('Age group')
+db[table].mobile_phone.label = T("Mobile Phone #")
+
+# CRUD Strings
 title_create = T('Add Person')
 title_display = T('Person Details')
 title_list = T('List Persons')
@@ -333,7 +328,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', '%(id)s: %(first_name)s %(last_name)s')),
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
                 represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
                 comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
                 ondelete = 'RESTRICT'
@@ -386,16 +381,20 @@ db.define_table(table, timestamp, deletion_status,
                 Field('comment'),                               # optional comment
                 migrate=migrate)
 
+# Field validation
+
+# Field representation
 db[table].pr_pe_label.readable=False
 db[table].pr_pe_label.writable=False
-
 db[table].system.readable = False
 db[table].system.writable = False
 
+# Field labels
 db[table].opt_pr_group_type.label = T("Group type")
-
 db[table].group_name.label = T("Group name")
 db[table].group_description.label = T("Group description")
+
+# CRUD Strings
 title_create = T('Add Group')
 title_display = T('Group Details')
 title_list = T('List Groups')
@@ -423,47 +422,13 @@ group_id = SQLTable(None, 'group_id',
                 ))
 
 # *****************************************************************************
-# Network (network)
+# Error messages
 #
-pr_network_type_opts = {
-    1:T('Family'),
-    2:T('Friends'),
-    3:T('Colleagues'),
-    99:T('other')
-    }
-
-opt_pr_network_type = SQLTable(None, 'opt_pr_network_type',
-                    db.Field('opt_pr_network_type','integer',
-                    requires = IS_IN_SET(pr_network_type_opts),
-                    default = 99,
-                    label = T('Network Type'),
-                    represent = lambda opt: opt and pr_network_type_opts[opt]))
-#
-# network table ---------------------------------------------------------------
-#
-resource = 'network'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                person_id,                          # Reference to person (owner)
-                opt_pr_network_type,                # Network type
-                Field('comment'),                   # a comment (optional)
-                migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-
-#
-# network_id: reusable field for other tables to reference ----------------------
-#
-network_id = SQLTable(None, 'network_id',
-                Field('network_id', db.pr_network,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'pr_network.id', '%(id)s')),
-                represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
-                comment = DIV(A(T('Add Network'), _class='popup', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
-                ondelete = 'RESTRICT'
-                ))
+PR_UNAUTHORIZED = T('Not Authorized!')
+PR_BADFORMAT = T('Unsupported Format!')
 
 # *****************************************************************************
 # Functions:
-#
 
 #
 # shn_pentity_ondelete --------------------------------------------------------
@@ -475,10 +440,9 @@ def shn_pentity_ondelete(record):
 
     Use as setting in the calling controller:
 
-    crud.settings.delete_onvalidation=shn_pentity_ondelete
-
-    Also called by the shn_pentity_onvalidation function on deletion from update form
+        crud.settings.delete_onvalidation=shn_pentity_ondelete
     """
+
     if request.vars.format:
         representation = str.lower(request.vars.format)
     else:
@@ -486,7 +450,25 @@ def shn_pentity_ondelete(record):
 
     if 'pr_pe_id' in record:
         pr_pe_id = record.pr_pe_id
-        shn_delete('pr_pentity', 'pentity', pr_pe_id, representation)
+
+        delete_onvalidation = crud.settings.delete_onvalidation
+        delete_onaccept = crud.settings.delete_onaccept
+
+        crud.settings.delete_onvalidation = None
+        crud.settings.delete_onaccept = None
+
+        if shn_has_permission('delete', db.pr_pentity, pr_pe_id):
+            shn_audit_delete('pr_pentity', pr_pe_id, 'plain')
+            if db(db.s3_setting.id==1).select()[0].archive_not_delete:
+                db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
+            else:
+                crud.delete(db.pr_pentity, pr_pe_id)
+
+        # TODO: delete joined resources!?
+
+        crud.settings.delete_onvalidation = delete_onvalidation
+        crud.settings.delete_onaccept = delete_onaccept
+
     return
 
 #
@@ -578,714 +560,152 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
     else:
         # no label given or wrong parameter type
         return None
-#
-# shn_pr_select_person --------------------------------------------------------
-# TODO: remove because unused
-#def shn_pr_select_person(id):
-#    """
-#        Selects a person for this session
-#    """
-#
-#    if not ('pr_person' in session):
-#        session.pr_person = None
-#
-#    if id:
-#        session.pr_person = None
-#        person_id = id
-#    else:
-#        person_id = session.pr_person
-#
-#    person = vita.person(person_id)
-#
-#    if person:
-#        session.pr_person = person.id
-#    else:
-#        session.pr_person = None
-#
-#    return
-
-#
-# shn_pr_person_header --------------------------------------------------------
-#
-def shn_pr_person_header(id, next=None):
-    """
-        Builds a header for person detail pages
-    """
-
-    # TODO: This requires read permission to the person table and
-    #       audit/read for the person table
-    person = vita.person(id)
-
-    if person:
-
-        if next: request.vars._next=next
-
-        redirect = { "_next" : "%s" % URL(r=request, args=request.args, vars=request.vars)}
-
-        # TODO: Internationalization!
-        pheader = TABLE(
-            TR(
-                TH("Name: "),
-                vita.fullname(person),
-                TH("ID Label: "),
-                "%(pr_pe_label)s" % person,
-                TH(A("Clear Selection", _href=URL(r=request, c='pr', f='person', args='clear', vars=request.vars)))
-                ),
-            TR(
-                TH("Date of Birth: "),
-                "%s" % (person.date_of_birth or 'unknown'),
-                TH("Gender: "),
-                "%s" % pr_person_gender_opts[person.opt_pr_gender],
-                "",
-                ),
-            TR(
-                TH("Nationality"),
-                "%s" % pr_nationality_opts[person.opt_pr_nationality],
-                TH("Age Group: "),
-                "%s" % pr_person_age_group_opts[person.opt_pr_age_group],
-                TH(A("Edit Person", _href=URL(r=request, c='pr', f='person', args='update/%s' % id, vars=redirect)))
-                )
-        )
-        return pheader
-    else:
-        return None
-
-# -----------------------------------------------------------------------------
-# shn_pr_pentity_details
-#
-def shn_pr_pentity_details_linkto(field):
-    """
-        Linkto helper for shn_pr_pentity_details
-    """
-    return URL(r=request, f=request.args[0], args="update/%s" % field, vars=dict(_next=URL(r=request, args=request.args, vars=request.vars)))
-
-def shn_pr_pentity_details(
-    request,
-    module,
-    entity,
-    record,
-    joinby='pr_pe_id',
-    fields=None,
-    representation='html',
-    orderby=None,
-    multiple=True):
-    """
-        Custom CRUD controller for person entity joined tables
-    """
-
-    resource = "%s_%s" % (module, entity)
-    table = db[resource]
-
-    # Get CRUD Strings
-    try:
-        title_create = s3.crud_strings[resource].subtitle_create
-        title_display =  s3.crud_strings[resource].title_display
-        title_list =  s3.crud_strings[resource].subtitle_list
-        title_update =  s3.crud_strings[resource].title_update
-        msg_created = s3.crud_strings[resource].msg_record_created
-        msg_modified = s3.crud_strings[resource].msg_record_modified
-        msg_empty = s3.crud_strings[resource].msg_list_empty
-    except:
-        title_create = s3.crud_strings.title_create
-        title_display =  s3.crud_strings.title_display
-        title_list =  s3.crud_strings.title_list
-        title_update =  s3.crud_strings.title_update
-        msg_created = s3.crud_strings.msg_record_created
-        msg_modified = s3.crud_strings.msg_record_modified
-        msg_empty = s3.crud_strings.msg_list_empty
-
-    if not shn_has_permission('read',table):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args=request.args, vars=request.vars)}))
-
-    output = {}
-
-    # Query
-    if joinby=='pr_pe_id':
-        query = (table.pr_pe_id==record.pr_pe_id)
-        _id = record.pr_pe_id
-    else:
-        query = (table[joinby]==record.id)
-        _id = record.id
-
-    if multiple: # multiple records of that type allowed
-
-        # Filter for deletion status (not necessary if multiple==False)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
-
-        # Add form
-        if shn_has_permission('create',table):
-            try:
-                table[joinby].default = _id
-                table[joinby].writable = False
-                table[joinby].comment = None #avoid any Add XXXX links here
-
-                form = SQLFORM(table)
-                if form.accepts(request.vars,session):
-                    shn_audit_create(form, resource, representation)
-                    response.flash=msg_created
-                elif form.errors:
-                    response.flash="Error!" # should not happen
-                output.update(form=form, formtitle=title_create)
-            except:
-                pass
-
-        # Pagination
-        if 'page' in request.vars:
-            # Pagination at server-side (since no JS available)
-            page = int(request.vars.page)
-            start_record = (page - 1) * ROWSPERPAGE
-            end_record = start_record + ROWSPERPAGE
-            limitby = start_record, end_record
-            totalpages = (db(query).count() / ROWSPERPAGE) + 1 # Fails on GAE
-            label_search_button = T('Search')
-            search_btn = A(label_search_button, _href=URL(r=request, f=resource, args='search'), _id='search-btn')
-            output.update(dict(page=page, totalpages=totalpages, search_btn=search_btn))
-        else:
-            # No Pagination server-side (to allow it to be done client-side)
-            limitby = ''
-            # Redirect to a paginated version if JS not-enabled
-            request.vars['page'] = 1
-            response.refresh = '<noscript><meta http-equiv="refresh" content="0; url=' + URL(r=request, args=request.args, vars=request.vars) + '" /></noscript>'
-
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
-
-        # Column labels
-        headers = {}
-        for field in fields:
-            # Use custom or prettified label
-            headers[str(field)] = field.label
-
-        if shn_has_permission('update',table):
-            linkto=shn_pr_pentity_details_linkto
-        else:
-            linkto=None
-
-        # Audit
-        shn_audit_read(operation='list', resource=resource, representation=representation)
-
-        # Get List
-        items = crud.select(
-            table,
-            query=query,
-            fields=fields,
-            limitby=limitby,
-            headers=headers,
-            truncate=48,
-            linkto=linkto,
-            orderby=orderby,
-            _id='list', _class='display')
-
-        if not items:
-            items = T('None')
-
-        output.update(items=items, subtitle=title_list)
-        return output
-
-    else: # only one record of that type per entity ID
-        try:
-            target_record = db(query).select(table.id)[0]
-        except:
-            target_record = None
-
-        if not target_record:
-            if shn_has_permission('create', table):
-                table[joinby].default = _id
-                table[joinby].writable = False
-                table[joinby].comment = None #avoid any Add XXXX links here
-                form = SQLFORM(table, showid=False)
-                if form.accepts(request.vars,session):
-                    shn_audit_create(form, resource, representation)
-                    response.flash=msg_created
-#                    form = SQLFORM(table, form.vars.id, showid=False)
-                    redirect(URL(r=request, args=request.args)) # redirect here for update
-                elif form.errors:
-                    response.flash="Error!" # should not happen
-                output.update(form=form, formtitle=title_create)
-            else:
-                # error message
-                items=T('No data available')
-                output.update(items=items, subtitle=title_display)
-            return output
-
-        if shn_has_permission('update', table):
-            # create update form for the record
-            table[joinby].default = _id
-            table[joinby].writable = False
-            table[joinby].comment = None #avoid any Add XXXX links here
-
-            form = SQLFORM(table, target_record.id, showid=False)
-            if form.accepts(request.vars,session):
-                shn_audit_update(form, resource, representation)
-                response.flash=msg_modified
-                form = SQLFORM(table, target_record.id, showid=False)
-            elif form.errors:
-                response.flash="Error!" # should not happen
-            output.update(form=form, formtitle=title_update)
-        else:
-            items = crud.read(table, target_record.id)
-            output.update(items=items,subtitle=title_display)
-        return output
-
-    return None
-
-#
-# shn_pr_rest_parse_request ---------------------------------------------------
-#
-def shn_pr_rest_parse_request(jresources):
-
-    _request = {}
-
-    if len(request.args)==0:
-        record_id= None
-        jresource=None
-        method=None
-    else:
-        if request.args[0].isdigit():
-            record_id = request.args[0]
-            if len(request.args)>1:
-                jresource = str.lower(request.args[1])
-                if jresource in jresources:
-                    if len(request.args)>2:
-                        method = str.lower(request.args[2])
-                    else:
-                        method = None
-                else:
-                    # Error: INVALID FUNCTION
-                    return None
-            else:
-                jresource = None
-                method = None
-        elif str.lower(request.args[0]) in jresources:
-            record_id = None
-            jresource = str.lower(request.args[0])
-            if len(request.args)>1:
-                method = str.lower(request.args[1])
-            else:
-                method = None
-        else:
-            method = str.lower(request.args[0])
-            jresource = None
-            if len(request.args)>1 and request.args[1].isdigit():
-                record_id = request.args[1]
-            else:
-                record_id = None
-
-    _request.update(record_id=record_id, jresource=jresource, method=method)
-
-    return _request
-
-#
-# shn_pr_rest_identify_record -------------------------------------------------
-#
-def shn_pr_rest_identify_record(module, resource, _id, jresource):
-
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
-
-    record_id = _id
-
-    if record_id:
-        query = (table.id==record_id)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
-        records = db(query).select(table.id)
-        if records:
-            record_id = records[0].id
-        else:
-            # Error: NO SUCH RECORD
-            return 0
-
-    if not record_id:
-        if 'id_label' in request.vars:
-            id_label = str.strip(request.vars.id_label)
-            if 'pr_pe_label' in table:
-                query = (table.pr_pe_label==id_label)
-                if 'deleted' in table:
-                    query = ((table.deleted==False) | (table.deleted==None)) & query
-                records = db(query).select(table.id)
-                if records:
-                    record_id = records[0].id
-                else:
-                    # Error: NO SUCH RECORD
-                    return 0
-
-#    if not record_id and jresource:
-    if not record_id:
-        if tablename in session:
-            record_id = session[tablename]
-            query = (table.id==record_id)
-            if 'deleted' in table:
-                query = ((table.deleted==False) | (table.deleted==None)) & query
-            records = db(query).select(table.id)
-            if records:
-                record_id = records[0].id
-            else:
-                record_id = None
-                session[tablename] = None
-
-    if record_id:
-        session[tablename] = record_id
-
-    return record_id
 
 #
 # shn_pr_person_search_simple -------------------------------------------------
 #
-def shn_pr_person_search_simple():
-
-    if not shn_has_permission('read', db.pr_person):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
-
-    # Check for redirection
-    if request.vars._next:
-        next = str.lower(request.vars._next)
-    else:
-        next = str.lower(URL(r=request, f='person', args='view/[id]'))
-
-    # Custom view
-    response.view = '%s/person_search.html' % module
-
-    # Title and subtitle
-    title = T('Search for a Person')
-    subtitle = T('Matching Records')
-
-    # Select form
-    form = FORM(TABLE(
-            TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
-            TR("",INPUT(_type="submit",_value="Search"))
-            ))
-
-    output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-    # Accept action
-    items = None
-    if form.accepts(request.vars, session):
-
-        results = shn_pr_get_person_id(form.vars.label)
-
-        if results and len(results):
-            rows = db(db.pr_person.id.belongs(results)).select()
-        else:
-            rows = None
-
-        # Build table rows from matching records
-        if rows:
-            records = []
-            for row in rows:
-                href = next.replace('%5bid%5d', '%s' % row.id)
-                records.append(TR(
-                    row.pr_pe_label or '[no label]',
-                    A(vita.fullname(row), _href=href),
-                    row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
-                    row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
-                    row.opt_pr_nationality and pr_nationality_opts[row.opt_pr_nationality] or 'unknown',
-                    row.date_of_birth or 'unknown'
-                    ))
-            items=DIV(TABLE(THEAD(TR(
-                TH("ID Label"),
-                TH("Name"),
-                TH("Gender"),
-                TH("Age Group"),
-                TH("Nationality"),
-                TH("Date of Birth"))),
-                TBODY(records), _id='list', _class="display"))
-        else:
-            items = T('None')
-
-        output.update(dict(items=items))
-
-    return output
-
-#
-# shn_pr_person_view ----------------------------------------------------------
-#
-def shn_pr_person_view(record_id):
-
-    if not record_id:
-        request.vars._next=URL(r=request, f='person', args='view/[id]')
-        redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-
-    pheader = shn_pr_person_header(record_id)
-
-    # Set response view
-    response.view = '%s/person.html' % module
-
-    # Add title and subtitle
-    title=T('Person')
-    output=dict(title=title, pheader=pheader)
-
-    record = vita.person(session.pr_person)
-
-    _output = shn_pr_pentity_details(
-        request, 'pr', 'person', record, joinby='pr_pe_id', multiple=False)
-
-    if _output:
-        output.update(_output)
-
-    pheader = shn_pr_person_header(session.pr_person)
-    output.update(pheader=pheader)
-
-    return output
-
-#
-# shn_pr_rest_jresource_list --------------------------------------------------
-#
-def shn_pr_rest_jresource_list(resource,record_id,jresource,joinby,multiple,representation):
-
-    if resource=="person":
-        next = URL(r=request, f='person', args='[id]/%s' % jresource)
-        if not record_id:
-            request.vars._next = next
-            redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request.vars))
-        else:
-            pheader = shn_pr_person_header(record_id, next=next)
-
-        record = vita.person(record_id)
-
-        # Set response view
-        response.view = '%s/person.html' % module
-
-        # Add title and subtitle
-        title=T('Person')
-        output=dict(title=title, pheader=pheader)
-    elif resource=="group":
-        record = vita.group(record_id)
-        # Set response view
-        response.view = '%s/person.html' % module
-
-        # Add title and subtitle
-        title=T('Group')
-        output=dict(title=title)
-    else:
-        # TODO: what comes here?
-        output={}
-        record=None
-
-    # Which fields into the list?
-
-    if jresource=="presence":
-        fields = [
-                db.pr_presence.id,
-                db.pr_presence.time,
-                db.pr_presence.location,
-                db.pr_presence.location_details,
-                db.pr_presence.lat,
-                db.pr_presence.lon,
-                db.pr_presence.opt_pr_presence_condition,
-                db.pr_presence.origin,
-                db.pr_presence.destination,
-        ]
-    elif jresource=="image":
-        fields = [
-                db.pr_image.id,
-                db.pr_image.opt_pr_image_type,
-                db.pr_image.image,
-                db.pr_image.title,
-                db.pr_image.description,
-        ]
-    elif jresource=="identity":
-        fields = [
-                db.pr_identity.id,
-                db.pr_identity.opt_pr_id_type,
-                db.pr_identity.type,
-                db.pr_identity.value,
-                db.pr_identity.country_code,
-                db.pr_identity.ia_name,
-        ]
-    elif jresource=="address":
-        fields = [
-                db.pr_address.id,
-                db.pr_address.opt_pr_address_type,
-                db.pr_address.co_name,
-                db.pr_address.street1,
-                db.pr_address.postcode,
-                db.pr_address.city,
-                db.pr_address.opt_pr_country,
-        ]
-    elif jresource=="contact":
-        fields = [
-                db.pr_contact.id,
-                db.pr_contact.name,
-                db.pr_contact.person_name,
-                db.pr_contact.opt_pr_contact_method,
-                db.pr_contact.value,
-                db.pr_contact.priority,
-        ]
-    elif jresource=="group_membership":
-        fields = [
-                db.pr_group_membership.id,
-                db.pr_group_membership.group_id,
-                db.pr_group_membership.group_head,
-                db.pr_group_membership.description,
-        ]
-    else:
-        session.error = PR_INVALID_FUNCTION
-        redirect(URL(r=request,c=module,f='index'))
-
-    _output = shn_pr_pentity_details(
-        request, module, jresource, record, joinby=joinby, multiple=multiple, fields=fields)
-
-    if _output:
-        output.update(_output)
-
-    return output
-
-#
-# shn_pr_rest_controller ------------------------------------------------------
-#
-def shn_pr_rest_controller(module, resource,
-    deletable=True,
-    editable=True,
-    listadd=True,
-    main='name',
-    extra=None,
-    orderby=None,
-    sortby=None,
+def shn_pr_person_search_simple(module, resource, record_id, method,
+    jmodule=None,
+    jresource=None,
+    jrecord_id=None,
+    joinby=None,
+    multiple=True,
+    representation="html",
     onvalidation=None,
     onaccept=None):
+    """
+        Simple search form for persons
+    """
 
-    # Configure joint resources -----------------------------------------------
-    #   set False if only one joint record per main record allowed
+    if not shn_has_permission('read', db.pr_person):
+        session.error = PR_UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
 
-    jresources = dict(
-        address=True,
-        contact=True,
-        image=True,
-        identity=True,
-        presence=True,
-        role=False,
-        status=False,
-        network=True,
-        group_membership=True,
-        network_membership=False
-    )
-
-    # Get representation ------------------------------------------------------
-
-    if request.vars.format:
-        representation = str.lower(request.vars.format)
-    else:
-        representation = "html"
-
-    # Identify action ---------------------------------------------------------
-
-    _request = shn_pr_rest_parse_request(jresources)
-
-    if not _request:
-        session.error = PR_INVALID_FUNCTION
-        redirect(URL(r=request, c=module, f='index'))
-
-    jresource = _request['jresource']
-    method = _request['method']
-
-    # Identify main resource record -------------------------------------------
-
-    record_id = shn_pr_rest_identify_record(module, resource, _request['record_id'], jresource)
-
-    if record_id==0:
-        session.error = PR_NO_SUCH_RECORD
-        redirect(URL(r=request, c=module, f='index'))
-
-    if (('id_label' in request.vars) or method ) and record_id and len(request.args)<2:
-        request.args.append(str(record_id))
-
-    # Identify join field -----------------------------------------------------
-
-    if jresource:
-
-        tablename = "%s_%s" % (module,resource)
-        table = db[tablename]
-
-        jtablename = "pr_%s" % jresource
-        jtable = db[jtablename]
-
-        if 'pr_pe_id' in table and 'pr_pe_id' in jtable:
-            joinby = 'pr_pe_id'
+    if representation=="html":
+        # Check for redirection
+        if request.vars._next:
+            next = str.lower(request.vars._next)
         else:
-            joinby = '%s_id' % resource
-            if not joinby in jtable:
-                joinby = '%s_%s_id' % (module,resource)
-                if not joinby in jtable:
-                    session.error = PR_INVALID_FUNCTION
-                    redirect(URL(r=request, c=module, f='index'))
+            next = str.lower(URL(r=request, f='person', args='[id]'))
 
+        # Custom view
+        response.view = '%s/person_search.html' % module
+
+        # Title and subtitle
+        title = T('Search for a Person')
+        subtitle = T('Matching Records')
+
+        # Select form
+        form = FORM(TABLE(
+                TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
+                TR("",INPUT(_type="submit",_value="Search"))
+                ))
+
+        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            results = shn_pr_get_person_id(form.vars.label)
+
+            if results and len(results):
+                rows = db(db.pr_person.id.belongs(results)).select()
+            else:
+                rows = None
+
+            # Build table rows from matching records
+            if rows:
+                records = []
+                for row in rows:
+                    href = next.replace('%5bid%5d', '%s' % row.id)
+                    records.append(TR(
+                        row.pr_pe_label or '[no label]',
+                        A(vita.fullname(row), _href=href),
+                        row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
+                        row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                        row.opt_pr_nationality and pr_nationality_opts[row.opt_pr_nationality] or 'unknown',
+                        row.date_of_birth or 'unknown'
+                        ))
+                items=DIV(TABLE(THEAD(TR(
+                    TH("ID Label"),
+                    TH("Name"),
+                    TH("Gender"),
+                    TH("Age Group"),
+                    TH("Nationality"),
+                    TH("Date of Birth"))),
+                    TBODY(records), _id='list', _class="display"))
+            else:
+                items = T('None')
+
+            output.update(dict(items=items))
+
+        return output
     else:
-        joinby = None
+        session.error = PR_BADFORMAT
+        redirect(URL(r=request))
 
-    # Map action --------------------------------------------------------------
-    # request, module, resource, record_id, method, jresource, joinby
+# Plug into REST controller
+jrlayer.set_method(module, 'person', None, None, 'search_simple', shn_pr_person_search_simple )
 
-    if jresource:
-        # Action on joint resource
-        if method==None or method=="list":
+#
+# shn_pr_pheader --------------------------------------------------------------
+#
+def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
 
-            multiple = jresources[jresource]
+    if resource=="person":
 
-            # replace by list method
-            return shn_pr_rest_jresource_list(resource,record_id,jresource,joinby,multiple,representation)
+        if representation=="html":
 
-#        elif method=="create":
-
-        else:
-            session.error = PR_UNSUPPORTED_METHOD
-            redirect(URL(r=request, c=module, f='index'))
-
-    else:
-        # Action on main resource
-        if method=="search_simple":
-            if resource=="person":
-
-                if representation=="html":
-
-                    return shn_pr_person_search_simple()
-
-                else:
-                    session.error = PR_UNSUPPORTED_FORMAT
-                    redirect(URL(r=request, c=module, f='index'))
-
+            if next:
+                _next = next
             else:
-                session.error = PR_UNSUPPORTED_METHOD
-                redirect(URL(r=request, c=module, f='index'))
+                _next = URL(r=request, f='resource', args=['read'])
 
-        elif method=="view":
-            if resource=="person":
-
-                if representation=="html":
-
-                    return shn_pr_person_view(record_id)
-
-                else:
-                    session.error = PR_UNSUPPORTED_FORMAT
-                    redirect(URL(r=request, c=module, f='index'))
-
+            if same:
+                _same = same
             else:
-                session.error = PR_UNSUPPORTED_METHOD
-                redirect(URL(r=request, c=module, f='index'))
+                _same = URL(r=request, f='resource', args=['read', '[id]'])
 
-        elif method=="clear":
+            person = vita.person(record_id)
 
-            session_var = '%s_%s' % (module, resource)
-
-            if session_var in session:
-                del session[session_var]
-
-            if '_next' in request.vars:
-                request_vars = dict(_next=request.vars._next)
-            else:
-                request_vars = {}
-
-            if resource=='person':
-                redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request_vars))
-            else:
-                redirect(URL(r=request, c='pr', f=resource))
+            if person:
+                pheader = TABLE(
+                    TR(
+                        TH(T('Name: ')),
+                        vita.fullname(person),
+                        TH(T('ID Label: ')),
+                        "%(pr_pe_label)s" % person,
+                        TH(A(T('Clear Selection'),
+                            _href=URL(r=request, c='pr', f='person', args='clear', vars={'_next': _same})))
+                        ),
+                    TR(
+                        TH(T('Date of Birth: ')),
+                        "%s" % (person.date_of_birth or T('unknown')),
+                        TH(T('Gender: ')),
+                        "%s" % pr_person_gender_opts[person.opt_pr_gender],
+                        TH(""),
+                        ),
+                    TR(
+                        TH(T('Nationality: ')),
+                        "%s" % pr_nationality_opts[person.opt_pr_nationality],
+                        TH(T('Age Group: ')),
+                        "%s" % pr_person_age_group_opts[person.opt_pr_age_group],
+                        TH(A(T('Edit Person'),
+                            _href=URL(r=request, c='pr', f='person', args=['update', record_id], vars={'_next': _next})))
+                        )
+                )
+                return pheader
 
         else:
-            # Default CRUD action - forward to standard REST controller
-            return shn_rest_controller(module, resource, main=main, extra=extra, onvalidation=onvalidation, onaccept=onaccept)
+            pass
+
+    elif resource=="group":
+        pass
+    else:
+        pass
+
+    return None
 
 # END
 # *****************************************************************************

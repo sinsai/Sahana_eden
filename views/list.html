@@ -1,5 +1,10 @@
 {{extend 'layout.html'}}
 
+{{if session.s3.debug:}}
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.js" type="text/javascript" charset="utf-8"></script>
+{{else:}}
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.min.js" type="text/javascript" charset="utf-8"></script>
+{{pass}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
 	$('#list').dataTable(
@@ -18,11 +23,18 @@ $(document).ready(function() {
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-{{include 'formats.html'}}
+<div id='pheader'>
+{{try:}}
+ {{=pheader}}
+<p>&nbsp;</p>
+{{except:}}
+ {{pass}}
+</div>
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
+{{include 'formats.html'}}
 <div id='table-container'>
 {{try:}}
  {{=items}}

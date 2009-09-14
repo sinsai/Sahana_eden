@@ -14,9 +14,9 @@ from gluon.validators import *
 from gluon.sqlhtml import *
 from gluon.contrib.markdown import WIKI
 try:
-    from gluon.contrib.gql import SQLTable
+    from gluon.contrib.gql import SQLTable, SQLStorage
 except ImportError:
-    from gluon.sql import SQLTable
+    from gluon.sql import SQLTable, SQLStorage
 import traceback
 
 # Copied from Selenium Plone Tool
@@ -94,6 +94,73 @@ def URL3(a=None, r=None):
     #other = ''
     url = '/%s' % application
     return url
+
+# Modified version of MENU from gluon/html.py
+# Only supports 2 levels
+# Each menu is a UL not an LI
+# A tags have classes
+class MENU2(DIV):
+    """
+    Used to build modules menu
+
+    Optional arguments
+      _class: defaults to 'S3menuInner'
+      ul_main_class: defaults to 'S3menuUL'
+      ul_sub_class: defaults to 'S3menuSub'
+      li_class: defaults to 'S3menuLI'
+      a_class: defaults to 'S3menuA'
+      
+    Example:
+        menu = MENU2([['name', False, URL(...), [submenu]], ...])
+        {{=menu}}
+    """
+
+    tag = 'div'
+
+    def __init__(self, data, **args):
+        self.data = data
+        self.attributes = args
+        if not '_class' in self.attributes:
+            self['_class'] = 'S3menuInner'
+        if not 'ul_main_class' in self.attributes:
+            self['ul_main_class'] = 'S3menuUL'
+        if not 'ul_sub_class' in self.attributes:
+            self['ul_sub_class'] = 'S3menuSub'
+        if not 'li_class' in self.attributes:
+            self['li_class'] = 'S3menuLI'
+        if not 'a_class' in self.attributes:
+            self['a_class'] = 'S3menuA'
+        
+    def serialize(self, data, level=0):
+        if level == 0:
+            # Top-level menu
+            div = DIV(**self.attributes)
+            for item in data:
+                (name, active, link) = item[:3]
+                if len(item) > 3 and item[3]:
+                    # Submenu
+                    ul_inner = self.serialize(item[3], level+1)
+                    if link:
+                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                    else:
+                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                else:
+                    if link:
+                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
+                    else:
+                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
+                div.append(ul)
+        else:
+            # Submenu
+            div = UL(_class=self['ul_sub_class'])
+            for item in data:
+                (name, active, link) = item[:3]
+                li = LI(A(name, _href=link))
+                div.append(li)
+        return div
+
+    def xml(self):
+        return self.serialize(self.data, 0).xml()
 
 # Modified version of SQLTABLE from gluon/sqlhtml.py
 # we need a different linkto construction for our CRUD controller
@@ -711,22 +778,28 @@ class CrudS3(Crud):
         **attr
         ):
         request = self.environment.request
-        if isinstance(table, str):
-            if not table in self.db.tables:
-                raise HTTP(404)
+        if not (isinstance(table, self.db.Table) or table in self.db.tables):
+            raise HTTP(404)
+        if not self.has_permission('select', table):
+            redirect(self.settings.auth.settings.on_failed_authorization)
+        #if record_id and not self.has_permission('select', table):
+        #    redirect(self.settings.auth.settings.on_failed_authorization)
+        if not isinstance(table, self.db.Table):
             table = self.db[table]
         if not query:
             query = table.id > 0
         if not fields:
             fields = [table.ALL]
-        rows = self.db(query).select(*fields,
-            **dict(orderby=orderby, limitby=limitby))
+        rows = self.db(query).select(*fields, **dict(orderby=orderby,
+            limitby=limitby))
         if not rows:
             return None # Nicer than an empty table.
         if not 'linkto' in attr:
-            attr['linkto'] = URL(r=request, args='read')
+            attr['linkto'] = self.url(args='read')
         if not 'upload' in attr:
-            attr['upload'] = URL(r=request, f='download')
+            attr['upload'] = self.url('download')
+        if request.extension != 'html':
+            return rows.as_list()
         return SQLTABLE2(rows, headers=headers, **attr)
 
 #from applications.t3.modules.t2 import T2
@@ -1034,41 +1107,73 @@ class S3:
 #
 # added by nursix
 #
+
+# *****************************************************************************
+# Joined Resource
+#
 class JoinedResource(object):
 
-    def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, attr=None):
+    def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, rss=None, attr=None):
 
         self.prefix = prefix
         self.name = name
         self.joinby = joinby
         self.multiple = multiple
         self.fields = fields
+        self.rss = rss
         if attr:
             self.attr = attr
         else:
             self.attr = {}
 
+        if not 'deletable' in self.attr:
+            self.set_attr('deletable', True)
+
+        if not 'editable' in self.attr:
+            self.set_attr('editable', True)
+
+    # get_prefix --------------------------------------------------------------
     def get_prefix(self):
         return self.prefix
 
+    # is_multiple -------------------------------------------------------------
     def is_multiple(self):
         return self.multiple
 
+    # list_fields -------------------------------------------------------------
     def list_fields(self):
         return self.fields
 
-    def delete_onvalidation(self):
-        if 'delete_onvalidation' in self.attr:
-            return self.attr['delete_onvalidation']
+    # rss ---------------------------------------------------------------------
+    def _rss(self):
+        return self.rss
+
+    # head_fields -------------------------------------------------------------
+    def head_fields(self):
+        if 'main' in self.attr:
+            main = self.attr['main']
+        else:
+            main = 'id'
+
+        if 'extra' in self.attr:
+            extra = self.attr['extra']
+        else:
+            extra = main
+
+        return (main, extra)
+
+    # set_attr ----------------------------------------------------------------
+    def set_attr(self, name, value):
+        self.attr.update(name, value)
+
+    # get_attr ----------------------------------------------------------------
+    def get_attr(self, name):
+        if name in self.attr:
+            return self.attr[name]
         else:
             return None
 
-    def delete_onaccept(self):
-        if 'delete_onaccept' in self.attr:
-            return self.attr['delete_onaccept']
-        else:
-            return None
-
+    # get_join_key ------------------------------------------------------------
     def get_join_key(self, module, resource):
 
         tablename = "%s_%s" % (module, resource)
@@ -1093,6 +1198,9 @@ class JoinedResource(object):
             # No join_key defined
             return None
 
+# *****************************************************************************
+# JRLayer
+#
 class JRLayer(object):
 
     jresources = {}
@@ -1106,16 +1214,18 @@ class JRLayer(object):
         self.jresources = {}
         self.settings = {}
 
-    def add_jresource(self, prefix, name, joinby=None, multiple=True, fields=None, **attr):
+    # add_jresource -----------------------------------------------------------
+    def add_jresource(self, prefix, name, joinby=None, multiple=True, rss=None, fields=None, **attr):
 
         _table = "%s_%s" % (prefix, name)
 
         if fields:
             list_fields = [self.db[_table][f] for f in fields]
 
-        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, fields=list_fields, attr=attr)
+        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, rss=rss, fields=list_fields, attr=attr)
         self.jresources[name] = jr
 
+    # get_prefix --------------------------------------------------------------
     def get_prefix(self, name):
 
         if name in self.jresources:
@@ -1123,6 +1233,7 @@ class JRLayer(object):
         else:
             return None
 
+    # is_multiple -------------------------------------------------------------
     def is_multiple(self, name):
 
         if name in self.jresources:
@@ -1130,6 +1241,7 @@ class JRLayer(object):
         else:
             return True
 
+    # get_join_key ------------------------------------------------------------
     def get_join_key(self, name, module, resource):
 
         if name in self.jresources:
@@ -1137,6 +1249,7 @@ class JRLayer(object):
         else:
             return None
 
+    # list_fields -------------------------------------------------------------
     def list_fields(self, name):
 
         if name in self.jresources:
@@ -1144,20 +1257,37 @@ class JRLayer(object):
         else:
             return None
 
-    def delete_onvalidation(self, name):
+    # rss ---------------------------------------------------------------------
+    def rss(self, name):
 
         if name in self.jresources:
-            return self.jresources[name].delete_onvalidation()
+            return self.jresources[name]._rss()
         else:
             return None
 
-    def delete_onaccept(self, name):
+    # head_fields -------------------------------------------------------------
+    def head_fields(self, resource):
 
-        if name in self.jresources:
-            return self.jresources[name].delete_onaccept()
+        if resource in self.jresources:
+            return self.jresources[resource].head_fields()
+        else:
+            return (None, None)
+
+    # set_attr ----------------------------------------------------------------
+    def set_attr(self, resource, name, value):
+
+        if resource in self.jresources:
+            self.jresources[resource].set_attr(name, value)
+
+    # get_attr ----------------------------------------------------------------
+    def get_attr(self, resource, name):
+
+        if resource in self.jresources:
+            return self.jresources[resource].get_attr(name)
         else:
             return None
 
+    # set_method --------------------------------------------------------------
     def set_method(self, prefix, resource, jprefix, jresource, method, action):
 
         if not method:
@@ -1183,6 +1313,7 @@ class JRLayer(object):
         else:
             return None
 
+    # get_method --------------------------------------------------------------
     def get_method(self, prefix, resource, jprefix, jresource, method):
 
         if not method:
@@ -1207,65 +1338,356 @@ class JRLayer(object):
         else:
             return None
 
-    # -------------------------------------------------------------------------
-    # Request Parser
+    # store_session -----------------------------------------------------------
+    def store_session(self, session, module, resource, record_id):
 
-    def parse_request(self, request):
+        if session and not ('jrvars' in session):
+            session.jrvars = Storage()
 
-        _request = {}
+        if session and 'jrvars' in session:
+            tablename = "%s_%s" % (module, resource)
+            session.jrvars[tablename] = record_id
 
-        if len(request.args)==0:
-            record_id= None
-            jresource=None
-            method=None
-        else:
-            if request.args[0].isdigit():
-                record_id = request.args[0]
-                if len(request.args)>1:
-                    jresource = str.lower(request.args[1])
-                    if jresource in self.jresources:
-                        if len(request.args)>2:
-                            method = str.lower(request.args[2])
-                        else:
-                            method = None
-                    else:
-                        # Error: INVALID FUNCTION
-                        return None
-                else:
-                    jresource = None
-                    method = None
-            elif str.lower(request.args[0]) in self.jresources:
-                record_id = None
-                jresource = str.lower(request.args[0])
-                if len(request.args)>1:
-                    method = str.lower(request.args[1])
-                else:
-                    method = None
+    # clear_session -----------------------------------------------------------
+    def clear_session(self, session, module=None, resource=None):
+
+        if session:
+
+            if module and resource:
+                tablename = "%s_%s" % (module, resource)
+                if ('jrvars' in session) and (tablename in session.jrvars):
+                    del session.jrvars[tablename]
+
             else:
-                method = str.lower(request.args[0])
-                jresource = None
-                if len(request.args)>1 and request.args[1].isdigit():
-                    record_id = request.args[1]
+                if 'jrvars' in session:
+                    del session['jrvars']
+
+# *****************************************************************************
+# JRequest
+#
+class JRequest(object):
+    """
+        Class handling requests to joined resources REST controller.
+    """
+
+    def __init__(self, jrlayer, module, resource, request, session=None):
+
+        self.default_representation = 'html'
+        self.request = request
+        self.jrlayer = jrlayer
+        self.session = session
+
+        self.invalid = False
+        self.badmethod = False
+        self.badrecord = False
+        self.badrequest = False
+
+        self.representation = request.extension
+        self.http = request.env.request_method
+        self.extension = False
+
+        self.module = module or request.controller
+        self.resource = resource or request.function
+        self.method = None
+        self.record_id = None
+        self.jresource = None
+
+        # Parse original request
+        if not self.__parse():
+            return None
+
+        self.tablename = None
+        self.table = None
+        self.record = None
+
+        # Check for primary record
+        if not self.__record():
+            return None
+
+        self.jmodule = None
+        self.jtablename = None
+        self.jtable = None
+        self.jrecord_id = None
+        self.pkey = None
+        self.fkey = None
+        self.multiple = True
+
+        #  Get Joined Resource parameters (if any)
+        if self.jresource:
+            self.jmodule = self.jrlayer.get_prefix(self.jresource)
+            self.multiple = self.jrlayer.is_multiple(self.jresource)
+            if not self.jrecord_id:
+                if self.args[len(self.args)-1].isdigit():
+                    self.jrecord_id = self.args[len(self.args)-1]
+            self.jtablename = "%s_%s" % (self.jmodule, self.jresource)
+            self.jtable = self.jrlayer.db[self.jtablename]
+
+            # Get join key
+            join_keys = self.jrlayer.get_join_key(self.jresource, self.module, self.resource)
+            if not join_keys:
+                self.badmethod = True
+                self.invalid = True
+                return self
+            else:
+                self.pkey, self.fkey = join_keys
+
+        # Get custom action (if any)
+        self.custom_action = self.jrlayer.get_method(
+            self.module,
+            self.resource,
+            self.jmodule,
+            self.jresource,
+            self.method)
+
+        # Append record ID to request as necessary
+        if self.record_id:
+            if len(self.args)>0 or len(self.args)==0 and ('id_label' in self.request.vars):
+                if self.jresource and not self.args[0].isdigit():
+                    self.args.insert(0, str(self.record_id))
+                    if self.representation==self.default_representation or self.extension:
+                        self.request.args.insert(0, str(self.record_id))
+                    else:
+                        self.request.args.insert(0, '%s.%s' % (self.record_id, self.representation))
+                elif not self.jresource and not (str(self.record_id) in self.args):
+                    self.args.append(self.record_id)
+                    if self.representation==self.default_representation or self.extension:
+                        self.request.args.append(self.record_id)
+                    else:
+                        self.request.args.append('%s.%s' % (self.record_id, self.representation))
+    # -------------------------------------------------------------------------
+    def __parse(self):
+        """
+            Parse the original request
+        """
+
+        self.args = []
+
+        if len(self.request.args)>0:
+
+            # Check for extensions
+            for arg in self.request.args:
+                if '.' in arg:
+                    arg, ext = arg.rsplit('.',1)
+                    if ext and len(ext)>0:
+                        self.representation = str.lower(ext)
+                        self.extension = True
+                self.args.append(str.lower(arg))
+
+            # Parse arguments
+            if self.args[0].isdigit():
+                self.record_id = self.args[0]
+                if len(self.args)>1:
+                    self.jresource = self.args[1]
+                    if self.jresource in self.jrlayer.jresources:
+                        if len(self.args)>2:
+                            if self.args[2].isdigit():
+                                self.jrecord_id = self.args[2]
+                            else:
+                                self.method = self.args[2]
+                        else:
+                            self.method = None
+                    else:
+                        # Error: BAD REQUEST
+                        self.badrequest = True
+                        self.invalid = True
+                        return False
                 else:
-                    record_id = None
+                    self.jresource = None
+                    self.method = None
+            else:
+                if self.args[0] in self.jrlayer.jresources:
+                    self.jresource = self.args[0]
+                    self.record_id = None
+                    if len(self.args)>1:
+                        if self.args[1].isdigit():
+                            self.jrecord_id = self.args[1]
+                        else:
+                            self.method = self.args[1]
+                    else:
+                        self.method = None
+                else:
+                    self.method = self.args[0]
+                    self.jresource = None
+                    if len(self.args)>1 and self.args[1].isdigit():
+                        self.record_id = self.args[1]
+                    else:
+                        self.record_id = None
 
-        jrecord_id = None
+        # Check format option
+        if 'format' in self.request.vars:
+            self.representation = str.lower(self.request.vars.format)
 
-        if jresource:
-            jmodule = self.get_prefix(jresource)
-            multiple = self.is_multiple(jresource)
-            if request.args[len(request.args)-1].isdigit():
-                jrecord_id = request.args[len(request.args)-1]
+        # Representation fallback
+        if not self.representation:
+            self.representation = self.default_representation
+
+        return True
+
+    # -------------------------------------------------------------------------
+    def __record(self):
+        """
+            Check primary record ID
+        """
+
+        # Get primary table
+        self.tablename = "%s_%s" % (self.module, self.resource)
+        self.table = self.jrlayer.db[self.tablename]
+
+        # Check record ID passed in the request
+        if self.record_id:
+            query = (self.table.id==self.record_id)
+            if 'deleted' in self.table:
+                query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+            records = self.jrlayer.db(query).select(self.table.ALL)
+            if records:
+                self.record = records[0]
+                self.record_id = self.record.id
+            else:
+                # Error: NO SUCH RECORD
+                self.record_id = 0
+                self.badrecord = True
+                self.invalid = True
+                return False
+
+        # Check for ?id_label=
+        if not self.record_id and 'id_label' in self.request.vars:
+            id_label = str.strip(self.request.vars.id_label)
+            if 'pr_pe_label' in self.table:
+                query = (self.table.pr_pe_label==id_label)
+                if 'deleted' in self.table:
+                    query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+                records = self.jrlayer.db(query).select(self.table.ALL)
+                if records:
+                    self.record = records[0]
+                    self.record_id = self.record.id
+                else:
+                    # Error: NO SUCH RECORD
+                    self.record_id = 0
+                    self.badrecord = True
+                    self.invalid = True
+                    return False
+
+        # Retrieve prior selected ID, if any
+        if not self.record_id and len(self.request.args)>0:
+            if self.session and self.session.jrvars and self.tablename in self.session.jrvars:
+                self.record_id = self.session.jrvars[self.tablename]
+                query = (self.table.id==self.record_id)
+                if 'deleted' in self.table:
+                    query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+                records = self.jrlayer.db(query).select(self.table.ALL)
+                if records:
+                    self.record = records[0]
+                    self.record_id = self.record.id
+                else:
+                    self.record_id = None
+                    self.session.jrvars[self.tablename] = None
+
+        # Remember primary record ID for further requests
+        if self.record_id and self.session:
+            self.jrlayer.store_session(self.session, self.module, self.resource, self.record_id)
+
+        return True
+
+    # -------------------------------------------------------------------------
+    def here(self, representation=None):
+        """
+            Backlink producing the same request
+        """
+
+        args = []
+
+        if not representation:
+            representation = self.representation
+
+        f = self.resource
+
+        if self.jresource:
+            args = [self.record_id]
+            if not representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, representation))
+            else:
+                args.append(self.jresource)
+            if self.method:
+                args.append(self.method)
+                if self.jrecord_id:
+                    args.append(self.jrecord_id)
         else:
-            jmodule = None
-            multiple = True
+            if self.method:
+                args.append(self.method)
+            if self.record_id:
+                if not representation==self.default_representation:
+                    args.append('%s.%s' % (self.record_id, representation))
+                else:
+                    args.append(self.record_id)
+            else:
+                if not representation==self.default_representation:
+                    f='%s.%s' % (self.resource, representation)
+                else:
+                    f=self.resource
 
-        _request.update(
-            record_id=record_id,
-            jmodule=jmodule,
-            jresource=jresource,
-            jrecord_id=jrecord_id,
-            multiple=multiple,
-            method=method)
+        return(URL(r=self.request, c=self.request.controller, f=f, args=args))
 
-        return _request
+    # -------------------------------------------------------------------------
+    def there(self, representation=None):
+        """
+            Backlink producing a HTTP/list request to the same resource
+        """
+        args = []
+
+        if not representation:
+            representation = self.representation
+
+        f = self.resource
+
+        if self.jresource:
+            args = [self.record_id]
+            if not representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, representation))
+            else:
+                args.append(self.jresource)
+        else:
+            if not representation==self.default_representation:
+                f='%s.%s' % (self.resource, representation)
+            else:
+                f=self.resource
+
+        return(URL(r=self.request, c=self.request.controller, f=f, args=args))
+
+    # -------------------------------------------------------------------------
+    def same(self, representation=None):
+        """
+            Backlink producing the same request with neutralized primary record ID
+        """
+
+        args = []
+
+        if not representation:
+            representation = self.representation
+
+        f = self.resource
+
+        if self.jresource:
+            args = ['[id]']
+            if not representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, representation))
+            else:
+                args.append(self.jresource)
+            if self.method:
+                args.append(self.method)
+                #if self.jrecord_id:
+                #    args.append(self.jrecord_id)
+        else:
+            if self.method:
+                args.append(self.method)
+            if self.record_id:
+                if not representation==self.default_representation:
+                    args.append('[id].%s' % representation)
+                else:
+                    args.append('[id]')
+            else:
+                if not representation==self.default_representation:
+                    f='%s.%s' % (self.resource, representation)
+                else:
+                    f=self.resource
+
+        return(URL(r=self.request, c=self.request.controller, f=f, args=args))

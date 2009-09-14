@@ -166,3 +166,25 @@ file(outputFilename, "w").write(minimized)
 print "Writing to %s." % outputFilenameGIS
 file(outputFilenameGIS, "w").write(minimizedGIS)
 print "Done."
+import shutil
+import os
+try:
+    os.remove("../S3/S3.min.js")
+except:
+    pass
+try:
+    os.remove("../gis/MapFish.min.js")
+except:
+    pass
+try:
+    os.remove("../../styles/S3/sahana.min.css")
+except:
+    pass
+try:
+    os.remove("../../styles/gis/gis.min.css")
+except:
+    pass
+shutil.move("S3.min.js","../S3")
+shutil.move("MapFish.min.js","../gis")
+shutil.move("sahana.min.css","../../styles/S3")
+shutil.move("gis.min.css","../../styles/gis")

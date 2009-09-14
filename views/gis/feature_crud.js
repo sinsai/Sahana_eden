@@ -1,11 +1,11 @@
 ﻿<script type="text/javascript">//<![CDATA[
 $(function() {
-    type=$("select#gis_feature_type").val();
-    if (type==1) {
+    feature_type=$("select#gis_feature_feature_type").val();
+    if (feature_type==1) {
         // Point
         // Hide the WKT input
         $("#gis_feature_wkt__row").hide();
-    } else if (type==2) {
+    } else if (feature_type==2) {
         // Line
         // Hide the Lat/Lon inputs
         $("#gis_feature_lat__row").hide();
@@ -14,7 +14,7 @@ $(function() {
             // Pre-populate the WKT field
             $(this).val('LINESTRING( , , )')
         }
-    } else if (type==3) {
+    } else if (feature_type==3) {
         // Polygon
         // Hide the Lat/Lon inputs
         $("#gis_feature_lat__row").hide();
@@ -25,17 +25,17 @@ $(function() {
         }
     }
     // When the Type changes:
-	$("select#gis_feature_type").change(function() {
+	$("select#gis_feature_feature_type").change(function() {
 		// What is the new type?
-        type=$(this).val();
-        if (type==1) {
+        feature_type=$(this).val();
+        if (feature_type==1) {
             // Point
             // Hide the WKT input
             $("#gis_feature_wkt__row").hide();
             // Show the Lat/Lon inputs
             $("#gis_feature_lat__row").show();
             $("#gis_feature_lon__row").show();
-        } else if (type==2) {
+        } else if (feature_type==2) {
             // Line
             // Hide the Lat/Lon inputs
             $("#gis_feature_lat__row").hide();
@@ -46,7 +46,7 @@ $(function() {
                 // Pre-populate the WKT field
                 $('input#gis_feature_wkt').val('LINESTRING( , , )')
             }
-        } else if (type==3) {
+        } else if (feature_type==3) {
             // Polygon
             // Hide the Lat/Lon inputs
             $("#gis_feature_lat__row").hide();

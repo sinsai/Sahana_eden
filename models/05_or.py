@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'or'
 
@@ -98,11 +98,11 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].organisation.requires = IS_ONE_OF(db, 'or_organisation.id', 'or_organisation.name')
+db[table].organisation.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
 db[table].organisation.represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0]
 db[table].organisation.label = T('Organisation')
 db[table].organisation.comment = DIV(A(s3.crud_strings.or_organisation.label_create_button, _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Organisation|The Organisation this Office belongs to.")))
-db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', 'or_office.name'))
+db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
 db[table].parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))
 db[table].type.represent = lambda opt: opt and or_office_type_opts[opt]
@@ -149,7 +149,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('manager_id', db.pr_person),
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
-db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', 'or_office.name')
+db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
 db[table].office_id.label = T('Office')
 db[table].title.label = T('Title')
 db[table].title.comment = A(SPAN("[Help]"), _class="popupLink", _id="tooltip", _title=T("Title|The Role this person plays within this Office."))
@@ -180,9 +180,9 @@ db.define_table(table, timestamp, deletion_status,
                 Field('office_id', db.or_office),
                 Field('organisation_id', db.or_organisation),
                 migrate=migrate)
-db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', 'or_office.name')
+db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
 db[table].office_id.label = T('Office')
-db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', 'or_organisation.name')
+db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
 db[table].organisation_id.label = T('Organisation')
 
 # Contacts to Organisations
@@ -193,6 +193,6 @@ db[table].organisation_id.label = T('Organisation')
 #db.define_table(table,timestamp,
 #                Field('contact_id',db.or_contact),
 #                Field('organisation_id',db.or_organisation))
-#db[table].contact_id.requires=IS_ONE_OF(db,'or_office.id','or_office.name')
-#db[table].organisation_id.requires=IS_ONE_OF(db,'or_organisation.id','or_organisation.name')
+#db[table].contact_id.requires=IS_ONE_OF(db,'or_office.id','%(name)s')
+#db[table].organisation_id.requires=IS_ONE_OF(db,'or_organisation.id','%(name)s')
 

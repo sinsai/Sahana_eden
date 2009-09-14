@@ -95,6 +95,73 @@ def URL3(a=None, r=None):
     url = '/%s' % application
     return url
 
+# Modified version of MENU from gluon/html.py
+# Only supports 2 levels
+# Each menu is a UL not an LI
+# A tags have classes
+class MENU2(DIV):
+    """
+    Used to build modules menu
+
+    Optional arguments
+      _class: defaults to 'S3menuInner'
+      ul_main_class: defaults to 'S3menuUL'
+      ul_sub_class: defaults to 'S3menuSub'
+      li_class: defaults to 'S3menuLI'
+      a_class: defaults to 'S3menuA'
+      
+    Example:
+        menu = MENU2([['name', False, URL(...), [submenu]], ...])
+        {{=menu}}
+    """
+
+    tag = 'div'
+
+    def __init__(self, data, **args):
+        self.data = data
+        self.attributes = args
+        if not '_class' in self.attributes:
+            self['_class'] = 'S3menuInner'
+        if not 'ul_main_class' in self.attributes:
+            self['ul_main_class'] = 'S3menuUL'
+        if not 'ul_sub_class' in self.attributes:
+            self['ul_sub_class'] = 'S3menuSub'
+        if not 'li_class' in self.attributes:
+            self['li_class'] = 'S3menuLI'
+        if not 'a_class' in self.attributes:
+            self['a_class'] = 'S3menuA'
+        
+    def serialize(self, data, level=0):
+        if level == 0:
+            # Top-level menu
+            div = DIV(**self.attributes)
+            for item in data:
+                (name, active, link) = item[:3]
+                if len(item) > 3 and item[3]:
+                    # Submenu
+                    ul_inner = self.serialize(item[3], level+1)
+                    if link:
+                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                    else:
+                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                else:
+                    if link:
+                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
+                    else:
+                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
+                div.append(ul)
+        else:
+            # Submenu
+            div = UL(_class=self['ul_sub_class'])
+            for item in data:
+                (name, active, link) = item[:3]
+                li = LI(A(name, _href=link))
+                div.append(li)
+        return div
+
+    def xml(self):
+        return self.serialize(self.data, 0).xml()
+
 # Modified version of SQLTABLE from gluon/sqlhtml.py
 # we need a different linkto construction for our CRUD controller
 # we need to specify a different ID field to direct to for the M2M controller
@@ -711,22 +778,28 @@ class CrudS3(Crud):
         **attr
         ):
         request = self.environment.request
-        if isinstance(table, str):
-            if not table in self.db.tables:
-                raise HTTP(404)
+        if not (isinstance(table, self.db.Table) or table in self.db.tables):
+            raise HTTP(404)
+        if not self.has_permission('select', table):
+            redirect(self.settings.auth.settings.on_failed_authorization)
+        #if record_id and not self.has_permission('select', table):
+        #    redirect(self.settings.auth.settings.on_failed_authorization)
+        if not isinstance(table, self.db.Table):
             table = self.db[table]
         if not query:
             query = table.id > 0
         if not fields:
             fields = [table.ALL]
-        rows = self.db(query).select(*fields,
-            **dict(orderby=orderby, limitby=limitby))
+        rows = self.db(query).select(*fields, **dict(orderby=orderby,
+            limitby=limitby))
         if not rows:
             return None # Nicer than an empty table.
         if not 'linkto' in attr:
-            attr['linkto'] = URL(r=request, args='read')
+            attr['linkto'] = self.url(args='read')
         if not 'upload' in attr:
-            attr['upload'] = URL(r=request, f='download')
+            attr['upload'] = self.url('download')
+        if request.extension != 'html':
+            return rows.as_list()
         return SQLTABLE2(rows, headers=headers, **attr)
 
 #from applications.t3.modules.t2 import T2

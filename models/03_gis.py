@@ -308,7 +308,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 feature_class_id,
                 marker_id,
                 Field('metadata', db.gis_feature_metadata),      # NB This can have issues with sync unless going via CSV
-                Field('type', 'integer', default=1, notnull=True),
+                Field('feature_type', 'integer', default=1, notnull=True),
                 Field('lat', 'double'),    # Only needed for Points
                 Field('lon', 'double'),    # Only needed for Points
                 Field('wkt', length=256),  # WKT is auto-calculated from lat/lon for Points
@@ -322,9 +322,9 @@ db[table].metadata.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_metadata.id'
 db[table].metadata.represent = lambda id: (id and [db(db.gis_feature_metadata.id==id).select()[0].description] or ["None"])[0]
 db[table].metadata.label = T('Metadata')
 db[table].metadata.comment = DIV(A(T('Add Metadata'), _class='popup', _href=URL(r=request, c='gis', f='feature_metadata', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Metadata|Additional attributes associated with this Feature.")))
-db[table].type.requires = IS_IN_SET(gis_feature_type_opts)
-db[table].type.represent = lambda opt: opt and gis_feature_type_opts[opt]
-db[table].type.label = T('Type')
+db[table].feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+db[table].feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
+db[table].feature_type.label = T('Type')
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lat.label = T('Latitude')
 db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
@@ -334,7 +334,7 @@ db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="t
 # WKT validation is done in the onvalidation callback
 #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
 db[table].wkt.label = T('Well-Known Text')
-db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]") ,_class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 title_create = T('Add Feature')
 title_display = T('Feature Details')
 title_list = T('List Features')
@@ -428,7 +428,7 @@ resource = 'landmark'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True),
-                Field('type', 'integer'),
+                Field('landmark_type', 'integer'),
                 Field('description', length=256),
                 Field('url'),
                 Field('image', 'upload'),
@@ -437,9 +437,9 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(gis_landmark_type_opts))
-db[table].type.represent = lambda opt: opt and gis_landmark_type_opts[opt]
-db[table].type.label = T('Type')
+db[table].landmark_type.requires = IS_NULL_OR(IS_IN_SET(gis_landmark_type_opts))
+db[table].landmark_type.represent = lambda opt: opt and gis_landmark_type_opts[opt]
+db[table].landmark_type.label = T('Type')
 db[table].description.label = T('Description')
 db[table].url.requires = IS_NULL_OR(IS_URL())
 db[table].url.label = "URL"
@@ -613,7 +613,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button = T('List OpenStreetMap Layers')
         msg_list_empty = T('No OpenStreetMap Layers currently defined')
-        s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     if layertype == "google":
         t = SQLTable(db, table,
             Field('subtype', label=T('Sub-type')),
@@ -631,7 +631,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button = T('List Google Layers')
         msg_list_empty = T('No Google Layers currently defined')
-        s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     if layertype == "yahoo":
         t = SQLTable(db, table,
             Field('subtype', label=T('Sub-type')),
@@ -649,7 +649,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button = T('List Yahoo Layers')
         msg_list_empty = T('No Yahoo Layers currently defined')
-        s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     if layertype == "bing":
         t = SQLTable(db, table,
             Field('subtype', label=T('Sub-type')),
@@ -667,7 +667,7 @@ for layertype in gis_layer_types:
         # Customise CRUD strings if-desired
         label_list_button = T('List Bing Layers')
         msg_list_empty = T('No Bing Layers currently defined')
-        s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+        s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     
 # GIS Styles: SLD
 #db.define_table('gis_style', timestamp,
@@ -691,7 +691,7 @@ def wkt_centroid(form):
     """
     #shapely_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + str(T(" library not found, so can't find centroid!"))
     shapely_error = T("Shapely library not found, so can't find centroid!")
-    if form.vars.type == 1:
+    if form.vars.feature_type == '1':
         # Point
         if form.vars.lon == None:
             form.errors['lon'] = T("Invalid: Longitude can't be empty!")
@@ -700,7 +700,7 @@ def wkt_centroid(form):
             form.errors['lat'] = T("Invalid: Latitude can't be empty!")
             return
         form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
-    elif form.vars.type == 2:
+    elif form.vars.feature_type == '2':
         # Line
         try:
             from shapely.wkt import loads
@@ -713,8 +713,8 @@ def wkt_centroid(form):
             form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
             form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
         except:
-            form.errors['type'] = shapely_error
-    elif form.vars.type == 3:
+            form.errors['feature_type'] = shapely_error
+    elif form.vars.feature_type == '3':
         # Polygon
         try:
             from shapely.wkt import loads
@@ -727,7 +727,7 @@ def wkt_centroid(form):
             form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
             form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
         except:
-            form.errors['type'] = shapely_error
+            form.errors['feature_type'] = shapely_error
     else:
-        form.errors['type'] = T('Unknown type!')
+        form.errors['feature_type'] = T('Unknown type!')
     return

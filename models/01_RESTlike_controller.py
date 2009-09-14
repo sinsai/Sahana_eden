@@ -3,7 +3,9 @@
 #
 # RESTlike CRUD controller
 #
-# created by Fran Boon, amendments by nursix
+# created by Fran Boon
+# extended by nursix
+# http://trac.sahanapy.org/wiki/JoinedResourceController
 #
 
 # *****************************************************************************
@@ -1022,7 +1024,8 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
     elif jr.representation == "popup":
         form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
-        response.view = 'popup.html'
+        # Check for presence of Custom View
+        shn_custom_view(jr, 'popup.html')
         return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
 
     elif representation == "json":

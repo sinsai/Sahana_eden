@@ -8,7 +8,7 @@ response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Add Shelter'), False, URL(r=request, f='shelter', args='create')],
     [T('List Shelters'), False, URL(r=request, f='shelter')],
-    [T('Search Shelters'), False, URL(r=request, f='shelter', args='search')]
+    #[T('Search Shelters'), False, URL(r=request, f='shelter', args='search')]
 ]
         
 # S3 framework functions

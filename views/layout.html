@@ -5,54 +5,45 @@
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 {{if response.refresh:}}{{=XML(response.refresh)}}{{pass}}
 {{if session.s3.debug:}}
-  {{include 'sahana_scripts_debug.html'}}
   {{include 'sahana_styles_debug.html'}}
+  {{include 'sahana_scripts_debug.html'}}
 {{else:}}
-  {{include 'sahana_scripts_min.html'}}
   <link href="/{{=request.application}}/static/styles/S3/{{=session.s3.theme}}.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{include 'sahana_scripts_min.html'}}
 {{pass}}
 </head>
 <body>
-<div id="container">
- <div id="header" class="clearfix">
-  <div id="menu">
+
+<div id="header">
+  <div id="menu_auth">
    {{=MENU(response.menu_auth)}}
   </div>
 </div>
+
+<div id="menu_modules">
+    {{=MENU2(response.menu_modules, _class='modules_inner')}}
 </div>
-<div id="wrapper" class="clearfix">
-  <div id="wrapper_menu">
-   <p id="skip">Jump to: <a href="#content">Content</a> | <a href="#modulemenu">Module Menu</a></p>
-    <div id="modmenuwrap">
-   {{try:}}
-    {{=H2(module_name)}}
-   {{except:}}
-   {{pass}}
-  <div id="modmenu">
-   {{if response.menu_options:}}
-    {{=MENU(response.menu_options)}}
-   {{pass}}
-  </div>
-  </div>
-  <div id="menuwrap">
-   <h2>{{=T("Modules")}}</h2>  
-   <div id="optionsmenu">
-    {{=MENU(response.menu_modules)}}
-   </div>
-  </div>
-  </div>
-  <div id="content" class="clearfix">
-    {{if response.error:}}<div class="error">{{=response.error}}</div>{{pass}}
-    {{if response.warning:}}<div class="warning">{{=response.warning}}</div>{{pass}}
-    {{if response.information:}}<div class="information">{{=response.information}}</div>{{pass}}
-    {{if response.confirmation:}}<div class="confirmation">{{=response.confirmation}}</div>{{pass}}
-    {{if response.flash:}}<div class="confirmation">{{=response.flash}}</div>{{pass}}
-    {{include}}
-  </div>
-  </div>
-  <div id="footer">
-    {{include 'themes/' + session.s3.theme + '/footer.html'}}
-  </div>
- </div>
+
+<div id="menu_options">
+    {{=MENU2(response.menu_options, _class='options_inner')}}
+</div>
+
+<div class="colmask fullpage">
+	<div class="col1">
+        <div id="content" class="clearfix">
+            {{if response.error:}}<div class="error">{{=response.error}}</div>{{pass}}
+            {{if response.warning:}}<div class="warning">{{=response.warning}}</div>{{pass}}
+            {{if response.information:}}<div class="information">{{=response.information}}</div>{{pass}}
+            {{if response.confirmation:}}<div class="confirmation">{{=response.confirmation}}</div>{{pass}}
+            {{if response.flash:}}<div class="confirmation">{{=response.flash}}</div>{{pass}}
+            {{include}}
+        </div>
+	</div>
+</div>
+
+<div id="footer">
+  {{include 'themes/' + session.s3.theme + '/footer.html'}}
+</div>
+
 </body>
 </html>

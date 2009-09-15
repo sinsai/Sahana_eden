@@ -3,7 +3,7 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Hide the real Input Row
-    $("#msg_email_outbox_group_id__row").hide();
+    $("#msg_email_outbox_msg_group_id__row").hide();
     // Autocomplete-enable the Dummy Input
     $("#dummy").autocomplete('{{=URL(r=request, c='msg', f='group_search', vars={'type':'email'})}}', {
         matchContains: true,
@@ -22,7 +22,7 @@ $(function() {
     // Populate the real Input when the Dummy is selected
     $("#dummy").result(function(event, data, formatted) {
         var newvalue = data.id;
-        $("#msg_email_outbox_group_id").val(newvalue);
+        $("#msg_email_outbox_msg_group_id").val(newvalue);
     });
 });
 //]]></script>
@@ -39,24 +39,24 @@ $(function() {
  <tbody>
  <tr id='msg_email_outbox_group_ac__row'>
  <td>
- <label>{{=form.custom.label.group_id}}</label>
+ <label>{{=form.custom.label.msg_group_id}}</label>
  </td>
  <td>
  {{=INPUT(_id="dummy", _class="ac_input")}}
  </td>
  <td>
- {{=form.custom.comment.group_id}}
+ {{=form.custom.comment.msg_group_id}}
  </td>
  </tr>
- <tr id='msg_email_outbox_group_id__row'>
+ <tr id='msg_email_outbox_msg_group_id__row'>
  <td>
- <label>{{=form.custom.label.group_id}}</label>
+ <label>{{=form.custom.label.msg_group_id}}</label>
  </td>
  <td>
- {{=form.custom.widget.group_id}}
+ {{=form.custom.widget.msg_group_id}}
  </td>
  <td>
- {{=form.custom.comment.group_id}}
+ {{=form.custom.comment.msg_group_id}}
  </td>
  </tr>
  <tr id='msg_email_outbox_subject__row'>

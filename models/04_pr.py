@@ -64,7 +64,7 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
+    list_fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -140,7 +140,7 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
+    list_fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -211,7 +211,7 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
+    list_fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -247,7 +247,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 pr_presence_condition_opts = vita.presence_conditions
 
 opt_pr_presence_condition = SQLTable(None, 'opt_pr_presence_condition',
-                        db.Field('opt_pr_presence_condition','integer',
+                        db.Field('opt_pr_presence_condition', 'integer',
                         requires = IS_IN_SET(pr_presence_condition_opts),
                         default = vita.DEFAULT_PRESENCE,
                         label = T('Presence Condition'),
@@ -303,7 +303,7 @@ jrlayer.add_jresource(module, resource,
         title="%(time)s",
         description=shn_pr_presence_rss
     ),
-    fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
+    list_fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -314,12 +314,12 @@ db[table].lon.requires = IS_NULL_OR(IS_LON())
 db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
 db[table].observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 
-db[table].observer.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+db[table].observer.comment = DIV(A(T('Add Person'), _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].observer.ondelete = 'RESTRICT'
 
 db[table].reporter.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
 db[table].reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-db[table].reporter.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+db[table].reporter.comment = DIV(A(T('Add Person'), _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].reporter.ondelete = 'RESTRICT'
 
 db[table].time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
@@ -387,7 +387,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
+    list_fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -436,7 +436,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_group='group_id', pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id','group_id','person_id','group_head','description'])
+    list_fields = ['id','group_id','person_id','group_head','description'])
 
 # Field validation
 
@@ -481,7 +481,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id','opt_pr_network_type','comment'])
+    list_fields = ['id','opt_pr_network_type','comment'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -499,7 +499,7 @@ network_id = SQLTable(None, 'network_id',
                 Field('network_id', db.pr_network,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_network.id', '%(id)s')),
                 represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
-                comment = DIV(A(T('Add Network'), _class='popup', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
+                comment = DIV(A(T('Add Network'), _class='thickbox', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -525,7 +525,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id','network_id','person_id','description','comment'])
+    list_fields = ['id','network_id','person_id','description','comment'])
 
 # Field validation
 
@@ -556,7 +556,7 @@ pcase_id = SQLTable(None, 'pcase_id',
                 Field('pcase_id', db.pr_case,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_case.id', '%(description)s')),
                 represent = lambda id: (id and [db(db.pr_case.id==id).select()[0].description] or ["None"])[0],
-                comment = DIV(A(T('Add Case'), _class='popup', _href=URL(r=request, c='pr', f='case', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Case|Add new case."))),
+                comment = DIV(A(T('Add Case'), _class='thickbox', _href=URL(r=request, c='pr', f='case', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Case|Add new case."))),
                 ondelete = 'RESTRICT'
                 ))
 

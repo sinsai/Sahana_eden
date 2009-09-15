@@ -64,12 +64,12 @@ ul.web2py-menu li a:visited,
 ul.web2py-menu li a:active { text-decoration: none; }
 
 ul.web2py-menu li.sfhover a:active,
-ul.web2py-menu li:hover a:active { color: #fff; background-color: #833; }
+ul.web2py-menu li:hover a:active { color: #fff; background-color: #c72; }
 
 ul.web2py-menu li { background-color: #383; }
 
 ul.web2py-menu li:hover,
-ul.web2py-menu li.sfhover { background-color: #833; }
+ul.web2py-menu li.sfhover { background-color: #c72; }
 ul.web2py-menu li a:hover { background-color: #ffc; }
 
 ul.web2py-menu li.web2py-menu-expand a,

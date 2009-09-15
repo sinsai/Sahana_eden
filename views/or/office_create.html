@@ -1,0 +1,13 @@
+{{extend 'layout.html'}}
+
+{{if session.s3.security_policy==1:}}
+    <script type="text/javascript">//<![CDATA[
+    $(function() {
+            // Hide the Admin row for simple security_policy
+            $("#or_office_admin__row").hide();
+    });
+    //]]></script>
+{{else:}}
+{{pass}}
+
+{{include '_create.html'}}

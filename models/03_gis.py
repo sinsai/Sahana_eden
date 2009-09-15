@@ -474,25 +474,25 @@ resource = 'location'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
-                feature_id,         # Either just a Point or a Polygon
-                Field('sector', 'integer'),
                 Field('level', 'integer'),
-                admin_id,
+                feature_id,         # Either just a Point or a Polygon
                 Field('parent', 'reference gis_location', ondelete = 'RESTRICT'),   # This form of hierarchy may not work on all Databases
+                Field('sector', 'integer'),
+                admin_id,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 db[table].name.label = T('Name')
-db[table].feature.label = T('GIS Feature')
-db[table].sector.requires = IS_NULL_OR(IS_IN_SET(gis_sector_opts))
-db[table].sector.represent = lambda opt: opt and gis_sector_opts[opt]
-db[table].sector.label = T('Sector')
 db[table].level.requires = IS_NULL_OR(IS_IN_SET(gis_level_opts))
 db[table].level.represent = lambda opt: opt and gis_level_opts[opt]
 db[table].level.label = T('Level')
+db[table].feature.label = T('GIS Feature')
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
 db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
 db[table].parent.label = T('Parent')
+db[table].sector.requires = IS_NULL_OR(IS_IN_SET(gis_sector_opts))
+db[table].sector.represent = lambda opt: opt and gis_sector_opts[opt]
+db[table].sector.label = T('Sector')
 title_create = T('Add Location')
 title_display = T('Location Details')
 title_list = T('List Locations')

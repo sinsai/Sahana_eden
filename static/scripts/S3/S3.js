@@ -17,7 +17,7 @@ $(document).ready(function() {
     $('a.popup').click(function(){
         var url=$(this).attr('href');
         var caller=$(this).parents('tr').attr('id').replace(/__row/,'');
-        openPopup(url.replace(/format=plain/,'format=popup')+'&caller='+caller);
+//        openPopup(url.replace(/format=plain/,'format=popup')+'&caller='+caller);
         return false;
     });
 });

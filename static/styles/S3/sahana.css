@@ -81,7 +81,7 @@ table { border-collapse: collapse }
     #menu_auth a:hover, #menu_auth .current_page_item a { background: #06c; color: #FFFFFF; }
     
     /* response.menu_modules */
-    #menu_modules {position:relative; height:20px;}
+    #menu_modules {position:relative; height:20px; padding-top:5px; }
     /* IE6 defaults */
     #menu_modules a,
     #menu_modules a:hover,
@@ -90,7 +90,7 @@ table { border-collapse: collapse }
     .modules_inner { position:absolute; z-index:100; width:100%; }
     
     /* response.menu_options */
-    #menu_options { position:relative; height:32px; }
+    #menu_options { position:relative; height:32px; padding-top:5px; padding-bottom: 5px; }
     /* IE6 defaults */
     #menu_options a,
     #menu_options a:hover,
@@ -107,7 +107,7 @@ table { border-collapse: collapse }
     ul.S3menuUL li.S3menuLI a.S3menuA:focus,
     ul.S3menuUL li.S3menuLI a.S3menuA:active { margin-right:1px; background:#06c; }
     ul.S3menuSub { float:left; padding:5px 0 0 0; margin:0; list-style:none; background:#369; margin-top:-5px;}
-    ul.S3menuSub li a { float:left; width:125px; background:#07a; clear:left; }
+    ul.S3menuSub li a { float:left; width:125px; background:#07a; clear:left; padding-top: 2px; padding-bottom: 3px;}
     ul.S3menuSub a:hover,
     ul.S3menuSub a:focus,
     ul.S3menuSub a:active { background:#06c; margin-right:1px; }
@@ -133,7 +133,7 @@ table { border-collapse: collapse }
 }
 
 /* common styles */
-#content h1, div#content h2 { color:#069; font-size:15px; font-weight:bolder; background:#F3F6FF; padding:3px 3px 3px 3px; border:1px #C6D1F5 solid; margin-bottom:10px; }
+#content h1, #content h2 { color:#069; font-size:15px; font-weight:bolder; background:#F3F6FF; padding:3px 3px 3px 3px; border:1px #C6D1F5 solid; margin-bottom:10px; margin-top: 10px;}
 #content h3 { color:#069; font-size:14px; font-weight:bolder; border-bottom:1px #069 solid; margin-bottom:10px; }
 #content h4 { color:#069; margin-top:10px; font-size:13px; font-weight:bolder; border-bottom:1px #036 dotted; margin-bottom:10px; }
 			

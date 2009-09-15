@@ -29,11 +29,12 @@ $(function() {
         });
     });
 }
-//self.parent.tb_remove();
+{{if response.flash or response.confirmation :}}self.parent.tb_remove();{{pass}}
 });
 </script>
 </head>
 <body>
+
 {{include}}
 </body>
 </html>

@@ -88,12 +88,12 @@ msg_record_deleted = T('Group deleted')
 msg_list_empty = T('No Groups currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
-group_id = SQLTable(None, 'group_id',
-            Field('group_id', db.msg_group,
+msg_group_id = SQLTable(None, 'msg_group_id',
+            Field('msg_group_id', db.msg_group,
                 requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s'),
                 represent = lambda id: (id and [db(db.msg_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Group'),
-                comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='msg', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Distribution Group|The Group of People to whom this Message should be sent."))),
+                comment = DIV(A(T('Add Group'), _class='thickbox', _href=URL(r=request, c='msg', f='group', args='create', vars=dict(format='popup'))+"&KeepThis=true&TB_iframe=true&height=190&width=350", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Distribution Group|The Group of People to whom this Message should be sent."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -101,11 +101,11 @@ group_id = SQLTable(None, 'group_id',
 resource = 'group_user'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
-                Field('group_id', db.msg_group),
+                Field('msg_group_id', db.msg_group),
                 person_id,
                 migrate=migrate)
-db[table].group_id.requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s')
-db[table].group_id.represent = lambda group_id: db(db.msg_group.id==group_id).select()[0].name
+db[table].msg_group_id.requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s')
+db[table].msg_group_id.represent = lambda msg_group_id: db(db.msg_group.id==msg_group_id).select()[0].name
 db[table].person_id.label = T('User')
 
 # Incoming SMS
@@ -140,7 +140,7 @@ resource = 'sms_outbox'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('phone_number', 'integer', notnull=True),
-                group_id,
+                msg_group_id,
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
@@ -148,7 +148,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].phone_number.requires = IS_NOT_EMPTY()
 #db[table].phone_number.comment = SPAN("*", _class="req")
 db[table].contents.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contents|If this is over 140 characters then it will be split into Multiple SMS's."))
-db[table].group_id.label = T('Recipients')
+db[table].msg_group_id.label = T('Recipients')
 db[table].contents.label = T('Contents')
 title_create = T('Send SMS')
 title_display = T('SMS Details')
@@ -169,14 +169,14 @@ resource = 'sms_sent'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('phone_number', 'integer', notnull=True),
-                group_id,
+                msg_group_id,
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].phone_number.requires = IS_NOT_EMPTY()
 #db[table].phone_number.comment = SPAN("*", _class="req")
-db[table].group_id.label = T('Recipients')
+db[table].msg_group_id.label = T('Recipients')
 db[table].contents.label = T('Contents')
 #title_create = T('Send SMS')
 title_display = T('SMS Details')
@@ -226,14 +226,14 @@ resource = 'email_outbox'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('recipient', notnull=True),
-                group_id,
+                msg_group_id,
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].recipient.requires = IS_EMAIL()
 #db[table].recipient.comment = SPAN("*", _class="req")
-db[table].group_id.label = T('Recipients')
+db[table].msg_group_id.label = T('Recipients')
 db[table].subject.label = T('Subject')
 db[table].body.label = T('Body')
 title_create = T('Send Email')
@@ -255,14 +255,14 @@ resource = 'email_sent'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
                 #Field('recipient', notnull=True),
-                group_id,
+                msg_group_id,
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].recipient.requires = IS_EMAIL()
 #db[table].recipient.comment = SPAN("*", _class="req")
-db[table].group_id.label = T('Recipients')
+db[table].msg_group_id.label = T('Recipients')
 db[table].subject.label = T('Subject')
 db[table].body.label = T('Body')
 #title_create = T('Send Email')

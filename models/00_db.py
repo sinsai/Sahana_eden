@@ -59,7 +59,7 @@ def shn_sessions(f):
     # Select the theme
     if not session.s3.theme:
         session.s3.theme = Storage()
-    session.s3.theme.footer = db().select(db.s3_theme.footer)[0].footer
+    session.s3.theme.footer = db().select(db.admin_theme.footer)[0].footer
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
         session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read

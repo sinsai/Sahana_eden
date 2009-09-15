@@ -15,8 +15,9 @@ This file was developed by Fran Boon as a web2py extension.
 
 import time
 from datetime import datetime, timedelta
+from gluon.validators import IS_MATCH
 
-__all__ = ['IS_LAT', 'IS_LON', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF']
+__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF']
 
 class IS_LAT(object):
     """
@@ -61,6 +62,17 @@ class IS_LON(object):
         except ValueError:
             pass
         return (value, self.error_message)
+
+class IS_HTML_COLOUR(IS_MATCH):
+    """
+    example::
+
+        INPUT(_type='text', _name='name', requires=IS_HTML_COLOUR())
+
+    """
+
+    def __init__(self, error_message='must be a 6 digit hex code!'):
+        IS_MATCH.__init__(self, '^[0-9a-fA-F]{6}$', error_message)
 
 class THIS_NOT_IN_DB(object):
     """

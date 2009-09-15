@@ -14,6 +14,10 @@ import jsmin, mergejs
 # For CSS
 import re
 
+# For file moves
+import shutil                                   
+import os                                       
+
 def mergeCSS(inputFilenames,outputFilename):
     output=''
     for inputFilename in inputFilenames:
@@ -165,4 +169,33 @@ print "Writing to %s." % outputFilename
 file(outputFilename, "w").write(minimized)
 print "Writing to %s." % outputFilenameGIS
 file(outputFilenameGIS, "w").write(minimizedGIS)
+
+# Move files to correct locations
+print "Deleting %s." % outputFilename
+try:                                            
+    os.remove("../S3/%s" % outputFilename)                
+except:                                         
+    pass
+print "Deleting %s." % outputFilenameGIS
+try:
+    os.remove("../gis/%s" % outputFilenameGIS)
+except:
+    pass
+print "Deleting %s." % outputFilenameCSS
+try:
+    os.remove("../../styles/S3/%s" % outputFilenameCSS)
+except:
+    pass
+print "Deleting %s." % outputFilenameCSSGIS
+try:
+    os.remove("../../styles/gis/%s" % outputFilenameCSSGIS)
+except:
+    pass
+print "Moving new files"
+shutil.move("S3.min.js","../S3")
+shutil.move("MapFish.min.js","../gis")
+shutil.move("sahana.min.css","../../styles/S3")
+shutil.move("gis.min.css","../../styles/gis")
+
+
 print "Done."

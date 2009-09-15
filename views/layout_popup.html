@@ -10,10 +10,10 @@
 {{pass}}
 <script type="text/javascript">
 $(function() {
+	if(self.opener){
     // bind form and provide a simple callback function 
     $('form').ajaxForm(function() {
         // refresh lookup list in parent window
-	if(self.opener){
         // FIXME: How to get it to keep the rest of the form fields? (Read them in & re-populate?)
         self.opener.location.reload(true);
         // find which ID we need to make active
@@ -27,9 +27,9 @@ $(function() {
             self.close();
 	    
         });
-}
-self.parent.tb_remove();
     });
+}
+//self.parent.tb_remove();
 });
 </script>
 </head>

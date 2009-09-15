@@ -1679,7 +1679,7 @@ class JRequest(object):
         else:
             if self.method:
                 args.append(self.method)
-            if self.record_id:
+            if self.record_id or self.method=="read":
                 if not representation==self.default_representation:
                     args.append('[id].%s' % representation)
                 else:

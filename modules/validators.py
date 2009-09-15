@@ -305,45 +305,49 @@ class IS_UTC_DATETIME(object):
 
     def __call__(self,value):
 
+        _dtstr = value.strip()
+
+        if len(_dtstr)>6 and \
+            (_dtstr[-6:-4]==' +' or _dtstr[-6:-4]==' -') and \
+            _dtstr[-4:].isdigit():
+            # UTC offset specified in dtstr
+            dtstr = _dtstr[0:-6]
+            _offset_str = _dtstr[-5:]
+        else:
+            # use default UTC offset
+            dtstr = _dtstr
+            _offset_str = self.utc_offset
+
+        offset_hrs = int(_offset_str[-5]+_offset_str[-4:-2])
+        offset_min = int(_offset_str[-5]+_offset_str[-2:])
+        offset = 3600*offset_hrs + 60*offset_min
+
+        # Offset must be in range -1439 to +1439 minutes
+        if offset<-86340 or offset >86340:
+            self.error_message='invalid UTC offset!'
+            return (dt, self.error_message)
+
         try:
-            _dtstr = value.strip()
-
-            if len(_dtstr)>6 and \
-                (_dtstr[-6:-4]==' +' or _dtstr[-6:-4]==' -') and \
-                _dtstr[-4:].isdigit():
-                # UTC offset specified in dtstr
-                dtstr = _dtstr[0:-6]
-                _offset_str = _dtstr[-5:]
-            else:
-                # use default UTC offset
-                dtstr = _dtstr
-                _offset_str = self.utc_offset
-
-            offset_hrs = int(_offset_str[-5]+_offset_str[-4:-2])
-            offset_min = int(_offset_str[-5]+_offset_str[-2:])
-            offset = 3600*offset_hrs + 60*offset_min
-
-            # Offset must be in range -1439 to +1439 minutes
-            if offset<-86340 or offset >86340:
-                self.error_message='invalid UTC offset!'
-                return (dt, self.error_message)
-
             (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dtstr, str(self.format))
             dt = datetime(y,m,d,hh,mm,ss)
-
-            if self.allow_future:
-                return (dt, None)
-            else:
-                latest = datetime.utcnow() + timedelta(seconds=self.max_future)
-                dt_utc = dt - timedelta(seconds=offset)
-                if dt_utc > latest:
-                    self.error_message='future times not allowed!'
-                    return (dt_utc, self.error_message)
-                else:
-                    return (dt_utc, None)
         except:
-            self.error_message='must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!'
-            return(value, self.error_message)
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dtstr+":00", str(self.format))
+                dt = datetime(y,m,d,hh,mm,ss)
+            except:
+                self.error_message='must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!'
+                return(value, self.error_message)
+
+        if self.allow_future:
+            return (dt, None)
+        else:
+            latest = datetime.utcnow() + timedelta(seconds=self.max_future)
+            dt_utc = dt - timedelta(seconds=offset)
+            if dt_utc > latest:
+                self.error_message='future times not allowed!'
+                return (dt_utc, self.error_message)
+            else:
+                return (dt_utc, None)
 
     def formatter(self, value):
         # Always format with trailing UTC offset

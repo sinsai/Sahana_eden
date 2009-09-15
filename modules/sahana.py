@@ -1113,13 +1113,13 @@ class S3:
 #
 class JoinedResource(object):
 
-    def __init__(self, prefix, name, joinby=None, multiple=True, fields=None, rss=None, attr=None):
+    def __init__(self, prefix, name, joinby=None, multiple=True, list_fields=None, rss=None, attr=None):
 
         self.prefix = prefix
         self.name = name
         self.joinby = joinby
         self.multiple = multiple
-        self.fields = fields
+        self.list_fields = list_fields
         self.rss = rss
         if attr:
             self.attr = attr
@@ -1140,9 +1140,9 @@ class JoinedResource(object):
     def is_multiple(self):
         return self.multiple
 
-    # list_fields -------------------------------------------------------------
-    def list_fields(self):
-        return self.fields
+    # get_list_fields ---------------------------------------------------------
+    def get_list_fields(self):
+        return self.list_fields
 
     # rss ---------------------------------------------------------------------
     def _rss(self):
@@ -1215,14 +1215,16 @@ class JRLayer(object):
         self.settings = {}
 
     # add_jresource -----------------------------------------------------------
-    def add_jresource(self, prefix, name, joinby=None, multiple=True, rss=None, fields=None, **attr):
+    def add_jresource(self, prefix, name, joinby=None, multiple=True, rss=None, list_fields=None, **attr):
+
+        _fields = None
 
         _table = "%s_%s" % (prefix, name)
 
-        if fields:
-            list_fields = [self.db[_table][f] for f in fields]
+        if list_fields:
+            _fields = [self.db[_table][f] for f in list_fields]
 
-        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, rss=rss, fields=list_fields, attr=attr)
+        jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, rss=rss, list_fields=_fields, attr=attr)
         self.jresources[name] = jr
 
     # get_prefix --------------------------------------------------------------
@@ -1249,11 +1251,11 @@ class JRLayer(object):
         else:
             return None
 
-    # list_fields -------------------------------------------------------------
-    def list_fields(self, name):
+    # get_list_fields ---------------------------------------------------------
+    def get_list_fields(self, name):
 
         if name in self.jresources:
-            return self.jresources[name].list_fields()
+            return self.jresources[name].get_list_fields()
         else:
             return None
 

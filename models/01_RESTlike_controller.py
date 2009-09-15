@@ -745,7 +745,7 @@ def shn_list_jlinkto(field):
     return URL(r=request, args=[request.args[0], request.args[1], field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
-def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None, rss=None):
+def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None, rss=None):
     """
         List records matching the request
     """
@@ -826,8 +826,19 @@ def shn_list(jr, pheader=None, listadd=True, main=None, extra=None, orderby=None
 
         # Which fields do we display?
         fields = None
+
         if jr.jresource:
-            fields = jrlayer.list_fields(resource)
+            _fields = jrlayer.get_list_fields(resource)
+            if _fields:
+                fields = [f for f in _fields if f.readable]
+            else:
+                fields = None
+        elif list_fields:
+            fields = [table[f] for f in list_fields if table[f].readable]
+
+        if fields and len(fields)==0:
+            fields.append(table.id)
+
         if not fields:
             fields = [table[f] for f in table.fields if table[f].readable]
 
@@ -1260,6 +1271,7 @@ def shn_rest_controller(module, resource,
     deletable=True,
     editable=True,
     listadd=True,
+    list_fields=None,
     main='name',
     extra=None,
     orderby=None,
@@ -1531,7 +1543,7 @@ def shn_rest_controller(module, resource,
 
             # HTTP List or List-Add -------------------------------------------
             if jr.http == 'GET' or request.env.request_method == 'POST':
-                return shn_list(jr, pheader, listadd=listadd, main=main, extra=extra,
+                return shn_list(jr, pheader, list_fields=list_fields, listadd=listadd, main=main, extra=extra,
                     orderby=orderby, sortby=sortby, onvalidation=onvalidation, onaccept=onaccept, rss=rss)
             # HTTP Create -----------------------------------------------------
             elif jr.http == 'PUT':

@@ -64,7 +64,7 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
+    list_fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -140,7 +140,7 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
+    list_fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -211,7 +211,7 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
+    list_fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -303,7 +303,7 @@ jrlayer.add_jresource(module, resource,
         title="%(time)s",
         description=shn_pr_presence_rss
     ),
-    fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
+    list_fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -387,7 +387,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
+    list_fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -436,7 +436,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_group='group_id', pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id','group_id','person_id','group_head','description'])
+    list_fields = ['id','group_id','person_id','group_head','description'])
 
 # Field validation
 
@@ -481,7 +481,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id','opt_pr_network_type','comment'])
+    list_fields = ['id','opt_pr_network_type','comment'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -525,7 +525,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_person='person_id'),
     deletable=True,
     editable=True,
-    fields = ['id','network_id','person_id','description','comment'])
+    list_fields = ['id','network_id','person_id','description','comment'])
 
 # Field validation
 

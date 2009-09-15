@@ -1047,8 +1047,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
         # Check for presence of Custom View
         shn_custom_view(jr, 'popup.html')
-        print "Here!"
-        return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller, next=jr.here())
+        return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
 
     elif representation == "json":
         return import_json(method='create')

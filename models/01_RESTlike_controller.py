@@ -882,8 +882,13 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                 table[jr.fkey].default = jr.record[jr.pkey]
                 table[jr.fkey].writable = False
 
+            if onaccept:
+                _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id) and onaccept(form)
+            else:
+                _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id)
+
             # Display the Add form below List
-            form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept, next=jr.there())
+            form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept, next=jr.there())
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
             if jr.jresource:
@@ -1018,7 +1023,12 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             table[jr.fkey].default = jr.record[jr.pkey]
             table[jr.fkey].writable = False
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept, next=jr.there())
+        if onaccept:
+            _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id) and onaccept(form)
+        else:
+            _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id)
+
+        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept, next=jr.there())
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
         if jr.jresource:
@@ -1037,7 +1047,8 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
         # Check for presence of Custom View
         shn_custom_view(jr, 'popup.html')
-        return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
+        print "Here!"
+        return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller, next=jr.here())
 
     elif representation == "json":
         return import_json(method='create')

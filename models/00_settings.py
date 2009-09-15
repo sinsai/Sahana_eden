@@ -358,6 +358,9 @@ admin_menu_options = [
             [T('Sync Partners'), False, URL(r=request, c='sync', f='partner')],
             [T('Sync Settings'), False, URL(r=request, c='sync', f='setting', args=['update', 1])]
     ]],
+    [T('Mobile'), False, URL(r=request, c='mobile', f='index'),[
+            [T('Modem Settings'), False, URL(r=request, c='mobile', f='settings', args=['update', 1])]
+    ]],
     [T('Edit Application'), False, URL(r=request, a='admin', c='default', f='design', args=['sahana'])],
     [T('Functional Tests'), False, URL(r=request, c='static', f='selenium', args=['core', 'TestRunner.html'], vars=dict(test='../tests/TestSuite.html', auto='true', resultsUrl=URL(r=request, c='admin', f='handleResults')))]
 ]

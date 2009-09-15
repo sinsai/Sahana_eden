@@ -1350,6 +1350,8 @@ class JRLayer(object):
             tablename = "%s_%s" % (module, resource)
             session.jrvars[tablename] = record_id
 
+        return True # always return True to make this chainable
+
     # clear_session -----------------------------------------------------------
     def clear_session(self, session, module=None, resource=None):
 
@@ -1363,6 +1365,8 @@ class JRLayer(object):
             else:
                 if 'jrvars' in session:
                     del session['jrvars']
+
+        return True # always return True to make this chainable
 
 # *****************************************************************************
 # JRequest

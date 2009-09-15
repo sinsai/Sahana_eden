@@ -113,7 +113,7 @@ def importxml(db,xmlinput):
         csvout = csvout + csvdata(subnode.childNodes)
     fh = StringIO.StringIO()
     fh.write(csvout)
-    fh.seek(0, 0)
+    fh.seek(0,0)
     try:
         db[parent].import_from_csv_file(fh)
         return 1

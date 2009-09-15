@@ -22,6 +22,11 @@ def setting():
     return shn_rest_controller('s3', 'setting', deletable=False, listadd=False)
 
 @auth.requires_membership('Administrator')
+def theme():
+    "RESTlike CRUD controller"
+    return shn_rest_controller('s3', 'theme')
+
+@auth.requires_membership('Administrator')
 def user():
     "RESTlike CRUD controller"
     # Add users to Person Registry & 'Authenticated' role

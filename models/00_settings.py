@@ -198,6 +198,7 @@ if not len(db().select(db[table].ALL)):
     auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
     auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
     auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')
+    auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
     
 module = 's3'
 # Auditing
@@ -227,11 +228,11 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('admin_name'),
                 Field('admin_email'),
                 Field('admin_tel'),
+                Field('theme', db.s3_theme),
                 Field('debug', 'boolean', default=False),
-                Field('security_policy', 'integer', default=1),
                 Field('self_registration', 'boolean', default=True),
+                Field('security_policy', 'integer', default=1),
                 Field('archive_not_delete', 'boolean', default=True),
-                Field('theme', default='sahana'),
                 Field('audit_read', 'boolean', default=False),
                 Field('audit_write', 'boolean', default=False),
                 migrate=migrate)
@@ -255,7 +256,8 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         admin_name = T("Sahana Administrator"),
         admin_email = T("support@Not Set"),
-        admin_tel = T("Not Set")
+        admin_tel = T("Not Set"),
+        theme = 1
     )
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
 title_create = T('Add Setting')
@@ -271,6 +273,51 @@ msg_record_created = T('Setting added')
 msg_record_modified = T('Setting updated')
 msg_record_deleted = T('Setting deleted')
 msg_list_empty = T('No Settings currently defined')
+s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+resource = 'theme'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                Field('name'),
+                Field('logo'),
+                Field('footer'),
+                Field('col_background'),    # ToDo: Colour selector
+                Field('col_menu'),
+                Field('col_highlight'),
+                migrate=migrate)
+db[table].name.label = T('Name')
+db[table].logo.label = T('Logo')
+db[table].logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
+db[table].footer.label = T('Footer')
+db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
+db[table].col_background.label = T('Background Colour')
+db[table].col_menu.label = T('Colour of dropdown menus')
+db[table].col_highlight.label = T('Colour of Selected Menu items')
+# Populate table with Default options
+# - deployments can change these live via appadmin
+if not len(db().select(db[table].ALL)): 
+    db[table].insert(
+        name = T('Sahana Blue')
+        logo = 'img/sahanapy_logo.png',
+        footer = 'footer.html',
+        col_background = '369',
+        col_menu = '06c',
+        col_highlight = '07a'
+    )
+# Define CRUD strings
+title_create = T('Add Theme')
+title_display = T('Theme Details')
+title_list = T('List Themes')
+title_update = T('Edit Theme')
+title_search = T('Search Themes')
+subtitle_create = T('Add New Theme')
+subtitle_list = T('Themes')
+label_list_button = T('List Themes')
+label_create_button = T('Add Theme')
+msg_record_created = T('Theme added')
+msg_record_modified = T('Theme updated')
+msg_record_deleted = T('Theme deleted')
+msg_list_empty = T('No Themes currently defined')
 s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
 # Auth Menu (available in all Modules)

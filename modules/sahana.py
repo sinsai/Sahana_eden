@@ -1601,11 +1601,10 @@ class JRequest(object):
         """
 
         args = []
+        vars = {}
 
         if not representation:
             representation = self.representation
-
-        f = self.resource
 
         if self.jresource:
             args = [self.record_id]
@@ -1627,11 +1626,9 @@ class JRequest(object):
                     args.append(self.record_id)
             else:
                 if not representation==self.default_representation:
-                    f='%s.%s' % (self.resource, representation)
-                else:
-                    f=self.resource
+                    vars = {'format': representation}
 
-        return(URL(r=self.request, c=self.request.controller, f=f, args=args))
+        return(URL(r=self.request, c=self.request.controller, f=self.resource, args=args, vars=vars))
 
     # -------------------------------------------------------------------------
     def there(self, representation=None):
@@ -1639,11 +1636,10 @@ class JRequest(object):
             Backlink producing a HTTP/list request to the same resource
         """
         args = []
+        vars = {}
 
         if not representation:
             representation = self.representation
-
-        f = self.resource
 
         if self.jresource:
             args = [self.record_id]
@@ -1653,11 +1649,9 @@ class JRequest(object):
                 args.append(self.jresource)
         else:
             if not representation==self.default_representation:
-                f='%s.%s' % (self.resource, representation)
-            else:
-                f=self.resource
+                vars = {'format': representation}
 
-        return(URL(r=self.request, c=self.request.controller, f=f, args=args))
+        return(URL(r=self.request, c=self.request.controller, f=self.resource, args=args, vars=vars))
 
     # -------------------------------------------------------------------------
     def same(self, representation=None):
@@ -1666,11 +1660,10 @@ class JRequest(object):
         """
 
         args = []
+        vars = {}
 
         if not representation:
             representation = self.representation
-
-        f = self.resource
 
         if self.jresource:
             args = ['[id]']
@@ -1680,8 +1673,6 @@ class JRequest(object):
                 args.append(self.jresource)
             if self.method:
                 args.append(self.method)
-                #if self.jrecord_id:
-                #    args.append(self.jrecord_id)
         else:
             if self.method:
                 args.append(self.method)
@@ -1692,8 +1683,6 @@ class JRequest(object):
                     args.append('[id]')
             else:
                 if not representation==self.default_representation:
-                    f='%s.%s' % (self.resource, representation)
-                else:
-                    f=self.resource
+                    vars = {'format': representation}
 
-        return(URL(r=self.request, c=self.request.controller, f=f, args=args))
+        return(URL(r=self.request, c=self.request.controller, f=self.resource, args=args, vars=vars))

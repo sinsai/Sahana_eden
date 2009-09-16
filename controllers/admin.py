@@ -53,12 +53,18 @@ def theme_apply(form):
             line = line.replace("YOURLOGOHERE", logo)
             ofile.write(line)
         ofile.close()
+
         # Minify
-        from subprocess import Popen, PIPE
-        cmd = os.path.join(os.getcwd(), request.folder, 'static', 'scripts', 'tools', 'build.sahana.py')
-        proc = Popen([sys.executable, cmd], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
-        # Currently above line fails since mergejs.py can't find sahana.js.cfg
-        
+        from subprocess import PIPE, check_call
+        currentdir = os.getcwd()
+        os.chdir(os.path.join(currentdir, request.folder, 'static', 'scripts', 'tools'))
+        try:
+            proc = check_call([sys.executable, 'build.sahana.py', 'CSS', 'NOGIS'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+        except:
+            session.error = T('Error encountered while applying the theme.')
+            redirect(URL(r=request, args=request.args))
+        os.chdir(currentdir)
+
         # Don't do standard redirect to List view as we only want this option available
         redirect(URL(r=request, args=['update', 1]))
     else:

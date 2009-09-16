@@ -15,18 +15,19 @@ $(document).ready(function() {
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
     $('a.popup').click(function(){
-        var url=$(this).attr('href');
-        var caller=$(this).parents('tr').attr('id').replace(/__row/,'');
-        openPopup(url.replace(/format=plain/,'format=popup')+'&caller='+caller);
+        // Add the caller to the URL vars so that the popup knows which field to refresh/set
+        var url = $(this).attr('href');
+        var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
+        openPopup(url.replace(/format=plain/, 'format=popup') + '&caller='+caller);
         return false;
     });
     $('a.thickbox').click(function(){
         $(this).attr('href', function() {
             // Add the caller to the URL vars so that the popup knows which field to refresh/set
-            var url_in=$(this).attr('href');
-            var caller=$(this).parents('tr').attr('id').replace(/__row/,'');
+            var url_in = $(this).attr('href');
+            var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
             // This has to be the last var: &TB_iframe=true
-            var url_out=url_in.replace(/&TB_iframe=true/,'&caller='+caller+'&TB_iframe=true');
+            var url_out = url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
             return url_out;
         });
         return false;

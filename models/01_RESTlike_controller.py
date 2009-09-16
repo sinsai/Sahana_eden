@@ -982,7 +982,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         # Check for presence of Custom View
         shn_custom_view(jr, 'create.html')
 
-        output = dict(module_name=module_name)
+        output = dict(module_name=module_name, module=module, resource=resource, main=main)
 
         if jr.jresource:
             try:

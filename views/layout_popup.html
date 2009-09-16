@@ -10,29 +10,36 @@
 {{pass}}
 <script type="text/javascript">
 $(function() {
-    if(self.opener){
-    // Legacy popups
-    // bind form and provide a simple callback function 
-    $('form').ajaxForm(function() {
-        // FIXME: Refresh just the SELECT not the whole page
-        // otherwise existing inputs lost & form won't submit!
-        self.opener.location.reload(true);
-        // find which ID we need to make active
-        {{field = '%s_%s_%s' % (module, resource, main)}}
-        value=$('input#{{=field}}').val();
-        $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}"+"&value="+value,
-        function(data){
-            // set the caller's lookup list to the new ID
-            self.opener.$('select#{{=caller}}').val(data[0].id);
-            // close the popup
-            self.close();
-	    
+    if (self.opener) {
+        // Legacy popups
+        // bind form and provide a simple callback function 
+        $('form').ajaxForm(function() {
+            // FIXME: Refresh just the SELECT not the whole page
+            // otherwise existing inputs lost & form won't submit!
+            self.opener.location.reload(true);
+            // find which ID we need to make active
+            {{field = '%s_%s_%s' % (module, resource, main)}}
+            value=$('input#{{=field}}').val();
+            $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}" + "&value=" + value,
+                function(data) {
+                    // set the caller's lookup list to the new ID
+                    self.opener.$('select#{{=caller}}').val(data[0].id);
+                    // close the popup
+                    self.close();
+                });
         });
-    });
-}
-{{if response.flash or response.confirmation:}}
-self.parent.tb_remove();
-{{pass}}
+    } else {
+        // Thickbox popups
+        // Refresh the SELECT DIV: FIXME
+        self.parent.TB_refresh('{{=caller}}');
+        // Set the lookup list to the new ID: FIXME
+        self.parent.TB_select('{{=caller}}');
+        // If submission succesful
+        {{if response.flash or response.confirmation:}}
+        // Close popup
+        self.parent.tb_remove();
+        {{pass}}
+    }
 });
 </script>
 </head>

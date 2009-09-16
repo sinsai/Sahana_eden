@@ -314,12 +314,12 @@ db[table].lon.requires = IS_NULL_OR(IS_LON())
 db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
 db[table].observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 
-db[table].observer.comment = DIV(A(T('Add Person'), _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+db[table].observer.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].observer.ondelete = 'RESTRICT'
 
 db[table].reporter.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
 db[table].reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-db[table].reporter.comment = DIV(A(T('Add Person'), _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+db[table].reporter.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].reporter.ondelete = 'RESTRICT'
 
 db[table].time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
@@ -499,7 +499,7 @@ network_id = SQLTable(None, 'network_id',
                 Field('network_id', db.pr_network,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_network.id', '%(id)s')),
                 represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
-                comment = DIV(A(T('Add Network'), _class='thickbox', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
+                comment = DIV(A(T('Add Network'), _class='popup', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -556,7 +556,7 @@ pcase_id = SQLTable(None, 'pcase_id',
                 Field('pcase_id', db.pr_case,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_case.id', '%(description)s')),
                 represent = lambda id: (id and [db(db.pr_case.id==id).select()[0].description] or ["None"])[0],
-                comment = DIV(A(T('Add Case'), _class='thickbox', _href=URL(r=request, c='pr', f='case', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Case|Add new case."))),
+                comment = DIV(A(T('Add Case'), _class='popup', _href=URL(r=request, c='pr', f='case', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Case|Add new case."))),
                 ondelete = 'RESTRICT'
                 ))
 

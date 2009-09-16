@@ -113,7 +113,7 @@ admin_id = SQLTable(None, 'admin_id',
             Field('admin', db.auth_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
-                comment = DIV(A(T('Add Role'), _class='thickbox', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='popup')), _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
+                comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
                 ondelete='RESTRICT'
                 ))
     
@@ -302,7 +302,7 @@ db[table].security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T
 db[table].theme.label = T('Theme')
 db[table].theme.requires = IS_IN_DB(db, 'admin_theme.id', 'admin_theme.name')
 db[table].theme.represent = lambda name: db(db.admin_theme.id==name).select()[0].name
-db[table].theme.comment = DIV(A(T('Add Theme'), _class='thickbox', _href=URL(r=request, c='admin', f='theme', args='create', vars=dict(format='popup')), _target='top', _title=T('Add Theme'))),
+db[table].theme.comment = DIV(A(T('Add Theme'), _class='popup', _href=URL(r=request, c='admin', f='theme', args='create', vars=dict(format='plain')), _target='top', _title=T('Add Theme'))),
 db[table].debug.label = T('Debug')
 db[table].debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
 db[table].self_registration.label = T('Self Registration')

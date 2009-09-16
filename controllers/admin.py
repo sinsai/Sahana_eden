@@ -30,7 +30,7 @@ def theme_apply(form):
         col_background = theme.col_background
         col_menu = theme.col_menu
         col_highlight = theme.col_highlight
-        
+
         template = os.path.join(request.folder, 'static', 'styles', 'S3', 'template.css')
         out_file = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.css')
         # Check permissions
@@ -55,10 +55,14 @@ def theme_apply(form):
         ofile.close()
 
         # Minify
-        from subprocess import Popen, PIPE
+        from subprocess import PIPE, check_call
         currentdir=os.getcwd()
         os.chdir(os.path.join(os.getcwd(), request.folder,'static','scripts','tools'))
-        proc = Popen([sys.executable, 'build.sahana.py'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+        try:
+            proc = check_call([sys.executable, 'build.sahana.py', 'CSS', 'NOGIS'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+        except:
+            session.error = T('Error encountered while applying the theme.')
+            redirect(URL(r=request, args=request.args))
         os.chdir(currentdir)
 
         # Don't do standard redirect to List view as we only want this option available

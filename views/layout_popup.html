@@ -10,7 +10,7 @@
 {{pass}}
 <script type="text/javascript">
 $(function() {
-	//if(self.opener){
+	if(self.opener){
         // bind form and provide a simple callback function 
         $('form').ajaxForm(function() {
             // refresh lookup list in parent window
@@ -27,7 +27,7 @@ $(function() {
                 self.close();
             });
         });
-    //}
+    }
 {{if response.flash or response.confirmation:}}
 self.parent.tb_remove();
 {{pass}}

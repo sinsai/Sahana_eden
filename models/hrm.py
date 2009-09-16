@@ -93,8 +93,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 hrm_find_id = SQLTable(None, 'hrm_find_id',
                 Field('hrm_find_id', db.hrm_find,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'hrm_find.id', '%(find_date)s: %(location_details)s, %(bodies_est)s bodies')),
-                represent = lambda id: (id and [DIV(A(db(db.hrm_find.id==id).select()[0].id, _class='thickbox', _href=URL(r=request, c='hrm', f='find', args='read'+"/"+str(id).strip(), vars=dict(format='popup')), _target='top'))] or ["None"])[0],
-                comment = DIV(A(s3.crud_strings.hrm_find.label_create_button, _class='thickbox', _href=URL(r=request, c='hrm', f='find', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
+                represent = lambda id: (id and [DIV(A(db(db.hrm_find.id==id).select()[0].id, _class='thickbox', _href=URL(r=request, c='hrm', f='find', args=['read', str(id).strip()], vars=dict(format='popup')), _target='top', _title=s3.crud_strings.hrm_find.label_create_button))] or ["None"])[0],
+                comment = DIV(A(s3.crud_strings.hrm_find.label_create_button, _class='thickbox', _href=URL(r=request, c='hrm', f='find', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings.hrm_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
                 ondelete = 'RESTRICT'
                 ))
 

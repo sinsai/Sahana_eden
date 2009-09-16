@@ -18,8 +18,86 @@ def setting():
     s3.crud_strings.setting.title_update = T('Edit Settings')
     s3.crud_strings.setting.msg_record_modified = T('Settings updated')
     s3.crud_strings.setting.label_list_button = None
-    crud.settings.update_next = URL(r=request, args=['update', 1])
-    return shn_rest_controller('s3', 'setting', deletable=False, listadd=False)
+    #crud.settings.update_next = URL(r=request, args=['update', 1])
+    return shn_rest_controller('s3', 'setting', deletable=False, listadd=False, onvalidation=lambda form: theme_check(form), onaccept=lambda form: theme_apply(form))
+
+def theme_apply(form):
+    "Apply the Theme specified by Form"
+    if form.vars.theme:
+        # Valid form - what are the settings?
+        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
+        logo = theme.logo
+        col_background = theme.col_background
+        col_menu = theme.col_menu
+        col_highlight = theme.col_highlight
+        
+        template = os.path.join(request.folder, 'static', 'styles', 'S3', 'template.css')
+        out_file = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.css')
+        # Check permissions
+        if not os.access(template, os.R_OK):
+            session.error = T('Template file %s not readable - unable to apply theme!' % template)
+            redirect(URL(r=request, args=request.args))
+        if not os.access(out_file, os.W_OK):
+            session.error = T('CSS file %s not writable - unable to apply theme!' % out_file)
+            redirect(URL(r=request, args=request.args))
+        # Read in Template
+        inpfile = open(template, 'r')
+        lines = inpfile.readlines()
+        inpfile.close()
+        # Write out CSS
+        ofile = open(out_file, 'w')
+        for line in lines:
+            line = line.replace("col_background", col_background)
+            line = line.replace("col_menu", col_menu)
+            line = line.replace("col_highlight", col_highlight)
+            line = line.replace("YOURLOGOHERE", logo)
+            ofile.write(line)
+        ofile.close()
+
+        # Minify
+        from subprocess import Popen, PIPE
+        currentdir=os.getcwd()
+        os.chdir(os.path.join(os.getcwd(), request.folder,'static','scripts','tools'))
+        proc = Popen([sys.executable, 'build.sahana.py'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+        os.chdir(currentdir)
+
+        # Don't do standard redirect to List view as we only want this option available
+        redirect(URL(r=request, args=['update', 1]))
+    else:
+        session.error = INVALIDREQUEST
+        redirect(URL(r=request))
+
+def theme_check(form):
+    "Check the Theme has valid files available"
+    # Check which form we're called by
+    if form.vars.theme:
+        # Called from Settings
+        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
+        logo = theme.logo
+        footer = theme.footer
+    elif form.vars.logo and form.vars.footer:
+        # Called from Theme
+        logo = form.vars.logo
+        footer = form.vars.footer
+    else:
+        session.error = INVALIDREQUEST
+        redirect(URL(r=request))
+    _logo = os.path.join(request.folder, 'static', logo)
+    _footer = os.path.join(request.folder, 'views', footer)
+    if not os.access(_logo, os.R_OK):
+        session.error = T('Logo file %s missing!' % logo)
+        redirect(URL(r=request, args=request.args))
+    if not os.access(_footer, os.R_OK):
+        session.error = T('Footer file %s missing!' % footer)
+        redirect(URL(r=request, args=request.args))
+    # Validation passed
+    return
+
+    
+@auth.requires_membership('Administrator')
+def theme():
+    "RESTlike CRUD controller"
+    return shn_rest_controller('admin', 'theme', onvalidation=lambda form: theme_check(form))
 
 @auth.requires_membership('Administrator')
 def user():

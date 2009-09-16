@@ -1,21 +1,5 @@
-{{if session.s3.debug:}}
- <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.js" type="text/javascript" charset="utf-8"></script>
-{{else:}}
- <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.min.js" type="text/javascript" charset="utf-8"></script>
-{{pass}}
-<script type="text/javascript">//<![CDATA[
-$(document).ready(function() {
-	$('#list').dataTable(
-    {{try:}}
-        {{if sortby:}}
-            {"aaSorting": {{=sortby}}}
-        {{else:}}
-        {{pass}}
-    {{except:}}
-    {{pass}}
-    );
-});
-//]]></script>
+{{include 'thickbox.html'}}
+{{include 'dataTables.html'}}
 
 {{try:}}
  {{=H2(title)}}

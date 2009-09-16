@@ -40,6 +40,7 @@ def shn_sessions(f):
         Settings
             Debug mode
             Security mode
+            Restricted mode
             Theme
             Audit modes
     """
@@ -56,8 +57,12 @@ def shn_sessions(f):
     session.s3.debug = db().select(db.s3_setting.debug)[0].debug
     # Which security policy are we running?
     session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy
+    # Are we running in restricted mode?
+    session.s3.restricted = auth.has_membership(auth.id_group('Restricted'))
     # Select the theme
-    session.s3.theme = db().select(db.s3_setting.theme)[0].theme
+    if not session.s3.theme:
+        session.s3.theme = Storage()
+    session.s3.theme.footer = db().select(db.admin_theme.footer)[0].footer
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
         session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read

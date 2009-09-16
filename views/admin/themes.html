@@ -1,0 +1,21 @@
+<script src="/{{=request.application}}/static/scripts/S3/colorpicker.js" type="text/javascript" charset="utf-8"></script>
+<link href="/{{=request.application}}/static/styles/S3/colorpicker.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+
+<script type="text/javascript">//<![CDATA[
+// These are the resources available to import/export functions
+$(function() {
+    $('#admin_theme_col_background, #admin_theme_col_menu, #admin_theme_col_highlight').ColorPicker({
+        onSubmit: function(hsb, hex, rgb, el) {
+            $(el).val(hex);
+            $(el).ColorPickerHide();
+        },
+        onBeforeShow: function () {
+            $(this).ColorPickerSetColor(this.value);
+        }
+    })
+    .bind('keyup', function(){
+        $(this).ColorPickerSetColor(this.value);
+    });
+});
+//]]></script>
+

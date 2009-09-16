@@ -2,34 +2,35 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 {{if session.s3.debug:}}
-  {{include 'sahana_scripts_debug.html'}}
   {{include 'sahana_styles_debug.html'}}
+  {{include 'sahana_scripts_debug.html'}}
 {{else:}}
-  {{include 'sahana_scripts_min.html'}}
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{include 'sahana_scripts_min.html'}}
 {{pass}}
 <script type="text/javascript">
 $(function() {
 	if(self.opener){
-    // bind form and provide a simple callback function 
-    $('form').ajaxForm(function() {
-        // refresh lookup list in parent window
-        // FIXME: How to get it to keep the rest of the form fields? (Read them in & re-populate?)
-        self.opener.location.reload(true);
-        // find which ID we need to make active
-        {{field = '%s_%s_%s' % (module, resource, main)}}
-        value=$('input#{{=field}}').val();
-        $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}"+"&value="+value,
-        function(data){
-            // set the caller's lookup list to the new ID
-            self.opener.$('select#{{=caller}}').val(data[0].id);
-            // close the popup
-            self.close();
-	    
+        // bind form and provide a simple callback function 
+        $('form').ajaxForm(function() {
+            // refresh lookup list in parent window
+            // FIXME: How to get it to keep the rest of the form fields? (Refresh just TR? Read them in & re-populate?)
+            self.opener.location.reload(true);
+            // find which ID we need to make active
+            {{field = '%s_%s_%s' % (module, resource, main)}}
+            value=$('input#{{=field}}').val();
+            $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}"+"&value="+value,
+            function(data){
+                // set the caller's lookup list to the new ID
+                self.opener.$('select#{{=caller}}').val(data[0].id);
+                // close the popup
+                self.close();
+            });
         });
-    });
-}
-{{if response.flash or response.confirmation :}}self.parent.tb_remove();{{pass}}
+    }
+{{if response.flash or response.confirmation:}}
+self.parent.tb_remove();
+{{pass}}
 });
 </script>
 </head>

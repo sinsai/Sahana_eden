@@ -220,7 +220,7 @@ class Vita(object):
         else:
             return ''
 
-    def rlevenshtein(self,str1,str2):
+    def rlevenshtein(self, str1, str2):
         """
             Returns a relative value for the Levenshtein distance of two strings
 
@@ -237,19 +237,19 @@ class Vita(object):
         l1 = len(str1)
         l2 = len(str2)
 
-        for i in range(0,l1+1): matrix[i,0] = i
-        for j in range(0,l2+1): matrix[0,j] = j 
+        for i in range(0, l1+1): matrix[i, 0] = i
+        for j in range(0, l2+1): matrix[0, j] = j 
 
-        for i in range(1,l1+1):
-            for j in range(1,l2+1):
-                x = matrix[i-1,j]+1
-                y = matrix[i,j-1]+1
+        for i in range(1, l1+1):
+            for j in range(1, l2+1):
+                x = matrix[i-1, j] + 1
+                y = matrix[i, j-1] + 1
 
                 if str1[i-1] == str2[j-1]:
-                    z = matrix[i-1,j-1]
+                    z = matrix[i-1, j-1]
                 else:
-                    z = matrix[i-1,j-1]+1
+                    z = matrix[i-1, j-1] + 1
 
-                matrix[i,j] = min(x,y,z)
+                matrix[i, j] = min(x, y, z)
 
-        return float(matrix[l1,l2])/float(max(l1,l2))
+        return float(matrix[l1, l2])/float(max(l1, l2))

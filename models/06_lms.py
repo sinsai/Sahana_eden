@@ -35,7 +35,7 @@ lms_unit_type_opts = {
     }
 
 opt_lms_unit_type = SQLTable(None, 'opt_lms_unit_type',
-                    db.Field('opt_lms_unit_type','integer',
+                    db.Field('opt_lms_unit_type', 'integer',
                     requires = IS_IN_SET(lms_unit_type_opts),
                     default = 1,
                     label = T('Unit Set'),

@@ -203,4 +203,23 @@ for module_type in [5]:
                     authorised = True
             if authorised == True:
                 response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-                
+
+# Test
+#response.menu_modules = []
+#module_type_menu = ([T('Modules'), False, '#'])
+#modules_submenu = []
+#query = db.s3_module.enabled=='Yes'
+#modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
+#for module in modules:
+#    if not module.access:
+#        modules_submenu.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+#    else:
+#        authorised = False
+#        groups = re.split('\|', module.access)[1:-1]
+#        for group in groups:
+#            if auth.has_membership(group):
+#                authorised = True
+#        if authorised == True:
+#            modules_submenu.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+#module_type_menu.append(modules_submenu)
+#response.menu_modules.append(module_type_menu)

@@ -247,7 +247,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 pr_presence_condition_opts = vita.presence_conditions
 
 opt_pr_presence_condition = SQLTable(None, 'opt_pr_presence_condition',
-                        db.Field('opt_pr_presence_condition','integer',
+                        db.Field('opt_pr_presence_condition', 'integer',
                         requires = IS_IN_SET(pr_presence_condition_opts),
                         default = vita.DEFAULT_PRESENCE,
                         label = T('Presence Condition'),

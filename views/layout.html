@@ -8,9 +8,10 @@
   {{include 'sahana_styles_debug.html'}}
   {{include 'sahana_scripts_debug.html'}}
 {{else:}}
-  <link href="/{{=request.application}}/static/styles/S3/{{=session.s3.theme}}.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
+
 </head>
 <body>
 
@@ -20,6 +21,7 @@
   </div>
 </div>
 
+{{if not auth.has_membership(5):}}
 <div id="menu_modules">
     {{=MENU2(response.menu_modules, _class='modules_inner')}}
 </div>
@@ -27,6 +29,8 @@
 <div id="menu_options">
     {{=MENU2(response.menu_options, _class='options_inner')}}
 </div>
+{{else:}}
+{{pass}}
 
 <div class="colmask fullpage">
 	<div class="col1">
@@ -42,7 +46,10 @@
 </div>
 
 <div id="footer">
-  {{include 'themes/' + session.s3.theme + '/footer.html'}}
+{{if not auth.has_membership(5):}}
+    {{include session.s3.theme.footer}}
+{{else:}}
+{{pass}}
 </div>
 
 </body>

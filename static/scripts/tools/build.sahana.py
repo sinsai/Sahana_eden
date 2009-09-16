@@ -18,10 +18,10 @@ import re
 import shutil                                   
 import os                                       
 
-def mergeCSS(inputFilenames,outputFilename):
-    output=''
+def mergeCSS(inputFilenames, outputFilename):
+    output = ''
     for inputFilename in inputFilenames:
-        output+=file(inputFilename, "r").read()
+        output += file(inputFilename, "r").read()
     file(outputFilename, "w").write(output)
     return outputFilename
 
@@ -68,9 +68,9 @@ def cleanline(theLine):
 
 	return m
     
-def compressCSS(inputFilename,outputFilename):
+def compressCSS(inputFilename, outputFilename):
     theFile = file(inputFilename, "r").read()
-    output=''
+    output = ''
     for line in theFile:
         output = output + cleanline(line)
 
@@ -81,13 +81,14 @@ def compressCSS(inputFilename,outputFilename):
     return
 
 # Define which files we want to include
-
+# also need to amend sahana.js.cfg
 configDictCore = {
     'web2py':                       '..',
     'T2':                           '..',
     'S3':                           '..'
 }
 
+# also need to amend sahana.js.gis.cfg
 mfbase = '../../mfbase'
 configDictOpenLayers = {
     'OpenLayers.js':                mfbase+'/openlayers/lib',
@@ -115,9 +116,9 @@ listCSS = [
     '../../styles/S3/jquery.autocomplete.css',
     '../../styles/S3/jquery.cluetip.css',
     '../../styles/S3/jquery.dataTables.css',
+    '../../styles/S3/thickbox.css',
     '../../styles/T2/t2.css',
-    '../../styles/web2py/calendar.css',
-    '../../styles/web2py/menu.css'
+    '../../styles/web2py/calendar.css'
 ]
 
 listCSSGIS = [
@@ -146,9 +147,9 @@ print "Merging GIS libraries."
 mergedGIS = mergejs.run(files, order)
 
 print "Merging Core styles."
-mergedCSS = mergeCSS(listCSS,outputFilenameCSS)
+mergedCSS = mergeCSS(listCSS, outputFilenameCSS)
 print "Merging GIS styles."
-mergedCSSGIS = mergeCSS(listCSSGIS,outputFilenameCSSGIS)
+mergedCSSGIS = mergeCSS(listCSSGIS, outputFilenameCSSGIS)
 
 # Compress files
 print "Compressing."
@@ -157,7 +158,7 @@ minimizedGIS = jsmin.jsmin(mergedGIS)
 print "Writing to %s." % outputFilenameCSS
 compressCSS(mergedCSS,outputFilenameCSS)
 print "Writing to %s." % outputFilenameCSSGIS
-compressCSS(mergedCSSGIS,outputFilenameCSSGIS)
+compressCSS(mergedCSSGIS, outputFilenameCSSGIS)
 
 # Add license
 print "Adding license file."
@@ -199,25 +200,3 @@ shutil.move("gis.min.css","../../styles/gis")
 
 
 print "Done."
-import shutil
-import os
-try:
-    os.remove("../S3/S3.min.js")
-except:
-    pass
-try:
-    os.remove("../gis/MapFish.min.js")
-except:
-    pass
-try:
-    os.remove("../../styles/S3/sahana.min.css")
-except:
-    pass
-try:
-    os.remove("../../styles/gis/gis.min.css")
-except:
-    pass
-shutil.move("S3.min.js","../S3")
-shutil.move("MapFish.min.js","../gis")
-shutil.move("sahana.min.css","../../styles/S3")
-shutil.move("gis.min.css","../../styles/gis")

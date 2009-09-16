@@ -113,7 +113,7 @@ admin_id = SQLTable(None, 'admin_id',
             Field('admin', db.auth_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
-                comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
+                comment = DIV(A(T('Add Role'), _class='popup', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='plain')), _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
                 ondelete='RESTRICT'
                 ))
     
@@ -198,7 +198,67 @@ if not len(db().select(db[table].ALL)):
     auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
     auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
     auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')
+    auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
     
+module = 'admin'
+resource = 'theme'
+table = module + '_' + resource
+db.define_table(table,
+                Field('name'),
+                Field('logo'),
+                Field('footer'),
+                Field('col_background'),    # ToDo: Colour selector
+                Field('col_menu'),
+                Field('col_highlight'),
+                migrate=migrate)
+db[table].name.label = T('Name')
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.comment = SPAN("*", _class="req")
+db[table].logo.label = T('Logo')
+db[table].logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
+db[table].footer.label = T('Footer')
+db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
+db[table].col_background.label = T('Background Colour')
+db[table].col_background.requires = IS_HTML_COLOUR()
+db[table].col_menu.label = T('Colour of dropdown menus')
+db[table].col_menu.requires = IS_HTML_COLOUR()
+db[table].col_highlight.label = T('Colour of selected menu items')
+db[table].col_highlight.requires = IS_HTML_COLOUR()
+# Populate table with Default options
+# - deployments can change these live via appadmin
+if not len(db().select(db[table].ALL)): 
+    db[table].insert(
+        name = T('Sahana Blue'),
+        logo = 'img/sahanapy_logo.png',
+        footer = 'footer.html',
+        col_background = '336699',
+        col_menu = '0066cc',
+        col_highlight = '0077aa'
+    )
+    db[table].insert(
+        name = T('Sahana Green'),
+        logo = 'img/sahanapy_logo_green.png',
+        footer = 'footer.html',
+        col_background = '337733',
+        col_menu = 'cc7722',
+        col_highlight = '338833'
+    )
+# Define CRUD strings
+title_create = T('Add Theme')
+title_display = T('Theme Details')
+title_list = T('List Themes')
+title_update = T('Edit Theme')
+title_search = T('Search Themes')
+subtitle_create = T('Add New Theme')
+subtitle_list = T('Themes')
+label_list_button = T('List Themes')
+label_create_button = T('Add Theme')
+msg_record_created = T('Theme added')
+msg_record_modified = T('Theme updated')
+msg_record_deleted = T('Theme deleted')
+msg_list_empty = T('No Themes currently defined')
+s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
 module = 's3'
 # Auditing
 # ToDo: consider using native Web2Py log to auth_events
@@ -227,11 +287,11 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('admin_name'),
                 Field('admin_email'),
                 Field('admin_tel'),
+                Field('theme', db.admin_theme),
                 Field('debug', 'boolean', default=False),
-                Field('security_policy', 'integer', default=1),
                 Field('self_registration', 'boolean', default=True),
+                Field('security_policy', 'integer', default=1),
                 Field('archive_not_delete', 'boolean', default=True),
-                Field('theme', default='sahana'),
                 Field('audit_read', 'boolean', default=False),
                 Field('audit_write', 'boolean', default=False),
                 migrate=migrate)
@@ -239,6 +299,10 @@ db[table].security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
 db[table].security_policy.represent = lambda opt: opt and s3_setting_security_policy_opts[opt]
 db[table].security_policy.label = T('Security Policy')
 db[table].security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
+db[table].theme.label = T('Theme')
+db[table].theme.requires = IS_IN_DB(db, 'admin_theme.id', 'admin_theme.name')
+db[table].theme.represent = lambda name: db(db.admin_theme.id==name).select()[0].name
+db[table].theme.comment = DIV(A(T('Add Theme'), _class='popup', _href=URL(r=request, c='admin', f='theme', args='create', vars=dict(format='plain')), _target='top', _title=T('Add Theme'))),
 db[table].debug.label = T('Debug')
 db[table].debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
 db[table].self_registration.label = T('Self Registration')
@@ -255,7 +319,8 @@ if not len(db().select(db[table].ALL)):
     db[table].insert(
         admin_name = T("Sahana Administrator"),
         admin_email = T("support@Not Set"),
-        admin_tel = T("Not Set")
+        admin_tel = T("Not Set"),
+        theme = 1
     )
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
 title_create = T('Add Setting')
@@ -342,7 +407,9 @@ if not len(db().select(db[table].ALL)):
 
 admin_menu_options = [
     [T('Home'), False, URL(r=request, c='admin', f='index')],
-    [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1])],
+    [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1]), [
+        [T('Themes'), False, URL(r=request, c='admin', f='theme')]
+    ]],
     [T('User Management'), False, '#', [
         [T('Users'), False, URL(r=request, c='admin', f='user')],
         [T('Roles'), False, URL(r=request, c='admin', f='group')],

@@ -1,19 +1,6 @@
 {{extend 'layout.html'}}
 
 {{include 'dataTables.html'}}
-<script type="text/javascript">//<![CDATA[
-$(document).ready(function() {
-	$('#list').dataTable(
-    {{try:}}
-        {{if sortby:}}
-            {"aaSorting": {{=sortby}}}
-        {{else:}}
-        {{pass}}
-    {{except:}}
-    {{pass}}
-    );
-});
-//]]></script>
 
 {{try:}}
  {{=H2(title)}}

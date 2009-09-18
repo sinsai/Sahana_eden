@@ -66,8 +66,15 @@ def theme_apply(form):
         from subprocess import PIPE, check_call
         currentdir = os.getcwd()
         os.chdir(os.path.join(currentdir, request.folder, 'static', 'scripts', 'tools'))
+        import sys
+        # If started as a services os.sys.executable is no longer python on
+        # windows.
+        if ("win" in sys.platform):
+            pythonpath = os.path.join(sys.prefix, 'python.exe')
+        else:
+            pythonpath = os.sys.executable
         try:
-            proc = check_call([sys.executable, 'build.sahana.py', 'CSS', 'NOGIS'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+            proc = check_call([pythonpath, 'build.sahana.py', 'CSS', 'NOGIS'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
         except:
             session.error = T('Error encountered while applying the theme.')
             redirect(URL(r=request, args=request.args))

@@ -5,7 +5,7 @@ module = 'cr'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
+    [module_name, False, URL(r=request, f='index')],
     [T('Add Shelter'), False, URL(r=request, f='shelter', args='create')],
     [T('List Shelters'), False, URL(r=request, f='shelter')],
     #[T('Search Shelters'), False, URL(r=request, f='shelter', args='search')]

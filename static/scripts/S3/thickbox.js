@@ -3,6 +3,7 @@
  * By Cody Lindley (http://www.codylindley.com)
  * Copyright (c) 2007 cody lindley
  * Licensed under the MIT License: http://www.opensource.org/licenses/mit-license.php
+ * Modified to include Callbacks: http://codylindley.com/Javascript/257/thickbox-one-box-to-rule-them-all#c002066
 */
 		  
 var tb_pathToImage = "../../img/thickbox/loadingAnimation.gif";
@@ -270,14 +271,19 @@ function tb_remove() {
 	$("#TB_closeWindowButton").unbind("click");
 	$("#TB_window").fadeOut("fast",function(){$('#TB_window,#TB_overlay,#TB_HideSelect').trigger("unload").unbind().remove();});
 	$("#TB_load").remove();
-	if (typeof document.body.style.maxHeight == "undefined") {//if IE 6
+    if (typeof document.body.style.maxHeight == "undefined") {//if IE 6
 		$("body","html").css({height: "auto", width: "auto"});
 		$("html").css("overflow","");
 	}
 	document.onkeydown = "";
 	document.onkeyup = "";
+	// http://codylindley.com/Javascript/257/thickbox-one-box-to-rule-them-all#c002066
+    TB_closeCallBack();
 	return false;
 }
+
+// Dummy so that it doesn't barf
+function TB_closeCallBack(){}
 
 function tb_position() {
 $("#TB_window").css({marginLeft: '-' + parseInt((TB_WIDTH / 2),10) + 'px', width: TB_WIDTH + 'px'});

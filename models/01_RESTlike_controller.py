@@ -964,8 +964,8 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         table = jr.jtable
         tablename = jr.jtablename
 
-        onvalidation = jrlayer.get_attr(resource, 'onvalidation')
-        onaccept = jrlayer.get_attr(resource, 'onaccept')
+        onvalidation = jrlayer.get_attr(resource, 'create_onvalidation')
+        onaccept = jrlayer.get_attr(resource, 'create_onaccept')
         main, extra = jrlayer.head_fields(resource)
 
     else:
@@ -982,7 +982,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         # Check for presence of Custom View
         shn_custom_view(jr, 'create.html')
 
-        output = dict(module_name=module_name)
+        output = dict(module_name=module_name, module=module, resource=resource, main=main)
 
         if jr.jresource:
             try:
@@ -1016,23 +1016,36 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output.update(title=title, list_btn=list_btn)
 
-        # Block join field
         if jr.jresource:
+            # Block join field
             _comment = table[jr.fkey].comment
             table[jr.fkey].comment = None
             table[jr.fkey].default = jr.record[jr.pkey]
             table[jr.fkey].writable = False
+            # Save callbacks
+            create_onvalidation = crud.settings.create_onvalidation
+            create_onaccept = crud.settings.create_onaccept
+            create_next = crud.settings.create_next
+            # Neutralize callbacks
+            crud.settings.create_onvalidation = None
+            crud.settings.create_onaccept = None
+            crud.settings.create_next = jrlayer.get_attr(jr.jresource, 'create_next') or jr.there()
 
         if onaccept:
             _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id) and onaccept(form)
         else:
             _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept, next=jr.there())
+        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
         if jr.jresource:
+            # Restore comment
             table[jr.fkey].comment = _comment
+            # Restore callbacks
+            crud.settings.create_onvalidation = create_onvalidation
+            crud.settings.create_onaccept = create_onaccept
+            crud.settings.create_next = create_next
 
         output.update(form=form)
 
@@ -1097,8 +1110,8 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             session.error = BADRECORD
             redirect(jr.there())
 
-        onvalidation = jrlayer.get_attr(resource, 'onvalidation')
-        onaccept = jrlayer.get_attr(resource, 'onaccept')
+        onvalidation = jrlayer.get_attr(resource, 'update_onvalidation')
+        onaccept = jrlayer.get_attr(resource, 'update_onaccept')
         deletable = jrlayer.get_attr(resource, 'deletable')
 
     else:
@@ -1158,18 +1171,31 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
             output.update(title=title, list_btn=list_btn)
 
-            # Block join field
             if jr.jresource:
+                # Block join field
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
                 table[jr.fkey].writable = False
+                # Save callbacks
+                update_onvalidation = crud.settings.update_onvalidation
+                update_onaccept = crud.settings.update_onaccept
+                update_next = crud.settings.update_next
+                # Neutralize callbacks
+                crud.settings.update_onvalidation = None
+                crud.settings.update_onaccept = None
+                crud.settings.update_next = jrlayer.get_attr(jr.jresource, 'update_next') or jr.there()
 
-            form = crud.update(table, record_id, onvalidation=onvalidation, onaccept=onaccept, next=jr.there())
+            form = crud.update(table, record_id, onvalidation=onvalidation, onaccept=onaccept)
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
             if jr.jresource:
+                # Restore comment
                 table[jr.fkey].comment = _comment
+                # Restore callbacks
+                crud.settings.update_onvalidation = update_onvalidation
+                crud.settings.update_onaccept = update_onaccept
+                crud.settings.update_next = update_next
 
             output.update(form=form)
 
@@ -1204,8 +1230,8 @@ def shn_delete(jr):
         table = jr.jtable
         tablename = jr.jtablename
 
-        onvalidation = jrlayer.get_attr(resource, 'onvalidation')
-        onaccept = jrlayer.get_attr(resource, 'onaccept')
+        onvalidation = jrlayer.get_attr(resource, 'delete_onvalidation')
+        onaccept = jrlayer.get_attr(resource, 'delete_onaccept')
 
         query = (table[jr.fkey]==jr.record[jr.pkey])
         if jr.jrecord_id:
@@ -1235,10 +1261,12 @@ def shn_delete(jr):
         # Save callback settings
         delete_onvalidation = crud.settings.delete_onvalidation
         delete_onaccept = crud.settings.delete_onaccept
+        delete_next = crud.settings.delete_next
 
         # Set resource specific callbacks, if any
-        crud.settings.delete_onvalidation = jrlayer.get_attr(resource, 'delete_onvalidation')
-        crud.settings.delete_onaccept = jrlayer.get_attr(resource, 'delete_onaccept')
+        crud.settings.delete_onvalidation = onvalidation
+        crud.settings.delete_onaccept = onaccept
+        crud.settings.delete_next = None # do not set here!
 
     # Delete all accessible records
     numrows = 0
@@ -1253,8 +1281,8 @@ def shn_delete(jr):
                 if crud.settings.delete_onaccept:
                     crud.settings.delete_onaccept(row)
             else:
-                #if representation == "ajax":
-                    #crud.settings.delete_next = URL(r=request, c=module, f=resource, vars={'format':'ajax'})
+                if representation == "ajax":
+                    crud.settings.delete_next = jr.there(representation=representation)
                 crud.delete(table, row.id)
         else:
             continue
@@ -1263,12 +1291,19 @@ def shn_delete(jr):
         # Restore callback settings
         crud.settings.delete_onvalidation = delete_onvalidation
         crud.settings.delete_onaccept = delete_onaccept
+        crud.settings.delete_next = delete_next
+
+        delete_next =  jrlayer.get_attr(resource, 'delete_next')
 
     # Confirm and return
     if numrows > 1:
         session.confirmation = "%s %s" % ( numrows, T('records deleted'))
     else:
         session.confirmation = T('Record deleted')
+
+    if jr.jresource and delete_next: # but redirect here!
+        redirect(delete_next)
+
     return
 
 # *****************************************************************************

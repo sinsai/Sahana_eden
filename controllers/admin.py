@@ -32,13 +32,21 @@ def theme_apply(form):
         col_highlight = theme.col_highlight
 
         template = os.path.join(request.folder, 'static', 'styles', 'S3', 'template.css')
+        tmp_folder = os.path.join(request.folder, 'static', 'scripts', 'tools')
         out_file = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.css')
+        out_file2 = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.min.css')
         # Check permissions
         if not os.access(template, os.R_OK):
             session.error = T('Template file %s not readable - unable to apply theme!' % template)
             redirect(URL(r=request, args=request.args))
+        if not os.access(tmp_folder, os.W_OK):
+            session.error = T('Temp folder %s not writable - unable to apply theme!' % tmp_folder)
+            redirect(URL(r=request, args=request.args))
         if not os.access(out_file, os.W_OK):
             session.error = T('CSS file %s not writable - unable to apply theme!' % out_file)
+            redirect(URL(r=request, args=request.args))
+        if not os.access(out_file2, os.W_OK):
+            session.error = T('CSS file %s not writable - unable to apply theme!' % out_file2)
             redirect(URL(r=request, args=request.args))
         # Read in Template
         inpfile = open(template, 'r')
@@ -56,8 +64,8 @@ def theme_apply(form):
 
         # Minify
         from subprocess import PIPE, check_call
-        currentdir=os.getcwd()
-        os.chdir(os.path.join(os.getcwd(), request.folder,'static','scripts','tools'))
+        currentdir = os.getcwd()
+        os.chdir(os.path.join(currentdir, request.folder, 'static', 'scripts', 'tools'))
         try:
             proc = check_call([sys.executable, 'build.sahana.py', 'CSS', 'NOGIS'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
         except:

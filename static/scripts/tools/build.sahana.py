@@ -123,7 +123,7 @@ def dojs(dogis = True):
 
     # Move new JS files
     print "Moving new JS files"
-    shutil.move("S3.min.js","../S3")
+    shutil.move("S3.min.js", "../S3")
 
     if dogis:
 
@@ -173,7 +173,7 @@ def dojs(dogis = True):
         except:
             pass
         print "Moving new GIS JS files"
-        shutil.move("MapFish.min.js","../gis")
+        shutil.move("MapFish.min.js", "../gis")
 
 def docss(dogis = True):
     """Compresses the  CSS files"""
@@ -194,7 +194,7 @@ def docss(dogis = True):
 
     # Compress CSS files
     print "Writing to %s." % outputFilenameCSS
-    compressCSS(mergedCSS,outputFilenameCSS)
+    compressCSS(mergedCSS, outputFilenameCSS)
 
     # Move files to correct locations
     print "Deleting %s." % outputFilenameCSS
@@ -203,7 +203,7 @@ def docss(dogis = True):
     except:
         pass
 
-    shutil.move("sahana.min.css","../../styles/S3")
+    shutil.move("sahana.min.css", "../../styles/S3")
 
     if dogis:
         listCSSGIS = [
@@ -230,7 +230,7 @@ def docss(dogis = True):
             os.remove("../../styles/gis/%s" % outputFilenameCSSGIS)
         except:
             pass
-        shutil.move("gis.min.css","../../styles/gis")
+        shutil.move("gis.min.css", "../../styles/gis")
 
 def main(argv):
     try:

@@ -5,7 +5,6 @@ module = 'hrm'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
     [T('Find'), False, URL(r=request, f='find'),[
         [T('Add Report'), False, URL(r=request, f='find', args='create')],
         [T('List Reports'), False, URL(r=request, f='find')]

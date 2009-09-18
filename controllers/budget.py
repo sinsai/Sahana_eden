@@ -5,7 +5,6 @@ module = 'budget'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
     [T('Parameters'), False, URL(r=request, f='parameters')],
     [T('Items'), False, URL(r=request, f='item')],
     [T('Kits'), False, URL(r=request, f='kit')],

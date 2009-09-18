@@ -5,7 +5,7 @@ module = 'vol'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
+    [module_name, False, URL(r=request, f='index')],
 ]
 
 # S3 framework functions

@@ -1,6 +1,7 @@
 databases/*
 errors/*
 sessions/*
+static/scripts/tools/httpserver.log
 uploads/*
 docs/*
 .raw/*

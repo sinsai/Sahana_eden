@@ -30,15 +30,22 @@ def theme_apply(form):
         col_background = theme.col_background
         col_menu = theme.col_menu
         col_highlight = theme.col_highlight
-        
         template = os.path.join(request.folder, 'static', 'styles', 'S3', 'template.css')
+        tmp_folder = os.path.join(request.folder, 'static', 'scripts', 'tools')
         out_file = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.css')
+        out_file2 = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.min.css')
         # Check permissions
         if not os.access(template, os.R_OK):
             session.error = T('Template file %s not readable - unable to apply theme!' % template)
             redirect(URL(r=request, args=request.args))
+        if not os.access(tmp_folder, os.W_OK):
+            session.error = T('Temp folder %s not writable - unable to apply theme!' % tmp_folder)
+            redirect(URL(r=request, args=request.args))
         if not os.access(out_file, os.W_OK):
             session.error = T('CSS file %s not writable - unable to apply theme!' % out_file)
+            redirect(URL(r=request, args=request.args))
+        if not os.access(out_file2, os.W_OK):
+            session.error = T('CSS file %s not writable - unable to apply theme!' % out_file2)
             redirect(URL(r=request, args=request.args))
         # Read in Template
         inpfile = open(template, 'r')
@@ -53,12 +60,25 @@ def theme_apply(form):
             line = line.replace("YOURLOGOHERE", logo)
             ofile.write(line)
         ofile.close()
+
         # Minify
-        from subprocess import Popen, PIPE
-        cmd = os.path.join(os.getcwd(), request.folder, 'static', 'scripts', 'tools', 'build.sahana.py')
-        proc = Popen([sys.executable, cmd], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
-        # Currently above line fails since mergejs.py can't find sahana.js.cfg
-        
+        from subprocess import PIPE, check_call
+        currentdir = os.getcwd()
+        os.chdir(os.path.join(currentdir, request.folder, 'static', 'scripts', 'tools'))
+        import sys
+        # If started as a services os.sys.executable is no longer python on
+        # windows.
+        if ("win" in sys.platform):
+            pythonpath = os.path.join(sys.prefix, 'python.exe')
+        else:
+            pythonpath = os.sys.executable
+        try:
+            proc = check_call([pythonpath, 'build.sahana.py', 'CSS', 'NOGIS'], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+        except:
+            session.error = T('Error encountered while applying the theme.')
+            redirect(URL(r=request, args=request.args))
+        os.chdir(currentdir)
+
         # Don't do standard redirect to List view as we only want this option available
         redirect(URL(r=request, args=['update', 1]))
     else:

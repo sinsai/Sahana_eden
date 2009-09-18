@@ -704,7 +704,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             response.view = 'plain.html'
             return dict(item=item)
 
-        elif jr. representation == "csv":
+        elif jr.representation == "csv":
             query = db[table].id == record_id
             return export_csv(resource, query)
 
@@ -982,7 +982,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         # Check for presence of Custom View
         shn_custom_view(jr, 'create.html')
 
-        output = dict(module_name=module_name)
+        output = dict(module_name=module_name, module=module, resource=resource, main=main)
 
         if jr.jresource:
             try:
@@ -1062,10 +1062,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         shn_custom_view(jr, 'popup.html')
         return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
 
-    elif representation == "json":
+    elif jr.representation == "json":
         return import_json(method='create')
 
-    elif representation == "csv":
+    elif jr.representation == "csv":
         # Read in POST
         file = request.vars.filename.file
         try:
@@ -1281,8 +1281,8 @@ def shn_delete(jr):
                 if crud.settings.delete_onaccept:
                     crud.settings.delete_onaccept(row)
             else:
-                if representation == "ajax":
-                    crud.settings.delete_next = jr.there(representation=representation)
+                if jr.representation == "ajax":
+                    crud.settings.delete_next = jr.there(representation=jr.representation)
                 crud.delete(table, row.id)
         else:
             continue

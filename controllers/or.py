@@ -5,7 +5,6 @@ module = 'or'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
     [T('Organisations'), False, URL(r=request, f='organisation'),[
         [T('Add Organisation'), False, URL(r=request, f='organisation', args='create')],
         #[T('List Organisations'), False, URL(r=request, f='organisation')],

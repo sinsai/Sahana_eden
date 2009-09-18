@@ -10,7 +10,7 @@ module = 'mpr'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
+    [module_name, False, URL(r=request, f='index')],
     [T('Search for a Person'), False,  URL(r=request, f='person_search')],
     [T('Report a Missing Person'), False,  URL(r=request, f='report_missing')],
     [T('Edit a Missing Person'), False,  URL(r=request, f='edit_missing')],

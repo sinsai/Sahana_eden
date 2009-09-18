@@ -5,7 +5,7 @@ module = 'gis'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
+    [module_name, False, URL(r=request, f='index')],
     [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
     [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
 ]

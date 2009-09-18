@@ -5,7 +5,7 @@ module = 'dvi'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
+    [module_name, False, URL(r=request, f='index')],
     [T('Checklist Of Operations'), False, URL(r=request, f='operation_checklist'),[
         [T('Personal Effects'), False, URL(r=request, f='personal_effects')],
         [T('Radiology'), False, URL(r=request, f='radiology')],

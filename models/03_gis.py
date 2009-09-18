@@ -32,22 +32,24 @@ db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].image.label = T('Image')
+db[table].image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 # Populate table with Default options
+# Can't do sub-folders :/
+# need a script to read in the list of default markers from the filesystem, copy/rename & populate the DB 1 by 1
 if not len(db().select(db[table].ALL)):
     # We want to start at ID 1
     db[table].truncate() 
     db[table].insert(
         name = "marker",
-        # Can't do sub-folders :/
-        # need to script a bulk copy & rename
-        image = "gis_marker.image.default.png"
+        image = "gis_marker.image.marker.png"
     )
-    # We should now read in the list of default markers from the filesystem & populate the DB 1 by 1
-    # - we need to get the size automatically
-    # TEMP: Manual markers for some pre-defined Feature Classes
+    #db[table].insert(
+    #    name = "marker_r1",
+    #    image = "marker_r1.png"
+    #)
     db[table].insert(
         name = "shelter",
-        image = "gis_marker.image.shelter.png"
+        image = "gis_marker.image.Emergency_Shelters_S1.png"
     )
 title_create = T('Add Marker')
 title_display = T('Marker Details')

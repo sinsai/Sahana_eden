@@ -5,7 +5,6 @@ module = 'msg'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
     [T('Admin'), False, URL(r=request, f='admin')],
     [T('Email'), False, URL(r=request, f='email'), [
         [T('Send Email'), False, URL(r=request, f='email_outbox', args='create')],

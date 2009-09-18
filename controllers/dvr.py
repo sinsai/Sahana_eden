@@ -11,7 +11,6 @@ module = 'dvr'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
     [T('Add Disaster Victims'), False,  URL(r=request, f='index'),[
         [T('Add new Group'), False, URL(r=request, f='index')],
         [T('Add new Individual'), False, URL(r=request, f='index')]

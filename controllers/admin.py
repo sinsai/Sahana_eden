@@ -30,7 +30,6 @@ def theme_apply(form):
         col_background = theme.col_background
         col_menu = theme.col_menu
         col_highlight = theme.col_highlight
-        
         template = os.path.join(request.folder, 'static', 'styles', 'S3', 'template.css')
         tmp_folder = os.path.join(request.folder, 'static', 'scripts', 'tools')
         out_file = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.css')

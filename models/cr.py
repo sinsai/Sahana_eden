@@ -23,7 +23,7 @@ resource = 'shelter'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
-                Field('description', length=256),
+                Field('description'),
                 admin_id,
                 location_id,
                 person_id,

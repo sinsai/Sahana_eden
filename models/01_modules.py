@@ -9,7 +9,7 @@ db.define_table(table,
                 opt_s3_module_type,
                 Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in the Modules menu or the Controllers)
                 Field('priority', 'integer', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 Field('enabled', 'boolean', default=True),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]

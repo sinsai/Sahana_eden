@@ -162,7 +162,7 @@ def group_user():
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'group_user', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'group_user', 'html')
         # Display a List_Create page with deletable Rows
         for row in sqlrows:
             if even:

@@ -120,7 +120,7 @@ resource = 'site'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('name', notnull=True),
-                db.Field('description', length=256),
+                db.Field('description'),
 				opt_site_category,
                 admin_id,
                 person_id,
@@ -172,7 +172,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
                 db.Field('name', notnull=True),
-                db.Field('description', length=256),
+                db.Field('description'),
                 location_id,
                 db.Field('capacity'),
 				db.Field('capacity_unit'),
@@ -248,7 +248,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('storage_id', db.lms_storage_loc),                
 				db.Field('number', notnull=True),
                 db.Field('bin_type', db.lms_storage_bin_type),
-                db.Field('capacity', length=256),
+                db.Field('capacity'),
 				db.Field('capacity_unit'),
 				db.Field('max_weight'),
 				db.Field('weight_unit'),
@@ -608,12 +608,12 @@ resource = 'kit'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('code', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
                 Field('total_monthly_cost', 'double', writable=False),
                 Field('total_minute_cost', 'double', writable=False),
                 Field('total_megabyte_cost', 'double', writable=False),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.label = T('Code')

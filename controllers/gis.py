@@ -103,7 +103,7 @@ def feature_group_contents():
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'feature_group_contents', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'feature_group_contents', 'html')
         # Display a List_Create page with checkboxes to remove items
         
         # Feature Classes

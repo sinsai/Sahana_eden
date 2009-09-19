@@ -210,7 +210,7 @@ resource = 'feature_class'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 marker_id,
                 Field('module'),    # Used to build Edit URL
                 Field('resource'),   # Used to build Edit URL & to provide Attributes to Display
@@ -260,7 +260,7 @@ if not len(db().select(db[table].ALL)):
 resource = 'feature_metadata'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
-                Field('description', length=256),
+                Field('description'),
                 person_id,
                 Field('source'),
                 Field('accuracy'),       # Drop-down on a IS_IN_SET[]?
@@ -313,7 +313,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('feature_type', 'integer', default=1, notnull=True),
                 Field('lat', 'double'),    # Only needed for Points
                 Field('lon', 'double'),    # Only needed for Points
-                Field('wkt', length=256),  # WKT is auto-calculated from lat/lon for Points
+                Field('wkt'),  # WKT is auto-calculated from lat/lon for Points
                 Field('resource_id', 'integer', ondelete = 'RESTRICT'), # Used to build Edit URL for Feature Class.
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -367,7 +367,7 @@ resource = 'feature_group'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 #Field('features', 'text'),        # List of features (to be replaced by many-to-many table)
                 #Field('feature_classes', 'text'), # List of feature classes (to be replaced by many-to-many table)
                 Field('display', 'boolean', default='True'),
@@ -431,7 +431,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True),
                 Field('landmark_type', 'integer'),
-                Field('description', length=256),
+                Field('description'),
                 Field('url'),
                 Field('image', 'upload'),
                 migrate=migrate)
@@ -525,7 +525,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp,
                 Field('name', notnull=True),
                 Field('apikey', length=128, notnull=True),
-				Field('description', length=256),
+				Field('description'),
                 migrate=migrate)
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
@@ -578,7 +578,7 @@ gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
 gis_layer = SQLTable(db, 'gis_layer', timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
             Field('name', notnull=True, label=T('Name')),
-            Field('description', length=256, label=T('Description')),
+            Field('description', label=T('Description')),
             #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
             Field('enabled', 'boolean', default=True, label=T('Enabled?')))
 gis_layer.name.requires = IS_NOT_EMPTY()

@@ -82,13 +82,13 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 opt_budget_category_type,
                 Field('code', notnull=True, unique=True),
-                Field('description', length=256, notnull=True),
+                Field('description', notnull=True),
                 opt_budget_cost_type,
                 Field('unit_cost', 'double', default=0.00),
                 Field('monthly_cost', 'double', default=0.00),
                 Field('minute_cost', 'double', default=0.00),
                 Field('megabyte_cost', 'double', default=0.00),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.label = T('Code')
@@ -122,12 +122,12 @@ resource = 'kit'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('code', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
                 Field('total_monthly_cost', 'double', writable=False),
                 Field('total_minute_cost', 'double', writable=False),
                 Field('total_megabyte_cost', 'double', writable=False),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.label = T('Code')
@@ -176,10 +176,10 @@ resource = 'bundle'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
                 Field('total_monthly_cost', 'double', writable=False),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
@@ -280,7 +280,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('subsistence', 'double', default=0.00),
                 # Location-dependent
                 #Field('hazard_pay', 'double', default=0.00),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
@@ -316,7 +316,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('description'),
                 Field('subsistence', 'double', default=0.00),
                 Field('hazard_pay', 'double', default=0.00),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.label = T('Code')
@@ -348,7 +348,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('code', notnull=True, unique=True),
                 Field('title'),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 db[table].code.label = T('Code')
@@ -375,10 +375,10 @@ resource = 'budget'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 Field('total_onetime_costs', 'double', writable=False),
                 Field('total_recurring_costs', 'double', writable=False),
-                Field('comments', length=256),
+                Field('comments'),
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')

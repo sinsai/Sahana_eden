@@ -222,7 +222,7 @@ def kit_item():
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'kit_item', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'kit_item', 'html')
         # Display a List_Create page with editable Quantities
         for row in sqlrows:
             if even:
@@ -623,7 +623,7 @@ def bundle_kit_item():
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'bundle_kit_item', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'bundle_kit_item', 'html')
         # Display a List_Create page with editable Quantities, Minutes & Megabytes
         
         # Kits
@@ -933,7 +933,7 @@ def budget_staff_bundle():
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'budget_staff_bundle', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'budget_staff_bundle', 'html')
         # Display a List_Create page with editable Quantities & Months
         
         # Staff

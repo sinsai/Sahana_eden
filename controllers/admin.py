@@ -154,11 +154,10 @@ def users():
     output = dict(module_name=module_name, title=title, description=description, group=group)
 
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'membership', 'html')
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'membership', 'html')
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
-    forms = Storage()
     even = True
     for row in sqlrows:
         if even:
@@ -171,7 +170,7 @@ def users():
         item_first = db.auth_user[id].first_name
         item_second = db.auth_user[id].last_name
         item_description = db.auth_user[id].email
-        id_link = A(id,_href=URL(r=request,f='user',args=['read', id]))
+        id_link = A(id, _href=URL(r=request, f='user', args=['read', id]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_second), TD(item_description), TD(checkbox), _class=theclass))
         
@@ -180,7 +179,7 @@ def users():
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='group_remove_users', args=[group])))
         
     subtitle = T("Users")
-    crud.messages.submit_button=T('Add')
+    crud.messages.submit_button = T('Add')
     crud.messages.record_created = T('Role Updated')
     form = crud.create(table, next=URL(r=request, args=[group]))
     addtitle = T("Add New User to Role")
@@ -219,11 +218,10 @@ def groups():
     output = dict(module_name=module_name, title=title, description=description, user=user)
 
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'membership', 'html')
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'membership', 'html')
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
-    forms = Storage()
     even = True
     for row in sqlrows:
         if even:
@@ -233,9 +231,6 @@ def groups():
             theclass = "odd"
             even = True
         id = row.group_id
-        forms[id] = SQLFORM(table, id)
-        if forms[id].accepts(request.vars, session):
-            response.flash = T("Membership Updated")
         item_first = db.auth_group[id].role
         item_description = db.auth_group[id].description
         id_link = A(id, _href=URL(r=request, f='group', args=['read', id]))

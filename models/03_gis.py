@@ -241,7 +241,7 @@ msg_list_empty = T('No Feature Classes currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_class_id = SQLTable(None, 'feature_class_id',
-            Field('feature_class', db.gis_feature_class,
+            Field('feature_class_id', db.gis_feature_class,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Class'),
@@ -314,7 +314,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('lat', 'double'),    # Only needed for Points
                 Field('lon', 'double'),    # Only needed for Points
                 Field('wkt'),  # WKT is auto-calculated from lat/lon for Points
-                Field('resource_id', 'integer', ondelete = 'RESTRICT'), # Used to build Edit URL for Feature Class.
+                #Field('resource_id', 'integer', ondelete = 'RESTRICT'), # Used to build Edit URL for Feature Class.
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
@@ -397,7 +397,7 @@ msg_list_empty = T('No Feature Groups currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_group_id = SQLTable(None, 'feature_group_id',
-            Field('feature_group', db.gis_feature_group,
+            Field('feature_group_id', db.gis_feature_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Group'),
@@ -509,6 +509,13 @@ msg_record_modified = T('Location updated')
 msg_record_deleted = T('Location deleted')
 msg_list_empty = T('No Locations currently available')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Joined Resource
+jrlayer.add_jresource(module, resource,
+    multiple=True,
+    joinby='feature_id',
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'name', 'level'])
 # Reusable field for other tables to reference
 location_id = SQLTable(None, 'location_id',
             Field('location', db.gis_location,

@@ -153,6 +153,11 @@ def users():
     # Start building the Return
     output = dict(module_name=module_name, title=title, description=description, group=group)
 
+    if auth.settings.username:
+        username = 'username'
+    else:
+        username = 'email'
+
     # Audit
     crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'membership', 'html')
     # Many<>Many selection (Deletable, no Quantity)
@@ -169,12 +174,16 @@ def users():
         id = row.user_id
         item_first = db.auth_user[id].first_name
         item_second = db.auth_user[id].last_name
-        item_description = db.auth_user[id].email
+        item_description = db.auth_user[id][username]
         id_link = A(id, _href=URL(r=request, f='user', args=['read', id]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_second), TD(item_description), TD(checkbox), _class=theclass))
         
-    table_header = THEAD(TR(TH('ID'), TH(T('First Name')), TH(T('Last Name')), TH(T('Email')), TH(T('Remove'))))
+    if auth.settings.username:
+        username_label = T('Username')
+    else:
+        username_label = T('Email')
+    table_header = THEAD(TR(TH('ID'), TH(T('First Name')), TH(T('Last Name')), TH(username_label), TH(T('Remove'))))
     table_footer = TFOOT(TR(TD(_colspan=4), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Remove')))))
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='group_remove_users', args=[group])))
         
@@ -213,7 +222,7 @@ def groups():
     table = db.auth_membership
     query = table.user_id==user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name
-    description = db.auth_user[user].email
+    description = db.auth_user[user][username]
     # Start building the Return
     output = dict(module_name=module_name, title=title, description=description, user=user)
 

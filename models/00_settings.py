@@ -15,6 +15,7 @@ mail.settings.server = 'mail:25'
 mail.settings.sender = 'sahana@sahanapy.org'
 
 auth = AuthS3(globals(),db)
+#auth.settings.username_field = True
 auth.settings.hmac_key = 'akeytochange'
 auth.define_tables()
 auth.settings.expiration = 3600  # seconds

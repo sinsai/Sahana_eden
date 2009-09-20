@@ -31,11 +31,11 @@ pr_address_type_opts = {
     }
 
 opt_pr_address_type = SQLTable(None, 'opt_pr_address_type',
-                        db.Field('opt_pr_address_type','integer',
-                        requires = IS_IN_SET(pr_address_type_opts),
-                        default = 99,
-                        label = T('Address Type'),
-                        represent = lambda opt: opt and pr_address_type_opts[opt]))
+                        Field('opt_pr_address_type','integer',
+                            requires = IS_IN_SET(pr_address_type_opts),
+                            default = 99,
+                            label = T('Address Type'),
+                            represent = lambda opt: opt and pr_address_type_opts[opt]))
 
 #
 # address table ---------------------------------------------------------------
@@ -43,20 +43,20 @@ opt_pr_address_type = SQLTable(None, 'opt_pr_address_type',
 resource = 'address'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                pr_pe_id,                               # Person Entity ID
-                opt_pr_address_type,                    # Address type
-                Field('co_name'),                       # c/o Name
-                Field('street1'),                       # Street Address 1
-                Field('street2'),                       # Street Address 2
-                Field('postcode'),                      # ZIP or postal code
-                Field('city'),                          # City
-                Field('state'),                         # State or Province
-                opt_pr_country,                         # Country
-                location_id,                            # Link to GIS location
-                Field('lat'),                           # Latitude
-                Field('lon'),                           # Longitude
-                Field('comment'),                       # Comment
-                migrate=migrate)
+                    pr_pe_id,                           # Person Entity ID
+                    opt_pr_address_type,                # Address type
+                    Field('co_name'),                   # c/o Name
+                    Field('street1'),                   # Street Address 1
+                    Field('street2'),                   # Street Address 2
+                    Field('postcode'),                  # ZIP or postal code
+                    Field('city'),                      # City
+                    Field('state'),                     # State or Province
+                    opt_pr_country,                     # Country
+                    location_id,                        # Link to GIS location
+                    Field('lat'),                       # Latitude
+                    Field('lon'),                       # Longitude
+                    Field('comment'),                   # Comment
+                    migrate=migrate)
 
 # Joined Resource
 jrlayer.add_jresource(module, resource,
@@ -64,11 +64,11 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    list_fields = ['id','opt_pr_address_type','co_name','street1','postcode','city','opt_pr_country'])
+    list_fields = ['id', 'opt_pr_address_type', 'co_name', 'street1', 'postcode', 'city', 'opt_pr_country'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(1,2))
+db[table].pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lon.requires = IS_NULL_OR(IS_LON())
 
@@ -113,11 +113,11 @@ pr_contact_method_opts = {
     }
 
 opt_pr_contact_method = SQLTable(None, 'opt_pr_contact_method',
-                        db.Field('opt_pr_contact_method','integer',
-                        requires = IS_IN_SET(pr_contact_method_opts),
-                        default = 99,
-                        label = T('Contact Method'),
-                        represent = lambda opt: opt and pr_contact_method_opts[opt]))
+                        Field('opt_pr_contact_method', 'integer',
+                            requires = IS_IN_SET(pr_contact_method_opts),
+                            default = 99,
+                            label = T('Contact Method'),
+                            represent = lambda opt: opt and pr_contact_method_opts[opt]))
 
 #
 # contact table ---------------------------------------------------------------
@@ -140,11 +140,11 @@ jrlayer.add_jresource(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    list_fields = ['id','name','person_name','opt_pr_contact_method','value','priority'])
+    list_fields = ['id', 'name', 'person_name', 'opt_pr_contact_method', 'value', 'priority'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].pr_pe_id.requires = IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(1,2))
+db[table].pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
 db[table].value.requires = IS_NOT_EMPTY()
 db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
 
@@ -185,7 +185,7 @@ pr_image_type_opts = {
     }
 
 opt_pr_image_type = SQLTable(None, 'opt_pr_image_type',
-                    db.Field('opt_pr_image_type','integer',
+                    db.Field('opt_pr_image_type', 'integer',
                     requires = IS_IN_SET(pr_image_type_opts),
                     default = 1,
                     label = T('Image Type'),
@@ -247,11 +247,11 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 pr_presence_condition_opts = vita.presence_conditions
 
 opt_pr_presence_condition = SQLTable(None, 'opt_pr_presence_condition',
-                        db.Field('opt_pr_presence_condition', 'integer',
-                        requires = IS_IN_SET(pr_presence_condition_opts),
-                        default = vita.DEFAULT_PRESENCE,
-                        label = T('Presence Condition'),
-                        represent = lambda opt: opt and pr_presence_condition_opts[opt]))
+                        Field('opt_pr_presence_condition', 'integer',
+                            requires = IS_IN_SET(pr_presence_condition_opts),
+                            default = vita.DEFAULT_PRESENCE,
+                            label = T('Presence Condition'),
+                            represent = lambda opt: opt and pr_presence_condition_opts[opt]))
 
 #
 # presence table --------------------------------------------------------------
@@ -359,11 +359,11 @@ pr_id_type_opts = {
     }
 
 opt_pr_id_type = SQLTable(None, 'opt_pr_id_type',
-                    db.Field('opt_pr_id_type','integer',
-                    requires = IS_IN_SET(pr_id_type_opts),
-                    default = 1,
-                    label = T('ID type'),
-                    represent = lambda opt: opt and pr_id_type_opts[opt]))
+                    Field('opt_pr_id_type', 'integer',
+                        requires = IS_IN_SET(pr_id_type_opts),
+                        default = 1,
+                        label = T('ID type'),
+                        represent = lambda opt: opt and pr_id_type_opts[opt]))
 
 #
 # identitiy table -------------------------------------------------------------
@@ -436,7 +436,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_group='group_id', pr_person='person_id'),
     deletable=True,
     editable=True,
-    list_fields = ['id','group_id','person_id','group_head','description'])
+    list_fields = ['id', 'group_id', 'person_id', 'group_head', 'description'])
 
 # Field validation
 
@@ -458,11 +458,11 @@ pr_network_type_opts = {
     }
 
 opt_pr_network_type = SQLTable(None, 'opt_pr_network_type',
-                    db.Field('opt_pr_network_type','integer',
-                    requires = IS_IN_SET(pr_network_type_opts),
-                    default = 99,
-                    label = T('Network Type'),
-                    represent = lambda opt: opt and pr_network_type_opts[opt]))
+                    Field('opt_pr_network_type','integer',
+                        requires = IS_IN_SET(pr_network_type_opts),
+                        default = 99,
+                        label = T('Network Type'),
+                        represent = lambda opt: opt and pr_network_type_opts[opt]))
 
 #
 # network table ---------------------------------------------------------------
@@ -481,7 +481,7 @@ jrlayer.add_jresource(module, resource,
     joinby=dict(pr_person='person_id'),
     deletable=True,
     editable=True,
-    list_fields = ['id','opt_pr_network_type','comment'])
+    list_fields = ['id', 'opt_pr_network_type', 'comment'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)

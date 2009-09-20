@@ -58,7 +58,7 @@ def person():
         onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1))
 
 def group():
-    request.filter = (db.pr_group.system==False) # do not show system groups
+    response.s3.filter = (db.pr_group.system==False) # do not show system groups
     crud.settings.delete_onvalidation=shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description',
@@ -74,7 +74,7 @@ def image():
     return shn_rest_controller(module, 'image')
 def image_person():
     db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,)))
-    request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
+    response.s3.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')
 
@@ -99,7 +99,7 @@ def presence():
     return shn_rest_controller(module, 'presence')
 def presence_person():
     db.pr_presence.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_pentity_class',filter_opts=(1,)))
-    request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
+    response.s3.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_pentity_class==1)
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'presence')
 

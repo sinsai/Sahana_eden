@@ -50,9 +50,13 @@ def shn_sessions(f):
     session.error = []
     session.confirmation = []
     session.warning = []
-    # Keep all our configuration options in a single global variable
+    # Keep all our configuration options in a single pair of global variables
+    # Use session for persistent variables
     if not session.s3:
         session.s3 = Storage()
+    # Use response for one-off variables
+    if not response.s3:
+        response.s3 = Storage()
     # Are we running in debug mode?
     session.s3.debug = db().select(db.s3_setting.debug)[0].debug
     # Which security policy are we running?

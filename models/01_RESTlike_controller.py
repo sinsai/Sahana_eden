@@ -757,7 +757,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         tablename = jr.jtablename
 
         listadd = jrlayer.get_attr(resource, 'listadd')
-        if listadd==None: listadd=True
+        if listadd==None:
+            listadd=True
 
         main, extra = jrlayer.head_fields(resource)
         orderby = jrlayer.get_attr(resource, 'orderby')
@@ -782,8 +783,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
         query = shn_accessible_query('read', table)
 
-        if request.filter:
-            query = request.filter & query
+        if response.s3.filter:
+            query = response.s3.filter & query
 
         href_add = URL(r=jr.request, c=jr.module, f=jr.resource, args=['create'])
 
@@ -1348,7 +1349,7 @@ def shn_rest_controller(module, resource,
 
     Request options:
 
-        request.filter              contains custom query to filter list views
+        response.s3.filter              contains custom query to filter list views
 
     Customisable Security Policy
     Auditing options for Read &/or Write.

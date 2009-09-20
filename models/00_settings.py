@@ -15,8 +15,8 @@ mail.settings.server = 'mail:25'
 mail.settings.sender = 'sahana@sahanapy.org'
 
 auth = AuthS3(globals(),db)
-auth.define_tables()
 auth.settings.hmac_key = 'akeytochange'
+auth.define_tables()
 auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key='PUBLIC_KEY', private_key='PRIVATE_KEY')
@@ -187,19 +187,6 @@ msg_record_deleted = T('Membership deleted')
 msg_list_empty = T('No Memberships currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Authorization
-# User Roles (uses native Web2Py Auth Groups)
-table = auth.settings.table_group_name
-# 1st-run initialisation
-if not len(db().select(db[table].ALL)):
-    auth.add_group('Administrator', description = 'System Administrator - can access & make changes to any data')
-    # Doesn't work on Postgres!
-    auth.add_membership(1, 1) # 1st person created will be System Administrator (can be changed later)
-    auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
-    auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
-    auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')
-    auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
-    
 module = 'admin'
 resource = 'theme'
 table = module + '_' + resource

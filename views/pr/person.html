@@ -10,11 +10,11 @@ $(document).ready(function() {
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-<div id='pheader'>
+<div class='form-container'>
 {{try:}}
- {{=pheader}}
+ {{=form}}
 {{except:}}
- {{pass}}
+{{pass}}
 </div>
 <div><br /></div>
 <div id='table-container'>
@@ -27,20 +27,9 @@ $(document).ready(function() {
 {{except:}}
 {{pass}}
 </div>
-<div><br /></div>
-<div class='form-container'>
-{{try:}}
- {{=H3(formtitle)}}
-{{except:}}
- {{pass}}
-{{try:}}
- {{=form}}
-{{except:}}
- {{pass}}
-{{try:}}
- {{=list_btn}}
-{{except:}}
- {{pass}}
-</div>
 {{include 'pagenav.html'}}
 {{include 'searchbox.html'}}
+{{try:}}
+ {{=add_btn}}
+{{except:}}
+{{pass}}

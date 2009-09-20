@@ -1,10 +1,5 @@
 {{extend 'layout.html'}}
-
-<script type="text/javascript">//<![CDATA[
-$(document).ready(function() {
-	$('#list').dataTable();
-} );
-//]]></script>
+{{include 'dataTables.html'}}
 
 {{try:}}
  {{=H2(title)}}
@@ -27,5 +22,10 @@ $(document).ready(function() {
 {{except:}}
 {{pass}}
 </div>
+<p>&nbsp;</p>
 {{include 'pagenav.html'}}
 {{include 'searchbox.html'}}
+{{try:}}
+ {{=add_btn}}
+{{except:}}
+{{pass}}

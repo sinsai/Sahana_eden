@@ -352,7 +352,7 @@ class AuthS3(Auth):
                 table.utc_offset.requires = IS_UTC_OFFSET()
             except:
                 pass
-            table[passfield].requires = [CRYPT(key=self.settings.hmac_key)]
+            table[passfield].requires = [CRYPT(key=self.settings.hmac_key, digest_alg='sha512')]
             table.email.requires = \
                 [IS_EMAIL(error_message=self.messages.invalid_email),
                  IS_NOT_IN_DB(db, '%s.email'

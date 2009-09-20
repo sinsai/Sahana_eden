@@ -757,7 +757,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         tablename = jr.jtablename
 
         listadd = jrlayer.get_attr(resource, 'listadd')
-        if listadd==None: listadd=True
+        if listadd==None:
+            listadd=True
 
         main, extra = jrlayer.head_fields(resource)
         orderby = jrlayer.get_attr(resource, 'orderby')

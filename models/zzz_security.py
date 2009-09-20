@@ -1,9 +1,21 @@
 ﻿# -*- coding: utf-8 -*-
 
 # Security Model
-
 # File needs to be last in order to be able to have all Tables defined
 
+# Authorization
+# User Roles (uses native Web2Py Auth Groups)
+table = auth.settings.table_group_name
+# 1st-run initialisation
+if not len(db().select(db[table].ALL)):
+    auth.add_group('Administrator', description = 'System Administrator - can access & make changes to any data')
+    # Doesn't work on Postgres!
+    auth.add_membership(1, 1) # 1st person created will be System Administrator (can be changed later)
+    auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
+    auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
+    auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')
+    auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
+    
 # Populate dropdown
 db.auth_permission.table_name.requires = IS_IN_SET(db.tables)
 

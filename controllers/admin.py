@@ -21,15 +21,16 @@ def setting():
     #crud.settings.update_next = URL(r=request, args=['update', 1])
     return shn_rest_controller('s3', 'setting', deletable=False, listadd=False, onvalidation=lambda form: theme_check(form), onaccept=lambda form: theme_apply(form))
 
+@auth.requires_membership('Administrator')
+def theme():
+    "RESTlike CRUD controller"
+    return shn_rest_controller('admin', 'theme', list_fields=['id', 'name', 'logo', 'footer', 'col_background'], onvalidation=lambda form: theme_check(form))
+
 def theme_apply(form):
     "Apply the Theme specified by Form"
     if form.vars.theme:
-        # Valid form - what are the settings?
-        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
-        logo = theme.logo
-        col_background = theme.col_background
-        col_menu = theme.col_menu
-        col_highlight = theme.col_highlight
+        # Valid form
+        # Relevant paths
         template = os.path.join(request.folder, 'static', 'styles', 'S3', 'template.css')
         tmp_folder = os.path.join(request.folder, 'static', 'scripts', 'tools')
         out_file = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.css')
@@ -51,13 +52,17 @@ def theme_apply(form):
         inpfile = open(template, 'r')
         lines = inpfile.readlines()
         inpfile.close()
+        # Read settings from Database
+        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
+        logo = theme.logo
         # Write out CSS
         ofile = open(out_file, 'w')
         for line in lines:
-            line = line.replace("col_background", col_background)
-            line = line.replace("col_menu", col_menu)
-            line = line.replace("col_highlight", col_highlight)
             line = line.replace("YOURLOGOHERE", logo)
+            # Iterate through Colours
+            for key in theme.keys():
+                if key[:4] == 'col_':
+                    line = line.replace(key, theme[key])
             ofile.write(line)
         ofile.close()
 
@@ -110,13 +115,7 @@ def theme_check(form):
         redirect(URL(r=request, args=request.args))
     # Validation passed
     return
-
     
-@auth.requires_membership('Administrator')
-def theme():
-    "RESTlike CRUD controller"
-    return shn_rest_controller('admin', 'theme', onvalidation=lambda form: theme_check(form))
-
 @auth.requires_membership('Administrator')
 def user():
     "RESTlike CRUD controller"

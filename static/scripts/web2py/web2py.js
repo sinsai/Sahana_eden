@@ -15,12 +15,12 @@ function ajax(u,s,t) {
 }
 String.prototype.reverse = function () { return this.split('').reverse().join('');};
 $(document).ready(function() {
-$('.hidden').hide();
-$('.error').hide().slideDown('slow');
-$('.flash').hide().slideDown('slow')
-$('.flash').click(function() { $(this).fadeOut('slow'); return false; });
-$('input.string').attr('size',50);
-$('textarea.text').attr('cols',50).attr('rows',10);
-$('input.integer').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
-$('input.double').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/g,'').reverse();});
+    $('.hidden').hide();
+    $('.error').hide().slideDown('slow');
+    $('.flash').hide().slideDown('slow')
+    $('.flash').click(function() { $(this).fadeOut('slow'); return false; });
+    $('input.string').attr('size',50);
+    $('textarea.text').attr('cols',50).attr('rows',10);
+    $('input.integer').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
+    $('input.double').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/g,'').reverse();});
 });

@@ -37,7 +37,7 @@ exec('from applications.%s.modules.vita import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.vita import *
 
-vita = Vita(globals(),db)
+vita = Vita(globals(), db)
 
 # *****************************************************************************
 # PersonEntity (pentity)
@@ -46,11 +46,11 @@ vita = Vita(globals(),db)
 # Entity types
 #
 opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
-                    db.Field('opt_pr_entity_type','integer',
-                    requires = IS_IN_SET(vita.trackable_types),
-                    default = vita.DEFAULT_TRACKABLE,
-                    label = T('Entity Type'),
-                    represent = lambda opt: opt and vita.trackable_types[opt]))
+                    Field('opt_pr_entity_type', 'integer',
+                        requires = IS_IN_SET(vita.trackable_types),
+                        default = vita.DEFAULT_TRACKABLE,
+                        label = T('Entity Type'),
+                        represent = lambda opt: opt and vita.trackable_types[opt]))
 
 # -----------------------------------------------------------------------------
 # shn_pentity_represent
@@ -66,16 +66,16 @@ def shn_pentity_represent(pentity):
         record = vita.pentity(pentity)
         entity_type = record.opt_pr_entity_type
 
-        if entity_type==1:
-            person=vita.person(record)
+        if entity_type == 1:
+            person = vita.person(record)
             pentity_str = '%s [%s] (%s)' % (
                 vita.fullname(person),
                 record.label or 'no label',
                 vita.trackable_types[entity_type]
             )
 
-        elif entity_type==2:
-            group=vita.group(record)
+        elif entity_type == 2:
+            group = vita.group(record)
             pentity_str = '%s (%s)' % (
                 group.group_name,
                 vita.trackable_types[entity_type]
@@ -98,10 +98,10 @@ def shn_pentity_represent(pentity):
 resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('parent'),                    # Parent Entity
-                opt_pr_entity_type,                 # Entity class
-                Field('label', unique=True),        # Recognition Label
-                migrate=migrate)
+                    Field('parent'),                # Parent Entity
+                    opt_pr_entity_type,             # Entity class
+                    Field('label', unique=True),    # Recognition Label
+                    migrate=migrate)
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -121,10 +121,10 @@ db[table].parent.label = T('belongs to')
 #
 pr_pe_id = SQLTable(None, 'pr_pe_id',
                 Field('pr_pe_id', db.pr_pentity,
-                requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
-                represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
-                ondelete = 'RESTRICT',
-                label = T('ID')
+                    requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+                    represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+                    ondelete = 'RESTRICT',
+                    label = T('ID')
                 ))
 
 #
@@ -132,23 +132,23 @@ pr_pe_id = SQLTable(None, 'pr_pe_id',
 #
 pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
                     Field('pr_pe_id', db.pr_pentity,
-                    requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
-                    represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
-                    ondelete = 'RESTRICT',
-                    readable = False,   # should be invisible in (most) forms
-                    writable = False    # should be invisible in (most) forms
+                        requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+                        represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+                        ondelete = 'RESTRICT',
+                        readable = False,   # should be invisible in (most) forms
+                        writable = False    # should be invisible in (most) forms
                     ),
                     Field('pr_pe_parent', db.pr_pentity,
-                    requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
-                    represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
-                    ondelete = 'RESTRICT',
-                    label = T('belongs to'),
-                    readable = False,   # should be invisible in (most) forms
-                    writable = False    # should be invisible in (most) forms
+                        requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+                        represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+                        ondelete = 'RESTRICT',
+                        label = T('belongs to'),
+                        readable = False,   # should be invisible in (most) forms
+                        writable = False    # should be invisible in (most) forms
                     ),
                     Field('pr_pe_label',
-                    label = T('ID Label'),
-                    requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
+                        label = T('ID Label'),
+                        requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
                     ))
 
 # *****************************************************************************
@@ -165,11 +165,11 @@ pr_person_gender_opts = {
     }
 
 opt_pr_gender = SQLTable(None, 'opt_pr_gender',
-                    db.Field('opt_pr_gender','integer',
-                    requires = IS_IN_SET(pr_person_gender_opts),
-                    default = 1,
-                    label = T('Gender'),
-                    represent = lambda opt: opt and pr_person_gender_opts[opt]))
+                    Field('opt_pr_gender', 'integer',
+                        requires = IS_IN_SET(pr_person_gender_opts),
+                        default = 1,
+                        label = T('Gender'),
+                        represent = lambda opt: opt and pr_person_gender_opts[opt]))
 
 #
 # Age Group -------------------------------------------------------------------
@@ -184,11 +184,11 @@ pr_person_age_group_opts = {
     }
 
 opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
-                    db.Field('opt_pr_age_group','integer',
-                    requires = IS_IN_SET(pr_person_age_group_opts),
-                    default = 1,
-                    label = T('Age Group'),
-                    represent = lambda opt: opt and pr_person_age_group_opts[opt]))
+                    Field('opt_pr_age_group', 'integer',
+                        requires = IS_IN_SET(pr_person_age_group_opts),
+                        default = 1,
+                        label = T('Age Group'),
+                        represent = lambda opt: opt and pr_person_age_group_opts[opt]))
 
 #
 # Marital Status --------------------------------------------------------------
@@ -204,11 +204,11 @@ pr_marital_status_opts = {
 }
 
 opt_pr_marital_status = SQLTable(None, 'opt_pr_marital_status',
-                        db.Field('opt_pr_marital_status','integer',
-                        requires = IS_IN_SET(pr_marital_status_opts),
-                        default = 1,
-                        label = T('Marital Status'),
-                        represent = lambda opt: opt and pr_marital_status_opts[opt]))
+                        Field('opt_pr_marital_status', 'integer',
+                            requires = IS_IN_SET(pr_marital_status_opts),
+                            default = 1,
+                            label = T('Marital Status'),
+                            represent = lambda opt: opt and pr_marital_status_opts[opt]))
 
 #
 # Religion --------------------------------------------------------------------
@@ -224,11 +224,11 @@ pr_religion_opts = {
     }
 
 opt_pr_religion = SQLTable(None, 'opt_pr_religion',
-                    db.Field('opt_pr_religion','integer',
-                    requires = IS_IN_SET(pr_religion_opts),
-                    default = 1,
-                    label = T('Religion'),
-                    represent = lambda opt: opt and pr_religion_opts[opt]))
+                    Field('opt_pr_religion', 'integer',
+                        requires = IS_IN_SET(pr_religion_opts),
+                        default = 1,
+                        label = T('Religion'),
+                        represent = lambda opt: opt and pr_religion_opts[opt]))
 
 #
 # Nationality and Country of Residence ----------------------------------------
@@ -236,18 +236,18 @@ opt_pr_religion = SQLTable(None, 'opt_pr_religion',
 pr_nationality_opts = shn_list_of_nations
 
 opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
-                        db.Field('opt_pr_nationality','integer',
-                        requires = IS_IN_SET(pr_nationality_opts),
-                        default = 999, # unknown
-                        label = T('Nationality'),
-                        represent = lambda opt: opt and pr_nationality_opts[opt]))
+                        Field('opt_pr_nationality', 'integer',
+                            requires = IS_IN_SET(pr_nationality_opts),
+                            default = 999, # unknown
+                            label = T('Nationality'),
+                            represent = lambda opt: opt and pr_nationality_opts[opt]))
 
 opt_pr_country = SQLTable(None, 'opt_pr_country',
-                        db.Field('opt_pr_country','integer',
-                        requires = IS_IN_SET(pr_nationality_opts),
-                        default = 999, # unknown
-                        label = T('Country of Residence'),
-                        represent = lambda opt: opt and pr_nationality_opts[opt]))
+                        Field('opt_pr_country', 'integer',
+                            requires = IS_IN_SET(pr_nationality_opts),
+                            default = 999, # unknown
+                            label = T('Country of Residence'),
+                            represent = lambda opt: opt and pr_nationality_opts[opt]))
 
 #
 # shn_pr_person_represent -----------------------------------------------------
@@ -274,9 +274,9 @@ db.define_table(table, timestamp, deletion_status,
                 opt_pr_gender,
                 opt_pr_age_group,
                 Field('email', unique=True),            # Needed for AAA (change this!)
-                Field('mobile_phone','integer'),        # Needed for SMS (change this!)
+                Field('mobile_phone', 'integer'),       # Needed for SMS (change this!)
                 # Person Details
-                Field('date_of_birth','date'),          # Sahana legacy
+                Field('date_of_birth', 'date'),         # Sahana legacy
                 opt_pr_nationality,                     # Nationality
                 opt_pr_country,                         # Country of residence
                 opt_pr_religion,                        # Sahana legacy
@@ -294,7 +294,7 @@ db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' 
 
 # Field representation
 db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
-db[table].first_name.comment = SPAN(SPAN("*", _class="req"),A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
+db[table].first_name.comment = SPAN(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
 db[table].preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
 db[table].local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
 db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
@@ -328,10 +328,10 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
-                represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
-                comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
-                ondelete = 'RESTRICT'
+                    requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
+                    represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
+                    comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+                    ondelete = 'RESTRICT'
                 ))
 
 # *****************************************************************************
@@ -349,11 +349,11 @@ pr_group_type_opts = {
     }
 
 opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
-                    db.Field('opt_pr_group_type','integer',
-                    requires = IS_IN_SET(pr_group_type_opts),
-                    default = 4,
-                    label = T('Group Type'),
-                    represent = lambda opt: opt and pr_group_type_opts[opt]))
+                    db.Field('opt_pr_group_type', 'integer',
+                        requires = IS_IN_SET(pr_group_type_opts),
+                        default = 4,
+                        label = T('Group Type'),
+                        represent = lambda opt: opt and pr_group_type_opts[opt]))
 
 #
 # group table -----------------------------------------------------------------
@@ -384,8 +384,8 @@ db.define_table(table, timestamp, deletion_status,
 # Field validation
 
 # Field representation
-db[table].pr_pe_label.readable=False
-db[table].pr_pe_label.writable=False
+db[table].pr_pe_label.readable = False
+db[table].pr_pe_label.writable = False
 db[table].system.readable = False
 db[table].system.writable = False
 
@@ -415,10 +415,10 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 group_id = SQLTable(None, 'group_id',
                 Field('group_id', db.pr_group,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_group.id', '%(id)s: %(group_name)s', filterby='system', filter_opts=(False,))),
-                represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
-                comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
-                ondelete = 'RESTRICT'
+                    requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_group.id', '%(id)s: %(group_name)s', filterby='system', filter_opts=(False,))),
+                    represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
+                    comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
+                    ondelete = 'RESTRICT'
                 ))
 
 # *****************************************************************************
@@ -440,7 +440,7 @@ def shn_pentity_ondelete(record):
 
     Use as setting in the calling controller:
 
-        crud.settings.delete_onvalidation=shn_pentity_ondelete
+        crud.settings.delete_onvalidation = shn_pentity_ondelete
     """
 
     if request.vars.format:
@@ -491,7 +491,7 @@ def shn_pentity_onvalidation(form, table=None, entity_class=1):
         if (len(request.args) == 0 or request.args[0] == 'create') and entity_class in vita.trackable_types:
             # this is a create action either directly or from list view
             subentity_label = form.vars.get('pr_pe_label')
-            pr_pe_id = db['pr_pentity'].insert(opt_pr_entity_type=entity_class,label=subentity_label)
+            pr_pe_id = db['pr_pentity'].insert(opt_pr_entity_type=entity_class, label=subentity_label)
             if pr_pe_id: form.vars.pr_pe_id = pr_pe_id
         elif len(request.args) > 1 and request.args[0] == 'update' and form.vars.delete_this_record and table:
             # this is a delete action from update
@@ -523,7 +523,7 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
             return None
     else:
         # No search fields specified at all => fallback
-        search_fields = ['pr_pe_label','first_name','middle_name','last_name']
+        search_fields = ['pr_pe_label', 'first_name', 'middle_name', 'last_name']
 
     if label and isinstance(label,str):
         labels = label.split()
@@ -534,7 +534,7 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 
             # append wildcards
             wc = "%"
-            _l = "%s%s%s" % (wc,l,wc)
+            _l = "%s%s%s" % (wc, l, wc)
 
             # build query
             for f in search_fields:
@@ -597,8 +597,8 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
 
         # Select form
         form = FORM(TABLE(
-                TR(T('Name and/or ID Label: '),INPUT(_type="text",_name="label",_size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
-                TR("",INPUT(_type="submit",_value="Search"))
+                TR(T('Name and/or ID Label: '), INPUT(_type="text", _name="label", _size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
+                TR("", INPUT(_type="submit", _value="Search"))
                 ))
 
         output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
@@ -660,9 +660,9 @@ jrlayer.set_method(module, 'person', None, None, 'search_simple', shn_pr_person_
 #
 def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
 
-    if resource=="person":
+    if resource == "person":
 
-        if representation=="html":
+        if representation == "html":
 
             if next:
                 _next = next
@@ -707,7 +707,7 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
         else:
             pass
 
-    elif resource=="group":
+    elif resource == "group":
         pass
     else:
         pass

@@ -281,6 +281,7 @@ class AuthS3(Auth):
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Auth.__init__(self, environment, db)
+        self.settings.username_field = False
         self.messages.lock_keys = False
         self.messages.registration_disabled = 'Registration Disabled!'
         self.messages.lock_keys = True
@@ -316,30 +317,54 @@ class AuthS3(Auth):
         db = self.db
         if not self.settings.table_user:
             passfield = self.settings.password_field
-            self.settings.table_user = db.define_table(
-                self.settings.table_user_name,
-                db.Field('first_name', length=128, default='',
-                        label=self.messages.label_first_name),
-                db.Field('last_name', length=128, default='',
-                        label=self.messages.label_last_name),
+            if self.settings.username_field:
+                self.settings.table_user = db.define_table(
+                    self.settings.table_user_name,
+                    db.Field('first_name', length=128, default='',
+                            label=self.messages.label_first_name),
+                    db.Field('last_name', length=128, default='',
+                            label=self.messages.label_last_name),
 
-                # add UTC Offset (+/-HHMM) to specify the user's timezone
-                # TODO:
-                #   - this could need a nice label and context help
-                #   - entering timezone from a drop-down would be more comfortable
-                #   - automatic DST adjustment could be nice
-                db.Field('utc_offset'),
+                    # add UTC Offset (+/-HHMM) to specify the user's timezone
+                    # TODO:
+                    #   - this could need a nice label and context help
+                    #   - entering timezone from a drop-down would be more comfortable
+                    #   - automatic DST adjustment could be nice
+                    db.Field('utc_offset'),
+                    db.Field('username', length=128, default=''),
+                    db.Field('email', length=512, default='',
+                            label=self.messages.label_email),
+                    db.Field(passfield, 'password', length=512,
+                             readable=False, label=self.messages.label_password),
+                    db.Field('registration_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
+                    migrate=\
+                        self.__get_migrate(self.settings.table_user_name, migrate))
+            else:
+                self.settings.table_user = db.define_table(
+                    self.settings.table_user_name,
+                    db.Field('first_name', length=128, default='',
+                            label=self.messages.label_first_name),
+                    db.Field('last_name', length=128, default='',
+                            label=self.messages.label_last_name),
 
-                # db.Field('username', length=128, default=''),
-                db.Field('email', length=512, default='',
-                        label=self.messages.label_email),
-                db.Field(passfield, 'password', length=512,
-                         readable=False, label=self.messages.label_password),
-                db.Field('registration_key', length=512,
-                        writable=False, readable=False, default='',
-                        label=self.messages.label_registration_key),
-                migrate=\
-                    self.__get_migrate(self.settings.table_user_name, migrate))
+                    # add UTC Offset (+/-HHMM) to specify the user's timezone
+                    # TODO:
+                    #   - this could need a nice label and context help
+                    #   - entering timezone from a drop-down would be more comfortable
+                    #   - automatic DST adjustment could be nice
+                    db.Field('utc_offset'),
+                    #db.Field('username', length=128, default=''),
+                    db.Field('email', length=512, default='',
+                            label=self.messages.label_email),
+                    db.Field(passfield, 'password', length=512,
+                             readable=False, label=self.messages.label_password),
+                    db.Field('registration_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
+                    migrate=\
+                        self.__get_migrate(self.settings.table_user_name, migrate))
             table = self.settings.table_user
             table.first_name.requires = \
                 IS_NOT_EMPTY(error_message=self.messages.is_empty)
@@ -353,6 +378,8 @@ class AuthS3(Auth):
             except:
                 pass
             table[passfield].requires = [CRYPT(key=self.settings.hmac_key, digest_alg='sha512')]
+            if self.settings.username_field:
+                table.username.requires = IS_NOT_IN_DB(db, '%s.username' % self.settings.table_user._tablename)
             table.email.requires = \
                 [IS_EMAIL(error_message=self.messages.invalid_email),
                  IS_NOT_IN_DB(db, '%s.email'

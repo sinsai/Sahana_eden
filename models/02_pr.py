@@ -638,11 +638,18 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
             else:
                 items = T('None')
 
-            output.update(dict(items=items))
+        try:
+            label_create_button = s3.crud_strings['pr_person'].label_create_button
+        except:
+            label_create_button = s3.crud_strings.label_create_button
 
+        add_btn = A(label_create_button, _href=URL(r=request, c='pr', f='person', args='create'), _id='add-btn')
+
+        output.update(dict(items=items, add_btn=add_btn))
         return output
+
     else:
-        session.error = PR_BADFORMAT
+        session.error = BADFORMAT
         redirect(URL(r=request))
 
 # Plug into REST controller

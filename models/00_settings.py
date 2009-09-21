@@ -395,7 +395,7 @@ if not len(db().select(db[table].ALL)):
 
 admin_menu_options = [
     [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1]), [
-        [T('Themes'), False, URL(r=request, c='admin', f='theme')]
+        [T('Edit Themes'), False, URL(r=request, c='admin', f='theme')]
     ]],
     [T('User Management'), False, '#', [
         [T('Users'), False, URL(r=request, c='admin', f='user')],

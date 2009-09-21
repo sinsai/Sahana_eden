@@ -182,6 +182,9 @@ div#table-container th { border: 1px solid #ccc; }
 div#table-container tr.even td { border: 1px solid #ccc; }
 div#table-container tr.odd td { border: 1px solid #ccc; }
  
+/* Display view */
+div.item-container { margin: 5px 0 5px 0; }
+
 /* Required Field indicator */
 .req { color: red; font-weight: bold;  }
 /* For Key - ugly! */
@@ -292,3 +295,13 @@ html:not([lang*=""]) div.web2py-menu-center ul.web2py-menu li a:hover { height: 
 * html ul.web2py-menu-vRight li.sfhover ul,
 * html ul.web2py-menu-hRight ul.web2py-menu-vertical li.sfhover ul { left: -60%; }
 * html ul.web2py-menu iframe { position: absolute; left: 0; top: 0; z-index: -1; }
+
+#add-btn,
+#list-btn,
+#edit-btn,
+#delete-btn { text-decoration: none; color: #006699; background-color: #f3f6ff; border-right: 1px solid #6699CC; border-bottom: 1px solid #6699CC; border-left: 1px solid #c6d1f5; border-top: 1px solid #c6d1f5; padding: 2px 4px 2px 4px; }
+
+#add-btn:hover,
+#list-btn:hover,
+#edit-btn:hover,
+#delete-btn:hover { text-decoration: none; color: #ffffff; background-color: #3377BB; border-right: 1px solid #4589CE; border-bottom: 1px solid #4589CE; border-left: 1px solid #000000; border-top: 1px solid #000000; padding: 1px 4px 1px 4px; }

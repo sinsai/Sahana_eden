@@ -241,7 +241,7 @@ msg_list_empty = T('No Feature Classes currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_class_id = SQLTable(None, 'feature_class_id',
-            Field('feature_class_id', db.gis_feature_class,
+            Field('feature_class', db.gis_feature_class,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Class'),
@@ -297,6 +297,13 @@ msg_record_modified = T('Feature Metadata updated')
 msg_record_deleted = T('Feature Metadata deleted')
 msg_list_empty = T('No Feature Metadata currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Joined Resource
+jrlayer.add_jresource(module, resource,
+    multiple=True,
+    joinby=dict(gis_feature='feature'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'description', 'source', 'event_time', 'url', 'image'])
 
 gis_feature_type_opts = {
     1:T('Point'),
@@ -360,6 +367,13 @@ feature_id = SQLTable(None, 'feature_id',
                 comment = DIV(A(T('Add Feature'), _class='popup', _href=URL(r=request, c='gis', f='feature', args='create', vars=dict(format='plain')), _target='top', _title=T('Add Feature')), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature|The centre Point or Polygon used to display this Location on a Map."))),
                 ondelete = 'RESTRICT'
                 ))
+# Joined Resource
+jrlayer.add_jresource(module, resource,
+    multiple=True,
+    joinby=dict(gis_feature_class='feature_class'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'marker', 'feature_type', 'lat', 'lon', 'wkt'])
     
 # Feature Groups
 # Used to select a set of Features for either Display or Export
@@ -509,13 +523,6 @@ msg_record_modified = T('Location updated')
 msg_record_deleted = T('Location deleted')
 msg_list_empty = T('No Locations currently available')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-# Joined Resource
-jrlayer.add_jresource(module, resource,
-    multiple=True,
-    joinby='feature_id',
-    deletable=True,
-    editable=True,
-    list_fields = ['id', 'name', 'level'])
 # Reusable field for other tables to reference
 location_id = SQLTable(None, 'location_id',
             Field('location', db.gis_location,
@@ -525,6 +532,13 @@ location_id = SQLTable(None, 'location_id',
                 comment = DIV(A(s3.crud_strings.gis_location.label_create_button, _class='popup', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='plain')), _target='top', _title=s3.crud_strings.gis_location.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
+# Joined Resource
+jrlayer.add_jresource(module, resource,
+    multiple=True,
+    joinby=dict(gis_feature='feature'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'name', 'level'])
 
 # GIS Keys - needed for commercial mapping services
 resource = 'apikey' # Can't use 'key' as this has other meanings for dicts!

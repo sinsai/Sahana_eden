@@ -64,7 +64,7 @@ textarea:focus { background-color:#col_input; }
 
 /* Links should ALWAYS be unvisited */
 a { color: #039; text-decoration: underline; }
-a:hover { color: #C00; text-decoration: none; background-color: #col_input; }
+a:hover { color: #c00; text-decoration: none; background-color: #col_input; }
 a img { border:none; }
 
 table { border-collapse: collapse }
@@ -178,9 +178,9 @@ div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
 /* Tabular data view */
-div#table-container th { border: 1px solid #999; }
-div#table-container tr.even td { border: 1px solid #999; text-align: center;}
-div#table-container tr.odd td { border: 1px solid #999; text-align: center; }
+div#table-container th { border: 1px solid #ccc; }
+div#table-container tr.even td { border: 1px solid #ccc; text-align: center;}
+div#table-container tr.odd td { border: 1px solid #ccc; text-align: center; }
  
 /* Display view */
 div.item-container { margin: 5px 0 5px 0; }

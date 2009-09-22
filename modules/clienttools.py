@@ -5,7 +5,6 @@
    Client tools for web2py 
    Developed by Nathan Freeze <nathan@freezable.com>
    License: GPL v2
-   Examples: http://www.web2pyslices.com/main/slices/take_slice/8
    
    This file contains tools for managing client events 
    and resources from the server in web2py
@@ -112,9 +111,11 @@ class EventManager(object):
         self.events = []
         self.page_manager = page_manager
         self.environment = page_manager.environment        
-    def listen(self, event, helper, handler, success="eval(msg);", data='form:first'):
+    def listen(self, event, helper, handler, success="eval(msg);", 
+               data='form:first', args=None, persist=False, event_args=False):        
         act_on = 'document'      
-        use_jq = isinstance(helper,str)        
+        use_jq = isinstance(helper,str)
+        bind = 'live' if persist else 'bind'        
         if not event in __events__:            
             raise ValueError('Invalid event name.')        
         if not use_jq:
@@ -123,22 +124,28 @@ class EventManager(object):
             if not helper['_id']:
                 raise ValueError('Invalid helper for event. Component has no ID attribute.')
             if helper:
-                act_on = '"#' + helper['_id'] + '"'
+                act_on = '"#%s"' % helper['_id']
         if use_jq and helper != 'document':
             act_on = '"' + helper + '"'
         if hasattr(success,'xml'):
             if success['_id']:
                 success = 'jQuery("#%s").html(msg);' % success['_id']
             else:
-                raise ValueError('Invalid success component for event. No ID attribute found.')             
+                raise ValueError('Invalid success component for event. No ID attribute found.')
+        elif success != "eval(msg);":
+            success = 'jQuery("%s").html(msg);' % success             
         if not isinstance(handler, str):        
             if not hasattr(handler, '__call__'):
                 raise TypeError('Invalid handler for event. Object is not callable')
-            url = URL(r=self.environment.request,f=handler.__name__)
-            handler = 'jQuery.ajax({type:"POST",url:"%s",data:jQuery("%s").' \
-                      'serialize(),success: function(msg){%s} });'  % \
-                      (url, data, success)                   
+            url = URL(r=self.environment.request,f=handler.__name__, args=args) \
+                  if args else URL(r=self.environment.request,f=handler.__name__)
+            e = '"event_target_id=" + encodeURIComponent(e.target.id) + "&event_target_html=" + '\
+                'encodeURIComponent(jQuery(e.target).wrap("<div></div>").parent().html()) + '\
+                '"&event_pageX=" + e.pageX + "&event_pageY=" + e.pageY + '\
+                '"&event_timeStamp=" + e.timeStamp + "&"' if event_args else '""'
+            handler = 'jQuery.ajax({type:"POST",url:"%s",data:%s + jQuery("%s").serialize(),'\
+                      'success: function(msg){%s} });'  % (url, e, data, success)                   
         self.events.append([event, helper, handler, data])        
-        self.page_manager.onready.append('jQuery(%s).%s(function(){%s});' % 
-                                         (act_on, event, handler))
+        self.page_manager.onready.append('jQuery(%s).%s("%s", function(e){%s});' % 
+                                         (act_on, bind, event, handler))
         

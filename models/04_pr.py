@@ -234,7 +234,7 @@ label_create_button = T('Add Image')
 msg_record_created = T('Image added')
 msg_record_modified = T('Image updated')
 msg_record_deleted = T('Image deleted')
-msg_list_empty = T('No images currently registered')
+msg_list_empty = T('No Images currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # *****************************************************************************
@@ -341,7 +341,7 @@ label_create_button = T('Add Log Entry')
 msg_record_created = T('Log entry added')
 msg_record_modified = T('Log entry updated')
 msg_record_deleted = T('Log entry deleted')
-msg_list_empty = T('No presence entries currently registered')
+msg_list_empty = T('No Presence Log Entries currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # *****************************************************************************
@@ -410,7 +410,7 @@ label_create_button = T('Add Identity')
 msg_record_created = T('Identity added')
 msg_record_modified = T('Identity updated')
 msg_record_deleted = T('Identity deleted')
-msg_list_empty = T('No identities currently registered')
+msg_list_empty = T('No Identities currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # *****************************************************************************
@@ -455,11 +455,25 @@ jrlayer.add_jresource(module, resource,
 # Field validation
 
 # Field representation
-db[table].group_head.represent = lambda group_head: (group_head and ["yes"] or [""])[0]
+db[table].group_head.represent = lambda group_head: (group_head and [T('yes')] or [''])[0]
 
 # Field labels
 
 # CRUD Strings
+title_create = T('Add Group Membership')
+title_display = T('Group Membership Details')
+title_list = T('Group Memberships')
+title_update = T('Edit Membership')
+title_search = T('Search Membership')
+subtitle_create = T('Add New Group Membership')
+subtitle_list = T('Current Group Memberships')
+label_list_button = T('List All Group Memberships')
+label_create_button = T('Add Group Membership')
+msg_record_created = T('Group Membership added')
+msg_record_modified = T('Group Membership updated')
+msg_record_deleted = T('Group Membership deleted')
+msg_list_empty = T('No Group Memberships currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # *****************************************************************************
 # Network (network)

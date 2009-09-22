@@ -57,6 +57,10 @@ class Vita(object):
     DEFAULT_TRACKABLE = 1
     DEFAULT_PRESENCE = 4
 
+    # *************************************************************************
+    # Physical Description
+    #
+
     def __init__(self, environment, db=None, T=None):
         self.environment = Storage(environment)
         self.db = db

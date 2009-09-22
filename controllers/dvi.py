@@ -26,7 +26,6 @@ def personal_effects():
     return shn_rest_controller(module, 'personal_effects')
 
 def case():
-
     "Restlike CRUD controller"
     return shn_rest_controller(module, 'case')
 

@@ -615,5 +615,42 @@ db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name)
 #
 
 #
+# shn_pr_person_pfif ----------------------------------------------------------
+#
+def shn_pr_person_pfif(person, domain):
+
+    if person:
+        pe = vita.pentity(person)
+
+        person_record_id = "%s/%s" % (domain, pe.uuid)
+        pfif = dict(person_record_id=person_record_id)
+
+        entry_date = str(person.modified_on)
+        source_date = str(person.created_on)
+        pfif.update(entry_date=entry_date, source_date=source_date)
+
+        first_name = person.first_name.upper()
+        last_name = person.last_name.upper()
+        pfif.update(first_name=first_name, last_name=last_name)
+
+        return dict(person=pfif)
+
+    else:
+        return None
+
+#
+# shn_pr_presence_pfif --------------------------------------------------------
+#
+def shn_pr_presence_pfif(record, domain):
+
+    if record:
+        note_record_id = "%s/%s" % (domain, record.uuid)
+        pfif = dict(note_record_id=note_record_id)
+
+        return dict(note=pfif)
+    else:
+        return None
+
+#
 # End
 # *****************************************************************************

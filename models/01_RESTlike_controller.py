@@ -252,7 +252,57 @@ def export_xml(table, query):
     items = db(query).select(table.ALL).as_list()
     response.headers['Content-Type'] = 'text/xml'
     return str(gluon.serializers.xml(items))
-    
+
+#
+# export_pfif -----------------------------------------------------------------
+#
+def export_pfif(jr):
+    """
+        Export person information in PFIF/XML format, http://zesty.ca/pfif/1.1
+
+        Requests that can be served:
+            pr_person --> pfif/person
+            pr_presence --> pfif/note
+    """
+    import gluon.serializers
+    response.headers['Content-Type'] = 'application/pfif+xml'
+
+    if jr.jresource:
+        if jr.tablename=="pr_person" and jr.jtablename=="pr_presence":
+            # not yet implemented
+            return TAG['pfif']()
+        else:
+            # error: wrong resource type
+            return TAG['pfif']()
+    else:
+        if jr.tablename == 'pr_person':
+            if jr.record:
+                items = shn_pr_person_pfif(jr.record, request.env.server_name)
+                return str(gluon.serializers.xml_rec(items, 'pfif'))
+            else:
+                query = shn_accessible_query('read', jr.table)
+                if response.s3.filter:
+                    query = response.s3.filter & query
+                query = ((jr.table.deleted == False) | (jr.table.deleted == None)) & query
+                records = db(query).select(db.pr_person.ALL)
+                return TAG['pfif'](*[gluon.serializers.xml_rec(shn_pr_person_pfif(r, request.env.server_name)['person'], 'person') for r in records])
+        else:
+            # error: wrong resource type
+            return TAG['pfif']()
+
+#
+# export_pfif_rss -------------------------------------------------------------
+#
+def export_pfif_rss(jr):
+    """
+        Export person information as PFIF/RSS2.0 feeds, http://zesty.ca/pfif/1.1
+
+        Requests that can be served:
+            pr_person --> rss+pfif/person
+            pr_presence --> rss+pfif/note
+    """
+    return 'not yet implemented'
+
 #
 # import_csv ------------------------------------------------------------------
 #
@@ -309,6 +359,15 @@ def import_json(method):
                 item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
     response.headers['Content-Type'] = 'text/x-json'
     return item
+
+#
+# import_pfif -----------------------------------------------------------------
+#
+def import_pfif(jr):
+    """
+        Import person information from PFIF/XML format
+    """
+    return 'not yet implemented'
 
 # *****************************************************************************
 # Authorisation
@@ -728,6 +787,9 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             query = db[table].id == record_id
             return export_xml(table, query)
 
+        elif jr.representation == "pfif":
+            return export_pfif(jr)
+
         else:
             session.error = BADFORMAT
             redirect(URL(r=request, f='index'))
@@ -953,6 +1015,9 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     elif jr.representation == "xml":
         return export_xml(table, query)
 
+    elif jr.representation == "pfif":
+        return export_pfif(jr)
+    
     else:
         session.error = BADFORMAT
         redirect(URL(r=request, f='index'))
@@ -1680,7 +1745,7 @@ def shn_rest_controller(module, resource,
         # Read (single table) *************************************************
         elif jr.method == "read" or jr.method == "display":
             request.args.remove(jr.method)
-            redirect(URL(r=request, args=request.args))
+            redirect(URL(r=request, args=request.args, vars=request.vars))
 
         # Update (single table) ***********************************************
         elif jr.method == "update":

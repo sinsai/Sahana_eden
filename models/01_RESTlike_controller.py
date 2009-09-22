@@ -265,7 +265,8 @@ def export_pfif(jr):
             pr_presence --> pfif/note
     """
     import gluon.serializers
-    response.headers['Content-Type'] = 'application/pfif+xml'
+    response.headers['Content-Type'] = 'text/xml' # easier for testing
+    #response.headers['Content-Type'] = 'application/pfif+xml'
 
     if jr.jresource:
         if jr.tablename=="pr_person" and jr.jtablename=="pr_presence":

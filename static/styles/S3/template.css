@@ -58,13 +58,13 @@ input, select, textarea { font-size: 100%; }
 .wide { width:100%; }
 
 /* Input fields should give visual feedback when focussed */
-input:focus { background-color:#FFC; }
-select:focus { background-color:#FFC; }
-textarea:focus { background-color:#FFC; }
+input:focus { background-color:#col_input; }
+select:focus { background-color:#col_input; }
+textarea:focus { background-color:#col_input; }
 
 /* Links should ALWAYS be unvisited */
 a { color: #039; text-decoration: underline; }
-a:hover { color: #C00; text-decoration: none; background-color: #FFC; }
+a:hover { color: #c00; text-decoration: none; background-color: #col_input; }
 a img { border:none; }
 
 table { border-collapse: collapse }
@@ -134,9 +134,9 @@ table { border-collapse: collapse }
 }
 
 /* common styles */
-#content h1, #content h2 { color:#069; font-size:15px; font-weight:bolder; background:#F3F6FF; padding:3px 3px 3px 3px; border:1px #C6D1F5 solid; margin-bottom:10px; margin-top: 10px;}
-#content h3 { color:#069; font-size:14px; font-weight:bolder; border-bottom:1px #069 solid; margin-bottom:10px; }
-#content h4 { color:#069; margin-top:10px; font-size:13px; font-weight:bolder; border-bottom:1px #036 dotted; margin-bottom:10px; }
+#content h1, #content h2 { color:#col_txt; font-size:15px; font-weight:bolder; background:#col_txt_background; padding:3px 3px 3px 3px; border:1px #col_txt_border solid; margin-bottom:10px; margin-top: 10px;}
+#content h3 { color:#col_txt; font-size:14px; font-weight:bolder; border-bottom:1px #col_txt solid; margin-bottom:10px; }
+#content h4 { color:#col_txt; margin-top:10px; font-size:13px; font-weight:bolder; border-bottom:1px #col_txt_underline dotted; margin-bottom:10px; }
 			
 /* other styles */
 #home { border: 10px #fff solid; }
@@ -155,25 +155,25 @@ table { border-collapse: collapse }
         
 /* Form Layout styles */
 p.legend { margin-bottom: 1em; }
-p.legend em { color: #C00; font-style: normal; }
+p.legend em { color: #c00; font-style: normal; }
 
-div.form-container form { padding: 5px; background-color: #FFF; border: #EEE 1px solid; background-color: #FbFbFb; }
+div.form-container form { padding: 5px; background-color: #fff; border: #eee 1px solid; background-color: #fbfbfb; }
 div.form-container p { margin: 0.5em 0 0 0; }
 div.form-container form p { margin: 0; }
 div.form-container form p.note { font-style: italic; margin-left: 18em; font-size: 80%; color: #666; }
 div.form-container form input,
 div.form-container form select { padding: 1px; margin: 2px 0 2px 0; }
-div.form-container form fieldset { margin:0 0 10px 0; padding: 10px; border: #DDD 1px solid; background-color:#FFF;}
+div.form-container form fieldset { margin:0 0 10px 0; padding: 10px; border: #ddd 1px solid; background-color:#fff;}
 div.form-container form legend { font-weight: bold; color: #666; }
 div.form-container form fieldset div.brake { padding: 0.3em; }
 div.form-container form fieldset label{ position:relative; margin-right: 10px; padding-right: 10px; width: 15em; display: block; float: left; text-align: right;min-height:1em;top:0.25em;}
 div.form-container form fieldset label.errorfield,
-div.form-container form fieldset span.errorfield { color: #C00; }
+div.form-container form fieldset span.errorfield { color: #c00; }
 div.form-container form fieldset label.value{display:block;text-align:left;width:auto;}
-div.form-container form fieldset input.errorfield { border-color: #C00; background-color: #FEF; }
+div.form-container form fieldset input.errorfield { border-color: #c00; background-color: #fef; }
 div.form-container form fieldset input:focus,
 div.form-container form fieldset input.errorfield:focus, 
-div.form-container form fieldset textarea:focus { background-color: #FFC; border-color: #FC6;  }
+div.form-container form fieldset textarea:focus { background-color: #col_input; border-color: #fc6;  }
 div.form-container div.controlset label, 
 div.form-container div.controlset input { display: inline; float: none; }
 div.form-container div.controlset div { margin-left: 15em; }
@@ -181,8 +181,8 @@ div.form-container div.buttonrow { margin-left: 180px; }
 
 /* Tabular data view */
 div#table-container th { border: 1px solid #ccc; }
-div#table-container tr.even td { border: 1px solid #ccc; }
-div#table-container tr.odd td { border: 1px solid #ccc; }
+div#table-container tr.even td { border: 1px solid #ccc; text-align: center;}
+div#table-container tr.odd td { border: 1px solid #ccc; text-align: center; }
  
 /* Display view */
 div.item-container { margin: 5px 0 5px 0; }
@@ -198,17 +198,17 @@ div.item-container { margin: 5px 0 5px 0; }
 .tooltip:hover { background-color:transparent; background-image: url(../../img/help_on.gif); }
 
 /* Form Popup */
-div#popup {background: #FFF;}
+div#popup {background: #fff;}
 
 /* Message Flash styles */
-div.confirmation { color:#070; font-weight: bold; text-align: center; border: #070 1px solid; background: url(../../img/dialog-confirmation.png) #E5FFE5 no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
+div.confirmation { color:#070; font-weight: bold; text-align: center; border: #070 1px solid; background: url(../../img/dialog-confirmation.png) #e5ffe5 no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
 .confirmation p em { color:#070; }
-.error { color:#C00; font-weight: bold; text-align: center; border:  #C00 1px solid; background: url(../../img/dialog-error.png) #FFE5E5 no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
-.error p em { color:#C00; }
-.information { color:#748D8E; font-weight: bold; text-align: center; border: #9ED8D7 1px solid; background: url(../../img/dialog-information.png) #ECFDFF no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
-.information p em { color:#748D8E;  }
-.warning { color:#C00; font-weight: bold; text-align: center; border: #FC6 1px solid; background: url(../../img/dialog-warning.png) #FFC no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
-.warning p em { color:#C00;  }
+.error { color:#c00; font-weight: bold; text-align: center; border:  #c00 1px solid; background: url(../../img/dialog-error.png) #ffe5e5 no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
+.error p em { color:#c00; }
+.information { color:#748d8e; font-weight: bold; text-align: center; border: #9ed8d7 1px solid; background: url(../../img/dialog-information.png) #ecfdff no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
+.information p em { color:#748d8e;  }
+.warning { color:#c00; font-weight: bold; text-align: center; border: #fc6 1px solid; background: url(../../img/dialog-warning.png) #ffc no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
+.warning p em { color:#c00;  }
 
 /* Person Registry */
 div#pheader th { width: 8em; text-align: left; }
@@ -235,7 +235,7 @@ ul.web2py-menu li.sfhover a:active,
 ul.web2py-menu li:hover a:active { color: #fff; background-color: #col_menu; }
 ul.web2py-menu li:hover,
 ul.web2py-menu li.sfhover { background-color: #col_highlight; }
-ul.web2py-menu li a:hover { background-color: #ffc; }
+ul.web2py-menu li a:hover { background-color: #col_input; }
 ul.web2py-menu li.web2py-menu-expand a,
 ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand a,
 ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu-expand a { padding-right: 25px; }
@@ -301,9 +301,9 @@ html:not([lang*=""]) div.web2py-menu-center ul.web2py-menu li a:hover { height: 
 #add-btn,
 #list-btn,
 #edit-btn,
-#delete-btn { text-decoration: none; color: #006699; background-color: #f3f6ff; border-right: 1px solid #6699CC; border-bottom: 1px solid #6699CC; border-left: 1px solid #c6d1f5; border-top: 1px solid #c6d1f5; padding: 2px 4px 2px 4px; }
+#delete-btn { text-decoration: none; color: #col_txt; background-color: #col_txt_background; border-right: 1px solid #col_border_btn_out; border-bottom: 1px solid #col_border_btn_out; border-left: 1px solid #col_txt_border; border-top: 1px solid #col_txt_border; padding: 2px 4px 2px 4px; }
 
 #add-btn:hover,
 #list-btn:hover,
 #edit-btn:hover,
-#delete-btn:hover { text-decoration: none; color: #ffffff; background-color: #3377BB; border-right: 1px solid #4589CE; border-bottom: 1px solid #4589CE; border-left: 1px solid #000000; border-top: 1px solid #000000; padding: 1px 4px 1px 4px; }
+#delete-btn:hover { text-decoration: none; color: #fff; background-color: #col_btn_hover; border-right: 1px solid #col_border_btn_in; border-bottom: 1px solid #col_border_btn_in; border-left: 1px solid #000; border-top: 1px solid #000; padding: 1px 4px 1px 4px; }

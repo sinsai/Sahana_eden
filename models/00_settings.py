@@ -195,9 +195,17 @@ db.define_table(table,
                 Field('name'),
                 Field('logo'),
                 Field('footer'),
-                Field('col_background'),    # ToDo: Colour selector
+                Field('col_background'),
+                Field('col_txt'),
+                Field('col_txt_background'),
+                Field('col_txt_border'),
+                Field('col_txt_underline'),
                 Field('col_menu'),
                 Field('col_highlight'),
+                Field('col_input'),
+                Field('col_border_btn_out'),
+                Field('col_border_btn_in'),
+                Field('col_btn_hover'),
                 migrate=migrate)
 db[table].name.label = T('Name')
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -208,10 +216,26 @@ db[table].footer.label = T('Footer')
 db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
 db[table].col_background.label = T('Background Colour')
 db[table].col_background.requires = IS_HTML_COLOUR()
+db[table].col_txt.label = T('Text Colour for Text blocks')
+db[table].col_txt.requires = IS_HTML_COLOUR()
+db[table].col_txt_background.label = T('Background Colour for Text blocks')
+db[table].col_txt_background.requires = IS_HTML_COLOUR()
+db[table].col_txt_border.label = T('Border Colour for Text blocks')
+db[table].col_txt_border.requires = IS_HTML_COLOUR()
+db[table].col_txt_underline.label = T('Colour for Underline of Subheadings')
+db[table].col_txt_underline.requires = IS_HTML_COLOUR()
 db[table].col_menu.label = T('Colour of dropdown menus')
 db[table].col_menu.requires = IS_HTML_COLOUR()
 db[table].col_highlight.label = T('Colour of selected menu items')
 db[table].col_highlight.requires = IS_HTML_COLOUR()
+db[table].col_input.label = T('Colour of selected Input fields')
+db[table].col_input.requires = IS_HTML_COLOUR()
+db[table].col_border_btn_out.label = T('Colour of bottom of Buttons when not pressed')
+db[table].col_border_btn_out.requires = IS_HTML_COLOUR()
+db[table].col_border_btn_in.label = T('Colour of bottom of Buttons when pressed')
+db[table].col_border_btn_in.requires = IS_HTML_COLOUR()
+db[table].col_btn_hover.label = T('Colour of Buttons when hovering')
+db[table].col_btn_hover.requires = IS_HTML_COLOUR()
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -221,7 +245,15 @@ if not len(db().select(db[table].ALL)):
         footer = 'footer.html',
         col_background = '336699',
         col_menu = '0066cc',
-        col_highlight = '0077aa'
+        col_highlight = '0077aa',
+        col_txt = '006699',
+        col_txt_background = 'f3f6ff',
+        col_txt_border = 'c6d1f5',
+        col_txt_underline = '003366',
+        col_input = 'ffffcc',
+        col_border_btn_out = '6699cc',
+        col_border_btn_in = '4589ce',
+        col_btn_hover = '3377bb',
     )
     db[table].insert(
         name = T('Sahana Green'),
@@ -229,7 +261,15 @@ if not len(db().select(db[table].ALL)):
         footer = 'footer.html',
         col_background = '337733',
         col_menu = 'cc7722',
-        col_highlight = '338833'
+        col_highlight = '338833',
+        col_txt = '006699',
+        col_txt_background = 'f3f6ff',
+        col_txt_border = 'c6d1f5',
+        col_txt_underline = '003366',
+        col_input = 'ffffcc',
+        col_border_btn_out = '6699cc',
+        col_border_btn_in = '4589ce',
+        col_btn_hover = '3377bb',
     )
 # Define CRUD strings
 title_create = T('Add Theme')

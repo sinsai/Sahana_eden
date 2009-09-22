@@ -619,6 +619,8 @@ db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name)
 #
 def shn_pr_person_pfif(person, domain):
 
+    domain = request.env.server_name
+
     if person:
         pe = vita.pentity(person)
 
@@ -632,6 +634,74 @@ def shn_pr_person_pfif(person, domain):
         first_name = person.first_name.upper()
         last_name = person.last_name.upper()
         pfif.update(first_name=first_name, last_name=last_name)
+
+        # Get home address of that person
+        query = (db.pr_address.deleted==False)
+        query = (db.pr_address.pr_pe_id==pe.id) & query
+        query = (db.pr_address.opt_pr_address_type==1) & query
+
+        rows = db(query).select(db.pr_address.ALL)
+        if rows:
+            home_address = rows[0]
+            home_city = home_address.city
+            if home_address.opt_pr_country == 184: # United States?
+                home_state = home_address.state
+            else:
+                home_state = shn_list_of_nations[home_address.opt_pr_country]
+
+            home_neighborhood = '' # not available
+            home_street = home_address.street1
+            home_zip = home_address.postcode
+        else:
+            home_city = ''
+            home_state = ''
+            home_neighborhood = ''
+            home_street = ''
+            home_zip = ''
+
+        pfif.update(
+            home_city = home_city,
+            home_state = home_state,
+            home_neighborhood = home_neighborhood,
+            home_street = home_street,
+            home_zip = home_zip
+            )
+
+        # Get photograph of that person
+        query = (db.pr_image.deleted==False)
+        query = (db.pr_image.pr_pe_id==pe.id) & query
+        query = (db.pr_image.opt_pr_image_type==1) & query
+
+        rows = db(query).select(db.pr_image.ALL)
+        if rows:
+            photo = rows[0]
+            photo_url = "%s/%s/pr/download/%s" % (S3_PUBLIC_URL, request.application, photo.image)
+        else:
+            photo_url = ''
+
+        pfif.update(photo_url=photo_url)
+
+        # Get admin data
+        try:
+            admin_data = db(db.s3_setting.id==1).select(
+                                    db.s3_setting.admin_name,
+                                    db.s3_setting.admin_email,
+                                    db.s3_setting.admin_tel)[0]
+
+            author_name = admin_data.admin_name
+            author_email = admin_data.admin_email
+            author_phone = admin_data.admin_tel
+        except:
+            author_name = ''
+            author_email = ''
+            author_phone = ''
+
+        pfif.update(author_name=author_name, author_email=author_email, author_phone=author_phone)
+            
+        # Add source data
+        source_name = domain
+        source_url = "%s/%s/%s/person/%s.pfif" % (S3_PUBLIC_URL, request.application, module, person.id)
+        pfif.update(source_name=source_name, source_url=source_url)
 
         return dict(person=pfif)
 

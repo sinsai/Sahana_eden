@@ -888,8 +888,13 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             else:
                 _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id)
 
+            try:
+                message = s3.crud_strings[tablename].msg_record_created
+            except:
+                message = s3.crud_strings.msg_record_created
+
             # Display the Add form below List
-            form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept, next=jr.there())
+            form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept, message=message, next=jr.there())
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
             if jr.jresource:
@@ -1037,7 +1042,12 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         else:
             _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
+        try:
+            message = s3.crud_strings[tablename].msg_record_created
+        except:
+            message = s3.crud_strings.msg_record_created
+
+        form = crud.create(table, message=message, onvalidation=onvalidation, onaccept=_onaccept)
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
         if jr.jresource:
@@ -1187,7 +1197,12 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = None
                 crud.settings.update_next = jrlayer.get_attr(jr.jresource, 'update_next') or jr.there()
 
-            form = crud.update(table, record_id, onvalidation=onvalidation, onaccept=onaccept)
+            try:
+                message = s3.crud_strings[tablename].msg_record_modified
+            except:
+                message = s3.crud_strings.msg_record_modified
+
+            form = crud.update(table, record_id, message=message, onvalidation=onvalidation, onaccept=onaccept)
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
             if jr.jresource:
@@ -1258,6 +1273,11 @@ def shn_delete(jr):
         session.confirmation = T('No records to delete')
         return
 
+    try:
+        message = s3.crud_strings[tablename].msg_record_deleted
+    except:
+        message = s3.crud_strings.msg_record_deleted
+
     if jr.jresource:
         # Save callback settings
         delete_onvalidation = crud.settings.delete_onvalidation
@@ -1300,7 +1320,7 @@ def shn_delete(jr):
     if numrows > 1:
         session.confirmation = "%s %s" % ( numrows, T('records deleted'))
     else:
-        session.confirmation = T('Record deleted')
+        session.confirmation = message
 
     if jr.jresource and delete_next: # but redirect here!
         redirect(delete_next)
@@ -1392,7 +1412,7 @@ def shn_rest_controller(module, resource,
             session.error = BADRECORD
         else:
             session.error = INVALIDREQUEST
-        redirect(URL(r=request, c=module, f='index'))
+        redirect(URL(r=request, c=request.controller, f='index'))
 
     # Get backlinks
     here = jr.here()
@@ -1540,7 +1560,7 @@ def shn_rest_controller(module, resource,
         # Unsupported Method **************************************************
         else:
             session.error = BADMETHOD
-            redirect(URL(r=request, c=module, f='index'))
+            redirect(URL(r=request, f='index'))
 
     # *************************************************************************
     # Single Table Operation

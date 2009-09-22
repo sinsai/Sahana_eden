@@ -64,7 +64,7 @@ textarea:focus { background-color:#ffffcc; }
 
 /* Links should ALWAYS be unvisited */
 a { color: #039; text-decoration: underline; }
-a:hover { color: #C00; text-decoration: none; background-color: #ffffcc; }
+a:hover { color: #c00; text-decoration: none; background-color: #ffffcc; }
 a img { border:none; }
 
 table { border-collapse: collapse }
@@ -161,6 +161,8 @@ div.form-container form { padding: 5px; background-color: #fff; border: #eee 1px
 div.form-container p { margin: 0.5em 0 0 0; }
 div.form-container form p { margin: 0; }
 div.form-container form p.note { font-style: italic; margin-left: 18em; font-size: 80%; color: #666; }
+div.form-container form input,
+div.form-container form select { padding: 1px; margin: 2px 0 2px 0; }
 div.form-container form fieldset { margin:0 0 10px 0; padding: 10px; border: #ddd 1px solid; background-color:#fff;}
 div.form-container form legend { font-weight: bold; color: #666; }
 div.form-container form fieldset div.brake { padding: 0.3em; }
@@ -178,9 +180,9 @@ div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
 /* Tabular data view */
-div#table-container th { border: 1px solid #999; }
-div#table-container tr.even td { border: 1px solid #999; text-align: center;}
-div#table-container tr.odd td { border: 1px solid #999; text-align: center; }
+div#table-container th { border: 1px solid #ccc; }
+div#table-container tr.even td { border: 1px solid #ccc; text-align: center;}
+div#table-container tr.odd td { border: 1px solid #ccc; text-align: center; }
  
 /* Display view */
 div.item-container { margin: 5px 0 5px 0; }

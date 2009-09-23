@@ -701,7 +701,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
                 href_delete = None
                 href_edit = None
                 session.error = BADRECORD
-                redirect(jr.there())
+                redirect(jr.there()) # TODO: this is wrong when no records exist!
 
         editable = jrlayer.get_attr(resource, 'editable')
         deletable = jrlayer.get_attr(resource, 'deletable')

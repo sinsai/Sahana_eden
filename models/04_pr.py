@@ -345,6 +345,177 @@ msg_list_empty = T('No Presence Log Entries currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # *****************************************************************************
+# Physical Description (pd_xxx)
+#   - for identification purposes
+#   - following Interpol DVI Forms http://www.interpol.int/Public/DisasterVictim/Forms
+#   - appliable for both Missing Persons and Dead Bodies
+#
+#   TODO: elaborate on field types and field options!
+#
+
+#
+# Field options ---------------------------------------------------------------
+#
+pr_bodily_constitution_opts = {
+    1:T('light'),
+    2:T('medium'),
+    3:T('heavy'),
+    99:T('unspecified')
+    }
+
+opt_pr_bodily_constitution = SQLTable(None, 'opt_pr_bodily_constitution',
+                                db.Field('opt_pr_bodily_constitution', 'integer',
+                                requires = IS_IN_SET(pr_bodily_constitution_opts),
+                                default = 99,
+                                label = T('Bodily Constitution'),
+                                represent = lambda opt: opt and pr_bodily_constitution_opts[opt]))
+
+#
+# Physical Description Tables -------------------------------------------------
+#
+resource = 'pd_general'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,
+                Field('est_age'),                       # D1-31A   Estimated Age
+                Field('height'),                        # D1-32    Height
+                Field('weight'),                        # D1-33    Weight
+                opt_pr_bodily_constitution,             # D1-34/01 Bodily Constitution
+                Field('race_group'),                    # D1-35/01 Race, group
+                Field('race_type'),                     # D1-35/01 Race, type
+                Field('race_complexion'),               # D1-35/01 Race, complexion
+                Field('specific_details_head'),         # D3-53    Specific Details
+                Field('specific_details_throat'),       # D3-53    Specific Details
+                Field('specific_details_arm_left'),     # D3-53    Specific Details
+                Field('specific_details_arm_right'),    # D3-53    Specific Details
+                Field('specific_details_hand_left'),    # D3-53    Specific Details
+                Field('specific_details_hand_right'),   # D3-53    Specific Details
+                Field('specific_details_body_front'),   # D3-53    Specific Details
+                Field('specific_details_body_back'),    # D3-53    Specific Details
+                Field('specific_details_leg_left'),     # D3-53    Specific Details
+                Field('specific_details_leg_right'),    # D3-53    Specific Details
+                Field('specific_details_foot_left'),    # D3-53    Specific Details
+                Field('specific_details_foot_right'),   # D3-53    Specific Details
+                Field('other_peculiarities', 'text'),   # D3-55    Other Peculiarities
+                Field('body_sketch'),                   # D4       Body Sketch
+                migrate=migrate)
+
+# Joined Resource
+jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+resource = 'pd_head'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,
+                Field('head_form_front'),               # D1-34/02 Head form, front
+                Field('head_form_profile'),             # D1-34/03 Head form, profile
+                Field('hair_head_type'),                # D1-36/01 Hair of the head, Type
+                Field('hair_head_length'),              # D1-36/02 Hair of the head, Length
+                Field('hair_head_colour'),              # D1-36/03 Hair of the head, Colour
+                Field('hair_head_shade'),               # D1-36/04 Hair of the head, Shade of colour
+                Field('hair_head_thickness'),           # D1-36/05 Hair of the head, Thickness
+                Field('hair_head_style'),               # D1-36/06 Hair of the head, Style
+                Field('hair_head_parting'),             # D1-36/06 Hair of the head, Parting
+                Field('hair_head_baldness_ext'),        # D1-36/07 Hair of the head, Baldness (extent)
+                Field('hair_head_baldness_loc'),        # D1-36/07 Hair of the head, Baldness (location)
+                Field('hair_head_other'),               # D1-36/08 Hair of the head, Other information
+                migrate=migrate)
+
+# Joined Resource
+jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+resource = 'pd_face'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,
+                Field('forehead_height'),               # D2-37/01 Forehead, Height
+                Field('forehead_width'),                # D2-37/01 Forehead, Width
+                Field('forehead_inclination'),          # D2-37/02 Forehead, Inclination
+                Field('eyebrows_shape'),                # D2-38/01 Eyebrows, Shape
+                Field('eyebrows_thickness'),            # D2-38/01 Eyebrows, Thickness
+                Field('eyebrows_peculiarities'),        # D2-38/02 Eyebrows, Peculiarities
+                Field('eyes_colour'),                   # D2-39/01 Eyes, Colour
+                Field('eyes_shade'),                    # D2-39/02 Eyes, Shade
+                Field('eyes_distance'),                 # D2-39/03 Eyes, Distance between Eyes
+                Field('eyes_peculiarities'),            # D2-39/04 Eyes, Peculiarities
+                Field('nose_size'),                     # D2-40/01 Nose, size
+                Field('nose_shape'),                    # D2-40/01 Nose, shape
+                Field('nose_spectacle_marks'),          # D2-40/02 Nose, Peculiarities - Marks of spectacles
+                Field('nose_misshapen'),                # D2-40/02 Nose, Peculiarities - Misshapen
+                Field('nose_peculiarities'),            # D2-40/02 Nose, Peculiarities
+                Field('nose_curve'),                    # D2-40/03 Nose, Curve
+                Field('nose_angle'),                    # D2-40/03 Nose, Angle
+                Field('hair_facial_type'),              # D2-41/01 Facial hair, Type
+                Field('hair_facial_colour'),            # D2-41/02 Facial hair, Colour
+                Field('ears_size'),                     # D2-42/01 Ears, size
+                Field('ears_angle'),                    # D2-42/01 Ears, angle
+                Field('ears_lobes_attached'),           # D2-42/02 Ears, Ear Lobes
+                Field('ears_piercings_left'),           # D2-42/02 Ears, Number of Piercings, left
+                Field('ears_piercings_right'),          # D2-42/02 Ears, Number of Piercings, right
+                Field('mouth_size'),                    # D2-43/01 Mouth, Size
+                Field('mouth_other'),                   # D2-43/01 Mouth, Other
+                Field('lips_shape'),                    # D2-44/01 Lips, Shape
+                Field('lips_other'),                    # D2-44/01 Lips, Other
+                Field('chin_size'),                     # D3-47/01 Chin, Size
+                Field('chin_inclination'),              # D3-47/01 Chin, Inclination
+                Field('chin_shape'),                    # D3-47/02 Chin, Shape
+                migrate=migrate)
+
+# Joined Resource
+jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+resource = 'pd_teeth'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,
+                Field('teeth_natural', 'boolean', default=True),        # D2-45/01 Teeth, Conditions
+                Field('teeth_treated', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
+                Field('teeth_crowns', 'boolean', default=False),        # D2-45/01 Teeth, Conditions
+                Field('teeth_bridges', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
+                Field('teeth_implants', 'boolean', default=False),      # D2-45/01 Teeth, Conditions
+                Field('teeth_gaps'),                    # D2-45/02 Teeth, Gaps between front teeth
+                Field('teeth_missing'),                 # D2-45/02 Teeth, Missing teeth
+                Field('teeth_toothless'),               # D2-45/02 Teeth, Toothless
+                Field('teeth_dentures_lower'),          # D2-45/03 Teeth, Dentures
+                Field('teeth_dentures_upper'),          # D2-45/03 Teeth, Dentures
+                Field('teeth_dentures_id'),             # D2-45/03 Teeth, Dentures, ID-number
+                migrate=migrate)
+
+# Joined Resource
+jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+resource = 'pd_body'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,
+                Field('neck_length'),                   # D3-48/01 Neck, Length
+                Field('neck_shape'),                    # D3-48/01 Neck, Shape
+                Field('neck_peculiarities'),            # D3-48/02 Neck, Peculiarities
+                Field('neck_collar_size'),              # D3-48/02 Neck, Collar Size
+                Field('neck_circumference'),            # D3-48/02 Neck, Circumference
+                Field('hands_shape'),                   # D3-49/01 Hands, Shape
+                Field('hands_size'),                    # D3-49/01 Hands, Size
+                Field('hands_nails_length'),            # D3-49/02 Hands, Nail length
+                Field('hands_nails_peculiarities'),     # D3-49/03 Hands, Nail peculiarities
+                Field('hands_nicotine'),                # D3-49/03 Hands, Nicotine
+                Field('feet_shape'),                    # D3-50/01 Feet, Shape
+                Field('feet_size'),                     # D3-50/01 Feet, Size
+                Field('feet_condition'),                # D3-50/02 Feet, Condition
+                Field('feet_nails'),                    # D3-50/02 Feet, Nails
+                Field('feet_peculiarities'),            # D3-50/03 Feet, Peculiarities
+                Field('hair_body_extent'),              # D3-51/01 Body hair, Extent
+                Field('hair_body_colour'),              # D3-51/02 Body hair, Colour
+                Field('hair_pubic_extent'),             # D3-52/01 Pubic hair, Extent
+                Field('hair_pubic_colour'),             # D3-52/02 Pubic hair, Colour
+                Field('circumcision'),                  # D3-54    Circumcision
+                Field('smoking_habits'),                # D2-46/01 Smoking Habits, Type
+                Field('smoking_stains'),                # D2-46/01 Smoking Habits, Stains Found
+                migrate=migrate)
+
+# Joined Resource
+jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+# *****************************************************************************
 # Identity (identity)
 #
 

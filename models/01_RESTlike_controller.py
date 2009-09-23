@@ -694,11 +694,14 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             href_delete = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'delete', record_id])
             href_edit = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'update', record_id])
         except:
-            record_id = None
-            href_delete = None
-            href_edit = None
-            session.error = BADRECORD
-            redirect(jr.there())
+            if not jr.multiple:
+                redirect(URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'create']))
+            else:
+                record_id = None
+                href_delete = None
+                href_edit = None
+                session.error = BADRECORD
+                redirect(jr.there())
 
         editable = jrlayer.get_attr(resource, 'editable')
         deletable = jrlayer.get_attr(resource, 'deletable')
@@ -756,6 +759,9 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
 
             output.update(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
+
+            if jr.jresource and not jr.multiple:
+                del output["list_btn"]
 
             return(output)
 
@@ -1126,6 +1132,9 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output.update(form=form)
 
+        if jr.jresource and not jr.multiple:
+            del output["list_btn"]
+
         return output
 
     elif jr.representation == "plain":
@@ -1280,6 +1289,9 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_next = update_next
 
             output.update(form=form)
+
+            if jr.jresource and not jr.multiple:
+                del output["list_btn"]
 
             return(output)
 

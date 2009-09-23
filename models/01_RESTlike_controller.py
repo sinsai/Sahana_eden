@@ -691,11 +691,11 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
         try:
             record_id = db(query).select(table.id)[0].id
-            href_delete = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'delete', record_id])
-            href_edit = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'update', record_id])
+            href_delete = URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'delete', record_id])
+            href_edit = URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'update', record_id])
         except:
             if not jr.multiple:
-                redirect(URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'create']))
+                redirect(URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'create']))
             else:
                 record_id = None
                 href_delete = None
@@ -715,8 +715,8 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
         tablename = jr.tablename
 
         record_id = jr.record_id
-        href_delete = URL(r=jr.request, c=jr.module, f=jr.resource, args=['delete', record_id])
-        href_edit = URL(r=jr.request, c=jr.module, f=jr.resource, args=['update', record_id])
+        href_delete = URL(r=jr.request, f=jr.resource, args=['delete', record_id])
+        href_edit = URL(r=jr.request, f=jr.resource, args=['update', record_id])
 
     authorised = shn_has_permission('read', table, record_id)
     if authorised:
@@ -842,7 +842,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if jr.jrecord_id:
             query = (table.id==jr.jrecord_id) & query
 
-        href_add = URL(r=jr.request, c=jr.module, f=jr.resource, args=[jr.record_id, resource, 'create'])
+        href_add = URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'create'])
 
     else:
         module = jr.module
@@ -855,7 +855,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if response.s3.filter:
             query = response.s3.filter & query
 
-        href_add = URL(r=jr.request, c=jr.module, f=jr.resource, args=['create'])
+        href_add = URL(r=jr.request, f=jr.resource, args=['create'])
 
     if 'deleted' in table:
         query = ((table.deleted == False) | (table.deleted == None)) & query
@@ -1507,11 +1507,11 @@ def shn_rest_controller(module, resource,
 
         # TODO: Cleanup - this is PR specific
         if jr.module=="pr" and jr.resource=="person" and jr.representation=='html':
-            redirect(URL(r=request, c='pr', f='person', args='search_simple', vars={"_next": same}))
+            redirect(URL(r=request, f='person', args='search_simple', vars={"_next": same}))
 
         else:
             session.error = BADRECORD
-            redirect(URL(r=request, c=jr.module, f='index'))
+            redirect(URL(r=request, f='index'))
 
     # *************************************************************************
     # Joined Table Operation
@@ -1678,7 +1678,7 @@ def shn_rest_controller(module, resource,
             # Redirect to search
             # TODO: build a generic search function, this here is PR specific
             if jr.module=="pr" and jr.resource=="person" and jr.representation=="html":
-                redirect(URL(r=request, c='pr', f='person', args='search_simple', vars=request_vars))
+                redirect(URL(r=request, f='person', args='search_simple', vars=request_vars))
             else:
                 redirect(URL(r=request, c='pr', f=jr.resource))
 

@@ -1095,18 +1095,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 opt_pr_pd_race_group,                   # D1-35/01 Race, group
                 Field('race_type'),                     # D1-35/01 Race, type
                 opt_pr_pd_race_complexion,              # D1-35/01 Race, complexion
-                Field('specific_details_head'),         # D3-53    Specific Details
-                Field('specific_details_throat'),       # D3-53    Specific Details
-                Field('specific_details_arm_left'),     # D3-53    Specific Details
-                Field('specific_details_arm_right'),    # D3-53    Specific Details
-                Field('specific_details_hand_left'),    # D3-53    Specific Details
-                Field('specific_details_hand_right'),   # D3-53    Specific Details
-                Field('specific_details_body_front'),   # D3-53    Specific Details
-                Field('specific_details_body_back'),    # D3-53    Specific Details
-                Field('specific_details_leg_left'),     # D3-53    Specific Details
-                Field('specific_details_leg_right'),    # D3-53    Specific Details
-                Field('specific_details_foot_left'),    # D3-53    Specific Details
-                Field('specific_details_foot_right'),   # D3-53    Specific Details
                 Field('other_peculiarities', 'text'),   # D3-55    Other Peculiarities
                 #Field('body_sketch'),                   # D4       Body Sketch
                 migrate=migrate)
@@ -1270,6 +1258,18 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('smoking_stains_moustache', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
                 Field('smoking_stains_hand_left', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
                 Field('smoking_stains_hand_right', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
+                Field('specific_details_head'),         # D3-53    Specific Details
+                Field('specific_details_throat'),       # D3-53    Specific Details
+                Field('specific_details_arm_left'),     # D3-53    Specific Details
+                Field('specific_details_arm_right'),    # D3-53    Specific Details
+                Field('specific_details_hand_left'),    # D3-53    Specific Details
+                Field('specific_details_hand_right'),   # D3-53    Specific Details
+                Field('specific_details_body_front'),   # D3-53    Specific Details
+                Field('specific_details_body_back'),    # D3-53    Specific Details
+                Field('specific_details_leg_left'),     # D3-53    Specific Details
+                Field('specific_details_leg_right'),    # D3-53    Specific Details
+                Field('specific_details_foot_left'),    # D3-53    Specific Details
+                Field('specific_details_foot_right'),   # D3-53    Specific Details
                 migrate=migrate)
 
 # Joined Resource

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'admin'
 # Current Module (for sidebar title)
@@ -54,7 +54,11 @@ def theme_apply(form):
         inpfile.close()
         # Read settings from Database
         theme = db(db.admin_theme.id == form.vars.theme).select()[0]
-        logo = theme.logo
+        default_theme = db(db.admin_theme.id == 1).select()[0]
+        if theme.logo:
+            logo = theme.logo
+        else:
+            logo = default_theme.logo
         # Write out CSS
         ofile = open(out_file, 'w')
         for line in lines:
@@ -62,7 +66,10 @@ def theme_apply(form):
             # Iterate through Colours
             for key in theme.keys():
                 if key[:4] == 'col_':
-                    line = line.replace(key, theme[key])
+                    if theme[key]:
+                        line = line.replace(key, theme[key])
+                    else:
+                        line = line.replace(key, default_theme[key])
             ofile.write(line)
         ofile.close()
 

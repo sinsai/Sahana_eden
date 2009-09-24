@@ -1137,7 +1137,7 @@ jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', delet
 # Field validation
 
 # Field representation
-
+db[table].opt_pr_pd_head_form_front.comment = A(SPAN("[Help]"), _class="ajaxtip", _rel="/%s/pr/tooltip?formfield=head_form_front" % request.application )
 # Field labels
 
 # CRUD Strings

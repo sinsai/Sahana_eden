@@ -95,3 +95,8 @@ def group_membership():
 def download():
     "Download a file."
     return response.download(request, db) 
+
+def tooltip():
+    if 'formfield' in request.vars:
+        response.view='pr/ajaxtips/%s.html' % request.vars.formfield
+    return dict(module_name=module_name)

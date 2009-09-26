@@ -52,6 +52,7 @@ $(document).ready(function() {
         { event.default(); } else { event.preventDefault(); }
         return false; });
     $('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
+    $('.ajaxtip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',width: 380});
     $('a.popup').cluetip({activation: 'click', sticky: true, width: '360px', closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />'});
 });
 //]]></script>

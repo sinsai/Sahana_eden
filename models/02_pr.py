@@ -643,7 +643,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
         except:
             label_create_button = s3.crud_strings.label_create_button
 
-        add_btn = A(label_create_button, _href=URL(r=request, c='pr', f='person', args='create'), _id='add-btn')
+        add_btn = A(label_create_button, _href=URL(r=request, f='person', args='create'), _id='add-btn')
 
         output.update(dict(items=items, add_btn=add_btn))
         return output
@@ -684,7 +684,7 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
                         TH(T('ID Label: ')),
                         "%(pr_pe_label)s" % person,
                         TH(A(T('Clear Selection'),
-                            _href=URL(r=request, c='pr', f='person', args='clear', vars={'_next': _same})))
+                            _href=URL(r=request, f='person', args='clear', vars={'_next': _same})))
                         ),
                     TR(
                         TH(T('Date of Birth: ')),
@@ -699,7 +699,7 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
                         TH(T('Age Group: ')),
                         "%s" % pr_person_age_group_opts[person.opt_pr_age_group],
                         TH(A(T('Edit Person'),
-                            _href=URL(r=request, c='pr', f='person', args=['update', record_id], vars={'_next': _next})))
+                            _href=URL(r=request, f='person', args=['update', record_id], vars={'_next': _next})))
                         )
                 )
                 return pheader

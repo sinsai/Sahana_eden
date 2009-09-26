@@ -299,6 +299,7 @@ html:not([lang*=""]) div.web2py-menu-center ul.web2py-menu li a:hover { height: 
 * html ul.web2py-menu iframe { position: absolute; left: 0; top: 0; z-index: -1; }
 
 #add-btn,
+#contents-btn,
 #list-btn,
 #edit-btn,
 #delete-btn { text-decoration: none; color: #006699; background-color: #f3f6ff; border-right: 1px solid #6699cc; border-bottom: 1px solid #6699cc; border-left: 1px solid #c6d1f5; border-top: 1px solid #c6d1f5; padding: 2px 4px 2px 4px; }

@@ -216,7 +216,7 @@ def kit_item():
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
     # Audit
-    shn_audit_read(operation='list', resource='kit_item', record=kit, representation='html')
+    shn_audit_read(operation='list', module=module, resource='kit_item', record=kit, representation='html')
     item_list = []
     sqlrows = db(query).select()
     even = True
@@ -618,7 +618,7 @@ def bundle_kit_item():
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
     # Audit
-    shn_audit_read(operation='list', resource='bundle_kit_item', record=bundle, representation='html')
+    shn_audit_read(operation='list', module=module, resource='bundle_kit_item', record=bundle, representation='html')
     item_list = []
     even = True
     if authorised:
@@ -928,7 +928,7 @@ def budget_staff_bundle():
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
     # Audit
-    shn_audit_read(operation='list', resource='budget_staff_bundle', record=budget, representation='html')
+    shn_audit_read(operation='list', module=module, resource='budget_staff_bundle', record=budget, representation='html')
     item_list = []
     even = True
     if authorised:

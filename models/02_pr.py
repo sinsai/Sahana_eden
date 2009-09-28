@@ -97,7 +97,7 @@ def shn_pentity_represent(pentity):
 #
 resource = 'pentity'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                     Field('parent'),                # Parent Entity
                     opt_pr_entity_type,             # Entity class
                     Field('label', unique=True),    # Recognition Label
@@ -264,7 +264,7 @@ def shn_pr_person_represent(id):
 #
 resource = 'person'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                         # Person Entity Field Set
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
@@ -360,7 +360,7 @@ opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
 #
 resource = 'group'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                                 # Person Entity Field Set
                 opt_pr_group_type,                              # group type
                 Field('system','boolean',default=False),        # System internal? (e.g. users?)

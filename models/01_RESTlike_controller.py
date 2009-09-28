@@ -77,7 +77,7 @@ def export_pdf(table, query):
 
     import StringIO
     output = StringIO.StringIO()
-    
+
     fields = [table[f] for f in table.fields if table[f].readable]
     _elements = [SystemField(expression='%(report_title)s', top=0.1*cm,
                     left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
@@ -98,7 +98,7 @@ def export_pdf(table, query):
     mod, res = str(table).split('_', 1)
     mod_nice = db(db.s3_module.name==mod).select()[0].name_nice
     _title = mod_nice + ': ' + res.capitalize()
-        
+
     class MyReport(Report):
         title = _title
         page_size = landscape(A4)
@@ -246,12 +246,13 @@ def export_xls(table, query):
 #
 # export_xml ------------------------------------------------------------------
 #
-def export_xml(table, query):
+def export_xml(module, resource, query):
     "Export record(s) as XML"
-    import gluon.serializers
-    items = db(query).select(table.ALL).as_list()
+    exec('from applications.%s.modules.s3xml import S3XML' % request.application)
+    s3xml = S3XML(db)
+    joins = jrlayer.get_joins(module, resource)
     response.headers['Content-Type'] = 'text/xml'
-    return str(gluon.serializers.xml(items))
+    return s3xml.serialize(module, resource, query, joins=joins)
 
 #
 # export_pfif -----------------------------------------------------------------
@@ -792,7 +793,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
         elif jr.representation == "xml":
             query = db[table].id == record_id
-            return export_xml(table, query)
+            return export_xml(module, resource, query)
 
         elif jr.representation == "pfif":
             return export_pfif(jr)
@@ -1020,11 +1021,12 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         return export_xls(table, query)
 
     elif jr.representation == "xml":
-        return export_xml(table, query)
+        query = (db[table].id > 0)
+        return export_xml(module, resource, query)
 
     elif jr.representation == "pfif":
         return export_pfif(jr)
-    
+
     else:
         session.error = BADFORMAT
         redirect(URL(r=request, f='index'))
@@ -1157,7 +1159,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         try:
             import_csv(file, table)
             session.flash = T('Data uploaded')
-        except: 
+        except:
             session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
     else:
@@ -1585,7 +1587,7 @@ def shn_rest_controller(module, resource,
             elif jr.http=='DELETE':
                 # Not implemented
                 raise HTTP(501)
-        
+
             # Unsupported HTTP method -----------------------------------------
             else:
                 # Unsupported HTTP method for this context:

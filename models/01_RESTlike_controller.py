@@ -15,6 +15,11 @@ jrlayer = JRLayer(db)
 # *****************************************************************************
 # Constants to ensure consistency
 
+# XSL Settings
+XSL_FILE_EXTENSION = 'xslt'
+XSL_IMPORT_TEMPLATES = 'static/xsl/import'
+XSL_EXPORT_TEMPLATES = 'static/xsl/export'
+
 # Error messages
 UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported data format!')
@@ -246,13 +251,22 @@ def export_xls(table, query):
 #
 # export_xml ------------------------------------------------------------------
 #
-def export_xml(module, resource, query):
+def export_xml(module, resource, query, representation):
     "Export record(s) as XML"
     exec('from applications.%s.modules.s3xml import S3XML' % request.application)
     s3xml = S3XML(db)
     joins = jrlayer.get_joins(module, resource)
     response.headers['Content-Type'] = 'text/xml'
-    return s3xml.serialize(module, resource, query, joins=joins)
+    tree = s3xml.serialize(module, resource, query, joins=joins)
+    template_name = "%s.%s" % (representation, XSL_FILE_EXTENSION)
+    template_file = os.path.join(request.folder, XSL_EXPORT_TEMPLATES, template_name)
+    if os.path.exists(template_file):
+        output = s3xml.transform(tree, template_file)
+        if not output:
+            output = tree
+    else:
+        output = tree
+    return s3xml.tostring(output)
 
 #
 # export_pfif -----------------------------------------------------------------
@@ -793,7 +807,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
         elif jr.representation == "xml":
             query = db[table].id == record_id
-            return export_xml(module, resource, query)
+            return export_xml(module, resource, query, jr.representation)
 
         elif jr.representation == "pfif":
             return export_pfif(jr)
@@ -1022,7 +1036,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
     elif jr.representation == "xml":
         query = (db[table].id > 0)
-        return export_xml(module, resource, query)
+        return export_xml(module, resource, query, jr.representation)
 
     elif jr.representation == "pfif":
         return export_pfif(jr)

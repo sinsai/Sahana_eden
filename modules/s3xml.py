@@ -99,45 +99,96 @@ class S3XML(object):
         self.error = None
 
     # -------------------------------------------------------------------------
-    def __serialize(self, table, record, skip=[]):
+    def parse(self, source):
         """
-            Serializes a record from the DB as XML
+            Deserialize an XML source into an ElementTree object
+
+            returns: ElementTree
+        """
+        self.error = None
+        try:
+            result = etree.parse(source)
+            return result
+        except:
+            self.error = "XML Parse Error"
+            return None
+
+    # -------------------------------------------------------------------------
+    def transform(self, tree, template_path):
+        """
+            Transform an element tree using the given XSLT template
+
+            returns: ElementTree
+        """
+
+        if not NO_XSL:
+            template = self.parse(template_path)
+            if template:
+                try:
+                    transformer = etree.XSLT(template)
+                    result = transformer(tree)
+                    return result
+                except:
+                    self.error = "XSL Transformation Error"
+                    return None
+            else:
+                # Error parsing the XSL template
+                return None
+        else:
+            self.error = "XSL Transformation not available"
+            return None
+
+    # -------------------------------------------------------------------------
+    def tostring(self, tree):
+        """
+            Serialize an element tree as string object
+
+            returns: str
+        """
+        return etree.tostring(tree, xml_declaration=True, encoding="utf-8", pretty_print=True)
+
+    # -------------------------------------------------------------------------
+    def __element(self, table, record, skip=[]):
+        """
+            Builds an element from a record
 
             table:          the database table
             record:         the record (as dict of fields)
             skip:           list of fields to skip (optional)
+
+            returns: Element
         """
 
-        resource = etree.Element(self.TAG["resource"])
+        element = etree.Element(self.TAG["resource"])
 
         for f in table.fields:
             if f in self.IGNORE_FIELDS or f in skip:
                 continue
             if f == self._UUID:
                 if record[f] is None:
-                    resource.set(f, "")
+                    element.set(f, "")
                 else:
                     value = table[f].formatter(record[f])
-                    resource.set(f, str(value))
+                    element.set(f, str(value))
             elif f in self.FIELDS_TO_ATTRIBUTES:
 
                 if record[f] is None:
-                    resource.set(f, "")
+                    element.set(f, "")
                 else:
                     value = table[f].formatter(record[f])
-                    resource.set(f, str(value).decode('utf-8'))
+                    element.set(f, str(value).decode('utf-8'))
 
                 if record[f] is None:
-                    resource.set(f, "")
+                    element.set(f, "")
                 elif table[f].represent:
-                    resource.set(f, str(table[f].represent(record[f])).decode('utf-8'))
+                    element.set(f, str(table[f].represent(record[f])).decode('utf-8'))
                 else:
-                    resource.set(f, str(table[f].formatter(record[f])).decode('utf-8'))
+                    element.set(f, str(table[f].formatter(record[f])).decode('utf-8'))
             else:
                 if record[f] is None and not table[f].readable:
                     continue
                 else:
-                    data = etree.SubElement(resource, self.TAG["data"])
+                    data = etree.SubElement(element, self.TAG["data"])
                     data.set(self.ATTRIBUTE["field"], str(f))
                     if record[f] is not None:
                         value = table[f].formatter(record[f])
@@ -147,30 +198,74 @@ class S3XML(object):
                         else:
                             data.text = str(value).decode('utf-8')
 
-        return resource
+        return element
 
     # -------------------------------------------------------------------------
-    def __deserialize(self, table, resource, keys=[]):
+    def __export(self, prefix, name, query, joins=[], skip=[]):
         """
-            Deserializes an XML resource into a record and validates it
+            Exports data from the database as list of <resource> elements
+
+            prefix:         Module prefix
+            name:           Resource name
+            query:          web2py DB Query
+            joins:          List of joins =[dict(prefix, name, pkey, fkey)]
+            skip:           List of fields to skip
+
+            returns: [Element]
+        """
+
+        _table = "%s_%s" % (prefix, name)
+        try:
+            table = self.db[_table]
+
+            records = self.db(query).select(table.ALL) or []
+            resources = []
+            for record in records:
+                resource = self.__element(table, record, skip=skip)
+                resource.set(self.ATTRIBUTE["prefix"], prefix)
+                resource.set(self.ATTRIBUTE["name"], name)
+                for join in joins:
+                    _jtable = "%s_%s" % (join["prefix"], join["name"])
+                    jtable = self.db[_jtable]
+                    _query = (jtable[join["fkey"]]==record[join["pkey"]])
+                    if "id" in join:
+                        _query = (jtable.id==join["id"]) & _query
+                    if "deleted" in jtable:
+                        _query = ((jtable.deleted==False) | (jtable.deleted==None)) & _query
+                    jresources = self.__export(join["prefix"], join["name"], _query, skip=[join["fkey"]])
+                    if jresources:
+                        resource.extend(jresources)
+                resources.append(resource)
+            return resources
+        except:
+            return None
+
+    # -------------------------------------------------------------------------
+    def __record(self, table, element):
+        """
+            Builds a record from an element and validates it
 
             table:      the database table
-            resource:   the element tree of the record
+            element:    the element
+
+            Note: all web2py foreign keys (reference-fields) will be dropped
+
+            returns: dict
         """
 
         record = {}
-        for element in resource:
-            if element.tag==self.TAG["data"]:
-                fieldname = element.get(self.ATTRIBUTE["field"], None)
+        for child in element:
+            if child.tag==self.TAG["data"]:
+                fieldname = child.get(self.ATTRIBUTE["field"], None)
                 if not fieldname:
                     continue
                 if fieldname not in table.fields:
                     continue
                 if table[fieldname].type.startswith('reference'):
                     continue
-                value = element.get(self.ATTRIBUTE["value"], None)
+                value = child.get(self.ATTRIBUTE["value"], None)
                 if value is None:
-                    value = element.text
+                    value = child.text
                 if value is None:
                     value = table[fieldname].default
                 if value is None and table[fieldname].type == "string":
@@ -189,13 +284,13 @@ class S3XML(object):
                 record[fieldname] = value
 
         if self._UUID in table.fields:
-            uuid = resource.get(self._UUID, None)
+            uuid = element.get(self._UUID, None)
             if uuid and len(uuid)>0:
                 record[self._UUID] = uuid
 
         for f in self.ATTRIBUTES_TO_FIELDS:
             if f in table.fields:
-                value = resource.get(f, None)
+                value = element.get(f, None)
                 if value is not None:
                     requires = table[f].requires
                     if requires:
@@ -212,46 +307,19 @@ class S3XML(object):
         return record
 
     # -------------------------------------------------------------------------
-    def __export(self, prefix, name, query, joins=[], skip=[]):
-
-        _table = "%s_%s" % (prefix, name)
-        try:
-            table = self.db[_table]
-
-            records = self.db(query).select(table.ALL) or []
-            resources = []
-            for record in records:
-                resource = self.__serialize(table, record, skip=skip)
-                resource.set(self.ATTRIBUTE["prefix"], prefix)
-                resource.set(self.ATTRIBUTE["name"], name)
-                for join in joins:
-                    _jtable = "%s_%s" % (join["prefix"], join["name"])
-                    jtable = self.db[_jtable]
-                    jquery = (jtable[join["fkey"]]==record[join["pkey"]])
-                    if "id" in join:
-                        jquery = (jtable.id==join["id"])
-                    if "deleted" in jtable:
-                        jquery = ((jtable.deleted==False) | (jtable.deleted==None)) & jquery
-                    jresources = self.__export(join["prefix"], join["name"], jquery, skip=[join["fkey"]])
-                    if jresources:
-                        resource.extend(jresources)
-                resources.append(resource)
-            return resources
-        except:
-            return None
-
-    # -------------------------------------------------------------------------
     def __import(self, table, id, record):
         """
             Commits a record to the database (CRUD create/update)
 
             table:          the database table
             id:             the record ID in the table (0 for create)
-            record:         the deserialized record (as dict of fields)
+            record:         the record (built with __record)
 
             NOTE:
             If id==0, but record.uuid matches an existing record, then this record
             will get updated instead of creating a new => drop uuid to force create!
+
+            returns id (0 at error)
         """
 
         try:
@@ -286,6 +354,7 @@ class S3XML(object):
         if resources:
             root.extend(resources)
 
-        return etree.tostring(root, encoding='utf-8', pretty_print=True)
+        tree = etree.ElementTree(root)
 
-    # -------------------------------------------------------------------------
+        return tree
+

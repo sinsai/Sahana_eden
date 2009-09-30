@@ -251,73 +251,31 @@ def export_xls(table, query):
 #
 # export_xml ------------------------------------------------------------------
 #
-def export_xml(module, resource, query, representation):
-    "Export record(s) as XML"
-    exec('from applications.%s.modules.s3xml import S3XML' % request.application)
+def export_xml(jr):
+    """
+        Export data as XML
+    """
+    exec('from applications.%s.modules.s3xml import S3XML' % jr.request.application)
     s3xml = S3XML(db)
-    joins = jrlayer.get_joins(module, resource)
+
+    if jr.jresource:
+        joins = [dict(prefix=jr.jmodule, name=jr.jresource, pkey=jr.pkey, fkey=jr.fkey, id=jr.jrecord_id)]
+    else:
+        joins = jrlayer.get_joins(jr.module, jr.resource)
+
     response.headers['Content-Type'] = 'text/xml'
-    tree = s3xml.serialize(module, resource, query, joins=joins)
-    template_name = "%s.%s" % (representation, XSL_FILE_EXTENSION)
+    tree = s3xml.get(jr.module, jr.resource, jr.record_id, joins=joins)
+    template_name = "%s.%s" % (jr.representation, XSL_FILE_EXTENSION)
     template_file = os.path.join(request.folder, XSL_EXPORT_TEMPLATES, template_name)
+    # TODO: indicate transformation failure?
     if os.path.exists(template_file):
         output = s3xml.transform(tree, template_file)
         if not output:
             output = tree
     else:
         output = tree
-    return s3xml.tostring(output)
-
-#
-# export_pfif -----------------------------------------------------------------
-#
-def export_pfif(jr):
-    """
-        Export person information in PFIF/XML format, http://zesty.ca/pfif/1.1
-
-        Requests that can be served:
-            pr_person --> pfif/person
-            pr_presence --> pfif/note
-    """
-    import gluon.serializers
-    response.headers['Content-Type'] = 'text/xml' # easier for testing
-    #response.headers['Content-Type'] = 'application/pfif+xml'
-
-    if jr.jresource:
-        if jr.tablename=="pr_person" and jr.jtablename=="pr_presence":
-            # not yet implemented
-            return TAG['pfif']()
-        else:
-            # error: wrong resource type
-            return TAG['pfif']()
-    else:
-        if jr.tablename == 'pr_person':
-            if jr.record:
-                items = shn_pr_person_pfif(jr.record, request.env.server_name)
-                return str(gluon.serializers.xml_rec(items, 'pfif'))
-            else:
-                query = shn_accessible_query('read', jr.table)
-                if response.s3.filter:
-                    query = response.s3.filter & query
-                query = ((jr.table.deleted == False) | (jr.table.deleted == None)) & query
-                records = db(query).select(db.pr_person.ALL)
-                return TAG['pfif'](*[gluon.serializers.xml_rec(shn_pr_person_pfif(r, request.env.server_name)['person'], 'person') for r in records])
-        else:
-            # error: wrong resource type
-            return TAG['pfif']()
-
-#
-# export_pfif_rss -------------------------------------------------------------
-#
-def export_pfif_rss(jr):
-    """
-        Export person information as PFIF/RSS2.0 feeds, http://zesty.ca/pfif/1.1
-
-        Requests that can be served:
-            pr_person --> rss+pfif/person
-            pr_presence --> rss+pfif/note
-    """
-    return 'not yet implemented'
+    output_str = s3xml.tostring(output)
+    return output_str
 
 #
 # import_csv ------------------------------------------------------------------
@@ -377,13 +335,46 @@ def import_json(method):
     return item
 
 #
-# import_pfif -----------------------------------------------------------------
+# import_xml ------------------------------------------------------------------
 #
-def import_pfif(jr):
+def import_xml(jr):
     """
-        Import person information from PFIF/XML format
+        Import XML data
     """
-    return 'not yet implemented'
+    exec('from applications.%s.modules.s3xml import S3XML' % jr.request.application)
+    s3xml = S3XML(db)
+
+    if "filename" in jr.request.vars:
+        source = jr.request.vars["filename"]
+    elif "fetchurl" in jr.request.vars:
+        source = jr.request.vars["fetchurl"]
+    else:
+        source = jr.request.body
+
+    _tree = s3xml.parse(source)
+    if not _tree:
+        # error
+        return "Error!"
+
+    template_name = "%s.%s" % (jr.representation, XSL_FILE_EXTENSION)
+    template_file = os.path.join(jr.request.folder, XSL_IMPORT_TEMPLATES, template_name)
+    if os.path.exists(template_file):
+        tree = s3xml.transform(_tree, template_file) or _tree
+    else:
+        tree = _tree
+
+    if jr.jresource:
+        joins = [dict(prefix=jr.jmodule, name=jr.jresource, pkey=jr.pkey, fkey=jr.fkey, id=jr.jrecord_id)]
+    else:
+        joins = jrlayer.get_joins(jr.module, jr.resource)
+
+    success = s3xml.put(tree, jr.module, jr.resource, jr.record_id, joins=joins)
+    # TODO: respond in what? XML? HTML/plain? HTTP response?
+    # Where to go from here? => depends on the data source
+    if success:
+        return "Success!"
+    else:
+        return "Failed!"
 
 # *****************************************************************************
 # Authorisation
@@ -806,11 +797,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             return export_xls(table, query)
 
         elif jr.representation == "xml":
-            query = db[table].id == record_id
-            return export_xml(module, resource, query, jr.representation)
-
-        elif jr.representation == "pfif":
-            return export_pfif(jr)
+            return export_xml(jr)
 
         else:
             session.error = BADFORMAT
@@ -1035,11 +1022,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         return export_xls(table, query)
 
     elif jr.representation == "xml":
-        query = (db[table].id > 0)
-        return export_xml(module, resource, query, jr.representation)
-
-    elif jr.representation == "pfif":
-        return export_pfif(jr)
+        return export_xml(jr)
 
     else:
         session.error = BADFORMAT
@@ -1176,6 +1159,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         except:
             session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
+
+    elif jr.representation == "xml":
+        return import_xml(jr)
+
     else:
         session.error = BADFORMAT
         redirect(URL(r=request, f='index'))
@@ -1318,6 +1305,9 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
         elif jr.representation == "json":
             return import_json(method='update')
+
+        elif jr.representation == "xml":
+            return import_xml(jr)
 
         else:
             session.error = BADFORMAT

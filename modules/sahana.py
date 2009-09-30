@@ -1266,7 +1266,10 @@ class JRLayer(object):
         joins = []
 
         _table = "%s_%s" % (prefix, name)
-        table = self.db[_table]
+        if _table in self.db:
+            table = self.db[_table]
+        else:
+            return joins
         
         for _jresource in self.jresources:
             jresource = self.jresources[_jresource]

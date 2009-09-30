@@ -83,15 +83,17 @@ class S3XML(object):
     TAG = dict(
         root="sahanapy",
         resource="resource",
+        reference="reference",
         data="data"
         )
 
     ATTRIBUTE = dict(
-        prefix="prefix",
         name="name",
         table="table",
         field="field",
-        value="value"
+        value="value",
+        prefix="prefix",
+        resource="resource"
         )
 
     def __init__(self, db):
@@ -107,7 +109,8 @@ class S3XML(object):
         """
         self.error = None
         try:
-            result = etree.parse(source)
+            parser = etree.XMLParser(no_network=False)
+            result = etree.parse(source, parser)
             return result
         except:
             self.error = "XML Parse Error"
@@ -157,6 +160,11 @@ class S3XML(object):
             skip:           list of fields to skip (optional)
 
             returns: Element
+
+            Resource Routing:
+            References will be mapped to UUID's and represented as <reference> elements. If
+            the referenced table doesn't contain UUID's, the reference field will not be
+            represented at all.
         """
 
         element = etree.Element(self.TAG["resource"])
@@ -171,7 +179,6 @@ class S3XML(object):
                     value = table[f].formatter(record[f])
                     element.set(f, str(value))
             elif f in self.FIELDS_TO_ATTRIBUTES:
-
                 if record[f] is None:
                     element.set(f, "")
                 else:
@@ -184,6 +191,22 @@ class S3XML(object):
                     element.set(f, str(table[f].represent(record[f])).decode('utf-8'))
                 else:
                     element.set(f, str(table[f].formatter(record[f])).decode('utf-8'))
+            elif table[f].type.startswith("reference"):
+                _rtable = table[f].type.split()[1]
+                if _rtable in self.db and "uuid" in self.db[_rtable]:
+                    rtable = self.db[_rtable]
+                    try:
+                        uuid = self.db(rtable.id==record[f]).select(rtable.uuid)[0].uuid
+                    except:
+                        continue
+                    prefix, resource = _rtable.split("_", 1)
+                    reference = etree.SubElement(element, self.TAG["reference"])
+                    reference.set(self.ATTRIBUTE["field"], str(f))
+                    reference.set(self.ATTRIBUTE["prefix"], str(prefix))
+                    reference.set(self.ATTRIBUTE["resource"], str(resource))
+                    reference.set(self._UUID, str(uuid))
+                else:
+                    continue
             else:
                 if record[f] is None and not table[f].readable:
                     continue
@@ -228,7 +251,7 @@ class S3XML(object):
                     _jtable = "%s_%s" % (join["prefix"], join["name"])
                     jtable = self.db[_jtable]
                     _query = (jtable[join["fkey"]]==record[join["pkey"]])
-                    if "id" in join:
+                    if "id" in join and join["id"]:
                         _query = (jtable.id==join["id"]) & _query
                     if "deleted" in jtable:
                         _query = ((jtable.deleted==False) | (jtable.deleted==None)) & _query
@@ -248,9 +271,12 @@ class S3XML(object):
             table:      the database table
             element:    the element
 
-            Note: all web2py foreign keys (reference-fields) will be dropped
-
             returns: dict
+
+            Resource Routing:
+            Reference elements will be mapped to record id's, provided that a
+            UUID match exists => otherwise the particular <reference> element
+            will be ignored.
         """
 
         record = {}
@@ -283,6 +309,26 @@ class S3XML(object):
 
                 record[fieldname] = value
 
+            elif child.tag==self.TAG["reference"]:
+                fieldname = child.get(self.ATTRIBUTE["field"], None)
+                if not fieldname or fieldname not in table.fields:
+                    continue
+                prefix = child.get(self.ATTRIBUTE["prefix"], None)
+                resource = child.get(self.ATTRIBUTE["resource"], None)
+                uuid = child.get(self._UUID, None)
+                if not (prefix and resource and uuid):
+                    continue
+                _rtable = "%s_%s" % (prefix, resource)
+                if _rtable in self.db and "uuid" in self.db[_rtable]:
+                    rtable = self.db[_rtable]
+                    try:
+                        rid = self.db(rtable.uuid==uuid).select(rtable.id)[0].id
+                    except:
+                        continue
+                    record[fieldname] = rid
+                else:
+                    continue
+
         if self._UUID in table.fields:
             uuid = element.get(self._UUID, None)
             if uuid and len(uuid)>0:
@@ -309,7 +355,7 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def __import(self, table, id, record):
         """
-            Commits a record to the database (CRUD create/update)
+            Commits a record to the database
 
             table:          the database table
             id:             the record ID in the table (0 for create)
@@ -346,15 +392,102 @@ class S3XML(object):
             return 0
 
     # -------------------------------------------------------------------------
-    def serialize(self, prefix, name, query, joins=[]):
+    def get(self, prefix, name, id, joins=[]):
+        """
+            Interface function to export data through JRC
+        """
 
         root = etree.Element(self.TAG["root"])
 
-        resources = self.__export(prefix, name, query, joins=joins)
-        if resources:
-            root.extend(resources)
+        _table = "%s_%s" % (prefix, name)
+
+        if _table in self.db:
+            table = self.db[_table]
+
+            if id and isinstance(id, (list, tuple)):
+                query = (table.id.belongs(id))
+            elif id:
+                query = (table.id==id)
+            else:
+                query = (table.id>0)
+
+            if "deleted" in table:
+                query = ((table.deleted==False) | (table.deleted==None)) & query
+
+            resources = self.__export(prefix, name, query, joins=joins)
+            if resources:
+                root.extend(resources)
 
         tree = etree.ElementTree(root)
-
         return tree
 
+    # -------------------------------------------------------------------------
+    def put(self, tree, prefix, name, id=0, joins=[]):
+        """
+            Interface function to import data through JRC
+        """
+
+        _table = "%s_%s" % (prefix, name)
+        if _table in self.db:
+            table = self.db[_table]
+        else:
+            # Error: no such table
+            return False
+
+        if not tree: # => nothing to import
+            return True
+
+        root = tree.getroot()
+        if root.tag==self.TAG["root"]:
+            expr = './resource[@%s="%s" and @%s="%s"]' % (self.ATTRIBUTE["prefix"], prefix, self.ATTRIBUTE["name"], name)
+            elements = root.xpath(expr)
+            if len(elements):
+                if id and len(elements)>1:
+                    if self._UUID in table:
+                        try:
+                            uuid = self.db(table.id==id).select(table.uuid)[0].uuid
+                            for element in elements:
+                                if element[self._UUID]==uuid:
+                                    elements = [element]
+                                    break
+                        except:
+                            # Error: no such record
+                            return False
+                    if len(elements)>1:
+                        # Error: multiple input elements, but only one target record
+                        return False
+
+                for element in elements:
+                    record = self.__record(table, element)
+                    if not record:
+                        # Error validating primary resource
+                        continue
+                    record_id = self.__import(table, id, record)
+                    if record_id and len(joins):
+                        db_record = self.db(table.id==record_id).select(table.ALL)[0]
+                        for join in joins:
+                            expr = './resource[@%s="%s" and @%s="%s"]' % (self.ATTRIBUTE["prefix"], join["prefix"], self.ATTRIBUTE["name"], join["name"])
+                            jelements = element.xpath(expr)
+                            for jelement in jelements:
+                                _jtable = "%s_%s" % (join["prefix"], join["name"])
+                                jtable = self.db[_jtable]
+                                jrecord = self.__record(jtable, jelement)
+                                if jrecord:
+                                    jrecord[join["fkey"]] = db_record[join["pkey"]]
+                                    jrecord_id = self.__import(jtable, 0, jrecord)
+                                else:
+                                    # Error importing joined resource
+                                    continue
+                    else:
+                        # Error importing primary resource
+                        continue
+                # success
+                return True
+            else:
+                # nothing to import
+                return True
+        else:
+            # Error: invalid XML source
+            return False
+
+    # -------------------------------------------------------------------------

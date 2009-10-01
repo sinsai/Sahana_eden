@@ -39,6 +39,20 @@ except ImportError:
 import traceback
 
 from gluon.html import *
+import uuid
+
+#******************************************************************************
+# Errors
+#
+S3XML_BAD_RESOURCE = "Invalid Resource"
+S3XML_PARSE_ERROR = "XML Parse Error"
+S3XML_TRANFORMATION_ERROR = "XSL Transformation Error"
+S3XML_NO_XSLT = "XSL Transformation not available"
+S3XML_BAD_SOURCE = "Invalid XML Source"
+S3XML_BAD_RECORD = "Invalid Record ID"
+S3XML_NO_MATCH = "No Matching Element"
+S3XML_VALIDATION_ERROR = "Validation Error"
+S3XML_DATA_IMPORT_ERROR = "Data Import Error"
 
 #******************************************************************************
 # lxml
@@ -61,24 +75,138 @@ except ImportError:
                 import elementtree.ElementTree as etree
 
 # *****************************************************************************
+# XMLImport
+#
+class XMLImport(object):
+    """
+        Helper class for S3XML to handle XML imports
+    """
+
+    def __init__(self,
+        db=None,
+        prefix=None,
+        name=None,
+        id=None,
+        record=None,
+        permit=None,
+        onvalidation=None,
+        onaccept=None):
+
+        self.db=db
+        self.prefix=prefix
+        self.name=name
+        self.id=id
+        self.record=record
+
+        self.method=None
+        self.onvalidation=onvalidation
+        self.onaccept=onaccept
+
+        self.accepted=True
+        self.permitted=True
+        self.committed=False
+
+        self.PERMISSION = dict(create="create", update="update")
+        self._UUID = "uuid"
+
+        self.tablename = "%s_%s" % (self.prefix, self.name)
+        self.table = self.db[self.tablename]
+
+        if not self.id:
+            self.method = "create"
+            permission = self.PERMISSION["create"]
+            self.id = 0
+
+            _uuid = self.record.get(self._UUID, None)
+            if _uuid is not None:
+                if self.db(self.table.uuid==_uuid).count():
+                    del self.record[self._UUID]
+                    self.method = "update"
+                    permission = self.PERMISSION["update"]
+                    self.id = self.db(self.table.uuid==_uuid).select(self.table.id)[0].id
+        else:
+            self.method = "update"
+            permission = self.PERMISSION["update"]
+
+            if self._UUID in record:
+                del self.record[self._UUID]
+
+            if not self.db(self.table.id==id).count():
+                self.method = None
+                self.id = 0
+
+        if permit and not permit(permission, self.tablename, record_id=self.id):
+            self.permitted=False
+
+    # -------------------------------------------------------------------------
+    def commit(self):
+        """
+            Commits the record to the database
+
+            Returns: boolean
+        """
+
+        if self.committed:
+            return True
+
+        if self.accepted and self.permitted:
+
+            form = Storage() # PseudoForm for callbacks
+            form.method = self.method
+            form.vars = self.record
+            form.vars.id = self.id
+
+            if self.onvalidation:
+                self.onvalidation(form)
+
+            try:
+                if self.method == "update":
+                    self.id = self.db(self.table.id==self.id).update(**dict(self.record))
+                elif self.method == "create":
+                    self.id = self.table.insert(**dict(self.record))
+                    # Re-init the uuid default value, otherwise it gets re-used
+                    # web2py does not execute lambdas as field defaults!
+                    if self._UUID in self.table:
+                        self.table[self._UUID].default=uuid.uuid4()
+                self.committed=True
+            except:
+                self.id=0
+                self.method=None
+                self.accepted=False
+                self.committed=False
+                return False
+
+            form.vars.id = self.id
+
+            if self.onaccept:
+                self.onaccept(form)
+
+            return True
+        else:
+            return False
+
+# *****************************************************************************
 # S3XML
 #
 class S3XML(object):
+    """
+        Class to handle XML imports/exports
+    """
 
-    _UUID = 'uuid'
+    _UUID = "uuid"
 
-    IGNORE_FIELDS = ['deleted', 'id']
+    IGNORE_FIELDS = ["deleted", "id"]
 
     FIELDS_TO_ATTRIBUTES = [
-            'created_on',
-            'modified_on',
-            'created_by',
-            'modified_by',
-            'uuid',
-            'admin']
+            "created_on",
+            "modified_on",
+            "created_by",
+            "modified_by",
+            "uuid",
+            "admin"]
 
     ATTRIBUTES_TO_FIELDS = [
-            'admin']
+            "admin"]
 
     TAG = dict(
         root="sahanapy",
@@ -96,9 +224,18 @@ class S3XML(object):
         resource="resource"
         )
 
+    PERMISSION = dict(
+        read="read",
+        create="create",
+        update="update"
+    )
+
     def __init__(self, db):
         self.db = db
         self.error = None
+
+        self.imports = []
+        self.exports = []
 
     # -------------------------------------------------------------------------
     def parse(self, source):
@@ -108,12 +245,13 @@ class S3XML(object):
             returns: ElementTree
         """
         self.error = None
+
         try:
             parser = etree.XMLParser(no_network=False)
             result = etree.parse(source, parser)
             return result
         except:
-            self.error = "XML Parse Error"
+            self.error = S3XML_PARSE_ERROR
             return None
 
     # -------------------------------------------------------------------------
@@ -132,13 +270,13 @@ class S3XML(object):
                     result = transformer(tree)
                     return result
                 except:
-                    self.error = "XSL Transformation Error"
+                    self.error = S3XML_TRANFORMATION_ERROR
                     return None
             else:
                 # Error parsing the XSL template
                 return None
         else:
-            self.error = "XSL Transformation not available"
+            self.error = S3XML_NO_XSLT
             return None
 
     # -------------------------------------------------------------------------
@@ -151,11 +289,12 @@ class S3XML(object):
         return etree.tostring(tree, xml_declaration=True, encoding="utf-8", pretty_print=True)
 
     # -------------------------------------------------------------------------
-    def __element(self, table, record, skip=[]):
+    def element(self, prefix, name, record, skip=[]):
         """
             Builds an element from a record
 
-            table:          the database table
+            prefix:         the resource prefix
+            name:           the resource name
             record:         the record (as dict of fields)
             skip:           list of fields to skip (optional)
 
@@ -166,6 +305,13 @@ class S3XML(object):
             the referenced table doesn't contain UUID's, the reference field will not be
             represented at all.
         """
+
+        _table = "%s_%s" % (prefix, name)
+        if _table in self.db:
+            table = self.db[_table]
+        else:
+            self.error = S3XML_BAD_RESOURCE
+            return None
 
         element = etree.Element(self.TAG["resource"])
 
@@ -193,10 +339,10 @@ class S3XML(object):
                     element.set(f, str(table[f].formatter(record[f])).decode('utf-8'))
             elif table[f].type.startswith("reference"):
                 _rtable = table[f].type.split()[1]
-                if _rtable in self.db and "uuid" in self.db[_rtable]:
+                if _rtable in self.db and self._UUID in self.db[_rtable]:
                     rtable = self.db[_rtable]
                     try:
-                        uuid = self.db(rtable.id==record[f]).select(rtable.uuid)[0].uuid
+                        _uuid = self.db(rtable.id==record[f]).select(rtable._uuid)[0].uuid
                     except:
                         continue
                     prefix, resource = _rtable.split("_", 1)
@@ -204,7 +350,7 @@ class S3XML(object):
                     reference.set(self.ATTRIBUTE["field"], str(f))
                     reference.set(self.ATTRIBUTE["prefix"], str(prefix))
                     reference.set(self.ATTRIBUTE["resource"], str(resource))
-                    reference.set(self._UUID, str(uuid))
+                    reference.set(self._UUID, str(_uuid))
                 else:
                     continue
             else:
@@ -224,54 +370,16 @@ class S3XML(object):
         return element
 
     # -------------------------------------------------------------------------
-    def __export(self, prefix, name, query, joins=[], skip=[]):
-        """
-            Exports data from the database as list of <resource> elements
-
-            prefix:         Module prefix
-            name:           Resource name
-            query:          web2py DB Query
-            joins:          List of joins =[dict(prefix, name, pkey, fkey)]
-            skip:           List of fields to skip
-
-            returns: [Element]
-        """
-
-        _table = "%s_%s" % (prefix, name)
-        try:
-            table = self.db[_table]
-
-            records = self.db(query).select(table.ALL) or []
-            resources = []
-            for record in records:
-                resource = self.__element(table, record, skip=skip)
-                resource.set(self.ATTRIBUTE["prefix"], prefix)
-                resource.set(self.ATTRIBUTE["name"], name)
-                for join in joins:
-                    _jtable = "%s_%s" % (join["prefix"], join["name"])
-                    jtable = self.db[_jtable]
-                    _query = (jtable[join["fkey"]]==record[join["pkey"]])
-                    if "id" in join and join["id"]:
-                        _query = (jtable.id==join["id"]) & _query
-                    if "deleted" in jtable:
-                        _query = ((jtable.deleted==False) | (jtable.deleted==None)) & _query
-                    jresources = self.__export(join["prefix"], join["name"], _query, skip=[join["fkey"]])
-                    if jresources:
-                        resource.extend(jresources)
-                resources.append(resource)
-            return resources
-        except:
-            return None
-
-    # -------------------------------------------------------------------------
-    def __record(self, table, element):
+    def record(self, prefix, name, element, skip=[]):
         """
             Builds a record from an element and validates it
 
-            table:      the database table
-            element:    the element
+            prefix:         the resource prefix
+            name:           the resource name
+            element:        the element
+            skip:           list of fields to skip (optional)
 
-            returns: dict
+            returns: Storage
 
             Resource Routing:
             Reference elements will be mapped to record id's, provided that a
@@ -279,10 +387,30 @@ class S3XML(object):
             will be ignored.
         """
 
-        record = {}
+        _table = "%s_%s" % (prefix, name)
+        if _table in self.db:
+            table = self.db[_table]
+        else:
+            self.error = S3XML_BAD_RESOURCE
+            return None
+
+        record = Storage()
+        original = None
+        update = False
+
+        if self._UUID in table.fields and self._UUID not in skip:
+            _uuid = element.get(self._UUID, None)
+            if _uuid and len(_uuid)>0:
+                record[self._UUID] = _uuid
+                if self.db(table.uuid==_uuid).count():
+                    original = self.db(table.uuid==_uuid).select(table.ALL)[0]
+                    update = True
+
         for child in element:
+            fieldname = child.get(self.ATTRIBUTE["field"], None)
+            if fieldname in skip:
+                continue
             if child.tag==self.TAG["data"]:
-                fieldname = child.get(self.ATTRIBUTE["field"], None)
                 if not fieldname:
                     continue
                 if fieldname not in table.fields:
@@ -297,48 +425,15 @@ class S3XML(object):
                 if value is None and table[fieldname].type == "string":
                     value = ''
 
-                requires = table[fieldname].requires
-                if requires:
-                    if not isinstance(requires, (list, tuple)):
-                        requires = [requires]
-                    for validator in requires:
-                        (value, error) = validator(value)
-                        if error is not None:
-                            self.error = error
-                            return None
+                skip_validation=False
+                if update:
+                    if table[fieldname].type=="string" and original[fieldname]==None:
+                        skip_validation=False
+                    elif original[fieldname]==value:
+                        skip_validation=True
 
-                record[fieldname] = value
-
-            elif child.tag==self.TAG["reference"]:
-                fieldname = child.get(self.ATTRIBUTE["field"], None)
-                if not fieldname or fieldname not in table.fields:
-                    continue
-                prefix = child.get(self.ATTRIBUTE["prefix"], None)
-                resource = child.get(self.ATTRIBUTE["resource"], None)
-                uuid = child.get(self._UUID, None)
-                if not (prefix and resource and uuid):
-                    continue
-                _rtable = "%s_%s" % (prefix, resource)
-                if _rtable in self.db and "uuid" in self.db[_rtable]:
-                    rtable = self.db[_rtable]
-                    try:
-                        rid = self.db(rtable.uuid==uuid).select(rtable.id)[0].id
-                    except:
-                        continue
-                    record[fieldname] = rid
-                else:
-                    continue
-
-        if self._UUID in table.fields:
-            uuid = element.get(self._UUID, None)
-            if uuid and len(uuid)>0:
-                record[self._UUID] = uuid
-
-        for f in self.ATTRIBUTES_TO_FIELDS:
-            if f in table.fields:
-                value = element.get(f, None)
-                if value is not None:
-                    requires = table[f].requires
+                if not skip_validation:
+                    requires = table[fieldname].requires
                     if requires:
                         if not isinstance(requires, (list, tuple)):
                             requires = [requires]
@@ -348,58 +443,134 @@ class S3XML(object):
                                 self.error = error
                                 return None
 
+                record[fieldname] = value
+
+            elif child.tag==self.TAG["reference"]:
+                fieldname = child.get(self.ATTRIBUTE["field"], None)
+                if not fieldname or fieldname not in table.fields:
+                    continue
+                prefix = child.get(self.ATTRIBUTE["prefix"], None)
+                resource = child.get(self.ATTRIBUTE["resource"], None)
+                _uuid = child.get(self._UUID, None)
+                if not (prefix and resource and _uuid):
+                    continue
+                _rtable = "%s_%s" % (prefix, resource)
+                if _rtable in self.db and self._UUID in self.db[_rtable]:
+                    rtable = self.db[_rtable]
+                    try:
+                        rid = self.db(rtable.uuid==_uuid).select(rtable.id)[0].id
+                    except:
+                        continue
+                    record[fieldname] = rid
+                else:
+                    continue
+
+        for f in self.ATTRIBUTES_TO_FIELDS:
+            if f in skip:
+                continue
+            if f in table.fields:
+                value = element.get(f, None)
+                if value is not None:
+                    skip_validation=False
+                    if update:
+                        if table[f].type=="string" and original[f]==None:
+                            skip_validation=False
+                        elif original[f]==value:
+                            skip_validation=True
+                    if not skip_validation:
+                        requires = table[f].requires
+                        if requires:
+                            if not isinstance(requires, (list, tuple)):
+                                requires = [requires]
+                            for validator in requires:
+                                (value, error) = validator(value)
+                                if error is not None:
+                                    self.error = error
+                                    return None
+
                     record[f]=value
 
         return record
 
     # -------------------------------------------------------------------------
-    def __import(self, table, id, record):
+    def commit(self):
         """
-            Commits a record to the database
+            Commits all pending imports to the database.
 
-            table:          the database table
-            id:             the record ID in the table (0 for create)
-            record:         the record (built with __record)
+            returns: void
+        """
 
-            NOTE:
-            If id==0, but record.uuid matches an existing record, then this record
-            will get updated instead of creating a new => drop uuid to force create!
+        for r in self.imports:
+            r.commit()
 
-            returns id (0 at error)
+    # -------------------------------------------------------------------------
+    def __export(self, prefix, name, query, joins=[], skip=[], permit=None):
+        """
+            Exports data from the database as list of <resource> elements
+
+            prefix:         Module prefix
+            name:           Resource name
+            query:          web2py DB Query
+            joins:          List of joins =[dict(prefix, name, pkey, fkey)]
+            skip:           List of fields to skip
+
+            returns: [Element]
         """
 
         try:
-            if id==0:
-                uuid = record.get(self._UUID, None)
-                if uuid is not None:
-                    if self.db(table.uuid==uuid).count():
-                        del record[self._UUID]
-                        _id = self.db(table.uuid==uuid).update(**dict(record))
-                        return _id
-                _id = table.insert(**dict(record))
-                return _id
-            else:
-                if self._UUID in record:
-                    del record[self._UUID]
-                if self.db(table.id==id).count():
-                    _id = self.db(table.id==id).update(**dict(record))
-                    return _id
-                else:
-                    # Error: invalid record ID
-                    return 0
+            _table = "%s_%s" % (prefix, name)
+
+            if permit and not permit(self.PERMISSION["read"], _table):
+                return None
+
+            table = self.db[_table]
+
+            records = self.db(query).select(table.ALL) or []
+            resources = []
+
+            for record in records:
+                if permit and not permit(self.PERMISSION["read"], _table, record_id=record.id):
+                    continue
+
+                self.exports.append(dict(prefix=prefix, name=name, id=record.id))
+
+                resource = self.element(prefix, name, record, skip=skip)
+                resource.set(self.ATTRIBUTE["prefix"], prefix)
+                resource.set(self.ATTRIBUTE["name"], name)
+
+                for join in joins:
+                    _jtable = "%s_%s" % (join["prefix"], join["name"])
+                    jtable = self.db[_jtable]
+
+                    _query = (jtable[join["fkey"]]==record[join["pkey"]])
+                    if "id" in join and join["id"]:
+                        _query = (jtable.id==join["id"]) & _query
+                    if "deleted" in jtable:
+                        _query = ((jtable.deleted==False) | (jtable.deleted==None)) & _query
+
+                    jresources = self.__export(join["prefix"], join["name"], _query, skip=[join["fkey"]])
+                    if jresources:
+                        resource.extend(jresources)
+
+                resources.append(resource)
+
+            return resources
+
         except:
-            # can raise IntegrityError
-            return 0
+            return None
 
     # -------------------------------------------------------------------------
-    def get(self, prefix, name, id, joins=[]):
+    def get(self, prefix, name, id, joins=[], permit=None):
         """
             Interface function to export data through JRC
+
+            returns: ElementTree
         """
 
-        root = etree.Element(self.TAG["root"])
+        self.error = None
 
         _table = "%s_%s" % (prefix, name)
+        root = etree.Element(self.TAG["root"])
 
         if _table in self.db:
             table = self.db[_table]
@@ -414,7 +585,7 @@ class S3XML(object):
             if "deleted" in table:
                 query = ((table.deleted==False) | (table.deleted==None)) & query
 
-            resources = self.__export(prefix, name, query, joins=joins)
+            resources = self.__export(prefix, name, query, joins=joins, permit=permit)
             if resources:
                 root.extend(resources)
 
@@ -422,72 +593,99 @@ class S3XML(object):
         return tree
 
     # -------------------------------------------------------------------------
-    def put(self, tree, prefix, name, id=0, joins=[]):
+    def put(self, prefix, name, id, tree, joins=[], jrequest=False, permit=None, onvalidation=None, onaccept=None):
         """
             Interface function to import data through JRC
+
+            returns: boolean
         """
+
+        if not tree: # nothing to import actually
+            return True
+
+        self.error = None
+        self.imports = []
+
+        root = tree.getroot()
+        if not root.tag==self.TAG["root"]:
+            self.error = S3XML_BAD_SOURCE
+            return False
+
+        expr = './/resource[@%s="%s" and @%s="%s"]' % (self.ATTRIBUTE["prefix"], prefix, self.ATTRIBUTE["name"], name)
+        elements = root.xpath(expr)
+
+        if not len(elements): # still nothing to import
+            return True
 
         _table = "%s_%s" % (prefix, name)
         if _table in self.db:
             table = self.db[_table]
         else:
-            # Error: no such table
+            self.error = S3XML_BAD_RESOURCE
             return False
 
-        if not tree: # => nothing to import
-            return True
-
-        root = tree.getroot()
-        if root.tag==self.TAG["root"]:
-            expr = './resource[@%s="%s" and @%s="%s"]' % (self.ATTRIBUTE["prefix"], prefix, self.ATTRIBUTE["name"], name)
-            elements = root.xpath(expr)
-            if len(elements):
-                if id and len(elements)>1:
-                    if self._UUID in table:
-                        try:
-                            uuid = self.db(table.id==id).select(table.uuid)[0].uuid
-                            for element in elements:
-                                if element[self._UUID]==uuid:
-                                    elements = [element]
-                                    break
-                        except:
-                            # Error: no such record
-                            return False
-                    if len(elements)>1:
-                        # Error: multiple input elements, but only one target record
-                        return False
-
-                for element in elements:
-                    record = self.__record(table, element)
-                    if not record:
-                        # Error validating primary resource
-                        continue
-                    record_id = self.__import(table, id, record)
-                    if record_id and len(joins):
-                        db_record = self.db(table.id==record_id).select(table.ALL)[0]
-                        for join in joins:
-                            expr = './resource[@%s="%s" and @%s="%s"]' % (self.ATTRIBUTE["prefix"], join["prefix"], self.ATTRIBUTE["name"], join["name"])
-                            jelements = element.xpath(expr)
-                            for jelement in jelements:
-                                _jtable = "%s_%s" % (join["prefix"], join["name"])
-                                jtable = self.db[_jtable]
-                                jrecord = self.__record(jtable, jelement)
-                                if jrecord:
-                                    jrecord[join["fkey"]] = db_record[join["pkey"]]
-                                    jrecord_id = self.__import(jtable, 0, jrecord)
-                                else:
-                                    # Error importing joined resource
-                                    continue
-                    else:
-                        # Error importing primary resource
-                        continue
-                # success
-                return True
-            else:
-                # nothing to import
-                return True
+        if id:
+            try:
+                db_record = self.db(table.id==id).select(table.ALL)[0]
+            except:
+                self.error = S3XML_BAD_RECORD
+                return False
         else:
-            # Error: invalid XML source
-            return False
+            db_record = None
 
-    # -------------------------------------------------------------------------
+        if id and len(elements)>1:
+            # ID given, but multiple elements of that type => try to find UUID match
+            if self._UUID in table:
+                _uuid = db_record[self._UUID]
+                for element in elements:
+                    if element.get(self._UUID)==_uuid:
+                        elements = [element]
+                        break
+
+            if len(elements)>1:
+                # Error: multiple input elements, but only one target record
+                self.error = S3XML_NO_MATCH
+                return False
+
+        for element in elements:
+
+            if not jrequest:
+                record = self.record(prefix, name, element)
+                if not record:
+                    self.error = S3XML_VALIDATION_ERROR
+                    continue
+
+                xml_import = XMLImport(self.db, prefix, name, id, record, permit=permit, onvalidation=onvalidation, onaccept=onaccept)
+
+                if not xml_import.method: # possibly unnecessary to check here
+                    self.error = S3XML_DATA_IMPORT_ERROR
+                    continue
+
+                xml_import.commit()
+                record_id = xml_import.id
+                if not record_id:
+                    self.error = S3XML_DATA_IMPORT_ERROR
+                    continue
+
+                db_record = self.db(table.id==record_id).select(table.ALL)[0]
+
+            else:
+                record_id = db_record.id
+
+            for join in joins:
+                jprefix, jname = join["prefix"], join["name"]
+                expr = './resource[@%s="%s" and @%s="%s"]' % (self.ATTRIBUTE["prefix"], jprefix, self.ATTRIBUTE["name"], jname)
+                jelements = element.xpath(expr)
+                for jelement in jelements:
+                    jrecord = self.record(jprefix, jname, jelement)
+                    if not jrecord:
+                        self.error = S3XML_VALIDATION_ERROR
+                        continue
+                    xml_import = XMLImport(self.db, jprefix, jname, None, jrecord, permit=permit)
+                    if xml_import.method:
+                        xml_import.record[join["fkey"]]=db_record[join["pkey"]]
+                        self.imports.append(xml_import)
+                    else:
+                        self.error = S3XML_DATA_IMPORT_ERROR
+                        continue
+        return True

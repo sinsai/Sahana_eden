@@ -2,22 +2,25 @@
 # -*- coding: utf-8 -*-
 
 """
-   Client tools for web2py 
-   Developed by Nathan Freeze <nathan@freezable.com>
+   Client Tools for web2py 
+   Developed by Nathan Freeze (Copyright © 2009)
+   Email <nathan@freezable.com>
+   Info: http://www.web2pyslices.com/main/slices/take_slice/8
    License: GPL v2
    
    This file contains tools for managing client events 
-   and resources from the server in web2py
+   scripts and resources from the server in web2py
 """
 
 import urllib
 import os
 import string
+
+import gluon.contrib.simplejson as json
 from gluon.html import *
 from gluon.http import *
 from gluon.validators import *
 from gluon.sqlhtml import *
-import gluon.contrib.simplejson as json
 
 __all__ = ['PageManager','EventManager', 'ScriptManager', 'JQuery']
 
@@ -27,12 +30,48 @@ __events__ = ['blur', 'focus', 'load', 'resize', 'scroll', 'unload',
                  'mouseenter', 'mouseleave', 'change', 'select',
                  'submit', 'keydown', 'keypress', 'keyup', 'error']
 
-__scripts__ = ['alert','delay','confirm','timer','stop_timer','call_function']
+__events_live_unsupported__ = ['blur', 'focus', 'mouseenter', 
+                               'mouseleave', 'change', 'submit']
+
+__scripts__ = ['alert','delay','confirm','timer','stop_timer',
+               'call_function','load','get_script','get_json','function','var','jQuery']
 
 def valid_filename(filename):
     import string
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     return ''.join(c for c in filename if c in valid_chars)
+
+def get_selector(c):
+    if not c: return ""
+    if hasattr(c,'tag'):
+        if c['_id']:
+            return '"#%s"' % c['_id']   
+        if c['_name']:
+            return '"%s[name=\'%s\']"' % (c.tag.replace("/",""), c['_name'])          
+        raise ValueError('Invalid component. No id or name attribute')
+    if c.startswith("document") or c=="this": return c
+    c = c.replace('"',"'")
+    return '"%s"' % c  
+
+def get_url(req, function, args):
+    if not isinstance(function, str):        
+        if not hasattr(function, '__call__'):
+            raise TypeError('Invalid function for url. Object is not callable')
+        return URL(r=req,f=function.__name__, args=args) \
+                  if args else URL(r=req,f=function.__name__)
+    return function
+
+def is_script(cmd):
+    for s in __scripts__:
+        if cmd.startswith(s): return True
+    return False
+
+def get_data_fn(val):
+    if isinstance(val, JQuery): return str(val)
+    if isinstance(val, str) and val.startswith('jQuery'): 
+        return val
+    val = get_selector(val)
+    return 'jQuery(%s).serialize()' % val
 
 class PageManager(object):
     """
@@ -119,43 +158,37 @@ class EventManager(object):
         self.page_manager = page_manager
         self.environment = page_manager.environment  
               
-    def listen(self, event, helper, handler, success="eval(msg);", 
-               data='form:first', args=None, persist=False, event_args=False):        
-        act_on = 'document'      
-        use_jq = isinstance(helper,str)
-        bind = 'live' if persist else 'bind'        
+    def listen(self, event, target, handler, success="eval(msg);", data='form:first', 
+               args=None, on_error="" ,persist=False, event_args=False):
         if not event in __events__:            
-            raise ValueError('Invalid event name.')        
-        if not use_jq:
-            if not hasattr(helper,'xml'):
-                raise TypeError("Invalid helper for event.")
-            if not helper['_id']:
-                raise ValueError('Invalid helper for event. Component has no ID attribute.')
-            if helper:
-                act_on = '"#%s"' % helper['_id']
-        if use_jq and helper != 'document':
-            act_on = '"' + helper + '"'
-        if hasattr(success,'xml'):
-            if success['_id']:
-                success = 'jQuery("#%s").html(msg);' % success['_id']
-            else:
-                raise ValueError('Invalid success component for event. No ID attribute found.')
-        elif success != "eval(msg);":
-            success = 'jQuery("%s").html(msg);' % success             
+            raise ValueError('Invalid event name.')
+        if persist and event in __events_live_unsupported__:
+            raise ValueError('Invalid event name. Unsupported persistent event.')
+        bind = 'live' if persist else 'bind'  
+        target = get_selector(target)
+        if success != "eval(msg);":
+
+
+            success = 'jQuery(%s).html(msg);' % get_selector(success)        
+        data = get_data_fn(data)                             
         if not isinstance(handler, str):        
-            if not hasattr(handler, '__call__'):
-                raise TypeError('Invalid handler for event. Object is not callable')
-            url = URL(r=self.environment.request,f=handler.__name__, args=args) \
-                  if args else URL(r=self.environment.request,f=handler.__name__)
+            url = get_url(self.environment.request,handler, args=args)
             e = '"event_target_id=" + encodeURIComponent(e.target.id) + "&event_target_html=" + '\
                 'encodeURIComponent(jQuery(e.target).wrap("<div></div>").parent().html()) + '\
                 '"&event_pageX=" + e.pageX + "&event_pageY=" + e.pageY + '\
                 '"&event_timeStamp=" + e.timeStamp + "&"' if event_args else '""'
-            handler = 'jQuery.ajax({type:"POST",url:"%s",data:%s + jQuery("%s").serialize(),'\
-                      'success: function(msg){%s} });'  % (url, e, data, success)                   
-        self.events.append([event, helper, handler, data])        
+            handler = 'jQuery.ajax({type:"POST",url:"%s",data:%s + %s,'\
+                      'success: function(msg){%s}, error: function(request,textStatus,errorThrown){%s} });' \
+                        % (url, e, data, success, on_error)                   
+        self.events.append([event, target, handler, data])        
         self.page_manager.onready.append('jQuery(%s).%s("%s", function(e){%s});' % 
-                                         (act_on, bind, event, handler))
+                                         (target, bind, event, handler))
+        
+    def trigger(self, event, target, data=None):
+        if not event in __events__:            
+            raise ValueError('Invalid event name.') 
+        target = get_selector(target)               
+        return 'jQuery(%s).trigger("%s"%s);' % (target,event,"," + str(data) if data else "")
         
 class ScriptManager(object):
     """
@@ -170,8 +203,10 @@ class ScriptManager(object):
         self.page_manager = page_manager
         self.environment = page_manager.environment
         
-    def alert(self,message):
-        return 'alert("%s");' % message
+    def alert(self,message, unquote=False):
+        if is_script(message): unquote = True
+        if unquote: return 'alert(%s);' % message 
+        return 'alert("%s");' %  message
     
     def confirm(self,message, if_ok, if_cancel=''):
         return 'var c = confirm("%s");if(c==true){%s}else{%s}' % \
@@ -188,39 +223,76 @@ class ScriptManager(object):
     def stop_timer(self, timer_id):
         return 'clearTimeout(%s);jQuery("input[name=\'timer_id\']").remove();' % timer_id 
     
-    def call_function(self, function, data="form:first", success="eval(msg);", args=None):
-        url = function
-        if hasattr(success,'xml'):
-            if success['_id']:
-                success = 'jQuery("#%s").html(msg);' % success['_id']
-            else:
-                raise ValueError('Invalid success component for event. No ID attribute found.')
-        elif success != "eval(msg);":
-            success = 'jQuery("%s").html(msg);' % success             
+
+    def call_function(self, function, success="eval(msg);", 
+                      data="form:first", extra="", args=None, on_error=""):
+        if success != "eval(msg);":
+            success = 'jQuery(%s).html(msg);' % get_selector(success)             
+        function = get_url(self.environment.request,function,args)
+        data = get_data_fn(data) 
+        return 'jQuery.ajax({type:"POST",url:"%s",data: %s + "&%s",'\
+               'success: function(msg){%s}, error: function(request,textStatus,errorThrown){%s} });'  % \
+                       (function, data, extra, success, on_error) 
+                      
+    def load(self, function, target, data=dict(), callback="", args=None):
+        target = get_selector(target)
         if not isinstance(function, str):        
             if not hasattr(function, '__call__'):
                 raise TypeError('Invalid function. Object is not callable')
-            url = URL(r=self.environment.request,f=function.__name__, args=args) \
+            function = URL(r=self.environment.request,f=function.__name__, args=args) \
                   if args else URL(r=self.environment.request,f=function.__name__)
-        return 'jQuery.ajax({type:"POST",url:"%s",data: jQuery("%s").serialize(),'\
-                      'success: function(msg){%s} });'  % (url, data, success)    
+        return 'jQuery("%s").load("%s", %s, function(){%s});'  % (target, function, data, callback) 
+    
+    def get_script(self, url, success=""):
+        return 'jQuery.getScript("%s",function(){%s});' % (url,success)
+    
+    def get_json(self, url, data=dict(), success=""):
+        return 'jQuery.getJSON("%s", %s, function(json){%s});' % (url, str(data), success)
+    
+    def function(self, name,args=[],body=''):
+        if type(args)==type([]):
+            args = ", ".join(args)      
+        return 'function %s(%s){%s}' % (name, args, body)
+
+    def var(self, name, value=None, unquote=False):
+        if not isinstance(name,dict):
+            name = dict(name=value)
+        out = []
+        for k,v in name.items():
+           if isinstance(v,str) and not unquote: v = "'%s'" % v
+           out.append('var %s %s;' % (k, "= " + str(v) if v else ""))
+        return "".join(out)       
     
 class JQuery:
-    def __init__(self,name,attr=None,*args):
-        self.name=name
+    def __init__(self,name=None,attr=None,*args):
+        self.name=name        
         self.attr=attr
         self.args=args
-    def __str__(self):
-        import gluon.contrib.simplejson as json
+        if not self.attr:
+            if not isinstance(self.name,JQuery):
+                 self.name = get_selector(self.name)
+    def __str__(self):        
         def encode(obj):
             if isinstance(obj,JQuery): return str(obj)
+            if isinstance(obj,str):
+
+
+
+
+                if is_script(obj):return obj
+            if hasattr(obj, "xml"):
+                    return json.dumps(obj.xml().replace('"',"'"))
             return json.dumps(obj)
-        if not self.attr:
-            return ('jQuery("%s")' % self.name).replace('"this"',"this").replace('"document"',"document")        
+        if not self.name:
+            return 'jQuery'
+        if not self.attr:                        
+            return 'jQuery(%s)' % self.name        
         args=', '.join([encode(a) for a in self.args])
         return '%s.%s(%s)' % (self.name, self.attr, args)
     def __repr__(self):
         return str(self)
+    def __nonzero__(self):
+        return True
     def xml(self):
         raise AttributeError
     def __getattr__(self,attr):
@@ -230,9 +302,9 @@ class JQuery:
     def __call__(self,*args):
         if not args:
             jq = str(JQuery(self))       
-            jq = jq[8:-2]
-            return jq + ";"
-    def __add__(self,other):
-        return str(self)+str(other)    
+            return jq[7:-1] + ";"
+    def __coerce__(self, other):
+        return (str(self),str(other))
+       
 
-    
+

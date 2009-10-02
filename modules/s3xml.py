@@ -342,7 +342,7 @@ class S3XML(object):
                 if _rtable in self.db and self._UUID in self.db[_rtable]:
                     rtable = self.db[_rtable]
                     try:
-                        _uuid = self.db(rtable.id==record[f]).select(rtable._uuid)[0].uuid
+                        _uuid = self.db(rtable.id==record[f]).select(rtable.uuid)[0].uuid
                     except:
                         continue
                     prefix, resource = _rtable.split("_", 1)

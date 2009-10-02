@@ -8,12 +8,19 @@
 # http://trac.sahanapy.org/wiki/JoinedResourceController
 #
 
+exec('from applications.%s.modules.s3xml import S3XML' % request.application)
+
 # *****************************************************************************
 # Joint Resource Layer
 jrlayer = JRLayer(db)
 
 # *****************************************************************************
 # Constants to ensure consistency
+
+# XSL Settings
+XSL_FILE_EXTENSION = 'xslt'
+XSL_IMPORT_TEMPLATES = 'static/xsl/import'
+XSL_EXPORT_TEMPLATES = 'static/xsl/export'
 
 # Error messages
 UNAUTHORISED = T('Not authorised!')
@@ -24,6 +31,9 @@ INVALIDREQUEST = T('Invalid request!')
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
+
+shn_xml_import_formats = ["xml", "pfif"] # TODO: replace by auto-detection
+shn_xml_export_formats = ["xml", "pfif"] # TODO: replace by auto-detection
 
 # *****************************************************************************
 # Data conversion
@@ -77,7 +87,7 @@ def export_pdf(table, query):
 
     import StringIO
     output = StringIO.StringIO()
-    
+
     fields = [table[f] for f in table.fields if table[f].readable]
     _elements = [SystemField(expression='%(report_title)s', top=0.1*cm,
                     left=0, width=BAND_WIDTH, style={'fontName': 'Helvetica-Bold',
@@ -98,7 +108,7 @@ def export_pdf(table, query):
     mod, res = str(table).split('_', 1)
     mod_nice = db(db.s3_module.name==mod).select()[0].name_nice
     _title = mod_nice + ': ' + res.capitalize()
-        
+
     class MyReport(Report):
         title = _title
         page_size = landscape(A4)
@@ -246,63 +256,44 @@ def export_xls(table, query):
 #
 # export_xml ------------------------------------------------------------------
 #
-def export_xml(table, query):
-    "Export record(s) as XML"
-    import gluon.serializers
-    items = db(query).select(table.ALL).as_list()
-    response.headers['Content-Type'] = 'text/xml'
-    return str(gluon.serializers.xml(items))
-
-#
-# export_pfif -----------------------------------------------------------------
-#
-def export_pfif(jr):
+def export_xml(jr):
     """
-        Export person information in PFIF/XML format, http://zesty.ca/pfif/1.1
-
-        Requests that can be served:
-            pr_person --> pfif/person
-            pr_presence --> pfif/note
+        Export data as XML
     """
-    import gluon.serializers
-    response.headers['Content-Type'] = 'text/xml' # easier for testing
-    #response.headers['Content-Type'] = 'application/pfif+xml'
+    s3xml = S3XML(db)
 
     if jr.jresource:
-        if jr.tablename=="pr_person" and jr.jtablename=="pr_presence":
-            # not yet implemented
-            return TAG['pfif']()
-        else:
-            # error: wrong resource type
-            return TAG['pfif']()
+        joins = [dict(prefix=jr.jmodule, name=jr.jresource, pkey=jr.pkey, fkey=jr.fkey, id=jr.jrecord_id)]
     else:
-        if jr.tablename == 'pr_person':
-            if jr.record:
-                items = shn_pr_person_pfif(jr.record, request.env.server_name)
-                return str(gluon.serializers.xml_rec(items, 'pfif'))
+        joins = jrlayer.get_joins(jr.module, jr.resource)
+
+    response.headers['Content-Type'] = 'text/xml'
+    tree = s3xml.get(jr.module, jr.resource, jr.record_id, joins=joins, permit=shn_has_permission)
+
+    # Audit
+    for e in s3xml.exports:
+        shn_audit_read('read', e["prefix"], e["name"], e["id"], representation=jr.representation)
+
+    # XSL Transformation
+    template_name = "%s.%s" % (jr.representation, XSL_FILE_EXTENSION)
+    template_file = os.path.join(request.folder, XSL_EXPORT_TEMPLATES, template_name)
+    if os.path.exists(template_file):
+        output = s3xml.transform(tree, template_file)
+        if not tree:
+            if jr.representation=="xml":
+                output=tree
             else:
-                query = shn_accessible_query('read', jr.table)
-                if response.s3.filter:
-                    query = response.s3.filter & query
-                query = ((jr.table.deleted == False) | (jr.table.deleted == None)) & query
-                records = db(query).select(db.pr_person.ALL)
-                return TAG['pfif'](*[gluon.serializers.xml_rec(shn_pr_person_pfif(r, request.env.server_name)['person'], 'person') for r in records])
-        else:
-            # error: wrong resource type
-            return TAG['pfif']()
+                session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+                redirect(URL(r=request, f="index"))
+    else:
+        session.error = str(T("XSL Template Not Found: ")) + XSL_EXPORT_TEMPLATES + "/" + template_name
+        redirect(URL(r=request, f="index"))
 
-#
-# export_pfif_rss -------------------------------------------------------------
-#
-def export_pfif_rss(jr):
-    """
-        Export person information as PFIF/RSS2.0 feeds, http://zesty.ca/pfif/1.1
+    # Serialize
+    output_str = s3xml.tostring(output)
 
-        Requests that can be served:
-            pr_person --> rss+pfif/person
-            pr_presence --> rss+pfif/note
-    """
-    return 'not yet implemented'
+    # Done
+    return output_str
 
 #
 # import_csv ------------------------------------------------------------------
@@ -332,12 +323,14 @@ def import_json(method):
             uuid = True
         else:
             record[var] = request.vars[var]
-    if not uuid:
+    if method == 'update' and not uuid:
         item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"UUID required!"}}'
     else:
         item = ''
         for var in record:
             # Validate request manually
+            # TODO: this is wrong - requires can be (uses to be) a list,
+            #                       and validators can manipulate values
             if table[var].requires(record[var])[1]:
                 item += '{"Status":"failed","Error":{"StatusCode":403,"Message":"' + var + ' invalid: ' + table[var].requires(record[var])[1] + '"}}'
         if item:
@@ -362,13 +355,77 @@ def import_json(method):
     return item
 
 #
-# import_pfif -----------------------------------------------------------------
+# import_xml ------------------------------------------------------------------
 #
-def import_pfif(jr):
+def import_xml(jr, onvalidation=None, onaccept=None):
     """
-        Import person information from PFIF/XML format
+        Import XML data
     """
-    return 'not yet implemented'
+    s3xml = S3XML(db)
+
+    http_put = False
+    if "filename" in jr.request.vars:
+        source = jr.request.vars["filename"]
+    elif "fetchurl" in jr.request.vars:
+        source = jr.request.vars["fetchurl"]
+    else:
+        http_put = True
+        source = jr.request.body
+
+    _tree = s3xml.parse(source)
+
+    # XSL Transformation
+    template_name = "%s.%s" % (jr.representation, XSL_FILE_EXTENSION)
+    template_file = os.path.join(request.folder, XSL_IMPORT_TEMPLATES, template_name)
+    if os.path.exists(template_file):
+        tree = s3xml.transform(_tree, template_file)
+        if not tree:
+            session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+            redirect(URL(r=request, f="index"))
+    else:
+        session.error = str(T("XSL Template Not Found: ")) + XSL_IMPORT_TEMPLATES + "/" + template_name
+        redirect(URL(r=request, f="index"))
+
+    if jr.jresource:
+        jrequest = True
+        joins = [dict(prefix=jr.jmodule, name=jr.jresource, pkey=jr.pkey, fkey=jr.fkey, id=jr.jrecord_id)]
+    else:
+        jrequest = False
+        joins = jrlayer.get_joins(jr.module, jr.resource)
+
+    if onaccept:
+        _onaccept = lambda form: shn_audit_update(form, jr.module, jr.resource, jr.representation) and onaccept(form)
+    else:
+        _onaccept = lambda form: shn_audit_update(form, jr.module, jr.resource, jr.representation)
+
+    if jr.method=="create":
+        jr.record_id=None
+
+    success = s3xml.put(jr.module, jr.resource, jr.record_id, tree,
+        joins=joins,
+        jrequest=jrequest,
+        onvalidation=onvalidation,
+        onaccept=_onaccept)
+
+    if success:
+        for i in s3xml.imports:
+            if not i.committed:
+                i.onvalidation = jrlayer.get_attr(i.name, "onvalidation")
+                if i.method=="create":
+                    i.onaccept = lambda form: \
+                        shn_audit_create(form, i.prefix, i.name, jr.representation) and \
+                        jrlayer.get_attr(i.name, "onaccept")
+                else:
+                    i.onaccept = lambda form: \
+                        shn_audit_update(form, i.prefix, i.name, jr.representation) and \
+                        jrlayer.get_attr(i.name, "onaccept")
+        s3xml.commit()
+        item = '{"Status":"OK","Error":{"StatusCode":200}}'
+    else:
+        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"%s"}}' % s3xml.error
+
+    # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
+    return dict(item=item)
 
 # *****************************************************************************
 # Authorisation
@@ -437,6 +494,9 @@ def shn_accessible_query(name, table):
 
 # *****************************************************************************
 # Audit
+#
+# These functions should always return True in order to be chainable
+# by 'and' for lambda's as onaccept-callbacks. -- nursix --
 
 #
 # shn_audit_read --------------------------------------------------------------
@@ -452,16 +512,17 @@ def shn_audit_read(operation, module, resource, record=None, representation=None
                 record = record,
                 representation = representation,
             )
-    return
+    return True
 
 #
 # shn_audit_create ------------------------------------------------------------
 #
 def shn_audit_create(form, module, resource, representation=None):
     """
-    Called during Create operations to enable optional Auditing
-    Called as an onaccept so that it only takes effect when saved & can read the new values in:
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, representation)
+        Called during Create operations to enable optional Auditing
+        Called as an onaccept so that it only takes effect when
+        saved & can read the new values in:
+        onaccept = lambda form: shn_audit_create(form, module, resource, representation)
     """
     if session.s3.audit_write:
         record =  form.vars.id
@@ -477,16 +538,17 @@ def shn_audit_create(form, module, resource, representation=None):
                 representation = representation,
                 new_value = new_value
             )
-    return
+    return True
 
 #
 # shn_audit_update ------------------------------------------------------------
 #
 def shn_audit_update(form, module, resource, representation=None):
     """
-    Called during Update operations to enable optional Auditing
-    Called as an onaccept so that it only takes effect when saved & can read the new values in:
-    crud.settings.update_onaccept = lambda form: shn_audit_update(form, resource, representation)
+        Called during Create operations to enable optional Auditing
+        Called as an onaccept so that it only takes effect when
+        saved & can read the new values in:
+        onaccept = lambda form: shn_audit_update(form, module, resource, representation)
     """
     if session.s3.audit_write:
         record =  form.vars.id
@@ -503,7 +565,7 @@ def shn_audit_update(form, module, resource, representation=None):
                 #old_value = old_value, # Need to store these beforehand if we want them
                 new_value = new_value
             )
-    return
+    return True
 
 #
 # shn_audit_update_m2m --------------------------------------------------------
@@ -525,13 +587,15 @@ def shn_audit_update_m2m(module, resource, record, representation=None):
                 #old_value = old_value, # Need to store these beforehand if we want them
                 #new_value = new_value  # Various changes can happen, so would need to store dict of {item_id: qty}
             )
-    return
+    return True
 
 #
 # shn_audit_delete ------------------------------------------------------------
 #
 def shn_audit_delete(module, resource, record, representation=None):
-    "Called during Delete operations to enable optional Auditing"
+    """
+        Called during Delete operations to enable optional Auditing
+    """
     if session.s3.audit_write:
         module = module
         table = '%s_%s' % (module, resource)
@@ -548,7 +612,7 @@ def shn_audit_delete(module, resource, record, representation=None):
                 representation = representation,
                 old_value = old_value
             )
-    return
+    return True
 
 # *****************************************************************************
 # Display Representations
@@ -782,20 +846,16 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             query = db[table].id == record_id
             return export_pdf(table, query)
 
-        elif jr.representation == "rss": # TODO: encoding problems, doesn't quite work
-            query = db[table].id == record_id
-            return export_rss(module, resource, query, rss=rss, linkto=jr.here('html'))
-
         elif jr.representation == "xls":
             query = db[table].id == record_id
             return export_xls(table, query)
 
-        elif jr.representation == "xml":
-            query = db[table].id == record_id
-            return export_xml(table, query)
+        elif jr.representation in shn_xml_export_formats:
+            return export_xml(jr)
 
-        elif jr.representation == "pfif":
-            return export_pfif(jr)
+        elif jr.representation == "rss": # TODO: replace by XML export
+            query = db[table].id == record_id
+            return export_rss(module, resource, query, rss=rss, linkto=jr.here('html'))
 
         else:
             session.error = BADFORMAT
@@ -832,7 +892,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         main, extra = jrlayer.head_fields(resource)
         orderby = jrlayer.get_attr(resource, 'orderby')
         sortby = jrlayer.get_attr(resource, 'sortby')
-        onvalidation =  jrlayer.get_attr(resource, 'onvalidation')
+        onvalidation = jrlayer.get_attr(resource, 'onvalidation')
         onaccept =  jrlayer.get_attr(resource, 'onaccept')
         rss = jrlayer.rss(resource)
 
@@ -942,9 +1002,6 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         authorised = shn_has_permission('create', table)
         if authorised and listadd:
 
-            # Audit
-            crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation)
-
             # Block join field
             if jr.jresource:
                 _comment = table[jr.fkey].comment
@@ -953,9 +1010,9 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                 table[jr.fkey].writable = False
 
             if onaccept:
-                _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id) and onaccept(form)
+                _onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation) and jrlayer.store_session(session,module,resource,form.vars.id) and onaccept(form)
             else:
-                _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id)
+                _onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation) and jrlayer.store_session(session,module,resource,form.vars.id)
 
             try:
                 message = s3.crud_strings[tablename].msg_record_created
@@ -1013,18 +1070,15 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     elif jr.representation == "pdf":
         return export_pdf(table, query)
 
-    elif jr.representation == "rss":
-        return export_rss(module, resource, query, rss=rss, linkto=jr.there('html'))
-
     elif jr.representation == "xls":
         return export_xls(table, query)
 
-    elif jr.representation == "xml":
-        return export_xml(table, query)
+    elif jr.representation in shn_xml_export_formats:
+        return export_xml(jr)
 
-    elif jr.representation == "pfif":
-        return export_pfif(jr)
-    
+    elif jr.representation == "rss":
+        return export_rss(module, resource, query, rss=rss, linkto=jr.there('html'))
+
     else:
         session.error = BADFORMAT
         redirect(URL(r=request, f='index'))
@@ -1051,9 +1105,6 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         resource = jr.resource
         table = jr.table
         tablename = jr.tablename
-
-    # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, resource, jr.representation)
 
     if jr.representation == "html":
 
@@ -1110,9 +1161,14 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             crud.settings.create_next = jrlayer.get_attr(jr.jresource, 'create_next') or jr.there()
 
         if onaccept:
-            _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id) and onaccept(form)
+            _onaccept = lambda form: \
+                shn_audit_create(form, module, resource, jr.representation) and \
+                jrlayer.store_session(session,module,resource,form.vars.id) and \
+                onaccept(form)
         else:
-            _onaccept = lambda form: jrlayer.store_session(session,module,resource,form.vars.id)
+            _onaccept = lambda form: \
+                shn_audit_create(form, module, resource, jr.representation) and \
+                jrlayer.store_session(session,module,resource,form.vars.id)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created
@@ -1138,12 +1194,22 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         return output
 
     elif jr.representation == "plain":
-        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        if onaccept:
+            _onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation) and onaccept(form)
+        else:
+            _onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation)
+
+        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         response.view = 'plain.html'
         return dict(item=form)
 
     elif jr.representation == "popup":
-        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        if onaccept:
+            _onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation) and onaccept(form)
+        else:
+            _onaccept = lambda form: shn_audit_create(form, module, resource, jr.representation)
+
+        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         # Check for presence of Custom View
         shn_custom_view(jr, 'popup.html')
         return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
@@ -1157,9 +1223,14 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         try:
             import_csv(file, table)
             session.flash = T('Data uploaded')
-        except: 
+        except:
             session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
+
+    elif jr.representation in shn_xml_import_formats:
+        response.view = 'plain.html'
+        return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+
     else:
         session.error = BADFORMAT
         redirect(URL(r=request, f='index'))
@@ -1215,8 +1286,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised:
-        # Audit
-        crud.settings.update_onaccept = lambda form: shn_audit_update(form, module, resource, jr.representation)
+
         crud.settings.update_deletable = deletable
 
         if jr.representation == "html":
@@ -1277,7 +1347,17 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             except:
                 message = s3.crud_strings.msg_record_modified
 
-            form = crud.update(table, record_id, message=message, onvalidation=onvalidation, onaccept=onaccept)
+            if onaccept:
+                _onaccept = lambda form: \
+                    shn_audit_update(form, module, resource, jr.representation) and \
+                    jrlayer.store_session(session, module, resource, form.vars.id) and \
+                    onaccept(form)
+            else:
+                _onaccept = lambda form: \
+                    shn_audit_update(form, module, resource, jr.representation) and \
+                    jrlayer.store_session(session, module, resource, form.vars.id)
+
+            form = crud.update(table, record_id, message=message, onvalidation=onvalidation, onaccept=_onaccept)
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
 
             if jr.jresource:
@@ -1296,12 +1376,21 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             return(output)
 
         elif jr.representation == "plain":
-            form = crud.update(table, record_id, onvalidation=onvalidation, onaccept=onaccept)
+            if onaccept:
+                _onaccept = lambda form: shn_audit_update(form, module, resource, jr.representation) and onaccept(form)
+            else:
+                _onaccept = lambda form: shn_audit_update(form, module, resource, jr.representation)
+
+            form = crud.update(table, record_id, onvalidation=onvalidation, onaccept=_onaccept)
             response.view = 'plain.html'
             return dict(item=form)
 
         elif jr.representation == "json":
             return import_json(method='update')
+
+        elif jr.representation in shn_xml_import_formats:
+            response.view = 'plain.html'
+            return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
 
         else:
             session.error = BADFORMAT
@@ -1578,14 +1667,16 @@ def shn_rest_controller(module, resource,
 
             # HTTP Update -----------------------------------------------------
             elif jr.http=='PUT':
+                response.view = 'plain.html'
+                return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 # Not implemented
-                raise HTTP(501)
+                # raise HTTP(501)
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
                 # Not implemented
                 raise HTTP(501)
-        
+
             # Unsupported HTTP method -----------------------------------------
             else:
                 # Unsupported HTTP method for this context:
@@ -1692,8 +1783,8 @@ def shn_rest_controller(module, resource,
             # HTTP Create -----------------------------------------------------
             elif jr.http == 'PUT':
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                # Not implemented
-                raise HTTP(501)
+                response.view = 'plain.html'
+                return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
 
             # Unsupported HTTP method -----------------------------------------
             else:
@@ -1731,13 +1822,8 @@ def shn_rest_controller(module, resource,
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
                 # We don't yet implement PUT for create/update, although Web2Py does now support it
                 # Not implemented
-                raise HTTP(501)
-
-                # HTTP Update (single record) ---------------------------------
-                #if db(db[jr.table].id == jr.record_id).select():
-
-                # HTTP Create (single record) ---------------------------------
-                #else:
+                response.view = 'plain.html'
+                return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
 
             # Unsupported HTTP method -----------------------------------------
             else:
@@ -1784,7 +1870,7 @@ def shn_rest_controller(module, resource,
             authorised = shn_has_permission('read', jr.table)
             if authorised:
                 # Filter Search list to just those records which user can read
-                #query = shn_accessible_query('read', table)
+                # query = shn_accessible_query('read', table)
                 # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
 
                 # Audit

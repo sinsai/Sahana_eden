@@ -1201,15 +1201,19 @@ class JoinedResource(object):
             return None
 
     # get_join_key ------------------------------------------------------------
-    def get_join_key(self, module, resource):
+    def get_join_key(self, db, module, resource):
 
         tablename = "%s_%s" % (module, resource)
+        table = db[tablename]
 
         if self.joinby:
-
             if isinstance(self.joinby, str):
                 # natural join
-                return (self.joinby, self.joinby)
+                if self.joinby in table:
+                    return (self.joinby, self.joinby)
+                else:
+                    # Not joined with this table
+                    return None
 
             elif isinstance(self.joinby, dict):
                 # primary/foreign key join
@@ -1254,6 +1258,32 @@ class JRLayer(object):
         jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, rss=rss, list_fields=_fields, attr=attr)
         self.jresources[name] = jr
 
+    # get_joins ---------------------------------------------------------------
+    def get_joins(self, prefix, name):
+        """
+            Get all jresources that can be linked to the given resource
+        """
+        joins = []
+
+        _table = "%s_%s" % (prefix, name)
+        if _table in self.db:
+            table = self.db[_table]
+        else:
+            return joins
+        
+        for _jresource in self.jresources:
+            jresource = self.jresources[_jresource]
+            join_keys = jresource.get_join_key(self.db, prefix, name)
+            if join_keys and join_keys[0] in table:
+                # resource is linked
+                joins.append(dict(
+                    prefix=jresource.prefix,
+                    name=jresource.name,
+                    pkey=join_keys[0],
+                    fkey=join_keys[1]))
+
+        return joins
+
     # get_prefix --------------------------------------------------------------
     def get_prefix(self, name):
 
@@ -1274,7 +1304,7 @@ class JRLayer(object):
     def get_join_key(self, name, module, resource):
 
         if name in self.jresources:
-            return self.jresources[name].get_join_key(module, resource)
+            return self.jresources[name].get_join_key(self.db, module, resource)
         else:
             return None
 

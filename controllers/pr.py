@@ -89,6 +89,10 @@ def group_membership():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group_membership')
 
+def pentity():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pentity')
+
 #
 # Interactive functions -------------------------------------------------------
 #

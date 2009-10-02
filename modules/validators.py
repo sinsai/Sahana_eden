@@ -15,7 +15,7 @@ This file was developed by Fran Boon as a web2py extension.
 
 import time
 from datetime import datetime, timedelta
-from gluon.validators import IS_MATCH
+from gluon.validators import Validator, IS_MATCH
 
 __all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF']
 
@@ -102,7 +102,7 @@ class THIS_NOT_IN_DB(object):
 # IS_ONE_OF -------------------------------------------------------------------
 # added 2009-08-23 by nursix
 #
-class IS_ONE_OF(object):
+class IS_ONE_OF(Validator):
     """
         Filtered version of IS_IN_DB():
 
@@ -220,7 +220,7 @@ class IS_ONE_OF(object):
 # IS_UTC_OFFSET ---------------------------------------------------------------
 # added 2009-08-20 by nursix
 #
-class IS_UTC_OFFSET(object):
+class IS_UTC_OFFSET(Validator):
     """
     validates a given string value as UTC offset in the format +/-HHMM
 
@@ -263,7 +263,7 @@ class IS_UTC_OFFSET(object):
 # IS_UTC_DATETIME -------------------------------------------------------------
 # added 2009-08-19 by nursix
 #
-class IS_UTC_DATETIME(object):
+class IS_UTC_DATETIME(Validator):
     """
     validates a given value as datetime string and returns the corresponding UTC datetime
 

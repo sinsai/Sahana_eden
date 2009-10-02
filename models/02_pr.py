@@ -97,7 +97,7 @@ def shn_pentity_represent(pentity):
 #
 resource = 'pentity'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                     Field('parent'),                # Parent Entity
                     opt_pr_entity_type,             # Entity class
                     Field('label', unique=True),    # Recognition Label
@@ -264,7 +264,7 @@ def shn_pr_person_represent(id):
 #
 resource = 'person'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                         # Person Entity Field Set
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
@@ -360,7 +360,7 @@ opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
 #
 resource = 'group'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                                 # Person Entity Field Set
                 opt_pr_group_type,                              # group type
                 Field('system','boolean',default=False),        # System internal? (e.g. users?)
@@ -487,23 +487,45 @@ def shn_pentity_onvalidation(form, table=None, entity_class=1):
     table           : the table containing the subclass entity
     entity_class    : the class of pentity to be created (from vita.trackable_types)
     """
-    if form.vars:
-        if (len(request.args) == 0 or request.args[0] == 'create') and entity_class in vita.trackable_types:
-            # this is a create action either directly or from list view
-            subentity_label = form.vars.get('pr_pe_label')
-            pr_pe_id = db['pr_pentity'].insert(opt_pr_entity_type=entity_class, label=subentity_label)
-            if pr_pe_id: form.vars.pr_pe_id = pr_pe_id
-        elif len(request.args) > 1 and request.args[0] == 'update' and form.vars.delete_this_record and table:
-            # this is a delete action from update
-            subentity_id = request.args[1]
-            shn_pentity_ondelete(db[table][subentity_id])
-        elif len(request.args) > 1 and request.args[0] == 'update' and table:
-            # this is an update action
-            subentity_id = request.args[1]
-            subentity_record=db[table][subentity_id]
-            if subentity_record and subentity_record.pr_pe_id:
-                db(db.pr_pentity.id==subentity_record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
-    return
+    try:
+        # XML import?
+        method = form.method
+    except:
+        method = None
+
+    if method and method=="update":
+        record_id = form.vars.id
+        record=db[table][record_id]
+        if record and record.pr_pe_id:
+            db(db.pr_pentity.id==record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
+    elif method and method=="create":
+        label = form.vars.get("pr_pe_label")
+        pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_class, label=label)
+        db.pr_pentity.uuid.default=uuid.uuid4() # need to re-init the default!
+        if pr_pe_id:
+            form.vars.pr_pe_id = pr_pe_id
+    else:
+        # No, HTML request!
+        if form.vars:
+            if (len(request.args) == 0 or request.args[0] == 'create') and \
+                entity_class in vita.trackable_types:
+                # this is a create action either directly or from list view
+                label = form.vars.get('pr_pe_label')
+                pr_pe_id = db['pr_pentity'].insert(opt_pr_entity_type=entity_class, label=label)
+                if pr_pe_id:
+                    form.vars.pr_pe_id = pr_pe_id
+            elif len(request.args) > 1 and request.args[0] == 'update' and \
+                form.vars.delete_this_record and table:
+                # this is a delete action from update form
+                record_id = request.args[1]
+                shn_pentity_ondelete(db[table][record_id])
+            elif len(request.args) > 1 and request.args[0] == 'update' and table:
+                # this is an update action
+                record_id = request.args[1]
+                record=db[table][record_id]
+                if record and record.pr_pe_id:
+                    db(db.pr_pentity.id==record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
+        return
 
 #
 # shn_pr_get_person_id --------------------------------------------------------

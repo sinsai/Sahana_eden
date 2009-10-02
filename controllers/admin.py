@@ -62,7 +62,10 @@ def theme_apply(form):
             # Iterate through Colours
             for key in theme.keys():
                 if key[:4] == 'col_':
-                    line = line.replace(key, theme[key])
+                    if theme[key]:
+                        line = line.replace(key, theme[key])
+                    else:
+                        line = line.replace(key, default_theme[key])
             ofile.write(line)
         ofile.close()
 

@@ -272,7 +272,10 @@ def export_xml(jr):
 
     """ Export data as XML """
 
-    s3xml = S3XML(db)
+    domain = jr.request.env.server_name
+    base_url = "%s/%s" % (S3_PUBLIC_URL, jr.request.application)
+
+    s3xml = S3XML(db, domain=domain, base_url=base_url)
 
     if jr.jresource:
         joins = [dict(prefix=jr.jmodule,

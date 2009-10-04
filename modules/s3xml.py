@@ -3,7 +3,7 @@
 """
     SahanaPy XML Interface
 
-    @version: 1.0, 2009-10-03
+    @version: 1.0-2, 2009-10-04
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -34,19 +34,9 @@
 
 __name__ = "S3XML"
 
-import traceback
 import uuid
 
-from gluon.storage import Storage, Messages
-from gluon.http import *
-from gluon.validators import *
-from gluon.sqlhtml import *
-from gluon.contrib.markdown import WIKI
-try:
-    from gluon.contrib.gql import SQLTable, SQLStorage
-except ImportError:
-    from gluon.sql import SQLTable, SQLStorage
-from gluon.html import *
+from gluon.storage import Storage
 
 #******************************************************************************
 # Errors
@@ -245,7 +235,9 @@ class S3XML(object):
         field="field",
         value="value",
         prefix="prefix",
-        resource="resource"
+        resource="resource",
+        domain="domain",
+        url="url"
         )
 
     PERMISSION = dict(
@@ -254,12 +246,16 @@ class S3XML(object):
         update="update"
     )
 
-    def __init__(self, db):
+    def __init__(self, db, domain=None, base_url=None):
+
         self.db = db
         self.error = None
 
         self.imports = []
         self.exports = []
+
+        self.domain = domain
+        self.base_url = base_url
 
     # -------------------------------------------------------------------------
     def parse(self, source):
@@ -571,7 +567,7 @@ class S3XML(object):
         return
 
     # -------------------------------------------------------------------------
-    def __export(self, prefix, name, query, joins=[], skip=[], permit=None):
+    def __export(self, prefix, name, query, joins=[], skip=[], permit=None, url=None):
         """
             Exports data from the database as list of elements
 
@@ -589,6 +585,9 @@ class S3XML(object):
             @return:
                 list of elements
         """
+
+        if self.base_url and not url:
+            url = "%s/%s" % (self.base_url, prefix)
 
         try:
             _table = "%s_%s" % (prefix, name)
@@ -612,6 +611,12 @@ class S3XML(object):
                 resource.set(self.ATTRIBUTE["prefix"], prefix)
                 resource.set(self.ATTRIBUTE["name"], name)
 
+                if url:
+                    resource_url = "%s/%s/%s" % (url, name, record.id)
+                    resource.set(self.ATTRIBUTE["url"], resource_url)
+                else:
+                    resource_url = None
+
                 for join in joins:
                     _jtable = "%s_%s" % (join["prefix"], join["name"])
                     jtable = self.db[_jtable]
@@ -624,7 +629,7 @@ class S3XML(object):
                                   (jtable.deleted==None)) & _query
 
                     jresources = self.__export(join["prefix"], join["name"],
-                                               _query, skip=[join["fkey"]])
+                                               _query, skip=[join["fkey"]], url=resource_url)
                     if jresources:
                         resource.extend(jresources)
 
@@ -674,6 +679,12 @@ class S3XML(object):
                                       joins=joins, permit=permit)
             if resources:
                 root.extend(resources)
+
+        if self.domain:
+            root.set(self.ATTRIBUTE["domain"], self.domain)
+
+        if self.base_url:
+            root.set(self.ATTRIBUTE["url"], self.base_url)
 
         tree = etree.ElementTree(root)
         return tree

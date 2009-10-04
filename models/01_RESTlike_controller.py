@@ -303,7 +303,7 @@ def export_xml(jr):
                                  template_name)
     if os.path.exists(template_file):
         output = s3xml.transform(tree, template_file)
-        if not tree:
+        if not output:
             if jr.representation=="xml":
                 output=tree
             else:

@@ -299,11 +299,17 @@ html:not([lang*=""]) div.web2py-menu-center ul.web2py-menu li a:hover { height: 
 * html ul.web2py-menu iframe { position: absolute; left: 0; top: 0; z-index: -1; }
 
 #add-btn,
+#contents-btn,
 #list-btn,
 #edit-btn,
-#delete-btn { text-decoration: none; color: #col_txt; background-color: #col_txt_background; border-right: 1px solid #col_border_btn_out; border-bottom: 1px solid #col_border_btn_out; border-left: 1px solid #col_txt_border; border-top: 1px solid #col_txt_border; padding: 2px 4px 2px 4px; }
+#delete-btn,
+#register-btn,
+#retrieve-btn { text-decoration: none; color: #col_txt; background-color: #col_txt_background; border-right: 1px solid #col_border_btn_out; border-bottom: 1px solid #col_border_btn_out; border-left: 1px solid #col_txt_border; border-top: 1px solid #col_txt_border; padding: 2px 4px 2px 4px; }
 
 #add-btn:hover,
+#contents-btn:hover,
 #list-btn:hover,
 #edit-btn:hover,
-#delete-btn:hover { text-decoration: none; color: #fff; background-color: #col_btn_hover; border-right: 1px solid #col_border_btn_in; border-bottom: 1px solid #col_border_btn_in; border-left: 1px solid #000; border-top: 1px solid #000; padding: 1px 4px 1px 4px; }
+#delete-btn:hover,
+#register-btn:hover,
+#retrieve-btn:hover { text-decoration: none; color: #fff; background-color: #col_btn_hover; border-right: 1px solid #col_border_btn_in; border-bottom: 1px solid #col_border_btn_in; border-left: 1px solid #000; border-top: 1px solid #000; padding: 1px 4px 1px 4px; }

@@ -937,10 +937,15 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 # shn_list --------------------------------------------------------------------
 #
 def shn_list_linkto(field):
-    """ Helper function to generate links in list views """
+    """ Helper function to generate links in list views to Display items"""
     return URL(r=request, args=[field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-
+    
+def shn_list_linkto_update(field):
+    """ Helper function to generate links in list views to Update items"""
+    return URL(r=request, args=['update', field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+    
 def shn_list_jlinkto(field):
     """ Helper function to generate links in list views """
     return URL(r=request, args=[request.args[0], request.args[1], field],
@@ -1057,7 +1062,11 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if jr.jresource:
             linkto = shn_list_jlinkto
         else:
-            linkto = shn_list_linkto
+            authorised = shn_has_permission('update', table)
+            if authorised:
+                linkto = shn_list_linkto_update
+            else:
+                linkto = shn_list_linkto
 
         items = crud.select(table, query=query,
             fields=fields,

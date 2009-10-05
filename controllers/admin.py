@@ -54,7 +54,11 @@ def theme_apply(form):
         inpfile.close()
         # Read settings from Database
         theme = db(db.admin_theme.id == form.vars.theme).select()[0]
-        logo = theme.logo
+        default_theme = db(db.admin_theme.id == 1).select()[0]
+        if theme.logo:
+            logo = theme.logo
+        else:
+            logo = default_theme.logo
         # Write out CSS
         ofile = open(out_file, 'w')
         for line in lines:

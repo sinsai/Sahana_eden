@@ -47,7 +47,7 @@ def index():
 
 # Main controller functions
 def person():
-    crud.settings.delete_onvalidation=shn_pentity_ondelete
+    crud.settings.delete_onaccept=shn_pentity_ondelete
     return shn_rest_controller(module, 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
@@ -55,15 +55,16 @@ def person():
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ),
-        onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1))
+        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
 
 def group():
     response.s3.filter = (db.pr_group.system==False) # do not show system groups
-    crud.settings.delete_onvalidation=shn_pentity_ondelete
+    crud.settings.delete_onaccept=shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description',
         pheader=shn_pr_pheader,
-        onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_group', entity_class=2), deletable=False)
+        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_group, entity_type=2),
+        deletable=False)
 
 def image():
     "RESTlike CRUD controller"
@@ -98,7 +99,7 @@ def pentity():
 #
 def download():
     "Download a file."
-    return response.download(request, db) 
+    return response.download(request, db)
 
 def tooltip():
     if 'formfield' in request.vars:

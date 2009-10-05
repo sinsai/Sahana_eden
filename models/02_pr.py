@@ -434,21 +434,15 @@ PR_BADFORMAT = T('Unsupported Format!')
 # shn_pentity_ondelete --------------------------------------------------------
 #
 def shn_pentity_ondelete(record):
+
     """
-    Minimalistic callback function for CRUD controller, deletes a pentity record
-    when the corresponding subclass record gets deleted.
+        Deletes pr_pentity entries, when a subentity is deleted, used as
+        delete_onaccept callback.
 
-    Use as setting in the calling controller:
-
-        crud.settings.delete_onvalidation = shn_pentity_ondelete
+        crud.settings.delete_onaccept = shn_pentity_ondelete
     """
 
-    if request.vars.format:
-        representation = str.lower(request.vars.format)
-    else:
-        representation = "html"
-
-    if 'pr_pe_id' in record:
+    if "pr_pe_id" in record:
         pr_pe_id = record.pr_pe_id
 
         delete_onvalidation = crud.settings.delete_onvalidation
@@ -457,19 +451,48 @@ def shn_pentity_ondelete(record):
         crud.settings.delete_onvalidation = None
         crud.settings.delete_onaccept = None
 
-        if shn_has_permission('delete', db.pr_pentity, pr_pe_id):
-            shn_audit_delete('pr_pentity', pr_pe_id, 'plain')
-            if db(db.s3_setting.id==1).select()[0].archive_not_delete:
-                db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
-            else:
-                crud.delete(db.pr_pentity, pr_pe_id)
+        if db(db.s3_setting.id==1).select()[0].archive_not_delete:
+            db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
+        else:
+            crud.delete(db.pr_pentity, pr_pe_id)
 
         # TODO: delete joined resources!?
 
         crud.settings.delete_onvalidation = delete_onvalidation
         crud.settings.delete_onaccept = delete_onaccept
 
-    return
+    return True
+
+#
+# shn_pentity_onaccept --------------------------------------------------------
+#
+def shn_pentity_onaccept(form, table=None, entity_type=1):
+
+    """
+        Adds or updates a pr_pentity entries as necessary, used as
+        onaccept-callback for create/update of subentities.
+    """
+
+    if "pr_pe_id" in table:
+        try:
+            record = db(table.id==form.vars.id).select(table.pr_pe_id, table.pr_pe_label)[0]
+            pr_pe_id = record.pr_pe_id
+            label = record.pr_pe_label
+            if pr_pe_id:
+                # update action
+                db(db.pr_pentity.id==pr_pe_id).update(label=label)
+            else:
+                # create action
+                pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_type,
+                                                label=label)
+                # need to re-init the default:
+                db.pr_pentity.uuid.default=uuid.uuid4()
+                if pr_pe_id:
+                    db(table.id==form.vars.id).update(pr_pe_id=pr_pe_id)
+        except:
+            pass
+
+    return True
 
 #
 # shn_pentity_onvalidation ----------------------------------------------------
@@ -486,6 +509,8 @@ def shn_pentity_onvalidation(form, table=None, entity_class=1):
     form            : the current form containing pr_pe_id and pr_pe_label (from pr_pe_fieldset)
     table           : the table containing the subclass entity
     entity_class    : the class of pentity to be created (from vita.trackable_types)
+
+    @depreciated
     """
     try:
         # XML import?

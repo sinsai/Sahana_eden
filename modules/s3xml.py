@@ -61,19 +61,19 @@ try:
 except ImportError:
     try:
         import xml.etree.cElementTree as etree
-        print "%s: lxml not installed - using cElementTree" % __name__
+        print "WARNING: %s: lxml not installed - using cElementTree" % __name__
     except ImportError:
         try:
             import xml.etree.ElementTree as etree
-            print "%s: lxml not installed - using ElementTree" % __name__
+            print "WARNING: %s: lxml not installed - using ElementTree" % __name__
         except ImportError:
             try:
                 import cElementTree as etree
-                print "%s: lxml not installed - using cElementTree" % __name__
+                print "WARNING: %s: lxml not installed - using cElementTree" % __name__
             except ImportError:
                 # normal ElementTree install
                 import elementtree.ElementTree as etree
-                print "%s: lxml not installed - using ElementTree" % __name__
+                print "WARNING: %s: lxml not installed - using ElementTree" % __name__
 
 # *****************************************************************************
 # XMLImport
@@ -327,10 +327,13 @@ class S3XML(object):
             @note:
                 pretty-printed, with XML declaration, encoding="utf-8"
         """
-        return etree.tostring(tree,
-                              xml_declaration=True,
-                              encoding="utf-8",
-                              pretty_print=True)
+        if NO_LXML:
+            return etree.tostring(tree.getroot(), encoding="utf-8")
+        else:
+            return etree.tostring(tree,
+                                  xml_declaration=True,
+                                  encoding="utf-8",
+                                  pretty_print=True)
 
     # -------------------------------------------------------------------------
     def element(self, prefix, name, record, skip=[]):
@@ -631,7 +634,11 @@ class S3XML(object):
                     jresources = self.__export(join["prefix"], join["name"],
                                                _query, skip=[join["fkey"]], url=resource_url)
                     if jresources:
-                        resource.extend(jresources)
+                        if NO_LXML:
+                            for r in jresources:
+                                resource.append(r)
+                        else:
+                            resource.extend(jresources)
 
                 resources.append(resource)
 
@@ -678,7 +685,11 @@ class S3XML(object):
             resources = self.__export(prefix, name, query,
                                       joins=joins, permit=permit)
             if resources:
-                root.extend(resources)
+                if NO_LXML:
+                    for r in resources:
+                        root.append(r)
+                else:
+                    root.extend(resources)
 
         if self.domain:
             root.set(self.ATTRIBUTE["domain"], self.domain)

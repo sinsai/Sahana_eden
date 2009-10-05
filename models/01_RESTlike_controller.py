@@ -937,18 +937,31 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 # shn_list --------------------------------------------------------------------
 #
 def shn_list_linkto(field):
-    """ Helper function to generate links in list views to Display items"""
+
+    """ Helper function to generate links in list views to Display items """
+
     return URL(r=request, args=[field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-    
+
 def shn_list_linkto_update(field):
+
     """ Helper function to generate links in list views to Update items"""
+
     return URL(r=request, args=['update', field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-    
+
 def shn_list_jlinkto(field):
+
     """ Helper function to generate links in list views """
+
     return URL(r=request, args=[request.args[0], request.args[1], field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+
+def shn_list_jlinkto_update(field):
+
+    """ Helper function to generate links in list views to update items"""
+
+    return URL(r=request, args=[request.args[0], request.args[1], 'update', field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
 def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None, rss=None):
@@ -1059,10 +1072,13 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             # Use custom or prettified label
             headers[str(field)] = field.label
 
+        authorised = shn_has_permission('update', table)
         if jr.jresource:
-            linkto = shn_list_jlinkto
+            if authorised:
+                linkto = shn_list_jlinkto_update
+            else:
+                linkto = shn_list_jlinkto
         else:
-            authorised = shn_has_permission('update', table)
             if authorised:
                 linkto = shn_list_linkto_update
             else:

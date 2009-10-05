@@ -1,3 +1,4 @@
+cache/*
 databases/*
 errors/*
 sessions/*

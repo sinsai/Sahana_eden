@@ -483,9 +483,9 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
                 db(db.pr_pentity.id==pr_pe_id).update(label=label)
             else:
                 # create action
+                db.pr_pentity.uuid.default=uuid.uuid4()
                 pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_type,
                                                 label=label)
-                # need to re-init the default:
                 db.pr_pentity.uuid.default=uuid.uuid4()
                 if pr_pe_id:
                     db(table.id==form.vars.id).update(pr_pe_id=pr_pe_id)

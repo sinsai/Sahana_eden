@@ -3,7 +3,7 @@
 """
     SahanaPy XML Interface
 
-    @version: 1.0-2, 2009-10-04
+    @version: 1.0-3, 2009-10-06
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -399,6 +399,11 @@ class S3XML(object):
                     reference.set(self.ATTRIBUTE["prefix"], str(prefix))
                     reference.set(self.ATTRIBUTE["resource"], str(resource))
                     reference.set(self._UUID, str(_uuid))
+                    value = table[f].formatter(record[f])
+                    if table[f].represent:
+                        reference.text = str(table[f].represent(record[f])).decode('utf-8')
+                    else:
+                        reference.text = str(value).decode('utf-8')
                 else:
                     continue
             else:

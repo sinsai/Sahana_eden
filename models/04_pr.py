@@ -261,8 +261,8 @@ resource = 'presence'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                           # Personal Entity Reference
-                Field('observer'),                  # Person observing
-                Field('reporter'),                  # Person reporting
+                Field('observer', db.pr_person),    # Person observing
+                Field('reporter', db.pr_person),    # Person reporting
                 location_id,                        # Named Location Reference
                 Field('location_details'),          # Details on Location
                 Field('lat'),                       # Latitude
@@ -314,7 +314,6 @@ db[table].lon.requires = IS_NULL_OR(IS_LON())
 # Field representation
 db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
 db[table].observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-
 db[table].observer.comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
 db[table].observer.ondelete = 'RESTRICT'
 
@@ -354,7 +353,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #   TODO: elaborate on field types and field options!
 #
 
-pr_pe_id2 = SQLTable(None, 'pr_pe_id', Field('pr_pe_id', db.pr_pentity,
+pr_pe_id2 = SQLTable(None, 'pr_pe_id',
+                    Field('pr_pe_id', db.pr_pentity,
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=[1,3])),
                     represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
                     ondelete = 'RESTRICT',
@@ -1540,7 +1540,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                      # about which entity?
 #                opt_pr_findings_type,           # Finding type
                 Field('description'),           # Descriptive title
-                Field('module'),                # Access module
+                Field('module', db.s3_module),  # Access module
                 Field('resource'),              # Access resource
                 Field('resource_id'),           # Access ID
                 migrate=migrate)
@@ -1636,7 +1636,7 @@ def shn_pr_person_pfif(person, domain):
             author_phone = ''
 
         pfif.update(author_name=author_name, author_email=author_email, author_phone=author_phone)
-            
+
         # Add source data
         source_name = domain
         source_url = "%s/%s/%s/person/%s.pfif" % (S3_PUBLIC_URL, request.application, module, person.id)

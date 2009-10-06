@@ -55,7 +55,7 @@
                     <xsl:with-param name="name" select="./data[@field='last_name']/text()" />
                 </xsl:call-template>
             </pfif:last_name>
-            <xsl:apply-templates select="./resource[@prefix='pr' and @name='address' and ./data[@field='opt_pr_address_type']/@value=2][1]" />
+            <xsl:apply-templates select="./resource[@prefix='pr' and @name='address' and ./data[@field='opt_pr_address_type']/@value=1][1]" />
             <xsl:apply-templates select="./resource[@prefix='pr' and @name='presence']"/>
         </pfif:person>
     </xsl:template>
@@ -72,7 +72,7 @@
                 </xsl:call-template>
             </pfif:entry_date>
             <pfif:author_name>
-                <xsl:value-of select="./data[@field='reporter']/text()" />
+                <xsl:value-of select="./reference[@field='reporter']/text()" />
             </pfif:author_name>
             <pfif:source_date>
                 <xsl:call-template name="datetime2pfif">

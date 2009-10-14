@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'admin'
 # Current Module (for sidebar title)
@@ -21,16 +21,16 @@ def setting():
     #crud.settings.update_next = URL(r=request, args=['update', 1])
     return shn_rest_controller('s3', 'setting', deletable=False, listadd=False, onvalidation=lambda form: theme_check(form), onaccept=lambda form: theme_apply(form))
 
+@auth.requires_membership('Administrator')
+def theme():
+    "RESTlike CRUD controller"
+    return shn_rest_controller('admin', 'theme', list_fields=['id', 'name', 'logo', 'footer', 'col_background'], onvalidation=lambda form: theme_check(form))
+
 def theme_apply(form):
     "Apply the Theme specified by Form"
     if form.vars.theme:
-        # Valid form - what are the settings?
-        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
-        logo = theme.logo
-        col_background = theme.col_background
-        col_menu = theme.col_menu
-        col_highlight = theme.col_highlight
-
+        # Valid form
+        # Relevant paths
         template = os.path.join(request.folder, 'static', 'styles', 'S3', 'template.css')
         tmp_folder = os.path.join(request.folder, 'static', 'scripts', 'tools')
         out_file = os.path.join(request.folder, 'static', 'styles', 'S3', 'sahana.css')
@@ -52,13 +52,24 @@ def theme_apply(form):
         inpfile = open(template, 'r')
         lines = inpfile.readlines()
         inpfile.close()
+        # Read settings from Database
+        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
+        default_theme = db(db.admin_theme.id == 1).select()[0]
+        if theme.logo:
+            logo = theme.logo
+        else:
+            logo = default_theme.logo
         # Write out CSS
         ofile = open(out_file, 'w')
         for line in lines:
-            line = line.replace("col_background", col_background)
-            line = line.replace("col_menu", col_menu)
-            line = line.replace("col_highlight", col_highlight)
             line = line.replace("YOURLOGOHERE", logo)
+            # Iterate through Colours
+            for key in theme.keys():
+                if key[:4] == 'col_':
+                    if theme[key]:
+                        line = line.replace(key, theme[key])
+                    else:
+                        line = line.replace(key, default_theme[key])
             ofile.write(line)
         ofile.close()
 
@@ -111,13 +122,7 @@ def theme_check(form):
         redirect(URL(r=request, args=request.args))
     # Validation passed
     return
-
     
-@auth.requires_membership('Administrator')
-def theme():
-    "RESTlike CRUD controller"
-    return shn_rest_controller('admin', 'theme', onvalidation=lambda form: theme_check(form))
-
 @auth.requires_membership('Administrator')
 def user():
     "RESTlike CRUD controller"
@@ -154,12 +159,16 @@ def users():
     # Start building the Return
     output = dict(module_name=module_name, title=title, description=description, group=group)
 
+    if auth.settings.username:
+        username = 'username'
+    else:
+        username = 'email'
+
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'membership', 'html')
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'membership', 'html')
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
-    forms = Storage()
     even = True
     for row in sqlrows:
         if even:
@@ -171,17 +180,21 @@ def users():
         id = row.user_id
         item_first = db.auth_user[id].first_name
         item_second = db.auth_user[id].last_name
-        item_description = db.auth_user[id].email
-        id_link = A(id,_href=URL(r=request,f='user',args=['read', id]))
+        item_description = db.auth_user[id][username]
+        id_link = A(id, _href=URL(r=request, f='user', args=['read', id]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_second), TD(item_description), TD(checkbox), _class=theclass))
         
-    table_header = THEAD(TR(TH('ID'), TH(T('First Name')), TH(T('Last Name')), TH(T('Email')), TH(T('Remove'))))
+    if auth.settings.username:
+        username_label = T('Username')
+    else:
+        username_label = T('Email')
+    table_header = THEAD(TR(TH('ID'), TH(T('First Name')), TH(T('Last Name')), TH(username_label), TH(T('Remove'))))
     table_footer = TFOOT(TR(TD(_colspan=4), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Remove')))))
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='group_remove_users', args=[group])))
         
     subtitle = T("Users")
-    crud.messages.submit_button=T('Add')
+    crud.messages.submit_button = T('Add')
     crud.messages.record_created = T('Role Updated')
     form = crud.create(table, next=URL(r=request, args=[group]))
     addtitle = T("Add New User to Role")
@@ -215,16 +228,15 @@ def groups():
     table = db.auth_membership
     query = table.user_id==user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name
-    description = db.auth_user[user].email
+    description = db.auth_user[user][username]
     # Start building the Return
     output = dict(module_name=module_name, title=title, description=description, user=user)
 
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'membership', 'html')
+    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'membership', 'html')
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
-    forms = Storage()
     even = True
     for row in sqlrows:
         if even:
@@ -234,9 +246,6 @@ def groups():
             theclass = "odd"
             even = True
         id = row.group_id
-        forms[id] = SQLFORM(table, id)
-        if forms[id].accepts(request.vars, session):
-            response.flash = T("Membership Updated")
         item_first = db.auth_group[id].role
         item_description = db.auth_group[id].description
         id_link = A(id, _href=URL(r=request, f='group', args=['read', id]))

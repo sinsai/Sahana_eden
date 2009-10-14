@@ -5,7 +5,7 @@ module = 'default'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions)
 response.menu_options = [
-    [T('About Sahana'), False, URL(r=request, f='about_sahana')],
+    [T('About Sahana'), False, URL(r=request, f='about')],
 ]
 
 # Web2Py Tools functions
@@ -56,7 +56,7 @@ def apath(path=''):
     while path[:3] == '../': opath, path=up(opath), path[3:]
     return os.path.join(opath,path).replace('\\','/')
 
-def about_sahana():
+def about():
     "About Sahana page provides details on component versions."
     import sys
     python_version = sys.version

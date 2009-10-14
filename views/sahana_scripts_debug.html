@@ -61,5 +61,6 @@ $(document).ready(function() {
         { event.default(); } else { event.preventDefault(); }
         return false; });
     $('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
+    $('.ajaxtip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',width: 380});
 });
 //]]></script>

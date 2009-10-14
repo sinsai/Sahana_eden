@@ -5,7 +5,6 @@ module = 'budget'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
     [T('Parameters'), False, URL(r=request, f='parameters')],
     [T('Items'), False, URL(r=request, f='item')],
     [T('Kits'), False, URL(r=request, f='kit')],
@@ -37,7 +36,7 @@ def parameter():
     
 def item():
     "RESTlike CRUD controller"
-    response.pdf = URL(r=request, f='item_export_pdf')
+    response.s3.pdf = URL(r=request, f='item_export_pdf')
     return shn_rest_controller(module, 'item', main='code', extra='description', orderby=db.budget_item.category_type, sortby=[[1, "asc"]], onaccept=lambda form: item_cascade(form))
     #return shn_rest_controller(module, 'item', main='code', extra='description', orderby=db.budget_item.category_type, onaccept=lambda form: item_cascade(form))
 
@@ -176,8 +175,8 @@ def item_export_pdf():
     
 def kit():
     "RESTlike CRUD controller"
-    response.pdf = URL(r=request, f='kit_export_pdf')
-    response.xls = URL(r=request, f='kit_export_xls')
+    response.s3.pdf = URL(r=request, f='kit_export_pdf')
+    response.s3.xls = URL(r=request, f='kit_export_xls')
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='kit_item', args=request.args[1])
     return shn_rest_controller(module, 'kit', main='code', onaccept=lambda form: kit_total(form))
@@ -217,13 +216,13 @@ def kit_item():
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
     # Audit
-    shn_audit_read(operation='list', resource='kit_item', record=kit, representation='html')
+    shn_audit_read(operation='list', module=module, resource='kit_item', record=kit, representation='html')
     item_list = []
     sqlrows = db(query).select()
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'kit_item', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'kit_item', 'html')
         # Display a List_Create page with editable Quantities
         for row in sqlrows:
             if even:
@@ -619,12 +618,12 @@ def bundle_kit_item():
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
     # Audit
-    shn_audit_read(operation='list', resource='bundle_kit_item', record=bundle, representation='html')
+    shn_audit_read(operation='list', module=module, resource='bundle_kit_item', record=bundle, representation='html')
     item_list = []
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'bundle_kit_item', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'bundle_kit_item', 'html')
         # Display a List_Create page with editable Quantities, Minutes & Megabytes
         
         # Kits
@@ -929,12 +928,12 @@ def budget_staff_bundle():
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
     # Audit
-    shn_audit_read(operation='list', resource='budget_staff_bundle', record=budget, representation='html')
+    shn_audit_read(operation='list', module=module, resource='budget_staff_bundle', record=budget, representation='html')
     item_list = []
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'budget_staff_bundle', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'budget_staff_bundle', 'html')
         # Display a List_Create page with editable Quantities & Months
         
         # Staff

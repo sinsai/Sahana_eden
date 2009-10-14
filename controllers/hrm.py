@@ -5,7 +5,6 @@ module = 'hrm'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
     [T('Find'), False, URL(r=request, f='find'),[
         [T('Add Report'), False, URL(r=request, f='find', args='create')],
         [T('List Reports'), False, URL(r=request, f='find')]
@@ -36,12 +35,12 @@ def body():
 
 def image_body():
     db.pr_image.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
-    request.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_entity_type==3)
+    response.s3.filter=(db.pr_image.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_entity_type==3)
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', 'image')
 
 def presence_body():
     db.pr_presence.pr_pe_id.requires =  IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
-    request.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_entity_type==3)
+    response.s3.filter=(db.pr_presence.pr_pe_id==db.pr_pentity.id)&(db.pr_pentity.opt_pr_entity_type==3)
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', 'presence')

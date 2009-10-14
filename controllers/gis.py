@@ -5,7 +5,6 @@ module = 'gis'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
     [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
     [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
 ]
@@ -104,7 +103,7 @@ def feature_group_contents():
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'feature_group_contents', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'feature_group_contents', 'html')
         # Display a List_Create page with checkboxes to remove items
         
         # Feature Classes

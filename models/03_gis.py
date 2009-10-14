@@ -210,7 +210,7 @@ resource = 'feature_class'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 marker_id,
                 Field('module'),    # Used to build Edit URL
                 Field('resource'),   # Used to build Edit URL & to provide Attributes to Display
@@ -260,7 +260,7 @@ if not len(db().select(db[table].ALL)):
 resource = 'feature_metadata'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
-                Field('description', length=256),
+                Field('description'),
                 person_id,
                 Field('source'),
                 Field('accuracy'),       # Drop-down on a IS_IN_SET[]?
@@ -297,6 +297,13 @@ msg_record_modified = T('Feature Metadata updated')
 msg_record_deleted = T('Feature Metadata deleted')
 msg_list_empty = T('No Feature Metadata currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Joined Resource
+jrlayer.add_jresource(module, resource,
+    multiple=True,
+    joinby=dict(gis_feature='feature'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'description', 'source', 'event_time', 'url', 'image'])
 
 gis_feature_type_opts = {
     1:T('Point'),
@@ -313,8 +320,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('feature_type', 'integer', default=1, notnull=True),
                 Field('lat', 'double'),    # Only needed for Points
                 Field('lon', 'double'),    # Only needed for Points
-                Field('wkt', length=256),  # WKT is auto-calculated from lat/lon for Points
-                Field('resource_id', 'integer', ondelete = 'RESTRICT'), # Used to build Edit URL for Feature Class.
+                Field('wkt'),  # WKT is auto-calculated from lat/lon for Points
+                #Field('resource_id', 'integer', ondelete = 'RESTRICT'), # Used to build Edit URL for Feature Class.
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
@@ -360,6 +367,13 @@ feature_id = SQLTable(None, 'feature_id',
                 comment = DIV(A(T('Add Feature'), _class='popup', _href=URL(r=request, c='gis', f='feature', args='create', vars=dict(format='plain')), _target='top', _title=T('Add Feature')), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature|The centre Point or Polygon used to display this Location on a Map."))),
                 ondelete = 'RESTRICT'
                 ))
+# Joined Resource
+jrlayer.add_jresource(module, resource,
+    multiple=True,
+    joinby=dict(gis_feature_class='feature_class'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'marker', 'feature_type', 'lat', 'lon', 'wkt'])
     
 # Feature Groups
 # Used to select a set of Features for either Display or Export
@@ -367,7 +381,7 @@ resource = 'feature_group'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
-                Field('description', length=256),
+                Field('description'),
                 #Field('features', 'text'),        # List of features (to be replaced by many-to-many table)
                 #Field('feature_classes', 'text'), # List of feature classes (to be replaced by many-to-many table)
                 Field('display', 'boolean', default='True'),
@@ -397,7 +411,7 @@ msg_list_empty = T('No Feature Groups currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 feature_group_id = SQLTable(None, 'feature_group_id',
-            Field('feature_group', db.gis_feature_group,
+            Field('feature_group_id', db.gis_feature_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Group'),
@@ -431,7 +445,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True),
                 Field('landmark_type', 'integer'),
-                Field('description', length=256),
+                Field('description'),
                 Field('url'),
                 Field('image', 'upload'),
                 migrate=migrate)
@@ -518,6 +532,13 @@ location_id = SQLTable(None, 'location_id',
                 comment = DIV(A(s3.crud_strings.gis_location.label_create_button, _class='popup', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='plain')), _target='top', _title=s3.crud_strings.gis_location.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
+# Joined Resource
+jrlayer.add_jresource(module, resource,
+    multiple=True,
+    joinby=dict(gis_feature='feature'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'name', 'level'])
 
 # GIS Keys - needed for commercial mapping services
 resource = 'apikey' # Can't use 'key' as this has other meanings for dicts!
@@ -525,7 +546,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp,
                 Field('name', notnull=True),
                 Field('apikey', length=128, notnull=True),
-				Field('description', length=256),
+				Field('description'),
                 migrate=migrate)
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
@@ -578,7 +599,7 @@ gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
 gis_layer = SQLTable(db, 'gis_layer', timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
             Field('name', notnull=True, label=T('Name')),
-            Field('description', length=256, label=T('Description')),
+            Field('description', label=T('Description')),
             #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
             Field('enabled', 'boolean', default=True, label=T('Enabled?')))
 gis_layer.name.requires = IS_NOT_EMPTY()

@@ -1,6 +1,6 @@
 {{extend 'layout.html'}}
 
-<div class="frame">
+<div id="home">
 <h2>
 {{if request.args[0]=='login':}}
  {{=T('Login')}}
@@ -16,12 +16,13 @@
 </h2>
 {{=form}}
 {{if request.args[0]=='login':}}
- <p>
  {{self_registration = db().select(db.s3_setting.self_registration)[0].self_registration}}
  {{if self_registration:}}
+    <p>
     <a id="register-btn" href="{{=URL(r=request, args='register')}}">{{=T('Register')}}</a>
-    <br />
+    </p>
  {{pass}}
+ <p>
  <a id="retrieve-btn" href="{{=URL(r=request, args='retrieve_password')}}">{{=T('Lost Password')}}</a>
  </p>
 {{pass}}

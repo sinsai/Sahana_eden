@@ -5,7 +5,6 @@ module = 'msg'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
     [T('Admin'), False, URL(r=request, f='admin')],
     [T('Email'), False, URL(r=request, f='email'), [
         [T('Send Email'), False, URL(r=request, f='email_outbox', args='create')],
@@ -163,7 +162,7 @@ def group_user():
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, 'group_user', 'html')
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'group_user', 'html')
         # Display a List_Create page with deletable Rows
         for row in sqlrows:
             if even:

@@ -281,6 +281,7 @@ class AuthS3(Auth):
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Auth.__init__(self, environment, db)
+        self.settings.username_field = False
         self.messages.lock_keys = False
         self.messages.registration_disabled = 'Registration Disabled!'
         self.messages.lock_keys = True
@@ -316,30 +317,54 @@ class AuthS3(Auth):
         db = self.db
         if not self.settings.table_user:
             passfield = self.settings.password_field
-            self.settings.table_user = db.define_table(
-                self.settings.table_user_name,
-                db.Field('first_name', length=128, default='',
-                        label=self.messages.label_first_name),
-                db.Field('last_name', length=128, default='',
-                        label=self.messages.label_last_name),
+            if self.settings.username_field:
+                self.settings.table_user = db.define_table(
+                    self.settings.table_user_name,
+                    db.Field('first_name', length=128, default='',
+                            label=self.messages.label_first_name),
+                    db.Field('last_name', length=128, default='',
+                            label=self.messages.label_last_name),
 
-                # add UTC Offset (+/-HHMM) to specify the user's timezone
-                # TODO:
-                #   - this could need a nice label and context help
-                #   - entering timezone from a drop-down would be more comfortable
-                #   - automatic DST adjustment could be nice
-                db.Field('utc_offset'),
+                    # add UTC Offset (+/-HHMM) to specify the user's timezone
+                    # TODO:
+                    #   - this could need a nice label and context help
+                    #   - entering timezone from a drop-down would be more comfortable
+                    #   - automatic DST adjustment could be nice
+                    db.Field('utc_offset'),
+                    db.Field('username', length=128, default=''),
+                    db.Field('email', length=512, default='',
+                            label=self.messages.label_email),
+                    db.Field(passfield, 'password', length=512,
+                             readable=False, label=self.messages.label_password),
+                    db.Field('registration_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
+                    migrate=\
+                        self.__get_migrate(self.settings.table_user_name, migrate))
+            else:
+                self.settings.table_user = db.define_table(
+                    self.settings.table_user_name,
+                    db.Field('first_name', length=128, default='',
+                            label=self.messages.label_first_name),
+                    db.Field('last_name', length=128, default='',
+                            label=self.messages.label_last_name),
 
-                # db.Field('username', length=128, default=''),
-                db.Field('email', length=512, default='',
-                        label=self.messages.label_email),
-                db.Field(passfield, 'password', length=512,
-                         readable=False, label=self.messages.label_password),
-                db.Field('registration_key', length=512,
-                        writable=False, readable=False, default='',
-                        label=self.messages.label_registration_key),
-                migrate=\
-                    self.__get_migrate(self.settings.table_user_name, migrate))
+                    # add UTC Offset (+/-HHMM) to specify the user's timezone
+                    # TODO:
+                    #   - this could need a nice label and context help
+                    #   - entering timezone from a drop-down would be more comfortable
+                    #   - automatic DST adjustment could be nice
+                    db.Field('utc_offset'),
+                    #db.Field('username', length=128, default=''),
+                    db.Field('email', length=512, default='',
+                            label=self.messages.label_email),
+                    db.Field(passfield, 'password', length=512,
+                             readable=False, label=self.messages.label_password),
+                    db.Field('registration_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
+                    migrate=\
+                        self.__get_migrate(self.settings.table_user_name, migrate))
             table = self.settings.table_user
             table.first_name.requires = \
                 IS_NOT_EMPTY(error_message=self.messages.is_empty)
@@ -352,7 +377,9 @@ class AuthS3(Auth):
                 table.utc_offset.requires = IS_UTC_OFFSET()
             except:
                 pass
-            table[passfield].requires = [CRYPT(key=self.settings.hmac_key)]
+            table[passfield].requires = [CRYPT(key=self.settings.hmac_key, digest_alg='sha512')]
+            if self.settings.username_field:
+                table.username.requires = IS_NOT_IN_DB(db, '%s.username' % self.settings.table_user._tablename)
             table.email.requires = \
                 [IS_EMAIL(error_message=self.messages.invalid_email),
                  IS_NOT_IN_DB(db, '%s.email'
@@ -1174,15 +1201,19 @@ class JoinedResource(object):
             return None
 
     # get_join_key ------------------------------------------------------------
-    def get_join_key(self, module, resource):
+    def get_join_key(self, db, module, resource):
 
         tablename = "%s_%s" % (module, resource)
+        table = db[tablename]
 
         if self.joinby:
-
             if isinstance(self.joinby, str):
                 # natural join
-                return (self.joinby, self.joinby)
+                if self.joinby in table:
+                    return (self.joinby, self.joinby)
+                else:
+                    # Not joined with this table
+                    return None
 
             elif isinstance(self.joinby, dict):
                 # primary/foreign key join
@@ -1227,6 +1258,32 @@ class JRLayer(object):
         jr = JoinedResource(prefix, name, joinby=joinby, multiple=multiple, rss=rss, list_fields=_fields, attr=attr)
         self.jresources[name] = jr
 
+    # get_joins ---------------------------------------------------------------
+    def get_joins(self, prefix, name):
+        """
+            Get all jresources that can be linked to the given resource
+        """
+        joins = []
+
+        _table = "%s_%s" % (prefix, name)
+        if _table in self.db:
+            table = self.db[_table]
+        else:
+            return joins
+        
+        for _jresource in self.jresources:
+            jresource = self.jresources[_jresource]
+            join_keys = jresource.get_join_key(self.db, prefix, name)
+            if join_keys and join_keys[0] in table:
+                # resource is linked
+                joins.append(dict(
+                    prefix=jresource.prefix,
+                    name=jresource.name,
+                    pkey=join_keys[0],
+                    fkey=join_keys[1]))
+
+        return joins
+
     # get_prefix --------------------------------------------------------------
     def get_prefix(self, name):
 
@@ -1247,7 +1304,7 @@ class JRLayer(object):
     def get_join_key(self, name, module, resource):
 
         if name in self.jresources:
-            return self.jresources[name].get_join_key(module, resource)
+            return self.jresources[name].get_join_key(self.db, module, resource)
         else:
             return None
 

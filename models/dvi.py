@@ -335,3 +335,4 @@ db[table].anthropology.comment = DIV(A(T("Add Details"), _class='thickbox', _hre
 db[table].pathology.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='pathology', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Pathology|Record Pathology Details.")))
 db[table].dna.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='dna', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("DNA Exam|Record DNA Exam Details.")))
 db[table].dental.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='dental', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Dental|Record Dental Examination Details.")))
+

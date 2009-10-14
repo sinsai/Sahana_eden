@@ -57,6 +57,10 @@ class Vita(object):
     DEFAULT_TRACKABLE = 1
     DEFAULT_PRESENCE = 4
 
+    # *************************************************************************
+    # Physical Description
+    #
+
     def __init__(self, environment, db=None, T=None):
         self.environment = Storage(environment)
         self.db = db
@@ -102,13 +106,13 @@ class Vita(object):
 
             query = ((table.deleted==False) | (table.deleted==None))
 
-            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+            if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
 
-            elif isinstance(entity,str):
+            elif isinstance(entity, str):
                 query = (table.label.strip().lower()==entity.strip().lower()) & query
 
-            elif isinstance(entity,dict):
+            elif isinstance(entity, dict):
                 if 'pr_pe_id' in entity:
                     query = (table.id==entity.pr_pe_id) & query
                 else:
@@ -137,10 +141,10 @@ class Vita(object):
 
             query = ((table.deleted==False) | (table.deleted==None))
 
-            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+            if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
 
-            elif isinstance(entity,dict):
+            elif isinstance(entity, dict):
                 if 'pr_pe_id' in entity:
                     query = (table.pr_pe_id==entity.pr_pe_id) & query
                 elif 'person_id' in entity:
@@ -173,10 +177,10 @@ class Vita(object):
 
             query = ((table.deleted==False) | (table.deleted==None))
 
-            if isinstance(entity,int) or (isinstance(entity,str) and entity.strip().isdigit()):
+            if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
 
-            elif isinstance(entity,dict):
+            elif isinstance(entity, dict):
                 if 'pr_pe_id' in entity:
                     query = (table.pr_pe_id==entity.pr_pe_id) & query
                 elif 'group_id' in entity:

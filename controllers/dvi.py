@@ -5,7 +5,6 @@ module = 'dvi'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
     [T('Checklist Of Operations'), False, URL(r=request, f='operation_checklist'),[
         [T('Personal Effects'), False, URL(r=request, f='personal_effects')],
         [T('Radiology'), False, URL(r=request, f='radiology')],
@@ -27,7 +26,6 @@ def personal_effects():
     return shn_rest_controller(module, 'personal_effects')
 
 def case():
-
     "Restlike CRUD controller"
     return shn_rest_controller(module, 'case')
 

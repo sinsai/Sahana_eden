@@ -1,3 +1,3 @@
-<a href="{{=response.pdf or URL(r=request, args=request.args, vars={'format':'pdf'})}}"><img src="/{{=request.application}}/static/img/pdficon_small.gif"/></a>
-<a href="{{=response.xls or URL(r=request, args=request.args, vars={'format':'xls'})}}"><img src="/{{=request.application}}/static/img/icon-xls.png"/></a>
-<a href="{{=URL(r=request, args=request.args, vars={'format':'rss'})}}"><img src="/{{=request.application}}/static/img/RSS_16.png"/></a>
+<a href="{{=response.s3.pdf or URL(r=request, args=request.args, vars={'format':'pdf'})}}"><img src="/{{=request.application}}/static/img/pdficon_small.gif"/></a>
+<a href="{{=response.s3.xls or URL(r=request, args=request.args, vars={'format':'xls'})}}"><img src="/{{=request.application}}/static/img/icon-xls.png"/></a>
+<a href="{{=response.s3.rss or URL(r=request, args=request.args, vars={'format':'rss'})}}"><img src="/{{=request.application}}/static/img/RSS_16.png"/></a>

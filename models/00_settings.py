@@ -15,8 +15,9 @@ mail.settings.server = 'mail:25'
 mail.settings.sender = 'sahana@sahanapy.org'
 
 auth = AuthS3(globals(),db)
-auth.define_tables()
+#auth.settings.username_field = True
 auth.settings.hmac_key = 'akeytochange'
+auth.define_tables()
 auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key='PUBLIC_KEY', private_key='PRIVATE_KEY')
@@ -75,14 +76,16 @@ timestamp = SQLTable(None, 'timestamp',
                           update=request.utcnow)
             ) 
 
-# Reusable author fields
+# Reusable author fields, TODO: make a better represent!
 authorstamp = SQLTable(None, 'authorstamp',
             Field('created_by', db.auth_user,
+                          readable=False, # Enable when needed, not by default
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
                           represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
                           ondelete='RESTRICT'),
             Field('modified_by', db.auth_user,
+                          readable=False, # Enable when needed, not by default
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else 0,
                           update=session.auth.user.id if auth.is_logged_in() else 0,
@@ -187,19 +190,6 @@ msg_record_deleted = T('Membership deleted')
 msg_list_empty = T('No Memberships currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Authorization
-# User Roles (uses native Web2Py Auth Groups)
-table = auth.settings.table_group_name
-# 1st-run initialisation
-if not len(db().select(db[table].ALL)):
-    auth.add_group('Administrator', description = 'System Administrator - can access & make changes to any data')
-    # Doesn't work on Postgres!
-    auth.add_membership(1, 1) # 1st person created will be System Administrator (can be changed later)
-    auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
-    auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
-    auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')
-    auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
-    
 module = 'admin'
 resource = 'theme'
 table = module + '_' + resource
@@ -207,9 +197,17 @@ db.define_table(table,
                 Field('name'),
                 Field('logo'),
                 Field('footer'),
-                Field('col_background'),    # ToDo: Colour selector
+                Field('col_background'),
+                Field('col_txt'),
+                Field('col_txt_background'),
+                Field('col_txt_border'),
+                Field('col_txt_underline'),
                 Field('col_menu'),
                 Field('col_highlight'),
+                Field('col_input'),
+                Field('col_border_btn_out'),
+                Field('col_border_btn_in'),
+                Field('col_btn_hover'),
                 migrate=migrate)
 db[table].name.label = T('Name')
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -220,10 +218,26 @@ db[table].footer.label = T('Footer')
 db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
 db[table].col_background.label = T('Background Colour')
 db[table].col_background.requires = IS_HTML_COLOUR()
+db[table].col_txt.label = T('Text Colour for Text blocks')
+db[table].col_txt.requires = IS_HTML_COLOUR()
+db[table].col_txt_background.label = T('Background Colour for Text blocks')
+db[table].col_txt_background.requires = IS_HTML_COLOUR()
+db[table].col_txt_border.label = T('Border Colour for Text blocks')
+db[table].col_txt_border.requires = IS_HTML_COLOUR()
+db[table].col_txt_underline.label = T('Colour for Underline of Subheadings')
+db[table].col_txt_underline.requires = IS_HTML_COLOUR()
 db[table].col_menu.label = T('Colour of dropdown menus')
 db[table].col_menu.requires = IS_HTML_COLOUR()
 db[table].col_highlight.label = T('Colour of selected menu items')
 db[table].col_highlight.requires = IS_HTML_COLOUR()
+db[table].col_input.label = T('Colour of selected Input fields')
+db[table].col_input.requires = IS_HTML_COLOUR()
+db[table].col_border_btn_out.label = T('Colour of bottom of Buttons when not pressed')
+db[table].col_border_btn_out.requires = IS_HTML_COLOUR()
+db[table].col_border_btn_in.label = T('Colour of bottom of Buttons when pressed')
+db[table].col_border_btn_in.requires = IS_HTML_COLOUR()
+db[table].col_btn_hover.label = T('Colour of Buttons when hovering')
+db[table].col_btn_hover.requires = IS_HTML_COLOUR()
 # Populate table with Default options
 # - deployments can change these live via appadmin
 if not len(db().select(db[table].ALL)): 
@@ -233,7 +247,15 @@ if not len(db().select(db[table].ALL)):
         footer = 'footer.html',
         col_background = '336699',
         col_menu = '0066cc',
-        col_highlight = '0077aa'
+        col_highlight = '0077aa',
+        col_txt = '006699',
+        col_txt_background = 'f3f6ff',
+        col_txt_border = 'c6d1f5',
+        col_txt_underline = '003366',
+        col_input = 'ffffcc',
+        col_border_btn_out = '6699cc',
+        col_border_btn_in = '4589ce',
+        col_btn_hover = '3377bb',
     )
     db[table].insert(
         name = T('Sahana Green'),
@@ -241,7 +263,15 @@ if not len(db().select(db[table].ALL)):
         footer = 'footer.html',
         col_background = '337733',
         col_menu = 'cc7722',
-        col_highlight = '338833'
+        col_highlight = '338833',
+        col_txt = '006699',
+        col_txt_background = 'f3f6ff',
+        col_txt_border = 'c6d1f5',
+        col_txt_underline = '003366',
+        col_input = 'ffffcc',
+        col_border_btn_out = '6699cc',
+        col_border_btn_in = '4589ce',
+        col_btn_hover = '3377bb',
     )
 # Define CRUD strings
 title_create = T('Add Theme')
@@ -406,9 +436,8 @@ if not len(db().select(db[table].ALL)):
     )
 
 admin_menu_options = [
-    [T('Home'), False, URL(r=request, c='admin', f='index')],
     [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1]), [
-        [T('Themes'), False, URL(r=request, c='admin', f='theme')]
+        [T('Edit Themes'), False, URL(r=request, c='admin', f='theme')]
     ]],
     [T('User Management'), False, '#', [
         [T('Users'), False, URL(r=request, c='admin', f='user')],

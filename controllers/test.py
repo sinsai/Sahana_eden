@@ -2,6 +2,8 @@
 
 # This file is used to test out various ideas or new Web2Py features
 module = 'test'
+response.menu_options = [
+]
 
 def index():
     "Shows request/session state for debugging"
@@ -14,9 +16,9 @@ def call():
     return service()
 
 def test():
-    items = None
-    form = None
-    return dict(items=items, form=form)
+    #items = 
+    #form = 
+    return dict()
 
 def post():
     """Test for JSON POST

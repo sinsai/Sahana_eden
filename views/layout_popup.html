@@ -23,22 +23,13 @@ $(function() {
             $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}" + "&value=" + value,
                 function(data) {
                     // set the caller's lookup list to the new ID
-                    self.opener.$('select#{{=caller}}').val(data[0].id);
+//                    self.opener.$('select#{{=caller}}').val(data[0].id);
                     // close the popup
                     self.close();
                 });
         });
     } else {
-        // Thickbox popups
-        // Refresh the SELECT DIV: FIXME
-        self.parent.TB_refresh('{{=caller}}');
-        // Set the lookup list to the new ID: FIXME
-        self.parent.TB_select('{{=caller}}');
-        // If submission succesful
-        {{if response.flash or response.confirmation:}}
-        // Close popup
-        self.parent.tb_remove();
-        {{pass}}
+    //All the relevant thickbox stuff moved to thickbox.html
     }
 });
 </script>

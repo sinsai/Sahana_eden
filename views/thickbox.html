@@ -1,30 +1,38 @@
 ﻿<link href="/{{=request.application}}/static/styles/S3/thickbox.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <script src="/{{=request.application}}/static/scripts/S3/thickbox.js" type="text/javascript" charset="utf-8"></script>
-
-<div id='TB_closeCallBack'>
 <script type="text/javascript">//<![CDATA[
-function TB_refresh(caller){
-    var resource = caller.replace(/{{=module}} + '_' + {{=resource}} + '_'/, '');
-    var url = "{{=URL(r=request, c=module, f=resource)}}"
-    // Refresh the SELECT DIV which called the popup
-    // FIXME
-    $.getJSON(url.replace(/{{=resource}}$/, resource) + ".json",
-        function(data){
-            var html = '';
-            $.each(data, function(i) {
-                    html += '<option value="' + data[i].id + '">' + data[i].name + '</option>'
-                }
-            $('select#' + caller).html(html);
+function TB_refresh(){
+    // The JSON of the thing we just created
+    var $_GET = getQueryParams(document.location.search); // The Get parameters
+    var listsource = document.location.pathname.replace("/create",".json");
+    //Clean up the caller
+    self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+    $.getJSON(listsource, function (data) {
+        $.each(data, function() {
+            self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
         });
-    return false;
+        self.parent.tb_remove();
+    });
 }
-function TB_select(caller){
-            // Set the lookup list to the new ID
-            // FIXME
-            //$('select#' + caller).val(data[0].id);
+//Function to get the URL params
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+    var params = {};
+    var tokens;
+
+    while (tokens = /[?&]?([^=]+)=([^&]*)/g.exec(qs)) {
+        params[decodeURIComponent(tokens[1])]
+            = decodeURIComponent(tokens[2]);
+    }
+
+    return params;
 }
-function TB_closeCallBack(){
-    //window.location.reload(true);
-}
+
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+// Refresh the DIV and close the pop up
+TB_refresh();
+{{pass}}
+
 //]]></script>
-</div>

@@ -4,7 +4,6 @@ function openPopup(url) {
 		popupWin = window.open( url, "popupWin", "width=640,height=480" );
 	} else popupWin.focus();
 }
-
 $(document).ready(function() {
     $('.error').hide().slideDown('slow')
     $('.error').click(function() { $(this).fadeOut('slow'); return false; });

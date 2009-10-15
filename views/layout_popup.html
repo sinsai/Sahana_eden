@@ -8,6 +8,7 @@
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
+
 <script type="text/javascript">
 $(function() {
     if (self.opener) {
@@ -23,28 +24,65 @@ $(function() {
             $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}" + "&value=" + value,
                 function(data) {
                     // set the caller's lookup list to the new ID
-                    self.opener.$('select#{{=caller}}').val(data[0].id);
+//                    self.opener.$('select#{{=caller}}').val(data[0].id);
                     // close the popup
                     self.close();
                 });
         });
     } else {
-        // Thickbox popups
-        // Refresh the SELECT DIV: FIXME
-        self.parent.TB_refresh('{{=caller}}');
-        // Set the lookup list to the new ID: FIXME
-        self.parent.TB_select('{{=caller}}');
-        // If submission succesful
-        {{if response.flash or response.confirmation:}}
-        // Close popup
-        self.parent.tb_remove();
-        {{pass}}
+        // Thickbox popups (see below)
     }
 });
+
+function TB_refresh(){
+    // The Get parameters
+    var $_GET = getQueryParams(document.location.search);
+    // The JSON of the resource we just created
+    var listsource = document.location.pathname.replace("/create",".json");
+    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
+        // We have been called next to a drop-down
+        // Get the previously selected value
+        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex");
+        // Clean up the caller
+        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+        $.getJSON(listsource, function (data) {
+            $.each(data, function() {
+                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+            });
+            // Set the previously selected value
+            // FIXME: Set the newly-created value
+            self.parent.$('#' + $_GET["caller"]).val(selectedvalue+1);
+            self.parent.tb_remove();
+        });
+    } else {
+        // FIXME: If called next to an Input, then set to the newly-created value
+        // Clean-up
+        self.parent.tb_remove();
+    }
+}
+// Function to get the URL parameters
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+    var params = {};
+    var tokens;
+    while (tokens = /[?&]?([^=]+)=([^&]*)/g.exec(qs)) {
+        params[decodeURIComponent(tokens[1])]
+            = decodeURIComponent(tokens[2]);
+    }
+    return params;
+}
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+// Refresh the DIV and close the pop up
+TB_refresh();
+{{pass}}
+
 </script>
 </head>
-<body>
 
+<body>
 {{include}}
 </body>
+
 </html>

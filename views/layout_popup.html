@@ -42,16 +42,16 @@ function TB_refresh(){
     if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
         // We have been called next to a drop-down
         // Get the previously selected value
-        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex");
+        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
         // Clean up the caller
         self.parent.$('#' + $_GET["caller"] + ' >option').remove();
         $.getJSON(listsource, function (data) {
             $.each(data, function() {
                 self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+                selectedvalue = this['id'];
             });
-            // Set the previously selected value
-            // FIXME: Set the newly-created value
-            self.parent.$('#' + $_GET["caller"]).val(selectedvalue+1);
+            // Set the newly-created value
+            self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
             self.parent.tb_remove();
         });
     } else {

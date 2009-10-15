@@ -1688,6 +1688,45 @@ class JRequest(object):
         return(URL(r=self.request, c=self.request.controller, f=self.resource, args=args, vars=vars))
 
     # -------------------------------------------------------------------------
+    def other(self, method=None, record_id=None, representation=None):
+        """
+            Backlink to another method+record_id of the same resource
+        """
+
+        args = []
+        vars = {}
+
+        if not representation:
+            representation = self.representation
+
+        if not record_id:
+            record_id = self.record_id
+
+        if self.jresource:
+            args = [record_id]
+            if not representation==self.default_representation:
+                args.append('%s.%s' % (self.jresource, representation))
+            else:
+                args.append(self.jresource)
+            if method:
+                args.append(method)
+                if self.jrecord_id:
+                    args.append(self.jrecord_id)
+        else:
+            if method:
+                args.append(method)
+            if record_id:
+                if not representation==self.default_representation:
+                    args.append('%s.%s' % (record_id, representation))
+                else:
+                    args.append(record_id)
+            else:
+                if not representation==self.default_representation:
+                    vars = {'format': representation}
+
+        return(URL(r=self.request, c=self.request.controller, f=self.resource, args=args, vars=vars))
+
+    # -------------------------------------------------------------------------
     def there(self, representation=None):
         """
             Backlink producing a HTTP/list request to the same resource

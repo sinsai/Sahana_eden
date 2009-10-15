@@ -34,7 +34,7 @@ dvi_task_status_opts = {
     4:T('Completed')
     }
 
-opt_dvi_task_status = SQLTable(None, 'opt_dvi_task_status',
+opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
                     db.Field('opt_dvi_task_status','integer',
                     requires = IS_IN_SET(dvi_task_status_opts),
                     default = 1,

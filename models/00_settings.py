@@ -59,12 +59,13 @@ auth.settings.login_onaccept = shn_auth_on_login
 crud = CrudS3(globals(),db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
 #crud.settings.keepvalues = True
+crud.messages.submit_button = T('Save')
 
 from gluon.tools import Service
 service = Service(globals())
 
 # Reusable timestamp fields
-timestamp = SQLTable(None, 'timestamp',
+timestamp = db.Table(None, 'timestamp',
             Field('created_on', 'datetime',
                           readable=False,
                           writable=False,
@@ -77,7 +78,7 @@ timestamp = SQLTable(None, 'timestamp',
             ) 
 
 # Reusable author fields, TODO: make a better represent!
-authorstamp = SQLTable(None, 'authorstamp',
+authorstamp = db.Table(None, 'authorstamp',
             Field('created_by', db.auth_user,
                           readable=False, # Enable when needed, not by default
                           writable=False,
@@ -95,7 +96,7 @@ authorstamp = SQLTable(None, 'authorstamp',
 
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
-uuidstamp = SQLTable(None, 'uuidstamp',
+uuidstamp = db.Table(None, 'uuidstamp',
             Field('uuid', length=64,
                           notnull=True,
                           unique=True,
@@ -105,14 +106,14 @@ uuidstamp = SQLTable(None, 'uuidstamp',
 
 # Reusable Deletion status field (needed as part of database synchronization)
 # Q: Will this be moved to a separate table? (Simpler for module writers but a performance penalty)
-deletion_status = SQLTable(None, 'deletion_status',
+deletion_status = db.Table(None, 'deletion_status',
             Field('deleted', 'boolean',
                           readable=False,
                           writable=False,
                           default=False))
 
 # Reusable Admin field
-admin_id = SQLTable(None, 'admin_id',
+admin_id = db.Table(None, 'admin_id',
             Field('admin', db.auth_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
@@ -411,7 +412,7 @@ s3_module_type_opts = {
     4:T('Aid Management'),
     5:T('Communications')
     }
-opt_s3_module_type = SQLTable(None, 'opt_s3_module_type',
+opt_s3_module_type = db.Table(None, 'opt_s3_module_type',
                     db.Field('module_type', 'integer', notnull=True,
                     requires = IS_IN_SET(s3_module_type_opts),
                     default = 1,

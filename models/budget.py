@@ -44,7 +44,7 @@ budget_cost_type_opts = {
     1:T('One-time'),
     2:T('Recurring')
     }
-opt_budget_cost_type = SQLTable(None, 'budget_cost_type',
+opt_budget_cost_type = db.Table(None, 'budget_cost_type',
                         Field('cost_type', 'integer', notnull=True,
                             requires = IS_IN_SET(budget_cost_type_opts),
                             default = 1,
@@ -71,7 +71,7 @@ budget_category_type_opts = {
     18:T('Miscellaneous'),
     19:T('Running Cost')
     }
-opt_budget_category_type = SQLTable(None, 'budget_category_type',
+opt_budget_category_type = db.Table(None, 'budget_category_type',
                             Field('category_type', 'integer', notnull=True,
                                 requires = IS_IN_SET(budget_category_type_opts),
                                 default = 1,
@@ -261,7 +261,7 @@ budget_currency_type_opts = {
     2:T('Euros'),
     3:T('Pounds')
     }
-opt_budget_currency_type = SQLTable(None, 'budget_currency_type',
+opt_budget_currency_type = db.Table(None, 'budget_currency_type',
                     db.Field('currency_type', 'integer', notnull=True,
                     requires = IS_IN_SET(budget_currency_type_opts),
                     default = 1,

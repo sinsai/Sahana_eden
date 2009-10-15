@@ -29,9 +29,55 @@ $(function() {
                 });
         });
     } else {
-    //All the relevant thickbox stuff moved to thickbox.html
+    //All the relevant thickbox stuff below.
     }
 });
+function TB_refresh(){
+    // The JSON of the thing we just created
+    var $_GET = getQueryParams(document.location.search); // The Get parameters
+    var listsource = document.location.pathname.replace("/create",".json");
+    //This below is dropdown specific - no point calling it otherwise hence the
+    //if
+    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
+    //Get the previously selected value
+    var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex");
+    //Clean up the caller
+    self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+    $.getJSON(listsource, function (data) {
+        $.each(data, function() {
+            self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+        });
+        //Set the previously selected value
+        self.parent.$('#' + $_GET["caller"]).val(selectedvalue+1);
+        self.parent.tb_remove();
+    });
+    }
+    else{
+    //nothing much to do here
+        self.parent.tb_remove();
+    }
+}
+//Function to get the URL params
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+    var params = {};
+    var tokens;
+
+    while (tokens = /[?&]?([^=]+)=([^&]*)/g.exec(qs)) {
+        params[decodeURIComponent(tokens[1])]
+            = decodeURIComponent(tokens[2]);
+    }
+
+    return params;
+}
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+// Refresh the DIV and close the pop up
+TB_refresh();
+{{pass}}
+
+
 </script>
 </head>
 <body>

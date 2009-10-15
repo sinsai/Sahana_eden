@@ -8,6 +8,7 @@
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
+
 <script type="text/javascript">
 $(function() {
     if (self.opener) {
@@ -29,45 +30,45 @@ $(function() {
                 });
         });
     } else {
-    //All the relevant thickbox stuff below.
+        // Thickbox popups (see below)
     }
 });
+
 function TB_refresh(){
-    // The JSON of the thing we just created
-    var $_GET = getQueryParams(document.location.search); // The Get parameters
+    // The Get parameters
+    var $_GET = getQueryParams(document.location.search);
+    // The JSON of the resource we just created
     var listsource = document.location.pathname.replace("/create",".json");
-    //This below is dropdown specific - no point calling it otherwise hence the
-    //if
     if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
-    //Get the previously selected value
-    var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex");
-    //Clean up the caller
-    self.parent.$('#' + $_GET["caller"] + ' >option').remove();
-    $.getJSON(listsource, function (data) {
-        $.each(data, function() {
-            self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+        // We have been called next to a drop-down
+        // Get the previously selected value
+        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex");
+        // Clean up the caller
+        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+        $.getJSON(listsource, function (data) {
+            $.each(data, function() {
+                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+            });
+            // Set the previously selected value
+            // FIXME: Set the newly-created value
+            self.parent.$('#' + $_GET["caller"]).val(selectedvalue+1);
+            self.parent.tb_remove();
         });
-        //Set the previously selected value
-        self.parent.$('#' + $_GET["caller"]).val(selectedvalue+1);
-        self.parent.tb_remove();
-    });
-    }
-    else{
-    //nothing much to do here
+    } else {
+        // FIXME: If called next to an Input, then set to the newly-created value
+        // Clean-up
         self.parent.tb_remove();
     }
 }
-//Function to get the URL params
+// Function to get the URL parameters
 function getQueryParams(qs) {
     qs = qs.split("+").join(" ");
     var params = {};
     var tokens;
-
     while (tokens = /[?&]?([^=]+)=([^&]*)/g.exec(qs)) {
         params[decodeURIComponent(tokens[1])]
             = decodeURIComponent(tokens[2]);
     }
-
     return params;
 }
 
@@ -77,11 +78,11 @@ function getQueryParams(qs) {
 TB_refresh();
 {{pass}}
 
-
 </script>
 </head>
-<body>
 
+<body>
 {{include}}
 </body>
+
 </html>

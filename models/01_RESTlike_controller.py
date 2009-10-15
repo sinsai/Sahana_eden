@@ -335,9 +335,26 @@ def import_csv(file, table=None):
         db.import_from_csv_file(file)
 
 #
+# json_message ----------------------------------------------------------------
+#
+def json_message(success, status_code="200", message=None):
+
+    if success:
+        status="success"
+    else:
+        status="failed"
+
+    if message:
+        return '{"Status":"%s","Error":{"StatusCode":%s,"Message":"%s"}}' % \
+               (status, status_code, message)
+    else:
+        return '{"Status":"%s","Error":{"StatusCode":%s}}' % \
+               (status, status_code)
+
+#
 # import_json -----------------------------------------------------------------
 #
-def import_json(method):
+def import_json(jr, table, method, onvalidation=None, onaccept=None):
 
     """
         Import GET vars into Database & respond in JSON,
@@ -345,45 +362,97 @@ def import_json(method):
 
     """
 
+    s3xml = S3XML(db)
+
     record = Storage()
-    uuid = False
+    uuid = None
+    original = None
+
+    if jr.jresource:
+        module = jr.jmodule
+        resource = jr.jresource
+        onvalidation = jrlayer.get_attr(resource, "onvalidation")
+        onaccept = jrlayer.get_attr(resource, "onaccept")
+    else:
+        module = jr.module
+        resource = jr.resource
+
+    response.headers['Content-Type'] = 'text/x-json'
+
     for var in request.vars:
         # Skip the Representation
         if var == 'format':
-            pass
-        if var == 'uuid' and method == 'update':
-            uuid = True
+            continue
+        elif var == 'uuid':
+            uuid = request.vars[var]
         else:
             record[var] = request.vars[var]
-    if method == 'update' and not uuid:
-        item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"UUID required!"}}'
-    else:
-        item = ''
-        for var in record:
-            # Validate request manually
-            # TODO: this is wrong - requires can be (uses to be) a list,
-            #                       and validators can manipulate values
-            if table[var].requires(record[var])[1]:
-                item += '{"Status":"failed","Error":{"StatusCode":403,"Message":"' + var + ' invalid: ' + table[var].requires(record[var])[1] + '"}}'
-        if item:
-            # Don't import if validation failed
-            pass
-        else:
+
+    # UUID is required for update
+    if method == 'update':
+        if uuid:
             try:
-                if method == 'create':
-                    id = table.insert(**dict (record))
-                    item = '{"Status":"success","Error":{"StatusCode":201,"Message":"Created as ' + URL(r=request, c=module, f=resource, args=id) + '"}}'
-                elif method == 'update':
-                    result = db(table.uuid==request.vars.uuid).update(**dict (record))
-                    if result:
-                        item = '{"Status":"success","Error":{"StatusCode":200,"Message":"Record updated."}}'
-                    else:
-                        item = '{"Status":"failed","Error":{"StatusCode":404,"Message":"Record ' + request.vars.uuid + ' does not exist."}}'
-                else:
-                    item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Unsupported Method!"}}'
+                original = db(table.uuid==uuid).select(table.ALL)[0]
             except:
-                item = '{"Status":"failed","Error":{"StatusCode":400,"Message":"Invalid request!"}}'
-    response.headers['Content-Type'] = 'text/x-json'
+                return json_message(False, 404, "Record not found!")
+        else:
+            # You will never come to that point without having specified a
+            # record ID in the request. Nevertheless, we require a UUID to
+            # identify the record
+            return json_message(False, 400, "UUID required!")
+
+    # Validate record
+    for var in record:
+        if var in table.fields:
+            value = record[var]
+            (value, error) = s3xml.validate(table, original, var, value)
+        else:
+            # Shall we just ignore non-existent fields?
+            # del record[var]
+            error = "Invalid field name."
+        if error:
+            return json_message(False, 403, var + " invalid: " + error)
+        else:
+            record[var] = value
+
+    form = Storage()
+    form.method = method
+    form.vars = record
+
+    # Onvalidation callback
+    if onvalidation:
+        onvalidation(form)
+
+    # Create/update record
+    try:
+        if jr.jresource:
+            record[jr.fkey]=jr.record[jr.pkey]
+        if method == 'create':
+            id = table.insert(**dict(record))
+            if id:
+                item = json_message(True, 201,
+                                    "Created as " + str(jr.other(method=None, record_id=id)))
+                form.vars.id = id
+                if onaccept:
+                    onaccept(form)
+            else:
+                item = json_message(False, 403, "Could not create record!")
+
+        elif method == 'update':
+            result = db(table.uuid==uuid).update(**dict(record))
+            if result:
+                item = json_message(True, 200, "Record updated.")
+                form.vars.id = original.id
+                if onaccept:
+                    onaccept(form)
+            else:
+                item = json_message(False, 403, "Could not update record!")
+
+        else:
+            item = json_message(False, 400, "Unsupported Method!")
+    except:
+        item = json_message(False, 400, "Invalid request!")
+
     return item
 
 #
@@ -432,11 +501,11 @@ def import_xml(jr, onvalidation=None, onaccept=None):
 
     if onaccept:
         _onaccept = lambda form: \
-                    shn_audit_update(form, jr.module, jr.resource, jr.representation) and \
+                    shn_audit_create(form, jr.module, jr.resource, jr.representation) and \
                     onaccept(form)
     else:
         _onaccept = lambda form: \
-                    shn_audit_update(form, jr.module, jr.resource, jr.representation)
+                    shn_audit_create(form, jr.module, jr.resource, jr.representation)
 
     if jr.method=="create":
         jr.record_id=None
@@ -460,7 +529,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
                         shn_audit_update(form, i.prefix, i.name, jr.representation) and \
                         jrlayer.get_attr(i.name, "onaccept")
         s3xml.commit()
-        item = '{"Status":"OK","Error":{"StatusCode":200}}'
+        item = '{"Status":"success","Error":{"StatusCode":200}}'
     else:
         item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"%s"}}' % s3xml.error
 
@@ -1336,10 +1405,11 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         # Check for presence of Custom View
         shn_custom_view(jr, 'popup.html')
-        return dict(module_name=module_name, form=form, module=module, resource=resource, main=main, caller=request.vars.caller)
+        return dict(module_name=module_name, form=form, module=module,
+                    resource=resource, main=main, caller=request.vars.caller)
 
     elif jr.representation == "json":
-        return import_json(method='create')
+        return import_json(jr, table, method="create", onvalidation=onvalidation, onaccept=onaccept)
 
     elif jr.representation == "csv":
         # Read in POST
@@ -1525,7 +1595,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             return dict(item=form)
 
         elif jr.representation == "json":
-            return import_json(method='update')
+            return import_json(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
 
         elif jr.representation in shn_xml_import_formats:
             response.view = 'plain.html'
@@ -2008,7 +2078,8 @@ def shn_rest_controller(module, resource,
         elif jr.method == "create":
             authorised = shn_has_permission(jr.method, jr.table)
             if authorised:
-                return shn_create(jr, pheader, onvalidation=onvalidation, onaccept=onaccept, main=main)
+                return shn_create(jr, pheader, onvalidation=onvalidation,
+                                  onaccept=onaccept, main=main)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
@@ -2022,7 +2093,8 @@ def shn_rest_controller(module, resource,
         elif jr.method == "update":
             authorised = shn_has_permission(jr.method, jr.table, jr.record_id)
             if authorised:
-                return shn_update(jr, pheader, deletable=deletable, onvalidation=onvalidation, onaccept=onaccept)
+                return shn_update(jr, pheader, deletable=deletable,
+                                  onvalidation=onvalidation, onaccept=onaccept)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
@@ -2046,7 +2118,8 @@ def shn_rest_controller(module, resource,
                 # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
 
                 # Audit
-                shn_audit_read(operation='search', module=jr.module, resource=jr.resource, representation=jr.representation)
+                shn_audit_read(operation='search', module=jr.module,
+                               resource=jr.resource, representation=jr.representation)
 
                 if jr.representation == "html":
 

@@ -71,7 +71,7 @@ marker_id = SQLTable(None, 'marker_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
                 represent = lambda id: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden')),
                 label = T('Marker'),
-                comment = DIV(A(s3.crud_strings.gis_marker.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_marker.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features.")))
+                comment = DIV(A(s3.crud_strings.gis_marker.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_marker.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -245,7 +245,7 @@ feature_class_id = SQLTable(None, 'feature_class_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Class'),
-                comment = DIV(A(s3.crud_strings.gis_feature_class.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_feature_class.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup.")))
+                comment = DIV(A(s3.crud_strings.gis_feature_class.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_feature_class.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = 'RESTRICT'
                 ))
 # Populate table with Default options
@@ -364,7 +364,7 @@ feature_id = SQLTable(None, 'feature_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature'),
-                comment = DIV(A(s3.crud_strings.gis_feature.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='feature', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_feature.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature|The centre Point or Polygon used to display this Location on a Map.")))
+                comment = DIV(A(s3.crud_strings.gis_feature.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='feature', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_feature.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature|The centre Point or Polygon used to display this Location on a Map."))),
                 ondelete = 'RESTRICT'
                 ))
 # Joined Resource
@@ -529,7 +529,7 @@ location_id = SQLTable(None, 'location_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
                 label = T('Location'),
-                comment = DIV(A(s3.crud_strings.gis_location.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_location.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))
+                comment = DIV(A(s3.crud_strings.gis_location.label_create_button, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.gis_location.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
 # Joined Resource

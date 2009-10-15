@@ -326,11 +326,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 # person_id: reusable field for other tables to reference ---------------------
 #
+shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button, _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.pr_person.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry.")))
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
                     represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
-                    comment = DIV(A(T('Add Person'), _class='popup', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry."))),
+                    comment = shn_person_comment,
                     ondelete = 'RESTRICT'
                 ))
 
@@ -417,7 +418,7 @@ group_id = SQLTable(None, 'group_id',
                 Field('group_id', db.pr_group,
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_group.id', '%(id)s: %(group_name)s', filterby='system', filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
-                    comment = DIV(A(T('Add Group'), _class='popup', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
+                    comment = DIV(A(s3.crud_strings.pr_group.label_create_button, _class='thickbox', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.pr_group.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
                     ondelete = 'RESTRICT'
                 ))
 

@@ -8,7 +8,7 @@ sync_policy_opts = {
     3:T('Keep All'),
     4:T('Replace All')
     }
-opt_sync_policy = SQLTable(None, 'sync_policy',
+opt_sync_policy = db.Table(None, 'sync_policy',
                         Field('policy', 'integer', notnull=True,
                             requires = IS_IN_SET(sync_policy_opts),
                             default = 1,

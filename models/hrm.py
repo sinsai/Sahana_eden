@@ -37,7 +37,7 @@ hrm_task_status_opts = {
     4:T('Completed')
     }
 
-opt_hrm_task_status = SQLTable(None, 'opt_hrm_task_status',
+opt_hrm_task_status = db.Table(None, 'opt_hrm_task_status',
                     db.Field('opt_hrm_task_status','integer',
                     requires = IS_IN_SET(hrm_task_status_opts),
                     default = 1,
@@ -90,11 +90,11 @@ msg_record_deleted = T('Find Report deleted')
 msg_list_empty = T('No finds currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-hrm_find_id = SQLTable(None, 'hrm_find_id',
+hrm_find_id = db.Table(None, 'hrm_find_id',
                 Field('hrm_find_id', db.hrm_find,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'hrm_find.id', '%(find_date)s: %(location_details)s, %(bodies_est)s bodies')),
                 represent = lambda id: (id and [DIV(A(db(db.hrm_find.id==id).select()[0].id, _class='popup', _href=URL(r=request, c='hrm', f='find', args=['read', str(id).strip()], vars=dict(format='plain')), _target='top', _title=s3.crud_strings.hrm_find.label_create_button))] or ["None"])[0],
-                comment = DIV(A(s3.crud_strings.hrm_find.label_create_button, _class='popup', _href=URL(r=request, c='hrm', f='find', args='create', vars=dict(format='plain')), _target='top', _title=s3.crud_strings.hrm_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
+                comment = DIV(A(s3.crud_strings.hrm_find.label_create_button, _class='thickbox', _href=URL(r=request, c='hrm', f='find', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.hrm_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
                 ondelete = 'RESTRICT'
                 ))
 

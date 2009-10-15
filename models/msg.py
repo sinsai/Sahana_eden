@@ -54,7 +54,7 @@ msg_group_type_opts = {
     2:T('SMS'),
     3:T('Both')
     }
-opt_msg_group_type = SQLTable(None, 'opt_msg_group_type',
+opt_msg_group_type = db.Table(None, 'opt_msg_group_type',
                     db.Field('group_type', 'integer', notnull=True,
                     requires = IS_IN_SET(msg_group_type_opts),
                     default = 1,
@@ -88,7 +88,7 @@ msg_record_deleted = T('Group deleted')
 msg_list_empty = T('No Groups currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
-msg_group_id = SQLTable(None, 'msg_group_id',
+msg_group_id = db.Table(None, 'msg_group_id',
             Field('msg_group_id', db.msg_group,
                 requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s'),
                 represent = lambda id: (id and [db(db.msg_group.id==id).select()[0].name] or ["None"])[0],

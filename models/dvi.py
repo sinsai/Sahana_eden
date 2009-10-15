@@ -34,7 +34,7 @@ dvi_task_status_opts = {
     4:T('Completed')
     }
 
-opt_dvi_task_status = SQLTable(None, 'opt_dvi_task_status',
+opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
                     db.Field('opt_dvi_task_status','integer',
                     requires = IS_IN_SET(dvi_task_status_opts),
                     default = 1,
@@ -328,11 +328,11 @@ db[table].dna.requires = IS_IN_SET(dvi_task_status_opts)
 db[table].dental.requires = IS_IN_SET(dvi_task_status_opts)
 
 #comments
-db[table].personal_effects.comment = DIV(A(T('Add Details'), _class='thickbox', _href=URL(r=request, c='dvi', f='personal_effects', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Personal Effects|Record data about personal belongings")))
-db[table].body_radiology.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='radiology', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Radiology|Record Radiology data.")))
-db[table].fingerprints.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='fingerprints', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Fingerprints Details|Record fingerprint data .")))
-db[table].anthropology.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='anthropology', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Anthroplogy|Record Anthropology details.")))
-db[table].pathology.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='pathology', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Pathology|Record Pathology Details.")))
-db[table].dna.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='dna', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("DNA Exam|Record DNA Exam Details.")))
-db[table].dental.comment = DIV(A(T("Add Details"), _class='thickbox', _href=URL(r=request, c='dvi', f='dental', args='create', vars=dict(format='popup')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Dental|Record Dental Examination Details.")))
-
+ADD_DETAILS = T('Add Details')
+db[table].personal_effects.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='personal_effects', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Personal Effects|Record data about personal belongings")))
+db[table].body_radiology.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='radiology', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Radiology|Record Radiology data.")))
+db[table].fingerprints.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='fingerprints', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Fingerprints Details|Record fingerprint data .")))
+db[table].anthropology.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='anthropology', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Anthroplogy|Record Anthropology details.")))
+db[table].pathology.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='pathology', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Pathology|Record Pathology Details.")))
+db[table].dna.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='dna', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("DNA Exam|Record DNA Exam Details.")))
+db[table].dental.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='dental', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Dental|Record Dental Examination Details.")))

@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.0-3, 2009-10-06
+    @version: 1.0-4, 2009-10-15
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix

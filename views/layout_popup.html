@@ -49,13 +49,16 @@ function TB_refresh(){
             $.each(data, function() {
                 self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
                 selectedvalue = this['id'];
+                selectedname = this['name'];
             });
             // Set the newly-created value
             self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
+            // Also populate dummy
+            self.parent.$('#dummy').val(selectedname);
+            // Clean-up
             self.parent.tb_remove();
         });
     } else {
-        // FIXME: If called next to an Input, then set to the newly-created value
         // Clean-up
         self.parent.tb_remove();
     }

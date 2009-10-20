@@ -433,6 +433,9 @@ class S3XML(object):
                 elif tag_name==self.TAG["data"]:
                     tag_name = child.get(self.ATTRIBUTE["field"])
 
+            if tag_name.startswith("{"):
+                ns, tag_name = tag_name.rsplit("}",1)
+
             if not tag_name in obj:
                 obj[tag_name] = []
 

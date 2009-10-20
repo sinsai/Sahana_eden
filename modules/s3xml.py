@@ -35,7 +35,7 @@
 __name__ = "S3XML"
 
 import uuid
-import simplejson as json
+import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 

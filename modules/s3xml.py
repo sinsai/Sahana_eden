@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    SahanaPy XML Interface
+    SahanaPy XML+JSON Interface
 
-    @version: 1.0-3, 2009-10-06
+    @version: 1.0-4, 2009-10-15
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -35,6 +35,7 @@
 __name__ = "S3XML"
 
 import uuid
+import simplejson as json
 
 from gluon.storage import Storage
 
@@ -226,7 +227,10 @@ class S3XML(object):
         root="sahanapy",
         resource="resource",
         reference="reference",
-        data="data"
+        data="data",
+        list="list",
+        item="item",
+        object="object"
         )
 
     ATTRIBUTE = dict(
@@ -239,6 +243,14 @@ class S3XML(object):
         domain="domain",
         url="url"
         )
+
+    # JSON Prefixes
+    PREFIX = dict(
+        resource="$r",
+        reference="$k",
+        attribute="$_",
+        text="$"
+    )
 
     PERMISSION = dict(
         read="read",
@@ -334,6 +346,125 @@ class S3XML(object):
                                   xml_declaration=True,
                                   encoding="utf-8",
                                   pretty_print=True)
+
+    # -------------------------------------------------------------------------
+    def __json2element(self, key, value, native=False):
+
+        if isinstance(value, dict):
+            return self.__obj2element(key, value, native=native)
+        elif isinstance(value, (list, tuple)):
+            _list = etree.Element(self.TAG["list"])
+            for obj in value:
+                item = self.__json2element(self.TAG["item"], obj, native=native)
+                _list.append(item)
+            return _list
+        else:
+            element = etree.Element(key)
+            element.text = value
+            return element
+
+    # -------------------------------------------------------------------------
+    def __obj2element(self, key, obj, native=False):
+
+        if key is None:
+            tag = self.tag["object"]
+        else:
+            tag = key
+
+        prefix = name = field = None
+
+        if native:
+            if key.startswith(self.PREFIX["resource"]):
+                tag = self.TAG["resource"]
+                resource = key[len(self.PREFIX["resource"])+1:]
+                prefix, name = resource.split("_", 1)
+            elif key.startswith(self.PREFIX["reference"]):
+                tag = self.TAG["reference"]
+                field = key[len(self.PREFIX["reference"])+1:]
+
+        element = etree.Element(tag)
+
+        if native:
+            if prefix:
+                element.set(self.ATTRIBUTE["prefix"], prefix)
+            if name:
+                element.set(self.ATTRIBUTE["name"], name)
+            if field:
+                element.set(self.ATTRIBUTE["field"], field)
+
+        for k in obj.keys():
+            m = obj[k]
+
+            if isinstance(m, dict):
+                child = self.__obj2element(k, m, native=native)
+                element.append(child)
+            elif isinstance(m, (list, tuple)):
+                for _obj in m:
+                    child = self.__json2element(k, _obj, native=native)
+                    element.append(child)
+            else:
+                if k == self.PREFIX["text"]:
+                    element.text = m
+                elif k.startswith(self.PREFIX["attribute"]):
+                    attribute = k[len(self.PREFIX["attribute"]):]
+                    element.set(attribute, m)
+                else:
+                    child = self.__json2element(k, m, native=native)
+                    element.append(child)
+
+        return element
+
+    # -------------------------------------------------------------------------
+    def __element2json(self, element, native=False):
+
+        obj = {}
+
+        for child in element:
+            tag_name = child.tag
+            if native:
+                if tag_name==self.TAG["resource"]:
+                    prefix = child.get(self.ATTRIBUTE["prefix"])
+                    name = child.get(self.ATTRIBUTE["name"])
+                    tag_name = "%s_%s_%s" % \
+                               (self.PREFIX["resource"], prefix, name)
+                elif tag_name==self.TAG["reference"]:
+                    tag_name = "%s_%s" % \
+                               (self.PREFIX["reference"], child.get(self.ATTRIBUTE["field"]))
+                elif tag_name==self.TAG["data"]:
+                    tag_name = child.get(self.ATTRIBUTE["field"])
+
+            if not tag_name in obj:
+                obj[tag_name] = []
+
+            child_obj = self.__element2json(child, native=native)
+            if child_obj:
+                obj[tag_name].append(child_obj)
+
+        attributes = element.attrib
+        for a in attributes:
+            if native:
+                if a in (self.ATTRIBUTE["prefix"], self.ATTRIBUTE["name"]) and \
+                   element.tag==self.TAG["resource"]:
+                    continue
+                if a==self.ATTRIBUTE["field"] and \
+                   element.tag in (self.TAG["data"], self.TAG["reference"]):
+                    continue
+            obj[self.PREFIX["attribute"] + a] = attributes[a]
+
+        if element.text:
+            obj[self.PREFIX["text"]] = element.text
+
+        for key in obj.keys():
+            if isinstance(obj[key], (list, tuple, dict)):
+                if len(obj[key])==0:
+                    del obj[key]
+                elif len(obj[key])==1:
+                    obj[key] = obj[key][0]
+
+        if len(obj)==1 and obj.keys()[0]==self.PREFIX["text"]:
+            obj = obj[obj.keys()[0]]
+
+        return obj
 
     # -------------------------------------------------------------------------
     def element(self, prefix, name, record, skip=[]):
@@ -756,6 +887,9 @@ class S3XML(object):
         if not tree: # nothing to import actually
             return True
 
+        if joins is None:
+            joins = []
+
         self.error = None
         self.imports = []
 
@@ -834,8 +968,8 @@ class S3XML(object):
             for join in joins:
                 jprefix, jname = join["prefix"], join["name"]
                 expr = './resource[@%s="%s" and @%s="%s"]' % (
-                       self.ATTRIBUTE["prefix"], jprefix,
-                       self.ATTRIBUTE["name"], jname)
+                    self.ATTRIBUTE["prefix"], jprefix,
+                    self.ATTRIBUTE["name"], jname)
                 jelements = element.xpath(expr)
                 for jelement in jelements:
                     jrecord = self.record(jprefix, jname, jelement)
@@ -843,7 +977,7 @@ class S3XML(object):
                         self.error = S3XML_VALIDATION_ERROR
                         continue
                     xml_import = XMLImport(self.db, jprefix, jname,
-                                           None, jrecord, permit=permit)
+                                        None, jrecord, permit=permit)
                     if xml_import.method:
                         xml_import.record[join["fkey"]]=db_record[join["pkey"]]
                         self.imports.append(xml_import)
@@ -851,3 +985,52 @@ class S3XML(object):
                         self.error = S3XML_DATA_IMPORT_ERROR
                         continue
         return True
+
+    # -------------------------------------------------------------------------
+    def tree2json(self, tree):
+        """
+            Serializes an element tree as json object
+
+            @rtype: str
+            @return:
+                The json representation of the element tree.
+        """
+
+        root = tree.getroot()
+
+        if root.tag==self.TAG["root"]:
+            native = True
+        else:
+            native = False
+
+        root_dict = self.__element2json(root, native=native)
+
+        return json.dumps(root_dict)
+
+    # -------------------------------------------------------------------------
+    def json2tree(self, source, format=None):
+        """
+            Decodes a JSON source string into an element tree
+
+            @param format:      the tag name of the root element or None for native mode
+
+            @rtype: ElementTree
+            @return:
+                The corresponding ElementTree or None at format error
+        """
+
+        root_dict = json.loads(source)
+
+        native=False
+
+        if not format:
+            format=self.TAG["root"]
+            native=True
+
+        if root_dict and isinstance(root_dict, dict):
+            root = self.__obj2element(format, root_dict, native=native)
+            if root is not None:
+                return etree.ElementTree(root)
+
+        return None
+

@@ -423,12 +423,6 @@ group_id = SQLTable(None, 'group_id',
                 ))
 
 # *****************************************************************************
-# Error messages
-#
-PR_UNAUTHORIZED = T('Not Authorized!')
-PR_BADFORMAT = T('Unsupported Format!')
-
-# *****************************************************************************
 # Functions:
 
 #
@@ -626,7 +620,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
     """
 
     if not shn_has_permission('read', db.pr_person):
-        session.error = PR_UNAUTHORISED
+        session.error = UNAUTHORISED
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
 
     if representation=="html":

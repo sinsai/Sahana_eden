@@ -14,6 +14,7 @@ This file was developed by Fran Boon as a web2py extension.
 #from gluon.storage import Storage
 
 import time
+import uuid
 from datetime import datetime, timedelta
 from gluon.validators import Validator, IS_MATCH
 

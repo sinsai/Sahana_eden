@@ -1,4 +1,4 @@
-.dataTables_length {
+/.dataTables_length {
 	width: 40%;
 	/* float: left; */
 }
@@ -89,6 +89,14 @@ table.display td.center {
 
 .sorting {
 	background: url('../../img/jquery.dataTables/sort_both.jpg') no-repeat center right;
+}
+
+.sorting_asc_disabled {
+	background: url('../../img/jquery.dataTables/sort_asc_disabled.jpg') no-repeat center right;
+}
+
+.sorting_desc_disabled {
+	background: url('../../img/jquery.dataTables/sort_desc_disabled.jpg') no-repeat center right;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -368,4 +376,16 @@ tr.even.gradeU td.sorting_2 {
 
 tr.even.gradeU td.sorting_3 {
 	background-color: #e2e2e2;
+}
+
+
+/*
+ * Row highlighting example
+ */
+.ex_highlight #example tbody tr.even:hover, #example tbody tr.even td.highlighted {
+	background-color: #ECFFB3;
+}
+
+.ex_highlight #example tbody tr.odd:hover, #example tbody tr.odd td.highlighted {
+	background-color: #E6FF99;
 }

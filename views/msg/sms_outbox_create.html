@@ -9,8 +9,8 @@
 $(function() {
     // Warn when SMS goes over 140 characters
     // tbc
-    // Hide the real Input Row
-    $("#msg_sms_outbox_msg_group_id__row").hide();
+    // Hide the real Input Field
+    $("#msg_sms_outbox_msg_group_id").hide();
     // Autocomplete-enable the Dummy Input
     $("#dummy").autocomplete('{{=URL(r=request, c='msg', f='group_search', vars={'type':'sms'})}}', {
         matchContains: true,
@@ -44,28 +44,18 @@ $(function() {
  {{=form.custom.begin}}
  <table>
  <tbody>
- <tr id='msg_sms_outbox_group_ac__row'>
+ <tr id='msg_sms_outbox_group_id__row'>
  <td>
  <label>{{=form.custom.label.msg_group_id}}</label>
  </td>
  <td>
  {{=INPUT(_id="dummy", _class="ac_input")}}
+  {{=form.custom.widget.msg_group_id}}
  </td>
  <td>
  {{=form.custom.comment.msg_group_id}}
  </td>
 </tr>
- <tr id='msg_sms_outbox_msg_group_id__row'>
- <td>
- <label>{{=form.custom.label.msg_group_id}}</label>
- </td>
- <td>
- {{=form.custom.widget.msg_group_id}}
- </td>
- <td>
- {{=form.custom.comment.msg_group_id}}
- </td>
- </tr>
  <tr id='msg_sms_contents_body__row'>
  <td>
  <label>{{=form.custom.label.contents}}</label>

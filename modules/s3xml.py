@@ -35,7 +35,7 @@
 __name__ = "S3XML"
 
 import uuid
-import simplejson as json
+import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 
@@ -177,10 +177,6 @@ class XMLImport(object):
                     self.db(self.table.id==self.id).update(**dict(self.record))
                 elif self.method == "create":
                     self.id = self.table.insert(**dict(self.record))
-                    # Re-init the uuid default value, otherwise it gets re-used
-                    # web2py does not execute lambdas as field defaults!
-                    if self._UUID in self.table:
-                        self.table[self._UUID].default=uuid.uuid4()
 
                 self.committed=True
 

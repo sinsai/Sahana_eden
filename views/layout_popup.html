@@ -9,7 +9,7 @@
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
 
-<script type="text/javascript">
+<script type="text/javascript">//<![CDATA[
 $(function() {
     if (self.opener) {
         // Legacy popups
@@ -34,12 +34,12 @@ $(function() {
     }
 });
 
-function TB_refresh(){
+function TB_refresh() {
     // The Get parameters
     var $_GET = getQueryParams(document.location.search);
     // The JSON of the resource we just created
     var listsource = document.location.pathname.replace("/create",".json");
-    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
+    if (self.parent.$('#' + $_GET["caller"] + ' >option').length ) {
         // We have been called next to a drop-down
         // Get the previously selected value
         var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
@@ -47,15 +47,19 @@ function TB_refresh(){
         self.parent.$('#' + $_GET["caller"] + ' >option').remove();
         $.getJSON(listsource, function (data) {
             $.each(data, function() {
+                // FIXME: Don't assume that .represent is .name (doesn't even always exist!)
                 self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
                 selectedvalue = this['id'];
+                selectedname = this['name'];
             });
             // Set the newly-created value
             self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
+            // Also populate dummy, if present
+            self.parent.$('#dummy').val(selectedname);
+            // Clean-up
             self.parent.tb_remove();
         });
     } else {
-        // FIXME: If called next to an Input, then set to the newly-created value
         // Clean-up
         self.parent.tb_remove();
     }
@@ -74,11 +78,11 @@ function getQueryParams(qs) {
 
 // If submission succesful
 {{if response.flash or response.confirmation:}}
-// Refresh the DIV and close the pop up
+// Refresh the DIV and close the popup
 TB_refresh();
 {{pass}}
 
-</script>
+//]]></script>
 </head>
 
 <body>

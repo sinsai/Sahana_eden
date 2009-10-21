@@ -423,12 +423,6 @@ group_id = SQLTable(None, 'group_id',
                 ))
 
 # *****************************************************************************
-# Error messages
-#
-PR_UNAUTHORIZED = T('Not Authorized!')
-PR_BADFORMAT = T('Unsupported Format!')
-
-# *****************************************************************************
 # Functions:
 
 #
@@ -484,74 +478,14 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
                 db(db.pr_pentity.id==pr_pe_id).update(label=label)
             else:
                 # create action
-                db.pr_pentity.uuid.default=uuid.uuid4()
                 pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_type,
                                                 label=label)
-                db.pr_pentity.uuid.default=uuid.uuid4()
                 if pr_pe_id:
                     db(table.id==form.vars.id).update(pr_pe_id=pr_pe_id)
         except:
             pass
 
     return True
-
-#
-# shn_pentity_onvalidation ----------------------------------------------------
-#
-def shn_pentity_onvalidation(form, table=None, entity_class=1):
-    """
-    Callback function for RESTlike CRUD controller, creates or updates a pentity
-    record when the corresponding subclass record gets created/updated.
-
-    Passed to shn_rest_controller as:
-
-    onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1)
-
-    form            : the current form containing pr_pe_id and pr_pe_label (from pr_pe_fieldset)
-    table           : the table containing the subclass entity
-    entity_class    : the class of pentity to be created (from vita.trackable_types)
-
-    @depreciated
-    """
-    try:
-        # XML import?
-        method = form.method
-    except:
-        method = None
-
-    if method and method=="update":
-        record_id = form.vars.id
-        record=db[table][record_id]
-        if record and record.pr_pe_id:
-            db(db.pr_pentity.id==record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
-    elif method and method=="create":
-        label = form.vars.get("pr_pe_label")
-        pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_class, label=label)
-        db.pr_pentity.uuid.default=uuid.uuid4() # need to re-init the default!
-        if pr_pe_id:
-            form.vars.pr_pe_id = pr_pe_id
-    else:
-        # No, HTML request!
-        if form.vars:
-            if (len(request.args) == 0 or request.args[0] == 'create') and \
-                entity_class in vita.trackable_types:
-                # this is a create action either directly or from list view
-                label = form.vars.get('pr_pe_label')
-                pr_pe_id = db['pr_pentity'].insert(opt_pr_entity_type=entity_class, label=label)
-                if pr_pe_id:
-                    form.vars.pr_pe_id = pr_pe_id
-            elif len(request.args) > 1 and request.args[0] == 'update' and \
-                form.vars.delete_this_record and table:
-                # this is a delete action from update form
-                record_id = request.args[1]
-                shn_pentity_ondelete(db[table][record_id])
-            elif len(request.args) > 1 and request.args[0] == 'update' and table:
-                # this is an update action
-                record_id = request.args[1]
-                record=db[table][record_id]
-                if record and record.pr_pe_id:
-                    db(db.pr_pentity.id==record.pr_pe_id).update(label=form.vars.get('pr_pe_label'))
-        return
 
 #
 # shn_pr_get_person_id --------------------------------------------------------
@@ -626,7 +560,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
     """
 
     if not shn_has_permission('read', db.pr_person):
-        session.error = PR_UNAUTHORISED
+        session.error = UNAUTHORISED
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
 
     if representation=="html":

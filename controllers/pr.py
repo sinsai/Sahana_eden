@@ -37,17 +37,17 @@ def index():
     gender = []
     for g_opt in pr_person_gender_opts:
         count = db((db.pr_person.deleted==False) & (db.pr_person.opt_pr_gender==g_opt)).count()
-        gender.append([str(pr_person_gender_opts[g_opt]),count])
+        gender.append([str(pr_person_gender_opts[g_opt]), count])
     age = []
     for a_opt in pr_person_age_group_opts:
         count = db((db.pr_person.deleted==False) & (db.pr_person.opt_pr_age_group==a_opt)).count()
-        age.append([str(pr_person_age_group_opts[a_opt]),count])
+        age.append([str(pr_person_age_group_opts[a_opt]), count])
     total = db(db.pr_person.deleted==False).count()
     return dict(module_name=module_name, gender=gender, age=age, total=total)
 
 # Main controller functions
 def person():
-    crud.settings.delete_onaccept=shn_pentity_ondelete
+    crud.settings.delete_onaccept = shn_pentity_ondelete
     return shn_rest_controller(module, 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
@@ -59,7 +59,7 @@ def person():
 
 def group():
     response.s3.filter = (db.pr_group.system==False) # do not show system groups
-    crud.settings.delete_onaccept=shn_pentity_ondelete
+    crud.settings.delete_onaccept = shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'group', main='group_name', extra='group_description',
         pheader=shn_pr_pheader,
@@ -103,5 +103,5 @@ def download():
 
 def tooltip():
     if 'formfield' in request.vars:
-        response.view='pr/ajaxtips/%s.html' % request.vars.formfield
+        response.view = 'pr/ajaxtips/%s.html' % request.vars.formfield
     return dict(module_name=module_name)

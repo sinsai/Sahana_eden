@@ -319,13 +319,13 @@ def export_xml(jr):
     output_str = s3xml.tostring(output)
 
     # For testing
-    json_output = s3xml.tree2json(output)
-    print json_output
-    if jr.representation == "xml":
-        json_tree = s3xml.json2tree(json_output)
-    else:
-        json_tree = s3xml.json2tree(json_output, jr.representation)
-    print s3xml.tostring(json_tree)
+    #json_output = s3xml.tree2json(output)
+    #print json_output
+    #if jr.representation == "xml":
+    #    json_tree = s3xml.json2tree(json_output)
+    #else:
+    #    json_tree = s3xml.json2tree(json_output, jr.representation)
+    #print s3xml.tostring(json_tree)
 
     # Done
     return output_str

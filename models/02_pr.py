@@ -649,12 +649,12 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
             if next:
                 _next = next
             else:
-                _next = URL(r=request, f='resource', args=['read'])
+                _next = URL(r=request, f=resource, args=['read'])
 
             if same:
                 _same = same
             else:
-                _same = URL(r=request, f='resource', args=['read', '[id]'])
+                _same = URL(r=request, f=resource, args=['read', '[id]'])
 
             person = vita.person(record_id)
 

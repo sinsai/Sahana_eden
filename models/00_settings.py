@@ -96,13 +96,23 @@ authorstamp = db.Table(None, 'authorstamp',
 
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
+from gluon.sql import SQLCustomType
+s3uuid = SQLCustomType(
+                type ='string',
+                native ='string',
+                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else x)),
+                decoder = (lambda x: x)
+            )
+
 uuidstamp = db.Table(None, 'uuidstamp',
-            Field('uuid', length=64,
+                     Field('uuid',
+                          type=s3uuid,
+                          length=64,
                           notnull=True,
                           unique=True,
                           readable=False,
                           writable=False,
-                          default=uuid.uuid4()))
+                          default=""))
 
 # Reusable Deletion status field (needed as part of database synchronization)
 # Q: Will this be moved to a separate table? (Simpler for module writers but a performance penalty)

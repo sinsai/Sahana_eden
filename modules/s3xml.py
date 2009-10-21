@@ -177,10 +177,6 @@ class XMLImport(object):
                     self.db(self.table.id==self.id).update(**dict(self.record))
                 elif self.method == "create":
                     self.id = self.table.insert(**dict(self.record))
-                    # Re-init the uuid default value, otherwise it gets re-used
-                    # web2py does not execute lambdas as field defaults!
-                    if self._UUID in self.table:
-                        self.table[self._UUID].default=uuid.uuid4()
 
                 self.committed=True
 
@@ -432,6 +428,9 @@ class S3XML(object):
                                (self.PREFIX["reference"], child.get(self.ATTRIBUTE["field"]))
                 elif tag_name==self.TAG["data"]:
                     tag_name = child.get(self.ATTRIBUTE["field"])
+
+            if tag_name.startswith("{"):
+                ns, tag_name = tag_name.rsplit("}",1)
 
             if not tag_name in obj:
                 obj[tag_name] = []

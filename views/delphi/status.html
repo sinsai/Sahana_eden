@@ -1,0 +1,35 @@
+{{extend 'layout.html'}}
+
+<script type="text/javascript" language="javascript">//<![CDATA[
+$(document).ready(function(){
+});
+//]]></script>
+
+<div id="delphi_problem_header">
+	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
+	{{ pass }}
+	<a href="{{= URL(r=request, f='discuss', args=problem.id) }}">{{= T("Discussion Forum") }}</a>
+	<strong>{{= T("Scale of Results") }}</strong>
+	<a href="{{= URL(r=request, f='vote', args=problem.id) }}">{{= T("Vote") }}</a>
+	<a href="{{= URL(r=request, f='summary', args=problem.id) }}">{{= T("Options") }}</a>
+<h1>{{= problem.title }}</h1>
+</div>
+<p><b>{{= T("Description")}}:</b> {{= problem.description }}</p>
+<p><b>{{= T("Criteria")}}:</b> {{= problem.criteria }}</p>
+<hr/>
+{{ if can_view: }}
+<p>Total number of users: <b>{{= num_users }}</b><br/>
+Users who have voted so far: <b>{{= num_voted }}</b></p>
+<table class="delphi_wide"><thead><tr><td>{{=T("Solution Item")}}</td><td>Scale</td>
+	<td>Worst Case</td><td>Best Case</td></tr></thead>
+{{ for color, i_ids in beans: }}
+	{{ if i_ids: }}{{ for i in i_ids: }}<tr style="background: #{{= color }}">
+		<td>{{= items[i] }}</td>
+		<td>{{= scale[i] }}</td>
+		<td>{{= worst[i] }}</td>
+		<td>{{= best[i] }}</td>
+	</tr>{{ pass }}{{ else: }}
+	<tr style="background: #{{= color }}"><td colspan="4"> &nbsp; </td></tr>{{ pass }}
+{{ pass }}
+</table>
+{{ pass }}

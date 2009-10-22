@@ -1,0 +1,20 @@
+{{extend 'layout.html'}}
+
+<div id="home">
+{{=H2(T(module_name))}}
+{{ if latest_problems: }}
+	{{=H3(T("Active Problems"))}}
+	<ul>
+	{{ for pr in latest_problems: }}
+	{{ k = pr.delphi_solution_item.select() and len(pr.delphi_solution_item.select()[0].delphi_vote.select(db.delphi_vote.user, distinct=True)) or 0 }}
+		<li><a href="{{= URL(r=request, f='summary', args=pr.id) }}"><b>{{=T(pr.title)}}</b> ({{=k}} {{=T("Vote") if k == 1 else T("Votes")}})</a>
+		{{ if pr.description: }}
+			<p>{{= pr.description }}</p>
+		{{ pass }}
+		</li>
+	{{ pass }}
+	<ul>
+{{ else: }}
+	{{=H3(T("We have no active problem. That's great!"))}}
+{{ pass }}
+</div>

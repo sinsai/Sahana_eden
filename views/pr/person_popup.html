@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+{{if session.s3.debug:}}
+  {{include 'sahana_styles_debug.html'}}
+  {{include 'sahana_scripts_debug.html'}}
+{{else:}}
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{include 'sahana_scripts_min.html'}}
+{{pass}}
+
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    if (self.opener) {
+        // Legacy popups
+        // bind form and provide a simple callback function 
+        $('form').ajaxForm(function() {
+            // FIXME: Refresh just the SELECT not the whole page
+            // otherwise existing inputs lost & form won't submit!
+            self.opener.location.reload(true);
+            // find which ID we need to make active
+            {{field = '%s_%s_%s' % (module, resource, main)}}
+            value=$('input#{{=field}}').val();
+            $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}" + "&value=" + value,
+                function(data) {
+                    // set the caller's lookup list to the new ID
+//                    self.opener.$('select#{{=caller}}').val(data[0].id);
+                    // close the popup
+                    self.close();
+                });
+        });
+    } else {
+        // Thickbox popups (see below)
+    }
+});
+
+function TB_refresh() {
+    // The Get parameters
+    var $_GET = getQueryParams(document.location.search);
+    // The JSON of the resource we just created
+    var listsource = document.location.pathname.replace("/create",".json");
+    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
+        // We have been called next to a drop-down
+        // Get the previously selected value
+        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
+        // Clean up the caller
+        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+        $.getJSON(listsource, function (data) {
+            var name;
+            $.each(data, function() {
+                if (null == this['middle_name']) {
+                    name = this['first_name'] + ' ' + this['last_name'];
+                } else {
+                    name = this['first_name'] + ' ' + this['middle_name'] + ' ' + this['last_name'];    
+                }
+                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(name));
+                selectedvalue = this['id'];
+            });
+            // Set the newly-created value
+            self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
+            // Also populate dummy, if present
+            self.parent.$('#dummy').val(name);
+            // Clean-up
+            self.parent.tb_remove();
+        });
+    } else {
+        // Clean-up
+        self.parent.tb_remove();
+    }
+}
+// Function to get the URL parameters
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+    var params = {};
+    var tokens;
+    while (tokens = /[?&]?([^=]+)=([^&]*)/g.exec(qs)) {
+        params[decodeURIComponent(tokens[1])]
+            = decodeURIComponent(tokens[2]);
+    }
+    return params;
+}
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+// Refresh the DIV and close the pop up
+TB_refresh();
+{{pass}}
+
+//]]></script>
+</head>
+
+<body>
+{{include '_popup.html'}}
+</body>
+
+</html>

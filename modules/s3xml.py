@@ -34,7 +34,7 @@
 
 __name__ = "S3XML"
 
-import uuid
+import sys, uuid
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -62,19 +62,19 @@ try:
 except ImportError:
     try:
         import xml.etree.cElementTree as etree
-        print "WARNING: %s: lxml not installed - using cElementTree" % __name__
+        print >> sys.stderr, "WARNING: %s: lxml not installed - using cElementTree" % __name__
     except ImportError:
         try:
             import xml.etree.ElementTree as etree
-            print "WARNING: %s: lxml not installed - using ElementTree" % __name__
+            print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
         except ImportError:
             try:
                 import cElementTree as etree
-                print "WARNING: %s: lxml not installed - using cElementTree" % __name__
+                print >> sys.stderr, "WARNING: %s: lxml not installed - using cElementTree" % __name__
             except ImportError:
                 # normal ElementTree install
                 import elementtree.ElementTree as etree
-                print "WARNING: %s: lxml not installed - using ElementTree" % __name__
+                print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
 
 # *****************************************************************************
 # XMLImport

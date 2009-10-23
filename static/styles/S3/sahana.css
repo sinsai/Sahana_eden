@@ -48,7 +48,7 @@ li { margin-left: 1em; }
 
 /* Basic Page Formatting Styles
    ------------------------------------------------------------------------------- */
-body { font-size: 0.8em; color: #000; background: #336699; }
+body { font-size: 0.8em; color: #000; background: #336699; direction: ltr; }
 /* Miscellaneous conveniences: */
 form label { cursor: pointer; }                                 
 fieldset { border: none; }
@@ -63,8 +63,10 @@ select:focus { background-color:#ffffcc; }
 textarea:focus { background-color:#ffffcc; }
 
 /* Links should ALWAYS be unvisited */
-a { color: #039; text-decoration: underline; }
-a:hover { color: #c00; text-decoration: none; background-color: #ffffcc; }
+a { color: #039; text-decoration: underline; outline:0; }
+a:hover { color: #c00; text-decoration: none; background-color: #ffffcc; outline:0; }
+a:active,
+a:focus { outline:0; }
 a img { border:none; }
 
 table { border-collapse: collapse }

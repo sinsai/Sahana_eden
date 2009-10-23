@@ -59,10 +59,15 @@ def theme_apply(form):
             logo = theme.logo
         else:
             logo = default_theme.logo
+        if theme.text_direction:
+            text_direction = theme.text_direction
+        else:
+            text_direction = 'ltr'
         # Write out CSS
         ofile = open(out_file, 'w')
         for line in lines:
             line = line.replace("YOURLOGOHERE", logo)
+            line = line.replace("TEXT_DIRECTION", text_direction)
             # Iterate through Colours
             for key in theme.keys():
                 if key[:4] == 'col_':

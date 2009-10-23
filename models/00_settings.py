@@ -208,6 +208,7 @@ db.define_table(table,
                 Field('name'),
                 Field('logo'),
                 Field('footer'),
+                Field('text_direction'),
                 Field('col_background'),
                 Field('col_txt'),
                 Field('col_txt_background'),
@@ -227,6 +228,9 @@ db[table].logo.label = T('Logo')
 db[table].logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
 db[table].footer.label = T('Footer')
 db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
+db[table].text_direction.label = T('Text Direction')
+db[table].text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')})
+db[table].text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
 db[table].col_background.label = T('Background Colour')
 db[table].col_background.requires = IS_HTML_COLOUR()
 db[table].col_txt.label = T('Text Colour for Text blocks')
@@ -256,6 +260,7 @@ if not len(db().select(db[table].ALL)):
         name = T('Sahana Blue'),
         logo = 'img/sahanapy_logo.png',
         footer = 'footer.html',
+        text_direction = 'ltr',
         col_background = '336699',
         col_menu = '0066cc',
         col_highlight = '0077aa',
@@ -272,6 +277,7 @@ if not len(db().select(db[table].ALL)):
         name = T('Sahana Green'),
         logo = 'img/sahanapy_logo_green.png',
         footer = 'footer.html',
+        text_direction = 'ltr',
         col_background = '337733',
         col_menu = 'cc7722',
         col_highlight = '338833',

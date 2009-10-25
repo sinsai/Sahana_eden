@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 S3_PUBLIC_URL = 'http://127.0.0.1:8000'
+BREADCRUMB = '>> '
 
 # Default strings are in English
 T.current_languages = ['en', 'en-en']

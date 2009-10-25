@@ -256,7 +256,11 @@ def export_xls(table, query):
         cell1 = 0
         for field in fields:
             tab, col = str(field).split('.')
-            rowx.write(cell1, item[col])
+            try:
+                represent = str(field.represent(item[col]))
+            except:
+                represent = item[col]
+            rowx.write(cell1, represent)
             cell1 += 1
     book.save(output)
     output.seek(0)
@@ -2165,18 +2169,24 @@ def shn_rest_controller(module, resource,
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
                         filter = request.vars.filter
-                        if filter == '=':
-                            query = (jr.table[field]==value)
-                            item = db(query).select().json()
-                        elif filter == '~':
+                        if filter == '~':
                             query = (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:
                                 item = db(query).select(limitby=(0, limit)).json()
                             else:
                                 item = db(query).select().json()
+                        elif filter == '=':
+                            query = (jr.table[field] == value)
+                            item = db(query).select().json()
+                        elif filter == '<':
+                            query = (jr.table[field] < value)
+                            item = db(query).select().json()
+                        elif filter == '>':
+                            query = (jr.table[field] > value)
+                            item = db(query).select().json()
                         else:
-                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: =, ~"}}'
+                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ~, =, <, >"}}'
                     else:
                         item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
                     response.view = 'plain.html'

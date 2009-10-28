@@ -10,30 +10,6 @@
 {{pass}}
 
 <script type="text/javascript">//<![CDATA[
-$(function() {
-    if (self.opener) {
-        // Legacy popups
-        // bind form and provide a simple callback function 
-        $('form').ajaxForm(function() {
-            // FIXME: Refresh just the SELECT not the whole page
-            // otherwise existing inputs lost & form won't submit!
-            self.opener.location.reload(true);
-            // find which ID we need to make active
-            {{field = '%s_%s_%s' % (module, resource, main)}}
-            value=$('input#{{=field}}').val();
-            $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}" + "&value=" + value,
-                function(data) {
-                    // set the caller's lookup list to the new ID
-//                    self.opener.$('select#{{=caller}}').val(data[0].id);
-                    // close the popup
-                    self.close();
-                });
-        });
-    } else {
-        // Thickbox popups (see below)
-    }
-});
-
 function TB_refresh() {
     // The Get parameters
     var $_GET = getQueryParams(document.location.search);

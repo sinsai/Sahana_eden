@@ -239,7 +239,7 @@ def export_xls(table, query):
 
     items = db(query).select(table.ALL)
 
-    book = xlwt.Workbook()
+    book = xlwt.Workbook(encoding='utf-8')
     sheet1 = book.add_sheet(str(table))
     # Header row
     row0 = sheet1.row(0)
@@ -255,12 +255,23 @@ def export_xls(table, query):
         row += 1
         cell1 = 0
         for field in fields:
+            style = xlwt.XFStyle()
             tab, col = str(field).split('.')
+            # Check for Date formats
+            if db[tab][col].type == 'date':
+                style.num_format_str = 'D-MMM-YY'
+            elif db[tab][col].type == 'datetime':
+                style.num_format_str = 'M/D/YY h:mm'
+            elif db[tab][col].type == 'time':
+                style.num_format_str = 'h:mm:ss'
+            
+            # Check for a custom.represent (e.g. for ref fields)
             try:
                 represent = str(field.represent(item[col]))
             except:
                 represent = item[col]
-            rowx.write(cell1, represent)
+
+            rowx.write(cell1, represent, style)
             cell1 += 1
     book.save(output)
     output.seek(0)

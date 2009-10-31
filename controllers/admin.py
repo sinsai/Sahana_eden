@@ -120,11 +120,11 @@ def theme_check(form):
     _logo = os.path.join(request.folder, 'static', logo)
     _footer = os.path.join(request.folder, 'views', footer)
     if not os.access(_logo, os.R_OK):
-        session.error = T('Logo file %s missing!' % logo)
-        redirect(URL(r=request, args=request.args))
+        form.errors['logo'] = T('Logo file %s missing!' % logo)
+        return
     if not os.access(_footer, os.R_OK):
-        session.error = T('Footer file %s missing!' % footer)
-        redirect(URL(r=request, args=request.args))
+        form.errors['footer'] = T('Footer file %s missing!' % footer)
+        return
     # Validation passed
     return
     

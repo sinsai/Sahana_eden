@@ -352,9 +352,11 @@ class SQLTABLE2(TABLE):
                     r = ur[:truncate - 3].encode('utf8') + '...'
                 if linkto and field.type == 'id':
                     try:
-                        href = linkto(r, 'table', tablename)
+                        #href = linkto(r, 'table', tablename)
+                        href = linkto(r)
                     except TypeError:
-                        href = '%s/%s/%s' % (linkto, tablename, r)
+                        #href = '%s/%s/%s' % (linkto, tablename, r)
+                        href = '%s/%s' % (linkto, r)
                     row.append(TD(A(r, _href=href)))
                 elif linkto and field.type[:9] == 'reference':
                     ref = field.type[10:]
@@ -376,8 +378,7 @@ class SQLTABLE2(TABLE):
                                       and isinstance(record[tablename], Row)) and 
                                  (k, record[tablename][k])) or (k, record[k]) \
                                     for k in field._table._primarykey ] ))
-                    #row.append(TD(A(r, _href='%s/%s?%s' % (linkto, tablename, key))))
-                    row.append(TD(A(r, _href='%s/%s/%s' % (linkto, field.type[10:], r))))
+                    row.append(TD(A(r, _href='%s/%s?%s' % (linkto, tablename, key))))
                 else:
                     row.append(TD(r))
             tbody.append(TR(_class=_class, *row))

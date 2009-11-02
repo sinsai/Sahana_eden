@@ -153,6 +153,15 @@ if not len(db().select(db[table].ALL)):
         description="Sends & Receives Alerts via Email & SMS",
         enabled='True'
     )
+    db[table].insert(
+        name="delphi",
+        name_nice="Delphi Decision Maker",
+        priority=15,
+        module_type=4,
+        access='',
+        description="Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
+        enabled='True'
+    )
 
 # Modules Menu (available in all Controllers)
 response.menu_modules = []

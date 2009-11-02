@@ -162,23 +162,127 @@ class MENU2(DIV):
     def xml(self):
         return self.serialize(self.data, 0).xml()
 
+# Modified version of MENU from gluon/html.py
+# Only supports 2 levels
+# Each menu is a UL not an LI
+# A tags have classes
+class MENU3(DIV):
+    """
+    Used to build menu from a list of lists
+    Each list has 3 options: Name, Right & Link
+    (NB In Web2Py's MENU, the 2nd option is 'Active')
+    Right=False means that menu item follows the CSS to float: left
+    Right=True means that menu item floats right
+
+    Optional arguments
+      _class: defaults to 'S3menuInner'
+      ul_main_class: defaults to 'S3menuUL'
+      ul_sub_class: defaults to 'S3menuSub'
+      li_class: defaults to 'S3menuLI'
+      a_class: defaults to 'S3menuA'
+      
+    Example:
+        menu = MENU3([['name', False, URL(...), [submenu]], ...])
+        {{=menu}}
+    """
+
+    tag = 'div'
+
+    def __init__(self, data, **args):
+        self.data = data
+        self.attributes = args
+        if not '_class' in self.attributes:
+            self['_class'] = 'S3menuInner'
+        if not 'ul_main_class' in self.attributes:
+            self['ul_main_class'] = 'S3menuUL'
+        if not 'ul_sub_class' in self.attributes:
+            self['ul_sub_class'] = 'S3menuSub'
+        if not 'li_class' in self.attributes:
+            self['li_class'] = 'S3menuLI'
+        if not 'a_class' in self.attributes:
+            self['a_class'] = 'S3menuA'
+        
+    def serialize(self, data, level=0):
+        if level == 0:
+            # Top-level menu
+            div = DIV(**self.attributes)
+            for item in data:
+                (name, right, link) = item[:3]
+                if len(item) > 3 and item[3]:
+
+                    # Submenu present
+                    ul_inner = self.serialize(item[3], level+1)
+                    if link:
+                        if right:
+                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
+                        else:
+                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                    else:
+                        if right:
+                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
+                        else:
+                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                else:
+                    if link:
+                        if right:
+                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
+                        else:
+                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
+                    else:
+                        if right:
+                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
+                        else:
+                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
+                div.append(ul)
+        else:
+            # Submenu
+            div = UL(_class=self['ul_sub_class'])
+            for item in data:
+                (name, right, link) = item[:3]
+                li = LI(A(name, _href=link))
+                div.append(li)
+        return div
+
+    def xml(self):
+        return self.serialize(self.data, 0).xml()
+
 # Modified version of SQLTABLE from gluon/sqlhtml.py
 # we need a different linkto construction for our CRUD controller
 # we need to specify a different ID field to direct to for the M2M controller
 class SQLTABLE2(TABLE):
     """
-    given a SQLRows object, as returned by a db().select(),
-    generates an html table with the rows.
+    given a SQLRows object, as returned by a db().select(), generates
+    an html table with the rows.
 
     optional arguments:
-    linkto: URL to edit individual records
-    upload: URL to download uploaded files
-    orderby: Add an orderby link to column headers.
-    headers: dictionary of headers to headers redefinions
-    truncate: length at which to truncate text in table cells.
-              Defaults to 16 characters.
-    id: field to direct linkto to
+
+    :param linkto: URL (or lambda to generate a URL) to edit individual records
+    :param upload: URL to download uploaded files
+    :param orderby: Add an orderby link to column headers.
+    :param headers: dictionary of headers to headers redefinions
+    :param truncate: length at which to truncate text in table cells.
+        Defaults to 16 characters.
+
     optional names attributes for passed to the <table> tag
+
+    Simple linkto example::
+
+        rows = db.select(db.sometable.ALL)
+        table = SQLTABLE(rows, linkto='someurl')
+
+    This will link rows[id] to .../sometable/value_of_id
+
+
+    More advanced linkto example::
+
+        def mylink(field, type, ref):
+            return URL(r=request, args=[field])
+
+        rows = db.select(db.sometable.ALL)
+        table = SQLTABLE(rows, linkto=mylink)
+
+    This will link rows[id] to
+        current_app/current_controlle/current_function/value_of_id
     """
 
     def __init__(
@@ -189,9 +293,9 @@ class SQLTABLE2(TABLE):
         orderby=None,
         headers={},
         truncate=16,
-        id=None,
         **attributes
         ):
+
         TABLE.__init__(self, **attributes)
         self.components = []
         self.attributes = attributes
@@ -218,16 +322,15 @@ class SQLTABLE2(TABLE):
                     row.append(TD(r))
                     continue
                 (tablename, fieldname) = colname.split('.')
-                field = sqlrows._db[tablename][fieldname]
-                if record.has_key(tablename) and isinstance(record,
-                        SQLStorage) and isinstance(record[tablename],
-                        SQLStorage):
+                field = sqlrows.db[tablename][fieldname]
+                if tablename in record and isinstance(record,
+                        Row) and isinstance(record[tablename],
+                        Row):
                     r = record[tablename][fieldname]
-                elif record.has_key(fieldname):
+                elif fieldname in record:
                     r = record[fieldname]
                 else:
-                    raise SyntaxError, \
-                        'something wrong in SQLRows object'
+                    raise SyntaxError, 'something wrong in SQLRows object'
                 if field.represent:
                     r = field.represent(r)
                     row.append(TD(r))
@@ -236,32 +339,46 @@ class SQLTABLE2(TABLE):
                     row.append(TD('DATA'))
                     continue
                 r = str(field.formatter(r))
-                if upload and field.type == 'upload' and r != None:
-                    if r:
-                        row.append(TD(A('file', _href='%s/%s'
-                                    % (upload, r))))
+                if field.type == 'upload':
+                    if upload and r:
+                        row.append(TD(A('file', _href='%s/%s' % (upload, r))))
+                    elif r:
+                        row.append(TD('file'))
                     else:
                         row.append(TD())
                     continue
                 ur = unicode(r, 'utf8')
                 if len(ur) > truncate:
                     r = ur[:truncate - 3].encode('utf8') + '...'
-                if id and linkto and field.type == 'id':
-                    link_id = sqlrows._db[tablename][r][id]
+                if linkto and field.type == 'id':
                     try:
-                        href = linkto(link_id)
-                    except TypeError:
-                        href = '%s/%s' % (linkto, link_id)
-                    row.append(TD(A(link_id, _href=href)))
-                elif linkto and field.type == 'id':
-                    try:
+                        #href = linkto(r, 'table', tablename)
                         href = linkto(r)
                     except TypeError:
+                        #href = '%s/%s/%s' % (linkto, tablename, r)
                         href = '%s/%s' % (linkto, r)
                     row.append(TD(A(r, _href=href)))
                 elif linkto and field.type[:9] == 'reference':
-                    row.append(TD(A(r, _href='%s/%s/%s' % (linkto,
-                               field.type[10:], r))))
+                    ref = field.type[10:]
+                    try:
+                        href = linkto(r, 'reference', ref)
+                    except TypeError:
+                        href = '%s/%s/%s' % (linkto, ref, r)
+                        if ref.find('.') >= 0:
+                            tref,fref = ref.split('.')
+                            if hasattr(sqlrows.db[tref],'_primarykey'):
+                                href = '%s/%s?%s' % (linkto, tref, urllib.urlencode({fref:ur}))
+                            
+                    row.append(TD(A(r, _href=href)))
+                elif linkto and hasattr(field._table,'_primarykey') and fieldname in field._table._primarykey:
+                    # have to test this with multi-key tables
+                    key = urllib.urlencode(dict( [ \
+                                ((tablename in record \
+                                      and isinstance(record, Row) \
+                                      and isinstance(record[tablename], Row)) and 
+                                 (k, record[tablename][k])) or (k, record[k]) \
+                                    for k in field._table._primarykey ] ))
+                    row.append(TD(A(r, _href='%s/%s?%s' % (linkto, tablename, key))))
                 else:
                     row.append(TD(r))
             tbody.append(TR(_class=_class, *row))

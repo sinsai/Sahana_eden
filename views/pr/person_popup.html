@@ -10,6 +10,30 @@
 {{pass}}
 
 <script type="text/javascript">//<![CDATA[
+$(function() {
+    if (self.opener) {
+        // Legacy popups
+        // bind form and provide a simple callback function 
+        $('form').ajaxForm(function() {
+            // FIXME: Refresh just the SELECT not the whole page
+            // otherwise existing inputs lost & form won't submit!
+            self.opener.location.reload(true);
+            // find which ID we need to make active
+            {{field = '%s_%s_%s' % (module, resource, main)}}
+            value=$('input#{{=field}}').val();
+            $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}" + "&value=" + value,
+                function(data) {
+                    // set the caller's lookup list to the new ID
+//                    self.opener.$('select#{{=caller}}').val(data[0].id);
+                    // close the popup
+                    self.close();
+                });
+        });
+    } else {
+        // Thickbox popups (see below)
+    }
+});
+
 function TB_refresh() {
     // The Get parameters
     var $_GET = getQueryParams(document.location.search);
@@ -22,16 +46,20 @@ function TB_refresh() {
         // Clean up the caller
         self.parent.$('#' + $_GET["caller"] + ' >option').remove();
         $.getJSON(listsource, function (data) {
+            var name;
             $.each(data, function() {
-                // FIXME: Don't assume that .represent is .name (doesn't even always exist!)
-                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+                if (null == this['middle_name']) {
+                    name = this['first_name'] + ' ' + this['last_name'];
+                } else {
+                    name = this['first_name'] + ' ' + this['middle_name'] + ' ' + this['last_name'];    
+                }
+                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(name));
                 selectedvalue = this['id'];
-                selectedname = this['name'];
             });
             // Set the newly-created value
             self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
             // Also populate dummy, if present
-            self.parent.$('#dummy').val(selectedname);
+            self.parent.$('#dummy').val(name);
             // Clean-up
             self.parent.tb_remove();
         });
@@ -62,7 +90,7 @@ TB_refresh();
 </head>
 
 <body>
-{{include}}
+{{include '_popup.html'}}
 </body>
 
 </html>

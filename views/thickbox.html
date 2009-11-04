@@ -1,2 +1,6 @@
 ﻿<link href="/{{=request.application}}/static/styles/S3/thickbox.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-<script src="/{{=request.application}}/static/scripts/S3/thickbox.js" type="text/javascript" charset="utf-8"></script>
+{{if session.s3.debug:}}
+ <script src="/{{=request.application}}/static/scripts/S3/thickbox.js" type="text/javascript" charset="utf-8"></script>
+{{else:}}
+ <script src="/{{=request.application}}/static/scripts/S3/thickbox.min.js" type="text/javascript" charset="utf-8"></script>
+{{pass}}

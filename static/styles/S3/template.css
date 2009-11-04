@@ -48,7 +48,7 @@ li { margin-left: 1em; }
 
 /* Basic Page Formatting Styles
    ------------------------------------------------------------------------------- */
-body { font-size: 0.8em; color: #000; background: #col_background; }
+body { font-size: 0.8em; color: #000; background: #col_background; direction: TEXT_DIRECTION; }
 /* Miscellaneous conveniences: */
 form label { cursor: pointer; }                                 
 fieldset { border: none; }
@@ -63,8 +63,10 @@ select:focus { background-color:#col_input; }
 textarea:focus { background-color:#col_input; }
 
 /* Links should ALWAYS be unvisited */
-a { color: #039; text-decoration: underline; }
-a:hover { color: #c00; text-decoration: none; background-color: #col_input; }
+a { color: #039; text-decoration: underline; outline:0; }
+a:hover { color: #c00; text-decoration: none; background-color: #col_input; outline:0; }
+a:active,
+a:focus { outline:0; }
 a img { border:none; }
 
 table { border-collapse: collapse }
@@ -90,7 +92,7 @@ table { border-collapse: collapse }
     .modules_inner { position:absolute; z-index:100; width:100%; }
     
     /* response.menu_options */
-    #menu_options { position:relative; height:32px; padding-top:5px; padding-bottom: 5px; }
+    #menu_options { position:relative; height:32px; padding-top:5px; padding-bottom: 5px; border-top:1px solid #FFFFFF;}
     /* IE6 defaults */
     #menu_options a,
     #menu_options a:hover,
@@ -144,10 +146,7 @@ table { border-collapse: collapse }
 #home p { text-align:center; /*	padding-left:200px;*/ padding: 10px 10px 10px 10px; text-align:justify; line-height:1.25; }
 #home h2 { font-size:16px; text-align:center; } 
 
-/* GIS module */
-.btn-panel { padding: 2px; }
-            
-#footer { margin: 0 auto; padding: 10px; clear: both; float: left; width:100%; text-align: center; color: #666; background-color: #col_background; border-top: #058 1px solid; }
+#footer { margin: 0 auto; clear: both; float: left; width:100%; text-align: center; color: #666; background-color: #336699; border-top: #058 1px solid; }
     a.help, a:link.help { color: #fff; text-decoration: none; }
     a:hover.help { background-color: #col_background; text-decoration: underline; }
     a:visited.help { font-weight: normal; color: #aaa; }
@@ -210,9 +209,32 @@ div.confirmation { color:#070; font-weight: bold; text-align: center; border: #0
 .warning { color:#c00; font-weight: bold; text-align: center; border: #fc6 1px solid; background: url(../../img/dialog-warning.png) #ffc no-repeat 5px 5px; margin-top: 0.0em; margin-bottom: 1.0em; padding-top: 1.0em; padding-bottom: 1.0em; cursor: pointer; }
 .warning p em { color:#c00;  }
 
+/* GIS module */
+.btn-panel { padding: 2px; }
+            
 /* Person Registry */
 div#pheader th { width: 8em; text-align: left; }
 div#pheader td { width: 20em; text-align: left; }
+
+/* Delphi Decision Maker */
+.delphi_wide li { padding: 5px 20px; font-weight: bold; }
+.delphi_wide tr td { padding: 4px 30px; border-bottom: 1px dotted; }
+.delphi_wide thead { font-weight: bold; }
+#delphi_pairs tr td { padding: 12px 30px; }
+#delphi_problem_header a,
+#delphi_problem_header strong {	font-size: 105%; float: right; padding: 3px 10px; margin: 1px; }
+.delphi_post_title { background: #729fcf; padding: 3px 5px; }
+.delphi_post { border: 1px dotted; margin: 5px 10px; padding: 2px; }
+.delphi_post blockquote { margin: 2px 10px; }
+.delphi_quote { cursor: pointer; color: white; font-weight: bold; font-size: 85%; padding: 1px 5px; }
+.delphi_q1 { border-left: 4px solid #edd400; padding-left: 10px; color: #555753; }
+.delphi_q2 { border-left: 4px solid #3465a4; padding-left: 20px; color: #888a85; }
+.delphi_q3 { border-left: 4px solid #73d216; padding-left: 30px; color: #555753; }
+.delphi_q4 { border-left: 4px solid #f57900; padding-left: 40px; color: #888a85; }
+.delphi_q5 { border-left: 4px solid #ef2929; padding-left: 50px; color: #555753; }
+.delphi_q6 { border-left: 4px solid #75507b; padding-left: 60px; color: #888a85; }
+.delphi_post_text {	display: none; }
+.delphi_post_dbtitle { font-weight: bold;}
 
 /* Web2Py menu - as-used by Auth menu currently */
 ul.web2py-menu,

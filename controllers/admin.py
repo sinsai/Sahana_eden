@@ -59,10 +59,15 @@ def theme_apply(form):
             logo = theme.logo
         else:
             logo = default_theme.logo
+        if theme.text_direction:
+            text_direction = theme.text_direction
+        else:
+            text_direction = 'ltr'
         # Write out CSS
         ofile = open(out_file, 'w')
         for line in lines:
             line = line.replace("YOURLOGOHERE", logo)
+            line = line.replace("TEXT_DIRECTION", text_direction)
             # Iterate through Colours
             for key in theme.keys():
                 if key[:4] == 'col_':
@@ -115,11 +120,11 @@ def theme_check(form):
     _logo = os.path.join(request.folder, 'static', logo)
     _footer = os.path.join(request.folder, 'views', footer)
     if not os.access(_logo, os.R_OK):
-        session.error = T('Logo file %s missing!' % logo)
-        redirect(URL(r=request, args=request.args))
+        form.errors['logo'] = T('Logo file %s missing!' % logo)
+        return
     if not os.access(_footer, os.R_OK):
-        session.error = T('Footer file %s missing!' % footer)
-        redirect(URL(r=request, args=request.args))
+        form.errors['footer'] = T('Footer file %s missing!' % footer)
+        return
     # Validation passed
     return
     

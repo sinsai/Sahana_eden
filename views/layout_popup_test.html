@@ -15,23 +15,39 @@ function TB_refresh() {
     var $_GET = getQueryParams(document.location.search);
     // The JSON of the resource we just created
     var listsource = document.location.pathname.replace("/create",".json");
-    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
+    if (self.parent.$('#' + $_GET["caller"] + ' >option').length ) {
         // We have been called next to a drop-down
         // Get the previously selected value
         var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
         // Clean up the caller
-        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
-        $.getJSON(listsource, function (data) {
-            $.each(data, function() {
+        //self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+        //$.getJSON(listsource, function (data) {
+            //$.each(data, function() {
                 // FIXME: Don't assume that .represent is .name (doesn't even always exist!)
-                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
-                selectedvalue = this['id'];
-                selectedname = this['name'];
+                //self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+                //selectedvalue = this['id'];
+                //selectedname = this['name'];
+            //});
+            // Download an updated set of options for the Select box
+            // FIXME: check for existing format & replace if present
+            alert (selectedvalue);
+            var htmlsource = self.parent.location.pathname + '?format=plain';
+            alert (htmlsource);
+            $.ajax({
+                url: htmlsource,
+                success: function(data) {  
+                    var selectoptions = $('#' + $_GET["caller"], data).html(); 
+                    // Apply these options to the parent
+                    self.parent.$('#' + $_GET["caller"]).html(selectoptions);
+                    // Set the newly-created value
+                    self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
+                }
             });
             // Set the newly-created value
-            self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
+            //self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
             // Also populate dummy, if present
-            self.parent.$('#dummy').val(selectedname);
+            // FIXME: Get from new Option
+            //self.parent.$('#dummy').val(selectedname);
             // Clean-up
             self.parent.tb_remove();
         });
@@ -54,7 +70,7 @@ function getQueryParams(qs) {
 
 // If submission succesful
 {{if response.flash or response.confirmation:}}
-// Refresh the DIV and close the pop up
+// Refresh the DIV and close the popup
 TB_refresh();
 {{pass}}
 

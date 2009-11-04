@@ -14,6 +14,9 @@
 # import S3XML
 exec('from applications.%s.modules.s3xml import S3XML' % request.application)
 
+# import S3JRC
+exec('from applications.%s.modules.s3jrc import JRLayer, JRequest' % request.application)
+
 # *****************************************************************************
 # Joint Resource Layer
 jrlayer = JRLayer(db) #: Joined Resource Layer Instance
@@ -36,6 +39,7 @@ BADFORMAT = T('Unsupported data format!')
 BADMETHOD = T('Unsupported method!')
 BADRECORD = T('No such record!')
 INVALIDREQUEST = T('Invalid request!')
+
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
@@ -238,7 +242,7 @@ def export_xls(table, query):
 
     items = db(query).select(table.ALL)
 
-    book = xlwt.Workbook()
+    book = xlwt.Workbook(encoding='utf-8')
     sheet1 = book.add_sheet(str(table))
     # Header row
     row0 = sheet1.row(0)
@@ -254,8 +258,23 @@ def export_xls(table, query):
         row += 1
         cell1 = 0
         for field in fields:
+            style = xlwt.XFStyle()
             tab, col = str(field).split('.')
-            rowx.write(cell1, item[col])
+            # Check for Date formats
+            if db[tab][col].type == 'date':
+                style.num_format_str = 'D-MMM-YY'
+            elif db[tab][col].type == 'datetime':
+                style.num_format_str = 'M/D/YY h:mm'
+            elif db[tab][col].type == 'time':
+                style.num_format_str = 'h:mm:ss'
+            
+            # Check for a custom.represent (e.g. for ref fields)
+            try:
+                represent = str(field.represent(item[col]))
+            except:
+                represent = item[col]
+
+            rowx.write(cell1, represent, style)
             cell1 += 1
     book.save(output)
     output.seek(0)
@@ -1005,6 +1024,9 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             query = db[table].id == record_id
             return export_rss(module, resource, query, rss=rss, linkto=jr.here('html'))
 
+
+
+
         else:
             session.error = BADFORMAT
             redirect(URL(r=request, f='index'))
@@ -1065,6 +1087,9 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
         query = shn_accessible_query('read', table)
         query = (table[jr.fkey]==jr.record[jr.pkey]) & query
+
+        if response.s3.jfilter:
+            query = response.s3.jfilter & query
 
         if jr.jrecord_id:
             query = (table.id==jr.jrecord_id) & query
@@ -1211,6 +1236,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                                next=jr.there())
 
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+            if response.s3.cancel:
+                form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
             if jr.jresource:
                 table[jr.fkey].comment = _comment
@@ -1373,6 +1400,8 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
                            onaccept=_onaccept)
 
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+        if response.s3.cancel:
+            form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
         if jr.jresource:
             # Restore comment
@@ -1570,6 +1599,8 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                                deletable=False) # TODO: add extra delete button to form
 
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+            if response.s3.cancel:
+                form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
             if jr.jresource:
                 # Restore comment
@@ -1764,6 +1795,8 @@ def shn_rest_controller(module, resource,
         ================
 
             - B{response.s3.filter}: contains custom query to filter list views (primary resources)
+            - B{response.s3.jfilter}: contains custom query to filter list views (joined resources)
+            - B{response.s3.cancel}: adds a cancel button to forms & provides a location to direct to upon pressing
 
         Description:
         ============
@@ -2150,18 +2183,24 @@ def shn_rest_controller(module, resource,
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
                         filter = request.vars.filter
-                        if filter == '=':
-                            query = (jr.table[field]==value)
-                            item = db(query).select().json()
-                        elif filter == '~':
+                        if filter == '~':
                             query = (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:
                                 item = db(query).select(limitby=(0, limit)).json()
                             else:
                                 item = db(query).select().json()
+                        elif filter == '=':
+                            query = (jr.table[field] == value)
+                            item = db(query).select().json()
+                        elif filter == '<':
+                            query = (jr.table[field] < value)
+                            item = db(query).select().json()
+                        elif filter == '>':
+                            query = (jr.table[field] > value)
+                            item = db(query).select().json()
                         else:
-                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: =, ~"}}'
+                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ~, =, <, >"}}'
                     else:
                         item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
                     response.view = 'plain.html'

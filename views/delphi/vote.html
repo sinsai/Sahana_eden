@@ -1,0 +1,37 @@
+{{extend 'layout.html'}}{{ #TODO: Move styles and scripts to static/ }}
+
+<script type="text/javascript" language="javascript">//<![CDATA[
+$(document).ready(function(){
+	var can_vote = {{=(can_vote and "true" or "false")}};
+	$("#delphi_pairs tr:even").css({background: "#ccc"});
+	$(".bkclear").css({background: "none"});
+});
+//]]></script>
+
+<div id="delphi_problem_header">
+	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
+	{{ pass }}
+	<a href="{{= URL(r=request, f='discuss', args=problem.id) }}">{{= T("Discussion Forum") }}</a>
+	<a href="{{= URL(r=request, f='status', args=problem.id) }}">{{= T("Scale of Results") }}</a>
+	<strong>{{= T("Vote") }}</strong>
+	<a href="{{= URL(r=request, f='summary', args=problem.id) }}">{{= T("Options") }}</a>
+<h1>{{= problem.title }}</h1>
+</div>
+<p><b>{{= T("Description")}}:</b> {{= problem.description }}</p>
+
+<p><b>{{= T("Criteria")}}:</b> {{= problem.criteria }}</p>
+<hr/>
+{{ if can_vote: }}
+	<div id="vote_div"><p>{{ if voted: }}{{= T("You can change your vote.")}} {{ pass }}{{= T("Please select the one item from each pair that you prefer over the other.")}}</p>
+<form action="{{= URL(r=request, f='vote', args=problem.id) }}" method="post"><table id="delphi_pairs" class="delphi_wide">
+{{ for pair in pairs: }}
+<tr>
+	<td><label><input name="v_{{=pair[0].id}}_{{=pair[1].id}}" type="radio" value="+" {{ if pair[2]==1: }}checked="checked"{{ pass }}/>{{= pair[0].title }}</label></td>
+	<td><label><input name="v_{{=pair[0].id}}_{{=pair[1].id}}" type="radio" value="-" {{ if pair[2]==2: }}checked="checked"{{ pass }}/>{{= pair[1].title }}</label></td>
+</tr>
+{{ pass }}
+	<tr class="bkclear"><td colspan="4" style="border-bottom: none; text-align: right"><input name="submit" type="submit" value="{{=(voted and T("Update") or T("Vote"))}}"/></td></tr>
+</table>
+</div>
+<p><a href="{{= URL(r=request, f='status', args=problem.id) }}">{{= T("Scale of Results") }}</a></p>
+{{ pass }}

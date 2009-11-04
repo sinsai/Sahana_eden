@@ -6,7 +6,7 @@
  * Modified to include Callbacks: http://codylindley.com/Javascript/257/thickbox-one-box-to-rule-them-all#c002066
 */
 		  
-var tb_pathToImage = "../../img/thickbox/loadingAnimation.gif";
+var tb_pathToImage = "/sahana/static/img/thickbox/loadingAnimation.gif";
 
 /*!!!!!!!!!!!!!!!!! edit below this line at your own risk !!!!!!!!!!!!!!!!!!!!!!!*/
 

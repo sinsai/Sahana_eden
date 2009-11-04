@@ -344,6 +344,29 @@ class S3XML(object):
                                   pretty_print=True)
 
     # -------------------------------------------------------------------------
+    def xml_encode(self, obj):
+
+        if obj is None:
+            return None
+
+        encode = {'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'}
+        obj = obj.replace('&', '&amp;')
+        for c in encode.keys():
+            obj = obj.replace(c, encode[c])
+        return obj
+
+    # -------------------------------------------------------------------------
+    def xml_decode(self, obj):
+
+        if obj is None:
+            return None
+
+        decode = {'&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'" }
+        for c in decode.keys():
+            obj = obj.replace(c, decode[c])
+        return obj.replace('&amp;', '&')
+
+    # -------------------------------------------------------------------------
     def __json2element(self, key, value, native=False):
 
         if isinstance(value, dict):
@@ -466,11 +489,11 @@ class S3XML(object):
         return obj
 
     # -------------------------------------------------------------------------
-    def element(self, prefix, name, record, skip=[]):
+    def element(self, table, record, skip=[]):
         """
             Builds an element from a record
 
-            @param prefix:      the resource prefix (=module name)
+            @param table:       the database table
             @param name:        the resource name
             @param record:      the record (as dict of fields)
             @param skip:        list of fields to skip (optional)
@@ -484,37 +507,37 @@ class S3XML(object):
                 at all.
         """
 
-        _table = "%s_%s" % (prefix, name)
-        if _table in self.db:
-            table = self.db[_table]
-        else:
-            self.error = S3XML_BAD_RESOURCE
-            return None
-
         element = etree.Element(self.TAG["resource"])
 
-        for f in table.fields:
+        for f in record.keys():
+
+            if f not in table:
+                continue
+
             if f in self.IGNORE_FIELDS or f in skip:
                 continue
+
             if f == self._UUID:
                 if record[f] is None:
                     element.set(f, "")
                 else:
                     value = table[f].formatter(record[f])
-                    element.set(f, str(value))
+                    element.set(f, self.xml_encode(str(value)))
+
             elif f in self.FIELDS_TO_ATTRIBUTES:
                 if record[f] is None:
                     element.set(f, "")
                 else:
                     value = table[f].formatter(record[f])
-                    element.set(f, str(value).decode('utf-8'))
+                    element.set(f, self.xml_encode(str(value).decode('utf-8')))
 
                 if record[f] is None:
                     element.set(f, "")
                 elif table[f].represent:
-                    element.set(f, str(table[f].represent(record[f])).decode('utf-8'))
+                    element.set(f, self.xml_encode(str(table[f].represent(record[f])).decode('utf-8')))
                 else:
-                    element.set(f, str(table[f].formatter(record[f])).decode('utf-8'))
+                    element.set(f, self.xml_encode(str(table[f].formatter(record[f])).decode('utf-8')))
+
             elif table[f].type.startswith("reference"):
                 _rtable = table[f].type.split()[1]
                 if _rtable in self.db and self._UUID in self.db[_rtable]:
@@ -525,17 +548,18 @@ class S3XML(object):
                         continue
                     prefix, resource = _rtable.split("_", 1)
                     reference = etree.SubElement(element, self.TAG["reference"])
-                    reference.set(self.ATTRIBUTE["field"], str(f))
-                    reference.set(self.ATTRIBUTE["prefix"], str(prefix))
-                    reference.set(self.ATTRIBUTE["resource"], str(resource))
-                    reference.set(self._UUID, str(_uuid))
+                    reference.set(self.ATTRIBUTE["field"], self.xml_encode(str(f)))
+                    reference.set(self.ATTRIBUTE["prefix"], self.xml_encode(str(prefix)))
+                    reference.set(self.ATTRIBUTE["resource"], self.xml_encode(str(resource)))
+                    reference.set(self._UUID, self.xml_encode(str(_uuid)))
                     value = table[f].formatter(record[f])
                     if table[f].represent:
-                        reference.text = str(table[f].represent(record[f])).decode('utf-8')
+                        reference.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
                     else:
-                        reference.text = str(value).decode('utf-8')
+                        reference.text = self.xml_encode(str(value).decode('utf-8'))
                 else:
                     continue
+
             else:
                 if record[f] is None and not table[f].readable:
                     continue
@@ -545,10 +569,10 @@ class S3XML(object):
                     if record[f] is not None:
                         value = table[f].formatter(record[f])
                         if table[f].represent:
-                            data.set(self.ATTRIBUTE["value"], str(value).decode('utf-8'))
-                            data.text = str(table[f].represent(record[f])).decode('utf-8')
+                            data.set(self.ATTRIBUTE["value"], self.xml_encode(str(value).decode('utf-8')))
+                            data.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
                         else:
-                            data.text = str(value).decode('utf-8')
+                            data.text = self.xml_encode(str(value).decode('utf-8'))
 
         return element
 
@@ -601,9 +625,9 @@ class S3XML(object):
                     continue
                 if table[fieldname].type.startswith('reference'):
                     continue
-                value = child.get(self.ATTRIBUTE["value"], None)
+                value = self.xml_decode(child.get(self.ATTRIBUTE["value"], None))
                 if value is None:
-                    value = child.text
+                    value = self.xml_decode(child.text)
                 if value is None:
                     value = table[fieldname].default
                 if value is None and table[fieldname].type == "string":
@@ -745,7 +769,7 @@ class S3XML(object):
 
                 self.exports.append(dict(prefix=prefix, name=name, id=record.id))
 
-                resource = self.element(prefix, name, record, skip=skip)
+                resource = self.element(table, record, skip=skip)
                 resource.set(self.ATTRIBUTE["prefix"], prefix)
                 resource.set(self.ATTRIBUTE["name"], name)
 

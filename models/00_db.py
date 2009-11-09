@@ -85,7 +85,7 @@ def shn_auth_on_login(form):
     """
 
     # JR controller
-    jrlayer.clear_session(session)
+    jrcontroller.clear_session(session)
 
 # shn_on_logout ---------------------------------------------------------------
 # added 2009-08-27 by nursix
@@ -95,7 +95,7 @@ def shn_auth_on_logout(user):
     """
 
     # JR controller
-    jrlayer.clear_session(session)
+    jrcontroller.clear_session(session)
 
 #
 # Widgets

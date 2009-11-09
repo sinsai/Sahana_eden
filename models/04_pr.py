@@ -60,7 +60,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                     migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby='pr_pe_id',
     deletable=True,
@@ -136,7 +136,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby='pr_pe_id',
     deletable=True,
@@ -207,7 +207,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby='pr_pe_id',
     deletable=True,
@@ -294,7 +294,7 @@ def shn_pr_presence_rss(record):
         return None
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby='pr_pe_id',
     deletable=True,
@@ -1100,7 +1100,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+jrcontroller.set_property(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
 
 # Field validation
 
@@ -1132,7 +1132,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+jrcontroller.set_property(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
 
 # Field validation
 
@@ -1184,7 +1184,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+jrcontroller.set_property(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
 
 # Field validation
 
@@ -1215,7 +1215,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+jrcontroller.set_property(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
 
 # Field validation
 
@@ -1273,7 +1273,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+jrcontroller.set_property(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
 
 # Field validation
 
@@ -1321,7 +1321,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('comment'))                   # a comment (optional)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
     deletable=True,
@@ -1384,7 +1384,7 @@ db.define_table(table, timestamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby=dict(pr_group='group_id', pr_person='person_id'),
     deletable=True,
@@ -1443,7 +1443,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
     deletable=True,
@@ -1487,7 +1487,7 @@ db.define_table(table, timestamp, deletion_status,
                 migrate=migrate)
 
 # Joined Resource
-jrlayer.add_jresource(module, resource,
+jrcontroller.set_property(module, resource,
     multiple=True,
     joinby=dict(pr_person='person_id'),
     deletable=True,

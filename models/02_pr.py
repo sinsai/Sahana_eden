@@ -635,7 +635,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
         redirect(URL(r=request))
 
 # Plug into REST controller
-jrlayer.set_method(module, 'person', None, None, 'search_simple', shn_pr_person_search_simple )
+jrcontroller.set_method(module, 'person', method='search_simple', action=shn_pr_person_search_simple )
 
 #
 # shn_pr_pheader --------------------------------------------------------------

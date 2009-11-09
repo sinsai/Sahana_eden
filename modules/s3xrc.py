@@ -1361,10 +1361,10 @@ class S3XML(object):
                 if a==self.ATTRIBUTE["field"] and \
                    element.tag in (self.TAG["data"], self.TAG["reference"]):
                     continue
-            obj[self.PREFIX["attribute"] + a] = attributes[a]
+            obj[self.PREFIX["attribute"] + a] = self.xml_decode(attributes[a])
 
         if element.text:
-            obj[self.PREFIX["text"]] = element.text
+            obj[self.PREFIX["text"]] = self.xml_decode(element.text)
 
         for key in obj.keys():
             if isinstance(obj[key], (list, tuple, dict)):

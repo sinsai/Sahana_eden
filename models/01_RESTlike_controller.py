@@ -65,12 +65,23 @@ def export_csv(resource, query, record=None):
 #
 # export_json -----------------------------------------------------------------
 #
-def export_json(table, query):
+def export_json(jr):
 
     """ Export record(s) as JSON """
 
+    s3xml = S3XML(db, domain=jrcontroller.domain, base_url=jrcontroller.base_url)
+
+    if jr.property:
+        joins = [(jr.property, jr.pkey, jr.fkey)]
+    else:
+        joins = jrcontroller.get_properties(jr.prefix, jr.name)
+
     response.headers['Content-Type'] = 'text/x-json'
-    return db(query).select(table.ALL).json()
+    tree = s3xml.get(jr.prefix, jr.name, jr.id, joins=joins, permit=shn_has_permission, audit=shn_audit)
+
+    # Serialize
+    output_str = s3xml.tree2json(tree)
+    return output_str
 
 #
 # export_pdf ------------------------------------------------------------------
@@ -1000,8 +1011,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             return export_csv(resource, query)
 
         elif jr.representation == "json":
-            query = db[table].id == record_id
-            return export_json(table, query)
+            return export_json(jr)
 
         elif jr.representation == "pdf": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
@@ -1266,7 +1276,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         return export_csv(resource, query)
 
     elif jr.representation == "json":
-        return export_json(table, query)
+        return export_json(jr)
 
     elif jr.representation == "pdf":
         return export_pdf(table, query)

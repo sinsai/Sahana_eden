@@ -300,27 +300,26 @@ def export_xml(jr):
 
     """ Export data as XML """
 
-    s3xml = S3XML(db, domain=jrcontroller.domain, base_url=jrcontroller.base_url)
-
     if jr.property:
         joins = [(jr.property, jr.pkey, jr.fkey)]
     else:
         joins = jrcontroller.get_properties(jr.prefix, jr.name)
 
     response.headers['Content-Type'] = 'text/xml'
-    tree = s3xml.get(jr.prefix, jr.name, jr.id, joins=joins, permit=shn_has_permission, audit=shn_audit)
+    tree = jrcontroller.get_xml(jr.prefix, jr.name, jr.id,
+                                joins=joins, permit=shn_has_permission, audit=shn_audit)
 
     # XSL Transformation
     template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
     template_file = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
     if os.path.exists(template_file):
-        output = s3xml.transform(tree, template_file)
+        output = jrcontroller.transform(tree, template_file)
         if not output:
             if jr.representation=="xml":
                 output=tree
             else:
                 session.error = str(T("XSL Transformation Error: ")) + \
-                                s3xml.error
+                                jrcontroller.error
                 redirect(URL(r=request, f="index"))
     else:
         session.error = str(T("XSL Template Not Found: ")) + \
@@ -328,18 +327,7 @@ def export_xml(jr):
         redirect(URL(r=request, f="index"))
 
     # Serialize
-    output_str = s3xml.tostring(output)
-
-    # For testing
-    #json_output = s3xml.tree2json(output)
-    #print json_output
-    #if jr.representation == "xml":
-    #    json_tree = s3xml.json2tree(json_output)
-    #else:
-    #    json_tree = s3xml.json2tree(json_output, jr.representation)
-    #print s3xml.tostring(json_tree)
-
-    # Done
+    output_str = jrcontroller.tostring(output)
     return output_str
 
 #
@@ -494,7 +482,11 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         http_put = True
         source = jr.request.body
 
+    print source
+
     _tree = s3xml.parse(source)
+    if not _tree:
+        print "Error: %s" % s3xml.error
 
     # XSL Transformation
     template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)

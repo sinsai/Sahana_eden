@@ -84,6 +84,56 @@ class JRController(object):
 
     JRVARS = "jrvars"
 
+    UUID = "uuid"
+
+    IGNORE_FIELDS = ["deleted", "id"]
+
+    FIELDS_TO_ATTRIBUTES = [
+            "created_on",
+            "modified_on",
+            "created_by",
+            "modified_by",
+            "uuid",
+            "admin"]
+
+    ATTRIBUTES_TO_FIELDS = ("admin",)
+
+    TAG = dict(
+        root="sahanapy",
+        resource="resource",
+        reference="reference",
+        data="data",
+        list="list",
+        item="item",
+        object="object"
+        )
+
+    ATTRIBUTE = dict(
+        name="name",
+        table="table",
+        field="field",
+        value="value",
+        resource="resource",
+        domain="domain",
+        url="url",
+        error="error"
+        )
+
+    # JSON Prefixes
+    PREFIX = dict(
+        resource="$r",
+        reference="$k",
+        attribute="@",
+        text="$"
+    )
+
+    ACTION = dict(
+        create="create",
+        read="read",
+        update="update",
+        delete="delete"
+    )
+
     def __init__(self, db, domain=None, base_url=None):
 
         assert db is not None, "Database must not be None."
@@ -225,6 +275,238 @@ class JRController(object):
     def request(self, prefix, name, request, session=None):
 
         return JoinedRequest(self, prefix, name, request, session=session)
+
+    # -------------------------------------------------------------------------
+    def parse(self, source):
+
+        self.error = None
+
+        try:
+            parser = etree.XMLParser(no_network=False)
+            result = etree.parse(source, parser)
+            return result
+        except:
+            self.error = S3XML_PARSE_ERROR
+            return None
+
+    # -------------------------------------------------------------------------
+    def transform(self, tree, template_path):
+
+        if not NO_LXML:
+            template = self.parse(template_path)
+            if template:
+                try:
+                    transformer = etree.XSLT(template)
+                    result = transformer(tree)
+                    return result
+                except:
+                    self.error = S3XML_TRANFORMATION_ERROR
+                    return None
+            else:
+                # Error parsing the XSL template
+                return None
+        else:
+            self.error = S3XML_NO_LXML
+            return None
+
+    # -------------------------------------------------------------------------
+    def tostring(self, tree):
+
+        if NO_LXML:
+            return etree.tostring(tree.getroot(), encoding="utf-8")
+        else:
+            return etree.tostring(tree,
+                                  xml_declaration=True,
+                                  encoding="utf-8",
+                                  pretty_print=True)
+
+    # -------------------------------------------------------------------------
+    def xml_encode(self, obj):
+
+        if obj is None:
+            return None
+
+        encode = {'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'}
+        obj = obj.replace('&', '&amp;')
+        for c in encode.keys():
+            obj = obj.replace(c, encode[c])
+        return obj
+
+    # -------------------------------------------------------------------------
+    def xml_decode(self, obj):
+
+        if obj is None:
+            return None
+
+        decode = {'&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'" }
+        for c in decode.keys():
+            obj = obj.replace(c, decode[c])
+        return obj.replace('&amp;', '&')
+
+    # -------------------------------------------------------------------------
+    def __element(self, table, record, skip=[]):
+
+        element = etree.Element(self.TAG["resource"])
+
+        for f in record.keys():
+
+            if f in skip or \
+               f in self.IGNORE_FIELDS or \
+               f not in table:
+                continue
+
+            if f == self.UUID:
+                if record[f] is None:
+                    element.set(f, "")
+                else:
+                    value = table[f].formatter(record[f])
+                    element.set(f, self.xml_encode(str(value)))
+
+            elif f in self.FIELDS_TO_ATTRIBUTES:
+                if record[f] is None:
+                    element.set(f, "")
+                elif table[f].represent:
+                    element.set(f, self.xml_encode(str(table[f].represent(record[f])).decode('utf-8')))
+                else:
+                    element.set(f, self.xml_encode(str(table[f].formatter(record[f])).decode('utf-8')))
+
+            elif table[f].type.startswith("reference"):
+
+                _rtable = table[f].type.split()[1]
+
+                if _rtable in self.db and self.UUID in self.db[_rtable]:
+                    rtable = self.db[_rtable]
+                    try:
+                        _uuid = self.db(rtable.id==record[f]).select(rtable.uuid)[0].uuid
+                    except:
+                        continue
+                    reference = etree.SubElement(element, self.TAG["reference"])
+                    reference.set(self.ATTRIBUTE["field"], self.xml_encode(f))
+                    reference.set(self.ATTRIBUTE["resource"], self.xml_encode(_rtable))
+                    reference.set(self.UUID, self.xml_encode(str(_uuid)))
+                    value = table[f].formatter(record[f])
+                    if table[f].represent:
+                        reference.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
+                    else:
+                        reference.text = self.xml_encode(str(value).decode('utf-8'))
+                else:
+                    continue
+
+            else:
+                if record[f] is None:
+                    continue
+                else:
+                    data = etree.SubElement(element, self.TAG["data"])
+                    data.set(self.ATTRIBUTE["field"], self.xml_encode(f))
+                    value = table[f].formatter(record[f])
+                    if table[f].represent:
+                        data.set(self.ATTRIBUTE["value"], self.xml_encode(str(value).decode('utf-8')))
+                        data.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
+                    else:
+                        data.text = self.xml_encode(str(value).decode('utf-8'))
+
+        return element
+
+    # -------------------------------------------------------------------------
+    def __export(self, table, query, joins=[], skip=[], permit=None, audit=None, url=None):
+
+        _table = table._tablename
+        prefix, name = _table.split("_", 1)
+
+        if self.base_url and not url:
+            url = "%s/%s" % (self.base_url, prefix)
+
+        try:
+            if permit and not permit(self.ACTION["read"], _table):
+                return None
+
+            fields = [table[f] for f in table.fields]
+            records = self.db(query).select(*fields) or []
+            resources = []
+
+            for record in records:
+                if permit and not \
+                   permit(self.ACTION["read"], _table, record_id=record.id):
+                    continue
+
+                if audit is not None:
+                    audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
+
+                resource = self.__element(table, record, skip=skip)
+                resource.set(self.ATTRIBUTE["name"], _table)
+
+                if url:
+                    resource_url = "%s/%s/%s" % (url, name, record.id)
+                    resource.set(self.ATTRIBUTE["url"], resource_url)
+                else:
+                    resource_url = None
+
+                for join in joins:
+                    property, pkey, fkey = join
+
+                    _query = (property.table[fkey]==record[pkey])
+                    if "deleted" in property.table:
+                        _query = ((property.table.deleted==False) |
+                                  (property.table.deleted==None)) & _query
+
+                    jresources = self.__export(property.table, _query,
+                                               skip=[fkey],
+                                               permit=permit,
+                                               audit=audit,
+                                               url=resource_url)
+
+                    if jresources:
+                        if NO_LXML:
+                            for r in jresources:
+                                resource.append(r)
+                        else:
+                            resource.extend(jresources)
+
+                resources.append(resource)
+
+            return resources
+
+        except:
+            return None
+
+    # -------------------------------------------------------------------------
+    def get_xml(self, prefix, name, id, joins=[], permit=None, audit=None):
+
+        self.error = None
+
+        _table = "%s_%s" % (prefix, name)
+        root = etree.Element(self.TAG["root"])
+
+        if _table in self.db:
+            table = self.db[_table]
+
+            if id and isinstance(id, (list, tuple)):
+                query = (table.id.belongs(id))
+            elif id:
+                query = (table.id==id)
+            else:
+                query = (table.id>0)
+
+            if "deleted" in table:
+                query = ((table.deleted==False) | (table.deleted==None)) & query
+
+            resources = self.__export(table, query, joins=joins, permit=permit, audit=audit)
+
+            if resources:
+                if NO_LXML:
+                    for r in resources:
+                        root.append(r)
+                else:
+                    root.extend(resources)
+
+        if self.domain:
+            root.set(self.ATTRIBUTE["domain"], self.domain)
+
+        if self.base_url:
+            root.set(self.ATTRIBUTE["url"], self.base_url)
+
+        tree = etree.ElementTree(root)
+        return tree
 
 # *****************************************************************************
 # StructuredProperty
@@ -778,7 +1060,8 @@ class S3XML(object):
         value="value",
         resource="resource",
         domain="domain",
-        url="url"
+        url="url",
+        error="error"
         )
 
     # JSON Prefixes
@@ -1040,80 +1323,33 @@ class S3XML(object):
         return tree
 
     # -------------------------------------------------------------------------
-    def record(self, table, element, skip=[]):
+    def get_field_options(self, table, fieldname):
 
-        record = Storage()
-        original = None
+        field = table[fieldname]
+        requires = field.requires
 
-        if self.UUID in table.fields and self.UUID not in skip:
-            _uuid = element.get(self.UUID, None)
-            if _uuid and len(_uuid)>0:
-                record[self.UUID] = _uuid
-                try:
-                    original = self.db(table.uuid==_uuid).select(table.ALL)[0]
-                except:
-                    original = None
+        if not isinstance(requires, (list, tuple)):
+            requires = [requires]
 
-        for child in element:
-            if child.tag==self.TAG["data"]:
-                fieldname = child.get(self.ATTRIBUTE["field"], None)
-                if not fieldname or fieldname not in table.fields:
-                    continue
-                if fieldname in self.IGNORE_FIELDS or fieldname in skip:
-                    continue
-                if table[fieldname].type.startswith('reference'):
-                    continue
-                value = self.xml_decode(child.get(self.ATTRIBUTE["value"], None))
-                if value is None:
-                    value = self.xml_decode(child.text)
-                if value is None:
-                    value = table[fieldname].default
-                if value is None and table[fieldname].type == "string":
-                    value = ''
+        select = etree.Element(self.TAG["select"])
+        select.set(self.TAG["field"], fieldname)
 
-                if value is not None:
-                    (value, error) = self.validate(table, original, fieldname, value)
-                    if error:
-                        self.error = error
-                        return None
-                    else:
-                        record[fieldname]=value
+        if requires:
+            r = requires[0]
+            if isinstance(r, IS_NULL_OR) and hasattr(r.other, 'options'):
+                null = etree.SubElement(select, self.TAG["option"])
+                null.set(self.ATTRIBUTE["value"], "")
+                null.text = ""
+                options = r.other.options()
+            elif hasattr(requires0, 'options'):
+                options = r.options()
 
-            elif child.tag==self.TAG["reference"]:
-                fieldname = child.get(self.ATTRIBUTE["field"], None)
-                if not fieldname or fieldname not in table.fields:
-                    continue
-                _rtable =  child.get(self.ATTRIBUTE["resource"], None)
-                _uuid = child.get(self.UUID, None)
-                if not (_rtable and _uuid):
-                    continue
-                if _rtable in self.db and self.UUID in self.db[_rtable]:
-                    rtable = self.db[_rtable]
-                    try:
-                        rid = self.db(rtable.uuid==_uuid).select(rtable.id)[0].id
-                    except:
-                        continue
-                    record[fieldname] = rid
-                else:
-                    continue
+        for (value, text) in options:
+            option = etree.SubElement(select, self.TAG["option"])
+            option.set(self.ATTRIBUTE["value"], value)
+            option.text = text
 
-            else:
-                continue
-
-        for f in self.ATTRIBUTES_TO_FIELDS:
-            if f in skip:
-                continue
-            if f in table.fields:
-                value = element.get(f, None)
-                if value is not None:
-                    (value, error) = self.validate(table, original, f, value)
-                    if error:
-                        self.error = error
-                        return None
-                    else:
-                        record[f]=value
-
-        return record
+        return select
 
     # -------------------------------------------------------------------------
     def validate(self, table, record, fieldname, value):
@@ -1137,6 +1373,82 @@ class S3XML(object):
                     return (value, error)
 
             return(value, None)
+
+    # -------------------------------------------------------------------------
+    def record(self, table, element, skip=[]):
+
+        record = Storage()
+        original = None
+
+        if self.UUID in table.fields and self.UUID not in skip:
+            uuid = element.get(self.UUID, None)
+            if uuid:
+                record[self.UUID] = uuid
+                fields = [table[f] for f in table.fields]
+                original = self.db(table.uuid==uuid).select(*fields, limitby=(0,1))
+                if original:
+                    original = original[0]
+
+        for f in self.ATTRIBUTES_TO_FIELDS:
+            if f in self.IGNORE_FIELDS or f in skip:
+                continue
+            if f in table.fields:
+                value = self.xml_decode(element.get(f, None))
+                if value is not None:
+                    (value, error) = self.validate(table, original, f, value)
+                    if error:
+                        element.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
+                        return None
+                    else:
+                        record[f]=value
+
+        for child in element:
+            if child.tag==self.TAG["data"]:
+                f = child.get(self.ATTRIBUTE["field"], None)
+                if not f or f not in table.fields:
+                    continue
+                if f in self.IGNORE_FIELDS or f in skip:
+                    continue
+                if table[f].type.startswith('reference'):
+                    continue
+                value = self.xml_decode(child.get(self.ATTRIBUTE["value"], None))
+                if value is None:
+                    value = self.xml_decode(child.text)
+                if value is None:
+                    value = table[f].default
+                if value is None and table[f].type == "string":
+                    value = ''
+
+                if value is not None:
+                    (value, error) = self.validate(table, original, f, value)
+                    if error:
+                        child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
+                        return None
+                    else:
+                        record[f]=value
+
+            elif child.tag==self.TAG["reference"]:
+                f = child.get(self.ATTRIBUTE["field"], None)
+                if not f or f not in table.fields:
+                    continue
+                if f in self.IGNORE_FIELDS or f in skip:
+                    continue
+                ktablename =  child.get(self.ATTRIBUTE["resource"], None)
+                uuid = child.get(self.UUID, None)
+                if not (ktablename and uuid):
+                    continue
+                if ktablename in self.db and self.UUID in self.db[ktablename]:
+                    ktable = self.db[ktablename]
+                    krecord = self.db(ktable.uuid==uuid).select(ktable.id, limitby=(0,1))
+                    if krecord:
+                        record[f] = krecord[0].id
+                else:
+                    continue
+
+            else:
+                continue
+
+        return record
 
     # -------------------------------------------------------------------------
     def commit(self):
@@ -1216,7 +1528,7 @@ class S3XML(object):
 
             if not jrequest:
 
-                record = self.record(prefix, name, element)
+                record = self.record(table, element)
                 if not record:
                     self.error = S3XML_VALIDATION_ERROR
                     continue

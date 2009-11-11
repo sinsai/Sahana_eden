@@ -31,7 +31,8 @@ function TB_refresh() {
             // Set the newly-created value
             self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
             // Also populate dummy, if present
-            self.parent.$('#dummy').val(selectedname);
+            // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
+            //self.parent.$('#dummy').val(selectedname);
             // Clean-up
             self.parent.tb_remove();
         });

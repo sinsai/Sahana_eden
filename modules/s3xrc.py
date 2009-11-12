@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.2-1, 2009-11-09
+    @version: 1.3-1, 2009-11-12
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -78,440 +78,9 @@ except ImportError:
                 print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
 
 # *****************************************************************************
-# JRController
+# ObjectComponent
 #
-class JRController(object):
-
-    JRVARS = "jrvars"
-
-    UUID = "uuid"
-
-    IGNORE_FIELDS = ["deleted", "id"]
-
-    FIELDS_TO_ATTRIBUTES = [
-            "created_on",
-            "modified_on",
-            "created_by",
-            "modified_by",
-            "uuid",
-            "admin"]
-
-    ATTRIBUTES_TO_FIELDS = ("admin",)
-
-    TAG = dict(
-        root="sahanapy",
-        resource="resource",
-        reference="reference",
-        data="data",
-        list="list",
-        item="item",
-        object="object"
-        )
-
-    ATTRIBUTE = dict(
-        name="name",
-        table="table",
-        field="field",
-        value="value",
-        resource="resource",
-        domain="domain",
-        url="url",
-        error="error"
-        )
-
-    # JSON Prefixes
-    PREFIX = dict(
-        resource="$r",
-        reference="$k",
-        attribute="@",
-        text="$"
-    )
-
-    ACTION = dict(
-        create="create",
-        read="read",
-        update="update",
-        delete="delete"
-    )
-
-    def __init__(self, db, domain=None, base_url=None):
-
-        assert db is not None, "Database must not be None."
-        self.db = db
-
-        self.domain = domain
-        self.base_url = base_url
-
-        self.error = None
-
-        self.properties = {}
-
-        self.methods = {}
-        self.pmethods = {}
-
-    # -------------------------------------------------------------------------
-    def set_property(self, prefix, name, **attr):
-
-        assert "joinby" in attr, "Join key(s) must be defined."
-
-        property = StructuredProperty(self.db, prefix, name, **attr)
-        self.properties[name] = property
-        return property
-
-    # -------------------------------------------------------------------------
-    def get_property(self, prefix, name, property_name):
-
-        if property_name in self.properties:
-
-            property = self.properties[property_name]
-
-            pkey, fkey = property.get_join_keys(prefix, name)
-            if pkey is not None:
-                return (property, pkey, fkey)
-
-        return (None, None, None)
-
-    # -------------------------------------------------------------------------
-    def get_properties(self, prefix, name):
-
-        plist = []
-
-        for property_name in self.properties:
-
-            property, pkey, fkey = self.get_property(prefix, name, property_name)
-            if property is not None:
-                plist.append((property, pkey, fkey))
-
-        return plist
-
-    # -------------------------------------------------------------------------
-    def set_method(self, prefix, name, property_name=None, method=None, action=None):
-
-        assert method is not None, "Method must be specified."
-
-        tablename = "%s_%s" % (prefix, name)
-
-        if property_name is None:
-
-            if method not in self.methods:
-                self.methods[method] = {}
-            self.methods[method][tablename] = action
-
-        else:
-
-            property = self.get_property(prefix, name, property_name)[0]
-            if property is not None:
-
-                if method not in self.pmethods:
-                    self.pmethods[method] = {}
-
-                if property.tablename not in self.pmethods[method]:
-                    self.pmethods[method][property.tablename] = {}
-
-                self.pmethods[method][property.tablename][tablename] = action
-
-        return
-
-    # -------------------------------------------------------------------------
-    def get_method(self, prefix, name, property_name=None, method=None):
-
-        if not method:
-            return None
-
-        tablename = "%s_%s" % (prefix, name)
-
-        if property_name is None:
-
-            if method in self.methods and tablename in self.methods[method]:
-                return self.methods[method][tablename]
-            else:
-                return None
-
-        else:
-
-            property = self.get_property(prefix, name, property_name)[0]
-            if property is not None and \
-               method in self.pmethods and \
-               property.tablename in self.pmethods[method] and \
-               tablename in self.pmethods[method][property.tablename]:
-                return self.pmethods[method][property.tablename][tablename]
-            else:
-                return None
-
-    # -------------------------------------------------------------------------
-    def get_session(self, session, prefix, name):
-
-        tablename = "%s_%s" % (prefix, name)
-
-        if self.JRVARS in session and tablename in session[self.JRVARS]:
-            return session[self.JRVARS][tablename]
-
-    # -------------------------------------------------------------------------
-    def store_session(self, session, prefix, name, id):
-
-        if self.JRVARS not in session:
-            session[self.JRVARS] = Storage()
-
-        if self.JRVARS in session:
-            tablename = "%s_%s" % (prefix, name)
-            session[self.JRVARS][tablename] = id
-
-        return True # always return True to make this chainable
-
-    # -------------------------------------------------------------------------
-    def clear_session(self, session, prefix=None, name=None):
-
-        if prefix and name:
-            tablename = "%s_%s" % (prefix, name)
-            if self.JRVARS in session and tablename in session[self.JRVARS]:
-                del session[self.JRVARS][tablename]
-        else:
-            if self.JRVARS in session:
-                del session[self.JRVARS]
-
-        return True # always return True to make this chainable
-
-    # -------------------------------------------------------------------------
-    def request(self, prefix, name, request, session=None):
-
-        return JoinedRequest(self, prefix, name, request, session=session)
-
-    # -------------------------------------------------------------------------
-    def parse(self, source):
-
-        self.error = None
-
-        try:
-            parser = etree.XMLParser(no_network=False)
-            result = etree.parse(source, parser)
-            return result
-        except:
-            self.error = S3XML_PARSE_ERROR
-            return None
-
-    # -------------------------------------------------------------------------
-    def transform(self, tree, template_path):
-
-        if not NO_LXML:
-            template = self.parse(template_path)
-            if template:
-                try:
-                    transformer = etree.XSLT(template)
-                    result = transformer(tree)
-                    return result
-                except:
-                    self.error = S3XML_TRANFORMATION_ERROR
-                    return None
-            else:
-                # Error parsing the XSL template
-                return None
-        else:
-            self.error = S3XML_NO_LXML
-            return None
-
-    # -------------------------------------------------------------------------
-    def tostring(self, tree):
-
-        if NO_LXML:
-            return etree.tostring(tree.getroot(), encoding="utf-8")
-        else:
-            return etree.tostring(tree,
-                                  xml_declaration=True,
-                                  encoding="utf-8",
-                                  pretty_print=True)
-
-    # -------------------------------------------------------------------------
-    def xml_encode(self, obj):
-
-        if obj is None:
-            return None
-
-        encode = {'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'}
-        obj = obj.replace('&', '&amp;')
-        for c in encode.keys():
-            obj = obj.replace(c, encode[c])
-        return obj
-
-    # -------------------------------------------------------------------------
-    def xml_decode(self, obj):
-
-        if obj is None:
-            return None
-
-        decode = {'&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'" }
-        for c in decode.keys():
-            obj = obj.replace(c, decode[c])
-        return obj.replace('&amp;', '&')
-
-    # -------------------------------------------------------------------------
-    def __element(self, table, record, skip=[]):
-
-        element = etree.Element(self.TAG["resource"])
-
-        for f in record.keys():
-
-            if f in skip or \
-               f in self.IGNORE_FIELDS or \
-               f not in table:
-                continue
-
-            if f == self.UUID:
-                if record[f] is None:
-                    element.set(f, "")
-                else:
-                    value = table[f].formatter(record[f])
-                    element.set(f, self.xml_encode(str(value)))
-
-            elif f in self.FIELDS_TO_ATTRIBUTES:
-                if record[f] is None:
-                    element.set(f, "")
-                elif table[f].represent:
-                    element.set(f, self.xml_encode(str(table[f].represent(record[f])).decode('utf-8')))
-                else:
-                    element.set(f, self.xml_encode(str(table[f].formatter(record[f])).decode('utf-8')))
-
-            elif table[f].type.startswith("reference"):
-
-                _rtable = table[f].type.split()[1]
-
-                if _rtable in self.db and self.UUID in self.db[_rtable]:
-                    rtable = self.db[_rtable]
-                    try:
-                        _uuid = self.db(rtable.id==record[f]).select(rtable.uuid)[0].uuid
-                    except:
-                        continue
-                    reference = etree.SubElement(element, self.TAG["reference"])
-                    reference.set(self.ATTRIBUTE["field"], self.xml_encode(f))
-                    reference.set(self.ATTRIBUTE["resource"], self.xml_encode(_rtable))
-                    reference.set(self.UUID, self.xml_encode(str(_uuid)))
-                    value = table[f].formatter(record[f])
-                    if table[f].represent:
-                        reference.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
-                    else:
-                        reference.text = self.xml_encode(str(value).decode('utf-8'))
-                else:
-                    continue
-
-            else:
-                if record[f] is None:
-                    continue
-                else:
-                    data = etree.SubElement(element, self.TAG["data"])
-                    data.set(self.ATTRIBUTE["field"], self.xml_encode(f))
-                    value = table[f].formatter(record[f])
-                    if table[f].represent:
-                        data.set(self.ATTRIBUTE["value"], self.xml_encode(str(value).decode('utf-8')))
-                        data.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
-                    else:
-                        data.text = self.xml_encode(str(value).decode('utf-8'))
-
-        return element
-
-    # -------------------------------------------------------------------------
-    def __export(self, table, query, joins=[], skip=[], permit=None, audit=None, url=None):
-
-        _table = table._tablename
-        prefix, name = _table.split("_", 1)
-
-        if self.base_url and not url:
-            url = "%s/%s" % (self.base_url, prefix)
-
-        try:
-            if permit and not permit(self.ACTION["read"], _table):
-                return None
-
-            fields = [table[f] for f in table.fields]
-            records = self.db(query).select(*fields) or []
-            resources = []
-
-            for record in records:
-                if permit and not \
-                   permit(self.ACTION["read"], _table, record_id=record.id):
-                    continue
-
-                if audit is not None:
-                    audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
-
-                resource = self.__element(table, record, skip=skip)
-                resource.set(self.ATTRIBUTE["name"], _table)
-
-                if url:
-                    resource_url = "%s/%s/%s" % (url, name, record.id)
-                    resource.set(self.ATTRIBUTE["url"], resource_url)
-                else:
-                    resource_url = None
-
-                for join in joins:
-                    property, pkey, fkey = join
-
-                    _query = (property.table[fkey]==record[pkey])
-                    if "deleted" in property.table:
-                        _query = ((property.table.deleted==False) |
-                                  (property.table.deleted==None)) & _query
-
-                    jresources = self.__export(property.table, _query,
-                                               skip=[fkey],
-                                               permit=permit,
-                                               audit=audit,
-                                               url=resource_url)
-
-                    if jresources:
-                        if NO_LXML:
-                            for r in jresources:
-                                resource.append(r)
-                        else:
-                            resource.extend(jresources)
-
-                resources.append(resource)
-
-            return resources
-
-        except:
-            return None
-
-    # -------------------------------------------------------------------------
-    def get_xml(self, prefix, name, id, joins=[], permit=None, audit=None):
-
-        self.error = None
-
-        _table = "%s_%s" % (prefix, name)
-        root = etree.Element(self.TAG["root"])
-
-        if _table in self.db:
-            table = self.db[_table]
-
-            if id and isinstance(id, (list, tuple)):
-                query = (table.id.belongs(id))
-            elif id:
-                query = (table.id==id)
-            else:
-                query = (table.id>0)
-
-            if "deleted" in table:
-                query = ((table.deleted==False) | (table.deleted==None)) & query
-
-            resources = self.__export(table, query, joins=joins, permit=permit, audit=audit)
-
-            if resources:
-                if NO_LXML:
-                    for r in resources:
-                        root.append(r)
-                else:
-                    root.extend(resources)
-
-        if self.domain:
-            root.set(self.ATTRIBUTE["domain"], self.domain)
-
-        if self.base_url:
-            root.set(self.ATTRIBUTE["url"], self.base_url)
-
-        tree = etree.ElementTree(root)
-        return tree
-
-# *****************************************************************************
-# StructuredProperty
-#
-class StructuredProperty(object):
+class ObjectComponent(object):
 
     def __init__(self, db, prefix, name, **attr):
 
@@ -571,16 +140,172 @@ class StructuredProperty(object):
             return None
 
 # *****************************************************************************
-# JoinedRequest
+# ObjectModel
 #
-class JoinedRequest(object):
+class ObjectModel(object):
+
+    def __init__(self, db):
+
+        self.db = db
+
+        self.components = {}
+
+        self.methods = {}
+        self.cmethods = {}
+
+    # -------------------------------------------------------------------------
+    def add_component(self, prefix, name, **attr):
+
+        assert "joinby" in attr, "Join key(s) must be defined."
+
+        component = ObjectComponent(self.db, prefix, name, **attr)
+        self.components[name] = component
+        return component
+
+    # -------------------------------------------------------------------------
+    def get_component(self, prefix, name, component_name):
+
+        if component_name in self.components:
+
+            component = self.components[component_name]
+
+            pkey, fkey = component.get_join_keys(prefix, name)
+            if pkey is not None:
+                return (component, pkey, fkey)
+
+        return (None, None, None)
+
+    # -------------------------------------------------------------------------
+    def get_components(self, prefix, name):
+
+        component_list = []
+
+        for component_name in self.components:
+
+            component, pkey, fkey = self.get_component(prefix, name, component_name)
+            if component is not None:
+                component_list.append((component, pkey, fkey))
+
+        return component_list
+
+    # -------------------------------------------------------------------------
+    def set_method(self, prefix, name, component_name=None, method=None, action=None):
+
+        assert method is not None, "Method must be specified."
+
+        tablename = "%s_%s" % (prefix, name)
+
+        if component_name is None:
+
+            if method not in self.methods:
+                self.methods[method] = {}
+            self.methods[method][tablename] = action
+
+        else:
+
+            component = self.get_component(prefix, name, component_name)[0]
+            if component is not None:
+
+                if method not in self.cmethods:
+                    self.cmethods[method] = {}
+
+                if component.tablename not in self.cmethods[method]:
+                    self.cmethods[method][component.tablename] = {}
+
+                self.cmethods[method][component.tablename][tablename] = action
+
+        return True
+
+    # -------------------------------------------------------------------------
+    def get_method(self, prefix, name, component_name=None, method=None):
+
+        if not method:
+            return None
+
+        tablename = "%s_%s" % (prefix, name)
+
+        if component_name is None:
+
+            if method in self.methods and tablename in self.methods[method]:
+                return self.methods[method][tablename]
+            else:
+                return None
+
+        else:
+
+            component = self.get_component(prefix, name, component_name)[0]
+            if component is not None and \
+               method in self.cmethods and \
+               component.tablename in self.cmethods[method] and \
+               tablename in self.cmethods[method][component.tablename]:
+                return self.cmethods[method][component.tablename][tablename]
+            else:
+                return None
+
+# *****************************************************************************
+# ResourceController
+#
+class ResourceController(object):
+
+    RCVARS = "rcvars"
+
+    def __init__(self, db, domain=None, base_url=None):
+
+        assert db is not None, "Database must not be None."
+        self.db = db
+
+        self.model = ObjectModel(self.db)
+        self.xml = S3XML(self.db, domain=domain, base_url=base_url)
+
+    # -------------------------------------------------------------------------
+    def get_session(self, session, prefix, name):
+
+        tablename = "%s_%s" % (prefix, name)
+
+        if self.RCVARS in session and tablename in session[self.RCVARS]:
+            return session[self.RCVARS][tablename]
+
+    # -------------------------------------------------------------------------
+    def store_session(self, session, prefix, name, id):
+
+        if self.RCVARS not in session:
+            session[self.RCVARS] = Storage()
+
+        if self.RCVARS in session:
+            tablename = "%s_%s" % (prefix, name)
+            session[self.RCVARS][tablename] = id
+
+        return True # always return True to make this chainable
+
+    # -------------------------------------------------------------------------
+    def clear_session(self, session, prefix=None, name=None):
+
+        if prefix and name:
+            tablename = "%s_%s" % (prefix, name)
+            if self.RCVARS in session and tablename in session[self.RCVARS]:
+                del session[self.RCVARS][tablename]
+        else:
+            if self.RCVARS in session:
+                del session[self.RCVARS]
+
+        return True # always return True to make this chainable
+
+    # -------------------------------------------------------------------------
+    def request(self, prefix, name, request, session=None):
+
+        return XRequest(self, prefix, name, request, session=session)
+
+# *****************************************************************************
+# XRequest
+#
+class XRequest(object):
 
     DEFAULT_REPRESENTATION = "html"
 
-    def __init__(self, jrc, prefix, name, request, session=None):
+    def __init__(self, rc, prefix, name, request, session=None):
 
-        assert jrc is not None, "JRController must not be None."
-        self.jrc = jrc
+        assert rc is not None, "Resource controller must not be None."
+        self.rc = rc
 
         self.prefix = prefix or request.controller
         self.name = name or request.function
@@ -602,16 +327,16 @@ class JoinedRequest(object):
         self.extension = False
 
         self.tablename = "%s_%s" % (self.prefix, self.name)
-        self.table = self.jrc.db[self.tablename]
+        self.table = self.rc.db[self.tablename]
 
         self.method = None
         self.id = None
         self.record = None
 
-        self.property = None
+        self.component = None
         self.pkey = self.fkey = None
-        self.property_name = None
-        self.property_id = None
+        self.component_name = None
+        self.component_id = None
         self.multiple = True
 
         if not self.__parse():
@@ -620,36 +345,36 @@ class JoinedRequest(object):
         if not self.__record():
             return None
 
-        # Check for property
-        if self.property_name:
-            self.property, self.pkey, self.fkey = self.jrc.get_property(self.prefix, self.name, self.property_name)
+        # Check for component
+        if self.component_name:
+            self.component, self.pkey, self.fkey = self.rc.model.get_component(self.prefix, self.name, self.component_name)
 
-            if not self.property:
+            if not self.component:
                 self.invalid = self.badrequest = True
                 return None
 
-            if "multiple" in self.property.attr:
-                self.multiple = self.property.attr.multiple
+            if "multiple" in self.component.attr:
+                self.multiple = self.component.attr.multiple
 
-            if not self.property_id:
+            if not self.component_id:
                 if self.args[len(self.args)-1].isdigit():
-                    self.property_id = self.args[len(self.args)-1]
+                    self.component_id = self.args[len(self.args)-1]
 
         # Check for custom action
-        self.custom_action = self.jrc.get_method(self.prefix, self.name,
-                                                 property_name=self.property_name,
+        self.custom_action = self.rc.model.get_method(self.prefix, self.name,
+                                                 component_name=self.component_name,
                                                  method=self.method)
 
         # Append record ID to request as necessary
         if self.id:
             if len(self.args)>0 or len(self.args)==0 and ('id_label' in self.request.vars):
-                if self.property and not self.args[0].isdigit():
+                if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
                     if self.representation==self.DEFAULT_REPRESENTATION or self.extension:
                         self.request.args.insert(0, str(self.id))
                     else:
                         self.request.args.insert(0, '%s.%s' % (self.id, self.representation))
-                elif not self.property and not (str(self.id) in self.args):
+                elif not self.component and not (str(self.id) in self.args):
                     self.args.append(self.id)
                     if self.representation==self.DEFAULT_REPRESENTATION or self.extension:
                         self.request.args.append(self.id)
@@ -661,7 +386,7 @@ class JoinedRequest(object):
 
         self.args = []
 
-        properties = self.jrc.properties
+        components = self.rc.model.components
 
         if len(self.request.args)>0:
 
@@ -678,22 +403,22 @@ class JoinedRequest(object):
             if self.args[0].isdigit():
                 self.id = self.args[0]
                 if len(self.args)>1:
-                    self.property_name = self.args[1]
-                    if self.property_name in properties:
+                    self.component_name = self.args[1]
+                    if self.component_name in components:
                         if len(self.args)>2:
                             if self.args[2].isdigit():
-                                self.property_id = self.args[2]
+                                self.component_id = self.args[2]
                             else:
                                 self.method = self.args[2]
                     else:
                         self.invalid = self.badrequest = True
                         return False
             else:
-                if self.args[0] in properties:
-                    self.property_name = self.args[0]
+                if self.args[0] in components:
+                    self.component_name = self.args[0]
                     if len(self.args)>1:
                         if self.args[1].isdigit():
-                            self.property_id = self.args[1]
+                            self.component_id = self.args[1]
                         else:
                             self.method = self.args[1]
                 else:
@@ -720,7 +445,7 @@ class JoinedRequest(object):
             if 'deleted' in self.table:
                 query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
             fields = [self.table[f] for f in self.table.fields]
-            records = self.jrc.db(query).select(*fields, limitby=(0,1))
+            records = self.rc.db(query).select(*fields, limitby=(0,1))
             if not records:
                 self.id = None
                 self.invalid = self.badrecord = True
@@ -736,7 +461,7 @@ class JoinedRequest(object):
                 if 'deleted' in self.table:
                     query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
                 fields = [self.table[f] for f in self.table.fields]
-                records = self.jrc.db(query).select(*fields, limitby=(0,1))
+                records = self.rc.db(query).select(*fields, limitby=(0,1))
                 if records:
                     self.record = records[0]
                     self.id = self.record.id
@@ -748,23 +473,23 @@ class JoinedRequest(object):
         # Retrieve prior selected ID, if any
         if not self.id and len(self.request.args)>0:
 
-            self.id = self.jrc.get_session(self.session, self.prefix, self.name)
+            self.id = self.rc.get_session(self.session, self.prefix, self.name)
 
             if self.id:
                 query = (self.table.id==self.id)
                 if 'deleted' in self.table:
                     query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
                 fields = [self.table[f] for f in self.table.fields]
-                records = self.jrc.db(query).select(*fields, limitby=(0,1))
+                records = self.rc.db(query).select(*fields, limitby=(0,1))
                 if not records:
                     self.id = None
-                    self.jrc.clear_session(self.session, self.prefix, self.name)
+                    self.rc.clear_session(self.session, self.prefix, self.name)
                 else:
                     self.record = records[0]
 
         # Remember primary record ID for further requests
         if self.id:
-            self.jrc.store_session(self.session, self.prefix, self.name, self.id)
+            self.rc.store_session(self.session, self.prefix, self.name, self.id)
 
         return True
 
@@ -780,16 +505,16 @@ class JoinedRequest(object):
         if not representation:
             representation = self.representation
 
-        if self.property:
+        if self.component:
             args = [self.id]
             if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.property_name, representation))
+                args.append('%s.%s' % (self.component_name, representation))
             else:
-                args.append(self.property_name)
+                args.append(self.component_name)
             if self.method:
                 args.append(self.method)
-                if self.property_id:
-                    args.append(self.property_id)
+                if self.component_id:
+                    args.append(self.component_id)
         else:
             if self.method:
                 args.append(self.method)
@@ -818,20 +543,20 @@ class JoinedRequest(object):
 
         if not record_id:
             record_id = self.id
-            property_id = self.property_id
+            component_id = self.component_id
         else:
-            property_id = None
+            component_id = None
 
-        if self.property:
+        if self.component:
             args = [record_id]
             if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.property_name, representation))
+                args.append('%s.%s' % (self.component_name, representation))
             else:
-                args.append(self.property_name)
+                args.append(self.component_name)
             if method:
                 args.append(method)
-                if property_id:
-                    args.append(property_id)
+                if component_id:
+                    args.append(component_id)
         else:
             if method:
                 args.append(method)
@@ -857,12 +582,12 @@ class JoinedRequest(object):
         if not representation:
             representation = self.representation
 
-        if self.property:
+        if self.component:
             args = [self.id]
             if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.property_name, representation))
+                args.append('%s.%s' % (self.component_name, representation))
             else:
-                args.append(self.property_name)
+                args.append(self.component_name)
         else:
             if not representation==self.DEFAULT_REPRESENTATION:
                 vars = {'format': representation}
@@ -881,12 +606,12 @@ class JoinedRequest(object):
         if not representation:
             representation = self.representation
 
-        if self.property:
+        if self.component:
             args = ['[id]']
             if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.property_name, representation))
+                args.append('%s.%s' % (self.component_name, representation))
             else:
-                args.append(self.property_name)
+                args.append(self.component_name)
             if self.method:
                 args.append(self.method)
         else:
@@ -906,12 +631,12 @@ class JoinedRequest(object):
     # -------------------------------------------------------------------------
     def target(self):
 
-        if self.property is not None:
+        if self.component is not None:
             return (
-                self.property.prefix,
-                self.property.name,
-                self.property.table,
-                self.property.tablename
+                self.component.prefix,
+                self.component.name,
+                self.component.table,
+                self.component.tablename
             )
         else:
             return (
@@ -924,128 +649,37 @@ class JoinedRequest(object):
     # -------------------------------------------------------------------------
     def export_xml(self, permit=None, audit=None, template=None):
 
-        if self.property:
-            joins = [(self.property, self.pkey, self.fkey)]
+        if self.component:
+            joins = [(self.component, self.pkey, self.fkey)]
         else:
-            joins = self.jrc.get_properties(self.prefix, self.name)
+            joins = self.rc.model.get_components(self.prefix, self.name)
 
-        output = tree = self.jrc.get_xml(self.prefix, self.name, self.id,
+        output = tree = self.rc.xml.get(self.prefix, self.name, self.id,
                                          joins=joins, permit=permit, audit=audit)
 
         if template is not None:
-            output = self.jrc.transform(tree, template)
+            output = self.rc.transform(tree, template)
             if not output:
                 if self.representation=="xml":
                     output = tree
                 else:
-                    self.error = self.jrc.error
+                    self.error = self.rc.error
                     return None
 
-        return self.jrc.tostring(output)
-
-# *****************************************************************************
-# XMLImport
-#
-class XMLImport(object):
-
-    PERMISSION = dict(create="create", update="update")
-
-    def __init__(self,
-                 db=None,
-                 prefix=None,
-                 name=None,
-                 id=None,
-                 record=None,
-                 permit=None,
-                 onvalidation=None,
-                 onaccept=None):
-
-        self.db=db
-        self.prefix=prefix
-        self.name=name
-        self.id=id
-
-        self.tablename = "%s_%s" % (self.prefix, self.name)
-        self.table = self.db[self.tablename]
-
-        self.method=None
-        self.record=record
-
-        self.onvalidation=onvalidation
-        self.onaccept=onaccept
-
-        self.accepted=True
-        self.permitted=True
-        self.committed=False
-
-        self.UUID = "uuid"
-
-        if not self.id:
-            self.method = "create"
-            permission = self.PERMISSION["create"]
-            self.id = 0
-
-            _uuid = self.record.get(self.UUID, None)
-            if _uuid is not None:
-                if self.db(self.table.uuid==_uuid).count():
-                    del self.record[self.UUID]
-                    self.method = "update"
-                    permission = self.PERMISSION["update"]
-                    self.id = self.db(self.table.uuid==_uuid).select(self.table.id)[0].id
-        else:
-            self.method = "update"
-            permission = self.PERMISSION["update"]
-
-            if self.UUID in record:
-                del self.record[self.UUID]
-
-            if not self.db(self.table.id==id).count():
-                self.method = None
-                self.id = 0
-
-        if permit and not \
-           permit(permission, self.tablename, record_id=self.id):
-            self.permitted=False
+        return self.rc.xml.tostring(output)
 
     # -------------------------------------------------------------------------
-    def commit(self):
+    def export_json(self, permit=None, audit=None):
 
-        if self.committed:
-            return True
-
-        if self.accepted and self.permitted:
-            form = Storage() # PseudoForm for callbacks
-            form.method = self.method
-            form.vars = self.record
-            form.vars.id = self.id
-
-            if self.onvalidation:
-                self.onvalidation(form)
-
-            try:
-                if self.method == "update":
-                    self.db(self.table.id==self.id).update(**dict(self.record))
-                elif self.method == "create":
-                    self.id = self.table.insert(**dict(self.record))
-
-                self.committed=True
-
-            except:
-                self.id=0
-                self.method=None
-                self.accepted=False
-                self.committed=False
-                return False
-
-            form.vars.id = self.id
-
-            if self.onaccept:
-                self.onaccept(form)
-
-            return True
-
+        if self.component:
+            joins = [(self.component, self.pkey, self.fkey)]
         else:
-            return False
+            joins = self.rc.model.get_components(self.prefix, self.name)
+
+        tree = self.rc.xml.get(self.prefix, self.name, self.id,
+                               joins=joins, permit=permit, audit=audit)
+
+        return self.rc.xml.tree2json(tree)
 
 # *****************************************************************************
 # S3XML
@@ -1087,14 +721,6 @@ class S3XML(object):
         error="error"
         )
 
-    # JSON Prefixes
-    PREFIX = dict(
-        resource="$r",
-        reference="$k",
-        attribute="@",
-        text="$"
-    )
-
     ACTION = dict(
         create="create",
         read="read",
@@ -1102,13 +728,17 @@ class S3XML(object):
         delete="delete"
     )
 
+    PREFIX = dict(
+        resource="$",
+        reference="$k",
+        attribute="@",
+        text="$"
+    )
+
     def __init__(self, db, domain=None, base_url=None):
 
         self.db = db
         self.error = None
-
-        self.imports = []
-        self.exports = []
 
         self.domain = domain
         self.base_url = base_url
@@ -1128,6 +758,8 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def transform(self, tree, template_path):
+
+        self.error = None
 
         if not NO_LXML:
             template = self.parse(template_path)
@@ -1181,7 +813,7 @@ class S3XML(object):
         return obj.replace('&amp;', '&')
 
     # -------------------------------------------------------------------------
-    def __element(self, table, record, skip=[]):
+    def element(self, table, record, skip=[]):
 
         element = etree.Element(self.TAG["resource"])
 
@@ -1245,7 +877,7 @@ class S3XML(object):
         return element
 
     # -------------------------------------------------------------------------
-    def __export(self, table, query, joins=[], skip=[], permit=None, audit=None, url=None):
+    def export(self, table, query, joins=[], skip=[], permit=None, audit=None, url=None):
 
         _table = table._tablename
         prefix, name = _table.split("_", 1)
@@ -1263,13 +895,13 @@ class S3XML(object):
 
             for record in records:
                 if permit and not \
-                   permit(self.ACTION["read"], _table, record_id=record.id):
+                    permit(self.ACTION["read"], _table, record_id=record.id):
                     continue
 
                 if audit is not None:
                     audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
 
-                resource = self.__element(table, record, skip=skip)
+                resource = self.element(table, record, skip=skip)
                 resource.set(self.ATTRIBUTE["name"], _table)
 
                 if url:
@@ -1284,13 +916,13 @@ class S3XML(object):
                     _query = (property.table[fkey]==record[pkey])
                     if "deleted" in property.table:
                         _query = ((property.table.deleted==False) |
-                                  (property.table.deleted==None)) & _query
+                                    (property.table.deleted==None)) & _query
 
-                    jresources = self.__export(property.table, _query,
-                                               skip=[fkey],
-                                               permit=permit,
-                                               audit=audit,
-                                               url=resource_url)
+                    jresources = self.export(property.table, _query,
+                                                skip=[fkey],
+                                                permit=permit,
+                                                audit=audit,
+                                                url=resource_url)
 
                     if jresources:
                         if NO_LXML:
@@ -1327,7 +959,7 @@ class S3XML(object):
             if "deleted" in table:
                 query = ((table.deleted==False) | (table.deleted==None)) & query
 
-            resources = self.__export(table, query, joins=joins, permit=permit, audit=audit)
+            resources = self.export(table, query, joins=joins, permit=permit, audit=audit)
 
             if resources:
                 if NO_LXML:
@@ -1744,4 +1376,108 @@ class S3XML(object):
                 return etree.ElementTree(root)
 
         return None
+
+# *****************************************************************************
+# XMLImport
+#
+class XMLImport(object):
+
+    PERMISSION = dict(create="create", update="update")
+
+    def __init__(self,
+                 db=None,
+                 prefix=None,
+                 name=None,
+                 id=None,
+                 record=None,
+                 permit=None,
+                 onvalidation=None,
+                 onaccept=None):
+
+        self.db=db
+        self.prefix=prefix
+        self.name=name
+        self.id=id
+
+        self.tablename = "%s_%s" % (self.prefix, self.name)
+        self.table = self.db[self.tablename]
+
+        self.method=None
+        self.record=record
+
+        self.onvalidation=onvalidation
+        self.onaccept=onaccept
+
+        self.accepted=True
+        self.permitted=True
+        self.committed=False
+
+        self.UUID = "uuid"
+
+        if not self.id:
+            self.method = "create"
+            permission = self.PERMISSION["create"]
+            self.id = 0
+
+            _uuid = self.record.get(self.UUID, None)
+            if _uuid is not None:
+                if self.db(self.table.uuid==_uuid).count():
+                    del self.record[self.UUID]
+                    self.method = "update"
+                    permission = self.PERMISSION["update"]
+                    self.id = self.db(self.table.uuid==_uuid).select(self.table.id)[0].id
+        else:
+            self.method = "update"
+            permission = self.PERMISSION["update"]
+
+            if self.UUID in record:
+                del self.record[self.UUID]
+
+            if not self.db(self.table.id==id).count():
+                self.method = None
+                self.id = 0
+
+        if permit and not \
+           permit(permission, self.tablename, record_id=self.id):
+            self.permitted=False
+
+    # -------------------------------------------------------------------------
+    def commit(self):
+
+        if self.committed:
+            return True
+
+        if self.accepted and self.permitted:
+            form = Storage() # PseudoForm for callbacks
+            form.method = self.method
+            form.vars = self.record
+            form.vars.id = self.id
+
+            if self.onvalidation:
+                self.onvalidation(form)
+
+            try:
+                if self.method == "update":
+                    self.db(self.table.id==self.id).update(**dict(self.record))
+                elif self.method == "create":
+                    self.id = self.table.insert(**dict(self.record))
+
+                self.committed=True
+
+            except:
+                self.id=0
+                self.method=None
+                self.accepted=False
+                self.committed=False
+                return False
+
+            form.vars.id = self.id
+
+            if self.onaccept:
+                self.onaccept(form)
+
+            return True
+
+        else:
+            return False
 

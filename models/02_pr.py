@@ -546,15 +546,7 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 #
 # shn_pr_person_search_simple -------------------------------------------------
 #
-def shn_pr_person_search_simple(module, resource, record_id, method,
-    jmodule=None,
-    jresource=None,
-    jrecord_id=None,
-    joinby=None,
-    multiple=True,
-    representation="html",
-    onvalidation=None,
-    onaccept=None):
+def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
     """
         Simple search form for persons
     """
@@ -563,7 +555,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
         session.error = UNAUTHORISED
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
 
-    if representation=="html":
+    if xrequest.representation=="html":
         # Check for redirection
         if request.vars._next:
             next = str.lower(request.vars._next)
@@ -571,7 +563,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
             next = str.lower(URL(r=request, f='person', args='[id]'))
 
         # Custom view
-        response.view = '%s/person_search.html' % module
+        response.view = '%s/person_search.html' % xrequest.prefix
 
         # Title and subtitle
         title = T('Search for a Person')
@@ -635,7 +627,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
         redirect(URL(r=request))
 
 # Plug into REST controller
-jrcontroller.set_method(module, 'person', method='search_simple', action=shn_pr_person_search_simple )
+s3xrc.model.set_method(module, 'person', method='search_simple', action=shn_pr_person_search_simple )
 
 #
 # shn_pr_pheader --------------------------------------------------------------

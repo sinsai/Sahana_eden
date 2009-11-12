@@ -298,7 +298,7 @@ msg_record_deleted = T('Feature Metadata deleted')
 msg_list_empty = T('No Feature Metadata currently defined')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Joined Resource
-jrcontroller.set_property(module, resource,
+s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby=dict(gis_feature='feature'),
     deletable=True,
@@ -368,7 +368,7 @@ feature_id = SQLTable(None, 'feature_id',
                 ondelete = 'RESTRICT'
                 ))
 # Joined Resource
-jrcontroller.set_property(module, resource,
+s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby=dict(gis_feature_class='feature_class'),
     deletable=True,
@@ -533,7 +533,7 @@ location_id = SQLTable(None, 'location_id',
                 ondelete = 'RESTRICT'
                 ))
 # Joined Resource
-jrcontroller.set_property(module, resource,
+s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby=dict(gis_feature='feature'),
     deletable=True,

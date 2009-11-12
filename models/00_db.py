@@ -84,8 +84,8 @@ def shn_auth_on_login(form):
         Actions that need to be performed on successful login (Do not redirect from here!)
     """
 
-    # JR controller
-    jrcontroller.clear_session(session)
+    # S3XRC
+    s3xrc.clear_session(session)
 
 # shn_on_logout ---------------------------------------------------------------
 # added 2009-08-27 by nursix
@@ -94,8 +94,8 @@ def shn_auth_on_logout(user):
         Actions that need to be performed on logout (Do not redirect from here!)
     """
 
-    # JR controller
-    jrcontroller.clear_session(session)
+    # S3XRC
+    s3xrc.clear_session(session)
 
 #
 # Widgets

@@ -591,6 +591,7 @@ class JoinedRequest(object):
         else:
             self.session = Storage()
 
+        self.error = None
         self.invalid = False
         self.badmethod = False
         self.badrecord = False
@@ -919,6 +920,28 @@ class JoinedRequest(object):
                 self.table,
                 self.tablename
             )
+
+    # -------------------------------------------------------------------------
+    def export_xml(self, permit=None, audit=None, template=None):
+
+        if self.property:
+            joins = [(self.property, self.pkey, self.fkey)]
+        else:
+            joins = self.jrc.get_properties(self.prefix, self.name)
+
+        output = tree = self.jrc.get_xml(self.prefix, self.name, self.id,
+                                         joins=joins, permit=permit, audit=audit)
+
+        if template is not None:
+            output = self.jrc.transform(tree, template)
+            if not output:
+                if self.representation=="xml":
+                    output = tree
+                else:
+                    self.error = self.jrc.error
+                    return None
+
+        return self.jrc.tostring(output)
 
 # *****************************************************************************
 # XMLImport

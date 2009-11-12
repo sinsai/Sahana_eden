@@ -300,35 +300,25 @@ def export_xml(jr):
 
     """ Export data as XML """
 
-    if jr.property:
-        joins = [(jr.property, jr.pkey, jr.fkey)]
-    else:
-        joins = jrcontroller.get_properties(jr.prefix, jr.name)
-
     response.headers['Content-Type'] = 'text/xml'
-    tree = jrcontroller.get_xml(jr.prefix, jr.name, jr.id,
-                                joins=joins, permit=shn_has_permission, audit=shn_audit)
 
-    # XSL Transformation
-    template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-    template_file = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
-    if os.path.exists(template_file):
-        output = jrcontroller.transform(tree, template_file)
-        if not output:
-            if jr.representation=="xml":
-                output=tree
-            else:
-                session.error = str(T("XSL Transformation Error: ")) + \
-                                jrcontroller.error
-                redirect(URL(r=request, f="index"))
+    if jr.representation=="xml":
+        template = None
     else:
-        session.error = str(T("XSL Template Not Found: ")) + \
-                        XSLT_EXPORT_TEMPLATES + "/" + template_name
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
+        if not os.path.exists(template):
+            session.error = str(T("XSLT Template Not Found: ")) + \
+                            XSLT_EXPORT_TEMPLATES + "/" + template_name
+            redirect(URL(r=request, f="index"))
+
+    output = jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)
+
+    if not output:
+        session.error = str(T("XSL Transformation Error: ")) + jr.error
         redirect(URL(r=request, f="index"))
 
-    # Serialize
-    output_str = jrcontroller.tostring(output)
-    return output_str
+    return output
 
 #
 # import_csv ------------------------------------------------------------------
@@ -482,11 +472,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         http_put = True
         source = jr.request.body
 
-    print source
-
     _tree = s3xml.parse(source)
-    if not _tree:
-        print "Error: %s" % s3xml.error
 
     # XSL Transformation
     template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
@@ -560,8 +546,6 @@ def shn_has_permission(name, table_name, record_id = 0):
 
     """
 
-    print "Check permission: %s on %s #%s" % (name, table_name, record_id)
-
     if session.s3.security_policy == 1:
         # Simple policy
         # Anonymous users can Read.
@@ -629,8 +613,6 @@ def shn_accessible_query(name, table):
 # shn_audit -------------------------------------------------------------------
 #
 def shn_audit(operation, module, resource, form=None, record=None, representation=None):
-
-    print "Audit: %s %s_%s %s (%s)" % (operation, module, resource, record, representation)
 
     if operation in ("list", "read"):
         return shn_audit_read(operation, module, resource,
@@ -881,7 +863,7 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
 #
 def shn_custom_view(jr, default_name):
 
-    """ Check for custom view. """
+    """ Check for custom view """
 
     if jr.property_name:
 
@@ -1962,6 +1944,11 @@ def shn_rest_controller(module, resource,
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
 
+        # Options (joined table) **********************************************
+        elif jr.method=="options":
+            session.error = BADMETHOD
+            redirect(URL(r=request, f='index'))
+
         # Unsupported Method **************************************************
         else:
             session.error = BADMETHOD
@@ -2171,6 +2158,11 @@ def shn_rest_controller(module, resource,
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
+
+        # Options (single table) **********************************************
+        elif jr.method=="options":
+            session.error = BADMETHOD
+            redirect(URL(r=request, f='index'))
 
         # Unsupported Method **************************************************
         else:

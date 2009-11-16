@@ -462,8 +462,6 @@ def import_xml(jr, onvalidation=None, onaccept=None):
 
     """ Import XML data """
 
-    s3xml = S3XML(db)
-
     http_put = False
     if "filename" in jr.request.vars:
         source = jr.request.vars["filename"]
@@ -473,13 +471,13 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         http_put = True
         source = jr.request.body
 
-    _tree = s3xml.parse(source)
+    _tree = s3xrc.xml.parse(source)
 
     # XSL Transformation
     template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
     template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
     if os.path.exists(template_file):
-        tree = s3xml.transform(_tree, template_file)
+        tree = s3xrc.xml.transform(_tree, template_file)
         if not tree:
             session.error = str(T("XSL Transformation Error: ")) + s3xml.error
             redirect(URL(r=request, f="index"))
@@ -493,7 +491,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         joins = [(jr.component, jr.pkey, jr.fkey)]
     else:
         jrequest = False
-        joins = s3xrc.get_properties(jr.prefix, jr.name)
+        joins = s3xrc.model.get_components(jr.prefix, jr.name)
 
     if onaccept:
         _onaccept = lambda form: \
@@ -506,28 +504,28 @@ def import_xml(jr, onvalidation=None, onaccept=None):
     if jr.method=="create":
         jr.id=None
 
-    success = s3xml.put(jr.prefix, jr.name, jr.id, tree,
+    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
         joins=joins,
         jrequest=jrequest,
         onvalidation=onvalidation,
         onaccept=_onaccept)
 
     if success:
-        for i in s3xml.imports:
+        for i in s3xrc.xml.imports:
             if not i.committed:
-                i.onvalidation = s3xrc.get_attr(i.name, "onvalidation")
+                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
                 if i.method=="create":
                     i.onaccept = lambda form: \
                         shn_audit_create(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.get_attr(i.name, "onaccept")
+                        s3xrc.model.get_attr(i.name, "onaccept")
                 else:
                     i.onaccept = lambda form: \
                         shn_audit_update(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.get_attr(i.name, "onaccept")
-        s3xml.commit()
+                        s3xrc.model.get_attr(i.name, "onaccept")
+        s3xrc.xml.commit()
         item = json_message()
     else:
-        item = json_message(False, 501, s3xml.error)
+        item = json_message(False, 501, s3xrc.xml.error)
 
     # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
     return dict(item=item)

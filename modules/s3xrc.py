@@ -1115,6 +1115,7 @@ class S3XML(object):
 
         for r in self.imports:
             r.commit()
+        self.imports = []
         return
 
     # -------------------------------------------------------------------------

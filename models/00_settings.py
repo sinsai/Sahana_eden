@@ -110,7 +110,7 @@ from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
                 type ='string',
                 native ='string',
-                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else x)),
+                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'","''"))),
                 decoder = (lambda x: x)
             )
 

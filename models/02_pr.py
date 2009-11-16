@@ -55,42 +55,60 @@ opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
 # -----------------------------------------------------------------------------
 # shn_pentity_represent
 #
-def shn_pentity_represent(pentity):
+def shn_pentity_represent(id):
     """
         Represent a Person Entity in option fields or list views
     """
 
-    default = T('None (no such record)')
+    pentity_str = default = T('None (no such record)')
 
     try:
-        record = vita.pentity(pentity)
-        entity_type = record.opt_pr_entity_type
+        table = db.pr_pentity
+        pentity = db(table.id==id).select(
+                    table.opt_pr_entity_type,
+                    table.label,
+                    limitby=(0,1))[0]
+        entity_type = pentity.opt_pr_entity_type
+        label = pentity.label or "no label"
+    except:
+        return default
 
-        if entity_type == 1:
-            person = vita.person(record)
+    etype = lambda entity_type: vita.trackable_types[entity_type]
+
+    if entity_type == 1:
+        table = db.pr_person
+        person = db(table.pr_pe_id==id).select(
+                    table.first_name,
+                    table.middle_name,
+                    table.last_name,
+                    limitby=(0,1))
+        if person:
+            person = person[0]
             pentity_str = '%s [%s] (%s)' % (
                 vita.fullname(person),
-                record.label or 'no label',
-                vita.trackable_types[entity_type]
+                label,
+                etype(entity_type)
             )
 
-        elif entity_type == 2:
-            group = vita.group(record)
+    elif entity_type == 2:
+        table = db.pr_group
+        group = db(table.pr_pe_id==id).select(
+                    table.group_name,
+                    limitby=(0,1))
+        if group:
+            group = group[0]
             pentity_str = '%s (%s)' % (
                 group.group_name,
                 vita.trackable_types[entity_type]
             )
 
-        else:
-            pentity_str = '[%s] (%s)' % (
-                record.label or 'no label',
-                vita.trackable_types[entity_type]
-            )
+    else:
+        pentity_str = '[%s] (%s)' % (
+            label,
+            vita.trackable_types[entity_type]
+        )
 
-        return pentity_str
-
-    except:
-        return default
+    return pentity_str
 
 #
 # pentity table ---------------------------------------------------------------
@@ -253,9 +271,14 @@ opt_pr_country = SQLTable(None, 'opt_pr_country',
 # shn_pr_person_represent -----------------------------------------------------
 #
 def shn_pr_person_represent(id):
-    person = vita.person(id)
+    table = db.pr_person
+    person = db(table.id==id).select(
+                table.first_name,
+                table.middle_name,
+                table.last_name,
+                limitby=(0,1))
     if person:
-        return vita.fullname(person)
+        return vita.fullname(person[0])
     else:
         return None
 
@@ -546,15 +569,7 @@ def shn_pr_get_person_id(label, fields=None, filterby=None):
 #
 # shn_pr_person_search_simple -------------------------------------------------
 #
-def shn_pr_person_search_simple(module, resource, record_id, method,
-    jmodule=None,
-    jresource=None,
-    jrecord_id=None,
-    joinby=None,
-    multiple=True,
-    representation="html",
-    onvalidation=None,
-    onaccept=None):
+def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
     """
         Simple search form for persons
     """
@@ -563,7 +578,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
         session.error = UNAUTHORISED
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
 
-    if representation=="html":
+    if xrequest.representation=="html":
         # Check for redirection
         if request.vars._next:
             next = str.lower(request.vars._next)
@@ -571,7 +586,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
             next = str.lower(URL(r=request, f='person', args='[id]'))
 
         # Custom view
-        response.view = '%s/person_search.html' % module
+        response.view = '%s/person_search.html' % xrequest.prefix
 
         # Title and subtitle
         title = T('Search for a Person')
@@ -635,7 +650,7 @@ def shn_pr_person_search_simple(module, resource, record_id, method,
         redirect(URL(r=request))
 
 # Plug into REST controller
-jrlayer.set_method(module, 'person', None, None, 'search_simple', shn_pr_person_search_simple )
+s3xrc.model.set_method(module, 'person', method='search_simple', action=shn_pr_person_search_simple )
 
 #
 # shn_pr_pheader --------------------------------------------------------------

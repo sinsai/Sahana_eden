@@ -34,7 +34,7 @@
 
 __name__ = "S3XRC"
 
-import sys, uuid
+import sys, uuid, time
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -242,6 +242,16 @@ class ObjectModel(object):
             else:
                 return None
 
+    # -------------------------------------------------------------------------
+    def set_attr(self, component_name, name, value):
+
+        return self.components[component_name].set_attr(name, value)
+
+    # -------------------------------------------------------------------------
+    def get_attr(self, component_name, name):
+
+        return self.components[component_name].get_attr(name, value)
+
 # *****************************************************************************
 # ResourceController
 #
@@ -391,7 +401,9 @@ class XRequest(object):
         if len(self.request.args)>0:
 
             # Check for extensions
-            for arg in self.request.args:
+
+            for i in range(0, len(self.request.args)):
+                arg = self.request.args[i]
                 if '.' in arg:
                     arg, ext = arg.rsplit('.',1)
                     if ext and len(ext)>0:
@@ -792,151 +804,127 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def xml_encode(self, obj):
 
-        if obj is None:
-            return None
-
-        encode = {'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'}
-        obj = obj.replace('&', '&amp;')
-        for c in encode.keys():
-            obj = obj.replace(c, encode[c])
+        if obj:
+            encode = [('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;')]
+            for (x,y) in encode:
+                obj = obj.replace(x, y)
         return obj
 
     # -------------------------------------------------------------------------
     def xml_decode(self, obj):
 
-        if obj is None:
-            return None
-
-        decode = {'&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'" }
-        for c in decode.keys():
-            obj = obj.replace(c, decode[c])
-        return obj.replace('&amp;', '&')
+        if obj:
+            encode = [('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;'), ('&', '&amp;')]
+            for (x,y) in encode:
+                obj = obj.replace(y, x)
+        return obj
 
     # -------------------------------------------------------------------------
     def element(self, table, record, skip=[]):
 
-        element = etree.Element(self.TAG["resource"])
+        resource= etree.Element(self.TAG["resource"])
 
-        for f in record.keys():
+        if self.UUID in table.fields and self.UUID in record:
+            value = str(table[self.UUID].formatter(record[self.UUID]))
+            resource.set(self.UUID, self.xml_encode(value))
 
-            if f in skip or \
-               f in self.IGNORE_FIELDS or \
-               f not in table:
-                continue
+        readable = filter( lambda key: \
+                        key not in self.IGNORE_FIELDS and \
+                        key not in skip and \
+                        record[key] is not None and \
+                        key in table.fields and \
+                        not(key==self.UUID),
+                        record.keys())
 
-            if f == self.UUID:
-                if record[f] is None:
-                    element.set(f, "")
-                else:
-                    value = table[f].formatter(record[f])
-                    element.set(f, self.xml_encode(str(value)))
+        for i in range(0, len(readable)):
 
-            elif f in self.FIELDS_TO_ATTRIBUTES:
-                if record[f] is None:
-                    element.set(f, "")
-                elif table[f].represent:
-                    element.set(f, self.xml_encode(str(table[f].represent(record[f])).decode('utf-8')))
-                else:
-                    element.set(f, self.xml_encode(str(table[f].formatter(record[f])).decode('utf-8')))
+            f = readable[i]
+            v = record[f]
 
-            elif table[f].type.startswith("reference"):
+            text = value = self.xml_encode(str(table[f].formatter(v)).decode('utf-8'))
+            if table[f].represent:
+                text = self.xml_encode(str(table[f].represent(v)).decode('utf-8'))
 
-                _rtable = table[f].type.split()[1]
+            if f in self.FIELDS_TO_ATTRIBUTES:
+                resource.set(f, text)
 
-                if _rtable in self.db and self.UUID in self.db[_rtable]:
-                    rtable = self.db[_rtable]
-                    try:
-                        _uuid = self.db(rtable.id==record[f]).select(rtable.uuid)[0].uuid
-                    except:
-                        continue
-                    reference = etree.SubElement(element, self.TAG["reference"])
-                    reference.set(self.ATTRIBUTE["field"], self.xml_encode(f))
-                    reference.set(self.ATTRIBUTE["resource"], self.xml_encode(_rtable))
-                    reference.set(self.UUID, self.xml_encode(str(_uuid)))
-                    value = table[f].formatter(record[f])
-                    if table[f].represent:
-                        reference.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
-                    else:
-                        reference.text = self.xml_encode(str(value).decode('utf-8'))
-                else:
-                    continue
+            elif isinstance(table[f].type, str) and \
+                table[f].type.startswith("reference"):
+
+                _ktable = table[f].type.split()[1]
+                ktable = self.db[_ktable]
+
+                if self.UUID in ktable.fields:
+                    uuid = ktable[value][self.UUID]
+                    if uuid:
+                        reference = etree.SubElement(resource, self.TAG["reference"])
+                        reference.set(self.ATTRIBUTE["field"], f)
+                        reference.set(self.ATTRIBUTE["resource"], _ktable)
+                        reference.set(self.UUID, self.xml_encode(str(uuid)))
+
+                        reference.text = text
 
             else:
-                if record[f] is None:
-                    continue
-                else:
-                    data = etree.SubElement(element, self.TAG["data"])
-                    data.set(self.ATTRIBUTE["field"], self.xml_encode(f))
-                    value = table[f].formatter(record[f])
-                    if table[f].represent:
-                        data.set(self.ATTRIBUTE["value"], self.xml_encode(str(value).decode('utf-8')))
-                        data.text = self.xml_encode(str(table[f].represent(record[f])).decode('utf-8'))
-                    else:
-                        data.text = self.xml_encode(str(value).decode('utf-8'))
+                data = etree.SubElement(resource, self.TAG["data"])
+                data.set(self.ATTRIBUTE["field"], f)
+                if table[f].represent:
+                    data.set(self.ATTRIBUTE["value"], value )
+                data.text = text
 
-        return element
+        return resource
 
     # -------------------------------------------------------------------------
-    def export(self, table, query, joins=[], skip=[], permit=None, audit=None, url=None):
+    def export(self, table, query, joins=[], skip=[], permit=None, audit=None):
 
         _table = table._tablename
         prefix, name = _table.split("_", 1)
 
-        if self.base_url and not url:
-            url = "%s/%s" % (self.base_url, prefix)
-
-        try:
-            if permit and not permit(self.ACTION["read"], _table):
-                return None
-
-            fields = [table[f] for f in table.fields]
-            records = self.db(query).select(*fields) or []
-            resources = []
-
-            for record in records:
-                if permit and not \
-                    permit(self.ACTION["read"], _table, record_id=record.id):
-                    continue
-
-                if audit is not None:
-                    audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
-
-                resource = self.element(table, record, skip=skip)
-                resource.set(self.ATTRIBUTE["name"], _table)
-
-                if url:
-                    resource_url = "%s/%s/%s" % (url, name, record.id)
-                    resource.set(self.ATTRIBUTE["url"], resource_url)
-                else:
-                    resource_url = None
-
-                for join in joins:
-                    property, pkey, fkey = join
-
-                    _query = (property.table[fkey]==record[pkey])
-                    if "deleted" in property.table:
-                        _query = ((property.table.deleted==False) |
-                                    (property.table.deleted==None)) & _query
-
-                    jresources = self.export(property.table, _query,
-                                                skip=[fkey],
-                                                permit=permit,
-                                                audit=audit,
-                                                url=resource_url)
-
-                    if jresources:
-                        if NO_LXML:
-                            for r in jresources:
-                                resource.append(r)
-                        else:
-                            resource.extend(jresources)
-
-                resources.append(resource)
-
-            return resources
-
-        except:
+        if permit and not permit(self.ACTION["read"], _table):
             return None
+
+        records = self.db(query).select(table.ALL) or []
+
+        if records and permit is not None:
+            records = filter(lambda r: permit(self.ACTION["read"], _table, record_id=r.id), records)
+
+        jresources = {}
+        for i in range(0, len(joins)):
+
+            (component, pkey, fkey) = joins[i]
+
+            pkeys = []
+            for j in range(0, len(records)):
+                record = records[j]
+                pkeys.append(record[pkey])
+
+            cquery = (component.table[fkey].belongs(pkeys))
+            if "deleted" in component.table:
+                cquery = (component.table.deleted==False) & cquery
+
+            jresources[component.tablename] = self.db(cquery).select(component.table.ALL) or []
+
+        resources = []
+        for i in range(0, len(records)):
+            record = records[i]
+
+            if audit is not None:
+                audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
+
+            resource = self.element(table, record, skip=skip)
+            resource.set(self.ATTRIBUTE["name"], _table)
+
+            for j in range(0, len(joins)):
+                (component, pkey, fkey) = joins[j]
+
+                for k in range(0, len(jresources[component.tablename])):
+                    jrecord = jresources[component.tablename][k]
+
+                    if jrecord[fkey]==record[pkey]:
+                        resource.append(self.element(component.table, jrecord, skip=[fkey,]))
+
+            resources.append(resource)
+
+        return resources
 
     # -------------------------------------------------------------------------
     def get(self, prefix, name, id, joins=[], permit=None, audit=None):
@@ -974,8 +962,7 @@ class S3XML(object):
         if self.base_url:
             root.set(self.ATTRIBUTE["url"], self.base_url)
 
-        tree = etree.ElementTree(root)
-        return tree
+        return etree.ElementTree(root)
 
     # -------------------------------------------------------------------------
     def get_field_options(self, table, fieldname):

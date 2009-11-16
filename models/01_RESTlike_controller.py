@@ -43,7 +43,27 @@ INVALIDREQUEST = T('Invalid request!')
 ROWSPERPAGE = 20
 
 # *****************************************************************************
-# Data conversion
+# Helpers
+
+#
+# json_message ----------------------------------------------------------------
+#
+def json_message(success=True, status_code="200", message=None):
+
+    if success:
+        status="success"
+    else:
+        status="failed"
+
+    if message:
+        return '{"Status":"%s","Error":{"StatusCode":%s,"Message":"%s"}}' % \
+               (status, status_code, message)
+    else:
+        return '{"Status":"%s","Error":{"StatusCode":%s}}' % \
+               (status, status_code)
+
+# *****************************************************************************
+# Exports
 
 #
 # export_csv ------------------------------------------------------------------
@@ -301,6 +321,10 @@ def export_xml(jr):
                             XSLT_EXPORT_TEMPLATES + "/" + template_name
             redirect(URL(r=request, f="index"))
 
+    #import cProfile
+    #cProfile.runctx("jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)",
+    #                globals(), locals())
+
     output = jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)
 
     if not output:
@@ -308,6 +332,9 @@ def export_xml(jr):
         redirect(URL(r=request, f="index"))
 
     return output
+
+# *****************************************************************************
+# Imports
 
 #
 # import_csv ------------------------------------------------------------------
@@ -321,23 +348,6 @@ def import_csv(file, table=None):
     else:
         # This is the preferred method as it updates reference fields
         db.import_from_csv_file(file)
-
-#
-# json_message ----------------------------------------------------------------
-#
-def json_message(success, status_code="200", message=None):
-
-    if success:
-        status="success"
-    else:
-        status="failed"
-
-    if message:
-        return '{"Status":"%s","Error":{"StatusCode":%s,"Message":"%s"}}' % \
-               (status, status_code, message)
-    else:
-        return '{"Status":"%s","Error":{"StatusCode":%s}}' % \
-               (status, status_code)
 
 #
 # import_url ------------------------------------------------------------------
@@ -412,7 +422,7 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
 
     # Create/update record
     try:
-        if jr.component_name:
+        if jr.component:
             record[jr.fkey]=jr.record[jr.pkey]
         if method == 'create':
             id = table.insert(**dict(record))
@@ -441,6 +451,13 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
         item = json_message(False, 400, "Invalid request!")
 
     return item
+
+#
+# import_json -----------------------------------------------------------------
+#
+def import_json(jr, onvalidation=None, onaccept=None):
+
+    return json_message(False, 501, "Not implemented!")
 
 #
 # import_xml ------------------------------------------------------------------
@@ -512,9 +529,9 @@ def import_xml(jr, onvalidation=None, onaccept=None):
                         shn_audit_update(form, i.prefix, i.name, jr.representation) and \
                         s3xrc.get_attr(i.name, "onaccept")
         s3xml.commit()
-        item = '{"Status":"success","Error":{"StatusCode":200}}'
+        item = json_message()
     else:
-        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"%s"}}' % s3xml.error
+        item = json_message(False, 501, s3xml.error)
 
     # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
     return dict(item=item)
@@ -853,7 +870,7 @@ def shn_custom_view(jr, default_name):
 
     """ Check for custom view """
 
-    if jr.component_name:
+    if jr.component:
 
         custom_view = '%s_%s_%s' % (jr.name, jr.component_name, default_name)
         _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
@@ -884,7 +901,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
     module, resource, table, tablename = jr.target()
 
-    if jr.component_name:
+    if jr.component:
 
         query = (table[jr.fkey]==jr.record[jr.pkey])
         if jr.component_id:
@@ -928,7 +945,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             except:
                 title = s3.crud_strings.title_display
             output = dict(title=title)
-            if jr.component_name:
+            if jr.component:
                 try:
                     subtitle = s3.crud_strings[tablename].title_display
                 except:
@@ -958,7 +975,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
             output.update(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
 
-            if jr.component_name and not jr.multiple:
+            if jr.component and not jr.multiple:
                 del output["list_btn"]
 
             return(output)
@@ -1033,7 +1050,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
     module, resource, table, tablename = jr.target()
 
-    if jr.component_name:
+    if jr.component:
 
         listadd = jr.component.attr.listadd
         if listadd is None:
@@ -1076,7 +1093,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     if jr.representation=="html":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
-        if jr.component_name:
+        if jr.component:
             try:
                 title = s3.crud_strings[jr.tablename].title_display
             except:
@@ -1110,7 +1127,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         # Which fields do we display?
         fields = None
 
-        if jr.component_name:
+        if jr.component:
             list_fields = jr.component.attr.list_fields
             _fields = [jr.component.table[f] for f in jr.component.table.fields if f in list_fields]
             if _fields:
@@ -1133,7 +1150,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             headers[str(field)] = field.label
 
         authorised = shn_has_permission('update', table)
-        if jr.component_name:
+        if jr.component:
             if authorised:
                 linkto = shn_list_jlinkto_update
             else:
@@ -1164,7 +1181,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if authorised and listadd:
 
             # Block join field
-            if jr.component_name:
+            if jr.component:
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
@@ -1196,7 +1213,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             if response.s3.cancel:
                 form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
-            if jr.component_name:
+            if jr.component:
                 table[jr.fkey].comment = _comment
 
             try:
@@ -1277,7 +1294,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output = dict(module_name=module_name, module=module, resource=resource, main=main)
 
-        if jr.component_name:
+        if jr.component:
             try:
                 title = s3.crud_strings[jr.tablename].title_display
             except:
@@ -1311,7 +1328,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output.update(title=title, list_btn=list_btn)
 
-        if jr.component_name:
+        if jr.component:
             # Block join field
             _comment = table[jr.fkey].comment
             table[jr.fkey].comment = None
@@ -1351,7 +1368,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if response.s3.cancel:
             form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
-        if jr.component_name:
+        if jr.component:
             # Restore comment
             table[jr.fkey].comment = _comment
             # Restore callbacks
@@ -1361,7 +1378,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output.update(form=form)
 
-        if jr.component_name and not jr.multiple:
+        if jr.component and not jr.multiple:
             del output["list_btn"]
 
         return output
@@ -1424,7 +1441,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
     module, resource, table, tablename = jr.target()
 
-    if jr.component_name:
+    if jr.component:
 
         if jr.multiple and not jr.component_id:
             return shn_create(jr, pheader)
@@ -1466,7 +1483,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
             output = dict(module_name=module_name)
 
-            if jr.component_name:
+            if jr.component:
                 try:
                     title = s3.crud_strings[jr.tablename].title_display
                 except:
@@ -1500,7 +1517,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
             output.update(title=title, list_btn=list_btn)
 
-            if jr.component_name:
+            if jr.component:
                 # Block join field
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
@@ -1673,6 +1690,14 @@ def shn_delete(jr):
 
     return
 
+#
+# shn_options -----------------------------------------------------------------
+#
+def shn_options(jr):
+    session.error = "Not implemented"
+    redirect(URL(r=request, f="index"))
+
+
 # *****************************************************************************
 # Main controller function
 
@@ -1774,10 +1799,7 @@ def shn_rest_controller(module, resource,
     """
 
     # Parse original request --------------------------------------------------
-
     jr = s3xrc.request(module, resource, request, session=session)
-
-    print "Resource: %s, Component: %s, Method: %s" % (jr.tablename, jr.component_name, jr.method)
 
     # Invalid request?
     if jr.invalid:
@@ -1922,8 +1944,7 @@ def shn_rest_controller(module, resource,
 
         # Options (joined table) **********************************************
         elif jr.method=="options":
-            session.error = BADMETHOD
-            redirect(URL(r=request, f='index'))
+            return shn_options(jr)
 
         # Unsupported Method **************************************************
         else:
@@ -2001,7 +2022,7 @@ def shn_rest_controller(module, resource,
                     authorised = shn_has_permission('delete', jr.table, jr.id)
                     if authorised:
                         shn_delete(jr)
-                        item = '{"Status":"OK","Error":{"StatusCode":200}}'
+                        item = json_message()
                         response.view = 'plain.html'
                         return dict(item=item)
                     else:
@@ -2110,9 +2131,9 @@ def shn_rest_controller(module, resource,
                             query = (jr.table[field] > value)
                             item = db(query).select().json()
                         else:
-                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ~, =, <, >"}}'
+                            item = json_message(False, 501, "Unsupported filter! Supported filters: ~, =, <, >")
                     else:
-                        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
+                        item = json_message(False, 501, "Search requires specifying Field, Filter & Value!")
                     response.view = 'plain.html'
                     return dict(item=item)
 
@@ -2125,8 +2146,7 @@ def shn_rest_controller(module, resource,
 
         # Options (single table) **********************************************
         elif jr.method=="options":
-            session.error = BADMETHOD
-            redirect(URL(r=request, f='index'))
+            return shn_options(jr)
 
         # Unsupported Method **************************************************
         else:

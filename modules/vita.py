@@ -104,7 +104,7 @@ class Vita(object):
 
         if entity:
 
-            query = ((table.deleted==False) | (table.deleted==None))
+            query = (table.deleted==False)
 
             if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
@@ -122,7 +122,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select(table.ALL)[0]
+                record = self.db(query).select(table.ALL, limitby=(0,1))[0]
                 return record
             except:
                 return None
@@ -139,7 +139,7 @@ class Vita(object):
 
         if entity:
 
-            query = ((table.deleted==False) | (table.deleted==None))
+            query = (table.deleted==False)
 
             if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
@@ -158,7 +158,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select(table.ALL)[0]
+                record = self.db(query).select(table.ALL, limitby=(0,1))[0]
                 return record
             except:
                 return None
@@ -175,7 +175,7 @@ class Vita(object):
 
         if entity:
 
-            query = ((table.deleted==False) | (table.deleted==None))
+            query = (table.deleted==False)
 
             if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
@@ -194,7 +194,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select(table.ALL)[0]
+                record = self.db(query).select(table.ALL, limitby=(0,1))[0]
                 return record
             except:
                 return None

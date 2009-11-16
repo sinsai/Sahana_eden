@@ -459,8 +459,7 @@ class XRequest(object):
             query = (self.table.id==self.id)
             if 'deleted' in self.table:
                 query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
-            fields = [self.table[f] for f in self.table.fields]
-            records = self.rc.db(query).select(*fields, limitby=(0,1))
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
             if not records:
                 self.id = None
                 self.invalid = self.badrecord = True
@@ -475,8 +474,7 @@ class XRequest(object):
                 query = (self.table.pr_pe_label==id_label)
                 if 'deleted' in self.table:
                     query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
-                fields = [self.table[f] for f in self.table.fields]
-                records = self.rc.db(query).select(*fields, limitby=(0,1))
+                records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
                 if records:
                     self.record = records[0]
                     self.id = self.record.id
@@ -494,8 +492,7 @@ class XRequest(object):
                 query = (self.table.id==self.id)
                 if 'deleted' in self.table:
                     query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
-                fields = [self.table[f] for f in self.table.fields]
-                records = self.rc.db(query).select(*fields, limitby=(0,1))
+                records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
                 if not records:
                     self.id = None
                     self.rc.clear_session(self.session, self.prefix, self.name)
@@ -1044,8 +1041,7 @@ class S3XML(object):
             uuid = element.get(self.UUID, None)
             if uuid:
                 record[self.UUID] = uuid
-                fields = [table[f] for f in table.fields]
-                original = self.db(table.uuid==uuid).select(*fields, limitby=(0,1))
+                original = self.db(table.uuid==uuid).select(table.ALL, limitby=(0,1))
                 if original:
                     original = original[0]
 

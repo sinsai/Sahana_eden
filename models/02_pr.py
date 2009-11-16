@@ -55,42 +55,60 @@ opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
 # -----------------------------------------------------------------------------
 # shn_pentity_represent
 #
-def shn_pentity_represent(pentity):
+def shn_pentity_represent(id):
     """
         Represent a Person Entity in option fields or list views
     """
 
-    default = T('None (no such record)')
+    pentity_str = default = T('None (no such record)')
 
     try:
-        record = vita.pentity(pentity)
-        entity_type = record.opt_pr_entity_type
+        table = db.pr_pentity
+        pentity = db(table.id==id).select(
+                    table.opt_pr_entity_type,
+                    table.label,
+                    limitby=(0,1))[0]
+        entity_type = pentity.opt_pr_entity_type
+        label = pentity.label or "no label"
+    except:
+        return default
 
-        if entity_type == 1:
-            person = vita.person(record)
+    etype = lambda entity_type: vita.trackable_types[entity_type]
+
+    if entity_type == 1:
+        table = db.pr_person
+        person = db(table.pr_pe_id==id).select(
+                    table.first_name,
+                    table.middle_name,
+                    table.last_name,
+                    limitby=(0,1))
+        if person:
+            person = person[0]
             pentity_str = '%s [%s] (%s)' % (
                 vita.fullname(person),
-                record.label or 'no label',
-                vita.trackable_types[entity_type]
+                label,
+                etype(entity_type)
             )
 
-        elif entity_type == 2:
-            group = vita.group(record)
+    elif entity_type == 2:
+        table = db.pr_group
+        group = db(table.pr_pe_id==id).select(
+                    table.group_name,
+                    limitby=(0,1))
+        if group:
+            group = group[0]
             pentity_str = '%s (%s)' % (
                 group.group_name,
                 vita.trackable_types[entity_type]
             )
 
-        else:
-            pentity_str = '[%s] (%s)' % (
-                record.label or 'no label',
-                vita.trackable_types[entity_type]
-            )
+    else:
+        pentity_str = '[%s] (%s)' % (
+            label,
+            vita.trackable_types[entity_type]
+        )
 
-        return pentity_str
-
-    except:
-        return default
+    return pentity_str
 
 #
 # pentity table ---------------------------------------------------------------
@@ -253,9 +271,14 @@ opt_pr_country = SQLTable(None, 'opt_pr_country',
 # shn_pr_person_represent -----------------------------------------------------
 #
 def shn_pr_person_represent(id):
-    person = vita.person(id)
+    table = db.pr_person
+    person = db(table.id==id).select(
+                table.first_name,
+                table.middle_name,
+                table.last_name,
+                limitby=(0,1))
     if person:
-        return vita.fullname(person)
+        return vita.fullname(person[0])
     else:
         return None
 

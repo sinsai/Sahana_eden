@@ -321,10 +321,6 @@ def export_xml(jr):
                             XSLT_EXPORT_TEMPLATES + "/" + template_name
             redirect(URL(r=request, f="index"))
 
-    #import cProfile
-    #cProfile.runctx("jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)",
-    #                globals(), locals())
-
     output = jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)
 
     if not output:

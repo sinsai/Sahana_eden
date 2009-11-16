@@ -710,7 +710,7 @@ class S3XML(object):
             "uuid",
             "admin"]
 
-    ATTRIBUTES_TO_FIELDS = ("admin",)
+    ATTRIBUTES_TO_FIELDS = ["admin"]
 
     TAG = dict(
         root="sahanapy",
@@ -849,21 +849,20 @@ class S3XML(object):
                 resource.set(f, text)
 
             elif isinstance(table[f].type, str) and \
-                table[f].type.startswith("reference"):
+                table[f].type[:9]=="reference":
 
-                _ktable = table[f].type.split()[1]
+                _ktable = table[f].type[10:]
                 ktable = self.db[_ktable]
 
                 if self.UUID in ktable.fields:
-                    uuid = ktable[value][self.UUID]
+                    uuid = self.db(ktable.id==value).select(ktable[self.UUID], limitby=(0,1))
                     if uuid:
+                        uuid = uuid[0].uuid
                         reference = etree.SubElement(resource, self.TAG["reference"])
                         reference.set(self.ATTRIBUTE["field"], f)
                         reference.set(self.ATTRIBUTE["resource"], _ktable)
                         reference.set(self.UUID, self.xml_encode(str(uuid)))
-
                         reference.text = text
-
             else:
                 data = etree.SubElement(resource, self.TAG["data"])
                 data.set(self.ATTRIBUTE["field"], f)
@@ -874,10 +873,10 @@ class S3XML(object):
         return resource
 
     # -------------------------------------------------------------------------
-    def export(self, table, query, joins=[], skip=[], permit=None, audit=None):
+    def export(self, prefix, name, query, joins=[], skip=[], permit=None, audit=None):
 
-        _table = table._tablename
-        prefix, name = _table.split("_", 1)
+        _table = "%s_%s" % (prefix, name)
+        table = self.db[_table]
 
         if permit and not permit(self.ACTION["read"], _table):
             return None
@@ -892,10 +891,7 @@ class S3XML(object):
 
             (component, pkey, fkey) = joins[i]
 
-            pkeys = []
-            for j in range(0, len(records)):
-                record = records[j]
-                pkeys.append(record[pkey])
+            pkeys = map(lambda r: r[pkey], records)
 
             cquery = (component.table[fkey].belongs(pkeys))
             if "deleted" in component.table:
@@ -915,9 +911,10 @@ class S3XML(object):
 
             for j in range(0, len(joins)):
                 (component, pkey, fkey) = joins[j]
+                jrecords = jresources[component.tablename]
 
-                for k in range(0, len(jresources[component.tablename])):
-                    jrecord = jresources[component.tablename][k]
+                for k in range(0, len(jrecords)):
+                    jrecord = jrecords[k]
 
                     if jrecord[fkey]==record[pkey]:
                         resource.append(self.element(component.table, jrecord, skip=[fkey,]))
@@ -947,7 +944,7 @@ class S3XML(object):
             if "deleted" in table:
                 query = ((table.deleted==False) | (table.deleted==None)) & query
 
-            resources = self.export(table, query, joins=joins, permit=permit, audit=audit)
+            resources = self.export(prefix, name, query, joins=joins, permit=permit, audit=audit)
 
             if resources:
                 if NO_LXML:

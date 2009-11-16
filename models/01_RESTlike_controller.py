@@ -919,10 +919,10 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
                 session.error = BADRECORD
                 redirect(jr.there()) # TODO: this is wrong when no records exist!
 
-        editable = s3xrc.get_attr(resource, 'editable')
-        deletable = s3xrc.get_attr(resource, 'deletable')
+        editable = s3xrc.model.get_attr(resource, 'editable')
+        deletable = s3xrc.model.get_attr(resource, 'deletable')
 
-        rss = s3xrc.rss(resource)
+        rss = s3xrc.model.get_attr(resource, 'rss')
 
     else:
         record_id = jr.id
@@ -1457,9 +1457,9 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             session.error = BADRECORD
             redirect(jr.there())
 
-        onvalidation = s3xrc.get_attr(resource, 'update_onvalidation')
-        onaccept = s3xrc.get_attr(resource, 'update_onaccept')
-        deletable = s3xrc.get_attr(resource, 'deletable')
+        onvalidation = s3xrc.model.get_attr(resource, 'update_onvalidation')
+        onaccept = s3xrc.model.get_attr(resource, 'update_onaccept')
+        deletable = s3xrc.model.get_attr(resource, 'deletable')
 
     else:
         record_id = jr.id
@@ -1526,7 +1526,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 # Neutralize callbacks
                 crud.settings.update_onvalidation = None
                 crud.settings.update_onaccept = None
-                crud.settings.update_next = s3xrc.get_attr(jr.component_name, 'update_next') or \
+                crud.settings.update_next = s3xrc.model.get_attr(jr.component_name, 'update_next') or \
                                             jr.there()
 
             try:

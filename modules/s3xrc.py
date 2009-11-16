@@ -250,7 +250,7 @@ class ObjectModel(object):
     # -------------------------------------------------------------------------
     def get_attr(self, component_name, name):
 
-        return self.components[component_name].get_attr(name, value)
+        return self.components[component_name].get_attr(name)
 
 # *****************************************************************************
 # ResourceController
@@ -263,6 +263,9 @@ class ResourceController(object):
 
         assert db is not None, "Database must not be None."
         self.db = db
+
+        self.domain = domain
+        self.base_url = base_url
 
         self.model = ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url)
@@ -747,6 +750,9 @@ class S3XML(object):
         text="$"
     )
 
+    PY2XML = [('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;')]
+    XML2PY = [('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;'), ('&', '&amp;')]
+
     def __init__(self, db, domain=None, base_url=None):
 
         self.db = db
@@ -805,8 +811,7 @@ class S3XML(object):
     def xml_encode(self, obj):
 
         if obj:
-            encode = [('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;')]
-            for (x,y) in encode:
+            for (x,y) in self.PY2XML:
                 obj = obj.replace(x, y)
         return obj
 
@@ -814,8 +819,7 @@ class S3XML(object):
     def xml_decode(self, obj):
 
         if obj:
-            encode = [('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;'), ('&', '&amp;')]
-            for (x,y) in encode:
+            for (x,y) in self.XML2PY:
                 obj = obj.replace(y, x)
         return obj
 
@@ -875,6 +879,11 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def export(self, prefix, name, query, joins=[], skip=[], permit=None, audit=None):
 
+        if self.base_url:
+            url = "%s/%s/%s" % (self.base_url, prefix, name)
+        else:
+            url = "/%s/%s" % (prefix, name)
+
         _table = "%s_%s" % (prefix, name)
         table = self.db[_table]
 
@@ -890,6 +899,9 @@ class S3XML(object):
         for i in range(0, len(joins)):
 
             (component, pkey, fkey) = joins[i]
+
+            if permit and not permit(self.ACTION["read"], component.tablename):
+                continue
 
             pkeys = map(lambda r: r[pkey], records)
 
@@ -908,6 +920,7 @@ class S3XML(object):
 
             resource = self.element(table, record, skip=skip)
             resource.set(self.ATTRIBUTE["name"], _table)
+            resource.set(self.ATTRIBUTE["url"], "%s/%s" % (url, record.id))
 
             for j in range(0, len(joins)):
                 (component, pkey, fkey) = joins[j]
@@ -917,7 +930,15 @@ class S3XML(object):
                     jrecord = jrecords[k]
 
                     if jrecord[fkey]==record[pkey]:
-                        resource.append(self.element(component.table, jrecord, skip=[fkey,]))
+                        if permit and not permit(self.ACTION["read"], component.tablename, jrecord.id):
+                            continue
+                        if audit is not None:
+                            audit(self.ACTION["read"], component.prefix, component.name, record=jrecord.id, representation="xml")
+
+                        jresource = self.element(component.table, jrecord, skip=[fkey,])
+                        jresource.set(self.ATTRIBUTE["url"], "%s/%s/%s/%s" % (url, record.id, component.name, jrecord.id))
+
+                        resource.append(jresource)
 
             resources.append(resource)
 

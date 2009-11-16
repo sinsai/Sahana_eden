@@ -364,8 +364,8 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
     if jr.component:
         module =  jr.component.prefix
         resource = jr.component_name
-        onvalidation = s3xrc.get_attr(resource, "onvalidation")
-        onaccept = s3xrc.get_attr(resource, "onaccept")
+        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "onaccept")
     else:
         module = jr.prefix
         resource = jr.name
@@ -1335,7 +1335,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = s3xrc.get_attr(jr.component_name, 'create_next') or \
+            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
                                         jr.there()
 
         if onaccept:

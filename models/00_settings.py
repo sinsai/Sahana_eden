@@ -4,7 +4,16 @@ S3_PUBLIC_URL = 'http://127.0.0.1:8000'
 BREADCRUMB = '>> '
 
 # Default strings are in English
-T.current_languages = ['en', 'en-en']
+T.current_languages = ['en', 'en-us']
+# Check if user has selected a specific language
+#if request.vars._language:
+#    session._language = request.vars._language
+#if session._language:
+#    T.force(session._language)
+#else:
+    # Use what browser requests
+#    T.force(T.http_accept_language)
+
 
 mail = Mail()
 # These settings could be made configurable as part of the Messaging Module

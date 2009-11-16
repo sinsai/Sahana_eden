@@ -269,8 +269,9 @@ def status():
 
 
     return dict(problem=pr, can_view=can_view, items=items, beans=beans,
-                votes=votes, scale=scale, 
+                scale=scale,
                 title="Scale of Results", num_users=num_users,
+                votes=votes, is_admin=auth.has_membership(1),
                 num_voted=num_voted, worst=worst, best=best)
 
 

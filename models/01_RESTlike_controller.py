@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.2.0, 2009-11-10
+    @version: 1.3.1, 2009-11-17
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
@@ -282,7 +282,7 @@ def export_xls(table, query):
             except:
                 represent = item[col]
 
-            rowx.write(cell1, represent, style)
+            rowx.write(cell1, str(represent), style)
             cell1 += 1
     book.save(output)
     output.seek(0)
@@ -1418,6 +1418,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
 
+    elif jr.representation == "json":
+        response.view = 'plain.html'
+        return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+
     elif jr.representation in shn_xml_import_formats:
         response.view = 'plain.html'
         return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
@@ -1586,6 +1590,10 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
         elif jr.representation == "url":
             return import_url(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
+
+        elif jr.representation == "json":
+            response.view = 'plain.html'
+            return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
 
         elif jr.representation in shn_xml_import_formats:
             response.view = 'plain.html'
@@ -2081,9 +2089,11 @@ def shn_rest_controller(module, resource,
             authorised = shn_has_permission('read', jr.table)
             if authorised:
                 # Filter Search list to just those records which user can read
-                # query = shn_accessible_query('read', table)
-                # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
-
+                query = shn_accessible_query('read', jr.table)
+                # Filter search to items which aren't deleted
+                if 'deleted' in jr.table:
+                    query = (jr.table.deleted==False) & query
+                
                 # Audit
                 shn_audit_read(operation='search', module=jr.prefix,
                                resource=jr.name, representation=jr.representation)
@@ -2091,8 +2101,7 @@ def shn_rest_controller(module, resource,
                 if jr.representation == "html":
 
                     shn_represent(jr.table, jr.prefix, jr.name, deletable, main, extra)
-                    #search = t2.search(table, query)
-                    search = t2.search(jr.table)
+                    search = t2.search(jr.table, query=query)
 
                     # Check for presence of Custom View
                     shn_custom_view(jr, 'search.html')
@@ -2109,20 +2118,20 @@ def shn_rest_controller(module, resource,
                         field = str.lower(request.vars.field)
                         filter = request.vars.filter
                         if filter == '~':
-                            query = (jr.table[field].like('%' + value + '%'))
+                            query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:
                                 item = db(query).select(limitby=(0, limit)).json()
                             else:
                                 item = db(query).select().json()
                         elif filter == '=':
-                            query = (jr.table[field] == value)
+                            query = query & (jr.table[field] == value)
                             item = db(query).select().json()
                         elif filter == '<':
-                            query = (jr.table[field] < value)
+                            query = query & (jr.table[field] < value)
                             item = db(query).select().json()
                         elif filter == '>':
-                            query = (jr.table[field] > value)
+                            query = query & (jr.table[field] > value)
                             item = db(query).select().json()
                         else:
                             item = json_message(False, 501, "Unsupported filter! Supported filters: ~, =, <, >")

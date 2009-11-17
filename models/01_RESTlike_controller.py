@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.3.1, 2009-11-17
+    @version: 1.3.1-3, 2009-11-18
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
@@ -275,7 +275,7 @@ def export_xls(table, query):
                 style.num_format_str = 'M/D/YY h:mm'
             elif db[tab][col].type == 'time':
                 style.num_format_str = 'h:mm:ss'
-            
+
             # Check for a custom.represent (e.g. for ref fields)
             try:
                 represent = str(field.represent(item[col]))
@@ -361,14 +361,11 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
     uuid = None
     original = None
 
+    module, resource, table, tablename = jr.target()
+
     if jr.component:
-        module =  jr.component.prefix
-        resource = jr.component_name
         onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
         onaccept = s3xrc.model.get_attr(resource, "onaccept")
-    else:
-        module = jr.prefix
-        resource = jr.name
 
     response.headers['Content-Type'] = 'text/x-json'
 
@@ -453,38 +450,21 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
 #
 def import_json(jr, onvalidation=None, onaccept=None):
 
-    return json_message(False, 501, "Not implemented!")
+    #return json_message(False, 501, "Not implemented!")
 
-#
-# import_xml ------------------------------------------------------------------
-#
-def import_xml(jr, onvalidation=None, onaccept=None):
-
-    """ Import XML data """
-
-    http_put = False
     if "filename" in jr.request.vars:
-        source = jr.request.vars["filename"]
+        source = open(jr.request.vars["filename"])
     elif "fetchurl" in jr.request.vars:
-        source = jr.request.vars["fetchurl"]
+        import urllib
+        source = urllib.urlopen(jr.request.vars["fetchurl"])
     else:
-        http_put = True
-        source = jr.request.body
+        from StringIO import StringIO
+        source = StringIO(jr.request.body)
 
-    _tree = s3xrc.xml.parse(source)
+    tree = s3xrc.xml.json2tree(source)
 
-    # XSL Transformation
-    template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-    template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-    if os.path.exists(template_file):
-        tree = s3xrc.xml.transform(_tree, template_file)
-        if not tree:
-            session.error = str(T("XSL Transformation Error: ")) + s3xml.error
-            redirect(URL(r=request, f="index"))
-    else:
-        session.error = str(T("XSL Template Not Found: ")) + \
-                        XSLT_IMPORT_TEMPLATES + "/" + template_name
-        redirect(URL(r=request, f="index"))
+    if hasattr(source, "close"):
+        source.close()
 
     if jr.component:
         jrequest = True
@@ -505,10 +485,85 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         jr.id=None
 
     success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
-        joins=joins,
-        jrequest=jrequest,
-        onvalidation=onvalidation,
-        onaccept=_onaccept)
+                            joins=joins,
+                            jrequest=jrequest,
+                            onvalidation=onvalidation,
+                            onaccept=_onaccept)
+
+    if success:
+        for i in s3xrc.xml.imports:
+            if not i.committed:
+                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
+                if i.method=="create":
+                    i.onaccept = lambda form: \
+                        shn_audit_create(form, i.prefix, i.name, jr.representation) and \
+                        s3xrc.model.get_attr(i.name, "onaccept")
+                else:
+                    i.onaccept = lambda form: \
+                        shn_audit_update(form, i.prefix, i.name, jr.representation) and \
+                        s3xrc.model.get_attr(i.name, "onaccept")
+        s3xrc.xml.commit()
+        item = json_message()
+    else:
+        # TODO: export the whole tree on error
+        item = json_message(False, 501, s3xrc.xml.error)
+
+    # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
+    return dict(item=item)
+
+#
+# import_xml ------------------------------------------------------------------
+#
+def import_xml(jr, onvalidation=None, onaccept=None):
+
+    """ Import XML data """
+
+    if "filename" in jr.request.vars:
+        source = jr.request.vars["filename"]
+    elif "fetchurl" in jr.request.vars:
+        source = jr.request.vars["fetchurl"]
+    else:
+        source = jr.request.body
+
+    tree = s3xrc.xml.parse(source)
+
+    # XSLT Transformation
+    if not jr.representation=="xml":
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
+        if os.path.exists(template_file):
+            tree = s3xrc.xml.transform(tree, template_file)
+            if not tree:
+                session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+                redirect(URL(r=request, f="index"))
+        else:
+            session.error = str(T("XSL Template Not Found: ")) + \
+                            XSLT_IMPORT_TEMPLATES + "/" + template_name
+            redirect(URL(r=request, f="index"))
+
+    if jr.component:
+        jrequest = True
+        joins = [(jr.component, jr.pkey, jr.fkey)]
+    else:
+        jrequest = False
+        joins = s3xrc.model.get_components(jr.prefix, jr.name)
+
+    if onaccept:
+        _onaccept = lambda form: \
+                    shn_audit_create(form, jr.prefix, jr.name, jr.representation) and \
+                    onaccept(form)
+    else:
+        _onaccept = lambda form: \
+                    shn_audit_create(form, jr.prefix, jr.name, jr.representation)
+
+    if jr.method=="create":
+        jr.id=None
+
+    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
+                            joins=joins,
+                            jrequest=jrequest,
+                            onvalidation=onvalidation,
+                            onaccept=_onaccept)
 
     if success:
         for i in s3xrc.xml.imports:
@@ -1277,9 +1332,12 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
     module, resource, table, tablename = jr.target()
 
     if jr.component:
-        onvalidation = jr.component.attr.create_onvalidation
-        onaccept = jr.component.attr.create_onaccept
-        main, extra = jr.component.attr.main, jr.component.attr.extra
+
+        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "onaccept")
+
+        main = s3xrc.model.get_attr(resource, "main")
+        extra = s3xrc.model.get_attr(resource, "extra")
 
     if jr.representation == "html":
 
@@ -1616,18 +1674,19 @@ def shn_delete(jr):
     module, resource, table, tablename = jr.target()
 
     if jr.component:
-        onvalidation = jr.component.attr.delete_onvalidation
-        onaccept = jr.component.attr.delete_onaccept
+        onvalidation = s3xrc.model.get_attr(resource, "delete_onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "delete_onaccept")
 
         query = (table[jr.fkey]==jr.record[jr.pkey])
         if jr.component_id:
             query = (table.id==jr.component_id) & query
         if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
+            query = (table.deleted==False) & query
     else:
         query = (table.id==jr.id)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
+
+    if 'deleted' in table:
+        query = (table.deleted==False) & query
 
     # Get target records
     rows = db(query).select(table.ALL)
@@ -2093,7 +2152,7 @@ def shn_rest_controller(module, resource,
                 # Filter search to items which aren't deleted
                 if 'deleted' in jr.table:
                     query = (jr.table.deleted==False) & query
-                
+
                 # Audit
                 shn_audit_read(operation='search', module=jr.prefix,
                                resource=jr.name, representation=jr.representation)

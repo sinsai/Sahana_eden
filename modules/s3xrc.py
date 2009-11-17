@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3-1, 2009-11-12
+    @version: 1.3.1-3, 2009-11-18
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -1255,15 +1255,15 @@ class S3XML(object):
         else:
             tag = key
 
-        prefix = name = field = None
+        prefix = name = resource = field = None
 
         if native:
-            if key.startswith(self.PREFIX["resource"]):
-                tag = self.TAG["resource"]
-                resource = key[len(self.PREFIX["resource"])+1:]
-            elif key.startswith(self.PREFIX["reference"]):
+            if key.startswith(self.PREFIX["reference"]):
                 tag = self.TAG["reference"]
                 field = key[len(self.PREFIX["reference"])+1:]
+            elif key.startswith(self.PREFIX["resource"]):
+                tag = self.TAG["resource"]
+                resource = key[len(self.PREFIX["resource"])+1:]
 
         element = etree.Element(tag)
 
@@ -1364,7 +1364,7 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def json2tree(self, source, format=None):
 
-        root_dict = json.loads(source)
+        root_dict = json.load(source)
 
         native=False
 

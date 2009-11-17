@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.2.0, 2009-11-10
+    @version: 1.3.1, 2009-11-17
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
@@ -364,8 +364,8 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
     if jr.component:
         module =  jr.component.prefix
         resource = jr.component_name
-        onvalidation = s3xrc.get_attr(resource, "onvalidation")
-        onaccept = s3xrc.get_attr(resource, "onaccept")
+        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "onaccept")
     else:
         module = jr.prefix
         resource = jr.name
@@ -1335,7 +1335,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = s3xrc.get_attr(jr.component_name, 'create_next') or \
+            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
                                         jr.there()
 
         if onaccept:
@@ -1417,6 +1417,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         except:
             session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
+
+    elif jr.representation == "json":
+        response.view = 'plain.html'
+        return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
 
     elif jr.representation in shn_xml_import_formats:
         response.view = 'plain.html'
@@ -1586,6 +1590,10 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
         elif jr.representation == "url":
             return import_url(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
+
+        elif jr.representation == "json":
+            response.view = 'plain.html'
+            return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
 
         elif jr.representation in shn_xml_import_formats:
             response.view = 'plain.html'
@@ -2080,7 +2088,6 @@ def shn_rest_controller(module, resource,
         elif jr.method == "search":
             authorised = shn_has_permission('read', jr.table)
             if authorised:
-                # Filter Search list to just those records which user can read
                 # Filter Search list to just those records which user can read
                 query = shn_accessible_query('read', jr.table)
                 # Filter search to items which aren't deleted

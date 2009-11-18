@@ -141,6 +141,13 @@ admin_id = db.Table(None, 'admin_id',
                 ondelete='RESTRICT'
                 ))
     
+# Reusable Document field
+document = db.Table(None, 'document',
+            Field('document', 'upload', autodelete = True,
+                label=T('Scanned File'),
+                #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
+                ))
+
 from gluon.storage import Storage
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns

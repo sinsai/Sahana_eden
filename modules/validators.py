@@ -16,9 +16,9 @@ This file was developed by Fran Boon as a web2py extension.
 import time
 import uuid
 from datetime import datetime, timedelta
-from gluon.validators import Validator, IS_MATCH
+from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB
 
-__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF']
+__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF', 'IS_NOT_ONE_OF']
 
 class IS_LAT(object):
     """
@@ -204,7 +204,7 @@ class IS_ONE_OF(Validator):
             query = (_table[self.kfield]==value)
 
             if 'deleted' in _table:
-                query = ((_table['deleted']==False) | (_table['deleted']==None)) & query
+                query = (_table['deleted']==False) & query
 
             if self.filterby and self.filterby in _table:
                 if self.filter_opts:
@@ -217,6 +217,33 @@ class IS_ONE_OF(Validator):
             pass
 
         return (value, self.error_message)
+
+class IS_NOT_ONE_OF(IS_NOT_IN_DB):
+    """
+    Filtered version of IS_NOT_IN_DB():
+        Understands the 'deleted' field.
+    
+    example::
+
+        INPUT(_type='text', _name='name', requires=IS_NOT_ONE_OF(db, db.table))
+
+    makes the field unique (amongst non-deleted field)
+    """
+
+    def __call__(self, value):
+        if value in self.allowed_override:
+            return (value, None)
+        (tablename, fieldname) = str(self.field).split('.')
+        _table = self.dbset._db[tablename] 
+        field = _table[fieldname]
+        query = (field == value)
+        if 'deleted' in _table:
+            query = (_table['deleted']==False) & query
+        rows = self.dbset(query).select(limitby=(0, 1))
+        if len(rows) > 0 and str(rows[0].id) != str(self.record_id):
+            return (value, self.error_message)
+        return (value, None)
+
 
 # IS_UTC_OFFSET ---------------------------------------------------------------
 # added 2009-08-20 by nursix

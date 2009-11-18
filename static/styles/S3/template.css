@@ -212,9 +212,9 @@ div.confirmation { color:#070; font-weight: bold; text-align: center; border: #0
 /* GIS module */
 .btn-panel { padding: 2px; }
             
-/* Person Registry */
-div#pheader th { width: 8em; text-align: left; }
-div#pheader td { width: 20em; text-align: left; }
+/* Joined Resources */
+div#pheader th { text-align: left; }
+div#pheader td { text-align: left; padding: 1px 6px 1px 1px; }
 
 /* Delphi Decision Maker */
 .delphi_wide li { padding: 5px 20px; font-weight: bold; }

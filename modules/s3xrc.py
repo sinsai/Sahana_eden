@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.1-3, 2009-11-18
+    @version: 1.3.1-4, 2009-11-18
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -251,6 +251,34 @@ class ObjectModel(object):
     def get_attr(self, component_name, name):
 
         return self.components[component_name].get_attr(name)
+
+    # -------------------------------------------------------------------------
+    def uuid2id(table, uuid):
+
+        if uuid in table:
+            if not isinstance(uuid, (list, tuple)):
+                uuid = [uuid]
+
+            rs = self.db(table.uuid.belongs(uuid)).select(table.id, table.uuid)
+
+            result = [(r.id, r.uuid) for r in rs]
+            return result
+        else:
+            return []
+
+    # -------------------------------------------------------------------------
+    def id2uuid(table, id):
+
+        if uuid in table:
+            if not isinstance(id, (list, tuple)):
+                id = [id]
+
+            rs = self.db(table.id.belongs(id)).select(table.id, table.uuid)
+
+            result = [(r.id, r.uuid) for r in rs]
+            return result
+        else:
+            return []
 
 # *****************************************************************************
 # ResourceController
@@ -882,12 +910,15 @@ class S3XML(object):
             url = "/%s/%s" % (prefix, name)
 
         _table = "%s_%s" % (prefix, name)
-        table = self.db[_table]
 
         if permit and not permit(self.ACTION["read"], _table):
             return None
 
-        records = self.db(query).select(table.ALL) or []
+        try:
+            table = self.db[_table]
+            records = self.db(query).select(table.ALL) or []
+        except:
+            return None
 
         if records and permit is not None:
             records = filter(lambda r: permit(self.ACTION["read"], _table, record_id=r.id), records)
@@ -1236,34 +1267,33 @@ class S3XML(object):
 
         if isinstance(value, dict):
             return self.__obj2element(key, value, native=native)
+
         elif isinstance(value, (list, tuple)):
             _list = etree.Element(self.TAG["list"])
             for obj in value:
                 item = self.__json2element(self.TAG["item"], obj, native=native)
                 _list.append(item)
             return _list
+
         else:
             element = etree.Element(key)
-            element.text = value
+            element.text = self.xml_encode(value)
             return element
 
     # -------------------------------------------------------------------------
-    def __obj2element(self, key, obj, native=False):
-
-        if key is None:
-            tag = self.tag["object"]
-        else:
-            tag = key
+    def __obj2element(self, tag, obj, native=False):
 
         prefix = name = resource = field = None
 
-        if native:
-            if key.startswith(self.PREFIX["reference"]):
+        if tag is None:
+            tag = self.TAG["object"]
+        elif native:
+            if tag.startswith(self.PREFIX["reference"]):
+                field = tag[len(self.PREFIX["reference"])+1:]
                 tag = self.TAG["reference"]
-                field = key[len(self.PREFIX["reference"])+1:]
-            elif key.startswith(self.PREFIX["resource"]):
+            elif tag.startswith(self.PREFIX["resource"]):
+                resource = tag[len(self.PREFIX["resource"])+1:]
                 tag = self.TAG["resource"]
-                resource = key[len(self.PREFIX["resource"])+1:]
 
         element = etree.Element(tag)
 
@@ -1279,21 +1309,43 @@ class S3XML(object):
             if isinstance(m, dict):
                 child = self.__obj2element(k, m, native=native)
                 element.append(child)
+
             elif isinstance(m, (list, tuple)):
                 for _obj in m:
                     child = self.__json2element(k, _obj, native=native)
                     element.append(child)
+
             else:
                 if k == self.PREFIX["text"]:
-                    element.text = m
+                    element.text = self.xml_encode(m)
+
                 elif k.startswith(self.PREFIX["attribute"]):
-                    attribute = k[len(self.PREFIX["attribute"]):]
-                    element.set(attribute, m)
+                    a = k[len(self.PREFIX["attribute"]):]
+                    element.set(a, self.xml_encode(m))
+
                 else:
                     child = self.__json2element(k, m, native=native)
                     element.append(child)
 
         return element
+
+    # -------------------------------------------------------------------------
+    def json2tree(self, source, format=None):
+
+        root_dict = json.load(source)
+
+        native=False
+
+        if not format:
+            format=self.TAG["root"]
+            native=True
+
+        if root_dict and isinstance(root_dict, dict):
+            root = self.__obj2element(format, root_dict, native=native)
+            if root is not None:
+                return etree.ElementTree(root)
+
+        return None
 
     # -------------------------------------------------------------------------
     def __element2json(self, element, native=False):
@@ -1312,8 +1364,8 @@ class S3XML(object):
                 elif tag_name==self.TAG["data"]:
                     tag_name = child.get(self.ATTRIBUTE["field"])
 
-            if tag_name.startswith("{"):
-                ns, tag_name = tag_name.rsplit("}",1)
+            if tag_name[0]=="{":
+                tag_name = tag_name.rsplit("}",1)[1]
 
             if not tag_name in obj:
                 obj[tag_name] = []
@@ -1360,24 +1412,6 @@ class S3XML(object):
         root_dict = self.__element2json(root, native=native)
 
         return json.dumps(root_dict)
-
-    # -------------------------------------------------------------------------
-    def json2tree(self, source, format=None):
-
-        root_dict = json.load(source)
-
-        native=False
-
-        if not format:
-            format=self.TAG["root"]
-            native=True
-
-        if root_dict and isinstance(root_dict, dict):
-            root = self.__obj2element(format, root_dict, native=native)
-            if root is not None:
-                return etree.ElementTree(root)
-
-        return None
 
 # *****************************************************************************
 # XMLImport

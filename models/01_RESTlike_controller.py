@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.3.1-3, 2009-11-18
+    @version: 1.3.1-4, 2009-11-18
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
@@ -355,8 +355,6 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
         supported methods: 'create' & 'update'
     """
 
-    s3xml = S3XML(db)
-
     record = Storage()
     uuid = None
     original = None
@@ -395,7 +393,7 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
     for var in record:
         if var in table.fields:
             value = record[var]
-            (value, error) = s3xml.validate(table, original, var, value)
+            (value, error) = s3xrc.xml.validate(table, original, var, value)
         else:
             # Shall we just ignore non-existent fields?
             # del record[var]
@@ -1192,11 +1190,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if not fields:
             fields = [table[f] for f in table.fields if table[f].readable]
 
-        # Column labels
-        headers = {}
-        for field in fields:
-            # Use custom or prettified label
-            headers[str(field)] = field.label
+        # Column labels: use custom or prettified label
+        headers = dict(map(lambda f: (str(f), f.label), fields))
 
         authorised = shn_has_permission('update', table)
         if jr.component:
@@ -1524,9 +1519,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
     else:
         record_id = jr.id
 
-    authorised = shn_has_permission('delete', table, record_id)
-    if not authorised:
-        deletable = False
+    deletable = shn_has_permission('delete', table, record_id)
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised:

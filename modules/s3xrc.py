@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.1-4, 2009-11-18
+    @version: 1.3.2-1, 2009-11-19
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -52,6 +52,8 @@ S3XML_BAD_RECORD = "Invalid Record ID"
 S3XML_NO_MATCH = "No Matching Element"
 S3XML_VALIDATION_ERROR = "Validation Error"
 S3XML_DATA_IMPORT_ERROR = "Data Import Error"
+
+S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 
 #******************************************************************************
 # lxml
@@ -287,10 +289,19 @@ class ResourceController(object):
 
     RCVARS = "rcvars"
 
+    ACTION = dict(
+        create="create",
+        read="read",
+        update="update",
+        delete="delete"
+    )
+
     def __init__(self, db, domain=None, base_url=None):
 
         assert db is not None, "Database must not be None."
         self.db = db
+
+        self.error = None
 
         self.domain = domain
         self.base_url = base_url
@@ -334,7 +345,107 @@ class ResourceController(object):
     # -------------------------------------------------------------------------
     def request(self, prefix, name, request, session=None):
 
+        self.error = None
         return XRequest(self, prefix, name, request, session=session)
+
+    # -------------------------------------------------------------------------
+    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None):
+
+        self.error = None
+        resources = []
+
+        _table = "%s_%s" % (prefix, name)
+
+        if _table not in self.db or (permit and not permit(self.ACTION["read"], _table)):
+            return self.xml.root(resources, domain=self.domain, url=self.base_url)
+
+        table = self.db[_table]
+
+        if id and isinstance(id, (list, tuple)):
+            query = (table.id.belongs(id))
+        elif id:
+            query = (table.id==id)
+        else:
+            query = (table.id>0)
+
+        if "deleted" in table:
+            query = (table.deleted==False) & query
+
+        if self.base_url:
+            url = "%s/%s/%s" % (self.base_url, prefix, name)
+        else:
+            url = "/%s/%s" % (prefix, name)
+
+        try:
+            records = self.db(query).select(table.ALL) or []
+        except:
+            return None
+
+        if records and permit is not None:
+            records = filter(lambda r: permit(self.ACTION["read"], _table, record_id=r.id), records)
+
+        if joins and permit is not None:
+            joins = filter(lambda j: permit(self.ACTION["read"], j[0].tablename), joins)
+
+        cdata = {}
+        for i in xrange(0,len(joins)):
+            (c, pkey, fkey) = joins[i]
+            pkeys = map(lambda r: r[pkey], records)
+
+            # TODO: Modify this section for use on GAE:
+            cquery = (c.table[fkey].belongs(pkeys))
+            if "deleted" in c.table:
+                cquery = (c.table.deleted==False) & cquery
+            cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
+
+        for i in xrange(0, len(records)):
+            record = records[i]
+
+            if audit is not None:
+                audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
+
+            resource_url = "%s/%s" % (url, record.id)
+            resource = self.xml.element(table, record, skip=skip, url=resource_url)
+
+            for j in xrange(0, len(joins)):
+                (c, pkey, fkey) = joins[j]
+                pkey = record[pkey]
+                crecords = cdata[c.tablename]
+                crecords = filter(lambda r: r[fkey]==pkey, crecords)
+
+                _skip = [fkey,]
+                if skip:
+                    _skip.extend(skip)
+
+                for k in xrange(0, len(crecords)):
+                    crecord = crecords[k]
+
+                    if permit and not permit(self.ACTION["read"], c.tablename, crecord.id):
+                        continue
+                    if audit is not None:
+                        audit(self.ACTION["read"], c.prefix, c.name, record=crecord.id, representation="xml")
+
+                    resource_url = "%s/%s/%s/%s" % (url, record.id, c.name, crecord.id)
+                    cresource = self.xml.element(c.table, crecord, skip=_skip, url=resource_url)
+                    resource.append(cresource)
+
+            resources.append(resource)
+
+        return self.xml.tree(resources, domain=self.domain, url=self.base_url)
+
+    # -------------------------------------------------------------------------
+    def import_xml(self):
+        self.error = None
+
+        self.error = S3XRC_NOT_IMPLEMENTED
+        return None
+
+    # -------------------------------------------------------------------------
+    def options_xml(self):
+        self.error = None
+
+        self.error = S3XRC_NOT_IMPLEMENTED
+        return None
 
 # *****************************************************************************
 # XRequest
@@ -694,11 +805,11 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
-        output = tree = self.rc.xml.get(self.prefix, self.name, self.id,
+        output = tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                          joins=joins, permit=permit, audit=audit)
 
         if template is not None:
-            output = self.rc.transform(tree, template)
+            output = self.rc.xml.transform(tree, template)
             if not output:
                 if self.representation=="xml":
                     output = tree
@@ -716,10 +827,23 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
-        tree = self.rc.xml.get(self.prefix, self.name, self.id,
+        tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins, permit=permit, audit=audit)
 
         return self.rc.xml.tree2json(tree)
+
+    # -------------------------------------------------------------------------
+    def import_xml(self):
+        return None
+    # -------------------------------------------------------------------------
+    def import_json(self):
+        return None
+    # -------------------------------------------------------------------------
+    def options_xml(self):
+        return None
+    # -------------------------------------------------------------------------
+    def options_json(self):
+        return None
 
 # *****************************************************************************
 # S3XML
@@ -849,9 +973,10 @@ class S3XML(object):
         return obj
 
     # -------------------------------------------------------------------------
-    def element(self, table, record, skip=[]):
+    def element(self, table, record, skip=[], url=None):
 
         resource= etree.Element(self.TAG["resource"])
+        resource.set(self.ATTRIBUTE["name"], table._tablename)
 
         if self.UUID in table.fields and self.UUID in record:
             value = str(table[self.UUID].formatter(record[self.UUID]))
@@ -899,113 +1024,27 @@ class S3XML(object):
                     data.set(self.ATTRIBUTE["value"], value )
                 data.text = text
 
+        if url is not None:
+            resource.set(self.ATTRIBUTE["url"], url)
+
         return resource
 
     # -------------------------------------------------------------------------
-    def export(self, prefix, name, query, joins=[], skip=[], permit=None, audit=None):
+    def tree(self, resources, domain=None, url=None):
 
-        if self.base_url:
-            url = "%s/%s/%s" % (self.base_url, prefix, name)
-        else:
-            url = "/%s/%s" % (prefix, name)
-
-        _table = "%s_%s" % (prefix, name)
-
-        if permit and not permit(self.ACTION["read"], _table):
-            return None
-
-        try:
-            table = self.db[_table]
-            records = self.db(query).select(table.ALL) or []
-        except:
-            return None
-
-        if records and permit is not None:
-            records = filter(lambda r: permit(self.ACTION["read"], _table, record_id=r.id), records)
-
-        jresources = {}
-        for i in range(0, len(joins)):
-
-            (component, pkey, fkey) = joins[i]
-
-            if permit and not permit(self.ACTION["read"], component.tablename):
-                continue
-
-            pkeys = map(lambda r: r[pkey], records)
-
-            cquery = (component.table[fkey].belongs(pkeys))
-            if "deleted" in component.table:
-                cquery = (component.table.deleted==False) & cquery
-
-            jresources[component.tablename] = self.db(cquery).select(component.table.ALL) or []
-
-        resources = []
-        for i in range(0, len(records)):
-            record = records[i]
-
-            if audit is not None:
-                audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
-
-            resource = self.element(table, record, skip=skip)
-            resource.set(self.ATTRIBUTE["name"], _table)
-            resource.set(self.ATTRIBUTE["url"], "%s/%s" % (url, record.id))
-
-            for j in range(0, len(joins)):
-                (component, pkey, fkey) = joins[j]
-                jrecords = jresources[component.tablename]
-
-                for k in range(0, len(jrecords)):
-                    jrecord = jrecords[k]
-
-                    if jrecord[fkey]==record[pkey]:
-                        if permit and not permit(self.ACTION["read"], component.tablename, jrecord.id):
-                            continue
-                        if audit is not None:
-                            audit(self.ACTION["read"], component.prefix, component.name, record=jrecord.id, representation="xml")
-
-                        jresource = self.element(component.table, jrecord, skip=[fkey,])
-                        jresource.set(self.ATTRIBUTE["url"], "%s/%s/%s/%s" % (url, record.id, component.name, jrecord.id))
-
-                        resource.append(jresource)
-
-            resources.append(resource)
-
-        return resources
-
-    # -------------------------------------------------------------------------
-    def get(self, prefix, name, id, joins=[], permit=None, audit=None):
-
-        self.error = None
-
-        _table = "%s_%s" % (prefix, name)
         root = etree.Element(self.TAG["root"])
 
-        if _table in self.db:
-            table = self.db[_table]
-
-            if id and isinstance(id, (list, tuple)):
-                query = (table.id.belongs(id))
-            elif id:
-                query = (table.id==id)
+        if resources is not None:
+            if NO_LXML:
+                for r in resources:
+                    root.append(r)
             else:
-                query = (table.id>0)
+                root.extend(resources)
 
-            if "deleted" in table:
-                query = ((table.deleted==False) | (table.deleted==None)) & query
-
-            resources = self.export(prefix, name, query, joins=joins, permit=permit, audit=audit)
-
-            if resources:
-                if NO_LXML:
-                    for r in resources:
-                        root.append(r)
-                else:
-                    root.extend(resources)
-
-        if self.domain:
+        if domain is not None:
             root.set(self.ATTRIBUTE["domain"], self.domain)
 
-        if self.base_url:
+        if url is not None:
             root.set(self.ATTRIBUTE["url"], self.base_url)
 
         return etree.ElementTree(root)
@@ -1146,6 +1185,7 @@ class S3XML(object):
         return
 
     # -------------------------------------------------------------------------
+    # TODO: This to be moved into ResourceController!
     def put(self,
             prefix,
             name,

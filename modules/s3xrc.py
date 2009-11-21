@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.2-1, 2009-11-19
+    @version: 1.3.2-3, 2009-11-21
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -34,11 +34,12 @@
 
 __name__ = "S3XRC"
 
-import sys, uuid, time
+import sys, uuid
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 from gluon.html import URL
+from gluon.validators import IS_NULL_OR
 
 #******************************************************************************
 # Errors
@@ -434,18 +435,27 @@ class ResourceController(object):
         return self.xml.tree(resources, domain=self.domain, url=self.base_url)
 
     # -------------------------------------------------------------------------
-    def import_xml(self):
+    def import_xml(self, prefix, name, id, tree, joins=[], join=False,
+                   permit=None,
+                   audit=None,
+                   onvalidation=None,
+                   onaccept=None):
+
         self.error = None
 
         self.error = S3XRC_NOT_IMPLEMENTED
         return None
 
     # -------------------------------------------------------------------------
-    def options_xml(self):
-        self.error = None
+    def options_xml(self, prefix, name, joins=[]):
 
-        self.error = S3XRC_NOT_IMPLEMENTED
-        return None
+        self.error = None
+        options = self.xml.get_options(prefix, name, joins=joins)
+
+        return self.xml.tree([options], domain=self.domain, url=self.base_url)
+
+        #self.error = S3XRC_NOT_IMPLEMENTED
+        #return None
 
 # *****************************************************************************
 # XRequest
@@ -840,15 +850,33 @@ class XRequest(object):
         return None
     # -------------------------------------------------------------------------
     def options_xml(self):
-        return None
+
+        if self.component:
+            joins = [(self.component, self.pkey, self.fkey)]
+        else:
+            joins = self.rc.model.get_components(self.prefix, self.name)
+
+        tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
+        return self.rc.xml.tostring(tree)
+
     # -------------------------------------------------------------------------
     def options_json(self):
-        return None
+
+        if self.component:
+            joins = [(self.component, self.pkey, self.fkey)]
+        else:
+            joins = self.rc.model.get_components(self.prefix, self.name)
+
+        tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
+        return self.rc.xml.tree2json(tree)
 
 # *****************************************************************************
 # S3XML
 #
 class S3XML(object):
+
+    # *************************************************************************
+    # Configuration
 
     UUID = "uuid"
 
@@ -871,7 +899,11 @@ class S3XML(object):
         data="data",
         list="list",
         item="item",
-        object="object"
+        object="object",
+        select="select",
+        field="field",
+        option="option",
+        options="options"
         )
 
     ATTRIBUTE = dict(
@@ -902,6 +934,9 @@ class S3XML(object):
     PY2XML = [('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;')]
     XML2PY = [('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;'), ('&', '&amp;')]
 
+    # *************************************************************************
+    # Constructor
+
     def __init__(self, db, domain=None, base_url=None):
 
         self.db = db
@@ -909,6 +944,9 @@ class S3XML(object):
 
         self.domain = domain
         self.base_url = base_url
+
+    # *************************************************************************
+    # XML Helpers
 
     # -------------------------------------------------------------------------
     def parse(self, source):
@@ -971,6 +1009,9 @@ class S3XML(object):
             for (x,y) in self.XML2PY:
                 obj = obj.replace(y, x)
         return obj
+
+    # *************************************************************************
+    # DB->ElementTree
 
     # -------------------------------------------------------------------------
     def element(self, table, record, skip=[], url=None):
@@ -1049,6 +1090,9 @@ class S3XML(object):
 
         return etree.ElementTree(root)
 
+    # *************************************************************************
+    # Field Options
+
     # -------------------------------------------------------------------------
     def get_field_options(self, table, fieldname):
 
@@ -1063,20 +1107,56 @@ class S3XML(object):
 
         if requires:
             r = requires[0]
+            options = []
             if isinstance(r, IS_NULL_OR) and hasattr(r.other, 'options'):
                 null = etree.SubElement(select, self.TAG["option"])
                 null.set(self.ATTRIBUTE["value"], "")
                 null.text = ""
                 options = r.other.options()
-            elif hasattr(requires0, 'options'):
+            elif hasattr(r, "options"):
                 options = r.options()
 
-        for (value, text) in options:
-            option = etree.SubElement(select, self.TAG["option"])
-            option.set(self.ATTRIBUTE["value"], value)
-            option.text = text
+            for (value, text) in options:
+                value = self.xml_encode(str(value).decode("utf-8"))
+                text = self.xml_encode(str(text).decode("utf-8"))
+
+                option = etree.SubElement(select, self.TAG["option"])
+                option.set(self.ATTRIBUTE["value"], value)
+                option.text = text
 
         return select
+
+    # -------------------------------------------------------------------------
+    def get_options(self, prefix, name, joins=[]):
+
+        resource = "%s_%s" % (prefix, name)
+
+        options = etree.Element(self.TAG["options"])
+        options.set(self.ATTRIBUTE["resource"], resource)
+
+        if resource in self.db:
+            table = self.db[resource]
+
+            for f in table.fields:
+                select = self.get_field_options(table, f)
+                if select:
+                    options.append(select)
+
+            for j in joins:
+                component = j[0]
+                print "Joined Component: %s" % component.tablename
+                coptions = etree.Element(self.TAG["options"])
+                coptions.set(self.ATTRIBUTE["resource"], component.tablename)
+                for f in component.table.fields:
+                    select = self.get_field_options(component.table, f)
+                    if select:
+                        coptions.append(select)
+                options.append(coptions)
+
+        return options
+
+    # *************************************************************************
+    # Validation
 
     # -------------------------------------------------------------------------
     def validate(self, table, record, fieldname, value):
@@ -1101,8 +1181,13 @@ class S3XML(object):
 
             return(value, None)
 
+    # *************************************************************************
+    # ElementTree->DB
+
     # -------------------------------------------------------------------------
     def record(self, table, element, skip=[]):
+
+        valid = True
 
         record = Storage()
         original = None
@@ -1124,7 +1209,8 @@ class S3XML(object):
                     (value, error) = self.validate(table, original, f, value)
                     if error:
                         element.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
-                        return None
+                        valid = False
+                        continue
                     else:
                         record[f]=value
 
@@ -1149,7 +1235,8 @@ class S3XML(object):
                     (value, error) = self.validate(table, original, f, value)
                     if error:
                         child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
-                        return None
+                        valid = False
+                        continue
                     else:
                         record[f]=value
 
@@ -1171,10 +1258,10 @@ class S3XML(object):
                 else:
                     continue
 
-            else:
-                continue
-
-        return record
+        if valid:
+            return record
+        else:
+            return None
 
     # -------------------------------------------------------------------------
     def commit(self):
@@ -1185,48 +1272,52 @@ class S3XML(object):
         return
 
     # -------------------------------------------------------------------------
+    def select_resources(self, tree, tablename):
+
+        resources = []
+
+        if not element:
+            return resources
+
+        if isinstance(etree, etree.ElementTree):
+            root = element.getroot()
+            if not root.tag==self.TAG["root"]:
+                return resources
+        else:
+            root = tree
+
+        expr = './%s[@%s="%s"]' % \
+               (self.TAG["resource"], self.ATTRIBUTE["name"], tablename)
+
+        resources = root.xpath(expr)
+        return resources
+
+    # -------------------------------------------------------------------------
     # TODO: This to be moved into ResourceController!
-    def put(self,
-            prefix,
-            name,
-            id,
-            tree,
-            joins=[],
-            jrequest=False,
+    def put(self, prefix, name, id, tree, joins=[], jrequest=False,
             permit=None,
+            audit=None,
             onvalidation=None,
             onaccept=None):
+
+        self.error = None
 
         if NO_LXML:
             self.error = S3XML_NO_LXML
             return False
 
-        if not tree: # nothing to import actually
-            return True
-
-        if joins is None:
-            joins = []
-
-        self.error = None
         self.imports = []
 
-        root = tree.getroot()
-        if not root.tag==self.TAG["root"]:
-            self.error = S3XML_BAD_SOURCE
-            return False
-
-        _table = "%s_%s" % (prefix, name)
-        expr = './/resource[@%s="%s"]' % (self.ATTRIBUTE["name"], _table)
-        elements = root.xpath(expr)
-
-        if not len(elements): # still nothing to import
-            return True
-
-        if _table in self.db:
-            table = self.db[_table]
+        tablename = "%s_%s" % (prefix, name)
+        if tablename in self.db:
+            table = self.db[tablename]
         else:
             self.error = S3XML_BAD_RESOURCE
             return False
+
+        elements = self.select_resources(tree, tablename)
+        if not elements: # nothing to import
+            return True
 
         if id:
             try:
@@ -1241,9 +1332,9 @@ class S3XML(object):
             # ID given, but multiple elements of that type
             # => try to find UUID match
             if self.UUID in table:
-                _uuid = db_record[self.UUID]
+                uuid = db_record[self.UUID]
                 for element in elements:
-                    if element.get(self.UUID)==_uuid:
+                    if element.get(self.UUID)==uuid:
                         elements = [element]
                         break
 
@@ -1252,7 +1343,11 @@ class S3XML(object):
                 self.error = S3XML_NO_MATCH
                 return False
 
-        for element in elements:
+        if joins is None:
+            joins = []
+
+        for i in xrange(0, len(elements)):
+            element = elements[i]
 
             if not jrequest:
 
@@ -1284,9 +1379,8 @@ class S3XML(object):
             for join in joins:
                 property, pkey, fkey = join
 
-                expr = './resource[@%s="%s"]' % (self.ATTRIBUTE["name"], property.tablename)
+                jelements = self.select_resources(element, property.tablename)
 
-                jelements = element.xpath(expr)
                 for jelement in jelements:
                     jrecord = self.record(property.prefix, property.name, jelement)
                     if not jrecord:
@@ -1300,7 +1394,11 @@ class S3XML(object):
                     else:
                         self.error = S3XML_DATA_IMPORT_ERROR
                         continue
+
         return True
+
+    # *************************************************************************
+    # JSON->ElementTree
 
     # -------------------------------------------------------------------------
     def __json2element(self, key, value, native=False):
@@ -1386,6 +1484,9 @@ class S3XML(object):
                 return etree.ElementTree(root)
 
         return None
+
+    # *************************************************************************
+    # ElementTree->JSON
 
     # -------------------------------------------------------------------------
     def __element2json(self, element, native=False):

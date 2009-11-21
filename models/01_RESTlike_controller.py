@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.3.1-4, 2009-11-18
+    @version: 1.3.1-5, 2009-11-21
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
@@ -56,10 +56,10 @@ def json_message(success=True, status_code="200", message=None):
         status="failed"
 
     if message:
-        return '{"Status":"%s","Error":{"StatusCode":%s,"Message":"%s"}}' % \
+        return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
                (status, status_code, message)
     else:
-        return '{"Status":"%s","Error":{"StatusCode":%s}}' % \
+        return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
                (status, status_code)
 
 # *****************************************************************************
@@ -1748,9 +1748,20 @@ def shn_delete(jr):
 # shn_options -----------------------------------------------------------------
 #
 def shn_options(jr):
-    session.error = "Not implemented"
-    redirect(URL(r=request, f="index"))
 
+    if jr.representation=="xml":
+        response.headers["Content-Type"] = "text/xml"
+        response.view = "plain.html"
+        return jr.options_xml()
+
+    elif jr.representation=="json":
+        response.headers['Content-Type'] = 'text/x-json'
+        response.view = "plain.html"
+        return jr.options_json()
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request, f='index'))
 
 # *****************************************************************************
 # Main controller function

@@ -1885,7 +1885,7 @@ def shn_rest_controller(module, resource,
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
 
     # Record ID is required in joined-table operations and read action:
-    if not jr.id and (jr.component_name or jr.method=="read"):
+    if not jr.id and (jr.component or jr.method=="read") and not jr.method=="options":
 
         # TODO: Cleanup - this is PR specific
         if jr.prefix=="pr" and jr.name=="person" and jr.representation=='html':

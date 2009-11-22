@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.2-3, 2009-11-21
+    @version: 1.3.2-4, 2009-11-22
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -59,6 +59,8 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 #******************************************************************************
 # lxml
 #
+from xml.etree.cElementTree import ElementTree
+
 NO_LXML=True
 try:
     from lxml import etree
@@ -421,13 +423,17 @@ class ResourceController(object):
                 for k in xrange(0, len(crecords)):
                     crecord = crecords[k]
 
-                    if permit and not permit(self.ACTION["read"], c.tablename, crecord.id):
+                    if permit and not permit(self.ACTION["read"],
+                                             c.tablename, crecord.id):
                         continue
                     if audit is not None:
-                        audit(self.ACTION["read"], c.prefix, c.name, record=crecord.id, representation="xml")
+                        audit(self.ACTION["read"], c.prefix, c.name,
+                              record=crecord.id, representation="xml")
 
-                    resource_url = "%s/%s/%s/%s" % (url, record.id, c.name, crecord.id)
-                    cresource = self.xml.element(c.table, crecord, skip=_skip, url=resource_url)
+                    resource_url = "%s/%s/%s/%s" % \
+                                   (url, record.id, c.name, crecord.id)
+                    cresource = self.xml.element(c.table, crecord,
+                                                 skip=_skip, url=resource_url)
                     resource.append(cresource)
 
             resources.append(resource)
@@ -453,9 +459,6 @@ class ResourceController(object):
         options = self.xml.get_options(prefix, name, joins=joins)
 
         return self.xml.tree([options], domain=self.domain, url=self.base_url)
-
-        #self.error = S3XRC_NOT_IMPLEMENTED
-        #return None
 
 # *****************************************************************************
 # XRequest
@@ -852,22 +855,22 @@ class XRequest(object):
     def options_xml(self):
 
         if self.component:
-            joins = [(self.component, self.pkey, self.fkey)]
+            tree = self.rc.options_xml(self.component.prefix, self.component.name)
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
+            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
 
-        tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
         return self.rc.xml.tostring(tree)
 
     # -------------------------------------------------------------------------
     def options_json(self):
 
         if self.component:
-            joins = [(self.component, self.pkey, self.fkey)]
+            tree = self.rc.options_xml(self.component.prefix, self.component.name)
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
+            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
 
-        tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
         return self.rc.xml.tree2json(tree)
 
 # *****************************************************************************
@@ -1139,12 +1142,11 @@ class S3XML(object):
 
             for f in table.fields:
                 select = self.get_field_options(table, f)
-                if select:
+                if len(select):
                     options.append(select)
 
             for j in joins:
                 component = j[0]
-                print "Joined Component: %s" % component.tablename
                 coptions = etree.Element(self.TAG["options"])
                 coptions.set(self.ATTRIBUTE["resource"], component.tablename)
                 for f in component.table.fields:
@@ -1199,6 +1201,8 @@ class S3XML(object):
                 original = self.db(table.uuid==uuid).select(table.ALL, limitby=(0,1))
                 if original:
                     original = original[0]
+                else:
+                    original = None
 
         for f in self.ATTRIBUTES_TO_FIELDS:
             if f in self.IGNORE_FIELDS or f in skip:
@@ -1276,11 +1280,11 @@ class S3XML(object):
 
         resources = []
 
-        if not element:
+        if not tree:
             return resources
 
-        if isinstance(etree, etree.ElementTree):
-            root = element.getroot()
+        if isinstance(tree, ElementTree):
+            root = tree.getroot()
             if not root.tag==self.TAG["root"]:
                 return resources
         else:

@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.3.1-5, 2009-11-21
+    @version: 1.3.1-6, 2009-11-23
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
@@ -464,49 +464,18 @@ def import_json(jr, onvalidation=None, onaccept=None):
     if hasattr(source, "close"):
         source.close()
 
-    if jr.component:
-        jrequest = True
-        joins = [(jr.component, jr.pkey, jr.fkey)]
-    else:
-        jrequest = False
-        joins = s3xrc.model.get_components(jr.prefix, jr.name)
-
-    if onaccept:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation) and \
-                    onaccept(form)
-    else:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation)
-
-    if jr.method=="create":
-        jr.id=None
-
-    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
-                            joins=joins,
-                            jrequest=jrequest,
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
                             onvalidation=onvalidation,
-                            onaccept=_onaccept)
+                            onaccept=onaccept)
 
     if success:
-        for i in s3xrc.xml.imports:
-            if not i.committed:
-                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
-                if i.method=="create":
-                    i.onaccept = lambda form: \
-                        shn_audit_create(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-                else:
-                    i.onaccept = lambda form: \
-                        shn_audit_update(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-        s3xrc.xml.commit()
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.xml.error)
+        item = json_message(False, 501, s3xrc.error)
 
-    # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
     return dict(item=item)
 
 #
@@ -539,48 +508,18 @@ def import_xml(jr, onvalidation=None, onaccept=None):
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
             redirect(URL(r=request, f="index"))
 
-    if jr.component:
-        jrequest = True
-        joins = [(jr.component, jr.pkey, jr.fkey)]
-    else:
-        jrequest = False
-        joins = s3xrc.model.get_components(jr.prefix, jr.name)
-
-    if onaccept:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation) and \
-                    onaccept(form)
-    else:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation)
-
-    if jr.method=="create":
-        jr.id=None
-
-    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
-                            joins=joins,
-                            jrequest=jrequest,
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
                             onvalidation=onvalidation,
-                            onaccept=_onaccept)
+                            onaccept=onaccept)
 
     if success:
-        for i in s3xrc.xml.imports:
-            if not i.committed:
-                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
-                if i.method=="create":
-                    i.onaccept = lambda form: \
-                        shn_audit_create(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-                else:
-                    i.onaccept = lambda form: \
-                        shn_audit_update(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-        s3xrc.xml.commit()
         item = json_message()
     else:
-        item = json_message(False, 501, s3xrc.xml.error)
+        # TODO: export the whole tree on error
+        item = json_message(False, 501, s3xrc.error)
 
-    # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
     return dict(item=item)
 
 # *****************************************************************************
@@ -665,6 +604,8 @@ def shn_accessible_query(name, table):
 # shn_audit -------------------------------------------------------------------
 #
 def shn_audit(operation, module, resource, form=None, record=None, representation=None):
+
+    #print "Audit: %s on %s_%s #%s" % (operation, module, resource, record or 0)
 
     if operation in ("list", "read"):
         return shn_audit_read(operation, module, resource,

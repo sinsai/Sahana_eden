@@ -83,7 +83,7 @@ def compressCSS(inputFilename, outputFilename):
 
 mfbase = '../../mfbase'
 
-def dojs(dogis = True):
+def dojs(dogis = False):
     """ Minifies the js"""
     # Define which files we want to include
     # also need to amend sahana.js.cfg
@@ -211,9 +211,11 @@ def docss(dogis = True):
     if dogis:
         listCSSGIS = [
             '../../styles/gis/gis.css',
-            '../../styles/gis/mapfish.css',
+            '../../styles/gis/geoext-all.css',
             #mfbase+'/ext/resources/css/ext-all.css', # would need to copy images if included here
-            mfbase+'/openlayers/theme/default/framedCloud.css'
+            '../../styles/gis/google.css',
+            #'../../styles/gis/style.css',
+            '../../styles/gis/ie6-style.css'
         ]
         outputFilenameCSSGIS = "gis.tmp.css"
         outputFilenameCSSGIS = "gis.min.css"

@@ -1,7 +1,6 @@
-﻿<script type="text/javascript">//<![CDATA[
-
-// make map available for easy debugging
-var map, toolbar;
+﻿// make map available for easy debugging
+var map;
+var mapPanel, toolbar;
 //var treeModel;
 //var features = new Array();
 var featuresLayer, currentFeature;
@@ -20,10 +19,11 @@ var lon = {{=lon}};
 var zoom = {{=zoom}};
 var centered = false;
 
-// See - http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
+// See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
 var proj4326 = new OpenLayers.Projection('EPSG:4326');
 var projection_current = new OpenLayers.Projection('EPSG:{{=projection}}');
 var point = new OpenLayers.LonLat(lon, lat);
+var center = point.transform(proj4326, projection_current);
 
 // Map Options
 var options = {

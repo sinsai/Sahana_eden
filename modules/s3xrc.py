@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.1-3, 2009-11-18
+    @version: 1.3.3-1, 2009-11-23
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -34,11 +34,12 @@
 
 __name__ = "S3XRC"
 
-import sys, uuid, time
+import sys, uuid
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 from gluon.html import URL
+from gluon.validators import IS_NULL_OR
 
 #******************************************************************************
 # Errors
@@ -52,10 +53,15 @@ S3XML_BAD_RECORD = "Invalid Record ID"
 S3XML_NO_MATCH = "No Matching Element"
 S3XML_VALIDATION_ERROR = "Validation Error"
 S3XML_DATA_IMPORT_ERROR = "Data Import Error"
+S3XML_NOT_PERMITTED = "Operation Not Permitted"
+
+S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 
 #******************************************************************************
 # lxml
 #
+from xml.etree.cElementTree import ElementTree
+
 NO_LXML=True
 try:
     from lxml import etree
@@ -144,6 +150,8 @@ class ObjectComponent(object):
 #
 class ObjectModel(object):
 
+    """ Class to handle the joined resources model """
+
     def __init__(self, db):
 
         self.db = db
@@ -156,6 +164,8 @@ class ObjectModel(object):
     # -------------------------------------------------------------------------
     def add_component(self, prefix, name, **attr):
 
+        """ Adds a component to the model """
+
         assert "joinby" in attr, "Join key(s) must be defined."
 
         component = ObjectComponent(self.db, prefix, name, **attr)
@@ -164,6 +174,8 @@ class ObjectModel(object):
 
     # -------------------------------------------------------------------------
     def get_component(self, prefix, name, component_name):
+
+        """ Retrieves a component of a resource """
 
         if component_name in self.components:
 
@@ -178,6 +190,8 @@ class ObjectModel(object):
     # -------------------------------------------------------------------------
     def get_components(self, prefix, name):
 
+        """ Retrieves all components related to a resource """
+
         component_list = []
 
         for component_name in self.components:
@@ -190,6 +204,8 @@ class ObjectModel(object):
 
     # -------------------------------------------------------------------------
     def set_method(self, prefix, name, component_name=None, method=None, action=None):
+
+        """ Adds a custom method for a resource or component """
 
         assert method is not None, "Method must be specified."
 
@@ -219,6 +235,8 @@ class ObjectModel(object):
     # -------------------------------------------------------------------------
     def get_method(self, prefix, name, component_name=None, method=None):
 
+        """ Retrieves a custom method for a resource or component """
+
         if not method:
             return None
 
@@ -245,24 +263,71 @@ class ObjectModel(object):
     # -------------------------------------------------------------------------
     def set_attr(self, component_name, name, value):
 
+        """ Sets an attribute for a component """
+
         return self.components[component_name].set_attr(name, value)
 
     # -------------------------------------------------------------------------
     def get_attr(self, component_name, name):
 
+        """ Retrieves an attribute value of a component """
+
         return self.components[component_name].get_attr(name)
+
+    # -------------------------------------------------------------------------
+    def uuid2id(table, uuid):
+
+        """ Maps UUID's to record ID's for a table """
+
+        if uuid in table:
+            if not isinstance(uuid, (list, tuple)):
+                uuid = [uuid]
+
+            rs = self.db(table.uuid.belongs(uuid)).select(table.id, table.uuid)
+
+            result = [(r.id, r.uuid) for r in rs]
+            return result
+        else:
+            return []
+
+    # -------------------------------------------------------------------------
+    def id2uuid(table, id):
+
+        """ Maps record ID's to UUID's for a table """
+
+        if uuid in table:
+            if not isinstance(id, (list, tuple)):
+                id = [id]
+
+            rs = self.db(table.id.belongs(id)).select(table.id, table.uuid)
+
+            result = [(r.id, r.uuid) for r in rs]
+            return result
+        else:
+            return []
 
 # *****************************************************************************
 # ResourceController
 #
 class ResourceController(object):
 
+    """ Controller class for joined resources """
+
     RCVARS = "rcvars"
+
+    ACTION = dict(
+        create="create",
+        read="read",
+        update="update",
+        delete="delete"
+    )
 
     def __init__(self, db, domain=None, base_url=None):
 
         assert db is not None, "Database must not be None."
         self.db = db
+
+        self.error = None
 
         self.domain = domain
         self.base_url = base_url
@@ -273,6 +338,8 @@ class ResourceController(object):
     # -------------------------------------------------------------------------
     def get_session(self, session, prefix, name):
 
+        """ Reads the last record ID for a resource from a session """
+
         tablename = "%s_%s" % (prefix, name)
 
         if self.RCVARS in session and tablename in session[self.RCVARS]:
@@ -280,6 +347,8 @@ class ResourceController(object):
 
     # -------------------------------------------------------------------------
     def store_session(self, session, prefix, name, id):
+
+        """ Stores a record ID for a resource in a session """
 
         if self.RCVARS not in session:
             session[self.RCVARS] = Storage()
@@ -292,6 +361,8 @@ class ResourceController(object):
 
     # -------------------------------------------------------------------------
     def clear_session(self, session, prefix=None, name=None):
+
+        """ Clears record ID's stored in a session """
 
         if prefix and name:
             tablename = "%s_%s" % (prefix, name)
@@ -306,7 +377,347 @@ class ResourceController(object):
     # -------------------------------------------------------------------------
     def request(self, prefix, name, request, session=None):
 
+        """ Wrapper function to generate an XRequest """
+
+        self.error = None
         return XRequest(self, prefix, name, request, session=session)
+
+    # -------------------------------------------------------------------------
+    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None):
+
+        """ Exports data as XML tree """
+
+        self.error = None
+        resources = []
+
+        _table = "%s_%s" % (prefix, name)
+
+        if _table not in self.db or (permit and not permit(self.ACTION["read"], _table)):
+            return self.xml.root(resources, domain=self.domain, url=self.base_url)
+
+        table = self.db[_table]
+
+        if id and isinstance(id, (list, tuple)):
+            query = (table.id.belongs(id))
+        elif id:
+            query = (table.id==id)
+        else:
+            query = (table.id>0)
+
+        if "deleted" in table:
+            query = (table.deleted==False) & query
+
+        if self.base_url:
+            url = "%s/%s/%s" % (self.base_url, prefix, name)
+        else:
+            url = "/%s/%s" % (prefix, name)
+
+        try:
+            records = self.db(query).select(table.ALL) or []
+        except:
+            return None
+
+        if records and permit is not None:
+            records = filter(lambda r: permit(self.ACTION["read"], _table, record_id=r.id), records)
+
+        if joins and permit is not None:
+            joins = filter(lambda j: permit(self.ACTION["read"], j[0].tablename), joins)
+
+        cdata = {}
+        for i in xrange(0,len(joins)):
+            (c, pkey, fkey) = joins[i]
+            pkeys = map(lambda r: r[pkey], records)
+
+            # TODO: Modify this section for use on GAE:
+            cquery = (c.table[fkey].belongs(pkeys))
+            if "deleted" in c.table:
+                cquery = (c.table.deleted==False) & cquery
+            cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
+
+        for i in xrange(0, len(records)):
+            record = records[i]
+
+            if audit is not None:
+                audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
+
+            resource_url = "%s/%s" % (url, record.id)
+            resource = self.xml.element(table, record, skip=skip, url=resource_url)
+
+            for j in xrange(0, len(joins)):
+                (c, pkey, fkey) = joins[j]
+                pkey = record[pkey]
+                crecords = cdata[c.tablename]
+                crecords = filter(lambda r: r[fkey]==pkey, crecords)
+
+                _skip = [fkey,]
+                if skip:
+                    _skip.extend(skip)
+
+                for k in xrange(0, len(crecords)):
+                    crecord = crecords[k]
+
+                    if permit and not permit(self.ACTION["read"],
+                                             c.tablename, crecord.id):
+                        continue
+                    if audit is not None:
+                        audit(self.ACTION["read"], c.prefix, c.name,
+                              record=crecord.id, representation="xml")
+
+                    resource_url = "%s/%s/%s/%s" % \
+                                   (url, record.id, c.name, crecord.id)
+                    cresource = self.xml.element(c.table, crecord,
+                                                 skip=_skip, url=resource_url)
+                    resource.append(cresource)
+
+            resources.append(resource)
+
+        return self.xml.tree(resources, domain=self.domain, url=self.base_url)
+
+    # -------------------------------------------------------------------------
+    def import_xml(self, prefix, name, id, tree,
+                   joins=[],
+                   skip_resource=False,
+                   permit=None,
+                   audit=None,
+                   onvalidation=None,
+                   onaccept=None):
+
+        """ Imports data from an XML tree """
+
+        self.error = None
+
+        if NO_LXML:
+            self.error = S3XML_NO_LXML
+            return False
+
+        tablename = "%s_%s" % (prefix, name)
+        if tablename in self.db:
+            table = self.db[tablename]
+        else:
+            self.error = S3XML_BAD_RESOURCE
+            return False
+
+        elements = self.xml.select_resources(tree, tablename)
+        if not elements: # nothing to import
+            return True
+
+        if id:
+            try:
+                db_record = self.db(table.id==id).select(table.ALL)[0]
+            except:
+                self.error = S3XML_BAD_RECORD
+                return False
+        else:
+            db_record = None
+
+        if id and len(elements)>1:
+            # ID given, but multiple elements of that type
+            # => try to find UUID match
+            if self.UUID in table:
+                uuid = db_record[self.UUID]
+                for element in elements:
+                    if element.get(self.UUID)==uuid:
+                        elements = [element]
+                        break
+
+            if len(elements)>1:
+                # Error: multiple input elements, but only one target record
+                self.error = S3XML_NO_MATCH
+                return False
+
+        if joins is None:
+            joins = []
+
+        imports = []
+
+        for i in xrange(0, len(elements)):
+            element = elements[i]
+
+            record = self.xml.record(table, element)
+            if not record:
+                self.error = S3XML_VALIDATION_ERROR
+                continue
+
+            vector = XVector(self.db, prefix, name, id,
+                             record=record,
+                             permit=permit,
+                             audit=audit,
+                             onvalidation=onvalidation,
+                             onaccept=onaccept)
+
+            if skip_resource:
+                vector.committed = True
+
+            for j in xrange(0, len(joins)):
+                component, pkey, fkey = joins[j]
+
+                celements = self.xml.select_resources(element, component.tablename)
+
+                for k in xrange(0, len(celements)):
+                    celement = celements[k]
+
+                    crecord = self.record(component.prefix, component.name, celement)
+                    if not crecord:
+                        self.error = S3XML_VALIDATION_ERROR
+                        continue
+
+                    cvector = XVector(self.db, component.prefix, component.name, None,
+                                      record=crecord,
+                                      permit=permit,
+                                      audit=audit,
+                                      onvalidation=component.get_attr("onvalidation"),
+                                      onaccept=component.get_attr("onaccept"))
+
+                    cvector.pkey = pkey
+                    cvector.fkey = fkey
+
+                    vector.components.append(cvector)
+
+            if self.error is None:
+                imports.append(vector)
+
+        if self.error is None:
+            for i in xrange(0, len(imports)):
+                vector = imports[i]
+
+                success = vector.commit()
+                if not success and not vector.permitted:
+                    self.error = S3XML_NOT_PERMITTED
+                    continue
+                elif not success:
+                    self.error = S3XML_DATA_IMPORT_ERROR
+                    continue
+
+        return True #(self.error is None)
+
+    # -------------------------------------------------------------------------
+    def options_xml(self, prefix, name, joins=[]):
+
+        """ Exports options for select fields """
+
+        self.error = None
+        options = self.xml.get_options(prefix, name, joins=joins)
+
+        return self.xml.tree([options], domain=self.domain, url=self.base_url)
+
+# *****************************************************************************
+# XVector
+#
+class XVector(object):
+
+    """ Helper class for database commits """
+
+    ACTION = dict(create="create", update="update")
+
+    UUID = "uuid"
+
+    def __init__(self, db, prefix, name, id,
+                 record=None,
+                 permit=None,
+                 audit=None,
+                 onvalidation=None,
+                 onaccept=None):
+
+        self.db=db
+
+        self.prefix=prefix
+        self.name=name
+        self.tablename = "%s_%s" % (self.prefix, self.name)
+        self.table = self.db[self.tablename]
+
+        self.id=id
+
+        self.method=None
+        self.record=record
+
+        self.onvalidation=onvalidation
+        self.onaccept=onaccept
+        self.audit=audit
+
+        self.components = []
+
+        self.accepted=True
+        self.permitted=True
+        self.committed=False
+
+        if not self.id:
+            self.id = 0
+            self.method = permission = self.ACTION["create"]
+
+            if self.UUID in self.table:
+                uuid = self.record.get(self.UUID, None)
+                if uuid is not None:
+                    orig = self.db(self.table[self.UUID]==uuid).select(self.table.id)
+                    if len(orig):
+                        self.id = orig[0].id
+                        self.method = permission = self.ACTION["update"]
+
+        else:
+            self.method = permission = self.ACTION["update"]
+
+            if not self.db(self.table.id==id).count():
+                self.id = 0
+                self.method = permission = self.ACTION["create"]
+            else:
+                if self.UUID in self.record:
+                    del self.record[self.UUID]
+
+        if permit and not \
+           permit(permission, self.tablename, record_id=self.id):
+            self.permitted=False
+
+    # -------------------------------------------------------------------------
+    def commit(self):
+
+        if not self.committed:
+
+            if self.accepted and self.permitted:
+                form = Storage() # PseudoForm for callbacks
+                form.method = self.method
+                form.vars = self.record
+                form.vars.id = self.id
+
+                if self.onvalidation:
+                    self.onvalidation(form)
+
+                if self.method == self.ACTION["update"]:
+                    try:
+                        success = self.db(self.table.id==self.id).update(**dict(self.record))
+                        if len(self.components):
+                            db_record = self.db(self.table.id==self.id).select(self.table.ALL)[0]
+                    except:
+                        return False
+                    if success:
+                        self.committed = True
+                elif self.method == self.ACTION["create"]:
+                    try:
+                        success = self.table.insert(**dict(self.record))
+                        if len(self.components):
+                            db_record = self.db(self.table.id==success).select(self.table.ALL)[0]
+                    except:
+                        return False
+                    if success:
+                        self.id = success
+                        self.committed = True
+
+                if self.committed:
+                    form.vars.id = self.id
+                    if self.audit:
+                        self.audit(self.method, self.prefix, self.name,
+                                   form=form, record=self.id, representation="xml")
+                    if self.onaccept:
+                        self.onaccept(form)
+                else:
+                    return False
+
+        for i in xrange(0, len(self.components)):
+            component = self.components[i]
+
+            pkey = component.pkey
+            fkey = component.fkey
+
+            component.record[fkey] = db_record[pkey]
+            component.commit()
 
 # *****************************************************************************
 # XRequest
@@ -397,6 +808,8 @@ class XRequest(object):
     # -------------------------------------------------------------------------
     def __parse(self):
 
+        """ Parses a web2py request for the REST interface """
+
         self.args = []
 
         components = self.rc.model.components
@@ -453,6 +866,8 @@ class XRequest(object):
 
     # -------------------------------------------------------------------------
     def __record(self):
+
+        """ Tries to find the primary resource record in a request """
 
         # Check record ID passed in the request
         if self.id:
@@ -666,11 +1081,11 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
-        output = tree = self.rc.xml.get(self.prefix, self.name, self.id,
+        output = tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                          joins=joins, permit=permit, audit=audit)
 
         if template is not None:
-            output = self.rc.transform(tree, template)
+            output = self.rc.xml.transform(tree, template)
             if not output:
                 if self.representation=="xml":
                     output = tree
@@ -688,8 +1103,51 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
-        tree = self.rc.xml.get(self.prefix, self.name, self.id,
+        tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins, permit=permit, audit=audit)
+
+        return self.rc.xml.tree2json(tree)
+
+    # -------------------------------------------------------------------------
+    def import_xml(self, tree, permit=None, audit=None, onvalidation=None, onaccept=None):
+
+        if self.component:
+            skip_resource = True
+            joins = [(self.component, self.pkey, self.fkey)]
+        else:
+            skip_resource = False
+            joins = self.rc.model.get_components(self.prefix, self.name)
+
+        if self.method=="create":
+            self.id=None
+
+        return self.rc.import_xml(self.prefix, self.name, self.id, tree,
+                                  joins=joins,
+                                  skip_resource=skip_resource,
+                                  permit=permit,
+                                  audit=audit,
+                                  onvalidation=onvalidation,
+                                  onaccept=onaccept)
+
+    # -------------------------------------------------------------------------
+    def options_xml(self):
+
+        if self.component:
+            tree = self.rc.options_xml(self.component.prefix, self.component.name)
+        else:
+            joins = self.rc.model.get_components(self.prefix, self.name)
+            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
+
+        return self.rc.xml.tostring(tree)
+
+    # -------------------------------------------------------------------------
+    def options_json(self):
+
+        if self.component:
+            tree = self.rc.options_xml(self.component.prefix, self.component.name)
+        else:
+            joins = self.rc.model.get_components(self.prefix, self.name)
+            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
 
         return self.rc.xml.tree2json(tree)
 
@@ -697,6 +1155,9 @@ class XRequest(object):
 # S3XML
 #
 class S3XML(object):
+
+    # *************************************************************************
+    # Configuration
 
     UUID = "uuid"
 
@@ -719,7 +1180,11 @@ class S3XML(object):
         data="data",
         list="list",
         item="item",
-        object="object"
+        object="object",
+        select="select",
+        field="field",
+        option="option",
+        options="options"
         )
 
     ATTRIBUTE = dict(
@@ -821,9 +1286,12 @@ class S3XML(object):
         return obj
 
     # -------------------------------------------------------------------------
-    def element(self, table, record, skip=[]):
+    def element(self, table, record, skip=[], url=None):
+
+        """ Creates an element from a Storage() record """
 
         resource= etree.Element(self.TAG["resource"])
+        resource.set(self.ATTRIBUTE["name"], table._tablename)
 
         if self.UUID in table.fields and self.UUID in record:
             value = str(table[self.UUID].formatter(record[self.UUID]))
@@ -871,110 +1339,29 @@ class S3XML(object):
                     data.set(self.ATTRIBUTE["value"], value )
                 data.text = text
 
+        if url is not None:
+            resource.set(self.ATTRIBUTE["url"], url)
+
         return resource
 
     # -------------------------------------------------------------------------
-    def export(self, prefix, name, query, joins=[], skip=[], permit=None, audit=None):
+    def tree(self, resources, domain=None, url=None):
 
-        if self.base_url:
-            url = "%s/%s/%s" % (self.base_url, prefix, name)
-        else:
-            url = "/%s/%s" % (prefix, name)
+        """ Builds a tree from a list of elements """
 
-        _table = "%s_%s" % (prefix, name)
-        table = self.db[_table]
-
-        if permit and not permit(self.ACTION["read"], _table):
-            return None
-
-        records = self.db(query).select(table.ALL) or []
-
-        if records and permit is not None:
-            records = filter(lambda r: permit(self.ACTION["read"], _table, record_id=r.id), records)
-
-        jresources = {}
-        for i in range(0, len(joins)):
-
-            (component, pkey, fkey) = joins[i]
-
-            if permit and not permit(self.ACTION["read"], component.tablename):
-                continue
-
-            pkeys = map(lambda r: r[pkey], records)
-
-            cquery = (component.table[fkey].belongs(pkeys))
-            if "deleted" in component.table:
-                cquery = (component.table.deleted==False) & cquery
-
-            jresources[component.tablename] = self.db(cquery).select(component.table.ALL) or []
-
-        resources = []
-        for i in range(0, len(records)):
-            record = records[i]
-
-            if audit is not None:
-                audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
-
-            resource = self.element(table, record, skip=skip)
-            resource.set(self.ATTRIBUTE["name"], _table)
-            resource.set(self.ATTRIBUTE["url"], "%s/%s" % (url, record.id))
-
-            for j in range(0, len(joins)):
-                (component, pkey, fkey) = joins[j]
-                jrecords = jresources[component.tablename]
-
-                for k in range(0, len(jrecords)):
-                    jrecord = jrecords[k]
-
-                    if jrecord[fkey]==record[pkey]:
-                        if permit and not permit(self.ACTION["read"], component.tablename, jrecord.id):
-                            continue
-                        if audit is not None:
-                            audit(self.ACTION["read"], component.prefix, component.name, record=jrecord.id, representation="xml")
-
-                        jresource = self.element(component.table, jrecord, skip=[fkey,])
-                        jresource.set(self.ATTRIBUTE["url"], "%s/%s/%s/%s" % (url, record.id, component.name, jrecord.id))
-
-                        resource.append(jresource)
-
-            resources.append(resource)
-
-        return resources
-
-    # -------------------------------------------------------------------------
-    def get(self, prefix, name, id, joins=[], permit=None, audit=None):
-
-        self.error = None
-
-        _table = "%s_%s" % (prefix, name)
         root = etree.Element(self.TAG["root"])
 
-        if _table in self.db:
-            table = self.db[_table]
-
-            if id and isinstance(id, (list, tuple)):
-                query = (table.id.belongs(id))
-            elif id:
-                query = (table.id==id)
+        if resources is not None:
+            if NO_LXML:
+                for r in resources:
+                    root.append(r)
             else:
-                query = (table.id>0)
+                root.extend(resources)
 
-            if "deleted" in table:
-                query = ((table.deleted==False) | (table.deleted==None)) & query
-
-            resources = self.export(prefix, name, query, joins=joins, permit=permit, audit=audit)
-
-            if resources:
-                if NO_LXML:
-                    for r in resources:
-                        root.append(r)
-                else:
-                    root.extend(resources)
-
-        if self.domain:
+        if domain is not None:
             root.set(self.ATTRIBUTE["domain"], self.domain)
 
-        if self.base_url:
+        if url is not None:
             root.set(self.ATTRIBUTE["url"], self.base_url)
 
         return etree.ElementTree(root)
@@ -993,23 +1380,57 @@ class S3XML(object):
 
         if requires:
             r = requires[0]
+            options = []
             if isinstance(r, IS_NULL_OR) and hasattr(r.other, 'options'):
                 null = etree.SubElement(select, self.TAG["option"])
                 null.set(self.ATTRIBUTE["value"], "")
                 null.text = ""
                 options = r.other.options()
-            elif hasattr(requires0, 'options'):
+            elif hasattr(r, "options"):
                 options = r.options()
 
-        for (value, text) in options:
-            option = etree.SubElement(select, self.TAG["option"])
-            option.set(self.ATTRIBUTE["value"], value)
-            option.text = text
+            for (value, text) in options:
+                value = self.xml_encode(str(value).decode("utf-8"))
+                text = self.xml_encode(str(text).decode("utf-8"))
+
+                option = etree.SubElement(select, self.TAG["option"])
+                option.set(self.ATTRIBUTE["value"], value)
+                option.text = text
 
         return select
 
     # -------------------------------------------------------------------------
+    def get_options(self, prefix, name, joins=[]):
+
+        resource = "%s_%s" % (prefix, name)
+
+        options = etree.Element(self.TAG["options"])
+        options.set(self.ATTRIBUTE["resource"], resource)
+
+        if resource in self.db:
+            table = self.db[resource]
+
+            for f in table.fields:
+                select = self.get_field_options(table, f)
+                if len(select):
+                    options.append(select)
+
+            for j in joins:
+                component = j[0]
+                coptions = etree.Element(self.TAG["options"])
+                coptions.set(self.ATTRIBUTE["resource"], component.tablename)
+                for f in component.table.fields:
+                    select = self.get_field_options(component.table, f)
+                    if select:
+                        coptions.append(select)
+                options.append(coptions)
+
+        return options
+
+    # -------------------------------------------------------------------------
     def validate(self, table, record, fieldname, value):
+
+        """ Validates a single value """
 
         requires = table[fieldname].requires
 
@@ -1034,6 +1455,10 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def record(self, table, element, skip=[]):
 
+        """ Creates a Storage() record from an element and validates it """
+
+        valid = True
+
         record = Storage()
         original = None
 
@@ -1044,6 +1469,8 @@ class S3XML(object):
                 original = self.db(table.uuid==uuid).select(table.ALL, limitby=(0,1))
                 if original:
                     original = original[0]
+                else:
+                    original = None
 
         for f in self.ATTRIBUTES_TO_FIELDS:
             if f in self.IGNORE_FIELDS or f in skip:
@@ -1054,7 +1481,8 @@ class S3XML(object):
                     (value, error) = self.validate(table, original, f, value)
                     if error:
                         element.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
-                        return None
+                        valid = False
+                        continue
                     else:
                         record[f]=value
 
@@ -1079,7 +1507,8 @@ class S3XML(object):
                     (value, error) = self.validate(table, original, f, value)
                     if error:
                         child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
-                        return None
+                        valid = False
+                        continue
                     else:
                         record[f]=value
 
@@ -1101,169 +1530,64 @@ class S3XML(object):
                 else:
                     continue
 
-            else:
-                continue
-
-        return record
+        if valid:
+            return record
+        else:
+            return None
 
     # -------------------------------------------------------------------------
-    def commit(self):
+    def select_resources(self, tree, tablename):
 
-        for r in self.imports:
-            r.commit()
-        self.imports = []
-        return
+        resources = []
 
-    # -------------------------------------------------------------------------
-    def put(self,
-            prefix,
-            name,
-            id,
-            tree,
-            joins=[],
-            jrequest=False,
-            permit=None,
-            onvalidation=None,
-            onaccept=None):
+        if not tree:
+            return resources
 
-        if NO_LXML:
-            self.error = S3XML_NO_LXML
-            return False
-
-        if not tree: # nothing to import actually
-            return True
-
-        if joins is None:
-            joins = []
-
-        self.error = None
-        self.imports = []
-
-        root = tree.getroot()
-        if not root.tag==self.TAG["root"]:
-            self.error = S3XML_BAD_SOURCE
-            return False
-
-        _table = "%s_%s" % (prefix, name)
-        expr = './/resource[@%s="%s"]' % (self.ATTRIBUTE["name"], _table)
-        elements = root.xpath(expr)
-
-        if not len(elements): # still nothing to import
-            return True
-
-        if _table in self.db:
-            table = self.db[_table]
+        if isinstance(tree, ElementTree):
+            root = tree.getroot()
+            if not root.tag==self.TAG["root"]:
+                return resources
         else:
-            self.error = S3XML_BAD_RESOURCE
-            return False
+            root = tree
 
-        if id:
-            try:
-                db_record = self.db(table.id==id).select(table.ALL)[0]
-            except:
-                self.error = S3XML_BAD_RECORD
-                return False
-        else:
-            db_record = None
+        expr = './%s[@%s="%s"]' % \
+               (self.TAG["resource"], self.ATTRIBUTE["name"], tablename)
 
-        if id and len(elements)>1:
-            # ID given, but multiple elements of that type
-            # => try to find UUID match
-            if self.UUID in table:
-                _uuid = db_record[self.UUID]
-                for element in elements:
-                    if element.get(self.UUID)==_uuid:
-                        elements = [element]
-                        break
-
-            if len(elements)>1:
-                # Error: multiple input elements, but only one target record
-                self.error = S3XML_NO_MATCH
-                return False
-
-        for element in elements:
-
-            if not jrequest:
-
-                record = self.record(table, element)
-                if not record:
-                    self.error = S3XML_VALIDATION_ERROR
-                    continue
-
-                xml_import = XMLImport(self.db, prefix, name, id, record,
-                    permit=permit,
-                    onvalidation=onvalidation,
-                    onaccept=onaccept)
-                if not xml_import.method:
-                    # possibly unnecessary to check here
-                    self.error = S3XML_DATA_IMPORT_ERROR
-                    continue
-
-                xml_import.commit()
-                record_id = xml_import.id
-                if not record_id:
-                    self.error = S3XML_DATA_IMPORT_ERROR
-                    continue
-
-                db_record = self.db(table.id==record_id).select(table.ALL)[0]
-
-            else:
-                record_id = db_record.id
-
-            for join in joins:
-                property, pkey, fkey = join
-
-                expr = './resource[@%s="%s"]' % (self.ATTRIBUTE["name"], property.tablename)
-
-                jelements = element.xpath(expr)
-                for jelement in jelements:
-                    jrecord = self.record(property.prefix, property.name, jelement)
-                    if not jrecord:
-                        self.error = S3XML_VALIDATION_ERROR
-                        continue
-                    xml_import = XMLImport(self.db, property.prefix, property.name,
-                                        None, jrecord, permit=permit)
-                    if xml_import.method:
-                        xml_import.record[fkey]=db_record[pkey]
-                        self.imports.append(xml_import)
-                    else:
-                        self.error = S3XML_DATA_IMPORT_ERROR
-                        continue
-        return True
+        resources = root.xpath(expr)
+        return resources
 
     # -------------------------------------------------------------------------
     def __json2element(self, key, value, native=False):
 
         if isinstance(value, dict):
             return self.__obj2element(key, value, native=native)
+
         elif isinstance(value, (list, tuple)):
             _list = etree.Element(self.TAG["list"])
             for obj in value:
                 item = self.__json2element(self.TAG["item"], obj, native=native)
                 _list.append(item)
             return _list
+
         else:
             element = etree.Element(key)
-            element.text = value
+            element.text = self.xml_encode(value)
             return element
 
     # -------------------------------------------------------------------------
-    def __obj2element(self, key, obj, native=False):
-
-        if key is None:
-            tag = self.tag["object"]
-        else:
-            tag = key
+    def __obj2element(self, tag, obj, native=False):
 
         prefix = name = resource = field = None
 
-        if native:
-            if key.startswith(self.PREFIX["reference"]):
+        if tag is None:
+            tag = self.TAG["object"]
+        elif native:
+            if tag.startswith(self.PREFIX["reference"]):
+                field = tag[len(self.PREFIX["reference"])+1:]
                 tag = self.TAG["reference"]
-                field = key[len(self.PREFIX["reference"])+1:]
-            elif key.startswith(self.PREFIX["resource"]):
+            elif tag.startswith(self.PREFIX["resource"]):
+                resource = tag[len(self.PREFIX["resource"])+1:]
                 tag = self.TAG["resource"]
-                resource = key[len(self.PREFIX["resource"])+1:]
 
         element = etree.Element(tag)
 
@@ -1279,21 +1603,43 @@ class S3XML(object):
             if isinstance(m, dict):
                 child = self.__obj2element(k, m, native=native)
                 element.append(child)
+
             elif isinstance(m, (list, tuple)):
                 for _obj in m:
                     child = self.__json2element(k, _obj, native=native)
                     element.append(child)
+
             else:
                 if k == self.PREFIX["text"]:
-                    element.text = m
+                    element.text = self.xml_encode(m)
+
                 elif k.startswith(self.PREFIX["attribute"]):
-                    attribute = k[len(self.PREFIX["attribute"]):]
-                    element.set(attribute, m)
+                    a = k[len(self.PREFIX["attribute"]):]
+                    element.set(a, self.xml_encode(m))
+
                 else:
                     child = self.__json2element(k, m, native=native)
                     element.append(child)
 
         return element
+
+    # -------------------------------------------------------------------------
+    def json2tree(self, source, format=None):
+
+        root_dict = json.load(source)
+
+        native=False
+
+        if not format:
+            format=self.TAG["root"]
+            native=True
+
+        if root_dict and isinstance(root_dict, dict):
+            root = self.__obj2element(format, root_dict, native=native)
+            if root is not None:
+                return etree.ElementTree(root)
+
+        return None
 
     # -------------------------------------------------------------------------
     def __element2json(self, element, native=False):
@@ -1312,8 +1658,8 @@ class S3XML(object):
                 elif tag_name==self.TAG["data"]:
                     tag_name = child.get(self.ATTRIBUTE["field"])
 
-            if tag_name.startswith("{"):
-                ns, tag_name = tag_name.rsplit("}",1)
+            if tag_name[0]=="{":
+                tag_name = tag_name.rsplit("}",1)[1]
 
             if not tag_name in obj:
                 obj[tag_name] = []
@@ -1360,126 +1706,4 @@ class S3XML(object):
         root_dict = self.__element2json(root, native=native)
 
         return json.dumps(root_dict)
-
-    # -------------------------------------------------------------------------
-    def json2tree(self, source, format=None):
-
-        root_dict = json.load(source)
-
-        native=False
-
-        if not format:
-            format=self.TAG["root"]
-            native=True
-
-        if root_dict and isinstance(root_dict, dict):
-            root = self.__obj2element(format, root_dict, native=native)
-            if root is not None:
-                return etree.ElementTree(root)
-
-        return None
-
-# *****************************************************************************
-# XMLImport
-#
-class XMLImport(object):
-
-    PERMISSION = dict(create="create", update="update")
-
-    def __init__(self,
-                 db=None,
-                 prefix=None,
-                 name=None,
-                 id=None,
-                 record=None,
-                 permit=None,
-                 onvalidation=None,
-                 onaccept=None):
-
-        self.db=db
-        self.prefix=prefix
-        self.name=name
-        self.id=id
-
-        self.tablename = "%s_%s" % (self.prefix, self.name)
-        self.table = self.db[self.tablename]
-
-        self.method=None
-        self.record=record
-
-        self.onvalidation=onvalidation
-        self.onaccept=onaccept
-
-        self.accepted=True
-        self.permitted=True
-        self.committed=False
-
-        self.UUID = "uuid"
-
-        if not self.id:
-            self.method = "create"
-            permission = self.PERMISSION["create"]
-            self.id = 0
-
-            _uuid = self.record.get(self.UUID, None)
-            if _uuid is not None:
-                if self.db(self.table.uuid==_uuid).count():
-                    del self.record[self.UUID]
-                    self.method = "update"
-                    permission = self.PERMISSION["update"]
-                    self.id = self.db(self.table.uuid==_uuid).select(self.table.id)[0].id
-        else:
-            self.method = "update"
-            permission = self.PERMISSION["update"]
-
-            if self.UUID in record:
-                del self.record[self.UUID]
-
-            if not self.db(self.table.id==id).count():
-                self.method = None
-                self.id = 0
-
-        if permit and not \
-           permit(permission, self.tablename, record_id=self.id):
-            self.permitted=False
-
-    # -------------------------------------------------------------------------
-    def commit(self):
-
-        if self.committed:
-            return True
-
-        if self.accepted and self.permitted:
-            form = Storage() # PseudoForm for callbacks
-            form.method = self.method
-            form.vars = self.record
-            form.vars.id = self.id
-
-            if self.onvalidation:
-                self.onvalidation(form)
-
-            try:
-                if self.method == "update":
-                    self.db(self.table.id==self.id).update(**dict(self.record))
-                elif self.method == "create":
-                    self.id = self.table.insert(**dict(self.record))
-
-                self.committed=True
-
-            except:
-                self.id=0
-                self.method=None
-                self.accepted=False
-                self.committed=False
-                return False
-
-            form.vars.id = self.id
-
-            if self.onaccept:
-                self.onaccept(form)
-
-            return True
-
-        else:
-            return False
 

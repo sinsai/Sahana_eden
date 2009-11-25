@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.3.1-3, 2009-11-18
+    @version: 1.3.1-6, 2009-11-23
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
@@ -56,10 +56,10 @@ def json_message(success=True, status_code="200", message=None):
         status="failed"
 
     if message:
-        return '{"Status":"%s","Error":{"StatusCode":%s,"Message":"%s"}}' % \
+        return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
                (status, status_code, message)
     else:
-        return '{"Status":"%s","Error":{"StatusCode":%s}}' % \
+        return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
                (status, status_code)
 
 # *****************************************************************************
@@ -355,8 +355,6 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
         supported methods: 'create' & 'update'
     """
 
-    s3xml = S3XML(db)
-
     record = Storage()
     uuid = None
     original = None
@@ -395,7 +393,7 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
     for var in record:
         if var in table.fields:
             value = record[var]
-            (value, error) = s3xml.validate(table, original, var, value)
+            (value, error) = s3xrc.xml.validate(table, original, var, value)
         else:
             # Shall we just ignore non-existent fields?
             # del record[var]
@@ -466,49 +464,18 @@ def import_json(jr, onvalidation=None, onaccept=None):
     if hasattr(source, "close"):
         source.close()
 
-    if jr.component:
-        jrequest = True
-        joins = [(jr.component, jr.pkey, jr.fkey)]
-    else:
-        jrequest = False
-        joins = s3xrc.model.get_components(jr.prefix, jr.name)
-
-    if onaccept:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation) and \
-                    onaccept(form)
-    else:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation)
-
-    if jr.method=="create":
-        jr.id=None
-
-    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
-                            joins=joins,
-                            jrequest=jrequest,
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
                             onvalidation=onvalidation,
-                            onaccept=_onaccept)
+                            onaccept=onaccept)
 
     if success:
-        for i in s3xrc.xml.imports:
-            if not i.committed:
-                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
-                if i.method=="create":
-                    i.onaccept = lambda form: \
-                        shn_audit_create(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-                else:
-                    i.onaccept = lambda form: \
-                        shn_audit_update(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-        s3xrc.xml.commit()
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.xml.error)
+        item = json_message(False, 501, s3xrc.error)
 
-    # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
     return dict(item=item)
 
 #
@@ -541,48 +508,18 @@ def import_xml(jr, onvalidation=None, onaccept=None):
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
             redirect(URL(r=request, f="index"))
 
-    if jr.component:
-        jrequest = True
-        joins = [(jr.component, jr.pkey, jr.fkey)]
-    else:
-        jrequest = False
-        joins = s3xrc.model.get_components(jr.prefix, jr.name)
-
-    if onaccept:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation) and \
-                    onaccept(form)
-    else:
-        _onaccept = lambda form: \
-                    shn_audit_create(form, jr.prefix, jr.name, jr.representation)
-
-    if jr.method=="create":
-        jr.id=None
-
-    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
-                            joins=joins,
-                            jrequest=jrequest,
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
                             onvalidation=onvalidation,
-                            onaccept=_onaccept)
+                            onaccept=onaccept)
 
     if success:
-        for i in s3xrc.xml.imports:
-            if not i.committed:
-                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
-                if i.method=="create":
-                    i.onaccept = lambda form: \
-                        shn_audit_create(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-                else:
-                    i.onaccept = lambda form: \
-                        shn_audit_update(form, i.prefix, i.name, jr.representation) and \
-                        s3xrc.model.get_attr(i.name, "onaccept")
-        s3xrc.xml.commit()
         item = json_message()
     else:
-        item = json_message(False, 501, s3xrc.xml.error)
+        # TODO: export the whole tree on error
+        item = json_message(False, 501, s3xrc.error)
 
-    # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
     return dict(item=item)
 
 # *****************************************************************************
@@ -667,6 +604,8 @@ def shn_accessible_query(name, table):
 # shn_audit -------------------------------------------------------------------
 #
 def shn_audit(operation, module, resource, form=None, record=None, representation=None):
+
+    #print "Audit: %s on %s_%s #%s" % (operation, module, resource, record or 0)
 
     if operation in ("list", "read"):
         return shn_audit_read(operation, module, resource,
@@ -1192,11 +1131,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if not fields:
             fields = [table[f] for f in table.fields if table[f].readable]
 
-        # Column labels
-        headers = {}
-        for field in fields:
-            # Use custom or prettified label
-            headers[str(field)] = field.label
+        # Column labels: use custom or prettified label
+        headers = dict(map(lambda f: (str(f), f.label), fields))
 
         authorised = shn_has_permission('update', table)
         if jr.component:
@@ -1524,9 +1460,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
     else:
         record_id = jr.id
 
-    authorised = shn_has_permission('delete', table, record_id)
-    if not authorised:
-        deletable = False
+    deletable = shn_has_permission('delete', table, record_id)
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised:
@@ -1755,9 +1689,20 @@ def shn_delete(jr):
 # shn_options -----------------------------------------------------------------
 #
 def shn_options(jr):
-    session.error = "Not implemented"
-    redirect(URL(r=request, f="index"))
 
+    if jr.representation=="xml":
+        response.headers["Content-Type"] = "text/xml"
+        response.view = "plain.html"
+        return jr.options_xml()
+
+    elif jr.representation=="json":
+        response.headers['Content-Type'] = 'text/x-json'
+        response.view = "plain.html"
+        return jr.options_json()
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request, f='index'))
 
 # *****************************************************************************
 # Main controller function
@@ -1881,7 +1826,7 @@ def shn_rest_controller(module, resource,
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
 
     # Record ID is required in joined-table operations and read action:
-    if not jr.id and (jr.component_name or jr.method=="read"):
+    if not jr.id and (jr.component or jr.method=="read") and not jr.method=="options":
 
         # TODO: Cleanup - this is PR specific
         if jr.prefix=="pr" and jr.name=="person" and jr.representation=='html':

@@ -6,8 +6,6 @@
 # created 2009-07-24 by nursix
 #
 
-import time
-
 module = 'pr'
 
 # Current Module (for sidebar title)
@@ -50,8 +48,7 @@ def index():
 # Main controller functions
 def person():
     crud.settings.delete_onaccept = shn_pentity_ondelete
-    t1 = time.clock()
-    output = shn_rest_controller(module, 'person', main='first_name', extra='last_name',
+    return shn_rest_controller(module, 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
         rss=dict(
@@ -59,9 +56,6 @@ def person():
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ),
         onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
-    t2 = time.clock()
-    print "Turnaround: %.5f " % (t2-t1)
-    return output
 
 def group():
     response.s3.filter = (db.pr_group.system==False) # do not show system groups

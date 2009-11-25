@@ -12,32 +12,33 @@
   
 <!--Web2Py Layer-->
 <script type="text/javascript">//<![CDATA[
-$(document).ready(function() {
-    $('input.delete').attr('onclick','if(this.checked) if(!confirm("{{=T('Sure you want to delete this object?')}}")) this.checked=false;');
-    try { $("input.datetime").focus( function() {Calendar.setup({
+jQuery(document).ready(function() {
+    jQuery("input[type='checkbox'].delete").click(function() { if(this.checked) if(!confirm("{{=T('Sure you want to delete this object?')}}")) this.checked=false; }); 
+    try { jQuery("input.datetime").focus( function() {Calendar.setup({
          inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M:00')}}", showsTime: true,timeFormat: "24"
     }); }); } catch(e) {};
-    try { $("input.time").clockpick({
-         starthour:0, endhour:23, showminutes:true, military:true
-    }); } catch(e) {};
 });
 //]]></script>
 
 <!--T2 Layer-->
 <script type="text/javascript">//<![CDATA[
-$(document).ready(function(){
-    try { $('.zoom').fancyZoom({scaleImg:true, closeOnClick:true, directory:"/{{=request.application}}/static/media"}); } catch(e) {};
+jQuery(document).ready(function(){
+    try { jQuery('.zoom').fancyZoom({scaleImg:true, closeOnClick:true, directory:"/{{=request.application}}/static/media"}); } catch(e) {};
 });
 //]]></script>
 
 <!--S3 Layer-->
 <script type="text/javascript">//<![CDATA[
-$(document).ready(function() {
-    $("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
-    $('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}"))
-        { event.default(); } else { event.preventDefault(); }
-        return false; });
-    $('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
-    $('.ajaxtip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',width: 380});
+jQuery(document).ready(function() {
+    jQuery("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
+    jQuery('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}")) {
+            return true;
+        } else {
+            event.preventDefault();
+            return false;
+        }
+    });
+    jQuery('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
+    jQuery('.ajaxtip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',width: 380});
 });
 //]]></script>

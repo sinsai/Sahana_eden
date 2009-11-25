@@ -33,3 +33,22 @@ Users who have voted so far: <b>{{= num_voted }}</b></p>
 {{ pass }}
 </table>
 {{ pass }}
+{{ if is_admin: }}
+ <hr />
+ <table class="delphi_wide">
+    <thead><tr>
+        <td> &nbsp; </td>
+        {{ for i, v in items.items(): }}
+            <td>{{= v }}</td>
+        {{ pass }}
+    </tr></thead>
+    {{ for i1, v1 in items.items(): }}
+      <tr>
+        <td><b>{{= v1 }}</b></td>
+        {{ for i2, v2 in items.items(): }}
+            <td>{{= votes[(i1, i2)] }}</td>
+        {{ pass }}
+      </tr>
+    {{ pass }}
+ </table>
+ {{ pass }}

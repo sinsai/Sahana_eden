@@ -4,7 +4,16 @@ S3_PUBLIC_URL = 'http://127.0.0.1:8000'
 BREADCRUMB = '>> '
 
 # Default strings are in English
-T.current_languages = ['en', 'en-en']
+T.current_languages = ['en', 'en-us']
+# Check if user has selected a specific language
+#if request.vars._language:
+#    session._language = request.vars._language
+#if session._language:
+#    T.force(session._language)
+#else:
+    # Use what browser requests
+#    T.force(T.http_accept_language)
+
 
 mail = Mail()
 # These settings could be made configurable as part of the Messaging Module
@@ -101,7 +110,7 @@ from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
                 type ='string',
                 native ='string',
-                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else x)),
+                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'","''"))),
                 decoder = (lambda x: x)
             )
 
@@ -132,6 +141,13 @@ admin_id = db.Table(None, 'admin_id',
                 ondelete='RESTRICT'
                 ))
     
+# Reusable Document field
+document = db.Table(None, 'document',
+            Field('document', 'upload', autodelete = True,
+                label=T('Scanned File'),
+                #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
+                ))
+
 from gluon.storage import Storage
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns

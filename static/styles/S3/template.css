@@ -212,9 +212,9 @@ div.confirmation { color:#070; font-weight: bold; text-align: center; border: #0
 /* GIS module */
 .btn-panel { padding: 2px; }
             
-/* Person Registry */
-div#pheader th { width: 8em; text-align: left; }
-div#pheader td { width: 20em; text-align: left; }
+/* Joined Resources */
+div#pheader th { text-align: left; }
+div#pheader td { text-align: left; padding: 1px 6px 1px 1px; }
 
 /* Delphi Decision Maker */
 .delphi_wide li { padding: 5px 20px; font-weight: bold; }
@@ -334,4 +334,4 @@ html:not([lang*=""]) div.web2py-menu-center ul.web2py-menu li a:hover { height: 
 #edit-btn:hover,
 #delete-btn:hover,
 #register-btn:hover,
-#retrieve-btn:hover { text-decoration: none; color: #fff; background-color: #col_btn_hover; border-right: 1px solid #col_border_btn_in; border-bottom: 1px solid #col_border_btn_in; border-left: 1px solid #000; border-top: 1px solid #000; padding: 1px 4px 1px 4px; }
+#retrieve-btn:hover { text-decoration: none; color: #fff; background-color: #col_btn_hover; border-right: 1px solid #col_border_btn_in; border-bottom: 1px solid #col_border_btn_in; border-left: 1px solid #000; border-top: 1px solid #000; padding: 2px 4px 2px 4px; }

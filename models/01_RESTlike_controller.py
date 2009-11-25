@@ -6,29 +6,31 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.1.0, 2009-10-03
+    @version: 1.3.1-3, 2009-11-18
 
     @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
 """
 
-# import S3XML
-exec('from applications.%s.modules.s3xml import S3XML' % request.application)
-
 # *****************************************************************************
-# Joint Resource Layer
-jrlayer = JRLayer(db) #: Joined Resource Layer Instance
+# ResourceController
+
+exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
+
+s3xrc = ResourceController(db,
+                           domain=request.env.server_name,
+                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application))
 
 # *****************************************************************************
 # Constants to ensure consistency
 
 # XSLT Settings
 XSLT_FILE_EXTENSION = 'xslt' #: File extension of XSLT templates
-XSLT_IMPORT_TEMPLATES = 'static/xsl/import' #: Path to XSLT templates for data import
-XSLT_EXPORT_TEMPLATES = 'static/xsl/export' #: Path to XSLT templates for data export
+XSLT_IMPORT_TEMPLATES = 'static/xslt/import' #: Path to XSLT templates for data import
+XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml", "pfif"] #: Supported XML import formats
-shn_xml_export_formats = ["xml", "pfif"] #: Supported XML output formats
+shn_xml_import_formats = ["xml"] #: Supported XML import formats
+shn_xml_export_formats = ["xml"] #: Supported XML output formats
 
 # Error messages
 UNAUTHORISED = T('Not authorised!')
@@ -37,12 +39,31 @@ BADMETHOD = T('Unsupported method!')
 BADRECORD = T('No such record!')
 INVALIDREQUEST = T('Invalid request!')
 
-
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
 
 # *****************************************************************************
-# Data conversion
+# Helpers
+
+#
+# json_message ----------------------------------------------------------------
+#
+def json_message(success=True, status_code="200", message=None):
+
+    if success:
+        status="success"
+    else:
+        status="failed"
+
+    if message:
+        return '{"Status":"%s","Error":{"StatusCode":%s,"Message":"%s"}}' % \
+               (status, status_code, message)
+    else:
+        return '{"Status":"%s","Error":{"StatusCode":%s}}' % \
+               (status, status_code)
+
+# *****************************************************************************
+# Exports
 
 #
 # export_csv ------------------------------------------------------------------
@@ -60,16 +81,6 @@ def export_csv(resource, query, record=None):
         filename = "%s_%s_list.csv" % (request.env.server_name, resource)
     response.headers['Content-disposition'] = "attachment; filename=%s" % filename
     return str(db(query).select())
-
-#
-# export_json -----------------------------------------------------------------
-#
-def export_json(table, query):
-
-    """ Export record(s) as JSON """
-
-    response.headers['Content-Type'] = 'text/x-json'
-    return db(query).select(table.ALL).json()
 
 #
 # export_pdf ------------------------------------------------------------------
@@ -264,14 +275,14 @@ def export_xls(table, query):
                 style.num_format_str = 'M/D/YY h:mm'
             elif db[tab][col].type == 'time':
                 style.num_format_str = 'h:mm:ss'
-            
+
             # Check for a custom.represent (e.g. for ref fields)
             try:
                 represent = str(field.represent(item[col]))
             except:
                 represent = item[col]
 
-            rowx.write(cell1, represent, style)
+            rowx.write(cell1, str(represent), style)
             cell1 += 1
     book.save(output)
     output.seek(0)
@@ -282,69 +293,44 @@ def export_xls(table, query):
     return output.read()
 
 #
+# export_json -----------------------------------------------------------------
+#
+def export_json(jr):
+
+    """ Export record(s) as JSON """
+
+    response.headers['Content-Type'] = 'text/x-json'
+    return jr.export_json(permit=shn_has_permission, audit=shn_audit)
+
+#
 # export_xml ------------------------------------------------------------------
 #
 def export_xml(jr):
 
     """ Export data as XML """
 
-    domain = jr.request.env.server_name
-    base_url = "%s/%s" % (S3_PUBLIC_URL, jr.request.application)
-
-    s3xml = S3XML(db, domain=domain, base_url=base_url)
-
-    if jr.jresource:
-        joins = [dict(prefix=jr.jmodule,
-                      name=jr.jresource,
-                      pkey=jr.pkey,
-                      fkey=jr.fkey,
-                      id=jr.jrecord_id)]
-    else:
-        joins = jrlayer.get_joins(jr.module, jr.resource)
-
     response.headers['Content-Type'] = 'text/xml'
-    tree = s3xml.get(jr.module, jr.resource, jr.record_id,
-                     joins=joins,
-                     permit=shn_has_permission)
 
-    # Audit
-    for e in s3xml.exports:
-        shn_audit_read('read', e["prefix"], e["name"], e["id"],
-                       representation=jr.representation)
-
-    # XSL Transformation
-    template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-    template_file = os.path.join(request.folder,
-                                 XSLT_EXPORT_TEMPLATES,
-                                 template_name)
-    if os.path.exists(template_file):
-        output = s3xml.transform(tree, template_file)
-        if not output:
-            if jr.representation=="xml":
-                output=tree
-            else:
-                session.error = str(T("XSL Transformation Error: ")) + \
-                                s3xml.error
-                redirect(URL(r=request, f="index"))
+    if jr.representation=="xml":
+        template = None
     else:
-        session.error = str(T("XSL Template Not Found: ")) + \
-                        XSLT_EXPORT_TEMPLATES + "/" + template_name
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
+        if not os.path.exists(template):
+            session.error = str(T("XSLT Template Not Found: ")) + \
+                            XSLT_EXPORT_TEMPLATES + "/" + template_name
+            redirect(URL(r=request, f="index"))
+
+    output = jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)
+
+    if not output:
+        session.error = str(T("XSLT Transformation Error: ")) + jr.error
         redirect(URL(r=request, f="index"))
 
-    # Serialize
-    output_str = s3xml.tostring(output)
+    return output
 
-    # For testing
-    #json_output = s3xml.tree2json(output)
-    #print json_output
-    #if jr.representation == "xml":
-    #    json_tree = s3xml.json2tree(json_output)
-    #else:
-    #    json_tree = s3xml.json2tree(json_output, jr.representation)
-    #print s3xml.tostring(json_tree)
-
-    # Done
-    return output_str
+# *****************************************************************************
+# Imports
 
 #
 # import_csv ------------------------------------------------------------------
@@ -360,31 +346,13 @@ def import_csv(file, table=None):
         db.import_from_csv_file(file)
 
 #
-# json_message ----------------------------------------------------------------
+# import_url ------------------------------------------------------------------
 #
-def json_message(success, status_code="200", message=None):
-
-    if success:
-        status="success"
-    else:
-        status="failed"
-
-    if message:
-        return '{"Status":"%s","Error":{"StatusCode":%s,"Message":"%s"}}' % \
-               (status, status_code, message)
-    else:
-        return '{"Status":"%s","Error":{"StatusCode":%s}}' % \
-               (status, status_code)
-
-#
-# import_json -----------------------------------------------------------------
-#
-def import_json(jr, table, method, onvalidation=None, onaccept=None):
+def import_url(jr, table, method, onvalidation=None, onaccept=None):
 
     """
-        Import GET vars into Database & respond in JSON,
+        Import GET/URL vars into Database & respond in JSON,
         supported methods: 'create' & 'update'
-
     """
 
     s3xml = S3XML(db)
@@ -393,14 +361,11 @@ def import_json(jr, table, method, onvalidation=None, onaccept=None):
     uuid = None
     original = None
 
-    if jr.jresource:
-        module = jr.jmodule
-        resource = jr.jresource
-        onvalidation = jrlayer.get_attr(resource, "onvalidation")
-        onaccept = jrlayer.get_attr(resource, "onaccept")
-    else:
-        module = jr.module
-        resource = jr.resource
+    module, resource, table, tablename = jr.target()
+
+    if jr.component:
+        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "onaccept")
 
     response.headers['Content-Type'] = 'text/x-json'
 
@@ -450,7 +415,7 @@ def import_json(jr, table, method, onvalidation=None, onaccept=None):
 
     # Create/update record
     try:
-        if jr.jresource:
+        if jr.component:
             record[jr.fkey]=jr.record[jr.pkey]
         if method == 'create':
             id = table.insert(**dict(record))
@@ -481,82 +446,141 @@ def import_json(jr, table, method, onvalidation=None, onaccept=None):
     return item
 
 #
+# import_json -----------------------------------------------------------------
+#
+def import_json(jr, onvalidation=None, onaccept=None):
+
+    #return json_message(False, 501, "Not implemented!")
+
+    if "filename" in jr.request.vars:
+        source = open(jr.request.vars["filename"])
+    elif "fetchurl" in jr.request.vars:
+        import urllib
+        source = urllib.urlopen(jr.request.vars["fetchurl"])
+    else:
+        from StringIO import StringIO
+        source = StringIO(jr.request.body)
+
+    tree = s3xrc.xml.json2tree(source)
+
+    if hasattr(source, "close"):
+        source.close()
+
+    if jr.component:
+        jrequest = True
+        joins = [(jr.component, jr.pkey, jr.fkey)]
+    else:
+        jrequest = False
+        joins = s3xrc.model.get_components(jr.prefix, jr.name)
+
+    if onaccept:
+        _onaccept = lambda form: \
+                    shn_audit_create(form, jr.prefix, jr.name, jr.representation) and \
+                    onaccept(form)
+    else:
+        _onaccept = lambda form: \
+                    shn_audit_create(form, jr.prefix, jr.name, jr.representation)
+
+    if jr.method=="create":
+        jr.id=None
+
+    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
+                            joins=joins,
+                            jrequest=jrequest,
+                            onvalidation=onvalidation,
+                            onaccept=_onaccept)
+
+    if success:
+        for i in s3xrc.xml.imports:
+            if not i.committed:
+                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
+                if i.method=="create":
+                    i.onaccept = lambda form: \
+                        shn_audit_create(form, i.prefix, i.name, jr.representation) and \
+                        s3xrc.model.get_attr(i.name, "onaccept")
+                else:
+                    i.onaccept = lambda form: \
+                        shn_audit_update(form, i.prefix, i.name, jr.representation) and \
+                        s3xrc.model.get_attr(i.name, "onaccept")
+        s3xrc.xml.commit()
+        item = json_message()
+    else:
+        # TODO: export the whole tree on error
+        item = json_message(False, 501, s3xrc.xml.error)
+
+    # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
+    return dict(item=item)
+
+#
 # import_xml ------------------------------------------------------------------
 #
 def import_xml(jr, onvalidation=None, onaccept=None):
 
     """ Import XML data """
 
-    s3xml = S3XML(db)
-
-    http_put = False
     if "filename" in jr.request.vars:
         source = jr.request.vars["filename"]
     elif "fetchurl" in jr.request.vars:
         source = jr.request.vars["fetchurl"]
     else:
-        http_put = True
         source = jr.request.body
 
-    _tree = s3xml.parse(source)
+    tree = s3xrc.xml.parse(source)
 
-    # XSL Transformation
-    template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-    template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-    if os.path.exists(template_file):
-        tree = s3xml.transform(_tree, template_file)
-        if not tree:
-            session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+    # XSLT Transformation
+    if not jr.representation=="xml":
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
+        if os.path.exists(template_file):
+            tree = s3xrc.xml.transform(tree, template_file)
+            if not tree:
+                session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+                redirect(URL(r=request, f="index"))
+        else:
+            session.error = str(T("XSL Template Not Found: ")) + \
+                            XSLT_IMPORT_TEMPLATES + "/" + template_name
             redirect(URL(r=request, f="index"))
-    else:
-        session.error = str(T("XSL Template Not Found: ")) + \
-                        XSLT_IMPORT_TEMPLATES + "/" + template_name
-        redirect(URL(r=request, f="index"))
 
-    if jr.jresource:
+    if jr.component:
         jrequest = True
-        joins = [dict(prefix=jr.jmodule,
-                      name=jr.jresource,
-                      pkey=jr.pkey,
-                      fkey=jr.fkey,
-                      multiple=jr.multiple)]
+        joins = [(jr.component, jr.pkey, jr.fkey)]
     else:
         jrequest = False
-        joins = jrlayer.get_joins(jr.module, jr.resource)
+        joins = s3xrc.model.get_components(jr.prefix, jr.name)
 
     if onaccept:
         _onaccept = lambda form: \
-                    shn_audit_create(form, jr.module, jr.resource, jr.representation) and \
+                    shn_audit_create(form, jr.prefix, jr.name, jr.representation) and \
                     onaccept(form)
     else:
         _onaccept = lambda form: \
-                    shn_audit_create(form, jr.module, jr.resource, jr.representation)
+                    shn_audit_create(form, jr.prefix, jr.name, jr.representation)
 
     if jr.method=="create":
-        jr.record_id=None
+        jr.id=None
 
-    success = s3xml.put(jr.module, jr.resource, jr.record_id, tree,
-        joins=joins,
-        jrequest=jrequest,
-        onvalidation=onvalidation,
-        onaccept=_onaccept)
+    success = s3xrc.xml.put(jr.prefix, jr.name, jr.id, tree,
+                            joins=joins,
+                            jrequest=jrequest,
+                            onvalidation=onvalidation,
+                            onaccept=_onaccept)
 
     if success:
-        for i in s3xml.imports:
+        for i in s3xrc.xml.imports:
             if not i.committed:
-                i.onvalidation = jrlayer.get_attr(i.name, "onvalidation")
+                i.onvalidation = s3xrc.model.get_attr(i.name, "onvalidation")
                 if i.method=="create":
                     i.onaccept = lambda form: \
                         shn_audit_create(form, i.prefix, i.name, jr.representation) and \
-                        jrlayer.get_attr(i.name, "onaccept")
+                        s3xrc.model.get_attr(i.name, "onaccept")
                 else:
                     i.onaccept = lambda form: \
                         shn_audit_update(form, i.prefix, i.name, jr.representation) and \
-                        jrlayer.get_attr(i.name, "onaccept")
-        s3xml.commit()
-        item = '{"Status":"success","Error":{"StatusCode":200}}'
+                        s3xrc.model.get_attr(i.name, "onaccept")
+        s3xrc.xml.commit()
+        item = json_message()
     else:
-        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"%s"}}' % s3xml.error
+        item = json_message(False, 501, s3xrc.xml.error)
 
     # Q: Is it correct to respond in JSON, and if so - why use plain.html then?
     return dict(item=item)
@@ -638,6 +662,25 @@ def shn_accessible_query(name, table):
 #
 # These functions should always return True in order to be chainable
 # by 'and' for lambda's as onaccept-callbacks. -- nursix --
+
+#
+# shn_audit -------------------------------------------------------------------
+#
+def shn_audit(operation, module, resource, form=None, record=None, representation=None):
+
+    if operation in ("list", "read"):
+        return shn_audit_read(operation, module, resource,
+                              record=record, representation=representation)
+    elif operation=="create":
+        return shn_audit_create(form, module, resource, representation=representation)
+
+    elif operation=="update":
+        return shn_audit_update(form, module, resource, representation=representation)
+
+    elif operation=="delete":
+        return shn_audit_create(module, resource, record, representation=representation)
+
+    return True
 
 #
 # shn_audit_read --------------------------------------------------------------
@@ -874,24 +917,24 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
 #
 def shn_custom_view(jr, default_name):
 
-    """ Check for custom view. """
+    """ Check for custom view """
 
-    if jr.jresource:
+    if jr.component:
 
-        custom_view = '%s_%s_%s' % (jr.resource, jr.jresource, default_name)
-        _custom_view = os.path.join(request.folder, 'views', jr.module, custom_view)
+        custom_view = '%s_%s_%s' % (jr.name, jr.component_name, default_name)
+        _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
 
         if not os.path.exists(_custom_view):
-            custom_view = '%s_%s' % (jr.resource, default_name)
-            _custom_view = os.path.join(request.folder, 'views', jr.module, custom_view)
+            custom_view = '%s_%s' % (jr.name, default_name)
+            _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
 
     else:
-        custom_view = '%s_%s' % (jr.resource, default_name)
-        _custom_view = os.path.join(request.folder, 'views', jr.module, custom_view)
+        custom_view = '%s_%s' % (jr.name, default_name)
+        _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
 
 
     if os.path.exists(_custom_view):
-        response.view = jr.module + '/' + custom_view
+        response.view = jr.prefix + '/' + custom_view
     else:
         response.view = default_name
 
@@ -905,25 +948,23 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
     """ Read a single record. """
 
-    if jr.jresource:
-        module = jr.jmodule
-        resource = jr.jresource
-        table = jr.jtable
-        tablename = jr.jtablename
+    module, resource, table, tablename = jr.target()
+
+    if jr.component:
 
         query = (table[jr.fkey]==jr.record[jr.pkey])
-        if jr.jrecord_id:
-            query = (table.id==jr.jrecord_id) & query
+        if jr.component_id:
+            query = (table.id==jr.component_id) & query
         if 'deleted' in table:
             query = ((table.deleted==False) | (table.deleted==None)) & query
 
         try:
             record_id = db(query).select(table.id)[0].id
-            href_delete = URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'delete', record_id])
-            href_edit = URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'update', record_id])
+            href_delete = URL(r=jr.request, f=jr.name, args=[jr.id, resource, 'delete', record_id])
+            href_edit = URL(r=jr.request, f=jr.name, args=[jr.id, resource, 'update', record_id])
         except:
             if not jr.multiple:
-                redirect(URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'create']))
+                redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, 'create']))
             else:
                 record_id = None
                 href_delete = None
@@ -931,20 +972,15 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
                 session.error = BADRECORD
                 redirect(jr.there()) # TODO: this is wrong when no records exist!
 
-        editable = jrlayer.get_attr(resource, 'editable')
-        deletable = jrlayer.get_attr(resource, 'deletable')
+        editable = s3xrc.model.get_attr(resource, 'editable')
+        deletable = s3xrc.model.get_attr(resource, 'deletable')
 
-        rss = jrlayer.rss(resource)
+        rss = s3xrc.model.get_attr(resource, 'rss')
 
     else:
-        module = jr.module
-        resource = jr.resource
-        table = jr.table
-        tablename = jr.tablename
-
-        record_id = jr.record_id
-        href_delete = URL(r=jr.request, f=jr.resource, args=['delete', record_id])
-        href_edit = URL(r=jr.request, f=jr.resource, args=['update', record_id])
+        record_id = jr.id
+        href_delete = URL(r=jr.request, f=jr.name, args=['delete', record_id])
+        href_edit = URL(r=jr.request, f=jr.name, args=['update', record_id])
 
     authorised = shn_has_permission('read', table, record_id)
     if authorised:
@@ -958,7 +994,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             except:
                 title = s3.crud_strings.title_display
             output = dict(title=title)
-            if jr.jresource:
+            if jr.component:
                 try:
                     subtitle = s3.crud_strings[tablename].title_display
                 except:
@@ -966,7 +1002,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
                 output.update(subtitle=subtitle)
                 if pheader:
                     try:
-                        _pheader = pheader(jr.resource, jr.record_id, jr.representation, next=jr.there(), same=jr.same())
+                        _pheader = pheader(jr.name, jr.id, jr.representation, next=jr.there(), same=jr.same())
                     except:
                         _pheader = pheader
                     if _pheader:
@@ -988,7 +1024,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
             output.update(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
 
-            if jr.jresource and not jr.multiple:
+            if jr.component and not jr.multiple:
                 del output["list_btn"]
 
             return(output)
@@ -1002,10 +1038,6 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             query = db[table].id == record_id
             return export_csv(resource, query)
 
-        elif jr.representation == "json": # TODO: encoding problems, output contains Python-strings
-            query = db[table].id == record_id
-            return export_json(table, query)
-
         elif jr.representation == "pdf": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
             return export_pdf(table, query)
@@ -1014,15 +1046,15 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             query = db[table].id == record_id
             return export_xls(table, query)
 
+        elif jr.representation == "json":
+            return export_json(jr)
+
         elif jr.representation in shn_xml_export_formats:
             return export_xml(jr)
 
         elif jr.representation == "rss": # TODO: replace by XML export
             query = db[table].id == record_id
             return export_rss(module, resource, query, rss=rss, linkto=jr.here('html'))
-
-
-
 
         else:
             session.error = BADFORMAT
@@ -1065,22 +1097,20 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
     """ List records matching the request """
 
-    if jr.jresource:
-        module = jr.jmodule
-        resource = jr.jresource
-        table = jr.jtable
-        tablename = jr.jtablename
+    module, resource, table, tablename = jr.target()
 
-        listadd = jrlayer.get_attr(resource, 'listadd')
-        if listadd==None:
+    if jr.component:
+
+        listadd = jr.component.attr.listadd
+        if listadd is None:
             listadd=True
 
-        main, extra = jrlayer.head_fields(resource)
-        orderby = jrlayer.get_attr(resource, 'orderby')
-        sortby = jrlayer.get_attr(resource, 'sortby')
-        onvalidation = jrlayer.get_attr(resource, 'onvalidation')
-        onaccept =  jrlayer.get_attr(resource, 'onaccept')
-        rss = jrlayer.rss(resource)
+        main, extra = jr.component.attr.main, jr.component.attr.extra
+        orderby = jr.component.attr.orderby
+        sortby = jr.component.attr.sortby
+        onvalidation = jr.component.attr.onvalidation
+        onaccept =  jr.component.attr.onaccept
+        rss = jr.component.attr.rss
 
         query = shn_accessible_query('read', table)
         query = (table[jr.fkey]==jr.record[jr.pkey]) & query
@@ -1088,23 +1118,18 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if response.s3.jfilter:
             query = response.s3.jfilter & query
 
-        if jr.jrecord_id:
-            query = (table.id==jr.jrecord_id) & query
+        if jr.component_id:
+            query = (table.id==jr.component_id) & query
 
-        href_add = URL(r=jr.request, f=jr.resource, args=[jr.record_id, resource, 'create'])
+        href_add = URL(r=jr.request, f=jr.name, args=[jr.id, resource, 'create'])
 
     else:
-        module = jr.module
-        resource = jr.resource
-        table = jr.table
-        tablename = jr.tablename
-
         query = shn_accessible_query('read', table)
 
         if response.s3.filter:
             query = response.s3.filter & query
 
-        href_add = URL(r=jr.request, f=jr.resource, args=['create'])
+        href_add = URL(r=jr.request, f=jr.name, args=['create'])
 
     if 'deleted' in table:
         query = ((table.deleted == False) | (table.deleted == None)) & query
@@ -1117,7 +1142,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     if jr.representation=="html":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
-        if jr.jresource:
+        if jr.component:
             try:
                 title = s3.crud_strings[jr.tablename].title_display
             except:
@@ -1129,7 +1154,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
             if pheader:
                 try:
-                    _pheader = pheader(jr.resource, jr.record_id, jr.representation,
+                    _pheader = pheader(jr.name, jr.id, jr.representation,
                                        next=jr.there(),
                                        same=jr.same())
                 except:
@@ -1151,8 +1176,9 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         # Which fields do we display?
         fields = None
 
-        if jr.jresource:
-            _fields = jrlayer.get_list_fields(resource)
+        if jr.component:
+            list_fields = jr.component.attr.list_fields
+            _fields = [jr.component.table[f] for f in jr.component.table.fields if f in list_fields]
             if _fields:
                 fields = [f for f in _fields if f.readable]
             else:
@@ -1173,7 +1199,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             headers[str(field)] = field.label
 
         authorised = shn_has_permission('update', table)
-        if jr.jresource:
+        if jr.component:
             if authorised:
                 linkto = shn_list_jlinkto_update
             else:
@@ -1204,7 +1230,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if authorised and listadd:
 
             # Block join field
-            if jr.jresource:
+            if jr.component:
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
@@ -1213,12 +1239,12 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             if onaccept:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            jrlayer.store_session(session,module,resource,form.vars.id) and \
+                            s3xrc.store_session(session,module,resource,form.vars.id) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            jrlayer.store_session(session,module,resource,form.vars.id)
+                            s3xrc.store_session(session,module,resource,form.vars.id)
 
             try:
                 message = s3.crud_strings[tablename].msg_record_created
@@ -1236,7 +1262,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             if response.s3.cancel:
                 form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
-            if jr.jresource:
+            if jr.component:
                 table[jr.fkey].comment = _comment
 
             try:
@@ -1277,14 +1303,14 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     elif jr.representation == "csv":
         return export_csv(resource, query)
 
-    elif jr.representation == "json":
-        return export_json(table, query)
-
     elif jr.representation == "pdf":
         return export_pdf(table, query)
 
     elif jr.representation == "xls":
         return export_xls(table, query)
+
+    elif jr.representation == "json":
+        return export_json(jr)
 
     elif jr.representation in shn_xml_export_formats:
         return export_xml(jr)
@@ -1303,21 +1329,15 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
     """ Create new records """
 
-    if jr.jresource:
-        module = jr.jmodule
-        resource = jr.jresource
-        table = jr.jtable
-        tablename = jr.jtablename
+    module, resource, table, tablename = jr.target()
 
-        onvalidation = jrlayer.get_attr(resource, 'create_onvalidation')
-        onaccept = jrlayer.get_attr(resource, 'create_onaccept')
-        main, extra = jrlayer.head_fields(resource)
+    if jr.component:
 
-    else:
-        module = jr.module
-        resource = jr.resource
-        table = jr.table
-        tablename = jr.tablename
+        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "onaccept")
+
+        main = s3xrc.model.get_attr(resource, "main")
+        extra = s3xrc.model.get_attr(resource, "extra")
 
     if jr.representation == "html":
 
@@ -1326,7 +1346,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output = dict(module_name=module_name, module=module, resource=resource, main=main)
 
-        if jr.jresource:
+        if jr.component:
             try:
                 title = s3.crud_strings[jr.tablename].title_display
             except:
@@ -1339,7 +1359,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
             if pheader:
                 try:
-                    _pheader = pheader(jr.resource, jr.record_id, jr.representation,
+                    _pheader = pheader(jr.name, jr.id, jr.representation,
                                        next=jr.there(),
                                        same=jr.same())
                 except:
@@ -1360,7 +1380,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output.update(title=title, list_btn=list_btn)
 
-        if jr.jresource:
+        if jr.component:
             # Block join field
             _comment = table[jr.fkey].comment
             table[jr.fkey].comment = None
@@ -1373,18 +1393,18 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = jrlayer.get_attr(jr.jresource, 'create_next') or \
+            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
                                         jr.there()
 
         if onaccept:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        jrlayer.store_session(session,module,resource,form.vars.id) and \
+                        s3xrc.store_session(session,module,resource,form.vars.id) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        jrlayer.store_session(session,module,resource,form.vars.id)
+                        s3xrc.store_session(session,module,resource,form.vars.id)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created
@@ -1400,7 +1420,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if response.s3.cancel:
             form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
-        if jr.jresource:
+        if jr.component:
             # Restore comment
             table[jr.fkey].comment = _comment
             # Restore callbacks
@@ -1410,7 +1430,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         output.update(form=form)
 
-        if jr.jresource and not jr.multiple:
+        if jr.component and not jr.multiple:
             del output["list_btn"]
 
         return output
@@ -1443,8 +1463,8 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         return dict(module_name=module_name, form=form, module=module,
                     resource=resource, main=main, caller=request.vars.caller)
 
-    elif jr.representation == "json":
-        return import_json(jr, table, method="create", onvalidation=onvalidation, onaccept=onaccept)
+    elif jr.representation == "url":
+        return import_url(jr, table, method="create", onvalidation=onvalidation, onaccept=onaccept)
 
     elif jr.representation == "csv":
         # Read in POST
@@ -1455,6 +1475,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         except:
             session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
+
+    elif jr.representation == "json":
+        response.view = 'plain.html'
+        return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
 
     elif jr.representation in shn_xml_import_formats:
         response.view = 'plain.html'
@@ -1471,19 +1495,16 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
     """ Update an existing record """
 
-    if jr.jresource:
+    module, resource, table, tablename = jr.target()
 
-        if jr.multiple and not jr.jrecord_id:
+    if jr.component:
+
+        if jr.multiple and not jr.component_id:
             return shn_create(jr, pheader)
 
-        module = jr.jmodule
-        resource = jr.jresource
-        table = jr.jtable
-        tablename = jr.jtablename
-
         query = (table[jr.fkey]==jr.record[jr.pkey])
-        if jr.jrecord_id:
-            query = (table.id==jr.jrecord_id) & query
+        if jr.component_id:
+            query = (table.id==jr.component_id) & query
         if 'deleted' in table:
             query = ((table.deleted==False) | (table.deleted==None)) & query
 
@@ -1496,18 +1517,12 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             session.error = BADRECORD
             redirect(jr.there())
 
-        onvalidation = jrlayer.get_attr(resource, 'update_onvalidation')
-        onaccept = jrlayer.get_attr(resource, 'update_onaccept')
-        deletable = jrlayer.get_attr(resource, 'deletable')
+        onvalidation = s3xrc.model.get_attr(resource, 'update_onvalidation')
+        onaccept = s3xrc.model.get_attr(resource, 'update_onaccept')
+        deletable = s3xrc.model.get_attr(resource, 'deletable')
 
     else:
-
-        module = jr.module
-        resource = jr.resource
-        table = jr.table
-        tablename = jr.tablename
-
-        record_id = jr.record_id
+        record_id = jr.id
 
     authorised = shn_has_permission('delete', table, record_id)
     if not authorised:
@@ -1524,7 +1539,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
             output = dict(module_name=module_name)
 
-            if jr.jresource:
+            if jr.component:
                 try:
                     title = s3.crud_strings[jr.tablename].title_display
                 except:
@@ -1537,7 +1552,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
                 if pheader:
                     try:
-                        _pheader = pheader(jr.resource, jr.record_id, jr.representation,
+                        _pheader = pheader(jr.name, jr.id, jr.representation,
                                            next=jr.there(),
                                            same=jr.same())
                     except:
@@ -1558,7 +1573,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
             output.update(title=title, list_btn=list_btn)
 
-            if jr.jresource:
+            if jr.component:
                 # Block join field
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
@@ -1571,7 +1586,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 # Neutralize callbacks
                 crud.settings.update_onvalidation = None
                 crud.settings.update_onaccept = None
-                crud.settings.update_next = jrlayer.get_attr(jr.jresource, 'update_next') or \
+                crud.settings.update_next = s3xrc.model.get_attr(jr.component_name, 'update_next') or \
                                             jr.there()
 
             try:
@@ -1582,12 +1597,12 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             if onaccept:
                 _onaccept = lambda form: \
                     shn_audit_update(form, module, resource, jr.representation) and \
-                    jrlayer.store_session(session, module, resource, form.vars.id) and \
+                    s3xrc.store_session(session, module, resource, form.vars.id) and \
                     onaccept(form)
             else:
                 _onaccept = lambda form: \
                     shn_audit_update(form, module, resource, jr.representation) and \
-                    jrlayer.store_session(session, module, resource, form.vars.id)
+                    s3xrc.store_session(session, module, resource, form.vars.id)
 
             form = crud.update(table, record_id,
                                message=message,
@@ -1599,7 +1614,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             if response.s3.cancel:
                 form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
 
-            if jr.jresource:
+            if jr.component:
                 # Restore comment
                 table[jr.fkey].comment = _comment
                 # Restore callbacks
@@ -1609,7 +1624,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
             output.update(form=form)
 
-            if jr.jresource and not jr.multiple:
+            if jr.component and not jr.multiple:
                 del output["list_btn"]
 
             return(output)
@@ -1631,8 +1646,12 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             response.view = 'plain.html'
             return dict(item=form)
 
+        elif jr.representation == "url":
+            return import_url(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
+
         elif jr.representation == "json":
-            return import_json(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
+            response.view = 'plain.html'
+            return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
 
         elif jr.representation in shn_xml_import_formats:
             response.view = 'plain.html'
@@ -1652,30 +1671,22 @@ def shn_delete(jr):
 
     """ Delete record(s) """
 
-    if jr.jresource:
-        module = jr.jmodule
-        resource = jr.jresource
-        table = jr.jtable
-        tablename = jr.jtablename
+    module, resource, table, tablename = jr.target()
 
-        onvalidation = jrlayer.get_attr(resource, 'delete_onvalidation')
-        onaccept = jrlayer.get_attr(resource, 'delete_onaccept')
+    if jr.component:
+        onvalidation = s3xrc.model.get_attr(resource, "delete_onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "delete_onaccept")
 
         query = (table[jr.fkey]==jr.record[jr.pkey])
-        if jr.jrecord_id:
-            query = (table.id==jr.jrecord_id) & query
+        if jr.component_id:
+            query = (table.id==jr.component_id) & query
         if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
-
+            query = (table.deleted==False) & query
     else:
-        module = jr.module
-        resource = jr.resource
-        table = jr.table
-        tablename = jr.tablename
+        query = (table.id==jr.id)
 
-        query = (table.id==jr.record_id)
-        if 'deleted' in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
+    if 'deleted' in table:
+        query = (table.deleted==False) & query
 
     # Get target records
     rows = db(query).select(table.ALL)
@@ -1690,7 +1701,7 @@ def shn_delete(jr):
     except:
         message = s3.crud_strings.msg_record_deleted
 
-    if jr.jresource:
+    if jr.component:
         # Save callback settings
         delete_onvalidation = crud.settings.delete_onvalidation
         delete_onaccept = crud.settings.delete_onaccept
@@ -1721,13 +1732,13 @@ def shn_delete(jr):
         else:
             continue
 
-    if jr.jresource:
+    if jr.component:
         # Restore callback settings
         crud.settings.delete_onvalidation = delete_onvalidation
         crud.settings.delete_onaccept = delete_onaccept
         crud.settings.delete_next = delete_next
 
-        delete_next =  jrlayer.get_attr(resource, 'delete_next')
+        delete_next =  jr.component.attr.delete_next
 
     # Confirm and return
     if numrows > 1:
@@ -1735,10 +1746,18 @@ def shn_delete(jr):
     else:
         session.confirmation = message
 
-    if jr.jresource and delete_next: # but redirect here!
+    if jr.component and delete_next: # but redirect here!
         redirect(delete_next)
 
     return
+
+#
+# shn_options -----------------------------------------------------------------
+#
+def shn_options(jr):
+    session.error = "Not implemented"
+    redirect(URL(r=request, f="index"))
+
 
 # *****************************************************************************
 # Main controller function
@@ -1840,10 +1859,8 @@ def shn_rest_controller(module, resource,
 
     """
 
-
     # Parse original request --------------------------------------------------
-
-    jr = JRequest(jrlayer, module, resource, request, session=session)
+    jr = s3xrc.request(module, resource, request, session=session)
 
     # Invalid request?
     if jr.invalid:
@@ -1856,9 +1873,7 @@ def shn_rest_controller(module, resource,
         redirect(URL(r=request, c=request.controller, f='index'))
 
     # Get backlinks
-    here = jr.here()
-    there = jr.there()
-    same = jr.same()
+    here, there, same = jr.here(), jr.there(), jr.same()
 
     # Check read permission on primary table
     if not shn_has_permission('read', jr.table):
@@ -1866,10 +1881,10 @@ def shn_rest_controller(module, resource,
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
 
     # Record ID is required in joined-table operations and read action:
-    if not jr.record_id and (jr.jresource or jr.method=="read"):
+    if not jr.id and (jr.component_name or jr.method=="read"):
 
         # TODO: Cleanup - this is PR specific
-        if jr.module=="pr" and jr.resource=="person" and jr.representation=='html':
+        if jr.prefix=="pr" and jr.name=="person" and jr.representation=='html':
             redirect(URL(r=request, f='person', args='search_simple', vars={"_next": same}))
 
         else:
@@ -1879,31 +1894,19 @@ def shn_rest_controller(module, resource,
     # *************************************************************************
     # Joined Table Operation
 
-    if jr.jresource:
+    if jr.component:
         if jr.method and jr.custom_action:
             try:
-                return(jr.custom_action(
-                    jr.module,
-                    jr.resource,
-                    jr.record_id,
-                    jr.method,
-                    jmodule=jr.jmodule,
-                    jresource=jr.jresource,
-                    jrecord_id=jr.jrecord_id,
-                    joinby=jr.fkey,
-                    multiple=jr.multiple,
-                    representation=jr.representation,
-                    onvalidation=None,
-                    onaccept=None))
+                return(jr.custom_action(jr, onvalidation=None, onaccept=None))
             except:
                 raise HTTP(501)
 
         # HTTP Multi-Record Operation *****************************************
-        if jr.method==None and jr.multiple and not jr.jrecord_id:
+        if jr.method==None and jr.multiple and not jr.component_id:
 
             # HTTP List/List-add ----------------------------------------------
             if jr.http=='GET' or jr.http=='POST':
-                authorised = shn_has_permission('read', jr.jtable)
+                authorised = shn_has_permission('read', jr.component.table)
                 if authorised:
                     return shn_list(jr, pheader, rss=rss)
                 else:
@@ -1928,11 +1931,11 @@ def shn_rest_controller(module, resource,
                 raise HTTP(501)
 
         # HTTP Single-Record Operation ****************************************
-        elif jr.method==None and (jr.jrecord_id or not jr.multiple):
+        elif jr.method==None and (jr.component_id or not jr.multiple):
 
             # HTTP Read/Update ------------------------------------------------
             if jr.http=='GET':
-                authorised = shn_has_permission('read', jr.jtable)
+                authorised = shn_has_permission('read', jr.component.table)
                 if authorised:
                     return shn_read(jr, pheader=pheader, rss=rss)
                 else:
@@ -1960,7 +1963,7 @@ def shn_rest_controller(module, resource,
 
         # Create (joined table) ************************************************
         elif jr.method=="create":
-            authorised = shn_has_permission(jr.method, jr.jtable)
+            authorised = shn_has_permission(jr.method, jr.component.table)
             if authorised:
                 return shn_create(jr, pheader)
             else:
@@ -1969,9 +1972,9 @@ def shn_rest_controller(module, resource,
 
         # Read (joined table) *************************************************
         elif jr.method=="read" or jr.method=="display":
-            authorised = shn_has_permission('read', jr.jtable)
+            authorised = shn_has_permission('read', jr.component.table)
             if authorised:
-                if jr.multiple and not jr.jrecord_id:
+                if jr.multiple and not jr.component_id:
                     # This is a list action
                     return shn_list(jr, pheader, rss=rss)
                 else:
@@ -1983,7 +1986,7 @@ def shn_rest_controller(module, resource,
 
         # Update (joined table) ***********************************************
         elif jr.method=="update":
-            authorised = shn_has_permission(jr.method, jr.jtable)
+            authorised = shn_has_permission(jr.method, jr.component.table)
             if authorised:
                 return shn_update(jr, pheader)
             else:
@@ -1992,13 +1995,17 @@ def shn_rest_controller(module, resource,
 
         # Delete (joined table) ***********************************************
         elif jr.method=="delete":
-            authorised = shn_has_permission(jr.method, jr.jtable)
+            authorised = shn_has_permission(jr.method, jr.component.table)
             if authorised:
                 shn_delete(jr)
                 redirect(there)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
+
+        # Options (joined table) **********************************************
+        elif jr.method=="options":
+            return shn_options(jr)
 
         # Unsupported Method **************************************************
         else:
@@ -2013,19 +2020,7 @@ def shn_rest_controller(module, resource,
         # Custom Method *******************************************************
         if jr.method and jr.custom_action:
             try:
-                return(jr.custom_action(
-                    jr.module,
-                    jr.resource,
-                    jr.record_id,
-                    jr.method,
-                    jmodule=None,
-                    jresource=None,
-                    jrecord_id=None,
-                    joinby=None,
-                    multiple=True,
-                    representation=jr.representation,
-                    onvalidation=onvalidation,
-                    onaccept=onaccept))
+                return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
             except:
                 raise HTTP(501)
 
@@ -2033,7 +2028,7 @@ def shn_rest_controller(module, resource,
         elif jr.method=="clear":
 
             # Clear session
-            jrlayer.clear_session(session, jr.module, jr.resource)
+            s3xrc.clear_session(session, jr.prefix, jr.name)
 
             if '_next' in request.vars:
                 request_vars = dict(_next=request.vars._next)
@@ -2042,13 +2037,13 @@ def shn_rest_controller(module, resource,
 
             # Redirect to search
             # TODO: build a generic search function, this here is PR specific
-            if jr.module=="pr" and jr.resource=="person" and jr.representation=="html":
+            if jr.prefix=="pr" and jr.name=="person" and jr.representation=="html":
                 redirect(URL(r=request, f='person', args='search_simple', vars=request_vars))
             else:
-                redirect(URL(r=request, c='pr', f=jr.resource))
+                redirect(URL(r=request, c='pr', f=jr.name))
 
         # HTTP Multi-Record Operation *****************************************
-        elif not jr.method and not jr.record_id:
+        elif not jr.method and not jr.id:
 
             # HTTP List or List-Add -------------------------------------------
             if jr.http == 'GET' or request.env.request_method == 'POST':
@@ -2075,7 +2070,7 @@ def shn_rest_controller(module, resource,
                 raise HTTP(501)
 
         # HTTP Single Record Operation ****************************************
-        elif jr.record_id and not jr.method:
+        elif jr.id and not jr.method:
 
             # HTTP Read (single record) ---------------------------------------
             if jr.http == 'GET':
@@ -2084,11 +2079,11 @@ def shn_rest_controller(module, resource,
             # HTTP Delete (single record) -------------------------------------
             elif jr.http == 'DELETE':
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7
-                if db(db[jr.table].id == jr.record_id).select():
-                    authorised = shn_has_permission('delete', jr.table, jr.record_id)
+                if db(db[jr.table].id == jr.id).select():
+                    authorised = shn_has_permission('delete', jr.table, jr.id)
                     if authorised:
                         shn_delete(jr)
-                        item = '{"Status":"OK","Error":{"StatusCode":200}}'
+                        item = json_message()
                         response.view = 'plain.html'
                         return dict(item=item)
                     else:
@@ -2130,7 +2125,7 @@ def shn_rest_controller(module, resource,
 
         # Update (single table) ***********************************************
         elif jr.method == "update":
-            authorised = shn_has_permission(jr.method, jr.table, jr.record_id)
+            authorised = shn_has_permission(jr.method, jr.table, jr.id)
             if authorised:
                 return shn_update(jr, pheader, deletable=deletable,
                                   onvalidation=onvalidation, onaccept=onaccept)
@@ -2140,7 +2135,7 @@ def shn_rest_controller(module, resource,
 
         # Delete (single table) ***********************************************
         elif jr.method == "delete":
-            authorised = shn_has_permission(jr.method, jr.table, jr.record_id)
+            authorised = shn_has_permission(jr.method, jr.table, jr.id)
             if authorised:
                 shn_delete(jr)
                 redirect(there)
@@ -2153,18 +2148,19 @@ def shn_rest_controller(module, resource,
             authorised = shn_has_permission('read', jr.table)
             if authorised:
                 # Filter Search list to just those records which user can read
-                # query = shn_accessible_query('read', table)
-                # Fails on t2's line 739: AttributeError: 'SQLQuery' object has no attribute 'get'
+                query = shn_accessible_query('read', jr.table)
+                # Filter search to items which aren't deleted
+                if 'deleted' in jr.table:
+                    query = (jr.table.deleted==False) & query
 
                 # Audit
-                shn_audit_read(operation='search', module=jr.module,
-                               resource=jr.resource, representation=jr.representation)
+                shn_audit_read(operation='search', module=jr.prefix,
+                               resource=jr.name, representation=jr.representation)
 
                 if jr.representation == "html":
 
-                    shn_represent(jr.table, jr.module, jr.resource, deletable, main, extra)
-                    #search = t2.search(table, query)
-                    search = t2.search(jr.table)
+                    shn_represent(jr.table, jr.prefix, jr.name, deletable, main, extra)
+                    search = t2.search(jr.table, query=query)
 
                     # Check for presence of Custom View
                     shn_custom_view(jr, 'search.html')
@@ -2181,25 +2177,25 @@ def shn_rest_controller(module, resource,
                         field = str.lower(request.vars.field)
                         filter = request.vars.filter
                         if filter == '~':
-                            query = (jr.table[field].like('%' + value + '%'))
+                            query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:
                                 item = db(query).select(limitby=(0, limit)).json()
                             else:
                                 item = db(query).select().json()
                         elif filter == '=':
-                            query = (jr.table[field] == value)
+                            query = query & (jr.table[field] == value)
                             item = db(query).select().json()
                         elif filter == '<':
-                            query = (jr.table[field] < value)
+                            query = query & (jr.table[field] < value)
                             item = db(query).select().json()
                         elif filter == '>':
-                            query = (jr.table[field] > value)
+                            query = query & (jr.table[field] > value)
                             item = db(query).select().json()
                         else:
-                            item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Unsupported filter! Supported filters: ~, =, <, >"}}'
+                            item = json_message(False, 501, "Unsupported filter! Supported filters: ~, =, <, >")
                     else:
-                        item = '{"Status":"failed","Error":{"StatusCode":501,"Message":"Search requires specifying Field, Filter & Value!"}}'
+                        item = json_message(False, 501, "Search requires specifying Field, Filter & Value!")
                     response.view = 'plain.html'
                     return dict(item=item)
 
@@ -2209,6 +2205,10 @@ def shn_rest_controller(module, resource,
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
+
+        # Options (single table) **********************************************
+        elif jr.method=="options":
+            return shn_options(jr)
 
         # Unsupported Method **************************************************
         else:

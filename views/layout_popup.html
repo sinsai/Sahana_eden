@@ -31,7 +31,8 @@ function TB_refresh() {
             // Set the newly-created value
             self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
             // Also populate dummy, if present
-            self.parent.$('#dummy').val(selectedname);
+            // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
+            //self.parent.$('#dummy').val(selectedname);
             // Clean-up
             self.parent.tb_remove();
         });
@@ -42,13 +43,15 @@ function TB_refresh() {
 }
 // Function to get the URL parameters
 function getQueryParams(qs) {
-    qs = qs.split("+").join(" ");
+// We want everything after the ?
+    qs = qs.split('?')[1]
+    var pairs = qs.split('&');
     var params = {};
-    var tokens;
-    while (tokens = /[?&]?([^=]+)=([^&]*)/g.exec(qs)) {
-        params[decodeURIComponent(tokens[1])]
-            = decodeURIComponent(tokens[2]);
-    }
+    var check = [];
+    for( var i = 0; i < pairs.length; i++ ) {
+            check = pairs[i].split('=');
+            params[decodeURIComponent(check[0])] = decodeURIComponent(check[1]);
+        }
     return params;
 }
 

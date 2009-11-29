@@ -1081,22 +1081,19 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
-        output = tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                                         joins=joins, permit=permit, audit=audit)
+        tree = self.rc.export_xml(self.prefix, self.name, self.id,
+                                  joins=joins, permit=permit, audit=audit)
 
         if template is not None:
-            output = self.rc.xml.transform(tree, template)
-            if not output:
-                if self.representation=="xml":
-                    output = tree
-                else:
-                    self.error = self.rc.error
-                    return None
+            tree = self.rc.xml.transform(tree, template)
+            if not tree:
+                self.error = self.rc.error
+                return None
 
-        return self.rc.xml.tostring(output)
+        return self.rc.xml.tostring(tree)
 
     # -------------------------------------------------------------------------
-    def export_json(self, permit=None, audit=None):
+    def export_json(self, permit=None, audit=None, template=None):
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1105,6 +1102,12 @@ class XRequest(object):
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins, permit=permit, audit=audit)
+
+        if template is not None:
+            tree = self.rc.xml.transform(tree, template)
+            if not tree:
+                self.error = self.rc.error
+                return None
 
         return self.rc.xml.tree2json(tree)
 
@@ -1563,7 +1566,10 @@ class S3XML(object):
             return self.__obj2element(key, value, native=native)
 
         elif isinstance(value, (list, tuple)):
-            _list = etree.Element(self.TAG["list"])
+            if not key==self.TAG["item"]:
+                _list = etree.Element(key)
+            else:
+                _list = etree.Element(self.TAG["list"])
             for obj in value:
                 item = self.__json2element(self.TAG["item"], obj, native=native)
                 _list.append(item)
@@ -1571,7 +1577,7 @@ class S3XML(object):
 
         else:
             element = etree.Element(key)
-            element.text = self.xml_encode(value)
+            element.text = self.xml_encode(str(value))
             return element
 
     # -------------------------------------------------------------------------
@@ -1605,6 +1611,7 @@ class S3XML(object):
                 element.append(child)
 
             elif isinstance(m, (list, tuple)):
+                #l = etree.SubElement(element, k)
                 for _obj in m:
                     child = self.__json2element(k, _obj, native=native)
                     element.append(child)
@@ -1642,12 +1649,40 @@ class S3XML(object):
         return None
 
     # -------------------------------------------------------------------------
+    def __list2json(self, element, native=False):
+
+        l = []
+
+        for child in element:
+
+            tag_name = child.tag
+
+            if tag_name[0]=="{":
+                tag_name = tag_name.rsplit("}",1)[1]
+
+            if tag_name==self.TAG["list"]:
+                sublist = self.__list2json(child, native=native)
+                if sublist:
+                    l.append(sublist)
+            else:
+                child_obj = self.__element2json(child, native=native)
+                if child_obj:
+                    l.append(child_obj)
+
+        return l
+
+    # -------------------------------------------------------------------------
     def __element2json(self, element, native=False):
 
         obj = {}
 
         for child in element:
+
             tag_name = child.tag
+
+            if tag_name[0]=="{":
+                tag_name = tag_name.rsplit("}",1)[1]
+
             if native:
                 if tag_name==self.TAG["resource"]:
                     resource = child.get(self.ATTRIBUTE["name"])
@@ -1658,15 +1693,17 @@ class S3XML(object):
                 elif tag_name==self.TAG["data"]:
                     tag_name = child.get(self.ATTRIBUTE["field"])
 
-            if tag_name[0]=="{":
-                tag_name = tag_name.rsplit("}",1)[1]
-
             if not tag_name in obj:
                 obj[tag_name] = []
 
-            child_obj = self.__element2json(child, native=native)
-            if child_obj:
-                obj[tag_name].append(child_obj)
+            if tag_name == self.TAG["list"]:
+                l = self.__list2json(child, native=native)
+                if l:
+                    obj[tag_name].append(l)
+            else:
+                child_obj = self.__element2json(child, native=native)
+                if child_obj:
+                    obj[tag_name].append(child_obj)
 
         attributes = element.attrib
         for a in attributes:
@@ -1685,11 +1722,14 @@ class S3XML(object):
             if isinstance(obj[key], (list, tuple, dict)):
                 if len(obj[key])==0:
                     del obj[key]
-                elif len(obj[key])==1:
+                elif len(obj[key])==1 and not isinstance(obj[key][0], (list, tuple)):
                     obj[key] = obj[key][0]
 
-        if len(obj)==1 and obj.keys()[0]==self.PREFIX["text"]:
-            obj = obj[obj.keys()[0]]
+        if len(obj)==1:
+            if obj.keys()[0]==self.PREFIX["text"] or \
+               obj.keys()[0]==self.TAG["item"] or \
+               obj.keys()[0]==self.TAG["list"]:
+                obj = obj[obj.keys()[0]]
 
         return obj
 

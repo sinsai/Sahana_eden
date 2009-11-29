@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.3-1, 2009-11-23
+    @version: 1.3.4-1, 2009-11-30
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -1210,6 +1210,7 @@ class S3XML(object):
 
     PREFIX = dict(
         resource="$",
+        options="$o",
         reference="$k",
         attribute="@",
         text="$"
@@ -1577,7 +1578,9 @@ class S3XML(object):
 
         else:
             element = etree.Element(key)
-            element.text = self.xml_encode(str(value))
+            if not isinstance(value, (str, unicode)):
+                value = str(value)
+            element.text = self.xml_encode(value)
             return element
 
     # -------------------------------------------------------------------------
@@ -1591,6 +1594,9 @@ class S3XML(object):
             if tag.startswith(self.PREFIX["reference"]):
                 field = tag[len(self.PREFIX["reference"])+1:]
                 tag = self.TAG["reference"]
+            elif tag.startswith(self.PREFIX["options"]):
+                resource = tag[len(self.PREFIX["options"])+1:]
+                tag = self.TAG["options"]
             elif tag.startswith(self.PREFIX["resource"]):
                 resource = tag[len(self.PREFIX["resource"])+1:]
                 tag = self.TAG["resource"]
@@ -1599,7 +1605,10 @@ class S3XML(object):
 
         if native:
             if resource:
-                element.set(self.ATTRIBUTE["name"], resource)
+                if tag==self.TAG["resource"]:
+                    element.set(self.ATTRIBUTE["name"], resource)
+                else:
+                    element.set(self.ATTRIBUTE["resource"], resource)
             if field:
                 element.set(self.ATTRIBUTE["field"], field)
 
@@ -1687,6 +1696,9 @@ class S3XML(object):
                 if tag_name==self.TAG["resource"]:
                     resource = child.get(self.ATTRIBUTE["name"])
                     tag_name = "%s_%s" % (self.PREFIX["resource"], resource)
+                elif tag_name==self.TAG["options"]:
+                    resource = child.get(self.ATTRIBUTE["resource"])
+                    tag_name = "%s_%s" % (self.PREFIX["options"], resource)
                 elif tag_name==self.TAG["reference"]:
                     tag_name = "%s_%s" % \
                                (self.PREFIX["reference"], child.get(self.ATTRIBUTE["field"]))
@@ -1709,6 +1721,8 @@ class S3XML(object):
         for a in attributes:
             if native:
                 if a==self.ATTRIBUTE["name"] and element.tag==self.TAG["resource"]:
+                    continue
+                if a==self.ATTRIBUTE["resource"] and element.tag==self.TAG["options"]:
                     continue
                 if a==self.ATTRIBUTE["field"] and \
                    element.tag in (self.TAG["data"], self.TAG["reference"]):
@@ -1745,5 +1759,9 @@ class S3XML(object):
 
         root_dict = self.__element2json(root, native=native)
 
-        return json.dumps(root_dict)
+        # pretty print for testing
+        js = json.dumps(root_dict, indent=4)
+        return '\n'.join([l.rstrip() for l in js.splitlines()])
+
+        #return json.dumps(root_dict)
 

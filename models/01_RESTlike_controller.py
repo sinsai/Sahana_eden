@@ -31,7 +31,7 @@ shn_xml_import_formats = ["xml"] #: Supported XML import formats
 shn_xml_export_formats = ["xml"] #: Supported XML output formats
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
-shn_json_output_formats = ["json"] #: Supported JSON output formats
+shn_json_export_formats = ["json"] #: Supported JSON output formats
 
 # Error messages
 UNAUTHORISED = T('Not authorised!')
@@ -495,6 +495,10 @@ def import_json(jr, onvalidation=None, onaccept=None):
             session.error = str(T("XSL Template Not Found: ")) + \
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
             redirect(URL(r=request, f="index"))
+
+    # For testing:
+    #print s3xrc.xml.tostring(tree)
+    #return s3xrc.xml.tree2json(tree)
 
     success = jr.import_xml(tree,
                             permit=shn_has_permission,

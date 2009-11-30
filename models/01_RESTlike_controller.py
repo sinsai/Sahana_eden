@@ -8,11 +8,11 @@
 
     @version: 1.3.1-6, 2009-11-23
 
-    @see: U{http://trac.sahanapy.org/wiki/JoinedResourceController}
+    @see: U{http://trac.sahanapy.org/wiki/RESTController}
 """
 
 # *****************************************************************************
-# ResourceController
+# S3XRC ResourceController
 
 exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
 
@@ -24,13 +24,16 @@ s3xrc = ResourceController(db,
 # Constants to ensure consistency
 
 # XSLT Settings
-XSLT_FILE_EXTENSION = 'xslt' #: File extension of XSLT templates
+XSLT_FILE_EXTENSION = 'xsl' #: File extension of XSLT templates
 XSLT_IMPORT_TEMPLATES = 'static/xslt/import' #: Path to XSLT templates for data import
 XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data export
 
 # XSLT available formats
 shn_xml_import_formats = ["xml"] #: Supported XML import formats
 shn_xml_export_formats = ["xml"] #: Supported XML output formats
+
+shn_json_import_formats = ["json"] #: Supported JSON import formats
+shn_json_export_formats = ["json"] #: Supported JSON output formats
 
 # Error messages
 UNAUTHORISED = T('Not authorised!')
@@ -297,10 +300,27 @@ def export_xls(table, query):
 #
 def export_json(jr):
 
-    """ Export record(s) as JSON """
+    """ Export data as JSON """
 
     response.headers['Content-Type'] = 'text/x-json'
-    return jr.export_json(permit=shn_has_permission, audit=shn_audit)
+
+    if jr.representation=="json":
+        template = None
+    else:
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
+        if not os.path.exists(template):
+            session.error = str(T("XSLT Template Not Found: ")) + \
+                            XSLT_EXPORT_TEMPLATES + "/" + template_name
+            redirect(URL(r=request, f="index"))
+
+    output = jr.export_json(permit=shn_has_permission, audit=shn_audit, template=template)
+
+    if not output:
+        session.error = str(T("XSLT Transformation Error: ")) + jr.error
+        redirect(URL(r=request, f="index"))
+
+    return output
 
 #
 # export_xml ------------------------------------------------------------------
@@ -463,6 +483,24 @@ def import_json(jr, onvalidation=None, onaccept=None):
 
     if hasattr(source, "close"):
         source.close()
+
+    # XSLT Transformation
+    if not jr.representation=="json":
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
+        if os.path.exists(template_file):
+            tree = s3xrc.xml.transform(tree, template_file)
+            if not tree:
+                session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+                redirect(URL(r=request, f="index"))
+        else:
+            session.error = str(T("XSL Template Not Found: ")) + \
+                            XSLT_IMPORT_TEMPLATES + "/" + template_name
+            redirect(URL(r=request, f="index"))
+
+    # For testing:
+    #print s3xrc.xml.tostring(tree)
+    #return s3xrc.xml.tree2json(tree)
 
     success = jr.import_xml(tree,
                             permit=shn_has_permission,
@@ -991,7 +1029,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
             query = db[table].id == record_id
             return export_xls(table, query)
 
-        elif jr.representation == "json":
+        elif jr.representation in shn_json_export_formats:
             return export_json(jr)
 
         elif jr.representation in shn_xml_export_formats:
@@ -1255,7 +1293,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     elif jr.representation == "xls":
         return export_xls(table, query)
 
-    elif jr.representation == "json":
+    elif jr.representation in shn_json_export_formats:
         return export_json(jr)
 
     elif jr.representation in shn_xml_export_formats:
@@ -1426,7 +1464,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
 
-    elif jr.representation == "json":
+    elif jr.representation in shn_json_import_formats:
         response.view = 'plain.html'
         return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
 
@@ -1601,7 +1639,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
         elif jr.representation == "url":
             return import_url(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
 
-        elif jr.representation == "json":
+        elif jr.representation in shn_json_import_formats:
             response.view = 'plain.html'
             return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
 
@@ -1910,8 +1948,6 @@ def shn_rest_controller(module, resource,
             elif jr.http=='PUT':
                 response.view = 'plain.html'
                 return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
-                # Not implemented
-                # raise HTTP(501)
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
@@ -2060,8 +2096,6 @@ def shn_rest_controller(module, resource,
             # HTTP Create/Update (single record) ------------------------------
             elif jr.http == 'PUT':
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                # We don't yet implement PUT for create/update, although Web2Py does now support it
-                # Not implemented
                 response.view = 'plain.html'
                 return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
 

@@ -1154,49 +1154,6 @@ class XRequest(object):
 
         return self.rc.xml.tree2json(tree)
 
-    # -------------------------------------------------------------------------
-    def import_xml(self, tree, permit=None, audit=None, onvalidation=None, onaccept=None):
-
-        if self.component:
-            skip_resource = True
-            joins = [(self.component, self.pkey, self.fkey)]
-        else:
-            skip_resource = False
-            joins = self.rc.model.get_components(self.prefix, self.name)
-
-        if self.method=="create":
-            self.id=None
-
-        return self.rc.import_xml(self.prefix, self.name, self.id, tree,
-                                  joins=joins,
-                                  skip_resource=skip_resource,
-                                  permit=permit,
-                                  audit=audit,
-                                  onvalidation=onvalidation,
-                                  onaccept=onaccept)
-
-    # -------------------------------------------------------------------------
-    def options_xml(self):
-
-        if self.component:
-            tree = self.rc.options_xml(self.component.prefix, self.component.name)
-        else:
-            joins = self.rc.model.get_components(self.prefix, self.name)
-            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
-
-        return self.rc.xml.tostring(tree)
-
-    # -------------------------------------------------------------------------
-    def options_json(self):
-
-        if self.component:
-            tree = self.rc.options_xml(self.component.prefix, self.component.name)
-        else:
-            joins = self.rc.model.get_components(self.prefix, self.name)
-            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
-
-        return self.rc.xml.tree2json(tree)
-
 # *****************************************************************************
 # S3XML
 #
@@ -1807,3 +1764,4 @@ class S3XML(object):
         return '\n'.join([l.rstrip() for l in js.splitlines()])
 
         #return json.dumps(root_dict)
+

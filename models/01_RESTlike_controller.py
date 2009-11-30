@@ -6,8 +6,6 @@
     @author: Fran Boon
     @author: nursix
 
-    @version: 1.3.1-6, 2009-11-23
-
     @see: U{http://trac.sahanapy.org/wiki/RESTController}
 """
 

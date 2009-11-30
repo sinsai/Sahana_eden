@@ -23,23 +23,6 @@ db.define_table(table,
 db[table].inbound_mail_type.requires = IS_IN_SET(['imap', 'pop3'])
 db[table].inbound_mail_port.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP)."))
 db[table].inbound_mail_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Delete|If this is set to True then mails will be deleted from the server after downloading."))
-# Populate table with Default options
-# - deployments can change these live via appadmin
-if not len(db().select(db[table].ALL)): 
-   db[table].insert(
-        inbound_mail_server = 'imap.gmail.com',
-        inbound_mail_type = 'imap',
-        inbound_mail_ssl = True,
-        inbound_mail_port = '993',
-        inbound_mail_username = 'username',
-        inbound_mail_password = 'password',
-        inbound_mail_delete = False,
-        #outbound_mail_server = 'mail:25',
-        #outbound_mail_from = 'demo@sahanapy.org',
-        # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read = False,
-        audit_write = False
-    )
 
 # Status
 resource = 'email_inbound_status'

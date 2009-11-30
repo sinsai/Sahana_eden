@@ -9,7 +9,10 @@
 module = 'pr'
 
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+try:
+    module_name = db(db.s3_module.name==module).select()[0].name_nice
+except:
+    module_name = T('Person Registry')
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [

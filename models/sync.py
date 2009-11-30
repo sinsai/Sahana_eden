@@ -25,12 +25,6 @@ db.define_table(table,
                 Field('rpc_service_url', default = "/sync/call/jsonrpc"), # URL our webservice is accessible on
                 Field('zeroconf_description', length=64, default = "This is a SahanaPy instance, see http://www.sahanapy.org" ),
                 migrate=migrate)
-# Populate table with Default options
-# - deployments can change these live via appadmin
-if not len(db().select(db[table].ALL)): 
-   db[table].insert(
-        uuid = uuid.uuid4()
-    )
 
 # Custom settings for sync partners
 resource = 'partner'

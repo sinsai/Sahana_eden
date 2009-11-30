@@ -83,7 +83,7 @@ def compressCSS(inputFilename, outputFilename):
 
 mfbase = '../../mfbase'
 
-def dojs(dogis = True):
+def dojs(dogis = False):
     """ Minifies the js"""
     # Define which files we want to include
     # also need to amend sahana.js.cfg
@@ -129,27 +129,19 @@ def dojs(dogis = True):
 
         # also need to amend sahana.js.gis.cfg
         configDictOpenLayers = {
-            'OpenLayers.js':                mfbase+'/openlayers/lib',
-            'OpenLayers':                   mfbase+'/openlayers/lib',
-            'Rico':                         mfbase+'/openlayers/lib',
-            'GoogleGears':                  mfbase+'/openlayers/lib'
-        }
-        configDictMapFish = {
-            'SingleFile.js':                mfbase+'/mapfish',
-            'MapFish.js':                   mfbase+'/mapfish',
-            'widgets':                      mfbase+'/mapfish',
-            'core':                         mfbase+'/mapfish',
-            'lang':                         mfbase+'/mapfish'
+            'OpenLayers.js':                '../gis/openlayers/lib',
+            'OpenLayers':                   '../gis/openlayers/lib',
+            'Rico':                         '../gis/openlayers/lib',
+            'GoogleGears':                  '../gis/openlayers/lib'
         }
         configDictGIS = {
             'gis':                          '..'
         }
         configDictGlobalGIS = {}
         configDictGlobalGIS.update(configDictOpenLayers)
-        configDictGlobalGIS.update(configDictMapFish)
         configDictGlobalGIS.update(configDictGIS)
         configFilenameGIS = "sahana.js.gis.cfg"
-        outputFilenameGIS = "MapFish.min.js"
+        outputFilenameGIS = "OpenLayers.js"
         #Merge GIS JS Files
         print "Merging GIS libraries."
         (files, order) = mergejs.getFiles(configDictGlobalGIS, configFilenameGIS)
@@ -173,7 +165,7 @@ def dojs(dogis = True):
         except:
             pass
         print "Moving new GIS JS files"
-        shutil.move("MapFish.min.js", "../gis")
+        shutil.move("OpenLayers.js", "../gis")
 
 def docss(dogis = True):
     """Compresses the  CSS files"""
@@ -211,9 +203,11 @@ def docss(dogis = True):
     if dogis:
         listCSSGIS = [
             '../../styles/gis/gis.css',
-            '../../styles/gis/mapfish.css',
+            '../../styles/gis/geoext-all.css',
             #mfbase+'/ext/resources/css/ext-all.css', # would need to copy images if included here
-            mfbase+'/openlayers/theme/default/framedCloud.css'
+            '../../styles/gis/google.css',
+            #'../../styles/gis/style.css',
+            '../../styles/gis/ie6-style.css'
         ]
         outputFilenameCSSGIS = "gis.tmp.css"
         outputFilenameCSSGIS = "gis.min.css"

@@ -1,4 +1,5 @@
-﻿{{if projection==900913:}}
+﻿function addLayers(map) {
+  {{if projection==900913:}}
     {{if openstreetmap:}}
         {{include 'gis/ol_layers_openstreetmap.js'}}
     {{pass}}
@@ -11,6 +12,7 @@
     {{if bing:}}
         {{include 'gis/ol_layers_bing.js'}}
     {{pass}}
-{{else:}}
-    // Disable other base layers if using a non-sphericalMercator WMS projection
-{{pass}}
+  {{else:}}
+    // Disable other base layers since using a non-sphericalMercator WMS projection
+  {{pass}}
+}

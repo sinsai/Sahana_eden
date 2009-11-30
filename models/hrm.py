@@ -65,7 +65,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 # Labels
 db[table].find_date.label = T('Date and time of find')
-db[table].location.label = T('Place of find')
+db[table].location_id.label = T('Place of find')
 db[table].person_id.label = T('Finder')
 db[table].bodies_est.label = T('Estimated number of bodies found')
 db[table].opt_hrm_task_status.label = T('Task status')

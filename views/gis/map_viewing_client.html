@@ -2,54 +2,86 @@
 
 {{include 'gis/ol_js_loaders.html'}}
 
+<script type="text/javascript">//<![CDATA[
+
 {{include 'gis/ol_start_vars.js'}}
 
-function centerMap() {
-	if (!centered) {
-		this.setCenter(point.transform(proj4326, this.getProjectionObject()), zoom);
-		centered = true;
-	}
-}
-
-function addLayers(map) {
-    {{include 'gis/ol_layers_all.js'}}
-}
+{{include 'gis/ol_layers_all.js'}}
 
 {{include 'gis/ol_vector_registerEvents.js'}}
 
 {{include 'gis/ol_controls_features.js'}}
 
-{{include 'gis/mf_toolbar.js'}}
-
 {{include 'gis/ol_functions.js'}}
 
 Ext.onReady(function() {
-
+    
     map = new OpenLayers.Map('center', options);
-	addLayers(map);
-	{{include 'gis/ol_controls.js'}}
-    toolbar = createToolbar(map);
-
+	
+    addLayers(map);
+    
     {{include 'gis/ol_layers_features.js'}}
     
-	// For making a custom LayerTree
-    //treeModel = createTreeModel();
-	
+	{{include 'gis/ol_controls.js'}}
+    
+    var mapPanel = new GeoExt.MapPanel({
+        region: "center",
+        id: "mappanel",
+        xtype: "gx_mappanel",
+        map: map,
+        center: center,
+        zoom: {{=zoom}},
+        tbar: new Ext.Toolbar()
+    });
+    
+    {{include 'gis/toolbar.js'}}
+    
+    var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
+        text: "{{=T('Base Layers')}}",
+        layerStore: mapPanel.layers,
+        leaf: false,
+        expanded: true
+    });
+
+    var layerTreeFeaturesExternal = new GeoExt.tree.OverlayLayerContainer({
+        text: "{{=T('External Features')}}",
+        layerStore: mapPanel.layers,
+        leaf: false,
+        expanded: true
+    });
+
+    var layerTreeFeaturesInternal = new GeoExt.tree.OverlayLayerContainer({
+        text: "{{=T('Internal Features')}}",
+        layerStore: mapPanel.layers,
+        leaf: false,
+        expanded: true
+    });
+
+    var layerTree = new Ext.tree.TreePanel({
+        id: "treepanel",
+        title: "{{=T("Layers")}}",
+        root: new Ext.tree.AsyncTreeNode({
+            expanded: true,
+            children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+        }),
+        rootVisible: false,
+        split: true,
+        collapsible: true,
+        collapseMode: "mini",
+        autoScroll: true,
+        lines: false,
+        enableDD: true
+    });
+    
     var win = new Ext.Window({
 		//title    : 'Sahana Map Viewing Client',
-		closable : true,
-		collapsible : true,
-		maximizable : true,
-		titleCollapse : true,
-		width    : {{=width}},
-		height   : {{=height}},
-		plain    : true,
-		layout   : 'border',
-		listeners: {
-                    afterlayout: centerMap,
-					scope: map
-                },
-		items    : [{
+		collapsible: true,
+		maximizable: true,
+		titleCollapse: true,
+		width: {{=width}},
+		height: {{=height}},
+		layout: 'border',
+		items:  [{
                     region: "west",
                     id: "tools",
                     title: "{{=T("Tools")}}",
@@ -57,66 +89,21 @@ Ext.onReady(function() {
                     width: 250,
                     collapsible: true,
                     split: true,
-                    items: [{
-                        id: "tree",
-                        title: "{{=T("Layer Tree")}}",
-                        xtype: "layertree",
-                        map: map,
-                        height: 200,
-                        showWmsLegend: true,
-                        enableDD: true,
-                        //model: treeModel
-                    }]
-                    //}, {
-                    //    id: "shortcuts_container",
-                    //    title: "Shortcuts",
-                    //    height: 50,
-                    //    items: [{
-                    //        id: "shorcuts",
-                    //        xtype: "shortcuts",
-                    //        map: map,
-                    //        store: createShortcutsStore(),
-                    //        templates: {
-                    //            header: new Ext.Template(""),
-                    //            footer: new Ext.Template("")
-                    //        }
-                    //  }]
-                    //}]
-                }, {
-                    region: "center",
-                    id: "map",
-                    layout: "fit",
-                    split: true,
-                    xtype: "mapcomponent",
-                    map: map,
-                    tbar: toolbar
-                }, {
-                    //region: "south",
-                    //id: "search_grid",
-                    //title: "{{=T("Search results")}}",
-                    //split: true,
-                    //collapsible: true,
-                    //height: 200,
-                    // 8.1
-                    //xtype: "grid",
-                    //store: gridStore,
-                    //columns: [
-                    //    {header: "Id", dataIndex: "fid", width: 25},
-                    //    {header: "Name", dataIndex: "name", width: 200},
-                    //    {header: "Elevation", dataIndex: "elevation"}
-                    //],
-                }]
-	});
+                    items: [ layerTree ]
+                },
+                mapPanel
+                ]
+    });
 
 	win.show();
-	initToolbarContent(toolbar);
-
+    Ext.QuickTips.init();
+    
 });
+
 //]]></script>
 
 {{include 'gis/catalogue_toolbar.html'}}
 
-<div id="center"></div>
-<div id="south">
 {{include 'gis/ol_status.html'}}
-</div>
+
+<div id='layerTree'></div>

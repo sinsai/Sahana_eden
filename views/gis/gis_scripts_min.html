@@ -1,21 +1,22 @@
 <!--When in Production mode we want fewer compressed scripts to download-->
 
 <!--Proj4js
-  <script type="text/javascript" src="{{=request.application}}/static/proj4js/lib/proj4js-compressed.js"></script>
+  <script type="text/javascript" src="{{=request.application}}/static/scripts/gis/proj4js/lib/proj4js-compressed.js"></script>
 -->
   
 <!--Ext-->
-<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/adapter/jquery/ext-jquery-adapter.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext/adapter/jquery/ext-jquery-adapter.js"></script>
 <!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance
-<script type="text/javascript" src="http://extjs.cachefly.net/ext-2.2.1/ext-all.js"></script>
+<script type="text/javascript" src="http://extjs.cachefly.net/ext-3.0.3/ext-all.js"></script>
  -->
-<script type="text/javascript" src="/{{=request.application}}/static/mfbase/ext/ext-all.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext/ext-all.js"></script>
 <!--
 <script  type="text/javascript src="/{{=request.application}}/static/scripts/gis/examples.js"></script>
 -->
 
-<!--MapFish-->
-<script type="text/javascript">//<![CDATA[
-	var gMfLocation = "/{{=request.application}}/static/mfbase/mapfish/";
-//--></script>
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/MapFish.min.js"></script>
+<!--OpenLayers-->
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/OpenLayers.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/RemoveFeature.js"></script>
+
+<!--GeoExt-->
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt.js"></script>

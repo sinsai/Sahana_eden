@@ -24,10 +24,7 @@ def apikey():
     return shn_rest_controller(module, 'apikey', deletable=False, listadd=False)
 def config():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'config')
-def feature():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'feature', onvalidation=lambda form: wkt_centroid(form))
+    return shn_rest_controller(module, 'config', deletable=False, listadd=False)
 def feature_class():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'feature_class')
@@ -39,7 +36,7 @@ def feature_metadata():
     return shn_rest_controller(module, 'feature_metadata')
 def location():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'location')
+    return shn_rest_controller(module, 'location', onvalidation=lambda form: wkt_centroid(form))
 def marker():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'marker')
@@ -60,6 +57,9 @@ def layer_bing():
     return shn_rest_controller(module, 'layer_bing', deletable=False)
 
 # Module-specific functions
+def convert_gps():
+    " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
+    return dict()
 
 def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
@@ -74,8 +74,8 @@ def shn_latlon_to_wkt(lat, lon):
 def feature_create_map():
     "Show a map to draw the feature"
     title = T("Add GIS Feature")
-    form = crud.create('gis_feature', onvalidation=lambda form: wkt_centroid(form))
-    _projection = db(db.gis_config.id==1).select()[0].projection
+    form = crud.create('gis_location', onvalidation=lambda form: wkt_centroid(form))
+    _projection = db(db.gis_config.id==1).select()[0].projection_id
     projection = db(db.gis_projection.id==_projection).select()[0].epsg
 
     # Layers
@@ -90,7 +90,7 @@ def feature_group_contents():
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f='feature_group'))
     feature_group = request.args[0]
-    tables = [db.gis_feature_class_to_feature_group, db.gis_feature_to_feature_group]
+    tables = [db.gis_feature_class_to_feature_group, db.gis_location_to_feature_group]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     
     title = db.gis_feature_group[feature_group].name
@@ -107,7 +107,7 @@ def feature_group_contents():
         # Display a List_Create page with checkboxes to remove items
         
         # Feature Classes
-        query = tables[0].feature_group==feature_group
+        query = (tables[0].feature_group_id == feature_group) & (tables[0].deleted == False)
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -116,7 +116,7 @@ def feature_group_contents():
             else:
                 theclass = "odd"
                 even = True
-            id = row.feature_class
+            id = row.feature_class_id
             name = db.gis_feature_class[id].name
             description = db.gis_feature_class[id].description
             id_link = A(id, _href=URL(r=request, f='feature_class', args=['read', id]))
@@ -124,7 +124,7 @@ def feature_group_contents():
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), TD(checkbox, _align='center'), _class=theclass, _align='right'))
             
         # Features
-        query = tables[1].feature_group==feature_group
+        query = (tables[1].feature_group_id == feature_group) & (tables[1].deleted == False)
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -133,14 +133,16 @@ def feature_group_contents():
             else:
                 theclass = "odd"
                 even = True
-            id = row.feature
-            name = db.gis_feature[id].name
-            metadata = db.gis_feature[id].metadata
+            id = row.location_id
+            name = db.gis_location[id].name
+            # Metadata is M->1 to Features
+            metadata = db(db.gis_metadata.location_id==id & db.gis_metadata.deleted==False).select()
             if metadata:
-                description = db.gis_feature_metadata[metadata].description
+                # We just read the description of the 1st one
+                description = metadata[0].description
             else:
                 description = ''
-            id_link = A(id, _href=URL(r=request, f='feature', args=['read', id]))
+            id_link = A(id, _href=URL(r=request, f='location', args=['read', id]))
             checkbox = INPUT(_type="checkbox", _value="on", _name='feature_' + str(id), _class="remove_item")
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), TD(checkbox, _align='center'), _class=theclass, _align='right'))
         
@@ -157,13 +159,13 @@ def feature_group_contents():
         form1[0][0].append(TR(TD(T('Type:')), TD(LABEL(T('Feature Class'), INPUT(_type="radio", _name="fg1", _value="FeatureClass", value="FeatureClass")), LABEL(T('Feature'), INPUT(_type="radio", _name="fg1", _value="Feature", value="FeatureClass")))))
         form2 = crud.create(tables[1], next=URL(r=request, args=[feature_group]))
         form2[0][0].append(TR(TD(T('Type:')), TD(LABEL(T('Feature Class'), INPUT(_type="radio", _name="fg2", _value="FeatureClass", value="Feature")), LABEL(T('Feature'), INPUT(_type="radio", _name="fg2", _value="Feature", value="Feature")))))
-        addtitle = T("Add to feature_group")
+        addtitle = T("Add to Feature Group")
         response.view = '%s/feature_group_contents_list_create.html' % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, feature_group=feature_group))
     else:
         # Display a simple List page
         # Feature Classes
-        query = tables[0].feature_group==feature_group
+        query = (tables[0].feature_group_id == feature_group) & (tables[0].deleted == False)
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -172,14 +174,14 @@ def feature_group_contents():
             else:
                 theclass = "odd"
                 even = True
-            id = row.feature_class
+            id = row.feature_class_id
             name = db.gis_feature_class[id].name
             description = db.gis_feature_class[id].description
             id_link = A(id, _href=URL(r=request, f='feature_class', args=['read', id]))
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), _class=theclass, _align='right'))
             
         # Features
-        query = tables[1].feature_group==feature_group
+        query = (tables[1].feature_group_id == feature_group) & (tables[1].deleted == False)
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -188,14 +190,16 @@ def feature_group_contents():
             else:
                 theclass = "odd"
                 even = True
-            id = row.feature
-            name = db.gis_feature[id].name
-            metadata = db.gis_feature[id].metadata
+            id = row.location_id
+            name = db.gis_location[id].name
+            # Metadata is M->1 to Features
+            metadata = db(db.gis_metadata.location_id==id & db.gis_metadata.deleted==False).select()
             if metadata:
-                description = db.gis_feature_metadata[metadata].description
+                # We just read the description of the 1st one
+                description = metadata[0].description
             else:
                 description = ''
-            id_link = A(id, _href=URL(r=request, f='feature', args=['read', id]))
+            id_link = A(id, _href=URL(r=request, f='location', args=['read', id]))
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), _class=theclass, _align='right'))
         
         table_header = THEAD(TR(TH('ID'), TH('Name'), TH(T('Description'))))
@@ -209,14 +213,14 @@ def feature_group_contents():
 def feature_group_dupes(form):
     "Checks for duplicate Feature/FeatureClass before adding to DB"
     feature_group = form.vars.feature_group
-    if 'feature_class' in form.vars:
-        feature_class = form.vars.feature_class
+    if 'feature_class_id' in form.vars:
+        feature_class_id = form.vars.feature_class_id
         table = db.gis_feature_class_to_feature_group
-        query = (table.feature_group==feature_group) & (table.feature_class==feature_class)
-    elif 'feature' in form.vars:
-        feature = form.vars.feature
-        table = db.gis_feature_to_feature_group
-        query = (table.feature_group==feature_group) & (table.feature==feature)
+        query = (table.feature_group==feature_group) & (table.feature_class_id==feature_class_id)
+    elif 'location_id' in form.vars:
+        location_id = form.vars.location_id
+        table = db.gis_location_to_feature_group
+        query = (table.feature_group==feature_group) & (table.location_id==location_id)
     else:
         # Something went wrong!
         return
@@ -233,19 +237,19 @@ def feature_group_update_items():
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f='feature_group'))
     feature_group = request.args[0]
-    tables = [db.gis_feature_class_to_feature_group, db.gis_feature_to_feature_group]
+    tables = [db.gis_feature_class_to_feature_group, db.gis_location_to_feature_group]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:
         for var in request.vars:
-            if 'feature_class' in var:
+            if 'feature_class_id' in var:
                 # Delete
-                feature_class = var[14:]
-                query = (tables[0].feature_group==feature_group) & (tables[0].feature_class==feature_class)
+                feature_class_id = var[14:]
+                query = (tables[0].feature_group==feature_group) & (tables[0].feature_class_id==feature_class_id)
                 db(query).delete()
-            elif 'feature' in var:
+            elif 'location_id' in var:
                 # Delete
-                feature = var[8:]
-                query = (tables[1].feature_group==feature_group) & (tables[1].feature==feature)
+                location_id = var[8:]
+                query = (tables[1].feature_group==feature_group) & (tables[1].location_id==location_id)
                 db(query).delete()
         # Audit
         shn_audit_update_m2m(resource='feature_group_contents', record=feature_group, representation='html')
@@ -434,55 +438,81 @@ def map_viewing_client():
     # Config
     width = db(db.gis_config.id==1).select()[0].map_width
     height = db(db.gis_config.id==1).select()[0].map_height
-    _projection = db(db.gis_config.id==1).select()[0].projection
+    _projection = db(db.gis_config.id==1).select()[0].projection_id
     projection = db(db.gis_projection.id==_projection).select()[0].epsg
-    lat = db(db.gis_config.id==1).select()[0].lat
-    lon = db(db.gis_config.id==1).select()[0].lon
-    zoom = db(db.gis_config.id==1).select()[0].zoom
+    if 'lat' in request.vars:
+        lat = request.vars.lat
+    else:
+        lat = db(db.gis_config.id==1).select()[0].lat
+    if 'lon' in request.vars:
+        lon = request.vars.lon
+    else:
+        lon = db(db.gis_config.id==1).select()[0].lon
+    if 'zoom' in request.vars:
+        zoom = request.vars.zoom
+    else:
+        zoom = db(db.gis_config.id==1).select()[0].zoom
     units = db(db.gis_projection.epsg==projection).select()[0].units
     maxResolution = db(db.gis_projection.epsg==projection).select()[0].maxResolution
     maxExtent = db(db.gis_projection.epsg==projection).select()[0].maxExtent
-    features_marker = db(db.gis_config.id==1).select()[0].marker
+    marker_default = db(db.gis_config.id==1).select()[0].marker_id
     
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, features_marker=features_marker))
+    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
     
     # Layers
     baselayers = layers()
-    
+    # Add the Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+
     # Internal Features
-    # ToDo: Only include those features which are are in enabled feature groups (either independently or through a feature class)
-    #feature_groups=db(db.gis_feature_group.enabled==True).select(db.gis_layer_feature_group.ALL)
-    #for feature_group in feature_groups:
-    # Limit to return only 200 features to prevent overloading the browser!
-    features = db(db.gis_feature.id>0).select(db.gis_feature.ALL, limitby=(0, 200))
-    features_classes = Storage()
-    features_markers = Storage()
-    features_metadata = Storage()
-    for feature in features:
-        # 1st choice for a Marker is the Feature's
-        marker = feature.marker
-        try:
-            feature_class = db(db.gis_feature_class.id==feature.feature_class).select()[0]
-            
+    features = Storage()
+    # Features are displayed in a layer per FeatureGroup
+    feature_groups = db(db.gis_feature_group.enabled == True).select()
+    for feature_group in feature_groups:
+        # FIXME: Use OL's Cluster Strategy to ensure no more than 200 features displayed to prevent overloading the browser!
+        # - better than doing a server-side spatial query to show ones visible within viewport on every Pan/Zoom!
+        groups = db.gis_feature_group
+        locations = db.gis_location
+        classes = db.gis_feature_class
+        metadata = db.gis_metadata
+        # Which Features are added to the Group directly?
+        link = db.gis_location_to_feature_group
+        features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        # Which Features are added to the Group via their FeatureClass?
+        link = db.gis_feature_class_to_feature_group
+        features2 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), classes.on(classes.id == link.feature_class_id), locations.on(locations.feature_class_id == link.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        features[feature_group.id] = features1 | features2
+        for feature in features[feature_group.id]:
+            feature.module = feature.gis_feature_class.module
+            feature.resource = feature.gis_feature_class.resource
+            if feature.module and feature.resource:
+                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+            else:
+                feature.resource_id = None
+            # 1st choice for a Marker is the Feature's
+            marker = feature.gis_location.marker_id
             if not marker:
                 # 2nd choice for a Marker is the Feature Class's
-                marker = feature_class.marker
-        except:
-            feature_class = None
-        if not marker:
-            # 3rd choice for a Marker is the default
-            marker = features_marker
-        features_classes[feature.id] = feature_class
-        features_markers[feature.id] = db(db.gis_marker.id==marker).select()[0].image
-                
-        try:
-            feature_metadata = db(db.gis_feature_metadata.id==feature.metadata).select()[0]
-        except:
-            feature_metadata = None
-        features_metadata[feature.id] = feature_metadata
+                marker = feature.gis_feature_class.marker_id
+            if not marker:
+                # 3rd choice for a Marker is the default
+                marker = marker_default
+            feature.marker = db(db.gis_marker.id == marker).select()[0].image
+            
+            try:
+                # Metadata is M->1 to Features
+                # We use the most recent one
+                query = (db.gis_metadata.location_id == feature.gis_location.id) & (db.gis_metadata.deleted == False)
+                metadata = db(query).select(orderby=~db.gis_metadata.event_time)[0]
+            except:
+                metadata = None
+            feature.metadata = metadata
 
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, features=features, features_classes=features_classes, features_markers=features_markers, features_metadata=features_metadata))
+    # Add the Features to the Return
+    #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
+    output.update(dict(feature_groups=feature_groups, features=features))
     
     return output

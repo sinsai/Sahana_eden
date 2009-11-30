@@ -1318,7 +1318,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('ia_name'),                   # Name of issuing authority
 #                Field('ia_subdivision'),            # Name of issuing authority subdivision
 #                Field('ia_code'),                   # Code of issuing authority (if any)
-                Field('comment'))                   # a comment (optional)
+                Field('comment'),                   # a comment (optional)
+                migrate=migrate)
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,

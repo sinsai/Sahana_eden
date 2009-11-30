@@ -1120,7 +1120,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                    resource=resource,
                    representation=jr.representation)
 
-    if jr.representation=="html":
+    if jr.representation=="html" or jr.representation=="ext":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
         if jr.component:
@@ -1265,22 +1265,21 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             else:
                 add_btn = ''
 
-            # Check for presence of Custom View
-            shn_custom_view(jr, 'list.html')
-
             # Add specificities to Return
             output.update(dict(add_btn=add_btn))
 
+            # Check for presence of Custom View
+            if jr.representation == "ext":
+                shn_custom_view(jr, 'list.html', format='ext')
+            else:
+                shn_custom_view(jr, 'list.html')
+            
         return output
 
     elif jr.representation == "plain":
         items = crud.select(table, query, truncate=24)
         response.view = 'plain.html'
         return dict(item=items)
-
-    elif jr.representation == "ext":
-        shn_custom_view(jr, 'list.html', format='ext')
-        return dict()
 
     elif jr.representation == "csv":
         return export_csv(resource, query)

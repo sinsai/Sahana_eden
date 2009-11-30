@@ -77,6 +77,26 @@
     height:20px !important;
     width:20px !important;
 }
+.movefeature {
+    background-image:url(../../img/gis/arrow_refresh.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
+.removefeature {
+    background-image:url(../../img/gis/remove_point_off.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
+.resizefeature {
+    background-image:url(../../img/gis/resize.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
+.rotatefeature {
+    background-image:url(../../img/gis/arrow_rotate_clockwise.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
 
 /*
 .mf-print-action {
@@ -110,7 +130,6 @@
 */
  
 /* Popups */
-/*
 .gis_openlayers_popupbox { padding: 10px; }
 .gis_openlayers_popupbox_header {}
 .gis_openlayers_popupbox_header_l { font-size: 0.8em; }
@@ -131,4 +150,3 @@
 span.gis_openlayers_popupbox_refreshs{ float: right; }
 .gis_openlayers_popupbox_edit_ok { float: left; margin-left: 15px; width: 17px; height: 17px; background: transparent url(../../img/tick.png) no-repeat scroll 0% 0%; }
 .gis_openlayers_popupbox_edit_cancel { float: left; width: 17px; height: 17px; background: transparent url(../../img/cross2.png) no-repeat scroll 0% 0%; }
- */

@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+{{if session.s3.debug:}}
+  {{include 'sahana_styles_debug.html'}}
+  {{include 'sahana_scripts_debug.html'}}
+{{else:}}
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{include 'sahana_scripts_min.html'}}
+{{pass}}
+
+<script type="text/javascript">//<![CDATA[
+function convertDD() {
+    // Convert Degrees Minutes Seconds to Decimal Degrees
+	var deg = document.inDDMMSS.form1_dd.value;
+	var min = document.inDDMMSS.form1_mm.value;
+	var sec = document.inDDMMSS.form1_ss.value;
+
+	if (deg == "" || min == "" || sec == ""){
+			alert("Enter a value for DD MM or SS.");
+	}
+
+	else if (deg > 180 || deg < 0){
+			alert("Enter a value less than 180 or greater than 0.");
+	}
+	else if (min > 60 || min < 0){
+			alert("Enter a value less than 60 or greater than 0 for minutes.");
+	}
+	else if (sec > 60 || sec < 0){
+			alert("Enter a value less than 60 or greater than 0 for seconds.");
+	}
+
+	else {
+		var dec_min = (min*1.0 + (sec/60.0));
+		var answer1 = deg*1.0 + (dec_min/60.0);
+		document.inDDMMSS.form1_dec.value=answer1;
+	}
+}
+
+function convertGps() {
+	// Convert GPS Coordinates to Decimal Degrees
+	var deg = 0;
+	var min = 0;
+	deg = document.inGPScoord.form3_gpsdeg.value;
+	min = document.inGPScoord.form3_gpsmin.value;
+
+	if (deg == "" || min == ""){
+			alert("Enter a value for GPS degrees or GPS min.");
+	}
+	else if (deg > 180 || deg < 0){
+			alert("Degrees should be greater than 0 and less than 180.");
+	}
+	else if (min > 60 || min < 0){
+				alert("Minutes should be greater than 0 and less than 60.");
+	}
+	else {
+		document.inGPScoord.form3_dec.value = (deg*1.0) + min/60.0;
+	}
+}
+
+function TB_refresh() {
+    //
+    // The Get parameters
+    var $_GET = getQueryParams(document.location.search);
+    // The JSON of the resource we just created
+    var listsource = document.location.pathname.replace("/create",".json");
+    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
+        // We have been called next to a drop-down
+        // Get the previously selected value
+        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
+        // Clean up the caller
+        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+        $.getJSON(listsource, function (data) {
+            $.each(data, function() {
+                // FIXME: Don't assume that .represent is .name (doesn't even always exist!)
+                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
+                selectedvalue = this['id'];
+                selectedname = this['name'];
+            });
+            // Set the newly-created value
+            self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
+            // Also populate dummy, if present
+            // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
+            //self.parent.$('#dummy').val(selectedname);
+            // Clean-up
+            self.parent.tb_remove();
+        });
+    } else {
+        // Clean-up
+        self.parent.tb_remove();
+    }
+}
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+// Refresh the DIV and close the pop up
+TB_refresh();
+{{pass}}
+
+//]]></script>
+</head>
+
+<body>
+
+<table>
+  <tr>
+    <td>
+      <form name="inDDMMSS">
+        <div><div align="center"><center>
+          <table border="1" cellpadding="2" width="400">
+            <tr>
+              <td align="center"><font face="Arial" size="2"><b>Enter Coordinates in Deg Min Sec</b></font></td>
+            </tr>
+            <tr>
+              <td align="center"><font face="Arial" size="2">
+                 DD&nbsp;<input type="text" size="3" name="form1_dd" align="right">
+                 MM&nbsp;<input type="text" size="2" name="form1_mm" align="right">
+                 SS&nbsp;<input type="text" size="2" name="form1_ss" align="right"></font>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" bgcolor="#C0C0C0"><font face="Arial" size="2"><b>Decimal Degrees </b>
+                  <input type="text" size="8" name="form1_dec"></font></td>
+            </tr>
+            <tr>
+              <td align="center"><input type="button" value="Calculate" onclick="convertDD(this.inDDMMSS)"> <input type="reset" value="Reset"></td>
+            </tr>
+          </table>
+        </center></div></div></font>
+      </form>
+    </td>
+  </tr>
+  <tr>
+    <td><hr width="50%" color="#000080"></td>
+  </tr>
+  <tr>
+	<td>
+      <form name="inGPScoord">
+        <small><small><font face="Arial">
+        <div><div align="center"><center>
+        <table border="1" cellpadding="2" width="400">
+          <tr>
+            <td align="center"><font face="Arial" size="2"><b>Enter a Coord in GPS Coords:</b>&nbsp;&nbsp;<input type="text" size="3" name="form3_gpsdeg">&nbsp;deg &nbsp;
+               <input type="text" size="6" name="form3_gpsmin">&nbsp;min</font></td>
+          </tr>
+          <tr>
+             <td align="center" bgcolor="#C0C0C0"><font face="Arial" size="2"><b>Decimal Degrees </b>
+                  <input type="text" size="8" name="form3_dec"></font></td>
+          </tr>
+          <tr>
+            <td align="center"><input type="button" value="Calculate" onclick="convertGps(this.inGPScoord)"> <input type="reset" value="Reset"></td>
+          </tr>
+        </table>
+        </center></div></div>
+      </form>
+    </td>
+  </tr>
+</table>
+
+</body>
+
+</html>

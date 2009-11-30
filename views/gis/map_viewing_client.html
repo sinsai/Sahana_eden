@@ -36,8 +36,22 @@ Ext.onReady(function() {
     
     {{include 'gis/toolbar.js'}}
     
-    var layerList = new GeoExt.tree.LayerContainer({
-        text: 'All Layers',
+    var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
+        text: "{{=T('Base Layers')}}",
+        layerStore: mapPanel.layers,
+        leaf: false,
+        expanded: true
+    });
+
+    var layerTreeFeaturesExternal = new GeoExt.tree.OverlayLayerContainer({
+        text: "{{=T('External Features')}}",
+        layerStore: mapPanel.layers,
+        leaf: false,
+        expanded: true
+    });
+
+    var layerTreeFeaturesInternal = new GeoExt.tree.OverlayLayerContainer({
+        text: "{{=T('Internal Features')}}",
         layerStore: mapPanel.layers,
         leaf: false,
         expanded: true
@@ -46,7 +60,16 @@ Ext.onReady(function() {
     var layerTree = new Ext.tree.TreePanel({
         id: "treepanel",
         title: "{{=T("Layers")}}",
-        root: layerList,
+        root: new Ext.tree.AsyncTreeNode({
+            expanded: true,
+            children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+        }),
+        rootVisible: false,
+        split: true,
+        collapsible: true,
+        collapseMode: "mini",
+        autoScroll: true,
+        lines: false,
         enableDD: true
     });
     

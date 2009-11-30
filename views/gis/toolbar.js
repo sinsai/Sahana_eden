@@ -27,6 +27,10 @@ var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
     isDefault: true
 });
 
+var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer, 
+    {onDone: function(feature) {console.log(feature)}
+});
+
 var nav = new OpenLayers.Control.NavigationHistory();
 
 // GeoExt Buttons
@@ -67,7 +71,7 @@ var lengthButton = new GeoExt.Action({
     control: length,
     map: map,
     iconCls: 'measure-off',
-    tooltip: '{{=T("Measure Length")}}',
+    tooltip: '{{=T("Measure Length: Click the points along the path & end with a double-click")}}',
     toggleGroup: toggleGroup,
 });
 
@@ -75,7 +79,7 @@ var areaButton = new GeoExt.Action({
     control: area,
     map: map,
     iconCls: 'measure-off',
-    tooltip: '{{=T("Measure Area")}}',
+    tooltip: '{{=T("Measure Area: Click the points around the polygon & end with a double-click")}}',
     toggleGroup: toggleGroup,
 });
 
@@ -114,8 +118,40 @@ var polygonButton = new GeoExt.Action({
 var dragButton = new GeoExt.Action({
     control: new OpenLayers.Control.DragFeature(featuresLayer),
     map: map,
-    iconCls: 'modifyfeature',
+    iconCls: 'movefeature',
     tooltip: '{{=T("Move Feature: Drag feature to desired location")}}',
+    toggleGroup: toggleGroup,
+});
+
+var resizeButton = new GeoExt.Action({
+    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
+    map: map,
+    iconCls: 'resizefeature',
+    tooltip: '{{=T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")}}',
+    toggleGroup: toggleGroup,
+});
+
+var rotateButton = new GeoExt.Action({
+    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
+    map: map,
+    iconCls: 'rotatefeature',
+    tooltip: '{{=T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")}}',
+    toggleGroup: toggleGroup,
+});
+
+var modifyButton = new GeoExt.Action({
+    control: new OpenLayers.Control.ModifyFeature(featuresLayer),
+    map: map,
+    iconCls: 'modifyfeature',
+    tooltip: '{{=T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")}}',
+    toggleGroup: toggleGroup,
+});
+
+var removeButton = new GeoExt.Action({
+    control: removeControl,
+    map: map,
+    iconCls: 'removefeature',
+    tooltip: '{{=T("Remove Feature: Select the feature you wish to remove & press the delete key")}}',
     toggleGroup: toggleGroup,
 });
 
@@ -164,6 +200,10 @@ toolbar.add(pointButton);
 toolbar.add(lineButton);
 toolbar.add(polygonButton);
 toolbar.add(dragButton);
+toolbar.add(resizeButton);
+toolbar.add(rotateButton);
+toolbar.add(modifyButton);
+toolbar.add(removeButton);
 toolbar.addSeparator();
 // Navigation
 map.addControl(nav);

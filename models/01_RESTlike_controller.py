@@ -854,7 +854,7 @@ def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last',
 #
 # shn_custom_view -------------------------------------------------------------
 #
-def shn_custom_view(jr, default_name):
+def shn_custom_view(jr, default_name, format=None):
 
     """ Check for custom view """
 
@@ -868,14 +868,20 @@ def shn_custom_view(jr, default_name):
             _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
 
     else:
-        custom_view = '%s_%s' % (jr.name, default_name)
+        if format:
+            custom_view = '%s_%s_%s' % (jr.name, default_name, format)
+        else:
+            custom_view = '%s_%s' % (jr.name, default_name)
         _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
 
 
     if os.path.exists(_custom_view):
         response.view = jr.prefix + '/' + custom_view
     else:
-        response.view = default_name
+        if format:
+            response.view = default_name.replace('.html', '_%s.html' % format)
+        else:
+            response.view = default_name
 
 # *****************************************************************************
 # CRUD Functions
@@ -1236,6 +1242,10 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         response.view = 'plain.html'
         return dict(item=items)
 
+    elif jr.representation == "ext":
+        shn_custom_view(jr, 'list.html', format='ext')
+        return dict()
+
     elif jr.representation == "csv":
         return export_csv(resource, query)
 
@@ -1383,6 +1393,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         response.view = 'plain.html'
         return dict(item=form)
+
+    elif jr.representation == "ext":
+        shn_custom_view(jr, 'create.html', format='ext')
+        return dict()
 
     elif jr.representation == "popup":
         if onaccept:
@@ -1580,6 +1594,10 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             response.view = 'plain.html'
             return dict(item=form)
 
+        elif jr.representation == "ext":
+            shn_custom_view(jr, 'update.html', format='ext')
+            return dict()
+
         elif jr.representation == "url":
             return import_url(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
 
@@ -1740,6 +1758,7 @@ def shn_rest_controller(module, resource,
             - B{plain}: is HTML with no layout
                 - can be inserted into DIVs via AJAX calls
                 - can be useful for clients on low-bandwidth or small screen sizes
+            - B{ext}: is Ext layouts (experimental)
             - B{json}: designed to be accessed via JavaScript
                 - responses in JSON format
                 - create/update/delete done via simple GET vars (no form displayed)

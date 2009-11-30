@@ -320,6 +320,9 @@ if not len(db().select(db[table].ALL)):
         name = 'Town',
     )
     db[table].insert(
+        name = 'Incident',
+    )
+    db[table].insert(
         name = 'Shelter',
         marker_id = db(db.gis_marker.name=='shelter').select()[0].id,
         module = 'cr',
@@ -339,6 +342,10 @@ if not len(db().select(db[table].ALL)):
         marker_id = db(db.gis_marker.name=='airport').select()[0].id,
     )
     db[table].insert(
+        name = 'Bridge',
+        marker_id = db(db.gis_marker.name=='bridge').select()[0].id,
+    )
+    db[table].insert(
         name = 'Port',
         marker_id = db(db.gis_marker.name=='port').select()[0].id,
     )
@@ -354,6 +361,14 @@ if not len(db().select(db[table].ALL)):
         name = 'School',
         marker_id = db(db.gis_marker.name=='school').select()[0].id,
     )
+    db[table].insert(
+        name = 'Food',
+        marker_id = db(db.gis_marker.name=='food').select()[0].id,
+    )
+    db[table].insert(
+        name = 'Water',
+        marker_id = db(db.gis_marker.name=='water').select()[0].id,
+    )
 
 # GIS Locations
 gis_feature_type_opts = {
@@ -366,6 +381,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 feature_class_id,
+                #Field('resource_id', 'integer'), # ID in associated resource table. FIXME: Remove as link should be reversed?
                 Field('parent', 'reference gis_location', ondelete = 'RESTRICT'),   # This form of hierarchy may not work on all Databases
                 marker_id,
                 Field('gis_feature_type', 'integer', default=1, notnull=True),
@@ -385,10 +401,12 @@ db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts
 db[table].gis_feature_type.label = T('Feature Type')
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lat.label = T('Latitude')
-db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+#db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+CONVERSION_TOOL = T("Conversion Tool")
+db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 db[table].lon.requires = IS_NULL_OR(IS_LON())
 db[table].lon.label = T('Longitude')
-db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 # WKT validation is done in the onvalidation callback
 #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
 db[table].wkt.label = T('Well-Known Text')
@@ -424,7 +442,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', notnull=True, unique=True),
                 Field('description'),
-                Field('display', 'boolean', default='True'),
+                Field('enabled', 'boolean', default=True, label=T('Enabled?')),
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].author.requires = IS_ONE_OF(db, 'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
@@ -434,7 +452,6 @@ db[table].name.comment = SPAN("*", _class="req")
 db[table].description.label = T('Description')
 #db[table].features.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 #db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-db[table].display.label = T('Display?')
 title_create = T('Add Feature Group')
 title_display = T('Feature Group Details')
 title_list = T('List Feature Groups')
@@ -458,6 +475,20 @@ feature_group_id = SQLTable(None, 'feature_group_id',
                 comment = '',
                 ondelete = 'RESTRICT'
                 ))
+# Populate table with Default options
+if not len(db().select(db[table].ALL)):
+    db[table].insert(
+        name = 'Towns',
+    )
+    db[table].insert(
+        name = 'Transport',
+    )
+    db[table].insert(
+        name = 'Infrastructure',
+    )
+    db[table].insert(
+        name = 'Programme',
+    )
 
 # Many-to-Many tables
 resource = 'location_to_feature_group'
@@ -473,6 +504,34 @@ db.define_table(table, timestamp, deletion_status,
                 feature_group_id,
                 feature_class_id,
                 migrate=migrate)
+# Populate table with Default options
+if not len(db().select(db[table].ALL)):
+    db[table].insert(
+        feature_group_id = db(db.gis_feature_group.name == 'Towns').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Town').select()[0].id,
+    )
+    db[table].insert(
+        feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Airport').select()[0].id,
+        feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Bridge').select()[0].id,
+        feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Port').select()[0].id,
+    )
+    db[table].insert(
+        feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Hospital').select()[0].id,
+        feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Church').select()[0].id,
+        feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'School').select()[0].id,
+    )
+    db[table].insert(
+        feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Food').select()[0].id,
+        feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
+        feature_class_id = db(db.gis_feature_class.name == 'Water').select()[0].id,
+    )
 
 resource = 'metadata'
 table = module + '_' + resource

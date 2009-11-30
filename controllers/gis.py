@@ -57,6 +57,9 @@ def layer_bing():
     return shn_rest_controller(module, 'layer_bing', deletable=False)
 
 # Module-specific functions
+def convert_gps():
+    " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
+    return dict()
 
 def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
@@ -452,53 +455,64 @@ def map_viewing_client():
     units = db(db.gis_projection.epsg==projection).select()[0].units
     maxResolution = db(db.gis_projection.epsg==projection).select()[0].maxResolution
     maxExtent = db(db.gis_projection.epsg==projection).select()[0].maxExtent
-    features_marker = db(db.gis_config.id==1).select()[0].marker_id
+    marker_default = db(db.gis_config.id==1).select()[0].marker_id
     
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, features_marker=features_marker))
+    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
     
     # Layers
     baselayers = layers()
-    
+    # Add the Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+
     # Internal Features
-    # ToDo: Only include those features which are are in enabled feature groups (either independently or through a feature class)
-    #feature_groups=db(db.gis_feature_group.enabled==True).select(db.gis_layer_feature_group.ALL)
-    #for feature_group in feature_groups:
-    # Limit to return only 200 features to prevent overloading the browser!
-    query = (db.gis_location.id > 0) & (db.gis_location.deleted==False)
-    features = db(query).select(db.gis_location.ALL, limitby=(0, 200))
-    features_classes = Storage()
-    features_markers = Storage()
-    features_metadata = Storage()
-    for feature in features:
-        # 1st choice for a Marker is the Feature's
-        marker = feature.marker_id
-        try:
-            query = db.gis_feature_class.id == feature.feature_class_id
-            feature_class = db(query).select()[0]
-            
+    features = Storage()
+    # Features are displayed in a layer per FeatureGroup
+    feature_groups = db(db.gis_feature_group.enabled == True).select()
+    for feature_group in feature_groups:
+        # FIXME: Use OL's Cluster Strategy to ensure no more than 200 features displayed to prevent overloading the browser!
+        # - better than doing a server-side spatial query to show ones visible within viewport on every Pan/Zoom!
+        groups = db.gis_feature_group
+        locations = db.gis_location
+        classes = db.gis_feature_class
+        metadata = db.gis_metadata
+        # Which Features are added to the Group directly?
+        link = db.gis_location_to_feature_group
+        features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        # Which Features are added to the Group via their FeatureClass?
+        link = db.gis_feature_class_to_feature_group
+        features2 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), classes.on(classes.id == link.feature_class_id), locations.on(locations.feature_class_id == link.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        features[feature_group.id] = features1 | features2
+        for feature in features[feature_group.id]:
+            feature.module = feature.gis_feature_class.module
+            feature.resource = feature.gis_feature_class.resource
+            if feature.module and feature.resource:
+                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+            else:
+                feature.resource_id = None
+            # 1st choice for a Marker is the Feature's
+            marker = feature.gis_location.marker_id
             if not marker:
                 # 2nd choice for a Marker is the Feature Class's
-                marker = feature_class.marker_id
-        except:
-            feature_class = None
-        if not marker:
-            # 3rd choice for a Marker is the default
-            marker = features_marker
-        features_classes[feature.id] = feature_class
-        features_markers[feature.id] = db(db.gis_marker.id==marker).select()[0].image
-                
-        try:
-            # Metadata is M->1 to Features
-            # We just use the 1st one
-            # FIXME: Use the most recent one instead
-            query = (db.gis_metadata.location_id == feature.id) & (db.gis_metadata.deleted == False)
-            metadata = db(query).select()[0]
-        except:
-            metadata = None
-        features_metadata[feature.id] = metadata
+                marker = feature.gis_feature_class.marker_id
+            if not marker:
+                # 3rd choice for a Marker is the default
+                marker = marker_default
+            feature.marker = db(db.gis_marker.id == marker).select()[0].image
+            
+            try:
+                # Metadata is M->1 to Features
+                # We use the most recent one
+                query = (db.gis_metadata.location_id == feature.gis_location.id) & (db.gis_metadata.deleted == False)
+                metadata = db(query).select(orderby=~db.gis_metadata.event_time)[0]
+            except:
+                metadata = None
+            feature.metadata = metadata
 
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, features=features, features_classes=features_classes, features_markers=features_markers, features_metadata=features_metadata))
+    # Add the Features to the Return
+    #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
+    output.update(dict(feature_groups=feature_groups, features=features))
     
     return output

@@ -6,15 +6,65 @@
 <meta name="keywords" content="{{=response.keywords}}" />
 <meta name="description" content="{{=response.description}}" />
 
-<link rel="stylesheet" type="text/css" href="/sahana/static/mfbase/ext/resources/css/ext-all.css" />
-<script type="text/javascript" src="/sahana/static/mfbase/ext/adapter/ext/ext-base.js"></script>
-<!-- Change to ext-all.js for Production installs -->
-<script type="text/javascript" src="/sahana/static/mfbase/ext/ext-all-debug.js"></script>
+{{if session.s3.debug:}}
+  {{include 'sahana_styles_debug.html'}}
+{{else:}}
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+{{pass}}
+
+
+<!--Ext-->
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.css" />
+<!--
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext/adapter/jquery/ext-jquery-adapter.js"></script>
+-->
+{{if session.s3.debug:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext/ext-all-debug.js"></script>
+{{else:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext/ext-all.js"></script>
+<!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance
+<script type="text/javascript" src="http://extjs.cachefly.net/ext-3.0.3/ext-all.js"></script>
+ -->
+{{pass}}
 
 {{include}}
 
 </head>
 <body>
- <div id="map"></div>
+
+{{if session.s3.restricted:}}
+<!--
+Load JavaScript to:
+* Go full-screen
+* Require Confirmation when leaving a page
+* Hide browser buttons, menu & URL bar
+-->
+{{else:}}
+<div id="header">
+  <div id="menu_auth">
+   {{=MENU(response.menu_auth)}}
+  </div>
+</div>
+
+<div id="menu_modules">
+    {{=MENU2(response.menu_modules, _class='modules_inner')}}
+</div>
+
+<div id="menu_options">
+    {{=MENU2(response.menu_options, _class='options_inner')}}
+</div>
+{{pass}}
+
+<div id="content">
+<!--Ext code will add HTML here -->
+</div>
+
+{{if session.s3.restricted:}}
+{{else:}}
+<div id="footer">
+    {{include session.s3.theme.footer}}
+</div>
+{{pass}}
+
 </body>
 </html>

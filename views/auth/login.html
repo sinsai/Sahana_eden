@@ -11,12 +11,13 @@ Ext.onReady(function(){
     Ext.form.Field.prototype.msgTarget = 'side';
 
     var simple = new Ext.FormPanel({
-        labelWidth: 75, // label settings here cascade unless overridden
-        url: '{{=URL(r=request, args=request.args)}}',
-        frame: true,
+        standardSubmit: true,
+        //url: '{{=URL(r=request, args=request.args)}}',
         title: '{{=T('Login')}}',
+        frame: true,
         bodyStyle:'padding:5px 5px 0',
         width: 350,
+        labelWidth: 75, // label settings here cascade unless overridden
         defaults: {width: 230},
         defaultType: 'textfield',
         //renderTo: 'login_form',
@@ -53,17 +54,16 @@ Ext.onReady(function(){
                     items: [{
                         xtype: 'hidden',
                         name: '_next',
-                        //inputType: 'hidden',
+                        {{if form.custom.end.components[0][0].attributes['_value']:}}
                         value: '{{=form.custom.end.components[0][0].attributes['_value']}}'
+                        {{pass}}
                     }, {
                         xtype: 'hidden',
                         name: '_formkey',
-                        //inputType: 'hidden',
                         value: '{{=form.custom.end.components[0][1].attributes['_value']}}'
                     }, {
                         xtype: 'hidden',
                         name: '_formname',
-                        //inputType: 'hidden',
                         value: '{{=form.custom.end.components[0][2].attributes['_value']}}'
                     }]
                 })
@@ -72,8 +72,8 @@ Ext.onReady(function(){
         buttons: [{
             text: '{{=form.custom.submit.attributes['_value']}}',
             handler: function(){
-                var fp = this.ownerCt.ownerCt,
-                    form = fp.getForm();
+                var fp = this.ownerCt.ownerCt;
+                var form = fp.getForm();
                 if (form.isValid()) {
                     // check if there are baseParams and if
                     // hidden items have been added already
@@ -90,6 +90,8 @@ Ext.onReady(function(){
                         // set a custom flag to prevent re-adding
                         fp.paramsAdded = true;
                     }
+                    form.action = '';
+                    form.method = 'POST';
                     form.submit();
                 }
             }
@@ -101,43 +103,13 @@ Ext.onReady(function(){
 //]]></script>
 
 <div id="home">
-<h2>{{=T('Login')}}</h2>
-<div id="form-container">
-<!--
-{{=form.custom.begin}}
-  <table>
-    <tr id="auth_user_email__row">
-      <td>
-        <label for="auth_user_email" id="auth_user_email__label">{{=form.custom.label.email}}</label>
-      </td>
-      <td>
-        <input class="string" id="auth_user_email" name="email" type="text" value="" />
-        or
-        {{=form.custom.widget.email}}
-      </td>
-    </tr>
-    <tr id="auth_user_password__row">
-      <td>
-        <label for="auth_user_password" id="auth_user_password__label">{{=form.custom.label.password}}</label>
-      </td>
-      <td>
-        <input class="password" id="auth_user_password" name="password" type="password" value="" />
-        or
-        {{=form.custom.widget.password}}
-      </td>
-    </tr>
-    <tr id="submit_record__row">
-      <td>
-      </td>
-      <td>
-        {{=form.custom.submit}}
-      </td>
-    </tr>
-  </table>
-{{=form.custom.end}}
--->
 
+<h2>{{=T('Login')}}</h2>
+
+<div id="form-container">
+<!-- Ext will render form here -->
 </div>
+
 {{self_registration = db().select(db.s3_setting.self_registration)[0].self_registration}}
 {{if self_registration:}}
     <p>

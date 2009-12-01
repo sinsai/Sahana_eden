@@ -30,8 +30,8 @@ def user():
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
     
     # Use Custom Ext views
-    #if request.args[0] == 'login':
-    #    response.view = 'auth/login.html'
+    if request.args[0] == 'login':
+        response.view = 'auth/login.html'
     
     return dict(form=form, module_name=module_name)
 

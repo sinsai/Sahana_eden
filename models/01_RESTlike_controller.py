@@ -1376,6 +1376,9 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             crud.settings.create_onaccept = None
             crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
                                         jr.there()
+        else:
+            if not crud.settings.create_next:
+                crud.settings.create_next = jr.there()
 
         if onaccept:
             _onaccept = lambda form: \
@@ -1571,6 +1574,9 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = None
                 crud.settings.update_next = s3xrc.model.get_attr(jr.component_name, 'update_next') or \
                                             jr.there()
+            else:
+                if not crud.settings.update_next:
+                    crud.settings.update_next = jr.here()
 
             try:
                 message = s3.crud_strings[tablename].msg_record_modified

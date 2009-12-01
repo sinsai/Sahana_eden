@@ -25,7 +25,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('privacy', 'integer', default=0),
                 #Field('archived', 'boolean', default=False),
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('acronym', length=8),
                 Field('type', 'integer'),
                 admin_id,

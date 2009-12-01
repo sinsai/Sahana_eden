@@ -41,7 +41,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('label'), #short code of Unit for e.g. "m" for "meter"
                 Field('name'),  #complete Unit - "meter" for "m"
                 Field('base_unit'), #links to which unit
-                Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links 
+                Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links
                 migrate=migrate)
 
 if not len(db().select(db[table].ALL)):
@@ -69,7 +69,7 @@ if not len(db().select(db[table].ALL)):
         opt_lms_unit_type=5,
         label="ton",
         name="Tonne"
-    )	
+    )
 
 db[table].base_unit.requires = IS_NULL_OR(IS_ONE_OF(db, "lms_unit.label", "lms_unit.name"))
 #db[table].base_unit.requires=IS_NULL_OR(IS_UNIT(db))
@@ -93,7 +93,7 @@ msg_record_modified = T('Unit updated')
 msg_record_deleted = T('Unit deleted')
 msg_list_empty = T('No Units currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-	
+
 # Sites
 site_category_opts = {
     1:T('Donor'),
@@ -238,7 +238,7 @@ resource = 'storage_bin'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
-				db.Field('storage_id', db.lms_storage_loc),                
+				db.Field('storage_id', db.lms_storage_loc),
 				db.Field('number', notnull=True),
                 db.Field('bin_type', db.lms_storage_bin_type),
                 db.Field('capacity'),
@@ -304,7 +304,7 @@ if not len(db().select(db[table].ALL)):
         name="Default",
         description="Default Catalog",
 		comments="All items are by default added to this Catalog"
-    )		
+    )
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
 db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|Add the name and additional information about the Organisation if it does not exists already.")))
@@ -419,7 +419,7 @@ msg_record_deleted = T('Category<>Sub-Category<>Catalog Relation deleted')
 msg_list_empty = T('No Category<>Sub-Category<>Catalog Relation currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Shipment 
+# Shipment
 resource = 'shipment'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -542,7 +542,7 @@ msg_record_deleted = T('Item deleted')
 msg_list_empty = T('No Item currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Shipment<>Item - A shipment can have many items under it. 
+# Shipment<>Item - A shipment can have many items under it.
 # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
 
 resource = 'shipment_item'
@@ -569,7 +569,7 @@ msg_record_deleted = T('Shipment<>Item Relation deleted')
 msg_list_empty = T('No Shipment<>Item Relation currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Shipment<>Item - A shipment can have many items under it. 
+# Shipment<>Item - A shipment can have many items under it.
 # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
 
 resource = 'shipment_transit_logs'
@@ -600,7 +600,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'kit'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('code', notnull=True, unique=True),
+                Field('code', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
                 Field('total_monthly_cost', 'double', writable=False),

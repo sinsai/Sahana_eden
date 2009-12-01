@@ -15,7 +15,7 @@ resource = 'marker'
 table = module + '_' + resource
 db.define_table(table, timestamp,
                 #uuidstamp, # Markers don't sync
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 #Field('height', 'integer'), # In Pixels, for display purposes
                 #Field('width', 'integer'),  # Not needed since we get size client-side using Javascript's Image() class
                 Field('image', 'upload', autodelete = True),
@@ -35,7 +35,7 @@ marker_id = SQLTable(None, 'marker_id',
 resource = 'projection'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('epsg', 'integer', notnull=True),
                 Field('maxExtent', length=64, notnull=True),
                 Field('maxResolution', 'double', notnull=True),
@@ -48,7 +48,7 @@ projection_id = SQLTable(None, 'projection_id',
                 represent = lambda id: db(db.gis_projection.id==id).select()[0].name,
                 label = T('Projection'),
                 comment = '',
-                ondelete = 'RESTRICT'    
+                ondelete = 'RESTRICT'
                 ))
 
 # GIS Config
@@ -66,7 +66,7 @@ db.define_table(table, timestamp, uuidstamp,
 				Field('map_height', 'integer', notnull=True),
 				Field('map_width', 'integer', notnull=True),
                 migrate=migrate)
-            
+
 # GIS Feature Classes
 resource_opts = {
     'shelter':T('Shelter'),
@@ -76,7 +76,7 @@ resource_opts = {
 resource = 'feature_class'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('description'),
                 marker_id,
                 Field('module'),    # Used to build Edit URL
@@ -123,13 +123,13 @@ location_id = SQLTable(None, 'location_id',
                 comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
-    
+
 # Feature Groups
 # Used to select a set of Features for either Display or Export
 resource = 'feature_group'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('enabled', 'boolean', default=True, label=T('Enabled?')),
                 migrate=migrate)
@@ -180,7 +180,7 @@ s3xrc.model.add_component(module, resource,
     editable=True,
     list_fields = ['id', 'description', 'source', 'event_time', 'url', 'image'])
 
-    
+
 # GIS Keys - needed for commercial mapping services
 resource = 'apikey' # Can't use 'key' as this has other meanings for dicts!
 table = module + '_' + resource
@@ -231,7 +231,7 @@ for layertype in gis_layer_types:
             gis_layer)
         t.subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
         db.define_table(table, t, migrate=migrate)
-    
+
 # GIS Styles: SLD
 #db.define_table('gis_style', timestamp,
 #                Field('name', notnull=True, unique=True))

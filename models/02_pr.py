@@ -110,7 +110,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                     Field('parent'),                # Parent Entity
                     opt_pr_entity_type,             # Entity class
-                    Field('label', unique=True),    # Recognition Label
+                    Field('label', length=128, unique=True),    # Recognition Label
                     migrate=migrate)
 
 # Field validation
@@ -288,8 +288,8 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('local_name'),                    # name in local language and script, Sahana legacy
                 opt_pr_gender,
                 opt_pr_age_group,
-                Field('email', unique=True),            # Needed for AAA (change this!)
-                Field('mobile_phone', 'integer'),       # Needed for SMS (change this!)
+                Field('email', length=128, unique=True), # Needed for AAA (change this!)
+                Field('mobile_phone', 'integer'),        # Needed for SMS (change this!)
                 # Person Details
                 Field('date_of_birth', 'date'),         # Sahana legacy
                 opt_pr_nationality,                     # Nationality

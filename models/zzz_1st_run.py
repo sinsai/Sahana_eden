@@ -12,7 +12,7 @@ empty = True
 if empty:
     # Settings
     table = 's3_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
         db[table].insert(
             admin_name = T("Sahana Administrator"),
             admin_email = T("support@Not Set"),
@@ -21,7 +21,7 @@ if empty:
         )
 
     table = 'admin_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -29,7 +29,7 @@ if empty:
         )
 
     table = 'appadmin_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -186,7 +186,7 @@ if empty:
 
     # Budget Module
     table = 'budget_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -195,7 +195,7 @@ if empty:
 
     # Shelter Registry
     table = 'cr_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -204,7 +204,7 @@ if empty:
 
     # Disaster Victim Identification
     table = 'dvi_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -213,7 +213,7 @@ if empty:
 
     # Disaster Victim Registration
     table = 'dvr_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -221,7 +221,7 @@ if empty:
         )
 
     table = 'gis_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -230,7 +230,7 @@ if empty:
 
     # Human Remains Management
     table = 'hrm_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -239,7 +239,7 @@ if empty:
 
     # Logistics
     table = 'lms_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -252,7 +252,7 @@ if empty:
        db[table].insert(baud=115200)
 
     table = 'msg_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             inbound_mail_server = 'imap.gmail.com',
             inbound_mail_type = 'imap',
@@ -270,7 +270,7 @@ if empty:
 
     # Missing Person Registry
     table = 'mpr_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -279,7 +279,7 @@ if empty:
 
     # Organisation Registry
     table = 'or_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -297,7 +297,7 @@ if empty:
 
     # Request Management System
     table = 'rms_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -306,14 +306,14 @@ if empty:
 
     # Synchronisation
     table = 'sync_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             uuid = uuid.uuid4()
         )
 
     # Volunteer Management
     table = 'vol_setting'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -326,7 +326,7 @@ if empty:
     # need a script to read in the list of default markers from the filesystem, copy/rename & populate the DB 1 by 1
     if not len(db().select(db[table].id)):
         # We want to start at ID 1
-        db[table].truncate() 
+        db[table].truncate()
         db[table].insert(
             name = "marker",
             image = "gis_marker.image.marker.png"
@@ -393,9 +393,9 @@ if empty:
         )
 
     table = 'gis_projection'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        # We want to start at ID 1
-       db[table].truncate() 
+       db[table].truncate()
        db[table].insert(
             uuid = uuid.uuid4(),
             name = "Spherical Mercator",
@@ -414,9 +414,9 @@ if empty:
         )
 
     table = 'gis_config'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        # We want to start at ID 1
-       db[table].truncate() 
+       db[table].truncate()
        db[table].insert(
             lat = "6",
             lon = "79.4",
@@ -517,28 +517,38 @@ if empty:
         db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Airport').select()[0].id,
+        )
+        db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Bridge').select()[0].id,
+        )
+        db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Port').select()[0].id,
         )
         db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Hospital').select()[0].id,
+        )
+        db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Church').select()[0].id,
+        )
+        db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'School').select()[0].id,
         )
         db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Food').select()[0].id,
+        )
+        db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Water').select()[0].id,
         )
 
     table = 'gis_apikey'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
        db[table].insert(
             name = "google",
             apikey = "ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw",
@@ -605,7 +615,7 @@ if empty:
         auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
         auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')
         auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
-        
+
     # Security Defaults for all tables
     # For performance we only populate this once (at system startup)
     # => need to populate manually when adding new tables to the database! (less RAD)
@@ -636,10 +646,10 @@ if empty:
         #auth.add_permission(id, 'create', db[table])
         #auth.add_permission(id, 'update', db[table])
         #auth.add_permission(id, 'delete', db[table])
-        
+
     # Theme
     table = 'admin_theme'
-    if not len(db().select(db[table].id)): 
+    if not len(db().select(db[table].id)):
         db[table].insert(
             name = T('Sahana Blue'),
             logo = 'img/sahanapy_logo.png',

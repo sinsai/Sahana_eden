@@ -1,0 +1,97 @@
+{{extend 'layout.html'}}
+
+{{include 'ext.html'}}
+
+<script type="text/javascript">//<![CDATA[
+Ext.onReady(function(){
+
+    Ext.QuickTips.init();
+
+    // turn on validation errors beside the field globally
+    Ext.form.Field.prototype.msgTarget = 'side';
+
+    var simple = new Ext.FormPanel({
+        labelWidth: 75, // label settings here cascade unless overridden
+        url: '{{=URL(r=request, args=request.args)}}',
+        //frame: true,
+        frame: false,
+        title: '{{=T('Login')}}',
+        bodyStyle:'padding:5px 5px 0',
+        width: 350,
+        defaults: {width: 230},
+        defaultType: 'textfield',
+
+        items: [{
+                fieldLabel: '{{=form.custom.label.email}}',
+                name: '{{=form.custom.widget.email.attributes['_name']}}',
+                inputType: '{{=form.custom.widget.email.attributes['_type']}}',
+                id: '{{=form.custom.widget.email.attributes['_id']}}',
+                fieldClass: '{{=form.custom.widget.email.attributes['_class']}}',
+                allowBlank: false
+            },{
+                fieldLabel: '{{=form.custom.label.password}}',
+                name: '{{=form.custom.widget.password.attributes['_name']}}',
+                inputType: '{{=form.custom.widget.password.attributes['_type']}}',
+                id: '{{=form.custom.widget.password.attributes['_id']}}',
+                fieldClass: '{{=form.custom.widget.password.attributes['_class']}}',
+                allowBlank: false
+            }
+        ],
+
+        buttons: [{
+            text: 'Submit'
+        }]
+    });
+
+    simple.render('form-container');
+});
+//]]></script>
+
+<div id="home">
+<h2>{{=T('Login')}}</h2>
+<div id="form-container">
+<!--
+{{=form.custom.begin}}
+  <table>
+    <tr id="auth_user_email__row">
+      <td>
+        <label for="auth_user_email" id="auth_user_email__label">{{=form.custom.label.email}}</label>
+      </td>
+      <td>
+        <input class="string" id="auth_user_email" name="email" type="text" value="" />
+        or
+        {{=form.custom.widget.email}}
+      </td>
+    </tr>
+    <tr id="auth_user_password__row">
+      <td>
+        <label for="auth_user_password" id="auth_user_password__label">{{=form.custom.label.password}}</label>
+      </td>
+      <td>
+        <input class="password" id="auth_user_password" name="password" type="password" value="" />
+        or
+        {{=form.custom.widget.password}}
+      </td>
+    </tr>
+    <tr id="submit_record__row">
+      <td>
+      </td>
+      <td>
+        {{=form.custom.submit}}
+      </td>
+    </tr>
+  </table>
+{{=form.custom.end}}
+-->
+
+</div>
+{{self_registration = db().select(db.s3_setting.self_registration)[0].self_registration}}
+{{if self_registration:}}
+    <p>
+        <a id="register-btn" href="{{=URL(r=request, args='register')}}">{{=T('Register')}}</a>
+    </p>
+{{pass}}
+    <p>
+        <a id="retrieve-btn" href="{{=URL(r=request, args='retrieve_password')}}">{{=T('Lost Password')}}</a>
+    </p>
+</div>

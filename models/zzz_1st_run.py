@@ -12,7 +12,7 @@ empty = True
 if empty:
     # Settings
     table = 's3_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         db[table].insert(
             admin_name = T("Sahana Administrator"),
             admin_email = T("support@Not Set"),
@@ -21,7 +21,7 @@ if empty:
         )
 
     table = 'admin_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -29,7 +29,7 @@ if empty:
         )
 
     table = 'appadmin_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -38,7 +38,7 @@ if empty:
 
     # Modules
     table = 's3_module'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         db[table].insert(
             name="default",
             name_nice="Sahana Home",
@@ -186,7 +186,7 @@ if empty:
 
     # Budget Module
     table = 'budget_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -195,7 +195,7 @@ if empty:
 
     # Shelter Registry
     table = 'cr_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -204,7 +204,7 @@ if empty:
 
     # Disaster Victim Identification
     table = 'dvi_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -213,7 +213,7 @@ if empty:
 
     # Disaster Victim Registration
     table = 'dvr_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -221,7 +221,7 @@ if empty:
         )
 
     table = 'gis_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -230,7 +230,7 @@ if empty:
 
     # Human Remains Management
     table = 'hrm_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -239,7 +239,7 @@ if empty:
 
     # Logistics
     table = 'lms_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -248,11 +248,11 @@ if empty:
 
     # Messaging
     table = 'mobile_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(baud=115200)
 
     table = 'msg_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             inbound_mail_server = 'imap.gmail.com',
             inbound_mail_type = 'imap',
@@ -270,7 +270,7 @@ if empty:
 
     # Missing Person Registry
     table = 'mpr_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -279,7 +279,7 @@ if empty:
 
     # Organisation Registry
     table = 'or_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -288,7 +288,7 @@ if empty:
 
     # Person Registry
     table = 'pr_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -297,7 +297,7 @@ if empty:
 
     # Request Management System
     table = 'rms_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -306,14 +306,14 @@ if empty:
 
     # Synchronisation
     table = 'sync_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             uuid = uuid.uuid4()
         )
 
     # Volunteer Management
     table = 'vol_setting'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
@@ -324,7 +324,7 @@ if empty:
     table = 'gis_marker'
     # Can't do sub-folders :/
     # need a script to read in the list of default markers from the filesystem, copy/rename & populate the DB 1 by 1
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         # We want to start at ID 1
         db[table].truncate()
         db[table].insert(
@@ -393,7 +393,7 @@ if empty:
         )
 
     table = 'gis_projection'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        # We want to start at ID 1
        db[table].truncate()
        db[table].insert(
@@ -414,7 +414,7 @@ if empty:
         )
 
     table = 'gis_config'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        # We want to start at ID 1
        db[table].truncate()
        db[table].insert(
@@ -429,7 +429,7 @@ if empty:
         )
 
     table = 'gis_feature_class'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         db[table].insert(
             name = 'Country',
         )
@@ -494,7 +494,7 @@ if empty:
         )
 
     table = 'gis_feature_group'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         db[table].insert(
             name = 'Towns',
         )
@@ -509,7 +509,7 @@ if empty:
         )
 
     table = 'gis_feature_class_to_feature_group'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Towns').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Town').select()[0].id,
@@ -548,7 +548,7 @@ if empty:
         )
 
     table = 'gis_apikey'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
        db[table].insert(
             name = "google",
             apikey = "ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw",
@@ -566,7 +566,7 @@ if empty:
         )
 
     table = 'gis_layer_openstreetmap'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         # Populate table
         for subtype in gis_layer_openstreetmap_subtypes:
             db[table].insert(
@@ -575,7 +575,7 @@ if empty:
                 )
 
     table = 'gis_layer_google'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         # Populate table
         for subtype in gis_layer_google_subtypes:
             db[table].insert(
@@ -585,7 +585,7 @@ if empty:
                 )
 
     table = 'gis_layer_yahoo'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         # Populate table
         for subtype in gis_layer_yahoo_subtypes:
             db[table].insert(
@@ -595,7 +595,7 @@ if empty:
                 )
 
     table = 'gis_layer_bing'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         # Populate table
         for subtype in gis_layer_bing_subtypes:
             db[table].insert(
@@ -607,7 +607,7 @@ if empty:
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         auth.add_group('Administrator', description = 'System Administrator - can access & make changes to any data')
         # Doesn't work on Postgres!
         auth.add_membership(1, 1) # 1st person created will be System Administrator (can be changed later)
@@ -620,7 +620,7 @@ if empty:
     # For performance we only populate this once (at system startup)
     # => need to populate manually when adding new tables to the database! (less RAD)
     table = auth.settings.table_permission_name
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         authenticated = auth.id_group('Authenticated')
         editors = auth.id_group('Editor')
         for table in db.tables:
@@ -649,7 +649,7 @@ if empty:
 
     # Theme
     table = 'admin_theme'
-    if not len(db().select(db[table].id)):
+    if not db(db[table].id).count():
         db[table].insert(
             name = T('Sahana Blue'),
             logo = 'img/sahanapy_logo.png',

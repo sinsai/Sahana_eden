@@ -63,7 +63,7 @@ resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 opt_budget_category_type,
-                Field('code', notnull=True, unique=True),
+                Field('code', length=128, notnull=True, unique=True),
                 Field('description', notnull=True),
                 opt_budget_cost_type,
                 Field('unit_cost', 'double', default=0.00),
@@ -77,7 +77,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 resource = 'kit'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('code', notnull=True, unique=True),
+                Field('code', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
                 Field('total_monthly_cost', 'double', writable=False),
@@ -99,7 +99,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 resource = 'bundle'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
                 Field('total_monthly_cost', 'double', writable=False),
@@ -144,7 +144,7 @@ opt_budget_currency_type = db.Table(None, 'budget_currency_type',
 resource = 'staff'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('grade', notnull=True),
                 Field('salary', 'integer', notnull=True),
                 opt_budget_currency_type,
@@ -171,7 +171,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 resource = 'project'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('code', notnull=True, unique=True),
+                Field('code', length=128, notnull=True, unique=True),
                 Field('title'),
                 Field('comments'),
                 migrate=migrate)
@@ -180,7 +180,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 resource = 'budget'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_onetime_costs', 'double', writable=False),
                 Field('total_recurring_costs', 'double', writable=False),

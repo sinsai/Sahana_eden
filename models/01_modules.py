@@ -19,8 +19,8 @@ opt_s3_module_type = db.Table(None, 'opt_s3_module_type',
 resource = 'module'
 table = module + '_' + resource
 db.define_table(table,
-                Field('name', notnull=True, unique=True),
-                Field('name_nice', notnull=True, unique=True),
+                Field('name', length=32, notnull=True, unique=True),
+                Field('name_nice', length=128, notnull=True, unique=True),
                 opt_s3_module_type,
                 Field('access'),  # Hide modules if users don't have the required access level (NB Not yet implemented either in the Modules menu or the Controllers)
                 Field('priority', 'integer', notnull=True, unique=True),

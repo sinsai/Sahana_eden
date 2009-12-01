@@ -14,7 +14,7 @@ timestamp = db.Table(None, 'timestamp',
                           writable=False,
                           default=request.utcnow,
                           update=request.utcnow)
-            ) 
+            )
 
 # Reusable author fields, TODO: make a better represent!
 authorstamp = db.Table(None, 'authorstamp',
@@ -31,14 +31,14 @@ authorstamp = db.Table(None, 'authorstamp',
                           update=session.auth.user.id if auth.is_logged_in() else 0,
                           represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
                           ondelete='RESTRICT')
-            ) 
+            )
 
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
 from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
                 type ='string',
-                native ='string',
+                native ='VARCHAR(64)',
                 encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'","''"))),
                 decoder = (lambda x: x)
             )
@@ -69,7 +69,7 @@ admin_id = db.Table(None, 'admin_id',
                 comment = DIV(A(T('Add Role'), _class='thickbox', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
                 ondelete='RESTRICT'
                 ))
-    
+
 # Reusable Document field
 document = db.Table(None, 'document',
             Field('document', 'upload', autodelete = True,

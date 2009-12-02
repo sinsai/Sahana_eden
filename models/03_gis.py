@@ -20,6 +20,8 @@ db.define_table(table, timestamp,
                 #Field('width', 'integer'),  # Not needed since we get size client-side using Javascript's Image() class
                 Field('image', 'upload', autodelete = True),
                 migrate=migrate)
+# upload folder needs to be visible to the download() function as well as the upload
+db[table].image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 # Reusable field for other tables to reference
 ADD_MARKER = T('Add Marker')
 marker_id = SQLTable(None, 'marker_id',

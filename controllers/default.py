@@ -18,7 +18,7 @@ def call():
     
 def download():
     "Download a file."
-    return response.download(request, db) 
+    return response.download(request, db)
 
 def user():
     "Auth functions based on arg. See gluon/tools.py"
@@ -32,9 +32,10 @@ def user():
     self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
     
     # Use Custom Ext views
-    if request.args[0] == 'login':
-        response.title = T('Login')
-        response.view = 'auth/login.html'
+    # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
+    #if request.args[0] == 'login':
+    #    response.title = T('Login')
+    #    response.view = 'auth/login.html'
     
     return dict(form=form, self_registration=self_registration)
 

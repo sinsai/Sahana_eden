@@ -56,10 +56,13 @@ def shn_sessions(f):
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
     # Are we running in debug mode?
-    try:
-        session.s3.debug = db().select(db.s3_setting.debug)[0].debug
-    except:
-        session.s3.debug = False
+    if not 'debug' in request.vars:
+        try:
+            session.s3.debug = db().select(db.s3_setting.debug)[0].debug
+        except:
+            session.s3.debug = False
+    else:
+        session.s3.debug = True
     # Which security policy are we running?
     try:
         session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy

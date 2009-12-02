@@ -10,15 +10,6 @@
 """
 
 # *****************************************************************************
-# S3XRC ResourceController
-
-exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
-
-s3xrc = ResourceController(db,
-                           domain=request.env.server_name,
-                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application))
-
-# *****************************************************************************
 # Constants to ensure consistency
 
 # XSLT Settings
@@ -27,7 +18,7 @@ XSLT_IMPORT_TEMPLATES = 'static/xslt/import' #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml"] #: Supported XML import formats
+shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
 shn_xml_export_formats = ["xml"] #: Supported XML output formats
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
@@ -44,24 +35,42 @@ INVALIDREQUEST = T('Invalid request!')
 ROWSPERPAGE = 20
 
 # *****************************************************************************
+# S3XRC ResourceController
+
+exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
+
+s3xrc = ResourceController(db,
+                           domain=request.env.server_name,
+                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+                           rpp=ROWSPERPAGE)
+
+# *****************************************************************************
 # Helpers
 
 #
 # json_message ----------------------------------------------------------------
 #
-def json_message(success=True, status_code="200", message=None):
+def json_message(success=True, status_code="200", message=None, tree=None):
 
     if success:
         status="success"
     else:
         status="failed"
 
-    if message:
-        return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
-               (status, status_code, message)
+    if not success:
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}, "Tree": %s }' % \
+                (status, status_code, message, tree)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}, "Tree": %s }' % \
+                (status, status_code, tree)
     else:
-        return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
-               (status, status_code)
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
+                (status, status_code, message)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
+                (status, status_code)
 
 # *****************************************************************************
 # Exports
@@ -510,7 +519,8 @@ def import_json(jr, onvalidation=None, onaccept=None):
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.error)
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 501, s3xrc.error, tree=tree)
 
     return dict(item=item)
 
@@ -554,7 +564,8 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.error)
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 501, s3xrc.error, tree=tree)
 
     return dict(item=item)
 
@@ -1388,6 +1399,9 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             crud.settings.create_onaccept = None
             crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
                                         jr.there()
+        else:
+            if not crud.settings.create_next:
+                crud.settings.create_next = jr.there()
 
         if onaccept:
             _onaccept = lambda form: \
@@ -1583,6 +1597,9 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = None
                 crud.settings.update_next = s3xrc.model.get_attr(jr.component_name, 'update_next') or \
                                             jr.there()
+            else:
+                if not crud.settings.update_next:
+                    crud.settings.update_next = jr.here()
 
             try:
                 message = s3.crud_strings[tablename].msg_record_modified

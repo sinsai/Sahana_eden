@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.4-1, 2009-11-30
+    @version: 1.4.0-3, 2009-12-02
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -322,7 +322,9 @@ class ResourceController(object):
         delete="delete"
     )
 
-    def __init__(self, db, domain=None, base_url=None):
+    ROWSPERPAGE=10
+
+    def __init__(self, db, domain=None, base_url=None, rpp=None):
 
         assert db is not None, "Database must not be None."
         self.db = db
@@ -331,6 +333,8 @@ class ResourceController(object):
 
         self.domain = domain
         self.base_url = base_url
+
+        self.rpp = rpp or self.ROWSPERPAGE
 
         self.model = ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url)
@@ -383,17 +387,32 @@ class ResourceController(object):
         return XRequest(self, prefix, name, request, session=session)
 
     # -------------------------------------------------------------------------
-    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None):
+    def export_xml(self, prefix, name, id,
+                   joins=[],
+                   skip=[],
+                   permit=None,
+                   audit=None,
+                   page=None,
+                   pagesize=None,
+                   show_urls=True):
 
         """ Exports data as XML tree """
 
         self.error = None
         resources = []
 
+        if not pagesize:
+            pagesize = self.rpp
+
         _table = "%s_%s" % (prefix, name)
 
+        if show_urls:
+            burl = self.base_url
+        else:
+            burl = None
+
         if _table not in self.db or (permit and not permit(self.ACTION["read"], _table)):
-            return self.xml.root(resources, domain=self.domain, url=self.base_url)
+            return self.xml.root(resources, domain=self.domain, url=burl)
 
         table = self.db[_table]
 
@@ -412,8 +431,21 @@ class ResourceController(object):
         else:
             url = "/%s/%s" % (prefix, name)
 
+        # TODO:
+        # Page count doesn't represent accessible records, so
+        # pages may be empty after filtering for permission
+        if page:
+            totalpages = ((self.db(query).count()-1)/pagesize) + 1
+            start_record = (page - 1) * pagesize
+            end_record = start_record + pagesize
+            limitby = (start_record, end_record)
+        else:
+            totalpages = 0
+            pages = None
+            limitby = None
+
         try:
-            records = self.db(query).select(table.ALL) or []
+            records = self.db(query).select(table.ALL, limitby=limitby) or []
         except:
             return None
 
@@ -424,15 +456,16 @@ class ResourceController(object):
             joins = filter(lambda j: permit(self.ACTION["read"], j[0].tablename), joins)
 
         cdata = {}
-        for i in xrange(0,len(joins)):
-            (c, pkey, fkey) = joins[i]
-            pkeys = map(lambda r: r[pkey], records)
+        if records:
+            for i in xrange(0,len(joins)):
+                (c, pkey, fkey) = joins[i]
+                pkeys = map(lambda r: r[pkey], records)
 
-            # TODO: Modify this section for use on GAE:
-            cquery = (c.table[fkey].belongs(pkeys))
-            if "deleted" in c.table:
-                cquery = (c.table.deleted==False) & cquery
-            cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
+                # TODO: Modify this section for use on GAE:
+                cquery = (c.table[fkey].belongs(pkeys))
+                if "deleted" in c.table:
+                    cquery = (c.table.deleted==False) & cquery
+                cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
 
         for i in xrange(0, len(records)):
             record = records[i]
@@ -440,7 +473,10 @@ class ResourceController(object):
             if audit is not None:
                 audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
 
-            resource_url = "%s/%s" % (url, record.id)
+            if show_urls:
+                resource_url = "%s/%s" % (url, record.id)
+            else:
+                resource_url = None
             resource = self.xml.element(table, record, skip=skip, url=resource_url)
 
             for j in xrange(0, len(joins)):
@@ -463,15 +499,19 @@ class ResourceController(object):
                         audit(self.ACTION["read"], c.prefix, c.name,
                               record=crecord.id, representation="xml")
 
-                    resource_url = "%s/%s/%s/%s" % \
-                                   (url, record.id, c.name, crecord.id)
+                    if show_urls:
+                        resource_url = "%s/%s/%s/%s" % \
+                                    (url, record.id, c.name, crecord.id)
+                    else:
+                        resource_url = None
+
                     cresource = self.xml.element(c.table, crecord,
                                                  skip=_skip, url=resource_url)
                     resource.append(cresource)
 
             resources.append(resource)
 
-        return self.xml.tree(resources, domain=self.domain, url=self.base_url)
+        return self.xml.tree(resources, domain=self.domain, url=burl, totalpages=totalpages, page=page)
 
     # -------------------------------------------------------------------------
     def import_xml(self, prefix, name, id, tree,
@@ -556,7 +596,7 @@ class ResourceController(object):
                 for k in xrange(0, len(celements)):
                     celement = celements[k]
 
-                    crecord = self.record(component.prefix, component.name, celement)
+                    crecord = self.xml.record(component.table, celement)
                     if not crecord:
                         self.error = S3XML_VALIDATION_ERROR
                         continue
@@ -588,7 +628,7 @@ class ResourceController(object):
                     self.error = S3XML_DATA_IMPORT_ERROR
                     continue
 
-        return True #(self.error is None)
+        return (self.error is None)
 
     # -------------------------------------------------------------------------
     def options_xml(self, prefix, name, joins=[]):
@@ -639,8 +679,6 @@ class XVector(object):
         self.accepted=True
         self.permitted=True
         self.committed=False
-
-        print [record[x] for x in record]
 
         if not self.id:
             self.id = 0
@@ -720,6 +758,8 @@ class XVector(object):
 
             component.record[fkey] = db_record[pkey]
             component.commit()
+
+        return True
 
 # *****************************************************************************
 # XRequest
@@ -1083,8 +1123,21 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
+        if "page" in self.request.vars:
+            page = int(self.request.vars["page"])
+        else:
+            page = None
+
+        if "pagesize" in self.request.vars:
+            pagesize = int(self.request.vars["pagesize"])
+            if not page:
+                page = 1
+        else:
+            pagesize = None
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                                  joins=joins, permit=permit, audit=audit)
+                                  joins=joins, permit=permit, audit=audit,
+                                  page=page, pagesize=pagesize)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)
@@ -1102,8 +1155,21 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
+        if "page" in self.request.vars:
+            page = int(self.request.vars["page"])
+        else:
+            page = None
+
+        if "pagesize" in self.request.vars:
+            pagesize = int(self.request.vars["pagesize"])
+            if not page:
+                page = 1
+        else:
+            pagesize = None
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                               joins=joins, permit=permit, audit=audit)
+                               joins=joins, permit=permit, audit=audit,
+                               page=page, pagesize=pagesize, show_urls=False)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)
@@ -1200,7 +1266,9 @@ class S3XML(object):
         resource="resource",
         domain="domain",
         url="url",
-        error="error"
+        error="error",
+        page="page",
+        totalpages="totalpages"
         )
 
     ACTION = dict(
@@ -1351,13 +1419,17 @@ class S3XML(object):
         return resource
 
     # -------------------------------------------------------------------------
-    def tree(self, resources, domain=None, url=None):
+    def tree(self, resources, domain=None, url=None, totalpages=None, page=None):
 
         """ Builds a tree from a list of elements """
 
         root = etree.Element(self.TAG["root"])
 
         if resources is not None:
+            if totalpages:
+                root.set(self.ATTRIBUTE["totalpages"], str(totalpages))
+            if page:
+                root.set(self.ATTRIBUTE["page"], str(page))
             if NO_LXML:
                 for r in resources:
                     root.append(r)
@@ -1606,7 +1678,7 @@ class S3XML(object):
             elif tag.startswith(self.PREFIX["resource"]):
                 resource = tag[len(self.PREFIX["resource"])+1:]
                 tag = self.TAG["resource"]
-            else:
+            elif not tag==self.TAG["root"]:
                 field = tag
                 tag = self.TAG["data"]
 
@@ -1736,17 +1808,17 @@ class S3XML(object):
                 if a==self.ATTRIBUTE["field"] and \
                    element.tag in (self.TAG["data"], self.TAG["reference"]):
                     continue
+
             obj[self.PREFIX["attribute"] + a] = self.xml_decode(attributes[a])
 
         if element.text:
             obj[self.PREFIX["text"]] = self.xml_decode(element.text)
 
-        for key in obj.keys():
-            if isinstance(obj[key], (list, tuple, dict)):
-                if len(obj[key])==0:
-                    del obj[key]
-                elif len(obj[key])==1 and not isinstance(obj[key][0], (list, tuple)):
-                    obj[key] = obj[key][0]
+        for key in filter(lambda k: isinstance(obj[k], (list, tuple, dict)), obj.keys()):
+            if len(obj[key])==0:
+                del obj[key]
+            elif len(obj[key])==1 and not isinstance(obj[key][0], (list, tuple)):
+                obj[key] = obj[key][0]
 
         if len(obj)==1:
             if obj.keys()[0]==self.PREFIX["text"] or \

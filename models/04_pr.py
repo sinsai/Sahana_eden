@@ -25,27 +25,22 @@ module = 'pr'
 # Address (address)
 #
 pr_address_type_opts = {
-    1:T('Home Address'),
-    2:T('Office Address'),
-    3:T('Holiday Address'),
-    99:T('other')
+        1:T('Home Address'),
+        2:T('Office Address'),
+        3:T('Holiday Address'),
+        99:T('other')
     }
 
-opt_pr_address_type = SQLTable(None, 'opt_pr_address_type',
-                        Field('opt_pr_address_type','integer',
-                            requires = IS_IN_SET(pr_address_type_opts),
-                            default = 99,
-                            label = T('Address Type'),
-                            represent = lambda opt: opt and pr_address_type_opts[opt]))
-
-#
-# address table ---------------------------------------------------------------
-#
 resource = 'address'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                     pr_pe_id,                           # Person Entity ID
-                    opt_pr_address_type,                # Address type
+                    Field('opt_pr_address_type',
+                          'integer',
+                          requires = IS_IN_SET(pr_address_type_opts),
+                          default = 99,
+                          label = T('Address Type'),
+                          represent = lambda opt: opt and pr_address_type_opts[opt]),
                     Field('co_name'),                   # c/o Name
                     Field('street1'),                   # Street Address 1
                     Field('street2'),                   # Street Address 2
@@ -59,7 +54,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                     Field('comment'),                   # Comment
                     migrate=migrate)
 
-# Joined Resource
+# Component
 s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby='pr_pe_id',
@@ -113,13 +108,6 @@ pr_contact_method_opts = {
     99:T('other')
     }
 
-opt_pr_contact_method = SQLTable(None, 'opt_pr_contact_method',
-                        Field('opt_pr_contact_method', 'integer',
-                            requires = IS_IN_SET(pr_contact_method_opts),
-                            default = 99,
-                            label = T('Contact Method'),
-                            represent = lambda opt: opt and pr_contact_method_opts[opt]))
-
 #
 # contact table ---------------------------------------------------------------
 #
@@ -128,7 +116,12 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                               # Person Entity ID
                 Field('name'),                          # Contact name (optional)
-                opt_pr_contact_method,                  # Contact Method
+                Field('opt_pr_contact_method',
+                      'integer',
+                      requires = IS_IN_SET(pr_contact_method_opts),
+                      default = 99,
+                      label = T('Contact Method'),
+                      represent = lambda opt: opt and pr_contact_method_opts[opt]),
                 Field('person_name'),                   # Contact person name
                 Field('priority'),                      # Priority
                 Field('value', notnull=True),
@@ -185,13 +178,6 @@ pr_image_type_opts = {
     99:T('other')
     }
 
-opt_pr_image_type = SQLTable(None, 'opt_pr_image_type',
-                    db.Field('opt_pr_image_type', 'integer',
-                    requires = IS_IN_SET(pr_image_type_opts),
-                    default = 1,
-                    label = T('Image Type'),
-                    represent = lambda opt: opt and pr_image_type_opts[opt]))
-
 #
 # image table -----------------------------------------------------------------
 #
@@ -199,7 +185,12 @@ resource = 'image'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,
-                opt_pr_image_type,
+                Field('opt_pr_image_type',
+                      'integer',
+                      requires = IS_IN_SET(pr_image_type_opts),
+                      default = 1,
+                      label = T('Image Type'),
+                      represent = lambda opt: opt and pr_image_type_opts[opt]),
                 Field('title'),
                 Field('image', 'upload', autodelete=True),
                 Field('description'),
@@ -247,13 +238,6 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #
 pr_presence_condition_opts = vita.presence_conditions
 
-opt_pr_presence_condition = SQLTable(None, 'opt_pr_presence_condition',
-                        Field('opt_pr_presence_condition', 'integer',
-                            requires = IS_IN_SET(pr_presence_condition_opts),
-                            default = vita.DEFAULT_PRESENCE,
-                            label = T('Presence Condition'),
-                            represent = lambda opt: opt and pr_presence_condition_opts[opt]))
-
 #
 # presence table --------------------------------------------------------------
 #
@@ -268,7 +252,11 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('lat'),                       # Latitude
                 Field('lon'),                       # Longitude
                 Field('time', 'datetime'),          # Time
-                opt_pr_presence_condition,          # Presence Condition
+                Field('opt_pr_presence_condition', 'integer',
+                      requires = IS_IN_SET(pr_presence_condition_opts),
+                      default = vita.DEFAULT_PRESENCE,
+                      label = T('Presence Condition'),
+                      represent = lambda opt: opt and pr_presence_condition_opts[opt]),
                 Field('proc_desc'),                 # Procedure description (for procedure) TODO: replace by option field?
                 Field('origin'),                    # Origin (for transfer and transit) TODO: replace by location reference?
                 Field('destination'),               # Destination (for transfer and transit) TODO: replace by location reference?
@@ -671,412 +659,6 @@ pr_pd_smoking_habits_opts = {                # D2-46/01 Smoking Habits, Type
     99:T('Data not available')
     }
 
-opt_pr_pd_bodily_constitution = SQLTable(None, 'opt_pr_pd_bodily_constitution',
-                                db.Field('opt_pr_pd_bodily_constitution', 'integer',
-                                requires = IS_IN_SET(pr_pd_bodily_constitution_opts),
-                                default = 99,
-                                label = T('Bodily Constitution'),
-                                represent = lambda opt: opt and pr_pd_bodily_constitution_opts[opt]))
-
-opt_pr_pd_race_group = SQLTable(None, 'opt_pr_pd_race_group',
-                                db.Field('opt_pr_pd_race_group', 'integer',
-                                requires = IS_IN_SET(pr_pd_race_group_opts),
-                                default = 99,
-                                label = T('Race group'),
-                                represent = lambda opt: opt and pr_pd_race_group_opts[opt]))
-
-opt_pr_pd_race_complexion = SQLTable(None, 'opt_pr_pd_race_complexion',
-                                db.Field('opt_pr_pd_race_complexion', 'integer',
-                                requires = IS_IN_SET(pr_pd_race_complexion_opts),
-                                default = 99,
-                                label = T('Race, complexion'),
-                                represent = lambda opt: opt and pr_pd_race_complexion_opts[opt]))
-
-opt_pr_pd_head_form_front = SQLTable(None, 'opt_pr_pd_head_form_front',
-                                db.Field('opt_pr_pd_head_form_front', 'integer',
-                                requires = IS_IN_SET(pr_pd_head_form_front_opts),
-                                default = 99,
-                                label = T('Head form, front'),
-                                represent = lambda opt: opt and pr_pd_head_form_front_opts[opt]))
-
-opt_pr_pd_head_form_profile = SQLTable(None, 'opt_pr_pd_head_form_profile',
-                                db.Field('opt_pr_pd_head_form_profile', 'integer',
-                                requires = IS_IN_SET(pr_pd_head_form_profile_opts),
-                                default = 99,
-                                label = T('Head form, profile'),
-                                represent = lambda opt: opt and pr_pd_head_form_profile_opts[opt]))
-
-opt_pr_pd_hair_head_type = SQLTable(None, 'opt_pr_pd_hair_head_type',
-                                db.Field('opt_pr_pd_hair_head_type', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_head_type_opts),
-                                default = 99,
-                                label = T('Hair of the head, Type'),
-                                represent = lambda opt: opt and pr_pd_hair_head_type_opts[opt]))
-
-opt_pr_pd_hair_head_length = SQLTable(None, 'opt_pr_pd_hair_head_length',
-                                db.Field('opt_pr_pd_hair_head_length', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_head_length_opts),
-                                default = 99,
-                                label = T('Hair of the head, Length'),
-                                represent = lambda opt: opt and pr_pd_hair_head_length_opts[opt]))
-
-opt_pr_pd_hair_head_colour = SQLTable(None, 'opt_pr_pd_hair_head_colour',
-                                db.Field('opt_pr_pd_hair_head_colour', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                                default = 99,
-                                label = T('Hair of the head, Colour'),
-                                represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]))
-
-opt_pr_pd_hair_head_shade = SQLTable(None, 'opt_pr_pd_hair_head_shade',
-                                db.Field('opt_pr_pd_hair_head_shade', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_head_shade_opts),
-                                default = 99,
-                                label = T('Hair of the head, Shade of colour'),
-                                represent = lambda opt: opt and pr_pd_hair_head_shade_opts[opt]))
-
-opt_pr_pd_hair_head_thickness = SQLTable(None, 'opt_pr_pd_hair_head_thickness',
-                                db.Field('opt_pr_pd_hair_head_thickness', 'integer',
-                                requires = IS_IN_SET(pr_pd_thickness_opts),
-                                default = 99,
-                                label = T('Hair of the head, Thickness'),
-                                represent = lambda opt: opt and pr_pd_thickness_opts[opt]))
-
-opt_pr_pd_hair_head_style = SQLTable(None, 'opt_pr_pd_hair_head_style',
-                                db.Field('opt_pr_pd_hair_head_style', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_head_style_opts),
-                                default = 99,
-                                label = T('Hair of the head, Style'),
-                                represent = lambda opt: opt and pr_pd_hair_head_style_opts[opt]))
-
-opt_pr_pd_hair_head_parting = SQLTable(None, 'opt_pr_pd_hair_head_parting',
-                                db.Field('opt_pr_pd_hair_head_parting', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_head_parting_opts),
-                                default = 99,
-                                label = T('Hair of the head, Parting'),
-                                represent = lambda opt: opt and pr_pd_hair_head_parting_opts[opt]))
-
-opt_pr_pd_hair_head_baldness_ext = SQLTable(None, 'opt_pr_pd_hair_head_baldness_ext',
-                                db.Field('opt_pr_pd_hair_head_baldness_ext', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_head_baldness_ext_opts),
-                                default = 99,
-                                label = T('Hair of the head, Baldness (extent)'),
-                                represent = lambda opt: opt and pr_pd_hair_head_baldness_ext_opts[opt]))
-
-opt_pr_pd_hair_head_baldness_loc = SQLTable(None, 'opt_pr_pd_hair_head_baldness_loc',
-                                db.Field('opt_pr_pd_hair_head_baldness_loc', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_head_baldness_loc_opts),
-                                default = 99,
-                                label = T('Hair of the head, Baldness (location)'),
-                                represent = lambda opt: opt and pr_pd_hair_head_baldness_loc_opts[opt]))
-
-opt_pr_pd_forehead_height = SQLTable(None, 'opt_pr_pd_forehead_height',
-                                db.Field('opt_pr_pd_forehead_height', 'integer',
-                                requires = IS_IN_SET(pr_pd_forehead_height_opts),
-                                default = 99,
-                                label = T('Forehead, Height'),
-                                represent = lambda opt: opt and pr_pd_forehead_height_opts[opt]))
-
-opt_pr_pd_forehead_width = SQLTable(None, 'opt_pr_pd_forehead_width',
-                                db.Field('opt_pr_pd_forehead_width', 'integer',
-                                requires = IS_IN_SET(pr_pd_forehead_width_opts),
-                                default = 99,
-                                label = T('Forehead, Width'),
-                                represent = lambda opt: opt and pr_pd_forehead_width_opts[opt]))
-
-opt_pr_pd_forehead_inclination = SQLTable(None, 'opt_pr_pd_forehead_inclination',
-                                db.Field('opt_pr_pd_forehead_inclination', 'integer',
-                                requires = IS_IN_SET(pr_pd_forehead_inclination_opts),
-                                default = 99,
-                                label = T('Forehead, Inclination'),
-                                represent = lambda opt: opt and pr_pd_forehead_inclination_opts[opt]))
-
-opt_pr_pd_eyebrows_shape = SQLTable(None, 'opt_pr_pd_eyebrows_shape',
-                                db.Field('opt_pr_pd_eyebrows_shape', 'integer',
-                                requires = IS_IN_SET(pr_pd_eyebrows_shape_opts),
-                                default = 99,
-                                label = T('Eyebrows, Shape'),
-                                represent = lambda opt: opt and pr_pd_eyebrows_shape_opts[opt]))
-
-opt_pr_pd_eyebrows_thickness = SQLTable(None, 'opt_pr_pd_eyebrows_thickness',
-                                db.Field('opt_pr_pd_eyebrows_thickness', 'integer',
-                                requires = IS_IN_SET(pr_pd_thickness_opts),
-                                default = 99,
-                                label = T('Eyebrows, Thickness'),
-                                represent = lambda opt: opt and pr_pd_thickness_opts[opt]))
-
-opt_pr_pd_eyebrows_peculiarities = SQLTable(None, 'opt_pr_pd_eyebrows_peculiarities',
-                                db.Field('opt_pr_pd_eyebrows_peculiarities', 'integer',
-                                requires = IS_IN_SET(pr_pd_eyebrows_peculiarities_opts),
-                                default = 99,
-                                label = T('Eyebrows, Peculiarities'),
-                                represent = lambda opt: opt and pr_pd_eyebrows_peculiarities_opts[opt]))
-
-opt_pr_pd_eyes_colour = SQLTable(None, 'opt_pr_pd_eyes_colour',
-                                db.Field('opt_pr_pd_eyes_colour', 'integer',
-                                requires = IS_IN_SET(pr_pd_eyes_colour_opts),
-                                default = 99,
-                                label = T('Eyes, Colour'),
-                                represent = lambda opt: opt and pr_pd_eyes_colour_opts[opt]))
-
-opt_pr_pd_eyes_shade = SQLTable(None, 'opt_pr_pd_eyes_shade',
-                                db.Field('opt_pr_pd_eyes_shade', 'integer',
-                                requires = IS_IN_SET(pr_pd_eyes_shade_opts),
-                                default = 99,
-                                label = T('Eyes, Shade'),
-                                represent = lambda opt: opt and pr_pd_eyes_shade_opts[opt]))
-
-opt_pr_pd_eyes_distance = SQLTable(None, 'opt_pr_pd_eyes_distance',
-                                db.Field('opt_pr_pd_eyes_distance', 'integer',
-                                requires = IS_IN_SET(pr_pd_size_opts),
-                                default = 99,
-                                label = T('Eyes, Distance between Eyes'),
-                                represent = lambda opt: opt and pr_pd_size_opts[opt]))
-
-opt_pr_pd_eyes_peculiarities = SQLTable(None, 'opt_pr_pd_eyes_peculiarities',
-                                db.Field('opt_pr_pd_eyes_peculiarities', 'integer',
-                                requires = IS_IN_SET(pr_pd_eyes_peculiarities_opts),
-                                default = 99,
-                                label = T('Eyes, Peculiarities'),
-                                represent = lambda opt: opt and pr_pd_eyes_peculiarities_opts[opt]))
-
-opt_pr_pd_nose_size = SQLTable(None, 'opt_pr_pd_nose_size',
-                                db.Field('opt_pr_pd_nose_size', 'integer',
-                                requires = IS_IN_SET(pr_pd_size_opts),
-                                default = 99,
-                                label = T('Nose, size'),
-                                represent = lambda opt: opt and pr_pd_size_opts[opt]))
-
-opt_pr_pd_nose_shape = SQLTable(None, 'opt_pr_pd_nose_shape',
-                                db.Field('opt_pr_pd_nose_shape', 'integer',
-                                requires = IS_IN_SET(pr_pd_nose_shape_opts),
-                                default = 99,
-                                label = T('Nose, shape'),
-                                represent = lambda opt: opt and pr_pd_nose_shape_opts[opt]))
-
-opt_pr_pd_nose_curve = SQLTable(None, 'opt_pr_pd_nose_curve',
-                                db.Field('opt_pr_pd_nose_curve', 'integer',
-                                requires = IS_IN_SET(pr_pd_nose_curve_opts),
-                                default = 99,
-                                label = T('Nose, Curve'),
-                                represent = lambda opt: opt and pr_pd_nose_curve_opts[opt]))
-
-opt_pr_pd_nose_angle = SQLTable(None, 'opt_pr_pd_nose_angle',
-                                db.Field('opt_pr_pd_nose_angle', 'integer',
-                                requires = IS_IN_SET(pr_pd_nose_angle_opts),
-                                default = 99,
-                                label = T('Nose, Angle'),
-                                represent = lambda opt: opt and pr_pd_nose_angle_opts[opt]))
-
-opt_pr_pd_hair_facial_type = SQLTable(None, 'opt_pr_pd_hair_facial_type',
-                                db.Field('opt_pr_pd_hair_facial_type', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_facial_type_opts),
-                                default = 99,
-                                label = T('Facial hair, Type'),
-                                represent = lambda opt: opt and pr_pd_hair_facial_type_opts[opt]))
-
-opt_pr_pd_hair_facial_colour = SQLTable(None, 'opt_pr_pd_hair_facial_colour',
-                                db.Field('opt_pr_pd_hair_facial_colour', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                                default = 99,
-                                label = T('Facial hair, Colour'),
-                                represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]))
-
-opt_pr_pd_ears_size = SQLTable(None, 'opt_pr_pd_ears_size',
-                                db.Field('opt_pr_pd_ears_size', 'integer',
-                                requires = IS_IN_SET(pr_pd_size_opts),
-                                default = 99,
-                                label = T('Ears, size'),
-                                represent = lambda opt: opt and pr_pd_size_opts[opt]))
-
-opt_pr_pd_ears_angle = SQLTable(None, 'opt_pr_pd_ears_angle',
-                                db.Field('opt_pr_pd_ears_angle', 'integer',
-                                requires = IS_IN_SET(pr_pd_ears_angle_opts),
-                                default = 99,
-                                label = T('Ears, angle'),
-                                represent = lambda opt: opt and pr_pd_ears_angle_opts[opt]))
-
-opt_pr_pd_mouth_size = SQLTable(None, 'opt_pr_pd_mouth_size',
-                                db.Field('opt_pr_pd_mouth_size', 'integer',
-                                requires = IS_IN_SET(pr_pd_size_opts),
-                                default = 99,
-                                label = T('Mouth, Size'),
-                                represent = lambda opt: opt and pr_pd_size_opts[opt]))
-
-opt_pr_pd_lips_shape = SQLTable(None, 'opt_pr_pd_lips_shape',
-                                db.Field('opt_pr_pd_lips_shape', 'integer',
-                                requires = IS_IN_SET(pr_pd_thickness_opts),
-                                default = 99,
-                                label = T('Lips, Shape'),
-                                represent = lambda opt: opt and pr_pd_thickness_opts[opt]))
-
-opt_pr_pd_chin_size = SQLTable(None, 'opt_pr_pd_chin_size',
-                                db.Field('opt_pr_pd_chin_size', 'integer',
-                                requires = IS_IN_SET(pr_pd_size_opts),
-                                default = 99,
-                                label = T('Chin, Size'),
-                                represent = lambda opt: opt and pr_pd_size_opts[opt]))
-
-opt_pr_pd_chin_inclination = SQLTable(None, 'opt_pr_pd_chin_inclination',
-                                db.Field('opt_pr_pd_chin_inclination', 'integer',
-                                requires = IS_IN_SET(pr_pd_chin_inclination_opts),
-                                default = 99,
-                                label = T('Chin, Inclination'),
-                                represent = lambda opt: opt and pr_pd_chin_inclination_opts[opt]))
-
-opt_pr_pd_chin_shape = SQLTable(None, 'opt_pr_pd_chin_shape',
-                                db.Field('opt_pr_pd_chin_shape', 'integer',
-                                requires = IS_IN_SET(pr_pd_chin_shape_opts),
-                                default = 99,
-                                label = T('Chin, Shape'),
-                                represent = lambda opt: opt and pr_pd_chin_shape_opts[opt]))
-
-opt_pr_pd_teeth_gaps = SQLTable(None, 'opt_pr_pd_teeth_gaps',
-                                db.Field('opt_pr_pd_teeth_gaps', 'integer',
-                                requires = IS_IN_SET(pr_pd_ul_opts),
-                                default = 99,
-                                label = T('Teeth, Gaps between front teeth'),
-                                represent = lambda opt: opt and pr_pd_ul_opts[opt]))
-
-opt_pr_pd_teeth_missing = SQLTable(None, 'opt_pr_pd_teeth_missing',
-                                db.Field('opt_pr_pd_teeth_missing', 'integer',
-                                requires = IS_IN_SET(pr_pd_ul_opts),
-                                default = 99,
-                                label = T('Teeth, Missing teeth'),
-                                represent = lambda opt: opt and pr_pd_ul_opts[opt]))
-
-opt_pr_pd_teeth_toothless = SQLTable(None, 'opt_pr_pd_teeth_toothless',
-                                db.Field('opt_pr_pd_teeth_toothless', 'integer',
-                                requires = IS_IN_SET(pr_pd_ul_opts),
-                                default = 99,
-                                label = T('Teeth, Toothless'),
-                                represent = lambda opt: opt and pr_pd_ul_opts[opt]))
-
-opt_pr_pd_teeth_dentures_lower = SQLTable(None, 'opt_pr_pd_teeth_dentures_lower',
-                                db.Field('opt_pr_pd_teeth_dentures_lower', 'integer',
-                                requires = IS_IN_SET(pr_pd_teeth_dentures_lower_opts),
-                                default = 99,
-                                label = T('Teeth, Dentures'),
-                                represent = lambda opt: opt and pr_pd_teeth_dentures_lower_opts[opt]))
-
-opt_pr_pd_teeth_dentures_upper = SQLTable(None, 'opt_pr_pd_teeth_dentures_upper',
-                                db.Field('opt_pr_pd_teeth_dentures_upper', 'integer',
-                                requires = IS_IN_SET(pr_pd_teeth_dentures_upper_opts),
-                                default = 99,
-                                label = T('Teeth, Dentures'),
-                                represent = lambda opt: opt and pr_pd_teeth_dentures_upper_opts[opt]))
-
-opt_pr_pd_neck_length = SQLTable(None, 'opt_pr_pd_neck_length',
-                                db.Field('opt_pr_pd_neck_length', 'integer',
-                                requires = IS_IN_SET(pr_pd_length_opts),
-                                default = 99,
-                                label = T('Neck, Length'),
-                                represent = lambda opt: opt and pr_pd_length_opts[opt]))
-
-opt_pr_pd_neck_shape = SQLTable(None, 'opt_pr_pd_neck_shape',
-                                db.Field('opt_pr_pd_neck_shape', 'integer',
-                                requires = IS_IN_SET(pr_pd_thickness_opts),
-                                default = 99,
-                                label = T('Neck, Shape'),
-                                represent = lambda opt: opt and pr_pd_thickness_opts[opt]))
-
-opt_pr_pd_neck_peculiarities = SQLTable(None, 'opt_pr_pd_neck_peculiarities',
-                                db.Field('opt_pr_pd_neck_peculiarities', 'integer',
-                                requires = IS_IN_SET(pr_pd_neck_peculiarities_opts),
-                                default = 99,
-                                label = T('Neck, Peculiarities'),
-                                represent = lambda opt: opt and pr_pd_neck_peculiarities_opts[opt]))
-
-opt_pr_pd_hands_shape = SQLTable(None, 'opt_pr_pd_hands_shape',
-                                db.Field('opt_pr_pd_hands_shape', 'integer',
-                                requires = IS_IN_SET(pr_pd_hands_shape_opts),
-                                default = 99,
-                                label = T('Hands, Shape'),
-                                represent = lambda opt: opt and pr_pd_hands_shape_opts[opt]))
-
-opt_pr_pd_hands_size = SQLTable(None, 'opt_pr_pd_hands_size',
-                                db.Field('opt_pr_pd_hands_size', 'integer',
-                                requires = IS_IN_SET(pr_pd_size_opts),
-                                default = 99,
-                                label = T('Hands, Size'),
-                                represent = lambda opt: opt and pr_pd_size_opts[opt]))
-
-opt_pr_pd_hands_nails_length = SQLTable(None, 'opt_pr_pd_hands_nails_length',
-                                db.Field('opt_pr_pd_hands_nails_length', 'integer',
-                                requires = IS_IN_SET(pr_pd_length_opts),
-                                default = 99,
-                                label = T('Hands, Nail length'),
-                                represent = lambda opt: opt and pr_pd_length_opts[opt]))
-
-opt_pr_pd_hands_nails_peculiarities = SQLTable(None, 'opt_pr_pd_hands_nails_peculiarities',
-                                db.Field('opt_pr_pd_hands_nails_peculiarities', 'integer',
-                                requires = IS_IN_SET(pr_pd_hands_nails_peculiarities_opts),
-                                default = 99,
-                                label = T('Hands, Nail peculiarities'),
-                                represent = lambda opt: opt and pr_pd_hands_nails_peculiarities_opts[opt]))
-
-opt_pr_pd_hands_nicotine = SQLTable(None, 'opt_pr_pd_hands_nicotine',
-                                db.Field('opt_pr_pd_hands_nicotine', 'integer',
-                                requires = IS_IN_SET(pr_pd_hands_nicotine_opts),
-                                default = 99,
-                                label = T('Hands, Nicotine'),
-                                represent = lambda opt: opt and pr_pd_hands_nicotine_opts[opt]))
-
-opt_pr_pd_feet_shape = SQLTable(None, 'opt_pr_pd_feet_shape',
-                                db.Field('opt_pr_pd_feet_shape', 'integer',
-                                requires = IS_IN_SET(pr_pd_feet_shape_opts),
-                                default = 99,
-                                label = T('Feet, Shape'),
-                                represent = lambda opt: opt and pr_pd_feet_shape_opts[opt]))
-
-opt_pr_pd_feet_condition = SQLTable(None, 'opt_pr_pd_feet_condition',
-                                db.Field('opt_pr_pd_feet_condition', 'integer',
-                                requires = IS_IN_SET(pr_pd_feet_condition_opts),
-                                default = 99,
-                                label = T('Feet, Condition'),
-                                represent = lambda opt: opt and pr_pd_feet_condition_opts[opt]))
-
-opt_pr_pd_feet_nails = SQLTable(None, 'opt_pr_pd_feet_nails',
-                                db.Field('opt_pr_pd_feet_nails', 'integer',
-                                requires = IS_IN_SET(pr_pd_feet_nails_opts),
-                                default = 99,
-                                label = T('Feet, Nails'),
-                                represent = lambda opt: opt and pr_pd_feet_nails_opts[opt]))
-
-opt_pr_pd_hair_body_extent = SQLTable(None, 'opt_pr_pd_hair_body_extent',
-                                db.Field('opt_pr_pd_hair_body_extent', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_body_extent_opts),
-                                default = 99,
-                                label = T('Body hair, Extent'),
-                                represent = lambda opt: opt and pr_pd_hair_body_extent_opts[opt]))
-
-opt_pr_pd_hair_body_colour = SQLTable(None, 'opt_pr_pd_hair_body_colour',
-                                db.Field('opt_pr_pd_hair_body_colour', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                                default = 99,
-                                label = T('Body hair, Colour'),
-                                represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]))
-
-opt_pr_pd_hair_pubic_extent = SQLTable(None, 'opt_pr_pd_hair_pubic_extent',
-                                db.Field('opt_pr_pd_hair_pubic_extent', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_pubic_extent_opts),
-                                default = 99,
-                                label = T('Pubic hair, Extent'),
-                                represent = lambda opt: opt and pr_pd_hair_pubic_extent_opts[opt]))
-
-opt_pr_pd_hair_pubic_colour = SQLTable(None, 'opt_pr_pd_hair_pubic_colour',
-                                db.Field('opt_pr_pd_hair_pubic_colour', 'integer',
-                                requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                                default = 99,
-                                label = T('Pubic hair, Colour'),
-                                represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]))
-
-opt_pr_pd_smoking_habits = SQLTable(None, 'opt_pr_pd_smoking_habits',
-                                db.Field('opt_pr_pd_smoking_habits', 'integer',
-                                requires = IS_IN_SET(pr_pd_smoking_habits_opts),
-                                default = 99,
-                                label = T('Smoking habits'),
-                                represent = lambda opt: opt and pr_pd_smoking_habits_opts[opt]))
-
 #
 # Physical Description Tables -------------------------------------------------
 #
@@ -1091,10 +673,25 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('est_age'),                       # D1-31A   Estimated Age
                 Field('height'),                        # D1-32    Height
                 Field('weight'),                        # D1-33    Weight
-                opt_pr_pd_bodily_constitution,          # D1-34/01 Bodily Constitution
-                opt_pr_pd_race_group,                   # D1-35/01 Race, group
+                Field('opt_pr_pd_bodily_constitution',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_bodily_constitution_opts),
+                      default = 99,
+                      label = T('Bodily Constitution'),
+                      represent = lambda opt: opt and pr_pd_bodily_constitution_opts[opt]),
+                Field('opt_pr_pd_race_group',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_race_group_opts),
+                      default = 99,
+                      label = T('Race group'),
+                      represent = lambda opt: opt and pr_pd_race_group_opts[opt]),
                 Field('race_type'),                     # D1-35/01 Race, type
-                opt_pr_pd_race_complexion,              # D1-35/01 Race, complexion
+                Field('opt_pr_pd_race_complexion',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_race_complexion_opts),
+                      default = 99,
+                      label = T('Race, complexion'),
+                      represent = lambda opt: opt and pr_pd_race_complexion_opts[opt]),
                 Field('other_peculiarities', 'text'),   # D3-55    Other Peculiarities
                 #Field('body_sketch'),                   # D4       Body Sketch
                 migrate=migrate)
@@ -1117,17 +714,72 @@ resource = 'pd_head'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
-                opt_pr_pd_head_form_front,               # D1-34/02 Head form, front
-                opt_pr_pd_head_form_profile,             # D1-34/03 Head form, profile
-                opt_pr_pd_hair_head_type,                # D1-36/01 Hair of the head, Type
-                opt_pr_pd_hair_head_length,              # D1-36/02 Hair of the head, Length
-                opt_pr_pd_hair_head_colour,              # D1-36/03 Hair of the head, Colour
-                opt_pr_pd_hair_head_shade,               # D1-36/04 Hair of the head, Shade of colour
-                opt_pr_pd_hair_head_thickness,           # D1-36/05 Hair of the head, Thickness
-                opt_pr_pd_hair_head_style,               # D1-36/06 Hair of the head, Style
-                opt_pr_pd_hair_head_parting,             # D1-36/06 Hair of the head, Parting
-                opt_pr_pd_hair_head_baldness_ext,        # D1-36/07 Hair of the head, Baldness (extent)
-                opt_pr_pd_hair_head_baldness_loc,        # D1-36/07 Hair of the head, Baldness (location)
+                Field('opt_pr_pd_head_form_front',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_head_form_front_opts),
+                      default = 99,
+                      label = T('Head form, front'),
+                      represent = lambda opt: opt and pr_pd_head_form_front_opts[opt]),
+                Field('opt_pr_pd_head_form_profile',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_head_form_profile_opts),
+                      default = 99,
+                      label = T('Head form, profile'),
+                      represent = lambda opt: opt and pr_pd_head_form_profile_opts[opt]),
+                Field('opt_pr_pd_hair_head_type',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_head_type_opts),
+                      default = 99,
+                      label = T('Hair of the head, Type'),
+                      represent = lambda opt: opt and pr_pd_hair_head_type_opts[opt]),
+                Field('opt_pr_pd_hair_head_length',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_head_length_opts),
+                      default = 99,
+                      label = T('Hair of the head, Length'),
+                      represent = lambda opt: opt and pr_pd_hair_head_length_opts[opt]),
+                Field('opt_pr_pd_hair_head_colour',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                      default = 99,
+                      label = T('Hair of the head, Colour'),
+                      represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]),
+                Field('opt_pr_pd_hair_head_shade',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_head_shade_opts),
+                      default = 99,
+                      label = T('Hair of the head, Shade of colour'),
+                      represent = lambda opt: opt and pr_pd_hair_head_shade_opts[opt]),
+                Field('opt_pr_pd_hair_head_thickness',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_thickness_opts),
+                      default = 99,
+                      label = T('Hair of the head, Thickness'),
+                      represent = lambda opt: opt and pr_pd_thickness_opts[opt]),
+                Field('opt_pr_pd_hair_head_style',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_head_style_opts),
+                      default = 99,
+                      label = T('Hair of the head, Style'),
+                      represent = lambda opt: opt and pr_pd_hair_head_style_opts[opt]),
+                Field('opt_pr_pd_hair_head_parting',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_head_parting_opts),
+                      default = 99,
+                      label = T('Hair of the head, Parting'),
+                      represent = lambda opt: opt and pr_pd_hair_head_parting_opts[opt]),
+                Field('opt_pr_pd_hair_head_baldness_ext',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_head_baldness_ext_opts),
+                      default = 99,
+                      label = T('Hair of the head, Baldness (extent)'),
+                      represent = lambda opt: opt and pr_pd_hair_head_baldness_ext_opts[opt]),
+                Field('opt_pr_pd_hair_head_baldness_loc',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_head_baldness_loc_opts),
+                      default = 99,
+                      label = T('Hair of the head, Baldness (location)'),
+                      represent = lambda opt: opt and pr_pd_hair_head_baldness_loc_opts[opt]),
                 Field('hair_head_other'),               # D1-36/08 Hair of the head, Other information
                 migrate=migrate)
 
@@ -1149,38 +801,153 @@ resource = 'pd_face'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
-                opt_pr_pd_forehead_height,               # D2-37/01 Forehead, Height
-                opt_pr_pd_forehead_width,                # D2-37/01 Forehead, Width
-                opt_pr_pd_forehead_inclination,          # D2-37/02 Forehead, Inclination
-                opt_pr_pd_eyebrows_shape,                # D2-38/01 Eyebrows, Shape
-                opt_pr_pd_eyebrows_thickness,            # D2-38/01 Eyebrows, Thickness
-                opt_pr_pd_eyebrows_peculiarities,        # D2-38/02 Eyebrows, Peculiarities
-                opt_pr_pd_eyes_colour,                   # D2-39/01 Eyes, Colour
-                opt_pr_pd_eyes_shade,                    # D2-39/02 Eyes, Shade
-                opt_pr_pd_eyes_distance,                 # D2-39/03 Eyes, Distance between Eyes
-                opt_pr_pd_eyes_peculiarities,            # D2-39/04 Eyes, Peculiarities
-                opt_pr_pd_nose_size,                     # D2-40/01 Nose, size
-                opt_pr_pd_nose_shape,                    # D2-40/01 Nose, shape
+                Field('opt_pr_pd_forehead_height',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_forehead_height_opts),
+                      default = 99,
+                      label = T('Forehead, Height'),
+                      represent = lambda opt: opt and pr_pd_forehead_height_opts[opt]),
+                Field('opt_pr_pd_forehead_width',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_forehead_width_opts),
+                      default = 99,
+                      label = T('Forehead, Width'),
+                      represent = lambda opt: opt and pr_pd_forehead_width_opts[opt]),
+                Field('opt_pr_pd_forehead_inclination',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_forehead_inclination_opts),
+                      default = 99,
+                      label = T('Forehead, Inclination'),
+                      represent = lambda opt: opt and pr_pd_forehead_inclination_opts[opt]),
+                Field('opt_pr_pd_eyebrows_shape',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_eyebrows_shape_opts),
+                      default = 99,
+                      label = T('Eyebrows, Shape'),
+                      represent = lambda opt: opt and pr_pd_eyebrows_shape_opts[opt]),
+                Field('opt_pr_pd_eyebrows_thickness',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_thickness_opts),
+                      default = 99,
+                      label = T('Eyebrows, Thickness'),
+                      represent = lambda opt: opt and pr_pd_thickness_opts[opt]),
+                Field('opt_pr_pd_eyebrows_peculiarities',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_eyebrows_peculiarities_opts),
+                      default = 99,
+                      label = T('Eyebrows, Peculiarities'),
+                      represent = lambda opt: opt and pr_pd_eyebrows_peculiarities_opts[opt]),
+                Field('opt_pr_pd_eyes_colour',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_eyes_colour_opts),
+                      default = 99,
+                      label = T('Eyes, Colour'),
+                      represent = lambda opt: opt and pr_pd_eyes_colour_opts[opt]),
+                Field('opt_pr_pd_eyes_shade',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_eyes_shade_opts),
+                      default = 99,
+                      label = T('Eyes, Shade'),
+                      represent = lambda opt: opt and pr_pd_eyes_shade_opts[opt]),
+                Field('opt_pr_pd_eyes_distance',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_size_opts),
+                      default = 99,
+                      label = T('Eyes, Distance between Eyes'),
+                      represent = lambda opt: opt and pr_pd_size_opts[opt]),
+                Field('opt_pr_pd_eyes_peculiarities',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_eyes_peculiarities_opts),
+                      default = 99,
+                      label = T('Eyes, Peculiarities'),
+                      represent = lambda opt: opt and pr_pd_eyes_peculiarities_opts[opt]),
+                Field('opt_pr_pd_nose_size',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_size_opts),
+                      default = 99,
+                      label = T('Nose, size'),
+                      represent = lambda opt: opt and pr_pd_size_opts[opt]),
+                Field('opt_pr_pd_nose_shape',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_nose_shape_opts),
+                      default = 99,
+                      label = T('Nose, shape'),
+                      represent = lambda opt: opt and pr_pd_nose_shape_opts[opt]),
                 Field('nose_spectacle_marks', 'boolean', default=False),          # D2-40/02 Nose, Peculiarities - Marks of spectacles
                 #Field('nose_misshapen'),                # D2-40/02 Nose, Peculiarities - Misshapen
                 Field('nose_peculiarities'),            # D2-40/02 Nose, Peculiarities
-                opt_pr_pd_nose_curve,                    # D2-40/03 Nose, Curve
-                opt_pr_pd_nose_angle,                    # D2-40/03 Nose, Angle
-                opt_pr_pd_hair_facial_type,              # D2-41/01 Facial hair, Type
-                opt_pr_pd_hair_facial_colour,            # D2-41/02 Facial hair, Colour
-                opt_pr_pd_ears_size,                     # D2-42/01 Ears, size
-                opt_pr_pd_ears_angle,                    # D2-42/01 Ears, angle
+                Field('opt_pr_pd_nose_curve',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_nose_curve_opts),
+                      default = 99,
+                      label = T('Nose, Curve'),
+                      represent = lambda opt: opt and pr_pd_nose_curve_opts[opt]),
+                Field('opt_pr_pd_nose_angle',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_nose_angle_opts),
+                      default = 99,
+                      label = T('Nose, Angle'),
+                      represent = lambda opt: opt and pr_pd_nose_angle_opts[opt]),
+                Field('opt_pr_pd_hair_facial_type',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_facial_type_opts),
+                      default = 99,
+                      label = T('Facial hair, Type'),
+                      represent = lambda opt: opt and pr_pd_hair_facial_type_opts[opt]),
+                Field('opt_pr_pd_hair_facial_colour',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                      default = 99,
+                      label = T('Facial hair, Colour'),
+                      represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]),
+                Field('opt_pr_pd_ears_size',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_size_opts),
+                      default = 99,
+                      label = T('Ears, size'),
+                      represent = lambda opt: opt and pr_pd_size_opts[opt]),
+                Field('opt_pr_pd_ears_angle',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_ears_angle_opts),
+                      default = 99,
+                      label = T('Ears, angle'),
+                      represent = lambda opt: opt and pr_pd_ears_angle_opts[opt]),
                 Field('ears_lobes_attached', 'boolean', default=False),           # D2-42/02 Ears, Ear Lobes
                 Field('ears_piercings_left', 'integer', default=0),           # D2-42/02 Ears, Number of Piercings, left
                 Field('ears_piercings_right', 'integer', default=0),          # D2-42/02 Ears, Number of Piercings, right
-                opt_pr_pd_mouth_size,                    # D2-43/01 Mouth, Size
+                Field('opt_pr_pd_mouth_size',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_size_opts),
+                      default = 99,
+                      label = T('Mouth, Size'),
+                      represent = lambda opt: opt and pr_pd_size_opts[opt]),
                 Field('mouth_other'),                   # D2-43/01 Mouth, Other
-                opt_pr_pd_lips_shape,                    # D2-44/01 Lips, Shape
+                Field('opt_pr_pd_lips_shape',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_thickness_opts),
+                      default = 99,
+                      label = T('Lips, Shape'),
+                      represent = lambda opt: opt and pr_pd_thickness_opts[opt]),
                 Field('lips_madeup', 'boolean', default=False), # D2.44/01 Lips, made-up
                 Field('lips_other'),                    # D2-44/01 Lips, Other
-                opt_pr_pd_chin_size,                     # D3-47/01 Chin, Size
-                opt_pr_pd_chin_inclination,              # D3-47/01 Chin, Inclination
-                opt_pr_pd_chin_shape,                    # D3-47/02 Chin, Shape
+                Field('opt_pr_pd_chin_size',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_size_opts),
+                      default = 99,
+                      label = T('Chin, Size'),
+                      represent = lambda opt: opt and pr_pd_size_opts[opt]),
+                Field('opt_pr_pd_chin_inclination',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_chin_inclination_opts),
+                      default = 99,
+                      label = T('Chin, Inclination'),
+                      represent = lambda opt: opt and pr_pd_chin_inclination_opts[opt]),
+                Field('opt_pr_pd_chin_shape',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_chin_shape_opts),
+                      default = 99,
+                      label = T('Chin, Shape'),
+                      represent = lambda opt: opt and pr_pd_chin_shape_opts[opt]),
                 migrate=migrate)
 
 # Joined Resource
@@ -1206,11 +973,36 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('teeth_crowns', 'boolean', default=False),        # D2-45/01 Teeth, Conditions
                 Field('teeth_bridges', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
                 Field('teeth_implants', 'boolean', default=False),      # D2-45/01 Teeth, Conditions
-                opt_pr_pd_teeth_gaps,                    # D2-45/02 Teeth, Gaps between front teeth
-                opt_pr_pd_teeth_missing,                 # D2-45/02 Teeth, Missing teeth
-                opt_pr_pd_teeth_toothless,               # D2-45/02 Teeth, Toothless
-                opt_pr_pd_teeth_dentures_lower,          # D2-45/03 Teeth, Dentures
-                opt_pr_pd_teeth_dentures_upper,          # D2-45/03 Teeth, Dentures
+                Field('opt_pr_pd_teeth_gaps',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_ul_opts),
+                      default = 99,
+                      label = T('Teeth, Gaps between front teeth'),
+                      represent = lambda opt: opt and pr_pd_ul_opts[opt]),
+                Field('opt_pr_pd_teeth_missing',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_ul_opts),
+                      default = 99,
+                      label = T('Teeth, Missing teeth'),
+                      represent = lambda opt: opt and pr_pd_ul_opts[opt]),
+                Field('opt_pr_pd_teeth_toothless',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_ul_opts),
+                      default = 99,
+                      label = T('Teeth, Toothless'),
+                      represent = lambda opt: opt and pr_pd_ul_opts[opt]),
+                Field('opt_pr_pd_teeth_dentures_lower',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_teeth_dentures_lower_opts),
+                      default = 99,
+                      label = T('Teeth, Dentures'),
+                      represent = lambda opt: opt and pr_pd_teeth_dentures_lower_opts[opt]),
+                Field('opt_pr_pd_teeth_dentures_upper',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_teeth_dentures_upper_opts),
+                      default = 99,
+                      label = T('Teeth, Dentures'),
+                      represent = lambda opt: opt and pr_pd_teeth_dentures_upper_opts[opt]),
                 Field('teeth_dentures_id'),             # D2-45/03 Teeth, Dentures, ID-number
                 migrate=migrate)
 
@@ -1232,27 +1024,107 @@ resource = 'pd_body'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
-                opt_pr_pd_neck_length,                   # D3-48/01 Neck, Length
-                opt_pr_pd_neck_shape,                    # D3-48/01 Neck, Shape
-                opt_pr_pd_neck_peculiarities,            # D3-48/02 Neck, Peculiarities
+                Field('opt_pr_pd_neck_length',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_length_opts),
+                      default = 99,
+                      label = T('Neck, Length'),
+                      represent = lambda opt: opt and pr_pd_length_opts[opt]),
+                Field('opt_pr_pd_neck_shape',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_thickness_opts),
+                      default = 99,
+                      label = T('Neck, Shape'),
+                      represent = lambda opt: opt and pr_pd_thickness_opts[opt]),
+                Field('opt_pr_pd_neck_peculiarities',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_neck_peculiarities_opts),
+                      default = 99,
+                      label = T('Neck, Peculiarities'),
+                      represent = lambda opt: opt and pr_pd_neck_peculiarities_opts[opt]),
                 Field('neck_collar_size', length=10),              # D3-48/02 Neck, Collar Size
                 Field('neck_circumference', length=10),            # D3-48/02 Neck, Circumference
-                opt_pr_pd_hands_shape,                   # D3-49/01 Hands, Shape
-                opt_pr_pd_hands_size,                    # D3-49/01 Hands, Size
-                opt_pr_pd_hands_nails_length,            # D3-49/02 Hands, Nail length
-                opt_pr_pd_hands_nails_peculiarities,     # D3-49/03 Hands, Nail peculiarities
-                opt_pr_pd_hands_nicotine,                # D3-49/03 Hands, Nicotine
-                opt_pr_pd_feet_shape,                    # D3-50/01 Feet, Shape
+                Field('opt_pr_pd_hands_shape',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hands_shape_opts),
+                      default = 99,
+                      label = T('Hands, Shape'),
+                      represent = lambda opt: opt and pr_pd_hands_shape_opts[opt]),
+                Field('opt_pr_pd_hands_size',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_size_opts),
+                      default = 99,
+                      label = T('Hands, Size'),
+                      represent = lambda opt: opt and pr_pd_size_opts[opt]),
+                Field('opt_pr_pd_hands_nails_length',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_length_opts),
+                      default = 99,
+                      label = T('Hands, Nail length'),
+                      represent = lambda opt: opt and pr_pd_length_opts[opt]),
+                Field('opt_pr_pd_hands_nails_peculiarities',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hands_nails_peculiarities_opts),
+                      default = 99,
+                      label = T('Hands, Nail peculiarities'),
+                      represent = lambda opt: opt and pr_pd_hands_nails_peculiarities_opts[opt]),
+                Field('opt_pr_pd_hands_nicotine',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hands_nicotine_opts),
+                      default = 99,
+                      label = T('Hands, Nicotine'),
+                      represent = lambda opt: opt and pr_pd_hands_nicotine_opts[opt]),
+                Field('opt_pr_pd_feet_shape',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_feet_shape_opts),
+                      default = 99,
+                      label = T('Feet, Shape'),
+                      represent = lambda opt: opt and pr_pd_feet_shape_opts[opt]),
                 Field('pd_feet_size'),                     # D3-50/01 Feet, Size
-                opt_pr_pd_feet_condition,                # D3-50/02 Feet, Condition
-                opt_pr_pd_feet_nails,                    # D3-50/02 Feet, Nails
+                Field('opt_pr_pd_feet_condition',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_feet_condition_opts),
+                      default = 99,
+                      label = T('Feet, Condition'),
+                      represent = lambda opt: opt and pr_pd_feet_condition_opts[opt]),
+                Field('opt_pr_pd_feet_nails',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_feet_nails_opts),
+                      default = 99,
+                      label = T('Feet, Nails'),
+                      represent = lambda opt: opt and pr_pd_feet_nails_opts[opt]),
                 Field('feet_peculiarities'),            # D3-50/03 Feet, Peculiarities
-                opt_pr_pd_hair_body_extent,              # D3-51/01 Body hair, Extent
-                opt_pr_pd_hair_body_colour,              # D3-51/02 Body hair, Colour
-                opt_pr_pd_hair_pubic_extent,             # D3-52/01 Pubic hair, Extent
-                opt_pr_pd_hair_pubic_colour,             # D3-52/02 Pubic hair, Colour
+                Field('opt_pr_pd_hair_body_extent',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_body_extent_opts),
+                      default = 99,
+                      label = T('Body hair, Extent'),
+                      represent = lambda opt: opt and pr_pd_hair_body_extent_opts[opt]),
+                Field('opt_pr_pd_hair_body_colour',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                      default = 99,
+                      label = T('Body hair, Colour'),
+                      represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]),
+                Field('opt_pr_pd_hair_pubic_extent',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_pubic_extent_opts),
+                      default = 99,
+                      label = T('Pubic hair, Extent'),
+                      represent = lambda opt: opt and pr_pd_hair_pubic_extent_opts[opt]),
+                Field('opt_pr_pd_hair_pubic_colour',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                      default = 99,
+                      label = T('Pubic hair, Colour'),
+                      represent = lambda opt: opt and pr_pd_hair_colour_opts[opt]),
                 Field('circumcision', 'boolean', default=False),                  # D3-54    Circumcision
-                opt_pr_pd_smoking_habits,                # D2-46/01 Smoking Habits, Type
+                Field('opt_pr_pd_smoking_habits',
+                      'integer',
+                      requires = IS_IN_SET(pr_pd_smoking_habits_opts),
+                      default = 99,
+                      label = T('Smoking habits'),
+                      represent = lambda opt: opt and pr_pd_smoking_habits_opts[opt]),
                 Field('smoking_stains_teeth', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
                 Field('smoking_stains_lips', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
                 Field('smoking_stains_moustache', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
@@ -1297,13 +1169,6 @@ pr_id_type_opts = {
     99:T('other')
     }
 
-opt_pr_id_type = SQLTable(None, 'opt_pr_id_type',
-                    Field('opt_pr_id_type', 'integer',
-                        requires = IS_IN_SET(pr_id_type_opts),
-                        default = 1,
-                        label = T('ID type'),
-                        represent = lambda opt: opt and pr_id_type_opts[opt]))
-
 #
 # identitiy table -------------------------------------------------------------
 #
@@ -1311,7 +1176,12 @@ resource = 'identity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 person_id,                          # Reference to person
-                opt_pr_id_type,                     # ID type
+                Field('opt_pr_id_type',
+                      'integer',
+                      requires = IS_IN_SET(pr_id_type_opts),
+                      default = 1,
+                      label = T('ID type'),
+                      represent = lambda opt: opt and pr_id_type_opts[opt]),
                 Field('type'),                      # Description for type 'Other'
                 Field('value'),                     # ID value
                 Field('country_code', length=4),    # Country Code (for National ID Cards)
@@ -1418,41 +1288,41 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 # *****************************************************************************
 # Network (network)
 #
-pr_network_type_opts = {
-    1:T('Family'),
-    2:T('Friends'),
-    3:T('Colleagues'),
-    99:T('other')
-    }
+#pr_network_type_opts = {
+#    1:T('Family'),
+#    2:T('Friends'),
+#    3:T('Colleagues'),
+#    99:T('other')
+#    }
 
-opt_pr_network_type = SQLTable(None, 'opt_pr_network_type',
-                    Field('opt_pr_network_type','integer',
-                        requires = IS_IN_SET(pr_network_type_opts),
-                        default = 99,
-                        label = T('Network Type'),
-                        represent = lambda opt: opt and pr_network_type_opts[opt]))
+#opt_pr_network_type = SQLTable(None, 'opt_pr_network_type',
+#                    Field('opt_pr_network_type','integer',
+#                        requires = IS_IN_SET(pr_network_type_opts),
+#                        default = 99,
+#                        label = T('Network Type'),
+#                        represent = lambda opt: opt and pr_network_type_opts[opt]))
 
 #
 # network table ---------------------------------------------------------------
 #
-resource = 'network'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                person_id,                          # Reference to person (owner)
-                opt_pr_network_type,                # Network type
-                Field('comment'),                   # a comment (optional)
-                migrate=migrate)
+#resource = 'network'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#                person_id,                          # Reference to person (owner)
+#                opt_pr_network_type,                # Network type
+#                Field('comment'),                   # a comment (optional)
+#                migrate=migrate)
 
 # Joined Resource
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(pr_person='person_id'),
-    deletable=True,
-    editable=True,
-    list_fields = ['id', 'opt_pr_network_type', 'comment'])
+#s3xrc.model.add_component(module, resource,
+#    multiple=True,
+#    joinby=dict(pr_person='person_id'),
+#    deletable=True,
+#    editable=True,
+#    list_fields = ['id', 'opt_pr_network_type', 'comment'])
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+#db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 # Field representation
 
@@ -1463,13 +1333,13 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #
 # network_id: reusable field for other tables to reference ----------------------
 #
-network_id = SQLTable(None, 'network_id',
-                Field('network_id', db.pr_network,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_network.id', '%(id)s')),
-                represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
-                comment = DIV(A(T('Add Network'), _class='thickbox', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Network')), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
-                ondelete = 'RESTRICT'
-                ))
+#network_id = SQLTable(None, 'network_id',
+#                Field('network_id', db.pr_network,
+#                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_network.id', '%(id)s')),
+#                represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
+#                comment = DIV(A(T('Add Network'), _class='thickbox', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Network')), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
+#                ondelete = 'RESTRICT'
+#                ))
 
 # *****************************************************************************
 # Network membership (network_membership)
@@ -1478,22 +1348,22 @@ network_id = SQLTable(None, 'network_id',
 #
 # network_membership table ----------------------------------------------------
 #
-resource = 'network_membership'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                network_id,
-                person_id,
-                Field('description'),
-                Field('comment'),
-                migrate=migrate)
+#resource = 'network_membership'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, deletion_status,
+#                network_id,
+#                person_id,
+#                Field('description'),
+#                Field('comment'),
+#                migrate=migrate)
 
 # Joined Resource
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(pr_person='person_id'),
-    deletable=True,
-    editable=True,
-    list_fields = ['id','network_id','person_id','description','comment'])
+#s3xrc.model.add_component(module, resource,
+#    multiple=True,
+#    joinby=dict(pr_person='person_id'),
+#    deletable=True,
+#    editable=True,
+#    list_fields = ['id','network_id','person_id','description','comment'])
 
 # Field validation
 
@@ -1553,113 +1423,6 @@ db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name)
 # *****************************************************************************
 # Functions:
 #
-
-#
-# shn_pr_person_pfif ----------------------------------------------------------
-#
-def shn_pr_person_pfif(person, domain):
-
-    domain = request.env.server_name
-
-    if person:
-        pe = vita.pentity(person)
-
-        person_record_id = "%s/%s" % (domain, pe.uuid)
-        pfif = dict(person_record_id=person_record_id)
-
-        entry_date = str(person.modified_on)
-        source_date = str(person.created_on)
-        pfif.update(entry_date=entry_date, source_date=source_date)
-
-        first_name = person.first_name.upper()
-        last_name = person.last_name.upper()
-        pfif.update(first_name=first_name, last_name=last_name)
-
-        # Get home address of that person
-        query = (db.pr_address.deleted==False)
-        query = (db.pr_address.pr_pe_id==pe.id) & query
-        query = (db.pr_address.opt_pr_address_type==1) & query
-
-        rows = db(query).select(db.pr_address.ALL)
-        if rows:
-            home_address = rows[0]
-            home_city = home_address.city
-            if home_address.opt_pr_country == 184: # United States?
-                home_state = home_address.state
-            else:
-                home_state = shn_list_of_nations[home_address.opt_pr_country]
-
-            home_neighborhood = '' # not available
-            home_street = home_address.street1
-            home_zip = home_address.postcode
-        else:
-            home_city = ''
-            home_state = ''
-            home_neighborhood = ''
-            home_street = ''
-            home_zip = ''
-
-        pfif.update(
-            home_city = home_city,
-            home_state = home_state,
-            home_neighborhood = home_neighborhood,
-            home_street = home_street,
-            home_zip = home_zip
-            )
-
-        # Get photograph of that person
-        query = (db.pr_image.deleted==False)
-        query = (db.pr_image.pr_pe_id==pe.id) & query
-        query = (db.pr_image.opt_pr_image_type==1) & query
-
-        rows = db(query).select(db.pr_image.ALL)
-        if rows:
-            photo = rows[0]
-            photo_url = "%s/%s/pr/download/%s" % (S3_PUBLIC_URL, request.application, photo.image)
-        else:
-            photo_url = ''
-
-        pfif.update(photo_url=photo_url)
-
-        # Get admin data
-        try:
-            admin_data = db(db.s3_setting.id==1).select(
-                                    db.s3_setting.admin_name,
-                                    db.s3_setting.admin_email,
-                                    db.s3_setting.admin_tel)[0]
-
-            author_name = admin_data.admin_name
-            author_email = admin_data.admin_email
-            author_phone = admin_data.admin_tel
-        except:
-            author_name = ''
-            author_email = ''
-            author_phone = ''
-
-        pfif.update(author_name=author_name, author_email=author_email, author_phone=author_phone)
-
-        # Add source data
-        source_name = domain
-        source_url = "%s/%s/%s/person/%s.pfif" % (S3_PUBLIC_URL, request.application, module, person.id)
-        pfif.update(source_name=source_name, source_url=source_url)
-
-        return dict(person=pfif)
-
-    else:
-        return None
-
-#
-# shn_pr_presence_pfif --------------------------------------------------------
-#
-def shn_pr_presence_pfif(record, domain):
-
-    if record:
-        note_record_id = "%s/%s" % (domain, record.uuid)
-        pfif = dict(note_record_id=note_record_id)
-
-        return dict(note=pfif)
-    else:
-        return None
 
 #
 # End

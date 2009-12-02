@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.0-1, 2009-12-02
+    @version: 1.4.0-2, 2009-12-02
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -1658,7 +1658,7 @@ class S3XML(object):
             elif tag.startswith(self.PREFIX["resource"]):
                 resource = tag[len(self.PREFIX["resource"])+1:]
                 tag = self.TAG["resource"]
-            else:
+            elif not tag==self.TAG["root"]:
                 field = tag
                 tag = self.TAG["data"]
 

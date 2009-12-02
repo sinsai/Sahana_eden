@@ -322,7 +322,7 @@ class ResourceController(object):
         delete="delete"
     )
 
-    ROWSPERPAGE=10
+    ROWSPERPAGE=3
 
     def __init__(self, db, domain=None, base_url=None, rpp=None):
 
@@ -416,11 +416,16 @@ class ResourceController(object):
         else:
             url = "/%s/%s" % (prefix, name)
 
+        # TODO:
+        # Page count doesn't represent accessible records, so
+        # pages may be empty after filtering for permission
         if page:
+            pages = ((self.db(query).count()-1)/self.rpp) + 1
             start_record = (page - 1) * self.rpp
             end_record = start_record + self.rpp
             limitby = (start_record, end_record)
         else:
+            pages = None
             limitby = None
 
         try:
@@ -483,7 +488,7 @@ class ResourceController(object):
 
             resources.append(resource)
 
-        return self.xml.tree(resources, domain=self.domain, url=self.base_url)
+        return self.xml.tree(resources, domain=self.domain, url=self.base_url, pages=pages)
 
     # -------------------------------------------------------------------------
     def import_xml(self, prefix, name, id, tree,
@@ -1222,7 +1227,8 @@ class S3XML(object):
         resource="resource",
         domain="domain",
         url="url",
-        error="error"
+        error="error",
+        pages="pages"
         )
 
     ACTION = dict(
@@ -1373,13 +1379,15 @@ class S3XML(object):
         return resource
 
     # -------------------------------------------------------------------------
-    def tree(self, resources, domain=None, url=None):
+    def tree(self, resources, domain=None, url=None, pages=None):
 
         """ Builds a tree from a list of elements """
 
         root = etree.Element(self.TAG["root"])
 
         if resources is not None:
+            if pages:
+                root.set(self.ATTRIBUTE["pages"], str(pages))
             if NO_LXML:
                 for r in resources:
                     root.append(r)

@@ -29,11 +29,14 @@ def user():
     # Add newly-registered users to Person Registry & 'Authenticated' role
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
     
+    self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
+    
     # Use Custom Ext views
     if request.args[0] == 'login':
+        response.title = T('Login')
         response.view = 'auth/login.html'
     
-    return dict(form=form, module_name=module_name)
+    return dict(form=form, self_registration=self_registration)
 
 # S3 framework functions
 def index():

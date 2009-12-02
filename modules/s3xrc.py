@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.0-2, 2009-12-02
+    @version: 1.4.0-3, 2009-12-02
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -387,7 +387,14 @@ class ResourceController(object):
         return XRequest(self, prefix, name, request, session=session)
 
     # -------------------------------------------------------------------------
-    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None, page=None, pagesize=None):
+    def export_xml(self, prefix, name, id,
+                   joins=[],
+                   skip=[],
+                   permit=None,
+                   audit=None,
+                   page=None,
+                   pagesize=None,
+                   show_urls=True):
 
         """ Exports data as XML tree """
 
@@ -399,8 +406,13 @@ class ResourceController(object):
 
         _table = "%s_%s" % (prefix, name)
 
+        if show_urls:
+            burl = self.base_url
+        else:
+            burl = None
+
         if _table not in self.db or (permit and not permit(self.ACTION["read"], _table)):
-            return self.xml.root(resources, domain=self.domain, url=self.base_url)
+            return self.xml.root(resources, domain=self.domain, url=burl)
 
         table = self.db[_table]
 
@@ -428,6 +440,7 @@ class ResourceController(object):
             end_record = start_record + pagesize
             limitby = (start_record, end_record)
         else:
+            totalpages = 0
             pages = None
             limitby = None
 
@@ -460,7 +473,10 @@ class ResourceController(object):
             if audit is not None:
                 audit(self.ACTION["read"], prefix, name, record=record.id, representation="xml")
 
-            resource_url = "%s/%s" % (url, record.id)
+            if show_urls:
+                resource_url = "%s/%s" % (url, record.id)
+            else:
+                resource_url = None
             resource = self.xml.element(table, record, skip=skip, url=resource_url)
 
             for j in xrange(0, len(joins)):
@@ -483,15 +499,19 @@ class ResourceController(object):
                         audit(self.ACTION["read"], c.prefix, c.name,
                               record=crecord.id, representation="xml")
 
-                    resource_url = "%s/%s/%s/%s" % \
-                                   (url, record.id, c.name, crecord.id)
+                    if show_urls:
+                        resource_url = "%s/%s/%s/%s" % \
+                                    (url, record.id, c.name, crecord.id)
+                    else:
+                        resource_url = None
+
                     cresource = self.xml.element(c.table, crecord,
                                                  skip=_skip, url=resource_url)
                     resource.append(cresource)
 
             resources.append(resource)
 
-        return self.xml.tree(resources, domain=self.domain, url=self.base_url, totalpages=totalpages, page=page)
+        return self.xml.tree(resources, domain=self.domain, url=burl, totalpages=totalpages, page=page)
 
     # -------------------------------------------------------------------------
     def import_xml(self, prefix, name, id, tree,
@@ -1149,7 +1169,7 @@ class XRequest(object):
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins, permit=permit, audit=audit,
-                               page=page, pagesize=pagesize)
+                               page=page, pagesize=pagesize, show_urls=False)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)

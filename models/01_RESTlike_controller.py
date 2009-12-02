@@ -50,19 +50,27 @@ s3xrc = ResourceController(db,
 #
 # json_message ----------------------------------------------------------------
 #
-def json_message(success=True, status_code="200", message=None):
+def json_message(success=True, status_code="200", message=None, tree=None):
 
     if success:
         status="success"
     else:
         status="failed"
 
-    if message:
-        return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
-               (status, status_code, message)
+    if not success:
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}, "Tree": %s }' % \
+                (status, status_code, message, tree)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}, "Tree": %s }' % \
+                (status, status_code, tree)
     else:
-        return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
-               (status, status_code)
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
+                (status, status_code, message)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
+                (status, status_code)
 
 # *****************************************************************************
 # Exports
@@ -511,7 +519,8 @@ def import_json(jr, onvalidation=None, onaccept=None):
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.error)
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 501, s3xrc.error, tree=tree)
 
     return dict(item=item)
 
@@ -555,7 +564,8 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.error)
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 501, s3xrc.error, tree=tree)
 
     return dict(item=item)
 

@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.4-4, 2009-12-02
+    @version: 1.4.0-1, 2009-12-02
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -576,7 +576,7 @@ class ResourceController(object):
                 for k in xrange(0, len(celements)):
                     celement = celements[k]
 
-                    crecord = self.record(component.prefix, component.name, celement)
+                    crecord = self.xml.record(component.table, celement)
                     if not crecord:
                         self.error = S3XML_VALIDATION_ERROR
                         continue
@@ -608,7 +608,7 @@ class ResourceController(object):
                     self.error = S3XML_DATA_IMPORT_ERROR
                     continue
 
-        return True #(self.error is None)
+        return (self.error is None)
 
     # -------------------------------------------------------------------------
     def options_xml(self, prefix, name, joins=[]):
@@ -659,8 +659,6 @@ class XVector(object):
         self.accepted=True
         self.permitted=True
         self.committed=False
-
-        print [record[x] for x in record]
 
         if not self.id:
             self.id = 0
@@ -740,6 +738,8 @@ class XVector(object):
 
             component.record[fkey] = db_record[pkey]
             component.commit()
+
+        return True
 
 # *****************************************************************************
 # XRequest

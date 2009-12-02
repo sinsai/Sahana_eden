@@ -289,7 +289,7 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 opt_pr_gender,
                 opt_pr_age_group,
                 Field('email', length=128, unique=True), # Needed for AAA (change this!)
-                Field('mobile_phone', 'integer'),        # Needed for SMS (change this!)
+                Field('mobile_phone'),                   # Needed for SMS (change this!)
                 # Person Details
                 Field('date_of_birth', 'date'),         # Sahana legacy
                 opt_pr_nationality,                     # Nationality

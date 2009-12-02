@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.4-3, 2009-12-02
+    @version: 1.3.4-4, 2009-12-02
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -387,12 +387,15 @@ class ResourceController(object):
         return XRequest(self, prefix, name, request, session=session)
 
     # -------------------------------------------------------------------------
-    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None, page=None):
+    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None, page=None, pagesize=None):
 
         """ Exports data as XML tree """
 
         self.error = None
         resources = []
+
+        if not pagesize:
+            pagesize = self.rpp
 
         _table = "%s_%s" % (prefix, name)
 
@@ -420,9 +423,9 @@ class ResourceController(object):
         # Page count doesn't represent accessible records, so
         # pages may be empty after filtering for permission
         if page:
-            totalpages = ((self.db(query).count()-1)/self.rpp) + 1
-            start_record = (page - 1) * self.rpp
-            end_record = start_record + self.rpp
+            totalpages = ((self.db(query).count()-1)/pagesize) + 1
+            start_record = (page - 1) * pagesize
+            end_record = start_record + pagesize
             limitby = (start_record, end_record)
         else:
             pages = None
@@ -1105,8 +1108,16 @@ class XRequest(object):
         else:
             page = None
 
+        if "pagesize" in self.request.vars:
+            pagesize = int(self.request.vars["pagesize"])
+            if not page:
+                page = 1
+        else:
+            pagesize = None
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                                  joins=joins, permit=permit, audit=audit, page=page)
+                                  joins=joins, permit=permit, audit=audit,
+                                  page=page, pagesize=pagesize)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)
@@ -1129,8 +1140,16 @@ class XRequest(object):
         else:
             page = None
 
+        if "pagesize" in self.request.vars:
+            pagesize = int(self.request.vars["pagesize"])
+            if not page:
+                page = 1
+        else:
+            pagesize = None
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                               joins=joins, permit=permit, audit=audit, page=page)
+                               joins=joins, permit=permit, audit=audit,
+                               page=page, pagesize=pagesize)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)

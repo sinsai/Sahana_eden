@@ -322,7 +322,7 @@ class ResourceController(object):
         delete="delete"
     )
 
-    ROWSPERPAGE=3
+    ROWSPERPAGE=10
 
     def __init__(self, db, domain=None, base_url=None, rpp=None):
 
@@ -420,7 +420,7 @@ class ResourceController(object):
         # Page count doesn't represent accessible records, so
         # pages may be empty after filtering for permission
         if page:
-            pages = ((self.db(query).count()-1)/self.rpp) + 1
+            totalpages = ((self.db(query).count()-1)/self.rpp) + 1
             start_record = (page - 1) * self.rpp
             end_record = start_record + self.rpp
             limitby = (start_record, end_record)
@@ -488,7 +488,7 @@ class ResourceController(object):
 
             resources.append(resource)
 
-        return self.xml.tree(resources, domain=self.domain, url=self.base_url, pages=pages)
+        return self.xml.tree(resources, domain=self.domain, url=self.base_url, totalpages=totalpages, page=page)
 
     # -------------------------------------------------------------------------
     def import_xml(self, prefix, name, id, tree,
@@ -1228,7 +1228,8 @@ class S3XML(object):
         domain="domain",
         url="url",
         error="error",
-        pages="pages"
+        page="page",
+        totalpages="totalpages"
         )
 
     ACTION = dict(
@@ -1379,15 +1380,17 @@ class S3XML(object):
         return resource
 
     # -------------------------------------------------------------------------
-    def tree(self, resources, domain=None, url=None, pages=None):
+    def tree(self, resources, domain=None, url=None, totalpages=None, page=None):
 
         """ Builds a tree from a list of elements """
 
         root = etree.Element(self.TAG["root"])
 
         if resources is not None:
-            if pages:
-                root.set(self.ATTRIBUTE["pages"], str(pages))
+            if totalpages:
+                root.set(self.ATTRIBUTE["totalpages"], str(totalpages))
+            if page:
+                root.set(self.ATTRIBUTE["page"], str(page))
             if NO_LXML:
                 for r in resources:
                     root.append(r)

@@ -11,9 +11,12 @@ var editor = new Ext.ux.grid.RowEditor({
         saveText: '{{=T('Update')}}'
     });
 
+{{table = request.controller + '_' + request.function}}
+
 // JsonReader.  Notice additional meta-data params for defining the core attributes of your json-response
 var reader = new Ext.data.JsonReader({
-    totalProperty: 'total',
+    totalProperty: '@totalrecords',
+    //totalProperty: 'total',
     successProperty: 'success',
     idProperty: 'id',
     root: '$_{{=table}}',       // We only want the data for our table
@@ -32,45 +35,19 @@ var writer = new Ext.data.JsonWriter({
     encode: false   // <-- don't return encoded JSON -- causes Ext.Ajax#request to send data using jsonData config rather than HTTP params
 });
 
-{{table = request.controller + '_' + request.function}}
-
-// TEMP: static store
-var myData = 
-    { "$_pr_person":[
-        {
-        "first_name": "Fran",
-        "last_name": "Boon",
-    }, {
-        "first_name": "Michael",
-        "last_name": "Howden",
-    }]
-};
-var myReader = new Ext.data.JsonReader({
-    root: '$_{{=table}}',    // We only want the data for our table
-    }, [
-        {{for field in form.fields:}}
-          {{if form.custom.widget[field]:}}
-            {name: '{{=form.custom.widget[field].attributes['_name']}}'},
-          {{pass}}
-        {{pass}}
-    ]
-);
-
 // Store collects the Proxy, Reader and Writer together.
 var store = new Ext.data.Store({
     root: '$_{{=table}}',    // We only want the data for our table
     //id: 'user',
-    data: myData,
-    //restful: true,
-    //proxy: proxy,
-    //reader: myReader,
+    restful: true,
+    proxy: proxy,
     reader: reader,
-    //writer: writer
+    writer: writer
 });
     
 // Load the store immediately (only for remote Store)
-//store.load();
-//store.load({params:{start:0, limit:25}});
+// client-side paging enabled. FIXME: read value for this from server
+store.load({params:{start:0, limit:25}});
 
 ////
 // ***New*** centralized listening of DataProxy events "beforewrite", "write" and "writeexception"
@@ -155,14 +132,14 @@ var userGrid = new xg.GridPanel({
         displayInfo: true,
         displayMsg: 'Displaying topics {0} - {1} of {2}',
         emptyMsg: "{{=s3.crud_strings[table].msg_list_empty}}",
-        items:[
+        items: [
             '-', {
             pressed: true,
             enableToggle:true,
             text: 'Show Preview',
             cls: 'x-btn-text-icon details',
             toggleHandler: function(btn, pressed){
-                var view = grid.getView();
+                var view = userGrid.getView();
                 view.showPreview = pressed;
                 view.refresh();
             }
@@ -179,9 +156,11 @@ var userGrid = new xg.GridPanel({
  */
 function onAdd(btn, ev) {
     var u = new userGrid.store.recordType({
-        first : '',
-        last: '',
-        email : ''
+        {{for field in form.fields:}}
+          {{if form.custom.widget[field]:}}
+            {{=form.custom.widget[field].attributes['_name']}} : '',
+          {{pass}}
+        {{pass}}
     });
     editor.stopEditing();
     userGrid.store.insert(0, u);

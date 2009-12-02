@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.3.4-1, 2009-11-30
+    @version: 1.3.4-2, 2009-12-02
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -322,7 +322,9 @@ class ResourceController(object):
         delete="delete"
     )
 
-    def __init__(self, db, domain=None, base_url=None):
+    ROWSPERPAGE=10
+
+    def __init__(self, db, domain=None, base_url=None, rpp=None):
 
         assert db is not None, "Database must not be None."
         self.db = db
@@ -331,6 +333,8 @@ class ResourceController(object):
 
         self.domain = domain
         self.base_url = base_url
+
+        self.rpp = rpp or self.ROWSPERPAGE
 
         self.model = ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url)
@@ -383,7 +387,7 @@ class ResourceController(object):
         return XRequest(self, prefix, name, request, session=session)
 
     # -------------------------------------------------------------------------
-    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None):
+    def export_xml(self, prefix, name, id, joins=[], skip=[], permit=None, audit=None, page=None):
 
         """ Exports data as XML tree """
 
@@ -412,8 +416,15 @@ class ResourceController(object):
         else:
             url = "/%s/%s" % (prefix, name)
 
+        if page:
+            start_record = (page - 1) * self.rpp
+            end_record = start_record + self.rpp
+            limitby = (start_record, end_record)
+        else:
+            limitby = None
+
         try:
-            records = self.db(query).select(table.ALL) or []
+            records = self.db(query).select(table.ALL, limitby=limitby) or []
         except:
             return None
 
@@ -424,15 +435,16 @@ class ResourceController(object):
             joins = filter(lambda j: permit(self.ACTION["read"], j[0].tablename), joins)
 
         cdata = {}
-        for i in xrange(0,len(joins)):
-            (c, pkey, fkey) = joins[i]
-            pkeys = map(lambda r: r[pkey], records)
+        if records:
+            for i in xrange(0,len(joins)):
+                (c, pkey, fkey) = joins[i]
+                pkeys = map(lambda r: r[pkey], records)
 
-            # TODO: Modify this section for use on GAE:
-            cquery = (c.table[fkey].belongs(pkeys))
-            if "deleted" in c.table:
-                cquery = (c.table.deleted==False) & cquery
-            cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
+                # TODO: Modify this section for use on GAE:
+                cquery = (c.table[fkey].belongs(pkeys))
+                if "deleted" in c.table:
+                    cquery = (c.table.deleted==False) & cquery
+                cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
 
         for i in xrange(0, len(records)):
             record = records[i]
@@ -1083,8 +1095,13 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
+        if "page" in self.request.vars:
+            page = int(self.request.vars["page"])
+        else:
+            page = None
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                                  joins=joins, permit=permit, audit=audit)
+                                  joins=joins, permit=permit, audit=audit, page=page)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)
@@ -1102,8 +1119,13 @@ class XRequest(object):
         else:
             joins = self.rc.model.get_components(self.prefix, self.name)
 
+        if "page" in self.request.vars:
+            page = int(self.request.vars["page"])
+        else:
+            page = None
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                               joins=joins, permit=permit, audit=audit)
+                               joins=joins, permit=permit, audit=audit, page=page)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)
@@ -1736,17 +1758,17 @@ class S3XML(object):
                 if a==self.ATTRIBUTE["field"] and \
                    element.tag in (self.TAG["data"], self.TAG["reference"]):
                     continue
+
             obj[self.PREFIX["attribute"] + a] = self.xml_decode(attributes[a])
 
         if element.text:
             obj[self.PREFIX["text"]] = self.xml_decode(element.text)
 
-        for key in obj.keys():
-            if isinstance(obj[key], (list, tuple, dict)):
-                if len(obj[key])==0:
-                    del obj[key]
-                elif len(obj[key])==1 and not isinstance(obj[key][0], (list, tuple)):
-                    obj[key] = obj[key][0]
+        for key in filter(lambda k: isinstance(obj[k], (list, tuple, dict)), obj.keys()):
+            if len(obj[key])==0:
+                del obj[key]
+            elif len(obj[key])==1 and not isinstance(obj[key][0], (list, tuple)):
+                obj[key] = obj[key][0]
 
         if len(obj)==1:
             if obj.keys()[0]==self.PREFIX["text"] or \

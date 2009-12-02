@@ -419,12 +419,12 @@ class ResourceController(object):
         if id and isinstance(id, (list, tuple)):
             query = (table.id.belongs(id))
         elif id:
-            query = (table.id==id)
+            query = (table.id == id)
         else:
-            query = (table.id>0)
+            query = (table.id > 0)
 
         if "deleted" in table:
-            query = (table.deleted==False) & query
+            query = (table.deleted == False) & query
 
         if self.base_url:
             url = "%s/%s/%s" % (self.base_url, prefix, name)
@@ -434,8 +434,9 @@ class ResourceController(object):
         # TODO:
         # Page count doesn't represent accessible records, so
         # pages may be empty after filtering for permission
+        totalrecords = self.db(query).count()
         if page:
-            totalpages = ((self.db(query).count()-1)/pagesize) + 1
+            totalpages = ((totalrecords - 1) / pagesize) + 1
             start_record = (page - 1) * pagesize
             end_record = start_record + pagesize
             limitby = (start_record, end_record)
@@ -457,7 +458,7 @@ class ResourceController(object):
 
         cdata = {}
         if records:
-            for i in xrange(0,len(joins)):
+            for i in xrange(0, len(joins)):
                 (c, pkey, fkey) = joins[i]
                 pkeys = map(lambda r: r[pkey], records)
 
@@ -478,7 +479,7 @@ class ResourceController(object):
             else:
                 resource_url = None
             resource = self.xml.element(table, record, skip=skip, url=resource_url)
-
+            
             for j in xrange(0, len(joins)):
                 (c, pkey, fkey) = joins[j]
                 pkey = record[pkey]
@@ -508,10 +509,10 @@ class ResourceController(object):
                     cresource = self.xml.element(c.table, crecord,
                                                  skip=_skip, url=resource_url)
                     resource.append(cresource)
-
+            
             resources.append(resource)
 
-        return self.xml.tree(resources, domain=self.domain, url=burl, totalpages=totalpages, page=page)
+        return self.xml.tree(resources, domain=self.domain, url=burl, totalrecords=totalrecords , totalpages=totalpages, page=page)
 
     # -------------------------------------------------------------------------
     def import_xml(self, prefix, name, id, tree,
@@ -1267,6 +1268,7 @@ class S3XML(object):
         domain="domain",
         url="url",
         error="error",
+        totalrecords="totalrecords",
         page="page",
         totalpages="totalpages"
         )
@@ -1419,13 +1421,15 @@ class S3XML(object):
         return resource
 
     # -------------------------------------------------------------------------
-    def tree(self, resources, domain=None, url=None, totalpages=None, page=None):
+    def tree(self, resources, domain=None, url=None, totalrecords=None, totalpages=None, page=None):
 
         """ Builds a tree from a list of elements """
 
         root = etree.Element(self.TAG["root"])
 
         if resources is not None:
+            if totalrecords:
+                root.set(self.ATTRIBUTE["totalrecords"], str(totalrecords))
             if totalpages:
                 root.set(self.ATTRIBUTE["totalpages"], str(totalpages))
             if page:

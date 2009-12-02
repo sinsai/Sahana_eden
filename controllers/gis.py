@@ -216,7 +216,6 @@ def marker():
     db[table].name.label = T('Name')
     db[table].name.comment = SPAN("*", _class="req")
     db[table].image.label = T('Image')
-    db[table].image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 
     # CRUD Strings
     title_create = T('Add Marker')

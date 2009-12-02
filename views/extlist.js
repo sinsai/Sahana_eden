@@ -3,25 +3,28 @@ var App = new Ext.App({});
 
 // Create a standard HttpProxy instance.
 var proxy = new Ext.data.HttpProxy({
+    // Records are loaded via the JSON representation of the resource
     url: '{{=URL(r=request, vars={'format':'json'})}}'
 });
 
 var editor = new Ext.ux.grid.RowEditor({
-        saveText: {{=T('Update')}}
+        saveText: '{{=T('Update')}}'
     });
 
-// Typical JsonReader.  Notice additional meta-data params for defining the core attributes of your json-response
+// JsonReader.  Notice additional meta-data params for defining the core attributes of your json-response
 var reader = new Ext.data.JsonReader({
     totalProperty: 'total',
     successProperty: 'success',
     idProperty: 'id',
-    root: 'data',
+    root: '$_{{=table}}',       // We only want the data for our table
     messageProperty: 'message'  // <-- New "messageProperty" meta-data
 }, [
-    {name: 'id'},
-    {name: 'email', allowBlank: false},
-    {name: 'first', allowBlank: false},
-    {name: 'last', allowBlank: false}
+    {{for field in form.fields:}}
+      {{if form.custom.widget[field]:}}
+        {name: '{{=form.custom.widget[field].attributes['_name']}}'},
+        //{name: '{{=form.custom.widget[field].attributes['_name']}}', allowBlank: false},
+      {{pass}}
+    {{pass}}
 ]);
 
 // The new DataWriter component.
@@ -29,17 +32,45 @@ var writer = new Ext.data.JsonWriter({
     encode: false   // <-- don't return encoded JSON -- causes Ext.Ajax#request to send data using jsonData config rather than HTTP params
 });
 
-// Typical Store collecting the Proxy, Reader and Writer together.
-var store = new Ext.data.Store({
-    id: 'user',
-    restful: true,     // <-- This Store is RESTful
-    proxy: proxy,
-    reader: reader,
-    writer: writer    // <-- plug a DataWriter into the store just as you would a Reader
-});
+{{table = request.controller + '_' + request.function}}
 
-// load the store immeditately
-store.load();
+// TEMP: static store
+var myData = 
+    { "$_pr_person":[
+        {
+        "first_name": "Fran",
+        "last_name": "Boon",
+    }, {
+        "first_name": "Michael",
+        "last_name": "Howden",
+    }]
+};
+var myReader = new Ext.data.JsonReader({
+    root: '$_{{=table}}',    // We only want the data for our table
+    }, [
+        {{for field in form.fields:}}
+          {{if form.custom.widget[field]:}}
+            {name: '{{=form.custom.widget[field].attributes['_name']}}'},
+          {{pass}}
+        {{pass}}
+    ]
+);
+
+// Store collects the Proxy, Reader and Writer together.
+var store = new Ext.data.Store({
+    root: '$_{{=table}}',    // We only want the data for our table
+    //id: 'user',
+    data: myData,
+    //restful: true,
+    //proxy: proxy,
+    //reader: myReader,
+    reader: reader,
+    //writer: writer
+});
+    
+// Load the store immediately (only for remote Store)
+//store.load();
+//store.load({params:{start:0, limit:25}});
 
 ////
 // ***New*** centralized listening of DataProxy events "beforewrite", "write" and "writeexception"
@@ -66,59 +97,103 @@ Ext.data.DataProxy.addListener('exception', function(proxy, type, action, option
     App.setAlert(false, "Something bad happened while executing " + action);
 });
 
-// Let's pretend we rendered our grid-columns with meta-data from our ORM framework.
+// Get list of columns from the 'form' var
 var userColumns =  [
-    {header: "ID", width: 40, sortable: true, dataIndex: 'id'},
-    {header: "Email", width: 100, sortable: true, dataIndex: 'email', editor: new Ext.form.TextField({})},
-    {header: "First", width: 50, sortable: true, dataIndex: 'first', editor: new Ext.form.TextField({})},
-    {header: "Last", width: 50, sortable: true, dataIndex: 'last', editor: new Ext.form.TextField({})}
+    //{header: "ID", width: 40, sortable: true, dataIndex: 'id'},
+  {{for field in form.fields:}}
+    {{if form.custom.widget[field]:}}
+        {{if form.custom.widget[field].attributes['_name'] != 'Id':}}
+            {header: "{{=form.custom.label[field]}}", sortable: true, dataIndex: '{{=form.custom.widget[field].attributes['_name']}}', editor: new Ext.form.TextField({})},
+        {{pass}}
+    {{pass}}
+  {{pass}}
 ];
 
-    // Create a typical GridPanel with RowEditor plugin
-    var userGrid = new Ext.grid.GridPanel({
-        renderTo: 'table-container',
-        iconCls: 'icon-grid',
-        frame: true,
-        //title: 'Users',
-        autoScroll: true,
-        height: 300,
-        store: store,
-        plugins: [editor],
-        columns : userColumns,
-        tbar: [{
-            text: 'Add',
-            iconCls: 'silk-add',
-            handler: onAdd
-        }, '-', {
-            text: 'Delete',
-            iconCls: 'silk-delete',
-            handler: onDelete
-        }, '-'],
-        viewConfig: {
-            forceFit: true
-        }
-    });
 
-    /**
-     * onAdd
-     */
-    function onAdd(btn, ev) {
-        var u = new userGrid.store.recordType({
-            first : '',
-            last: '',
-            email : ''
-        });
-        editor.stopEditing();
-        userGrid.store.insert(0, u);
-        editor.startEditing(0);
+// Shortcut to avoid multiple lookups
+var xg = Ext.grid;
+var sm = new xg.CheckboxSelectionModel();
+
+// Create a typical GridPanel with RowEditor plugin
+var userGrid = new xg.GridPanel({
+    renderTo: 'table-container',
+    iconCls: 'icon-grid',
+    frame: true,
+    autoScroll: true,
+    columns: userColumns,
+    //cm: new xg.ColumnModel({
+    //        defaults: {
+    //            width: 100,
+    //            sortable: true
+    //        },
+    //        columns: [
+    //            sm,
+    //            userColumns
+    //        ]
+    //    }),
+    sm: sm,
+    columnLines: true,
+    width: 600,
+    height: 300,
+    //autoHeight: true,
+    store: store,
+    plugins: [editor],
+    // Top toolbar for Add/Delete options (ToDo: Add Edit)
+    tbar: [{
+        text: '{{=T('Add')}}',
+        iconCls: 'silk-add',
+        handler: onAdd
+    }, '-', {
+        text: '{{=T('Delete')}}',
+        iconCls: 'silk-delete',
+        handler: onDelete
+    }, '-'],
+    // Paging bar on the bottom
+    bbar: new Ext.PagingToolbar({
+        pageSize: 25,
+        store: store,
+        displayInfo: true,
+        displayMsg: 'Displaying topics {0} - {1} of {2}',
+        emptyMsg: "{{=s3.crud_strings[table].msg_list_empty}}",
+        items:[
+            '-', {
+            pressed: true,
+            enableToggle:true,
+            text: 'Show Preview',
+            cls: 'x-btn-text-icon details',
+            toggleHandler: function(btn, pressed){
+                var view = grid.getView();
+                view.showPreview = pressed;
+                view.refresh();
+            }
+        }]
+    }),
+    //viewConfig: {
+        // This should be false to allow a horizontal scrollbar
+    //    forceFit: true
+    //}
+});
+
+/**
+ * onAdd
+ */
+function onAdd(btn, ev) {
+    var u = new userGrid.store.recordType({
+        first : '',
+        last: '',
+        email : ''
+    });
+    editor.stopEditing();
+    userGrid.store.insert(0, u);
+    editor.startEditing(0);
+}
+/**
+ * onDelete
+ */
+function onDelete() {
+    var rec = userGrid.getSelectionModel().getSelected();
+    if (!rec) {
+        return false;
     }
-    /**
-     * onDelete
-     */
-    function onDelete() {
-        var rec = userGrid.getSelectionModel().getSelected();
-        if (!rec) {
-            return false;
-        }
-        userGrid.store.remove(rec);
-    }
+    userGrid.store.remove(rec);
+}

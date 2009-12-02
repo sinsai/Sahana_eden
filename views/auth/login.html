@@ -1,0 +1,122 @@
+{{extend 'layout.html'}}
+
+{{include 'ext.html'}}
+
+<script type="text/javascript">//<![CDATA[
+Ext.onReady(function(){
+
+    Ext.QuickTips.init();
+
+    // turn on validation errors beside the field globally
+    Ext.form.Field.prototype.msgTarget = 'side';
+
+    var simple = new Ext.FormPanel({
+        standardSubmit: true,
+        //url: '{{=URL(r=request, args=request.args)}}',
+        title: '{{=T('Login')}}',
+        frame: true,
+        bodyStyle:'padding:5px 5px 0',
+        width: 350,
+        labelWidth: 75, // label settings here cascade unless overridden
+        defaults: {width: 230},
+        defaultType: 'textfield',
+        //renderTo: 'login_form',
+        items: [{
+                fieldLabel: '{{=form.custom.label.email}}',
+                name: '{{=form.custom.widget.email.attributes['_name']}}',
+                inputType: '{{=form.custom.widget.email.attributes['_type']}}',
+                id: '{{=form.custom.widget.email.attributes['_id']}}',
+                fieldClass: '{{=form.custom.widget.email.attributes['_class']}}',
+                value: '{{=form.custom.widget.email.attributes['value']}}',
+                {{requires = form.custom.widget.email.attributes['requires']}}
+                {{if not isinstance(requires, (list, tuple)):}}
+                    {{requires = [requires]}}
+                {{for require in requires:}}
+                    {{if 'IS_NOT_EMPTY' in str(require):}}
+                allowBlank: false
+                    {{pass}}
+            }, {
+                fieldLabel: '{{=form.custom.label.password}}',
+                name: '{{=form.custom.widget.password.attributes['_name']}}',
+                inputType: '{{=form.custom.widget.password.attributes['_type']}}',
+                id: '{{=form.custom.widget.password.attributes['_id']}}',
+                fieldClass: '{{=form.custom.widget.password.attributes['_class']}}',
+                value: '{{=form.custom.widget.email.attributes['value']}}',
+                {{requires = form.custom.widget.email.attributes['requires']}}
+                {{if not isinstance(requires, (list, tuple)):}}
+                    {{requires = [requires]}}
+                {{for require in requires:}}
+                    {{if 'IS_NOT_EMPTY' in str(require):}}
+                allowBlank: false
+                    {{pass}}
+            },  new Ext.Container({
+                    cls: 'hidden',
+                    items: [{
+                        xtype: 'hidden',
+                        name: '_next',
+                        {{if form.custom.end.components[0][0].attributes['_value']:}}
+                        value: '{{=form.custom.end.components[0][0].attributes['_value']}}'
+                        {{pass}}
+                    }, {
+                        xtype: 'hidden',
+                        name: '_formkey',
+                        value: '{{=form.custom.end.components[0][1].attributes['_value']}}'
+                    }, {
+                        xtype: 'hidden',
+                        name: '_formname',
+                        value: '{{=form.custom.end.components[0][2].attributes['_value']}}'
+                    }]
+                })
+        ],
+
+        buttons: [{
+            text: '{{=form.custom.submit.attributes['_value']}}',
+            handler: function(){
+                var fp = this.ownerCt.ownerCt;
+                var form = fp.getForm();
+                if (form.isValid()) {
+                    // check if there are baseParams and if
+                    // hidden items have been added already
+                    if (fp.baseParams && !fp.paramsAdded) {
+                        // add hidden items for all baseParams
+                        for (i in fp.baseParams) {
+                            fp.add({
+                                xtype: 'hidden',
+                                name: i,
+                                value: fp.baseParams[i]
+                            });
+                        }
+                        fp.doLayout();
+                        // set a custom flag to prevent re-adding
+                        fp.paramsAdded = true;
+                    }
+                    form.action = '';
+                    form.method = 'POST';
+                    form.submit();
+                }
+            }
+        }]
+    });
+
+    simple.render('form-container');
+});
+//]]></script>
+
+<div id="home">
+
+<h2>{{=T('Login')}}</h2>
+
+<div id="form-container">
+<!-- Ext will render form here -->
+</div>
+
+{{self_registration = db().select(db.s3_setting.self_registration)[0].self_registration}}
+{{if self_registration:}}
+    <p>
+        <a id="register-btn" href="{{=URL(r=request, args='register')}}">{{=T('Register')}}</a>
+    </p>
+{{pass}}
+    <p>
+        <a id="retrieve-btn" href="{{=URL(r=request, args='retrieve_password')}}">{{=T('Lost Password')}}</a>
+    </p>
+</div>

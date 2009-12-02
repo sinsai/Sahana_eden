@@ -1273,7 +1273,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                 shn_custom_view(jr, 'list.html', format='ext')
             else:
                 shn_custom_view(jr, 'list.html')
-            
+
         return output
 
     elif jr.representation == "plain":

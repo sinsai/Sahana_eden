@@ -10,12 +10,15 @@
 {{pass}}
 
 <script type="text/javascript">//<![CDATA[
+var calcDone = false;   // to track for finish button
+var answer;             // lets have a global answer to fill back using 1 function
+
 function convertDD() {
     // Convert Degrees Minutes Seconds to Decimal Degrees
 	var deg = document.inDDMMSS.form1_dd.value;
 	var min = document.inDDMMSS.form1_mm.value;
 	var sec = document.inDDMMSS.form1_ss.value;
-
+    
 	if (deg == "" || min == "" || sec == ""){
 			alert("Enter a value for DD MM or SS.");
 	}
@@ -32,8 +35,9 @@ function convertDD() {
 
 	else {
 		var dec_min = (min*1.0 + (sec/60.0));
-		var answer1 = deg*1.0 + (dec_min/60.0);
-		document.inDDMMSS.form1_dec.value=answer1;
+		answer = deg*1.0 + (dec_min/60.0);
+		document.inDDMMSS.form1_dec.value=answer;
+        calcDone = true;
 	}
 }
 
@@ -54,109 +58,152 @@ function convertGps() {
 				alert("Minutes should be greater than 0 and less than 60.");
 	}
 	else {
-		document.inGPScoord.form3_dec.value = (deg*1.0) + min/60.0;
+        answer = (deg*1.0) + min/60.0;
+		document.inGPScoord.form3_dec.value = answer;
+        calcDone = true;
 	}
 }
 
-function TB_refresh() {
+function convertFillBack(whereto) {
     //
-    // The Get parameters
-    var $_GET = getQueryParams(document.location.search);
-    // The JSON of the resource we just created
-    var listsource = document.location.pathname.replace("/create",".json");
-    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
-        // We have been called next to a drop-down
-        // Get the previously selected value
-        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
-        // Clean up the caller
-        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
-        $.getJSON(listsource, function (data) {
-            $.each(data, function() {
-                // FIXME: Don't assume that .represent is .name (doesn't even always exist!)
-                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
-                selectedvalue = this['id'];
-                selectedname = this['name'];
-            });
-            // Set the newly-created value
-            self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
-            // Also populate dummy, if present
-            // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
-            //self.parent.$('#dummy').val(selectedname);
-            // Clean-up
-            self.parent.tb_remove();
-        });
-    } else {
-        // Clean-up
+    // To fill back calculated stuff into page in background
+    if (calcDone == true) {
+        if (whereto == 1) {
+            self.parent.$("#gis_location_lat").attr("value",answer);
+        } else {
+            self.parent.$("#gis_location_lon").attr("value",answer);
+        }
+        
         self.parent.tb_remove();
+    } else {
+        alert ("You haven't made any calculations.");
     }
 }
-
-// If submission succesful
-{{if response.flash or response.confirmation:}}
-// Refresh the DIV and close the pop up
-TB_refresh();
-{{pass}}
-
 //]]></script>
+
+<script language="javascript" type="text/javascript">
+$(document).ready(function(){
+    // When a link is clicked
+    $("a.tab").click(function () {
+
+        // switch all tabs off
+        $(".active").removeClass("active");
+
+        // switch this tab on
+        $(this).addClass("active");
+
+        // slide all content up
+        $(".gps_content").slideUp();
+
+        // slide this content up
+        var content_show = $(this).attr("title");
+        $("#"+content_show).slideDown();
+    });
+});
+</script>
+
+<!--ToDo: Move to main template.css -->
+<style type="text/css">
+    #gps_content_1 {
+        display:none;
+    }
+
+    .gps_content form table{
+        -moz-box-shadow: 1px 1px 15px #000;
+        -webkit-box-shadow: 1px 1px 15px #000
+    }
+
+    .tabs li {
+        display:inline-block;
+        padding:5px 20px;
+        background:#ffffff;
+        -moz-box-shadow: 1px 1px 5px #000;
+        -webkit-box-shadow: 1px 1px 5px #000;
+        margin:5px;
+    }
+
+    .tabs li:hover {
+        background:#ffff99;
+    }
+    
+    .gps_table {
+        background: #efefef;
+    }
+
+    .finishButtons input {
+        padding:5px 20px;
+    }
+
+    .finishButtons {
+        margin-top:10px;
+        text-align:center;
+    }
+</style>
 </head>
 
 <body>
+<div class="tabbed_area">
+        <ul class="tabs">
+            <li><a href="#" title="gps_content_2" class="tab active">in GPS format</a></li>
+            <li><a href="#" title="gps_content_1" class="tab">in Deg Min Sec format</a></li>
+        </ul>
 
-<table>
-  <tr>
-    <td>
-      <form name="inDDMMSS">
-        <div><div align="center"><center>
-          <table border="1" cellpadding="2" width="400">
-            <tr>
-              <td align="center"><font face="Arial" size="2"><b>Enter Coordinates in Deg Min Sec</b></font></td>
-            </tr>
-            <tr>
-              <td align="center"><font face="Arial" size="2">
-                 DD&nbsp;<input type="text" size="3" name="form1_dd" align="right">
-                 MM&nbsp;<input type="text" size="2" name="form1_mm" align="right">
-                 SS&nbsp;<input type="text" size="2" name="form1_ss" align="right"></font>
-              </td>
-            </tr>
-            <tr>
-              <td align="center" bgcolor="#C0C0C0"><font face="Arial" size="2"><b>Decimal Degrees </b>
-                  <input type="text" size="8" name="form1_dec"></font></td>
-            </tr>
-            <tr>
-              <td align="center"><input type="button" value="Calculate" onclick="convertDD(this.inDDMMSS)"> <input type="reset" value="Reset"></td>
-            </tr>
-          </table>
-        </center></div></div></font>
-      </form>
-    </td>
-  </tr>
-  <tr>
-    <td><hr width="50%" color="#000080"></td>
-  </tr>
-  <tr>
-	<td>
-      <form name="inGPScoord">
-        <small><small><font face="Arial">
-        <div><div align="center"><center>
-        <table border="1" cellpadding="2" width="400">
-          <tr>
-            <td align="center"><font face="Arial" size="2"><b>Enter a Coord in GPS Coords:</b>&nbsp;&nbsp;<input type="text" size="3" name="form3_gpsdeg">&nbsp;deg &nbsp;
-               <input type="text" size="6" name="form3_gpsmin">&nbsp;min</font></td>
-          </tr>
-          <tr>
-             <td align="center" bgcolor="#C0C0C0"><font face="Arial" size="2"><b>Decimal Degrees </b>
-                  <input type="text" size="8" name="form3_dec"></font></td>
-          </tr>
-          <tr>
-            <td align="center"><input type="button" value="Calculate" onclick="convertGps(this.inGPScoord)"> <input type="reset" value="Reset"></td>
-          </tr>
-        </table>
-        </center></div></div>
-      </form>
-    </td>
-  </tr>
-</table>
+        <div id="gps_content_1" class="gps_content">
+            <form name="inDDMMSS">
+                <div><div align="center"><center>
+
+                <table border="1" cellpadding="2" width="400" class="gps_table">
+                    <tr>
+                    <td align="center"><font face="Arial" size="2"><b>Enter Coordinates in Deg Min Sec</b></font></td>
+                    </tr>
+                    <tr>
+                    <td align="center"><font face="Arial" size="2">
+                        DD&nbsp;<input type="text" size="3" name="form1_dd" align="right">
+                        MM&nbsp;<input type="text" size="2" name="form1_mm" align="right">
+                        SS&nbsp;<input type="text" size="2" name="form1_ss" align="right"></font>
+                    </td>
+                    </tr>
+                    <tr>
+                    <td align="center" bgcolor="#C0C0C0"><font face="Arial" size="2"><b>Decimal Degrees </b>
+                        <input type="text" size="8" name="form1_dec"></font></td>
+                    </tr>
+                    <tr>
+                    <td align="center"><input type="button" value="Calculate" onclick="convertDD(this.inDDMMSS)">
+                    <input type="reset" value="Reset"></td>
+                    </tr>
+                </table>
+                </center></div></div></font>
+            </form>
+        </div>
+        
+        <div id="gps_content_2" class="gps_content">
+            <form name="inGPScoord">
+                <small><small><font face="Arial">
+                <div><div align="center"><center>
+                <table border="1" cellpadding="2" width="400"  class="gps_table">
+                <tr>
+                    <td align="center"><font face="Arial" size="2"><b>Enter a Coord in GPS Coords:</b>&nbsp;&nbsp;<input type="text" size="3" name="form3_gpsdeg">&nbsp;deg &nbsp;
+                    <input type="text" size="6" name="form3_gpsmin">&nbsp;min</font></td>
+                </tr>
+                <tr>
+                    <td align="center" bgcolor="#C0C0C0"><font face="Arial" size="2"><b>Decimal Degrees </b>
+                        <input type="text" size="8" name="form3_dec"></font></td>
+                </tr>
+                <tr>
+                <td align="center"><input type="button" value="Calculate" onclick="convertGps(this.inGPScoord)"><input type="reset" value="Reset"></td>
+                </tr>
+                </table>
+                </center></div></div>
+            </form>
+        </div>
+
+        <div class="finishButtons">
+            <ul>
+                <input type="button" value="Fill in Latitude" onclick="convertFillBack(1)" />
+                <input type="button" value="Fill in Longitude" onclick="convertFillBack(2)" />
+            </ul>
+        </div>
+    </div>
 
 </body>
-
 </html>

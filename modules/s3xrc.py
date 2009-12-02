@@ -640,6 +640,8 @@ class XVector(object):
         self.permitted=True
         self.committed=False
 
+        print [record[x] for x in record]
+
         if not self.id:
             self.id = 0
             self.method = permission = self.ACTION["create"]
@@ -1577,7 +1579,11 @@ class S3XML(object):
             return _list
 
         else:
-            element = etree.Element(key)
+            if native:
+                element = etree.Element(self.TAG["data"])
+                element.set(self.ATTRIBUTE["field"], key)
+            else:
+                element = etree.Element(key)
             if not isinstance(value, (str, unicode)):
                 value = str(value)
             element.text = self.xml_encode(value)
@@ -1600,6 +1606,9 @@ class S3XML(object):
             elif tag.startswith(self.PREFIX["resource"]):
                 resource = tag[len(self.PREFIX["resource"])+1:]
                 tag = self.TAG["resource"]
+            else:
+                field = tag
+                tag = self.TAG["data"]
 
         element = etree.Element(tag)
 

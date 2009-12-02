@@ -44,7 +44,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links
                 migrate=migrate)
 
-if not len(db().select(db[table].ALL)):
+if not db(db[table].id).count():
     db[table].insert(
         opt_lms_unit_type=1,
         label="m",
@@ -299,7 +299,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-if not len(db().select(db[table].ALL)):
+if not db(db[table].id).count():
     db[table].insert(
         name="Default",
         description="Default Catalog",

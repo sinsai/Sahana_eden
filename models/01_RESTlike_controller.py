@@ -10,15 +10,6 @@
 """
 
 # *****************************************************************************
-# S3XRC ResourceController
-
-exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
-
-s3xrc = ResourceController(db,
-                           domain=request.env.server_name,
-                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application))
-
-# *****************************************************************************
 # Constants to ensure consistency
 
 # XSLT Settings
@@ -42,6 +33,16 @@ INVALIDREQUEST = T('Invalid request!')
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
+
+# *****************************************************************************
+# S3XRC ResourceController
+
+exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
+
+s3xrc = ResourceController(db,
+                           domain=request.env.server_name,
+                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+                           rpp=ROWSPERPAGE)
 
 # *****************************************************************************
 # Helpers

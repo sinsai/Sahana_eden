@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.0-3, 2009-12-02
+    @version: 1.4.0-4, 2009-12-03
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -479,7 +479,7 @@ class ResourceController(object):
             else:
                 resource_url = None
             resource = self.xml.element(table, record, skip=skip, url=resource_url)
-            
+
             for j in xrange(0, len(joins)):
                 (c, pkey, fkey) = joins[j]
                 pkey = record[pkey]
@@ -509,7 +509,7 @@ class ResourceController(object):
                     cresource = self.xml.element(c.table, crecord,
                                                  skip=_skip, url=resource_url)
                     resource.append(cresource)
-            
+
             resources.append(resource)
 
         return self.xml.tree(resources, domain=self.domain, url=burl, totalrecords=totalrecords , totalpages=totalpages, page=page)
@@ -521,7 +521,8 @@ class ResourceController(object):
                    permit=None,
                    audit=None,
                    onvalidation=None,
-                   onaccept=None):
+                   onaccept=None,
+                   ignore_errors=False):
 
         """ Imports data from an XML tree """
 
@@ -617,7 +618,7 @@ class ResourceController(object):
             if self.error is None:
                 imports.append(vector)
 
-        if self.error is None:
+        if self.error is None or ignore_errors:
             for i in xrange(0, len(imports)):
                 vector = imports[i]
 
@@ -629,7 +630,7 @@ class ResourceController(object):
                     self.error = S3XML_DATA_IMPORT_ERROR
                     continue
 
-        return (self.error is None)
+        return (self.error is None) or ignore_errors
 
     # -------------------------------------------------------------------------
     def options_xml(self, prefix, name, joins=[]):
@@ -1193,13 +1194,27 @@ class XRequest(object):
         if self.method=="create":
             self.id=None
 
+        # Add "&ignore_errors=True" to the URL to override any import errors:
+        # Unsuccessful commits simply get ignored, no error message is returned,
+        # invalid records are not imported at all, but all valid records in the
+        # source are committed (whereas the standard method stops at any errors).
+        # This is a backdoor for experts who exactly know what they're doing,
+        # it's not recommended for general use, and should not be represented
+        # in the UI!
+        # Also note that this option is subject to change in future versions!
+        if "ignore_errors" in self.request.vars:
+            ignore_errors = True
+        else:
+            ignore_errors = False
+
         return self.rc.import_xml(self.prefix, self.name, self.id, tree,
                                   joins=joins,
                                   skip_resource=skip_resource,
                                   permit=permit,
                                   audit=audit,
                                   onvalidation=onvalidation,
-                                  onaccept=onaccept)
+                                  onaccept=onaccept,
+                                  ignore_errors=ignore_errors)
 
     # -------------------------------------------------------------------------
     def options_xml(self):

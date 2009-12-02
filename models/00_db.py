@@ -3,7 +3,7 @@
 import os, traceback, datetime
 import re
 # All dates should be stored in UTC for Sync to work reliably
-request.utcnow = datetime.datetime.utcnow() 
+request.utcnow = datetime.datetime.utcnow()
 
 # Switch to 'False' in Production for a Performance gain
 # (need to set to 'True' again when amending Table definitions)
@@ -18,7 +18,7 @@ migrate = True
     # session.connect(request, response, db=MEMDB(Client())
 #else:                                         # else use a normal relational database
 db = DAL('sqlite://storage.db')       # if not, use SQLite or other DB
-#db = DAL('mysql://root:password@localhost/db', pool_size=10) # or other DB
+#db = DAL('mysql://username:password@localhost/dbname', pool_size=10) # or other DB
 #db = DAL('postgres://postgres:password@localhost/db', pool_size=10)
 
 # Custom classes which extend default Gluon & T2
@@ -56,24 +56,39 @@ def shn_sessions(f):
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
     # Are we running in debug mode?
-    session.s3.debug = db().select(db.s3_setting.debug)[0].debug
+    try:
+        session.s3.debug = db().select(db.s3_setting.debug)[0].debug
+    except:
+        session.s3.debug = False
     # Which security policy are we running?
-    session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy
+    try:
+        session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy
+    except:
+        session.s3.security_policy = 1
     # Are we running in restricted mode?
     session.s3.restricted = auth.has_membership(auth.id_group('Restricted'))
     # Select the theme
     if not session.s3.theme:
         session.s3.theme = Storage()
-    session.s3.theme.footer = db().select(db.admin_theme.footer)[0].footer
+    try:
+        session.s3.theme.footer = db().select(db.admin_theme.footer)[0].footer
+    except:
+        session.s3.theme.footer = 'footer.html'
     # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
     try:
         session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
     except:
-        session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read
+        try:
+            session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read
+        except:
+            session.s3.audit_read = False
     try:
         session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write or db().select(db['%s_setting' % request.controller].audit_write)[0].audit_write
     except:
-        session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write
+        try:
+            session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write
+        except:
+            session.s3.audit_write = False
     return f()
 response._caller = lambda f: shn_sessions(f)
 

@@ -129,27 +129,19 @@ def dojs(dogis = False):
 
         # also need to amend sahana.js.gis.cfg
         configDictOpenLayers = {
-            'OpenLayers.js':                mfbase+'/openlayers/lib',
-            'OpenLayers':                   mfbase+'/openlayers/lib',
-            'Rico':                         mfbase+'/openlayers/lib',
-            'GoogleGears':                  mfbase+'/openlayers/lib'
-        }
-        configDictMapFish = {
-            'SingleFile.js':                mfbase+'/mapfish',
-            'MapFish.js':                   mfbase+'/mapfish',
-            'widgets':                      mfbase+'/mapfish',
-            'core':                         mfbase+'/mapfish',
-            'lang':                         mfbase+'/mapfish'
+            'OpenLayers.js':                '../gis/openlayers/lib',
+            'OpenLayers':                   '../gis/openlayers/lib',
+            'Rico':                         '../gis/openlayers/lib',
+            'GoogleGears':                  '../gis/openlayers/lib'
         }
         configDictGIS = {
             'gis':                          '..'
         }
         configDictGlobalGIS = {}
         configDictGlobalGIS.update(configDictOpenLayers)
-        configDictGlobalGIS.update(configDictMapFish)
         configDictGlobalGIS.update(configDictGIS)
         configFilenameGIS = "sahana.js.gis.cfg"
-        outputFilenameGIS = "MapFish.min.js"
+        outputFilenameGIS = "OpenLayers.js"
         #Merge GIS JS Files
         print "Merging GIS libraries."
         (files, order) = mergejs.getFiles(configDictGlobalGIS, configFilenameGIS)
@@ -173,7 +165,7 @@ def dojs(dogis = False):
         except:
             pass
         print "Moving new GIS JS files"
-        shutil.move("MapFish.min.js", "../gis")
+        shutil.move("OpenLayers.js", "../gis")
 
 def docss(dogis = True):
     """Compresses the  CSS files"""

@@ -37,6 +37,20 @@ def index():
     response.title = T('Sahana FOSS Disaster Management System')
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
+# NB These 4 functions are unlikely to get used in production
+def header():
+    "Custom view designed to be pulled into an Ext layout's North Panel"
+    return dict()
+def footer():
+    "Custom view designed to be pulled into an Ext layout's South Panel"
+    return dict()
+def menu():
+    "Custom view designed to be pulled into the 1st item of an Ext layout's Center Panel"
+    return dict()
+def list():
+    "Custom view designed to be pulled into an Ext layout's Center Panel"
+    return dict()
+    
 def open_module():
     "Select Module"
     id = request.vars.id

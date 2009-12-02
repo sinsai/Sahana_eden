@@ -1,4 +1,6 @@
 # Crontab - scheduled tasks
+# Import data into database
+#@reboot root *applications/sahana/cron/1st_run.py
 # AutoSync daemon running ZeroConf should be launched at startup
 #@reboot root **applications/sahana/cron/daemonX.py
 # Send outgoing emails every 5 minutes

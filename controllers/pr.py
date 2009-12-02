@@ -9,7 +9,10 @@
 module = 'pr'
 
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+try:
+    module_name = db(db.s3_module.name==module).select()[0].name_nice
+except:
+    module_name = T('Person Registry')
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
@@ -37,12 +40,12 @@ def index():
     gender = []
     for g_opt in pr_person_gender_opts:
         count = db((db.pr_person.deleted==False) & (db.pr_person.opt_pr_gender==g_opt)).count()
-        gender.append([str(pr_person_gender_opts[g_opt]), count])
+        gender.append([str(pr_person_gender_opts[g_opt]), int(count)])
     age = []
     for a_opt in pr_person_age_group_opts:
         count = db((db.pr_person.deleted==False) & (db.pr_person.opt_pr_age_group==a_opt)).count()
-        age.append([str(pr_person_age_group_opts[a_opt]), count])
-    total = db(db.pr_person.deleted==False).count()
+        age.append([str(pr_person_age_group_opts[a_opt]), int(count)])
+    total = int(db(db.pr_person.deleted==False).count())
     return dict(module_name=module_name, gender=gender, age=age, total=total)
 
 # Main controller functions

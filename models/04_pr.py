@@ -269,7 +269,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('lon'),                       # Longitude
                 Field('time', 'datetime'),          # Time
                 opt_pr_presence_condition,          # Presence Condition
-                Field('procedure'),                 # Procedure description (for procedure) TODO: replace by option field?
+                Field('proc_desc'),                 # Procedure description (for procedure) TODO: replace by option field?
                 Field('origin'),                    # Origin (for transfer and transit) TODO: replace by location reference?
                 Field('destination'),               # Destination (for transfer and transit) TODO: replace by location reference?
                 Field('comment'),                   # a comment (optional)
@@ -289,7 +289,7 @@ def shn_pr_presence_rss(record):
             record.lat and "Lat: %s " % record.lat or "",
             record.lon and "Lon: %s " % record.lon or "",
 #            opt_pr_presence_condition.opt_pr_presence_condition.represent(record.opt_pr_presence_condition),
-            record.procedure or "-")
+            record.proc_desc or "-")
     else:
         return None
 
@@ -1318,7 +1318,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('ia_name'),                   # Name of issuing authority
 #                Field('ia_subdivision'),            # Name of issuing authority subdivision
 #                Field('ia_code'),                   # Code of issuing authority (if any)
-                Field('comment'))                   # a comment (optional)
+                Field('comment'),                   # a comment (optional)
+                migrate=migrate)
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,

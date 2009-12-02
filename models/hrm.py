@@ -18,14 +18,6 @@ db.define_table(table,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
-# Populate table with Default options
-# - deployments can change these live via appadmin
-if not len(db().select(db[table].ALL)): 
-   db[table].insert(
-        # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read = False,
-        audit_write = False
-    )
 
 #
 # Option fields ---------------------------------------------------------------
@@ -61,7 +53,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Settings and Restrictions
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+#db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 # Labels
 db[table].find_date.label = T('Date and time of find')
@@ -108,7 +100,7 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
                 pr_pe_fieldset,                             # Person Entity Fieldset
 #                db.Field('date_of_find', 'date'),          # from Khushbu
                 hrm_find_id,                                # Associated find report (if any)
-                db.Field('date_of_recovery', 'datetime'),       
+                db.Field('date_of_recovery', 'datetime'),
                 db.Field('has_major_outward_damage','boolean'), # Khushbu, TODO: elaborate
                 db.Field('is_burned_or_charred','boolean'),     # Khushbu, TODO: elaborate
                 db.Field('is_decayed','boolean'),               # Khushbu, TODO: elaborate

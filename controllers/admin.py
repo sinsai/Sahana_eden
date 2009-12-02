@@ -24,7 +24,60 @@ def setting():
 @auth.requires_membership('Administrator')
 def theme():
     "RESTlike CRUD controller"
-    return shn_rest_controller('admin', 'theme', list_fields=['id', 'name', 'logo', 'footer', 'col_background'], onvalidation=lambda form: theme_check(form))
+    resource = 'theme'
+    table = module + '_' + resource
+
+    # Model options
+    db[table].name.label = T('Name')
+    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+    db[table].name.comment = SPAN("*", _class="req")
+    db[table].logo.label = T('Logo')
+    db[table].logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
+    db[table].footer.label = T('Footer')
+    db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
+    db[table].text_direction.label = T('Text Direction')
+    db[table].text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')})
+    db[table].text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
+    db[table].col_background.label = T('Background Colour')
+    db[table].col_background.requires = IS_HTML_COLOUR()
+    db[table].col_txt.label = T('Text Colour for Text blocks')
+    db[table].col_txt.requires = IS_HTML_COLOUR()
+    db[table].col_txt_background.label = T('Background Colour for Text blocks')
+    db[table].col_txt_background.requires = IS_HTML_COLOUR()
+    db[table].col_txt_border.label = T('Border Colour for Text blocks')
+    db[table].col_txt_border.requires = IS_HTML_COLOUR()
+    db[table].col_txt_underline.label = T('Colour for Underline of Subheadings')
+    db[table].col_txt_underline.requires = IS_HTML_COLOUR()
+    db[table].col_menu.label = T('Colour of dropdown menus')
+    db[table].col_menu.requires = IS_HTML_COLOUR()
+    db[table].col_highlight.label = T('Colour of selected menu items')
+    db[table].col_highlight.requires = IS_HTML_COLOUR()
+    db[table].col_input.label = T('Colour of selected Input fields')
+    db[table].col_input.requires = IS_HTML_COLOUR()
+    db[table].col_border_btn_out.label = T('Colour of bottom of Buttons when not pressed')
+    db[table].col_border_btn_out.requires = IS_HTML_COLOUR()
+    db[table].col_border_btn_in.label = T('Colour of bottom of Buttons when pressed')
+    db[table].col_border_btn_in.requires = IS_HTML_COLOUR()
+    db[table].col_btn_hover.label = T('Colour of Buttons when hovering')
+    db[table].col_btn_hover.requires = IS_HTML_COLOUR()
+
+    # CRUD Strings
+    title_create = T('Add Theme')
+    title_display = T('Theme Details')
+    title_list = T('List Themes')
+    title_update = T('Edit Theme')
+    title_search = T('Search Themes')
+    subtitle_create = T('Add New Theme')
+    subtitle_list = T('Themes')
+    label_list_button = T('List Themes')
+    label_create_button = T('Add Theme')
+    msg_record_created = T('Theme added')
+    msg_record_modified = T('Theme updated')
+    msg_record_deleted = T('Theme deleted')
+    msg_list_empty = T('No Themes currently defined')
+    s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, list_fields=['id', 'name', 'logo', 'footer', 'col_background'], onvalidation=lambda form: theme_check(form))
 
 def theme_apply(form):
     "Apply the Theme specified by Form"
@@ -131,24 +184,92 @@ def theme_check(form):
 @auth.requires_membership('Administrator')
 def user():
     "RESTlike CRUD controller"
+    module = 'auth'
+    resource = 'user'
+    table = module + '_' + resource
+
+    # Model options
+    
+    # CRUD Strings
+    title_create = T('Add User')
+    title_display = T('User Details')
+    title_list = T('List Users')
+    title_update = T('Edit User')
+    title_search = T('Search Users')
+    subtitle_create = T('Add New User')
+    subtitle_list = T('Users')
+    label_list_button = T('List Users')
+    label_create_button = T('Add User')
+    msg_record_created = T('User added')
+    msg_record_modified = T('User updated')
+    msg_record_deleted = T('User deleted')
+    msg_list_empty = T('No Users currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
     # Add users to Person Registry & 'Authenticated' role
     crud.settings.create_onaccept = lambda form: auth.shn_register(form)
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.label = T('Disabled?')
     db.auth_user.registration_key.requires = IS_IN_SET(['','disabled'])
-    return shn_rest_controller('auth', 'user', main='first_name')
+
+    return shn_rest_controller(module, resource, main='first_name')
     
 @auth.requires_membership('Administrator')
 def group():
     "RESTlike CRUD controller"
-    return shn_rest_controller('auth', 'group', main='role')
+    module = 'auth'
+    resource = 'group'
+    table = module + '_' + resource
+
+    # Model options
+    
+    # CRUD Strings
+    title_create = T('Add Role')
+    title_display = T('Role Details')
+    title_list = T('List Roles')
+    title_update = T('Edit Role')
+    title_search = T('Search Roles')
+    subtitle_create = T('Add New Role')
+    subtitle_list = T('Roles')
+    label_list_button = T('List Roles')
+    label_create_button = T('Add Role')
+    msg_record_created = T('Role added')
+    msg_record_modified = T('Role updated')
+    msg_record_deleted = T('Role deleted')
+    msg_list_empty = T('No Roles currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, main='role')
     
 # Unused as poor UI
 @auth.requires_membership('Administrator')
 def membership():
     "RESTlike CRUD controller"
-    return shn_rest_controller('auth', 'membership', main='user_id')
+    module = 'auth'
+    resource = 'membership'
+    table = module + '_' + resource
+
+    # Model options
+    
+    # CRUD Strings
+    table = 'auth_membership'
+    title_create = T('Add Membership')
+    title_display = T('Membership Details')
+    title_list = T('List Memberships')
+    title_update = T('Edit Membership')
+    title_search = T('Search Memberships')
+    subtitle_create = T('Add New Membership')
+    subtitle_list = T('Memberships')
+    label_list_button = T('List Memberships')
+    label_create_button = T('Add Membership')
+    msg_record_created = T('Membership added')
+    msg_record_modified = T('Membership updated')
+    msg_record_deleted = T('Membership deleted')
+    msg_list_empty = T('No Memberships currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, main='user_id')
     
 @auth.requires_membership('Administrator')
 def users():

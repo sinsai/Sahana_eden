@@ -15,6 +15,165 @@ response.menu_options = [
     [T('Budgets'), False, URL(r=request, f='budget')]
 ]
 
+# Options used in multiple functions
+table = 'budget_item'
+db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
+db[table].code.comment = SPAN("*", _class="req")
+db[table].description.requires = IS_NOT_EMPTY()
+db[table].description.label = T('Description')
+db[table].description.comment = SPAN("*", _class="req")
+db[table].unit_cost.label = T('Unit Cost')
+db[table].monthly_cost.label = T('Monthly Cost')
+db[table].minute_cost.label = T('Cost per Minute')
+db[table].megabyte_cost.label = T('Cost per Megabyte')
+db[table].comments.label = T('Comments')
+
+table = 'budget_kit'
+db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
+db[table].code.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
+db[table].total_unit_cost.label = T('Total Unit Cost')
+db[table].total_monthly_cost.label = T('Total Monthly Cost')
+db[table].total_minute_cost.label = T('Total Cost per Minute')
+db[table].total_megabyte_cost.label = T('Total Cost per Megabyte')
+db[table].comments.label = T('Comments')
+
+table = 'budget_kit_item'
+db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
+db[table].kit_id.label = T('Kit')
+db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
+db[table].item_id.label = T('Item')
+db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+
+table = 'budget_bundle'
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
+db[table].total_unit_cost.label = T('One time cost')
+db[table].total_monthly_cost.label = T('Recurring cost')
+db[table].comments.label = T('Comments')
+
+table = 'budget_bundle_kit'
+db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
+db[table].bundle_id.label = T('Bundle')
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
+db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
+db[table].kit_id.label = T('Kit')
+db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].minutes.requires = IS_NOT_EMPTY()
+db[table].minutes.label = T('Minutes per Month')
+db[table].minutes.comment = SPAN("*", _class="req")
+db[table].megabytes.requires = IS_NOT_EMPTY()
+db[table].megabytes.label = T('Megabytes per Month')
+db[table].megabytes.comment = SPAN("*", _class="req")
+
+table = 'budget_bundle_item'
+db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
+db[table].bundle_id.label = T('Bundle')
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
+db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
+db[table].item_id.label = T('Item')
+db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].minutes.requires = IS_NOT_EMPTY()
+db[table].minutes.label = T('Minutes per Month')
+db[table].minutes.comment = SPAN("*", _class="req")
+db[table].megabytes.requires = IS_NOT_EMPTY()
+db[table].megabytes.label = T('Megabytes per Month')
+db[table].megabytes.comment = SPAN("*", _class="req")
+
+table = 'budget_staff'
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+db[table].grade.requires = IS_NOT_EMPTY()
+db[table].grade.label = T('Grade')
+db[table].grade.comment = SPAN("*", _class="req")
+db[table].salary.requires = IS_NOT_EMPTY()
+db[table].salary.label = T('Monthly Salary')
+db[table].salary.comment = SPAN("*", _class="req")
+db[table].travel.label = T('Travel Cost')
+db[table].comments.label = T('Comments')
+
+table = 'budget_location'
+db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
+db[table].code.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
+db[table].subsistence.label = T('Subsistence Cost')
+# UN terminology
+#db[table].subsistence.label = "DSA"
+db[table].hazard_pay.label = T('Hazard Pay')
+db[table].comments.label = T('Comments')
+
+table = 'budget_project'
+db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+db[table].code.label = T('Code')
+db[table].code.comment = SPAN("*", _class="req")
+db[table].title.label = T('Title')
+db[table].comments.label = T('Comments')
+
+table = 'budget_budget'
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+db[table].description.label = T('Description')
+db[table].total_onetime_costs.label = T('Total One-time Costs')
+db[table].total_recurring_costs.label = T('Total Recurring Costs')
+db[table].comments.label = T('Comments')
+
+table = 'budget_bundle'
+db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
+db[table].budget_id.label = T('Budget')
+db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
+db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
+db[table].project_id.label = T('Project')
+db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
+db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
+db[table].location_id.label = T('Location')
+db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
+db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(name)s')
+db[table].bundle_id.label = T('Bundle')
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].name
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].months.requires = IS_NOT_EMPTY()
+db[table].months.label = T('Months')
+db[table].months.comment = SPAN("*", _class="req")
+
+table = 'budget_staff'
+db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
+db[table].budget_id.label = T('Budget')
+db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
+db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
+db[table].project_id.label = T('Project')
+db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
+db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
+db[table].location_id.label = T('Location')
+db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
+db[table].staff_id.requires = IS_ONE_OF(db, 'budget_staff.id', '%(name)s')
+db[table].staff_id.label = T('Staff')
+db[table].staff_id.represent = lambda bundle_id: db(db.budget_staff.id==staff_id).select()[0].description
+db[table].quantity.requires = IS_NOT_EMPTY()
+db[table].quantity.label = T('Quantity')
+db[table].quantity.comment = SPAN("*", _class="req")
+db[table].months.requires = IS_NOT_EMPTY()
+db[table].months.label = T('Months')
+db[table].months.comment = SPAN("*", _class="req")
+
 # S3 framework functions
 def index():
     "Module's Home Page"
@@ -32,13 +191,53 @@ def parameters():
 
 def parameter():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'parameter', deletable=False)
+    resource = 'parameter'
+    table = module + '_' + resource
+    
+    # Model Options
+    db[table].shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
+    db[table].shipping.label = "Shipping cost"
+    db[table].logistics.requires = IS_FLOAT_IN_RANGE(0, 100)
+    db[table].logistics.label = "Procurement & Logistics cost"
+    db[table].admin.requires = IS_FLOAT_IN_RANGE(0, 100)
+    db[table].admin.label = "Administrative support cost"
+    db[table].indirect.requires = IS_FLOAT_IN_RANGE(0, 100)
+    db[table].indirect.label = "Indirect support cost HQ"
+
+    # CRUD Strings
+    title_update = T('Edit Parameters')
+    s3.crud_strings[table] = Storage(title_update=title_update)
+
+    return shn_rest_controller(module, resource, deletable=False)
     
 def item():
     "RESTlike CRUD controller"
+    resource = 'item'
+    table = module + '_' + resource
+
+    # Model options used in multiple controllers so defined at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Item')
+    title_display = T('Item Details')
+    title_list = T('List Items')
+    title_update = T('Edit Item')
+    title_search = T('Search Items')
+    subtitle_create = T('Add New Item')
+    subtitle_list = T('Items')
+    label_list_button = T('List Items')
+    label_create_button = T('Add Item')
+    label_search_button = T('Search Items')
+    msg_record_created = T('Item added')
+    msg_record_modified = T('Item updated')
+    msg_record_deleted = T('Item deleted')
+    msg_list_empty = T('No Items currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
     response.s3.pdf = URL(r=request, f='item_export_pdf')
-    return shn_rest_controller(module, 'item', main='code', extra='description', orderby=db.budget_item.category_type, sortby=[[1, "asc"]], onaccept=lambda form: item_cascade(form))
-    #return shn_rest_controller(module, 'item', main='code', extra='description', orderby=db.budget_item.category_type, onaccept=lambda form: item_cascade(form))
+    
+    return shn_rest_controller(module, resource, main='code', extra='description', orderby=db.budget_item.category_type, sortby=[[1, "asc"]], onaccept=lambda form: item_cascade(form))
+    #return shn_rest_controller(module, resource, main='code', extra='description', orderby=db.budget_item.category_type, onaccept=lambda form: item_cascade(form))
 
 def item_cascade(form):
     """
@@ -175,11 +374,33 @@ def item_export_pdf():
     
 def kit():
     "RESTlike CRUD controller"
+    resource = 'kit'
+    table = module + '_' + resource
+
+    # Model options used in multiple controllers so defined at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Kit')
+    title_display = T('Kit Details')
+    title_list = T('List Kits')
+    title_update = T('Edit Kit')
+    title_search = T('Search Kits')
+    subtitle_create = T('Add New Kit')
+    subtitle_list = T('Kits')
+    label_list_button = T('List Kits')
+    label_create_button = T('Add Kit')
+    msg_record_created = T('Kit added')
+    msg_record_modified = T('Kit updated')
+    msg_record_deleted = T('Kit deleted')
+    msg_list_empty = T('No Kits currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
     response.s3.pdf = URL(r=request, f='kit_export_pdf')
     response.s3.xls = URL(r=request, f='kit_export_xls')
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='kit_item', args=request.args[1])
-    return shn_rest_controller(module, 'kit', main='code', onaccept=lambda form: kit_total(form))
+
+    return shn_rest_controller(module, resource, main='code', onaccept=lambda form: kit_total(form))
 
 def kit_item():
     "Many to Many CRUD Controller"
@@ -598,9 +819,31 @@ def kit_import_csv():
     
 def bundle():
     "RESTlike CRUD controller"
+    resource = 'bundle'
+    table = module + '_' + resource
+
+    # Model options used in multiple controllers so defined at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Bundle')
+    title_display = T('Bundle Details')
+    title_list = T('List Bundles')
+    title_update = T('Edit Bundle')
+    title_search = T('Search Bundles')
+    subtitle_create = T('Add New Bundle')
+    subtitle_list = T('Bundles')
+    label_list_button = T('List Bundles')
+    label_create_button = T('Add Bundle')
+    msg_record_created = T('Bundle added')
+    msg_record_modified = T('Bundle updated')
+    msg_record_deleted = T('Bundle deleted')
+    msg_list_empty = T('No Bundles currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='bundle_kit_item', args=request.args[1])
-    return shn_rest_controller(module, 'bundle', onaccept=lambda form: bundle_total(form))
+
+    return shn_rest_controller(module, resource, onaccept=lambda form: bundle_total(form))
 
 def bundle_kit_item():
     "Many to Many CRUD Controller"
@@ -901,16 +1144,103 @@ def bundle_update_items():
 
 def staff():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'staff')
+    resource = 'staff'
+    table = module + '_' + resource
+
+    # Model options used in multiple controllers so defined at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Staff Type')
+    title_display = T('Staff Type Details')
+    title_list = T('List Staff Types')
+    title_update = T('Edit Staff Type')
+    title_search = T('Search Staff Types')
+    subtitle_create = T('Add New Staff Type')
+    subtitle_list = T('Staff Types')
+    label_list_button = T('List Staff Types')
+    label_create_button = T('Add Staff Type')
+    msg_record_created = T('Staff Type added')
+    msg_record_modified = T('Staff Type updated')
+    msg_record_deleted = T('Staff Type deleted')
+    msg_list_empty = T('No Staff Types currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
 def location():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'location', main='code')
-def project():
+    resource = 'location'
+    table = module + '_' + resource
+
+    # Model options used in multiple controllers so defined at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Location')
+    title_display = T('Location Details')
+    title_list = T('List Locations')
+    title_update = T('Edit Location')
+    title_search = T('Search Locations')
+    subtitle_create = T('Add New Location')
+    subtitle_list = T('Locations')
+    label_list_button = T('List Locations')
+    label_create_button = T('Add Location')
+    msg_record_created = T('Location added')
+    msg_record_modified = T('Location updated')
+    msg_record_deleted = T('Location deleted')
+    msg_list_empty = T('No Locations currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource, main='code')
+
+ def project():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'project', main='code')
+     resource = 'project'
+    table = module + '_' + resource
+
+    # Model options used in multiple controllers so defined at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Project')
+    title_display = T('Project Details')
+    title_list = T('List Projects')
+    title_update = T('Edit Project')
+    title_search = T('Search Projects')
+    subtitle_create = T('Add New Project')
+    subtitle_list = T('Projects')
+    label_list_button = T('List Projects')
+    label_create_button = T('Add Project')
+    msg_record_created = T('Project added')
+    msg_record_modified = T('Project updated')
+    msg_record_deleted = T('Project deleted')
+    msg_list_empty = T('No Projects currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+   return shn_rest_controller(module, resource, main='code')
+
 def budget():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'budget')
+    resource = 'budget'
+    table = module + '_' + resource
+
+    # Model options used in multiple controllers so defined at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Budget')
+    title_display = T('Budget Details')
+    title_list = T('List Budgets')
+    title_update = T('Edit Budget')
+    title_search = T('Search Budgets')
+    subtitle_create = T('Add New Budget')
+    subtitle_list = T('Budgets')
+    label_list_button = T('List Budgets')
+    label_create_button = T('Add Budget')
+    msg_record_created = T('Budget added')
+    msg_record_modified = T('Budget updated')
+    msg_record_deleted = T('Budget deleted')
+    msg_list_empty = T('No Budgets currently registered')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
 
 def budget_staff_bundle():
     "Many to Many CRUD Controller"

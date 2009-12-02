@@ -21,42 +21,407 @@ def index():
 
 def apikey():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'apikey', deletable=False, listadd=False)
+    resource = 'apikey'
+    table = module + '_' + resource
+    
+    # Model options
+    # FIXME
+    # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
+    db[table].name.requires = IS_IN_SET(['google', 'multimap', 'yahoo']) 
+    db[table].name.label = T("Service")
+    #db[table].apikey.requires = THIS_NOT_IN_DB(db(db[table].name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
+    db[table].apikey.requires = IS_NOT_EMPTY()
+    db[table].apikey.label = T("Key")
+
+    # CRUD Strings
+    title_create = T('Add Key')
+    title_display = T('Key Details')
+    title_list = T('List Keys')
+    title_update = T('Edit Key')
+    title_search = T('Search Keys')
+    subtitle_create = T('Add New Key')
+    subtitle_list = T('Keys')
+    label_list_button = T('List Keys')
+    label_create_button = T('Add Key')
+    msg_record_created = T('Key added')
+    msg_record_modified = T('Key updated')
+    msg_record_deleted = T('Key deleted')
+    msg_list_empty = T('No Keys currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+
 def config():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'config', deletable=False, listadd=False)
+    resource = 'config'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+    db[table].lat.requires = IS_LAT()
+    db[table].lat.label = T('Latitude')
+    db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+    db[table].lon.requires = IS_LON()
+    db[table].lon.label = T('Longitude')
+    db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+    db[table].zoom.requires = IS_INT_IN_RANGE(0,19)
+    db[table].zoom.label = T('Zoom')
+    db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+    db[table].marker_id.label = T('Default Marker')
+    db[table].map_height.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+    db[table].map_height.label = T('Map Height')
+    db[table].map_height.comment = SPAN("*", _class="req")
+    db[table].map_width.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+    db[table].map_width.label = T('Map Width')
+    db[table].map_width.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    title_create = T('Add Config')
+    title_display = T('Config Details')
+    title_list = T('List Configs')
+    title_update = T('Edit Config')
+    title_search = T('Search Configs')
+    subtitle_create = T('Add New Config')
+    subtitle_list = T('Configs')
+    label_list_button = T('List Configs')
+    label_create_button = T('Add Config')
+    msg_record_created = T('Config added')
+    msg_record_modified = T('Config updated')
+    msg_record_deleted = T('Config deleted')
+    msg_list_empty = T('No Configs currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+
 def feature_class():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'feature_class')
+    resource = 'feature_class'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+    db[table].name.label = T('Name')
+    db[table].name.comment = SPAN("*", _class="req")
+    db[table].description.label = T('Description')
+    db[table].module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=='True') & (~db.s3_module.name.like('default'))), 's3_module.name', '%(name_nice)s'))
+    db[table].module.label = T('Module')
+    db[table].resource.requires = IS_NULL_OR(IS_IN_SET(resource_opts))
+    db[table].resource.label = T('Resource')
+
+    # CRUD Strings
+    title_create = T('Add Feature Class')
+    title_display = T('Feature Class Details')
+    title_list = T('List Feature Classes')
+    title_update = T('Edit Feature Class')
+    title_search = T('Search Feature Class')
+    subtitle_create = T('Add New Feature Class')
+    subtitle_list = T('Feature Classes')
+    label_list_button = T('List Feature Classes')
+    label_create_button = ADD_FEATURE_CLASS
+    msg_record_created = T('Feature Class added')
+    msg_record_modified = T('Feature Class updated')
+    msg_record_deleted = T('Feature Class deleted')
+    msg_list_empty = T('No Feature Classes currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource)
+
 def feature_group():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'feature_group')
-def feature_metadata():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'feature_metadata')
+    resource = 'feature_group'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+    #db[table].author.requires = IS_ONE_OF(db, 'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
+    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+    db[table].name.label = T('Name')
+    db[table].name.comment = SPAN("*", _class="req")
+    db[table].description.label = T('Description')
+    #db[table].features.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    #db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+
+    # CRUD Strings
+    title_create = T('Add Feature Group')
+    title_display = T('Feature Group Details')
+    title_list = T('List Feature Groups')
+    title_update = T('Edit Feature Group')
+    title_search = T('Search Feature Groups')
+    subtitle_create = T('Add New Feature Group')
+    subtitle_list = T('Feature Groups')
+    label_list_button = T('List Feature Groups')
+    label_create_button = T('Add Feature Group')
+    msg_record_created = T('Feature Group added')
+    msg_record_modified = T('Feature Group updated')
+    msg_record_deleted = T('Feature Group deleted')
+    msg_list_empty = T('No Feature Groups currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource)
+
 def location():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'location', onvalidation=lambda form: wkt_centroid(form))
+    resource = 'location'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+    db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+    db[table].name.label = T('Name')
+    db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+    db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+    db[table].parent.label = T('Parent')
+    db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+    db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
+    db[table].gis_feature_type.label = T('Feature Type')
+    db[table].lat.requires = IS_NULL_OR(IS_LAT())
+    db[table].lat.label = T('Latitude')
+    #db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+    CONVERSION_TOOL = T("Conversion Tool")
+    db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    db[table].lon.requires = IS_NULL_OR(IS_LON())
+    db[table].lon.label = T('Longitude')
+    db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    # WKT validation is done in the onvalidation callback
+    #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
+    db[table].wkt.label = T('Well-Known Text')
+    db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+
+    # CRUD Strings
+    title_create = T('Add Location')
+    title_display = T('Location Details')
+    title_list = T('List Locations')
+    title_update = T('Edit Location')
+    title_search = T('Search Locations')
+    subtitle_create = T('Add New Location')
+    subtitle_list = T('Locations')
+    label_list_button = T('List Locations')
+    label_create_button = ADD_LOCATION
+    msg_record_created = T('Location added')
+    msg_record_modified = T('Location updated')
+    msg_record_deleted = T('Location deleted')
+    msg_list_empty = T('No Locations currently available')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
+
 def marker():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'marker')
+    resource = 'marker'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+    db[table].name.label = T('Name')
+    db[table].name.comment = SPAN("*", _class="req")
+    db[table].image.label = T('Image')
+    db[table].image.uploadfolder = os.path.join(request.folder, "static/img/markers")
+
+    # CRUD Strings
+    title_create = T('Add Marker')
+    title_display = T('Marker Details')
+    title_list = T('List Markers')
+    title_update = T('Edit Marker')
+    title_search = T('Search Markers')
+    subtitle_create = T('Add New Marker')
+    subtitle_list = T('Markers')
+    label_list_button = T('List Markers')
+    label_create_button = ADD_MARKER
+    msg_record_created = T('Marker added')
+    msg_record_modified = T('Marker updated')
+    msg_record_deleted = T('Marker deleted')
+    msg_list_empty = T('No Markers currently available')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource)
+
+def metadata():
+    "RESTlike CRUD controller"
+    resource = 'metadata'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+    db[table].description.label = T('Description')
+    db[table].person_id.label = T("Contact")
+    db[table].source.label = T('Source')
+    db[table].accuracy.label = T('Accuracy')
+    db[table].sensitivity.label = T('Sensitivity')
+    db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
+    db[table].event_time.label = T('Event Time')
+    db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())
+    db[table].expiry_time.label = T('Expiry Time')
+    db[table].url.requires = IS_NULL_OR(IS_URL())
+    db[table].url.label = 'URL'
+    db[table].image.label = T('Image')
+
+    # CRUD Strings
+    title_create = T('Add Metadata')
+    title_display = T('Metadata Details')
+    title_list = T('List Metadata')
+    title_update = T('Edit Metadata')
+    title_search = T('Search Metadata')
+    subtitle_create = T('Add New Metadata')
+    subtitle_list = T('Metadata')
+    label_list_button = T('List Metadata')
+    label_create_button = T('Add Metadata')
+    msg_record_created = T('Metadata added')
+    msg_record_modified = T('Metadata updated')
+    msg_record_deleted = T('Metadata deleted')
+    msg_list_empty = T('No Metadata currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource)
+
 def projection():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'projection', deletable=False)
+    resource = 'projection'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+    db[table].name.label = T('Name')
+    db[table].name.comment = SPAN("*", _class="req")
+    db[table].epsg.requires = IS_NOT_EMPTY()
+    db[table].epsg.label = "EPSG"
+    db[table].epsg.comment = SPAN("*", _class="req")
+    db[table].maxExtent.requires = IS_NOT_EMPTY()
+    db[table].maxExtent.label = T('maxExtent')
+    db[table].maxExtent.comment = SPAN("*", _class="req")
+    db[table].maxResolution.requires = IS_NOT_EMPTY()
+    db[table].maxResolution.label = T('maxResolution')
+    db[table].maxResolution.comment = SPAN("*", _class="req")
+    db[table].units.requires = IS_IN_SET(['m', 'degrees'])
+    db[table].units.label = T('Units')
+
+    # CRUD Strings
+    title_create = T('Add Projection')
+    title_display = T('Projection Details')
+    title_list = T('List Projections')
+    title_update = T('Edit Projection')
+    title_search = T('Search Projections')
+    subtitle_create = T('Add New Projection')
+    subtitle_list = T('Projections')
+    label_list_button = T('List Projections')
+    label_create_button = T('Add Projection')
+    msg_record_created = T('Projection added')
+    msg_record_modified = T('Projection updated')
+    msg_record_deleted = T('Projection deleted')
+    msg_list_empty = T('No Projections currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, deletable=False)
+
 def layer_openstreetmap():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'layer_openstreetmap', deletable=False)
+    resource = 'layer_openstreetmap'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].subtype.requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)
+
+    # CRUD Strings
+    title_create = T('Add Layer')
+    title_display = T('Layer Details')
+    title_list = T('List Layers')
+    title_update = T('Edit Layer')
+    title_search = T('Search Layers')
+    subtitle_create = T('Add New Layer')
+    subtitle_list = T('Layers')
+    label_list_button = T('List OpenStreetMap Layers')
+    label_create_button = T('Add Layer')
+    msg_record_created = T('Layer added')
+    msg_record_modified = T('Layer updated')
+    msg_record_deleted = T('Layer deleted')
+    msg_list_empty = T('No OpenStreetMap Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, deletable=False)
+
 def layer_google():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'layer_google', deletable=False)
+    resource = 'layer_google'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].subtype.requires = IS_IN_SET(gis_layer_google_subtypes)
+
+    # CRUD Strings
+    title_create = T('Add Layer')
+    title_display = T('Layer Details')
+    title_list = T('List Layers')
+    title_update = T('Edit Layer')
+    title_search = T('Search Layers')
+    subtitle_create = T('Add New Layer')
+    subtitle_list = T('Layers')
+    label_list_button = T('List Google Layers')
+    label_create_button = T('Add Layer')
+    msg_record_created = T('Layer added')
+    msg_record_modified = T('Layer updated')
+    msg_record_deleted = T('Layer deleted')
+    msg_list_empty = T('No Google Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, deletable=False)
+
 def layer_yahoo():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'layer_yahoo', deletable=False)
+    resource = 'layer_yahoo'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].subtype.requires = IS_IN_SET(gis_layer_yahoo_subtypes)
+
+    # CRUD Strings
+    title_create = T('Add Layer')
+    title_display = T('Layer Details')
+    title_list = T('List Layers')
+    title_update = T('Edit Layer')
+    title_search = T('Search Layers')
+    subtitle_create = T('Add New Layer')
+    subtitle_list = T('Layers')
+    label_list_button = T('List Yahoo Layers')
+    label_create_button = T('Add Layer')
+    msg_record_created = T('Layer added')
+    msg_record_modified = T('Layer updated')
+    msg_record_deleted = T('Layer deleted')
+    msg_list_empty = T('No Yahoo Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, deletable=False)
+
 def layer_bing():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'layer_bing', deletable=False)
+    resource = 'layer_bing'
+    table = module + '_' + resource
+    
+    # Model options
+    db[table].subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
+
+    # CRUD Strings
+    title_create = T('Add Layer')
+    title_display = T('Layer Details')
+    title_list = T('List Layers')
+    title_update = T('Edit Layer')
+    title_search = T('Search Layers')
+    subtitle_create = T('Add New Layer')
+    subtitle_list = T('Layers')
+    label_list_button = T('List Bing Layers')
+    label_create_button = T('Add Layer')
+    msg_record_created = T('Layer added')
+    msg_record_modified = T('Layer updated')
+    msg_record_deleted = T('Layer deleted')
+    msg_list_empty = T('No Bing Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource, deletable=False)
 
 # Module-specific functions
+def convert_gps():
+    " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
+    return dict()
 
 def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
@@ -65,6 +430,57 @@ def shn_latlon_to_wkt(lat, lon):
     """
     WKT = 'POINT(%d %d)' % (lon, lat)
     return WKT
+
+# Onvalidation callback
+def wkt_centroid(form):
+    """GIS
+    If a Point has LonLat defined: calculate the WKT.
+    If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
+    Centroid calculation is done using Shapely, which wraps Geos.
+    A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+    """
+    #shapely_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + str(T(" library not found, so can't find centroid!"))
+    shapely_error = T("Shapely library not found, so can't find centroid!")
+    if form.vars.gis_feature_type == '1':
+        # Point
+        if form.vars.lon == None:
+            form.errors['lon'] = T("Invalid: Longitude can't be empty!")
+            return
+        if form.vars.lat == None:
+            form.errors['lat'] = T("Invalid: Latitude can't be empty!")
+            return
+        form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
+    elif form.vars.gis_feature_type == '2':
+        # Line
+        try:
+            from shapely.wkt import loads
+            try:
+                line = loads(form.vars.wkt)
+            except:
+                form.errors['wkt'] = T("Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!")
+                return
+            centroid_point = line.centroid
+            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+        except:
+            form.errors.gis_feature_type = shapely_error
+    elif form.vars.gis_feature_type == '3':
+        # Polygon
+        try:
+            from shapely.wkt import loads
+            try:
+                polygon = loads(form.vars.wkt)
+            except:
+                form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
+                return
+            centroid_point = polygon.centroid
+            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+        except:
+            form.errors.gis_feature_type = shapely_error
+    else:
+        form.errors.gis_feature_type = T('Unknown type!')
+    return
 
 # Features
 # - experimental!
@@ -452,53 +868,64 @@ def map_viewing_client():
     units = db(db.gis_projection.epsg==projection).select()[0].units
     maxResolution = db(db.gis_projection.epsg==projection).select()[0].maxResolution
     maxExtent = db(db.gis_projection.epsg==projection).select()[0].maxExtent
-    features_marker = db(db.gis_config.id==1).select()[0].marker_id
+    marker_default = db(db.gis_config.id==1).select()[0].marker_id
     
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, features_marker=features_marker))
+    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
     
     # Layers
     baselayers = layers()
-    
+    # Add the Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+
     # Internal Features
-    # ToDo: Only include those features which are are in enabled feature groups (either independently or through a feature class)
-    #feature_groups=db(db.gis_feature_group.enabled==True).select(db.gis_layer_feature_group.ALL)
-    #for feature_group in feature_groups:
-    # Limit to return only 200 features to prevent overloading the browser!
-    query = (db.gis_location.id > 0) & (db.gis_location.deleted==False)
-    features = db(query).select(db.gis_location.ALL, limitby=(0, 200))
-    features_classes = Storage()
-    features_markers = Storage()
-    features_metadata = Storage()
-    for feature in features:
-        # 1st choice for a Marker is the Feature's
-        marker = feature.marker_id
-        try:
-            query = db.gis_feature_class.id == feature.feature_class_id
-            feature_class = db(query).select()[0]
-            
+    features = Storage()
+    # Features are displayed in a layer per FeatureGroup
+    feature_groups = db(db.gis_feature_group.enabled == True).select()
+    for feature_group in feature_groups:
+        # FIXME: Use OL's Cluster Strategy to ensure no more than 200 features displayed to prevent overloading the browser!
+        # - better than doing a server-side spatial query to show ones visible within viewport on every Pan/Zoom!
+        groups = db.gis_feature_group
+        locations = db.gis_location
+        classes = db.gis_feature_class
+        metadata = db.gis_metadata
+        # Which Features are added to the Group directly?
+        link = db.gis_location_to_feature_group
+        features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        # Which Features are added to the Group via their FeatureClass?
+        link = db.gis_feature_class_to_feature_group
+        features2 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), classes.on(classes.id == link.feature_class_id), locations.on(locations.feature_class_id == link.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        features[feature_group.id] = features1 | features2
+        for feature in features[feature_group.id]:
+            feature.module = feature.gis_feature_class.module
+            feature.resource = feature.gis_feature_class.resource
+            if feature.module and feature.resource:
+                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+            else:
+                feature.resource_id = None
+            # 1st choice for a Marker is the Feature's
+            marker = feature.gis_location.marker_id
             if not marker:
                 # 2nd choice for a Marker is the Feature Class's
-                marker = feature_class.marker_id
-        except:
-            feature_class = None
-        if not marker:
-            # 3rd choice for a Marker is the default
-            marker = features_marker
-        features_classes[feature.id] = feature_class
-        features_markers[feature.id] = db(db.gis_marker.id==marker).select()[0].image
-                
-        try:
-            # Metadata is M->1 to Features
-            # We just use the 1st one
-            # FIXME: Use the most recent one instead
-            query = (db.gis_metadata.location_id == feature.id) & (db.gis_metadata.deleted == False)
-            metadata = db(query).select()[0]
-        except:
-            metadata = None
-        features_metadata[feature.id] = metadata
+                marker = feature.gis_feature_class.marker_id
+            if not marker:
+                # 3rd choice for a Marker is the default
+                marker = marker_default
+            feature.marker = db(db.gis_marker.id == marker).select()[0].image
+            
+            try:
+                # Metadata is M->1 to Features
+                # We use the most recent one
+                query = (db.gis_metadata.location_id == feature.gis_location.id) & (db.gis_metadata.deleted == False)
+                metadata = db(query).select(orderby=~db.gis_metadata.event_time)[0]
+            except:
+                metadata = None
+            feature.metadata = metadata
 
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, features=features, features_classes=features_classes, features_markers=features_markers, features_metadata=features_metadata))
+    # Add the Features to the Return
+    #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
+    output.update(dict(feature_groups=feature_groups, features=features))
     
     return output

@@ -9,14 +9,6 @@ db.define_table(table,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
-# Populate table with Default options
-# - deployments can change these live via appadmin
-if not len(db().select(db[table].ALL)): 
-   db[table].insert(
-        # If Disabled at the Global Level then can still Enable just for this Module here
-        audit_read = False,
-        audit_write = False
-    )
 
 # Organisations
 or_organisation_type_opts = {
@@ -33,7 +25,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('privacy', 'integer', default=0),
                 #Field('archived', 'boolean', default=False),
-                Field('name', notnull=True, unique=True),
+                Field('name', length=128, notnull=True, unique=True),
                 Field('acronym', length=8),
                 Field('type', 'integer'),
                 admin_id,

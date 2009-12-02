@@ -1,9 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
 
-db.define_table('test_photo',
-                Field('image', 'upload', autodelete=True))
-db.test_photo.image.represent = lambda image: DIV(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60))
-
 def shn_m2m_widget(self,value,options=[]):
     """Many-to-Many widget
     Currently this is just a renamed copy of t2.tag_widget"""

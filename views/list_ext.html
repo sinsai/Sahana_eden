@@ -1,70 +1,43 @@
-{{extend 'layout_ext.html'}}
+{{extend 'layout.html'}}
+
+{{include 'ext.html'}}
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/restful.css" />
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/RowEditor.css" />
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/silk.css" />
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/extjs/App.js"></script>
 
 <script type="text/javascript">//<![CDATA[
+Ext.onReady(function(){
 
-<!-- List Grid -->
-Ext.onReady(function() {
-    
-    var viewport = new Ext.Viewport({
-        layout: 'border',
-        items: [
-        {{if session.s3.restricted:}}
-        {{else:}}
-            {
-            region: 'north',
-            autoLoad: '{{=URL(r=request, c='default', f='header')}}',
-            //autoHeight: true,
-            height: 70, // give north and south regions a height
-            //html: '<h1 class="x-panel-header">{{=title}}</h1>',
-            border: false,
-            //margins: '0 0 5 0'
-        }, {
-            region: 'south',
-            //title: 'Footer',
-            autoLoad: '{{=URL(r=request, c='default', f='footer')}}',
-            border: false,
-            collapsible: true,
-            split: true,
-            height: 100,
-            minHeight: 100
-        },{{pass}}
-        {
-            //region: 'west',
-            //collapsible: true,
-            //title: 'Navigation',
-            //width: 200
-            // the west region might typically utilize a TreePanel or a Panel with Accordion layout 
-        }, {
-            //region: 'east',
-            //title: 'Title for the Grid Panel',
-            //collapsible: true,
-            //split: true,
-            //width: 200,
-            //xtype: 'grid',
-            // remaining grid configuration not shown ...
-            // notice that the GridPanel is added directly as the region
-            // it is not "overnested" inside another Panel
-        }, {
-            region: 'center',
-            items: [
-                {{if session.s3.restricted:}}
-                {{else:}}
-                {
-                    autoLoad: '{{=URL(r=request, c='default', f='menu')}}',
-                    height: 52,
-                },
-                {{pass}}
-                {
-                    title: '{{=title}}',
-                    autoLoad: '{{=URL(r=request, c='default', f='list')}}',
-                }
-            ]
-        }]
-    });
-
-	viewport.show();
     Ext.QuickTips.init();
-    
-});
 
+    {{include 'extlist.js'}}
+});
 //]]></script>
+
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='pheader'>
+{{try:}}
+ {{=pheader}}
+<p>&nbsp;</p>
+{{except:}}
+ {{pass}}
+</div>
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+{{include 'formats.html'}}
+<div id='table-container'>
+<!-- Ext will render table here -->
+</div>
+<p>&nbsp;</p>
+{{include 'pagenav.html'}}
+{{include 'searchbox.html'}}
+{{try:}}
+ {{=add_btn}}
+{{except:}}
+{{pass}}

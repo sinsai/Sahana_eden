@@ -160,29 +160,6 @@ db.define_table(table, timestamp, deletion_status,
                 feature_class_id,
                 migrate=migrate)
 
-resource = 'metadata'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
-                location_id,
-                Field('description'),
-                person_id,
-                Field('source'),
-                Field('accuracy'),       # Drop-down on a IS_IN_SET[]?
-                Field('sensitivity'),    # Should be turned into a drop-down by referring to AAA's sensitivity table
-                Field('event_time', 'datetime'),
-                Field('expiry_time', 'datetime'),
-                Field('url'),
-                Field('image', 'upload'),
-                migrate=migrate)
-# Joined Resource
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(gis_location='location_id'),
-    deletable=True,
-    editable=True,
-    list_fields = ['id', 'description', 'source', 'event_time', 'url', 'image'])
-
-
 # GIS Keys - needed for commercial mapping services
 resource = 'apikey' # Can't use 'key' as this has other meanings for dicts!
 table = module + '_' + resource
@@ -244,6 +221,11 @@ db.define_table(table, timestamp,
                 migrate=migrate)
 # upload folder needs to be visible to the download() function as well as the upload
 db[table].track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+db[table].track.label = T('GPS Track File')
+db[table].track.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
 
 # GIS Styles: SLD
 #db.define_table('gis_style', timestamp,

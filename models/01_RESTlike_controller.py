@@ -340,7 +340,7 @@ def export_xml(jr):
 
     """ Export data as XML """
 
-    response.headers['Content-Type'] = 'text/xml'
+    response.headers['Content-Type'] = 'application/xml'
 
     if jr.representation=="xml":
         template = None

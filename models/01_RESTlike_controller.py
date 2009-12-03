@@ -483,8 +483,9 @@ def import_json(jr, onvalidation=None, onaccept=None):
         import urllib
         source = urllib.urlopen(jr.request.vars["fetchurl"])
     else:
-        from StringIO import StringIO
-        source = StringIO(jr.request.body)
+        #from StringIO import StringIO
+        #source = StringIO(jr.request.body)
+        source = jr.request.body
 
     tree = s3xrc.xml.json2tree(source)
 
@@ -1260,7 +1261,10 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                 addtitle = s3.crud_strings.subtitle_create
 
             # Check for presence of Custom View
-            shn_custom_view(jr, 'list_create.html')
+            if jr.representation == "ext":
+                shn_custom_view(jr, 'list.html', format='ext')
+            else:
+                shn_custom_view(jr, 'list_create.html')
 
             # Add specificities to Return
             output.update(dict(form=form, addtitle=addtitle))
@@ -1394,12 +1398,13 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if onaccept:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session,module,resource,form.vars.id) and \
+                        s3xrc.store_session(session, module, resource, 0) and \
                         onaccept(form)
+
         else:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session,module,resource,form.vars.id)
+                        s3xrc.store_session(session, module, resource, 0)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created
@@ -1921,7 +1926,7 @@ def shn_rest_controller(module, resource,
         if jr.method==None and jr.multiple and not jr.component_id:
 
             # HTTP List/List-add ----------------------------------------------
-            if jr.http=='GET' or jr.http=='POST':
+            if jr.http=='GET':
                 authorised = shn_has_permission('read', jr.component.table)
                 if authorised:
                     return shn_list(jr, pheader, rss=rss)
@@ -1930,9 +1935,16 @@ def shn_rest_controller(module, resource,
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
 
             # HTTP Create -----------------------------------------------------
-            elif jr.http=='PUT':
-                # Not implemented
-                raise HTTP(501)
+            elif jr.http=='PUT' or jr.http=='POST':
+                if jr.representation in shn_json_import_formats:
+                    response.view = 'plain.html'
+                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.representation in shn_xml_import_formats:
+                    response.view = 'plain.html'
+                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                else:
+                    session.error = BAD_FORMAT
+                    redirect(URL(r=request))
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
@@ -1959,9 +1971,16 @@ def shn_rest_controller(module, resource,
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
 
             # HTTP Update -----------------------------------------------------
-            elif jr.http=='PUT':
-                response.view = 'plain.html'
-                return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+            elif jr.http=='PUT' or jr.http == "POST":
+                if jr.representation in shn_json_import_formats:
+                    response.view = 'plain.html'
+                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.representation in shn_xml_import_formats:
+                    response.view = 'plain.html'
+                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                else:
+                    session.error = BAD_FORMAT
+                    redirect(URL(r=request))
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
@@ -2060,7 +2079,7 @@ def shn_rest_controller(module, resource,
         elif not jr.method and not jr.id:
 
             # HTTP List or List-Add -------------------------------------------
-            if jr.http == 'GET' or request.env.request_method == 'POST':
+            if jr.http == 'GET':
                 return shn_list(jr, pheader, list_fields=list_fields,
                                 listadd=listadd,
                                 main=main,
@@ -2071,10 +2090,17 @@ def shn_rest_controller(module, resource,
                                 onaccept=onaccept,
                                 rss=rss)
             # HTTP Create -----------------------------------------------------
-            elif jr.http == 'PUT':
+            elif jr.http == 'PUT' or jr.http == "POST":
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                response.view = 'plain.html'
-                return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                if jr.representation in shn_json_import_formats:
+                    response.view = 'plain.html'
+                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.representation in shn_xml_import_formats:
+                    response.view = 'plain.html'
+                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                else:
+                    session.error = BAD_FORMAT
+                    redirect(URL(r=request))
 
             # Unsupported HTTP method -----------------------------------------
             else:
@@ -2108,10 +2134,17 @@ def shn_rest_controller(module, resource,
                     raise HTTP(404)
 
             # HTTP Create/Update (single record) ------------------------------
-            elif jr.http == 'PUT':
+            elif jr.http == 'PUT' or jr.http == "POST":
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                response.view = 'plain.html'
-                return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                if jr.representation in shn_json_import_formats:
+                    response.view = 'plain.html'
+                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.representation in shn_xml_import_formats:
+                    response.view = 'plain.html'
+                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                else:
+                    session.error = BAD_FORMAT
+                    redirect(URL(r=request))
 
             # Unsupported HTTP method -----------------------------------------
             else:

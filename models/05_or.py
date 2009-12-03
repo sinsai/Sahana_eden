@@ -43,6 +43,7 @@ db[table].type.label = T('Type')
 db[table].registration.label = T('Registration')
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
+ADD_ORGANISATION = T('Add Organisation')
 title_create = T('Add Organisation')
 title_display = T('Organisation Details')
 title_list = T('List Organisations')
@@ -51,12 +52,21 @@ title_search = T('Search Organisations')
 subtitle_create = T('Add New Organisation')
 subtitle_list = T('Organisations')
 label_list_button = T('List Organisations')
-label_create_button = T('Add Organisation')
+label_create_button = ADD_ORGANISATION
 msg_record_created = T('Organisation added')
 msg_record_modified = T('Organisation updated')
 msg_record_deleted = T('Organisation deleted')
 msg_list_empty = T('No Organisations currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+organisation_id = SQLTable(None, 'organisation_id',
+            Field('organisation_id', db.or_organisation,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
+                label = T('Organisation'),
+                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|The name of the Organisation."))),
+                ondelete = 'RESTRICT'
+                ))
 
 # Offices
 or_office_type_opts = {

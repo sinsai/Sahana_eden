@@ -24,8 +24,18 @@ var reader = new Ext.data.JsonReader({
 }, [
     {{for field in form.fields:}}
       {{if form.custom.widget[field]:}}
-        {name: '{{=form.custom.widget[field].attributes['_name']}}'},
-        //{name: '{{=form.custom.widget[field].attributes['_name']}}', allowBlank: false},
+        {
+            name: '{{=form.custom.widget[field].attributes['_name']}}',
+        {{requires = form.custom.widget[field].attributes['requires']}}
+          {{if not isinstance(requires, (list, tuple)):}}
+            {{requires = [requires]}}
+          {{pass}}
+          {{for require in requires:}}
+            {{if 'IS_NOT_EMPTY' in str(require):}}
+              allowBlank: false
+            {{pass}}
+          {{pass}}
+        },
       {{pass}}
     {{pass}}
 ]);
@@ -47,7 +57,7 @@ var store = new Ext.data.Store({
     
 // Load the store immediately (only for remote Store)
 // client-side paging enabled. FIXME: read value for this from server
-store.load({params:{start:0, limit:25}});
+store.load({params:{start:0, limit:10}});
 
 ////
 // ***New*** centralized listening of DataProxy events "beforewrite", "write" and "writeexception"

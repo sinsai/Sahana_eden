@@ -1,0 +1,90 @@
+{{extend 'layout.html'}}
+
+<!-- Currently requires Ext20. To be replaced with main Ext3 -->
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-2.2.1/resources/css/ext-all.css" />
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/Ext.ux.UploadDialog.css" />
+<!--
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-2.2.1/adapter/jquery/ext-jquery-adapter.js"></script>
+-->
+{{if session.s3.debug:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-2.2.1/adapter/jquery/ext-jquery-adapter-debug.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-2.2.1/ext-all-debug.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.UploadDialog.js"></script>
+{{else:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-2.2.1/adapter/jquery/ext-jquery-adapter.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-2.2.1/ext-all.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.UploadDialog.packed.js"></script>
+<!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance
+<script type="text/javascript" src="http://extjs.cachefly.net/ext-2.2.1/ext-all.js"></script>
+ -->
+{{pass}}
+
+<script type="text/javascript">//<![CDATA[
+
+Ext.onReady(function() {
+    
+});
+
+//]]></script>
+
+{{try:}}
+ {{=H2(response.title)}}
+{{except:}}
+{{pass}}
+<p>
+{{=T('This screen allows you to upload a number of photos & have them linked to Map Locations. Any available Metadata in the files will be read automatically, such as Timestamp, Author, Latitude & Longitude. If Lat/Lon are not included within the files, then these can be supplied by uploading a GPS Track (in GPX format). Timestamps from the track will be correlated with those from the photos to allow the Photos to be placed onto the map. Metadata can be supplied here to be applied to all uploaded photos, if desired.')}}
+</p>
+<p>&nbsp;</p>
+{{try:}}
+ {{=H3(T('Upload Photos'))}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{=form.custom.begin}}
+ <table>
+ <tbody>
+ <tr id='gis_metadata_description__row'>
+ <td>
+ <label>{{=form.custom.label.description}}</label>
+ </td>
+ <td>
+ {{=form.custom.widget.description}}
+ </td>
+ <td>
+ {{=form.custom.comment.description}}
+ </td>
+</tr>
+ <tr id='gis_metadata__row'>
+ <td>
+ <label>{{=form.custom.label.contents}}</label>
+ </td>
+ <td>
+ {{=form.custom.widget.contents}}
+ </td>
+ <td>
+ {{=form.custom.comment.contents}}
+ </td>
+ </tr>
+ <tr id='submit_record__row'>
+ <td>
+ </td>
+ <td>
+ {{=form.custom.submit}}
+ </td>
+ </tr>
+ <td>
+ </td>
+ </tbody>
+ </table>
+ {{=form.custom.end}} 
+</div>
+<p>&nbsp;</p>
+{{=H3(T('Upload GPS Track'))}}
+{{=form_gpx}}
+{{include 'key.html'}}
+<p>&nbsp;</p>
+{{try:}}
+ {{=list_btn}}
+{{except:}}
+{{pass}}
+

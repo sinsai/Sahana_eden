@@ -7,7 +7,54 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
     [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
+    [T('Bulk Uploader'), False, URL(r=request, f='bulk_upload')],
 ]
+
+# Model options used in multiple Actions
+table = 'gis_location'
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+db[table].name.label = T('Name')
+db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+db[table].parent.label = T('Parent')
+db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
+db[table].gis_feature_type.label = T('Feature Type')
+db[table].lat.requires = IS_NULL_OR(IS_LAT())
+db[table].lat.label = T('Latitude')
+#db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+CONVERSION_TOOL = T("Conversion Tool")
+db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+db[table].lon.requires = IS_NULL_OR(IS_LON())
+db[table].lon.label = T('Longitude')
+db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+# WKT validation is done in the onvalidation callback
+#db[table].wkt.requires=IS_NULL_OR(IS_WKT())
+db[table].wkt.label = T('Well-Known Text')
+db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+
+table = 'gis_metadata'
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].description.label = T('Description')
+db[table].person_id.label = T("Contact")
+db[table].source.label = T('Source')
+db[table].accuracy.label = T('Accuracy')
+db[table].sensitivity.label = T('Sensitivity')
+db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
+db[table].event_time.label = T('Event Time')
+db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())
+db[table].expiry_time.label = T('Expiry Time')
+db[table].url.requires = IS_NULL_OR(IS_URL())
+db[table].url.label = 'URL'
+db[table].image.label = T('Image')
+
+table = 'gis_track'
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+db[table].track.label = T('GPS Track File')
+db[table].track.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 
 # Web2Py Tools functions
 def download():
@@ -166,27 +213,7 @@ def location():
     table = module + '_' + resource
     
     # Model options
-    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-    db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
-    db[table].name.label = T('Name')
-    db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
-    db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
-    db[table].parent.label = T('Parent')
-    db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-    db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
-    db[table].gis_feature_type.label = T('Feature Type')
-    db[table].lat.requires = IS_NULL_OR(IS_LAT())
-    db[table].lat.label = T('Latitude')
-    #db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-    CONVERSION_TOOL = T("Conversion Tool")
-    db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-    db[table].lon.requires = IS_NULL_OR(IS_LON())
-    db[table].lon.label = T('Longitude')
-    db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-    # WKT validation is done in the onvalidation callback
-    #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
-    db[table].wkt.label = T('Well-Known Text')
-    db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+    # used in multiple controllers, so at the top of the file
 
     # CRUD Strings
     title_create = T('Add Location')
@@ -241,19 +268,7 @@ def metadata():
     table = module + '_' + resource
     
     # Model options
-    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-    db[table].description.label = T('Description')
-    db[table].person_id.label = T("Contact")
-    db[table].source.label = T('Source')
-    db[table].accuracy.label = T('Accuracy')
-    db[table].sensitivity.label = T('Sensitivity')
-    db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
-    db[table].event_time.label = T('Event Time')
-    db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())
-    db[table].expiry_time.label = T('Expiry Time')
-    db[table].url.requires = IS_NULL_OR(IS_URL())
-    db[table].url.label = 'URL'
-    db[table].image.label = T('Image')
+    # used in multiple controllers, so at the top of the file
 
     # CRUD Strings
     title_create = T('Add Metadata')
@@ -312,6 +327,32 @@ def projection():
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     
     return shn_rest_controller(module, resource, deletable=False)
+
+def track():
+    "RESTlike CRUD controller"
+    resource = 'track'
+    table = module + '_' + resource
+    
+    # Model options
+    # used in multiple controllers, so at the top of the file
+    
+    # CRUD Strings
+    title_create = T('Add Track')
+    title_display = T('Track Details')
+    title_list = T('List Tracks')
+    title_update = T('Edit Track')
+    title_search = T('Search Tracks')
+    subtitle_create = T('Add New Track')
+    subtitle_list = T('Tracks')
+    label_list_button = T('List Tracks')
+    label_create_button = T('Add Track')
+    msg_record_created = T('Track added')
+    msg_record_modified = T('Track updated')
+    msg_record_deleted = T('Track deleted')
+    msg_list_empty = T('No Tracks currently available')
+    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource)
 
 def layer_openstreetmap():
     "RESTlike CRUD controller"
@@ -928,3 +969,18 @@ def map_viewing_client():
     output.update(dict(feature_groups=feature_groups, features=features))
     
     return output
+
+def bulk_upload():
+    """Custom view to allow bulk uploading of photos which are made into GIS Features.
+    Lat/Lon can be pulled from an associated GPX track with timestamp correlation."""
+    
+    form = crud.create(db.gis_metadata)
+    
+    form1 = crud.create(db.gis_location)
+    
+    form_gpx = crud.create(db.gis_track)
+
+    response.title = T('Bulk Uploader')
+    
+    return dict(form=form, form_gpx=form_gpx, form1=form1)
+ 

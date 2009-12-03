@@ -234,6 +234,17 @@ for layertype in gis_layer_types:
         t.subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
         db.define_table(table, t, migrate=migrate)
 
+# GPS Tracks (files in GPX format)
+resource = 'track'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                #uuidstamp, # Tracks don't sync
+                Field('name', length=128, notnull=True, unique=True),
+                Field('track', 'upload', autodelete = True),
+                migrate=migrate)
+# upload folder needs to be visible to the download() function as well as the upload
+db[table].track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
+
 # GIS Styles: SLD
 #db.define_table('gis_style', timestamp,
 #                Field('name', notnull=True, unique=True))

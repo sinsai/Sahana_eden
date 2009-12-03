@@ -7,6 +7,8 @@
     @author: nursix
 
     @see: U{http://trac.sahanapy.org/wiki/RESTController}
+
+    HTTP Status Codes: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 """
 
 # *****************************************************************************
@@ -319,13 +321,15 @@ def export_json(jr):
         if not os.path.exists(template):
             session.error = str(T("XSLT Template Not Found: ")) + \
                             XSLT_EXPORT_TEMPLATES + "/" + template_name
-            redirect(URL(r=request, f="index"))
+            raise HTTP(501, body=json_message(False, 501, session.error))
+            #redirect(URL(r=request, f="index"))
 
     output = jr.export_json(permit=shn_has_permission, audit=shn_audit, template=template)
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error
-        redirect(URL(r=request, f="index"))
+        raise HTTP(400, body=json_message(False, 400, session.error))
+        #redirect(URL(r=request, f="index"))
 
     return output
 
@@ -346,13 +350,15 @@ def export_xml(jr):
         if not os.path.exists(template):
             session.error = str(T("XSLT Template Not Found: ")) + \
                             XSLT_EXPORT_TEMPLATES + "/" + template_name
-            redirect(URL(r=request, f="index"))
+            raise HTTP(501, body=json_message(False, 501, session.error))
+            #redirect(URL(r=request, f="index"))
 
     output = jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error
-        redirect(URL(r=request, f="index"))
+        raise HTTP(400, body=json_message(False, 400, session.error))
+        #redirect(URL(r=request, f="index"))
 
     return output
 
@@ -409,12 +415,12 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
             try:
                 original = db(table.uuid==uuid).select(table.ALL)[0]
             except:
-                return json_message(False, 404, "Record not found!")
+                raise HTTP(404, body=json_message(False, 404, "Record not found!"))
         else:
             # You will never come to that point without having specified a
             # record ID in the request. Nevertheless, we require a UUID to
             # identify the record
-            return json_message(False, 400, "UUID required!")
+            raise HTTP(400, body=json_message(False, 400, "UUID required!"))
 
     # Validate record
     for var in record:
@@ -426,7 +432,7 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
             # del record[var]
             error = "Invalid field name."
         if error:
-            return json_message(False, 403, var + " invalid: " + error)
+            raise HTTP(400, body=json_message(False, 400, var + " invalid: " + error))
         else:
             record[var] = value
 
@@ -445,30 +451,35 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
         if method == 'create':
             id = table.insert(**dict(record))
             if id:
-                item = json_message(True, 201,
-                                    "Created as " + str(jr.other(method=None, record_id=id)))
+                error = 201
+                item = json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
                 form.vars.id = id
                 if onaccept:
                     onaccept(form)
             else:
-                item = json_message(False, 403, "Could not create record!")
+                error = 403
+                item = json_message(False, error, "Could not create record!")
 
         elif method == 'update':
             result = db(table.uuid==uuid).update(**dict(record))
             if result:
-                item = json_message(True, 200, "Record updated.")
+                error = 200
+                item = json_message(True, error, "Record updated.")
                 form.vars.id = original.id
                 if onaccept:
                     onaccept(form)
             else:
-                item = json_message(False, 403, "Could not update record!")
+                error = 403
+                item = json_message(False, error, "Could not update record!")
 
         else:
-            item = json_message(False, 400, "Unsupported Method!")
+            error = 501
+            item = json_message(False, error, "Unsupported Method!")
     except:
-        item = json_message(False, 400, "Invalid request!")
+        error = 400
+        item = json_message(False, error, "Invalid request!")
 
-    return item
+    raise HTTP(error, body=item)
 
 #
 # import_json -----------------------------------------------------------------
@@ -504,7 +515,9 @@ def import_json(jr, onvalidation=None, onaccept=None):
         else:
             session.error = str(T("XSL Template Not Found: ")) + \
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
-            redirect(URL(r=request, f="index"))
+            #redirect(URL(r=request, f="index"))
+            item = json_message(False, 501, session.error)
+            raise HTTP(501)
 
     # For testing:
     #print s3xrc.xml.tostring(tree)
@@ -521,7 +534,8 @@ def import_json(jr, onvalidation=None, onaccept=None):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 501, s3xrc.error, tree=tree)
+        item = json_message(False, 400, s3xrc.error, tree=tree)
+        raise HTTP(400, body=item)
 
     return dict(item=item)
 
@@ -553,7 +567,9 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         else:
             session.error = str(T("XSL Template Not Found: ")) + \
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
-            redirect(URL(r=request, f="index"))
+            #redirect(URL(r=request, f="index"))
+            item = json_message(False, 501, session.error)
+            raise HTTP(501)
 
     success = jr.import_xml(tree,
                             permit=shn_has_permission,
@@ -566,7 +582,8 @@ def import_xml(jr, onvalidation=None, onaccept=None):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 501, s3xrc.error, tree=tree)
+        item = json_message(False, 400, s3xrc.error, tree=tree)
+        raise HTTP(400, body=item)
 
     return dict(item=item)
 
@@ -1886,12 +1903,15 @@ def shn_rest_controller(module, resource,
     # Invalid request?
     if jr.invalid:
         if jr.badmethod:
-            session.error = BADMETHOD
+            #session.error = BADMETHOD
+            raise HTTP(501, body=BADMETHOD)
         elif jr.badrecord:
-            session.error = BADRECORD
+            #session.error = BADRECORD
+            raise HTTP(404, body=BADRECORD)
         else:
-            session.error = INVALIDREQUEST
-        redirect(URL(r=request, c=request.controller, f='index'))
+            #session.error = INVALIDREQUEST
+            raise HTTP(400, body=INVALIDREQUEST)
+        #redirect(URL(r=request, c=request.controller, f='index'))
 
     # Get backlinks
     here, there, same = jr.here(), jr.there(), jr.same()
@@ -1909,8 +1929,9 @@ def shn_rest_controller(module, resource,
             redirect(URL(r=request, f='person', args='search_simple', vars={"_next": same}))
 
         else:
-            session.error = BADRECORD
-            redirect(URL(r=request, f='index'))
+            raise HTTP(404, body=BADRECORD)
+            #session.error = BADRECORD
+            #redirect(URL(r=request, f='index'))
 
     # *************************************************************************
     # Joined Table Operation
@@ -1920,7 +1941,7 @@ def shn_rest_controller(module, resource,
             try:
                 return(jr.custom_action(jr, onvalidation=None, onaccept=None))
             except:
-                raise HTTP(501)
+                raise HTTP(500)
 
         # HTTP Multi-Record Operation *****************************************
         if jr.method==None and jr.multiple and not jr.component_id:
@@ -1943,8 +1964,9 @@ def shn_rest_controller(module, resource,
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 else:
-                    session.error = BAD_FORMAT
-                    redirect(URL(r=request))
+                    raise HTTP(501, body=BADFORMAT)
+                    #session.error = BADFORMAT
+                    #redirect(URL(r=request))
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
@@ -1979,8 +2001,9 @@ def shn_rest_controller(module, resource,
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 else:
-                    session.error = BAD_FORMAT
-                    redirect(URL(r=request))
+                    raise HTTP(501, body=BADFORMAT)
+                    #session.error = BADFORMAT
+                    #redirect(URL(r=request))
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
@@ -2042,8 +2065,9 @@ def shn_rest_controller(module, resource,
 
         # Unsupported Method **************************************************
         else:
-            session.error = BADMETHOD
-            redirect(URL(r=request, f='index'))
+            raise HTTP(501, body=BADMETHOD)
+            #session.error = BADMETHOD
+            #redirect(URL(r=request, f='index'))
 
     # *************************************************************************
     # Single Table Operation
@@ -2055,7 +2079,7 @@ def shn_rest_controller(module, resource,
             try:
                 return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
             except:
-                raise HTTP(501)
+                raise HTTP(500)
 
         # Clear Session *******************************************************
         elif jr.method=="clear":
@@ -2099,8 +2123,9 @@ def shn_rest_controller(module, resource,
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 else:
-                    session.error = BAD_FORMAT
-                    redirect(URL(r=request))
+                    raise HTTP(501, body=BADFORMAT)
+                    #session.error = BADFORMAT
+                    #redirect(URL(r=request))
 
             # Unsupported HTTP method -----------------------------------------
             else:
@@ -2143,8 +2168,9 @@ def shn_rest_controller(module, resource,
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 else:
-                    session.error = BAD_FORMAT
-                    redirect(URL(r=request))
+                    raise HTTP(501, body=BADFORMAT)
+                    #session.error = BADFORMAT
+                    #redirect(URL(r=request))
 
             # Unsupported HTTP method -----------------------------------------
             else:
@@ -2238,15 +2264,18 @@ def shn_rest_controller(module, resource,
                             query = query & (jr.table[field] > value)
                             item = db(query).select().json()
                         else:
-                            item = json_message(False, 501, "Unsupported filter! Supported filters: ~, =, <, >")
+                            item = json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                            raise HTTP(400, body=item)
                     else:
-                        item = json_message(False, 501, "Search requires specifying Field, Filter & Value!")
+                        item = json_message(False, 400, "Search requires specifying Field, Filter & Value!")
+                        raise HTTP(400, body=item)
                     response.view = 'plain.html'
                     return dict(item=item)
 
                 else:
-                    session.error = BADFORMAT
-                    redirect(URL(r=request))
+                    raise HTTP(501, body=BADFORMAT)
+                    #session.error = BADFORMAT
+                    #redirect(URL(r=request))
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
@@ -2257,8 +2286,9 @@ def shn_rest_controller(module, resource,
 
         # Unsupported Method **************************************************
         else:
-            session.error = BADMETHOD
-            redirect(URL(r=request))
+            raise HTTP(501, body=BADMETHOD)
+            #session.error = BADMETHOD
+            #redirect(URL(r=request))
 
 # END
 # *****************************************************************************

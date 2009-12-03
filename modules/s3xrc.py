@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.0-4, 2009-12-03
+    @version: 1.4.0-5, 2009-12-03
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -1573,9 +1573,11 @@ class S3XML(object):
             if f in self.IGNORE_FIELDS or f in skip:
                 continue
             if f in table.fields:
-                value = self.xml_decode(element.get(f, None))
+                v= value = self.xml_decode(element.get(f, None))
                 if value is not None:
-                    (value, error) = self.validate(table, original, f, value)
+                    if not isinstance(value, (str, unicode)):
+                        v = str(value)
+                    (value, error) = self.validate(table, original, f, v)
                     if error:
                         element.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
                         valid = False
@@ -1599,14 +1601,20 @@ class S3XML(object):
                     value = table[f].default
                 if value is None and table[f].type == "string":
                     value = ''
+                if value == '' and not table[f].type == "string":
+                    value = table[f].default
 
                 if value is not None:
-                    (value, error) = self.validate(table, original, f, value)
+                    v = value
+                    if not isinstance(value, (str, unicode)):
+                        v = str(value)
+                    (value, error) = self.validate(table, original, f, v)
                     if error:
                         child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
                         valid = False
                         continue
                     else:
+                        child.set(self.ATTRIBUTE["value"], v)
                         record[f]=value
 
             elif child.tag==self.TAG["reference"]:

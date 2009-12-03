@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'default'
 # Current Module (for sidebar title)
@@ -15,28 +15,28 @@ def call():
     # If webservices don't use sessions, avoid cluttering up the storage
     #session.forget()
     return service()
-    
+
 def download():
     "Download a file."
     return response.download(request, db)
 
 def user():
     "Auth functions based on arg. See gluon/tools.py"
-    
-    form = auth()
-    
+
     auth.settings.on_failed_authorization = URL(r=request, f='error')
     # Add newly-registered users to Person Registry & 'Authenticated' role
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
-    
+
+    form = auth()
+
     self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
-    
+
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
     #if request.args[0] == 'login':
     #    response.title = T('Login')
     #    response.view = 'auth/login.html'
-    
+
     return dict(form=form, self_registration=self_registration)
 
 # S3 framework functions
@@ -62,7 +62,7 @@ def menu():
 def list():
     "Custom view designed to be pulled into an Ext layout's Center Panel"
     return dict()
-    
+
 def open_module():
     "Select Module"
     id = request.vars.id

@@ -2,7 +2,7 @@
 
 """
 This file was developed by Fran Boon as a web2py extension.
-This file is released under the BSD license 
+This file is released under the BSD license
 (you can include it in bytecode compiled web2py apps as long as you acknowledge the author).
 
 web2py (required to run this file) is released under the GPLv2 license.
@@ -42,14 +42,14 @@ def URL2(a=None, c=None, r=None):
     >>> URL(a='a',c='c')
     '/a/c'
 
-    generates a url "/a/c" corresponding to application a & controller c 
+    generates a url "/a/c" corresponding to application a & controller c
     If r=request is passed, a & c are set, respectively,
     to r.application, r.controller
 
     The more typical usage is:
-    
+
     URL(r=request) that generates a base url with the present application and controller.
-    
+
     The function (& optionally args/vars) are expected to be added via jquery based on attributes of the item.
     """
     application = controller = None
@@ -57,7 +57,7 @@ def URL2(a=None, c=None, r=None):
         application = r.application
         controller = r.controller
     if a:
-        application = a    
+        application = a
     if c:
         controller = c
     if not (application and controller):
@@ -65,7 +65,7 @@ def URL2(a=None, c=None, r=None):
     #other = ''
     url = '/%s/%s' % (application, controller)
     return url
-        
+
 def URL3(a=None, r=None):
     """
     example:
@@ -78,9 +78,9 @@ def URL3(a=None, r=None):
     to r.application
 
     The more typical usage is:
-    
+
     URL(r=request) that generates a base url with the present application.
-    
+
     The controller & function (& optionally args/vars) are expected to be added via jquery based on attributes of the item.
     """
     application = controller = None
@@ -88,7 +88,7 @@ def URL3(a=None, r=None):
         application = r.application
         controller = r.controller
     if a:
-        application = a    
+        application = a
     if not (application and controller):
         raise SyntaxError, 'not enough information to build the url'
     #other = ''
@@ -109,7 +109,7 @@ class MENU2(DIV):
       ul_sub_class: defaults to 'S3menuSub'
       li_class: defaults to 'S3menuLI'
       a_class: defaults to 'S3menuA'
-      
+
     Example:
         menu = MENU2([['name', False, URL(...), [submenu]], ...])
         {{=menu}}
@@ -130,7 +130,7 @@ class MENU2(DIV):
             self['li_class'] = 'S3menuLI'
         if not 'a_class' in self.attributes:
             self['a_class'] = 'S3menuA'
-        
+
     def serialize(self, data, level=0):
         if level == 0:
             # Top-level menu
@@ -180,7 +180,7 @@ class MENU3(DIV):
       ul_sub_class: defaults to 'S3menuSub'
       li_class: defaults to 'S3menuLI'
       a_class: defaults to 'S3menuA'
-      
+
     Example:
         menu = MENU3([['name', False, URL(...), [submenu]], ...])
         {{=menu}}
@@ -201,7 +201,7 @@ class MENU3(DIV):
             self['li_class'] = 'S3menuLI'
         if not 'a_class' in self.attributes:
             self['a_class'] = 'S3menuA'
-        
+
     def serialize(self, data, level=0):
         if level == 0:
             # Top-level menu
@@ -368,14 +368,14 @@ class SQLTABLE2(TABLE):
                             tref,fref = ref.split('.')
                             if hasattr(sqlrows.db[tref],'_primarykey'):
                                 href = '%s/%s?%s' % (linkto, tref, urllib.urlencode({fref:ur}))
-                            
+
                     row.append(TD(A(r, _href=href)))
                 elif linkto and hasattr(field._table,'_primarykey') and fieldname in field._table._primarykey:
                     # have to test this with multi-key tables
                     key = urllib.urlencode(dict( [ \
                                 ((tablename in record \
                                       and isinstance(record, Row) \
-                                      and isinstance(record[tablename], Row)) and 
+                                      and isinstance(record[tablename], Row)) and
                                  (k, record[tablename][k])) or (k, record[k]) \
                                     for k in field._table._primarykey ] ))
                     row.append(TD(A(r, _href='%s/%s?%s' % (linkto, tablename, key))))
@@ -383,7 +383,7 @@ class SQLTABLE2(TABLE):
                     row.append(TD(r))
             tbody.append(TR(_class=_class, *row))
         components.append(TBODY(*tbody))
-    
+
 import uuid, datetime
 from gluon.tools import *
 
@@ -402,7 +402,7 @@ class AuthS3(Auth):
         self.messages.lock_keys = False
         self.messages.registration_disabled = 'Registration Disabled!'
         self.messages.lock_keys = True
-                
+
     def __get_migrate(self, tablename, migrate=True):
 
         if type(migrate).__name__=='str':
@@ -583,7 +583,7 @@ class AuthS3(Auth):
         ):
         """
         Overrides Web2Py's login() to use custom flash styles &  utcnow
-        
+
         returns a login form
 
         .. method:: Auth.login([next=DEFAULT [, onvalidation=DEFAULT
@@ -727,7 +727,7 @@ class AuthS3(Auth):
             * Checks whether registration is permitted
             * Custom Flash styles
             * utcnow
-            
+
         returns a registration form
 
         .. method:: Auth.register([next=DEFAULT [, onvalidation=DEFAULT
@@ -739,7 +739,7 @@ class AuthS3(Auth):
         request = self.environment.request
         response = self.environment.response
         session = self.environment.session
-        
+
         # S3: Don't allow registration if disabled
         db = self.db
         self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
@@ -872,13 +872,13 @@ class AuthS3(Auth):
                     last_name = form.vars.last_name,
                     email = form.vars.email
                 )
-                
+
     def requires_membership(self, role):
         """
         decorator that prevents access to action if not logged in or
         if user logged in is not a member of group_id.
         If role is provided instead of group_id then the group_id is calculated.
-        
+
         Overrides Web2Py's requires_membership() to add new functionality:
             * Custom Flash style
         """
@@ -910,7 +910,7 @@ class CrudS3(Crud):
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Crud.__init__(self, environment, db)
-        
+
     def select(
         self,
         table,
@@ -977,7 +977,7 @@ class S3:
             self.id = int(request.args[-1])
         except:
             self.id = 0
-        
+
     def _globals(self):
         """
         Returns (request, response, session, cache, T, db)
@@ -993,8 +993,8 @@ class S3:
 
     def action(self, f=None, args=[], vars={}):
         """
-        self.action('name', [], {}) is a shortcut for 
-     
+        self.action('name', [], {}) is a shortcut for
+
             URL(r=request, f='name', args=[], vars={})
         """
         if not f:
@@ -1055,11 +1055,11 @@ class S3:
           INPUT(_type='button', _value='<', _onclick='javascript:location="%s"'
             %self.action(args=request.args, vars={'_page':page-1})) if page else '',
           SELECT(value=page,
-            _onchange = 'javascript:location="%s?_page="+this.value' % self.action(args=request.args), 
+            _onchange = 'javascript:location="%s?_page="+this.value' % self.action(args=request.args),
             # Intentionally "hide" it here for professional users. Cuz I doubt it is not intuitive enough for non-english common users.
-            _title=query, 
+            _title=query,
             # I hope the marks here are universal therefore no need for i18n
-            *[OPTION('P%d (#%d~#%d)' % 
+            *[OPTION('P%d (#%d~#%d)' %
               (i+1, i*nitems+1, min(rows_count, (i+1)*nitems)),
               _value=i) for i in xrange(rows_count/nitems+1)]
             ) if nitems < rows_count else '',
@@ -1073,16 +1073,16 @@ class S3:
         if len(tables) == 1:
             return DIV(
                 # It shouldn't be inside the table otherwise it is tricky to set the correct _colspan for IE7
-                nav if nav else '', 
+                nav if nav else '',
                 # sorry, I don't know how to setup css to make _class='t2-itemize' looks cool, so I stick to "sortable"
-                TABLE(_class='sortable', 
+                TABLE(_class='sortable',
                     *headerList+[TR(*represent(tables[0], row)) for row in rows]),
                 nav if nav else '') # See above
         else:
             import itertools
             return DIV(
                 # And don't try to make it "align=right", because the table might be too wide to show in the screen.
-                nav if nav else '', 
+                nav if nav else '',
                 TABLE(_class='sortable', # see above
                     *headerList+[TR(*list(itertools.chain(
                         *[represent(table,row[table._tablename]) for table in tables])))
@@ -1113,23 +1113,23 @@ class S3:
             return DIV(
                         INPUT(
                             _class='date' if isinstance(requires, IS_DATE) else 'datetime',
-                            _type='text', 
-                            _name=lowName, 
-                            _id=lowName, 
+                            _type='text',
+                            _name=lowName,
+                            _id=lowName,
                             requires=IS_NULL_OR(requires)
                         ),
                     '<= X <=',
                     INPUT(_class='date' if isinstance(requires,IS_DATE) else 'datetime',
-                        _type='text', 
-                        _name=highName, 
-                        _id=highName, 
+                        _type='text',
+                        _name=highName,
+                        _id=highName,
                         requires=IS_NULL_OR(requires)),
                      )
         if field.name == 'id':
-            return DIV('=', 
+            return DIV('=',
                     # we still need this to trigger the search anyway
-                    INPUT(_type='hidden', 
-                            _value='is', 
+                    INPUT(_type='hidden',
+                            _value='is',
                             _name='%s%s' % (self.SEARCH_OP_PREFIX, field.name)),
                     INPUT(_class='integer', _name='id'))
         if field.type in ('text', 'string'): # the last exit
@@ -1143,7 +1143,7 @@ class S3:
         import logging
         logging.warn('Oops, this field is not yet supported. Please report it.')
 
-    def search(self, *tables, **opts):    
+    def search(self, *tables, **opts):
         """
         Makes a search widgets to search records in tables.
         opts can be query, orderby, limitby
@@ -1175,7 +1175,7 @@ class S3:
             for field in table.get('displays', table.fields):
                 tf = str(table[field])
                 t = table[field].type
-                if not self.is_gae and (t=='string' or t=='text'): 
+                if not self.is_gae and (t=='string' or t=='text'):
                     options.append(option('%s contains' % tf))
                     options.append(option('%s starts with' % tf))
                 if t != 'upload':
@@ -1199,11 +1199,11 @@ class S3:
                 session.t2.query = []
             session.t2.query.append(p)
             orderby, message1, message2 = None, '', ''
-            prev = [None, None, None]        
+            prev = [None, None, None]
             for item in session.t2.query:
                 c, value, order = item
                 if c != prev[0] or value != prev[1]:
-                    tf, cond = c.split(' ', 1)                
+                    tf, cond = c.split(' ', 1)
                     table, field = tf.split('.')
                     f = db[table][field]
                     if (f.type=='integer' or f.type=='id') and \
@@ -1217,13 +1217,13 @@ class S3:
                         q = f.lower().like('%%%s%%' %value.lower())
                     elif cond=='starts with':
                         q = f.lower().like('%s%%' % value.lower())
-                    elif cond=='less than': 
+                    elif cond=='less than':
                         q = f < value
                     elif cond=='equal to':
                         q = f == value
                     elif cond=='not equal to':
                         q = f != value
-                    elif cond=='greater than': 
+                    elif cond=='greater than':
                         q = f > value
                     query = query&q if query else q
                     message1 += '%s "%s" AND ' % (c, value)
@@ -1239,8 +1239,8 @@ class S3:
                     message2 += '%s ' % order
                 prev = item
             message = 'QUERY %s ORDER %s' % (message1, message2)
-            return DIV(TABLE(TR(form), TR(message), 
-                TR(self.itemize(query=query, orderby=orderby, *tables))), 
+            return DIV(TABLE(TR(form), TR(message),
+                TR(self.itemize(query=query, orderby=orderby, *tables))),
                 _class='t2-search')
         else:
             session.t2.query = []

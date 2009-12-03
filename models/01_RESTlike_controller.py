@@ -19,7 +19,7 @@ XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data 
 
 # XSLT available formats
 shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
-shn_xml_export_formats = ["xml"] #: Supported XML output formats
+shn_xml_export_formats = ["xml", "lmx"] #: Supported XML output formats
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
 shn_json_export_formats = ["json"] #: Supported JSON output formats

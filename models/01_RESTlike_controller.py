@@ -1963,10 +1963,15 @@ def shn_rest_controller(module, resource,
                 elif jr.representation in shn_xml_import_formats:
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.http == "POST":
+                    authorised = shn_has_permission('read', jr.component.table)
+                    if authorised:
+                        return shn_list(jr, pheader, rss=rss)
+                    else:
+                        session.error = UNAUTHORISED
+                        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
                 else:
                     raise HTTP(501, body=BADFORMAT)
-                    #session.error = BADFORMAT
-                    #redirect(URL(r=request))
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
@@ -2000,10 +2005,15 @@ def shn_rest_controller(module, resource,
                 elif jr.representation in shn_xml_import_formats:
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.http == "POST":
+                    authorised = shn_has_permission('read', jr.component.table)
+                    if authorised:
+                        return shn_read(jr, pheader=pheader, rss=rss)
+                    else:
+                        session.error = UNAUTHORISED
+                        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
                 else:
                     raise HTTP(501, body=BADFORMAT)
-                    #session.error = BADFORMAT
-                    #redirect(URL(r=request))
 
             # HTTP Delete -----------------------------------------------------
             elif jr.http=='DELETE':
@@ -2122,10 +2132,18 @@ def shn_rest_controller(module, resource,
                 elif jr.representation in shn_xml_import_formats:
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.http == "POST":
+                    return shn_list(jr, pheader, list_fields=list_fields,
+                                    listadd=listadd,
+                                    main=main,
+                                    extra=extra,
+                                    orderby=orderby,
+                                    sortby=sortby,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept,
+                                    rss=rss)
                 else:
                     raise HTTP(501, body=BADFORMAT)
-                    #session.error = BADFORMAT
-                    #redirect(URL(r=request))
 
             # Unsupported HTTP method -----------------------------------------
             else:
@@ -2140,6 +2158,20 @@ def shn_rest_controller(module, resource,
             # HTTP Read (single record) ---------------------------------------
             if jr.http == 'GET':
                 return shn_read(jr, pheader=pheader, editable=editable, deletable=deletable, rss=rss)
+
+            # HTTP Create/Update (single record) ------------------------------
+            elif jr.http == 'PUT' or jr.http == "POST":
+                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+                if jr.representation in shn_json_import_formats:
+                    response.view = 'plain.html'
+                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.representation in shn_xml_import_formats:
+                    response.view = 'plain.html'
+                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                elif jr.http == "POST":
+                    return shn_read(jr, pheader=pheader, editable=editable, deletable=deletable, rss=rss)
+                else:
+                    raise HTTP(501, body=BADFORMAT)
 
             # HTTP Delete (single record) -------------------------------------
             elif jr.http == 'DELETE':
@@ -2157,20 +2189,6 @@ def shn_rest_controller(module, resource,
                 else:
                     # Not found
                     raise HTTP(404)
-
-            # HTTP Create/Update (single record) ------------------------------
-            elif jr.http == 'PUT' or jr.http == "POST":
-                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                if jr.representation in shn_json_import_formats:
-                    response.view = 'plain.html'
-                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.representation in shn_xml_import_formats:
-                    response.view = 'plain.html'
-                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
-                else:
-                    raise HTTP(501, body=BADFORMAT)
-                    #session.error = BADFORMAT
-                    #redirect(URL(r=request))
 
             # Unsupported HTTP method -----------------------------------------
             else:

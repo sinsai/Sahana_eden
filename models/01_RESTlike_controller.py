@@ -1231,12 +1231,12 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             if onaccept:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session, module, resource, form.vars.id) and \
+                            s3xrc.store_session(session, module, resource, 0) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session, module, resource, form.vars.id)
+                            s3xrc.store_session(session, module, resource, 0)
 
             try:
                 message = s3.crud_strings[tablename].msg_record_created
@@ -1406,12 +1406,13 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if onaccept:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session,module,resource,form.vars.id) and \
+                        s3xrc.store_session(session, module, resource, 0) and \
                         onaccept(form)
+                        
         else:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session,module,resource,form.vars.id)
+                        s3xrc.store_session(session, module, resource, 0)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created

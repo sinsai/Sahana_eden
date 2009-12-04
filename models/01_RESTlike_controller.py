@@ -377,13 +377,38 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
     response.headers['Content-Type'] = 'text/x-json'
 
     for var in request.vars:
+        
         # Skip the Representation
         if var == 'format':
             continue
         elif var == 'uuid':
             uuid = request.vars[var]
+        elif table[var].type == 'upload':
+            # Handle file uploads (copied from gluon/sqlhtml.py)
+            field = table[var]
+            fieldname = var
+            f = request.vars[fieldname]
+            fd = fieldname + '__delete'
+            if f == '' or f == None:
+                #if request.vars.get(fd, False) or not self.record:
+                if request.vars.get(fd, False):
+                    record[fieldname] = ''
+                else:
+                    #record[fieldname] = self.record[fieldname]
+                    pass
+            elif hasattr(f,'file'):
+                (source_file, original_filename) = (f.file, f.filename)
+            elif isinstance(f, (str, unicode)):
+                ### do not know why this happens, it should not
+                (source_file, original_filename) = \
+                    (cStringIO.StringIO(f), 'file.txt')
+            newfilename = field.store(source_file, original_filename)
+            request.vars['%s_newfilename' % fieldname] = record[fieldname] = newfilename 
+            if field.uploadfield and not field.uploadfield==True:
+                record[field.uploadfield] = source_file.read()
         else:
             record[var] = request.vars[var]
+            
 
     # UUID is required for update
     if method == 'update':

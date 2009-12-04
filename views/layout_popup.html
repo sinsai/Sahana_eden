@@ -13,23 +13,29 @@
 function TB_refresh() {
     // The Get parameters
     var $_GET = getQueryParams(document.location.search);
-    // The JSON of the resource we just created
-    var listsource = document.location.pathname.replace("/create",".json");
-    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
+    var caller = $_GET["caller"];
+    var child_resource = '{{=request.function}}';
+    var parent_field = caller.replace('_' + child_resource, '');
+    var parent_module = parent_field.replace(/_.*/, '');
+    var parent_resource = parent_field.replace(/.*_/, '');
+    // URL to retrieve the Options list for the field of the master resource
+    var url = '{{=URL(r=request, c='aaa', f='bbb')}}'.replace('aaa/bbb', parent_module + '/' + parent_resource);
+    alert(url);
+    var listsource = url + "/options.json?field=" + child_resource;
+    if(self.parent.$('#' + caller + ' >option').length ){
         // We have been called next to a drop-down
         // Get the previously selected value
-        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
+        var selectedvalue = self.parent.$('#' + caller).attr("selectedIndex")+1;
         // Clean up the caller
-        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
+        self.parent.$('#' + caller + ' >option').remove();
         $.getJSON(listsource, function (data) {
             $.each(data, function() {
-                // FIXME: Don't assume that .represent is .name (doesn't even always exist!)
-                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(this['name']));
-                selectedvalue = this['id'];
-                selectedname = this['name'];
+                self.parent.$('#' + caller).append($("<option></option>").val(this['@value']).html(this['$']));
+                selectedvalue = this['@value'];
+                selectedname = this['$'];
             });
             // Set the newly-created value
-            self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
+            self.parent.$('#' + caller).val(selectedvalue);
             // Also populate dummy, if present
             // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
             //self.parent.$('#dummy').val(selectedname);

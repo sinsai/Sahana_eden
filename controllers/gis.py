@@ -7,7 +7,7 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
     [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
-    [T('Bulk Uploader'), False, URL(r=request, f='bulk_upload')],
+    [T('Bulk Uploader'), False, URL(r=request, c='media', f='bulk_upload')],
 ]
 
 # Model options used in multiple Actions
@@ -33,28 +33,13 @@ db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="t
 #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
 db[table].wkt.label = T('Well-Known Text')
 db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-
-table = 'gis_metadata'
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].description.label = T('Description')
-db[table].person_id.label = T("Contact")
-db[table].source.label = T('Source')
-db[table].accuracy.label = T('Accuracy')
-db[table].sensitivity.label = T('Sensitivity')
-db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
-db[table].event_time.label = T('Event Time')
-db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())
-db[table].expiry_time.label = T('Expiry Time')
-db[table].url.requires = IS_NULL_OR(IS_URL())
-db[table].url.label = 'URL'
-db[table].image.label = T('Image')
-
-table = 'gis_track'
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
-db[table].track.label = T('GPS Track File')
-db[table].track.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+# Joined Resource
+#s3xrc.model.add_component('media', 'metadata',
+#    multiple=True,
+#    joinby=dict(gis_location='location_id'),
+#    deletable=True,
+#    editable=True,
+#    list_fields = ['id', 'description', 'source', 'event_time', 'url'])
 
 # Web2Py Tools functions
 def download():
@@ -262,32 +247,6 @@ def marker():
     
     return shn_rest_controller(module, resource)
 
-def metadata():
-    "RESTlike CRUD controller"
-    resource = 'metadata'
-    table = module + '_' + resource
-    
-    # Model options
-    # used in multiple controllers, so at the top of the file
-
-    # CRUD Strings
-    title_create = T('Add Metadata')
-    title_display = T('Metadata Details')
-    title_list = T('List Metadata')
-    title_update = T('Edit Metadata')
-    title_search = T('Search Metadata')
-    subtitle_create = T('Add New Metadata')
-    subtitle_list = T('Metadata')
-    label_list_button = T('List Metadata')
-    label_create_button = T('Add Metadata')
-    msg_record_created = T('Metadata added')
-    msg_record_modified = T('Metadata updated')
-    msg_record_deleted = T('Metadata deleted')
-    msg_list_empty = T('No Metadata currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
-    return shn_rest_controller(module, resource)
-
 def projection():
     "RESTlike CRUD controller"
     resource = 'projection'
@@ -334,23 +293,10 @@ def track():
     table = module + '_' + resource
     
     # Model options
-    # used in multiple controllers, so at the top of the file
+    # used in multiple controllers, so defined in model
     
     # CRUD Strings
-    title_create = T('Add Track')
-    title_display = T('Track Details')
-    title_list = T('List Tracks')
-    title_update = T('Edit Track')
-    title_search = T('Search Tracks')
-    subtitle_create = T('Add New Track')
-    subtitle_list = T('Tracks')
-    label_list_button = T('List Tracks')
-    label_create_button = T('Add Track')
-    msg_record_created = T('Track added')
-    msg_record_modified = T('Track updated')
-    msg_record_deleted = T('Track deleted')
-    msg_list_empty = T('No Tracks currently available')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    # used in multiple controllers, so defined in model
     
     return shn_rest_controller(module, resource)
 
@@ -589,7 +535,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.gis_metadata.location_id==id & db.gis_metadata.deleted==False).select()
+            metadata = db(db.media_metadata.location_id==id & db.media_metadata.deleted==False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -646,7 +592,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.gis_metadata.location_id==id & db.gis_metadata.deleted==False).select()
+            metadata = db(db.media_metadata.location_id==id & db.media_metadata.deleted==False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -928,7 +874,7 @@ def map_viewing_client():
         groups = db.gis_feature_group
         locations = db.gis_location
         classes = db.gis_feature_class
-        metadata = db.gis_metadata
+        metadata = db.media_metadata
         # Which Features are added to the Group directly?
         link = db.gis_location_to_feature_group
         features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
@@ -958,8 +904,8 @@ def map_viewing_client():
             try:
                 # Metadata is M->1 to Features
                 # We use the most recent one
-                query = (db.gis_metadata.location_id == feature.gis_location.id) & (db.gis_metadata.deleted == False)
-                metadata = db(query).select(orderby=~db.gis_metadata.event_time)[0]
+                query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
+                metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
             except:
                 metadata = None
             feature.metadata = metadata
@@ -969,18 +915,3 @@ def map_viewing_client():
     output.update(dict(feature_groups=feature_groups, features=features))
     
     return output
-
-def bulk_upload():
-    """Custom view to allow bulk uploading of photos which are made into GIS Features.
-    Lat/Lon can be pulled from an associated GPX track with timestamp correlation."""
-    
-    form = crud.create(db.gis_metadata)
-    
-    form1 = crud.create(db.gis_location)
-    
-    form_gpx = crud.create(db.gis_track)
-
-    response.title = T('Bulk Uploader')
-    
-    return dict(form=form, form_gpx=form_gpx, form1=form1)
- 

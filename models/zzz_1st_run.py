@@ -186,6 +186,15 @@ if empty:
             description="Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
             enabled='True'
         )
+        db[table].insert(
+            name="media",
+            name_nice="Media Manager",
+            priority=16,
+            module_type=4,
+            access='',
+            description="A library of digital resources, such as Photos.",
+            enabled='True'
+        )
 
     # Budget Module
     table = 'budget_setting'

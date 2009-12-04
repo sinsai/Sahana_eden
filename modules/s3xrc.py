@@ -42,14 +42,42 @@ import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 from gluon.html import URL
+from gluon.http import HTTP
 from gluon.validators import IS_NULL_OR
+
+##exec('from applications.%s.modules.sahana import json_message' % request.application)
+#from applications.sahana.modules.sahana import json_message
+
+def json_message(success=True, status_code="200", message=None, tree=None):
+
+    """Provide a nicely-formatted JSON Message."""
+
+    if success:
+        status="success"
+    else:
+        status="failed"
+
+    if not success:
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}, "Tree": %s }' % \
+                (status, status_code, message, tree)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}, "Tree": %s }' % \
+                (status, status_code, tree)
+    else:
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
+                (status, status_code, message)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
+                (status, status_code)
 
 from xml.etree.cElementTree import ElementTree
 
-NO_LXML=True
+NO_LXML = True
 try:
     from lxml import etree
-    NO_LXML=False
+    NO_LXML = False
 except ImportError:
     try:
         import xml.etree.cElementTree as etree
@@ -1733,7 +1761,10 @@ class S3XML(object):
 
     def json2tree(self, source, format=None):
 
-        root_dict = json.load(source)
+        try:
+            root_dict = json.load(source)
+        except ValueError, e:
+            raise HTTP(400, body=json_message(False, 400, e.message))
 
         native=False
 

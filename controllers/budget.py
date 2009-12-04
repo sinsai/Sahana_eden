@@ -134,7 +134,7 @@ db[table].total_onetime_costs.label = T('Total One-time Costs')
 db[table].total_recurring_costs.label = T('Total Recurring Costs')
 db[table].comments.label = T('Comments')
 
-table = 'budget_bundle'
+table = 'budget_budget_bundle'
 db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
 db[table].budget_id.label = T('Budget')
 db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
@@ -154,7 +154,7 @@ db[table].months.requires = IS_NOT_EMPTY()
 db[table].months.label = T('Months')
 db[table].months.comment = SPAN("*", _class="req")
 
-table = 'budget_staff'
+table = 'budget_budget_staff'
 db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
 db[table].budget_id.label = T('Budget')
 db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
@@ -178,7 +178,6 @@ db[table].months.comment = SPAN("*", _class="req")
 def index():
     "Module's Home Page"
     return dict(module_name=module_name)
-
 
 def parameters():
     "Select which page to go to depending on login status"
@@ -1192,9 +1191,9 @@ def location():
 
     return shn_rest_controller(module, resource, main='code')
 
- def project():
+def project():
     "RESTlike CRUD controller"
-     resource = 'project'
+    resource = 'project'
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1215,7 +1214,7 @@ def location():
     msg_list_empty = T('No Projects currently registered')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-   return shn_rest_controller(module, resource, main='code')
+    return shn_rest_controller(module, resource, main='code')
 
 def budget():
     "RESTlike CRUD controller"

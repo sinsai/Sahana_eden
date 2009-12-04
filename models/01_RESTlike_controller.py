@@ -40,39 +40,15 @@ ROWSPERPAGE = 20
 # S3XRC ResourceController
 
 exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
+exec('from applications.%s.modules.s3xrc import json_message' % request.application)
+# Faster for Production (where app-name won't change):
+#from applications.sahana.modules.s3xrc import ResourceController
+#from applications.sahana.modules.s3xrc import json_message
 
 s3xrc = ResourceController(db,
                            domain=request.env.server_name,
                            base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
                            rpp=ROWSPERPAGE)
-
-# *****************************************************************************
-# Helpers
-
-#
-# json_message ----------------------------------------------------------------
-#
-def json_message(success=True, status_code="200", message=None, tree=None):
-
-    if success:
-        status="success"
-    else:
-        status="failed"
-
-    if not success:
-        if message:
-            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}, "Tree": %s }' % \
-                (status, status_code, message, tree)
-        else:
-            return '{"Status":"%s","Error":{"StatusCode":"%s"}, "Tree": %s }' % \
-                (status, status_code, tree)
-    else:
-        if message:
-            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
-                (status, status_code, message)
-        else:
-            return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
-                (status, status_code)
 
 # *****************************************************************************
 # Exports

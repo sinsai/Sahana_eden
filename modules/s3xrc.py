@@ -1548,14 +1548,19 @@ class S3XML(object):
 
     def get_field_options(self, table, fieldname):
 
-        field = table[fieldname]
+        select = etree.Element(self.TAG["select"])
+
+        if fieldname in table.fields:
+            field = table[fieldname]
+        else:
+            return select
+
         requires = field.requires
+
+        select.set(self.TAG["field"], fieldname)
 
         if not isinstance(requires, (list, tuple)):
             requires = [requires]
-
-        select = etree.Element(self.TAG["select"])
-        select.set(self.TAG["field"], fieldname)
 
         if requires:
             r = requires[0]

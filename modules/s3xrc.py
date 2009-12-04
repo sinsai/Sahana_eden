@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.1
+    @version: 1.4.2
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -35,7 +35,8 @@
 
 __name__ = "S3XRC"
 
-__all__ = ['ResourceController']
+__all__ = ['ResourceController', 'json_message']
+
 
 import sys, uuid
 import gluon.contrib.simplejson as json
@@ -44,33 +45,6 @@ from gluon.storage import Storage
 from gluon.html import URL
 from gluon.http import HTTP
 from gluon.validators import IS_NULL_OR
-
-##exec('from applications.%s.modules.sahana import json_message' % request.application)
-#from applications.sahana.modules.sahana import json_message
-
-def json_message(success=True, status_code="200", message=None, tree=None):
-
-    """Provide a nicely-formatted JSON Message."""
-
-    if success:
-        status="success"
-    else:
-        status="failed"
-
-    if not success:
-        if message:
-            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}, "Tree": %s }' % \
-                (status, status_code, message, tree)
-        else:
-            return '{"Status":"%s","Error":{"StatusCode":"%s"}, "Tree": %s }' % \
-                (status, status_code, tree)
-    else:
-        if message:
-            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
-                (status, status_code, message)
-        else:
-            return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
-                (status, status_code)
 
 from xml.etree.cElementTree import ElementTree
 
@@ -95,6 +69,7 @@ except ImportError:
                 import elementtree.ElementTree as etree
                 print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
 
+
 # Error messages
 S3XRC_BAD_RESOURCE = "Invalid Resource"
 S3XRC_PARSE_ERROR = "XML Parse Error"
@@ -107,6 +82,34 @@ S3XRC_VALIDATION_ERROR = "Validation Error"
 S3XRC_DATA_IMPORT_ERROR = "Data Import Error"
 S3XRC_NOT_PERMITTED = "Operation Not Permitted"
 S3XRC_NOT_IMPLEMENTED = "Not Implemented"
+
+
+#exec('from applications.%s.modules.s3xrc import json_message' % request.application)
+#from applications.sahana.modules.s3xrc import json_message
+
+def json_message(success=True, status_code="200", message=None, tree=None):
+
+    """ Provide a nicely-formatted JSON Message. """
+
+    if success:
+        status="success"
+    else:
+        status="failed"
+
+    if not success:
+        if message:
+            return '{"status": "%s", "statuscode": "%s", "message": "%s", "tree": %s }' % \
+                   (status, status_code, message, tree)
+        else:
+            return '{"status": "%s", "statuscode": "%s", "tree": %s }' % \
+                   (status, status_code, tree)
+    else:
+        if message:
+            return '{"status": "%s", "statuscode": "%s", "message": "%s"}' % \
+                   (status, status_code, message)
+        else:
+            return '{"status": "%s", "statuscode": "%s"}' % \
+                   (status, status_code)
 
 
 class ObjectComponent(object):

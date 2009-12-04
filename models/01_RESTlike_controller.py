@@ -36,6 +36,8 @@ INVALIDREQUEST = T('Invalid request!')
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
 
+PRETTY_PRINT = True
+
 # *****************************************************************************
 # S3XRC ResourceController
 
@@ -300,7 +302,10 @@ def export_json(jr):
             raise HTTP(501, body=json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
-    output = jr.export_json(permit=shn_has_permission, audit=shn_audit, template=template)
+    output = jr.export_json(permit=shn_has_permission,
+                            audit=shn_audit,
+                            template=template,
+                            pretty_print=PRETTY_PRINT)
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error
@@ -329,7 +334,10 @@ def export_xml(jr):
             raise HTTP(501, body=json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
-    output = jr.export_xml(permit=shn_has_permission, audit=shn_audit, template=template)
+    output = jr.export_xml(permit=shn_has_permission,
+                           audit=shn_audit,
+                           template=template,
+                           pretty_print=PRETTY_PRINT)
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error
@@ -1786,12 +1794,12 @@ def shn_options(jr):
     if jr.representation=="xml":
         response.headers["Content-Type"] = "text/xml"
         response.view = "plain.html"
-        return jr.options_xml()
+        return jr.options_xml(pretty_print=PRETTY_PRINT)
 
     elif jr.representation=="json":
         response.headers['Content-Type'] = 'text/x-json'
         response.view = "plain.html"
-        return jr.options_json()
+        return jr.options_json(pretty_print=PRETTY_PRINT)
 
     else:
         session.error = BADFORMAT

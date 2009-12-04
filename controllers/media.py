@@ -80,9 +80,13 @@ def bulk_upload():
 
     form = crud.create(db.media_metadata)
     
-    form_gpx = crud.create(db.gis_track)
+    gpx_tracks = OptionsWidget()
+    gpx_widget = gpx_tracks.widget(track_id.track_id, track_id.track_id.default)
+    gpx_label = track_id.track_id.label
+    gpx_comment = track_id.track_id.comment
+    #form_gpx = crud.create(db.gis_track)
 
     response.title = T('Bulk Uploader')
     
-    return dict(form=form, form_gpx=form_gpx)
+    return dict(form=form, gpx_label=gpx_label, gpx_widget=gpx_widget, gpx_comment=gpx_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
  

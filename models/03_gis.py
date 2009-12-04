@@ -217,6 +217,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp,
                 #uuidstamp, # Tracks don't sync
                 Field('name', length=128, notnull=True, unique=True),
+                Field('description', length=128),
                 Field('track', 'upload', autodelete = True),
                 migrate=migrate)
 # upload folder needs to be visible to the download() function as well as the upload
@@ -224,9 +225,35 @@ db[table].track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+db[table].track.requires = IS_UPLOAD_FILENAME(extension='gpx')
+db[table].track.description = T('Description')
 db[table].track.label = T('GPS Track File')
 db[table].track.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
-
+ADD_TRACK = T('Upload Track')
+title_create = ADD_TRACK
+title_display = T('Track Details')
+title_list = T('List Tracks')
+title_update = T('Edit Track')
+title_search = T('Search Tracks')
+subtitle_create = T('Add New Track')
+subtitle_list = T('Tracks')
+label_list_button = T('List Tracks')
+label_create_button = ADD_TRACK
+msg_record_created = T('Track uploaded')
+msg_record_modified = T('Track updated')
+msg_record_deleted = T('Track deleted')
+msg_list_empty = T('No Tracks currently available')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+track_id = SQLTable(None, 'track_id',
+            Field('track_id', db.gis_track,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_track.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.gis_track.id==id).select()[0].name] or ["None"])[0],
+                label = T('Track'),
+                comment = DIV(A(ADD_TRACK, _class='thickbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_TRACK), A(SPAN("[Help]"), _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                ondelete = 'RESTRICT'
+                ))
+    
 # GIS Styles: SLD
 #db.define_table('gis_style', timestamp,
 #                Field('name', notnull=True, unique=True))

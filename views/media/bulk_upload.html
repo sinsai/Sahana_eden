@@ -1,5 +1,7 @@
 {{extend 'layout.html'}}
 
+{{include 'thickbox.html'}}
+
 <!-- Currently requires Ext20. To be replaced with main Ext3 -->
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-2.2.1/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/Ext.ux.UploadDialog.css" />
@@ -19,15 +21,109 @@
  -->
 {{pass}}
 
+<style>
+#show-dialog-btn
+{
+	border:1px solid #efefef;
+    margin:10px;
+    padding:10px;
+}
+</style>
+
 <script type="text/javascript">//<![CDATA[
 
 // Ext for the Multiple Upload Widget
+Ext.BLANK_IMAGE_URL = '{{=request.application + '/static/scripts/ext/resources/images/default/s.gif'}}';
+
 Ext.onReady(function() {
-    
+    var UploadDialogController = function() {
+        var dialog = null;
+        var button = null;
+
+        //file_list_tpl.compile();
+
+        function hideLoadingMask() {
+            var loading = Ext.get('loading');
+            var mask = Ext.get('loading-mask');
+            //mask.remove();
+            //loading.remove();
+            Ext.get(document.body).setStyle('overflow', 'visible');
+        }
+
+        function getDialog() {
+            if (!dialog) {
+                dialog = new Ext.ux.UploadDialog.Dialog({
+                    // Affix your upload controller here
+                    url: '{{=URL(r=request, c='media', f='image', args='create', vars={'format':'json'})}}',
+                    reset_on_hide: false,
+                    allow_close_on_upload: true,
+                    upload_autostart: false, //true,
+                    post_var_name: 'image',
+                    base_params: { action : 'uploadfile', resptype: 'json' },
+                    permitted_extensions: {{=IMAGE_EXTENSIONS}}
+                });
+
+                dialog.on('uploadsuccess', onUploadSuccess);
+                //dialog.on('beforefileuploadstart', onBeforeFileUploadStart);
+                dialog.on('uploadcanceled', function() {
+                    console.log('cancel');
+                    });
+            }
+            return dialog;
+        }
+
+        function showDialog(button) {
+            getDialog().show(button.getEl());
+        }
+
+        function onUploadSuccess(dialog, filename, resp_data, record) {
+            // we append the textarea here
+            var parts = filename.split(/\/|\\/);
+            if (parts.length == 1) {
+                filename = parts[0];
+            } else {
+                filename = parts.pop();
+            }
+            
+            //file_list_tpl.append('file-list', {name: filename});
+            var textbox = document.getElementById ('file-list');
+            textbox.innerHTML = textbox.innerHTML + '|' + filename;
+        }
+
+        function onBeforeFileUploadStart(dialog, filename, record) {
+            var store = dialog.getQueueStore();
+            store.each(function(r, id) {
+                r.set('params', {extra: id});
+            });
+        }
+
+        return {
+            init : function() {
+                Ext.QuickTips.init();
+
+                button = new Ext.Button({
+                renderTo: 'show-dialog-btn',
+                id: 'show-button',
+                text: '{{=T('Select Photos')}}',
+                handler: showDialog
+            });
+
+            hideLoadingMask();
+                Ext.get(document.body).setStyle('overflow', 'auto');
+            }
+        }
+    }();
+    UploadDialogController.init();
 });
 
 // jQuery for the Workflow
 $(function() {
+    
+    // Hide the Flash uploader since not yet ready
+    $("#flash_uploader").hide();
+    
+    // Hide the Results DIV
+    $("#file-list").hide();
     
     // Hide the Forms initially
     $("#form_gps_track").hide();
@@ -38,7 +134,7 @@ $(function() {
     // Hide the Image Field (we use Ext multiple upload widget)
     $("#media_metadata_image__row").hide();
     // Hide the metadata Submit Field (we use Ext multiple upload widget)
-    $(":submit:last").hide();
+    $("#form_metadata :submit").hide();
 
     // When the Mapping answer changes:
 	$("input[name='method']:radio").change(function() {
@@ -87,7 +183,9 @@ $(function() {
 </div>
 <p>&nbsp;</p>
 <div class='form-container' id='form_gps_track'>
-{{=form_gpx}}
+<table>
+<tr><td>{{=gpx_label}}</td><td>{{=gpx_widget}}</td><td>{{=gpx_comment}}</td></tr>
+</table>
 </div>
 
 {{=H3(T('Metadata'))}}
@@ -101,13 +199,23 @@ $(function() {
 {{=T('Metadata can be supplied here to be applied to all uploaded photos, if desired.')}}
 </p>
 <table>
-<tr><td><label>{{=T('Do you want to over-write the file metadata with the default values supplied in the form?')}}</label></td><td><input type='checkbox' name='overwrite' id='overwrite'/></td><td></td></tr>
+<tr><td><label>{{=T('Do you want to over-write the file metadata with new default values?')}}</label></td><td><input type='checkbox' name='overwrite' id='overwrite'/></td><td></td></tr>
 </table>
 </form>
 </div>
 <p>&nbsp;</p>
 <div class='form-container' id='form_metadata'>
 {{=form}}
+</div>
+<div id='flash_uploader'>
+</div>
+<div id='js_uploader'>
+<!-- Backup option for when Flash not available in client or failing due to Proxy issues -->
+<form id="upload-confirmation" action="{{=URL(r=request)}}" method="POST">
+        <textarea id='file-list' name="file-list"></textarea>
+        <div id='show-dialog-btn'></div>
+        <!-- <input type="submit" value="confirm submissions"/> -->
+    </form>
 </div>
 <p>&nbsp;</p>
 {{try:}}

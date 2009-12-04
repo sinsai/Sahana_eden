@@ -7,36 +7,36 @@
 
 .ext-ux-uploaddialog-removebtn
 {
-	background: url('../../img/ext/Ext.ux.UploadDialog//file-remove.gif') no-repeat left center !important;
+	background: url('../../img/ext/Ext.ux.UploadDialog/file-remove.gif') no-repeat left center !important;
 }
 
 .ext-ux-uploaddialog-resetbtn
 {
-	background: url('../../img/ext/Ext.ux.UploadDialog//reset.gif') no-repeat left center !important;
+	background: url('../../img/ext/Ext.ux.UploadDialog/reset.gif') no-repeat left center !important;
 }
 
 .ext-ux-uploaddialog-uploadstartbtn
 {
-	background: url('../../img/ext/Ext.ux.UploadDialog//upload-start.gif') no-repeat left center !important;
+	background: url('../../img/ext/Ext.ux.UploadDialog/upload-start.gif') no-repeat left center !important;
 }
 
 .ext-ux-uploaddialog-uploadstopbtn
 {
-	background: url('../../img/ext/Ext.ux.UploadDialog//upload-stop.gif') no-repeat left center !important;
+	background: url('../../img/ext/Ext.ux.UploadDialog/upload-stop.gif') no-repeat left center !important;
 }
 
 .ext-ux-uploaddialog-indicator-stoped
 {
 	width: 16px;
 	height: 16px;
-	background: url('../../img/ext/Ext.ux.UploadDialog//done.gif') no-repeat center center;
+	background: url('../../img/ext/Ext.ux.UploadDialog/done.gif') no-repeat center center;
 }
 
 .ext-ux-uploaddialog-indicator-processing
 {
 	width: 16px;
 	height: 16px;	
-	background: url('../../img/ext/Ext.ux.UploadDialog//loading.gif') no-repeat center center;
+	background: url('../../img/ext/Ext.ux.UploadDialog/loading.gif') no-repeat center center;
 }
 
 .ext-ux-uploaddialog-state
@@ -49,25 +49,25 @@
 /* Queued */
 .ext-ux-uploaddialog-state-0
 {
-	background-image: url('../../img/ext/Ext.ux.UploadDialog//uncheck.gif');
+	background-image: url('../../img/ext/Ext.ux.UploadDialog/uncheck.gif');
 }
 
 /* Finished */
 .ext-ux-uploaddialog-state-1
 {
-	background-image: url('../../img/ext/Ext.ux.UploadDialog//check.gif');
+	background-image: url('../../img/ext/Ext.ux.UploadDialog/check.gif');
 }
 
 /* Failed */
 .ext-ux-uploaddialog-state-2
 {
-	background-image: url('../../img/ext/Ext.ux.UploadDialog//failed.gif');
+	background-image: url('../../img/ext/Ext.ux.UploadDialog/failed.gif');
 }
 
 /* Processing */
 .ext-ux-uploaddialog-state-3
 {
-	background-image: url('../../img/ext/Ext.ux.UploadDialog//file-uploading.gif');	
+	background-image: url('../../img/ext/Ext.ux.UploadDialog/file-uploading.gif');	
 }
 
 /* Progress bar fix */

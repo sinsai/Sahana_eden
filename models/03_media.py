@@ -50,9 +50,13 @@ resource = 'image'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 location_id,
-                Field('metadata_id', db.media_metadata),
+                metadata_id,
                 Field('image', 'upload'),
                 migrate=migrate)
+# upload folder needs to be visible to the download() function as well as the upload
+db[table].image.uploadfolder = os.path.join(request.folder, "uploads/images")
+IMAGE_EXTENSIONS = ['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG', 'gif', 'GIF', 'tif', 'TIF', 'bmp', 'BMP']
+db[table].image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
 ADD_IMAGE = T('Add Image')
 image_id = SQLTable(None, 'image_id',
             Field('image_id', db.media_image,

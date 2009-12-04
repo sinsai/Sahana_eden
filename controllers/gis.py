@@ -293,23 +293,10 @@ def track():
     table = module + '_' + resource
     
     # Model options
-    # used in multiple controllers, so at the top of the file
+    # used in multiple controllers, so defined in model
     
     # CRUD Strings
-    title_create = T('Add Track')
-    title_display = T('Track Details')
-    title_list = T('List Tracks')
-    title_update = T('Edit Track')
-    title_search = T('Search Tracks')
-    subtitle_create = T('Add New Track')
-    subtitle_list = T('Tracks')
-    label_list_button = T('List Tracks')
-    label_create_button = T('Add Track')
-    msg_record_created = T('Track added')
-    msg_record_modified = T('Track updated')
-    msg_record_deleted = T('Track deleted')
-    msg_list_empty = T('No Tracks currently available')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    # used in multiple controllers, so defined in model
     
     return shn_rest_controller(module, resource)
 

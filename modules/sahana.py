@@ -19,6 +19,30 @@ except ImportError:
     from gluon.sql import SQLTable, SQLStorage
 import traceback
 
+def json_message(success=True, status_code="200", message=None, tree=None):
+    "Provide a nicely-formatted JSON Message."
+    
+    if success:
+        status="success"
+    else:
+        status="failed"
+
+    if not success:
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}, "Tree": %s }' % \
+                (status, status_code, message, tree)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}, "Tree": %s }' % \
+                (status, status_code, tree)
+    else:
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
+                (status, status_code, message)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
+                (status, status_code)
+
+
 # Copied from Selenium Plone Tool
 def getBrowserName(userAgent):
     "Determine which browser is being used."

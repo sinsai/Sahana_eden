@@ -10,15 +10,6 @@
 """
 
 # *****************************************************************************
-# S3XRC ResourceController
-
-exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
-
-s3xrc = ResourceController(db,
-                           domain=request.env.server_name,
-                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application))
-
-# *****************************************************************************
 # Constants to ensure consistency
 
 # XSLT Settings
@@ -27,8 +18,8 @@ XSLT_IMPORT_TEMPLATES = 'static/xslt/import' #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml"] #: Supported XML import formats
-shn_xml_export_formats = ["xml"] #: Supported XML output formats
+shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
+shn_xml_export_formats = ["xml", "lmx"] #: Supported XML output formats
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
 shn_json_export_formats = ["json"] #: Supported JSON output formats
@@ -44,24 +35,42 @@ INVALIDREQUEST = T('Invalid request!')
 ROWSPERPAGE = 20
 
 # *****************************************************************************
+# S3XRC ResourceController
+
+exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
+
+s3xrc = ResourceController(db,
+                           domain=request.env.server_name,
+                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+                           rpp=ROWSPERPAGE)
+
+# *****************************************************************************
 # Helpers
 
 #
 # json_message ----------------------------------------------------------------
 #
-def json_message(success=True, status_code="200", message=None):
+def json_message(success=True, status_code="200", message=None, tree=None):
 
     if success:
         status="success"
     else:
         status="failed"
 
-    if message:
-        return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
-               (status, status_code, message)
+    if not success:
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}, "Tree": %s }' % \
+                (status, status_code, message, tree)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}, "Tree": %s }' % \
+                (status, status_code, tree)
     else:
-        return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
-               (status, status_code)
+        if message:
+            return '{"Status":"%s","Error":{"StatusCode":"%s","Message":"%s"}}' % \
+                (status, status_code, message)
+        else:
+            return '{"Status":"%s","Error":{"StatusCode":"%s"}}' % \
+                (status, status_code)
 
 # *****************************************************************************
 # Exports
@@ -510,7 +519,8 @@ def import_json(jr, onvalidation=None, onaccept=None):
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.error)
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 501, s3xrc.error, tree=tree)
 
     return dict(item=item)
 
@@ -554,7 +564,8 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         item = json_message()
     else:
         # TODO: export the whole tree on error
-        item = json_message(False, 501, s3xrc.error)
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 501, s3xrc.error, tree=tree)
 
     return dict(item=item)
 
@@ -1154,59 +1165,62 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
         output.update(title=title, subtitle=subtitle)
 
-        # Which fields do we display?
-        fields = None
+        if jr.representation == "html":
+            # Provide a Table of Items (Records)
+            # Which fields do we display?
+            fields = None
 
-        if jr.component:
-            list_fields = jr.component.attr.list_fields
-            _fields = [jr.component.table[f] for f in jr.component.table.fields if f in list_fields]
-            if _fields:
-                fields = [f for f in _fields if f.readable]
+            if jr.component:
+                list_fields = jr.component.attr.list_fields
+                _fields = [jr.component.table[f] for f in jr.component.table.fields if f in list_fields]
+                if _fields:
+                    fields = [f for f in _fields if f.readable]
+                else:
+                    fields = None
+            elif list_fields:
+                fields = [table[f] for f in list_fields if table[f].readable]
+
+            if fields and len(fields)==0:
+                fields.append(table.id)
+
+            if not fields:
+                fields = [table[f] for f in table.fields if table[f].readable]
+
+            # Column labels: use custom or prettified label
+            headers = dict(map(lambda f: (str(f), f.label), fields))
+
+            authorised = shn_has_permission('update', table)
+            if jr.component:
+                if authorised:
+                    linkto = shn_list_jlinkto_update
+                else:
+                    linkto = shn_list_jlinkto
             else:
-                fields = None
-        elif list_fields:
-            fields = [table[f] for f in list_fields if table[f].readable]
+                if authorised:
+                    linkto = shn_list_linkto_update
+                else:
+                    linkto = shn_list_linkto
 
-        if fields and len(fields)==0:
-            fields.append(table.id)
+            items = crud.select(table, query=query,
+                fields=fields,
+                orderby=orderby,
+                headers=headers,
+                linkto=linkto,
+                truncate=48, _id='list', _class='display')
 
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
+            if not items:
+                try:
+                    items = s3.crud_strings[tablename].msg_list_empty
+                except:
+                    items = s3.crud_strings.msg_list_empty
 
-        # Column labels: use custom or prettified label
-        headers = dict(map(lambda f: (str(f), f.label), fields))
-
-        authorised = shn_has_permission('update', table)
-        if jr.component:
-            if authorised:
-                linkto = shn_list_jlinkto_update
-            else:
-                linkto = shn_list_jlinkto
-        else:
-            if authorised:
-                linkto = shn_list_linkto_update
-            else:
-                linkto = shn_list_linkto
-
-        items = crud.select(table, query=query,
-            fields=fields,
-            orderby=orderby,
-            headers=headers,
-            linkto=linkto,
-            truncate=48, _id='list', _class='display')
-
-        if not items:
-            try:
-                items = s3.crud_strings[tablename].msg_list_empty
-            except:
-                items = s3.crud_strings.msg_list_empty
-
-        # Update the Return with common items
-        output.update(dict(items=items))
-
-        authorised = shn_has_permission('create', table)
-        if authorised and listadd:
-
+            # Update the Return with items
+            output.update(dict(items=items))
+        
+        if jr.representation == "ext" or (authorised and listadd):
+            # For non-Ext, we want a create form to add under the Table of records
+            # For Ext, we want a form object even for list views so that we can pass data to Ext.GridPanel
+            
             # Block join field
             if jr.component:
                 _comment = table[jr.fkey].comment
@@ -1217,19 +1231,18 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             if onaccept:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session,module,resource,form.vars.id) and \
+                            s3xrc.store_session(session, module, resource, 0) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session,module,resource,form.vars.id)
+                            s3xrc.store_session(session, module, resource, 0)
 
             try:
                 message = s3.crud_strings[tablename].msg_record_created
             except:
                 message = s3.crud_strings.msg_record_created
 
-            # Display the Add form below List
             form = crud.create(table,
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
@@ -1243,20 +1256,30 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             if jr.component:
                 table[jr.fkey].comment = _comment
 
+            # Update the Return with common items
+            output.update(dict(form=form))
+
+        authorised = shn_has_permission('create', table)
+        
+        if authorised and listadd:
+            # Display add form under list view
             try:
                 addtitle = s3.crud_strings[tablename].subtitle_create
             except:
                 addtitle = s3.crud_strings.subtitle_create
 
-            # Check for presence of Custom View
-            shn_custom_view(jr, 'list_create.html')
-
             # Add specificities to Return
-            output.update(dict(form=form, addtitle=addtitle))
+            output.update(dict(addtitle=addtitle))
+
+            # Check for presence of Custom View
+            if jr.representation == "ext":
+                shn_custom_view(jr, 'list_create.html', format='ext')
+            else:
+                shn_custom_view(jr, 'list_create.html')
 
         else:
             # List only with create button below
-            if listadd:
+            if listadd and jr.representation != 'ext':
                 try:
                     label_create_button = s3.crud_strings[tablename].label_create_button
                 except:
@@ -1376,16 +1399,20 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             crud.settings.create_onaccept = None
             crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
                                         jr.there()
+        else:
+            if not crud.settings.create_next:
+                crud.settings.create_next = jr.there()
 
         if onaccept:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session,module,resource,form.vars.id) and \
+                        s3xrc.store_session(session, module, resource, 0) and \
                         onaccept(form)
+                        
         else:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session,module,resource,form.vars.id)
+                        s3xrc.store_session(session, module, resource, 0)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created
@@ -1571,6 +1598,9 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = None
                 crud.settings.update_next = s3xrc.model.get_attr(jr.component_name, 'update_next') or \
                                             jr.there()
+            else:
+                if not crud.settings.update_next:
+                    crud.settings.update_next = jr.here()
 
             try:
                 message = s3.crud_strings[tablename].msg_record_modified

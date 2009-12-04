@@ -90,7 +90,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].organisation.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
+db[table].organisation.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s'))
 db[table].organisation.represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0]
 db[table].organisation.label = T('Organisation')
 db[table].organisation.comment = DIV(A(s3.crud_strings.or_organisation.label_create_button, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.or_organisation.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Organisation|The Organisation this Office belongs to.")))

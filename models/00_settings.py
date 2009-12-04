@@ -24,7 +24,7 @@ mail.settings.server = 'mail:25'
 #mail.settings.login = 'username:password'
 mail.settings.sender = 'sahana@sahanapy.org'
 
-auth = AuthS3(globals(),db)
+auth = AuthS3(globals(), db)
 #auth.settings.username_field = True
 auth.settings.hmac_key = 'akeytochange'
 auth.define_tables()
@@ -66,7 +66,7 @@ auth.settings.allow_basic_login = True
 auth.settings.logout_onlogout = shn_auth_on_logout
 auth.settings.login_onaccept = shn_auth_on_login
 
-crud = CrudS3(globals(),db)
+crud = CrudS3(globals(), db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
 #crud.settings.keepvalues = True
 crud.messages.submit_button = T('Save')

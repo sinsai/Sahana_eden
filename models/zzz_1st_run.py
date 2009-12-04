@@ -5,7 +5,10 @@
 # however this isn't reliable so still in models for now...
 
 # Set to False in Production
-empty = True
+if db(db["s3_setting"].id).count():
+    empty = False
+else:
+    empty = True
 
 # Deployments can change settings live via appadmin
 

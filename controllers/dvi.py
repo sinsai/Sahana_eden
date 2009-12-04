@@ -21,6 +21,7 @@ response.menu_options = [
 def index():
     "Module's Home Page"
     return dict(module_name=module_name)
+    
 def personal_effects():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'personal_effects')

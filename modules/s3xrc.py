@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.2
+    @version: 1.4.3
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -361,7 +361,6 @@ class ResourceController(object):
         self.model = ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url)
 
-
     def get_session(self, session, prefix, name):
 
         """ Reads the last record ID for a resource from a session """
@@ -534,7 +533,12 @@ class ResourceController(object):
 
             resources.append(resource)
 
-        return self.xml.tree(resources, domain=self.domain, url=burl, totalrecords=totalrecords , totalpages=totalpages, page=page)
+        return self.xml.tree(resources,
+                             domain=self.domain,
+                             url=burl,
+                             totalrecords=totalrecords,
+                             totalpages=totalpages,
+                             page=page)
 
 
     def import_xml(self, prefix, name, id, tree,
@@ -577,10 +581,10 @@ class ResourceController(object):
         if id and len(elements)>1:
             # ID given, but multiple elements of that type
             # => try to find UUID match
-            if self.UUID in table:
-                uuid = db_record[self.UUID]
+            if self.xml.UUID in table:
+                uuid = db_record[self.xml.UUID]
                 for element in elements:
-                    if element.get(self.UUID)==uuid:
+                    if element.get(self.xml.UUID)==uuid:
                         elements = [element]
                         break
 
@@ -617,25 +621,63 @@ class ResourceController(object):
 
                 celements = self.xml.select_resources(element, component.tablename)
 
-                for k in xrange(0, len(celements)):
-                    celement = celements[k]
+                if celements:
+                    if component.attr.multiple:
 
-                    crecord = self.xml.record(component.table, celement)
-                    if not crecord:
-                        self.error = S3XRC_VALIDATION_ERROR
-                        continue
+                        for k in xrange(0, len(celements)):
+                            celement = celements[k]
 
-                    cvector = XVector(self.db, component.prefix, component.name, None,
-                                      record=crecord,
-                                      permit=permit,
-                                      audit=audit,
-                                      onvalidation=component.get_attr("onvalidation"),
-                                      onaccept=component.get_attr("onaccept"))
+                            crecord = self.xml.record(component.table, celement)
+                            if not crecord:
+                                self.error = S3XRC_VALIDATION_ERROR
+                                continue
 
-                    cvector.pkey = pkey
-                    cvector.fkey = fkey
+                            cvector = XVector(self.db, component.prefix, component.name, None,
+                                              record=crecord,
+                                              permit=permit,
+                                              audit=audit,
+                                              onvalidation=component.get_attr("onvalidation"),
+                                              onaccept=component.get_attr("onaccept"))
 
-                    vector.components.append(cvector)
+                            cvector.pkey = pkey
+                            cvector.fkey = fkey
+
+                            vector.components.append(cvector)
+                    else:
+                        c_id = c_uuid = None
+                        if vector.id:
+                            p = self.db(table.id==vector.id).select(table[pkey], limitby=(0,1))
+                            if p:
+                                p = p[0][pkey]
+                                fields = [component.table.id]
+                                if self.xml.UUID in component.table:
+                                    fields.append(component.table[self.xml.UUID])
+                                orig = self.db(component.table[fkey]==p).select(*fields, limitby=(0,1))
+                                if orig:
+                                    c_id = orig[0].id
+                                    if self.xml.UUID in component.table:
+                                        c_uuid = orig[0].uuid
+
+                        celement = celements[0]
+                        if c_uuid is not None:
+                            celement.set(self.xml.UUID, c_uuid)
+
+                        crecord = self.xml.record(component.table, celement)
+                        if not crecord:
+                            self.error = S3XRC_VALIDATION_ERROR
+                            continue
+
+                        cvector = XVector(self.db, component.prefix, component.name, c_id,
+                                          record=crecord,
+                                          permit=permit,
+                                          audit=audit,
+                                          onvalidation=component.get_attr("onvalidation"),
+                                          onaccept=component.get_attr("onaccept"))
+
+                        cvector.pkey = pkey
+                        cvector.fkey = fkey
+
+                        vector.components.append(cvector)
 
             if self.error is None:
                 imports.append(vector)
@@ -709,7 +751,7 @@ class XVector(object):
             if self.UUID in self.table:
                 uuid = self.record.get(self.UUID, None)
                 if uuid is not None:
-                    orig = self.db(self.table[self.UUID]==uuid).select(self.table.id)
+                    orig = self.db(self.table[self.UUID]==uuid).select(self.table.id, limitby=(0,1))
                     if len(orig):
                         self.id = orig[0].id
                         self.method = permission = self.ACTION["update"]
@@ -1136,7 +1178,7 @@ class XRequest(object):
             )
 
 
-    def export_xml(self, permit=None, audit=None, template=None):
+    def export_xml(self, permit=None, audit=None, template=None, pretty_print=False):
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1165,10 +1207,10 @@ class XRequest(object):
                 self.error = self.rc.error
                 return None
 
-        return self.rc.xml.tostring(tree)
+        return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
-    def export_json(self, permit=None, audit=None, template=None):
+    def export_json(self, permit=None, audit=None, template=None, pretty_print=False):
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1197,7 +1239,7 @@ class XRequest(object):
                 self.error = self.rc.error
                 return None
 
-        return self.rc.xml.tree2json(tree)
+        return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
     def import_xml(self, tree, permit=None, audit=None, onvalidation=None, onaccept=None):
@@ -1235,28 +1277,54 @@ class XRequest(object):
                                   ignore_errors=ignore_errors)
 
 
-    def options_xml(self):
+    def options_xml(self, pretty_print=False):
 
-        if self.component:
-            tree = self.rc.options_xml(self.component.prefix, self.component.name)
+        if "field" in self.request.vars:
+            field = self.request.vars["field"]
         else:
-            joins = self.rc.model.get_components(self.prefix, self.name)
-            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
+            field = None
 
-        return self.rc.xml.tostring(tree)
+        if field is None:
+            if self.component:
+                tree = self.rc.options_xml(self.component.prefix, self.component.name)
+            else:
+                joins = self.rc.model.get_components(self.prefix, self.name)
+                tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
 
-
-    def options_json(self):
-
-        if self.component:
-            tree = self.rc.options_xml(self.component.prefix, self.component.name)
+            return self.rc.xml.tostring(tree, pretty_print=pretty_print)
         else:
-            joins = self.rc.model.get_components(self.prefix, self.name)
-            tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
+            if self.component:
+                tree = self.rc.xml.get_field_options(self.component.table, field)
+            else:
+                tree = self.rc.xml.get_field_options(self.table, field)
 
-        return self.rc.xml.tree2json(tree)
+            return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
+    def options_json(self, pretty_print=False):
+
+        if "field" in self.request.vars:
+            field = self.request.vars["field"]
+        else:
+            field = None
+
+        if field is None:
+            if self.component:
+                tree = self.rc.options_xml(self.component.prefix, self.component.name)
+            else:
+                joins = self.rc.model.get_components(self.prefix, self.name)
+                tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
+
+            return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
+        else:
+            if self.component:
+                tree = self.rc.xml.get_field_options(self.component.table, field)
+            else:
+                tree = self.rc.xml.get_field_options(self.table, field)
+
+            tree = etree.ElementTree(tree)
+
+            return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 class S3XML(object):
 
@@ -1365,7 +1433,7 @@ class S3XML(object):
             return None
 
 
-    def tostring(self, tree):
+    def tostring(self, tree, pretty_print=False):
 
         if NO_LXML:
             return etree.tostring(tree.getroot(), encoding="utf-8")
@@ -1373,7 +1441,7 @@ class S3XML(object):
             return etree.tostring(tree,
                                   xml_declaration=True,
                                   encoding="utf-8",
-                                  pretty_print=True)
+                                  pretty_print=pretty_print)
 
 
     def xml_encode(self, obj):
@@ -1869,7 +1937,7 @@ class S3XML(object):
             return obj
 
 
-    def tree2json(self, tree):
+    def tree2json(self, tree, pretty_print=False):
 
         root = tree.getroot()
 
@@ -1880,8 +1948,8 @@ class S3XML(object):
 
         root_dict = self.__element2json(root, native=native)
 
-        # pretty print for testing
-        js = json.dumps(root_dict, indent=4)
-        return '\n'.join([l.rstrip() for l in js.splitlines()])
-
-        #return json.dumps(root_dict)
+        if pretty_print:
+            js = json.dumps(root_dict, indent=4)
+            return '\n'.join([l.rstrip() for l in js.splitlines()])
+        else:
+            return json.dumps(root_dict)

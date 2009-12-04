@@ -652,7 +652,7 @@ class ResourceController(object):
                                 fields = [component.table.id]
                                 if self.xml.UUID in component.table:
                                     fields.append(component.table[self.xml.UUID])
-                                orig = self.db(component.table[fkey]==p).select(*fields, limitby=(0,1))
+                                orig = self.db(component.table[fkey]==p).select(limitby=(0,1), *fields)
                                 if orig:
                                     c_id = orig[0].id
                                     if self.xml.UUID in component.table:
@@ -1298,6 +1298,8 @@ class XRequest(object):
             else:
                 tree = self.rc.xml.get_field_options(self.table, field)
 
+            tree.set("id", "%s_%s_%s" % (self.prefix, self.name, field))
+            tree.set("name", "%s" % field)
             return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 

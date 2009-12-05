@@ -58,23 +58,23 @@ class Form:
         c = self.canvas
         c.setLineWidth(0.20)
 	c.setStrokeGray(gray)
-	if fontsize == 0 :
-	  fontsize = self.fontsize
 	if style == "center":
 	   self.x = self.width/2
 	if style == "right":
 	   self.x = self.width - self.marginsides - self.fontsize
-	else:
-	  self.fontsize = fontsize
-	self.y = self.y - self.fontsize
 	if seek > (self.width - (self.marginsides + self.fontsize) ) :
 	  seek = 0
+	if continuetext == 1:
+	  self.y = self.y + self.fontsize
+	  self.x = self.lastx
+	else:
+	  self.y = self.y - self.fontsize
 	if seek != 0 :
 	  self.x = self.x + seek
-	if continuetext == 1:
-	  if seek != 0 :
-	    self.x = self.lastx + seek
-	  self.y = self.y + self.fontsize * 2
+	if fontsize == 0 :
+	  fontsize = self.fontsize
+	else:
+	  self.fontsize = fontsize	
 	for i in range(boxes):
 	  c.rect(self.x, self.y, self.fontsize, self.fontsize, stroke=1)
 	  self.x = self.x + self.fontsize
@@ -127,14 +127,18 @@ def create():
         else:
 	  form.print_text([str(table[field].label)],fontsize = 13)
 	  if table[field].type == "integer":
-	    form.print_text([Tstr(" (Place a cross in one box)")],fontsize = 13, gray = 0, continuetext = 1)
 	    form.print_text([""]) # leave a space
 	    for i in range(100):
 	      try:
-		form.print_text([str(table[field].represent(i+1))],seek = 20, fontsize = 12)
-		form.draw_check_boxes(continuetext=1,style = "center",fontsize = 10, gray = 0.9) # reduce font size by 2
+		choice = str(table[field].represent(i+1))
+		form.print_text([str(i+1)+". "],seek = 20, fontsize = 12)		
+		form.print_text([choice],continuetext = 1, fontsize = 12)
+		#form.draw_check_boxes(continuetext=1,style = "center",fontsize = 10, gray = 0.9) # reduce font size by 2
 	      except:
 		break
+	    form.print_text([""]) # leave a space		
+	    form.print_text([Tstr("Put a choice in the box")], fontsize = 13, gray = 0)
+	    form.draw_check_boxes(boxes = 2, continuetext=1, gray = 0.9, fontsize = 20, seek = 10)
 	    form.print_text([""]) # leave a space
 	  else:
 	    form.draw_check_boxes(boxes = table[field].length,fontsize = 20, gray = 0.9)

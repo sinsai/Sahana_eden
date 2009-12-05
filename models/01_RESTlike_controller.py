@@ -21,7 +21,7 @@ XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data 
 
 # XSLT available formats
 shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
-shn_xml_export_formats = ["xml", "lmx"] #: Supported XML output formats
+shn_xml_export_formats = ["xml", "lmx", "kml", "georss"] #: Supported XML output formats
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
 shn_json_export_formats = ["json"] #: Supported JSON output formats
@@ -385,7 +385,7 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
     response.headers['Content-Type'] = 'text/x-json'
 
     for var in request.vars:
-        
+
         # Skip the Representation
         if var == 'format':
             continue
@@ -411,12 +411,12 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
                 (source_file, original_filename) = \
                     (cStringIO.StringIO(f), 'file.txt')
             newfilename = field.store(source_file, original_filename)
-            request.vars['%s_newfilename' % fieldname] = record[fieldname] = newfilename 
+            request.vars['%s_newfilename' % fieldname] = record[fieldname] = newfilename
             if field.uploadfield and not field.uploadfield==True:
                 record[field.uploadfield] = source_file.read()
         else:
             record[var] = request.vars[var]
-            
+
 
     # UUID is required for update
     if method == 'update':

@@ -81,12 +81,140 @@ def bulk_upload():
     form = crud.create(db.media_metadata)
     
     gpx_tracks = OptionsWidget()
-    gpx_widget = gpx_tracks.widget(track_id.track_id, track_id.track_id.default)
+    gpx_widget = gpx_tracks.widget(track_id.track_id, track_id.track_id.default, _id='gis_layer_gpx_track_id')
     gpx_label = track_id.track_id.label
     gpx_comment = track_id.track_id.comment
-    #form_gpx = crud.create(db.gis_track)
-
+    
+    feature_group = OptionsWidget()
+    fg_widget = feature_group.widget(feature_group_id.feature_group_id, feature_group_id.feature_group_id.default, _id='gis_location_to_feature_group_feature_group_id')
+    fg_label = feature_group_id.feature_group_id.label
+    fg_comment = feature_group_id.feature_group_id.comment
+    
     response.title = T('Bulk Uploader')
     
-    return dict(form=form, gpx_label=gpx_label, gpx_widget=gpx_widget, gpx_comment=gpx_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
+    return dict(form=form, gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, fg_widget=fg_widget, fg_label=fg_label, fg_comment=fg_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
  
+def upload():
+    "Receive the Uploaded data from bulk_upload()"
+    # Is there a Feature Group to create?
+    # Is there a GPX track to correlate timestamps with?
+    # Should we overwrite metadata?
+    # Receive file ( from import_url() )
+    
+    record = Storage()
+    uuid = None
+    original = None
+
+    module, resource, table, tablename = jr.target()
+
+    if jr.component:
+        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
+        onaccept = s3xrc.model.get_attr(resource, "onaccept")
+
+    response.headers['Content-Type'] = 'text/x-json'
+
+    for var in request.vars:
+        
+        # Skip the Representation
+        if var == 'format':
+            continue
+        elif var == 'uuid':
+            uuid = request.vars[var]
+        elif table[var].type == 'upload':
+            # Handle file uploads (copied from gluon/sqlhtml.py)
+            field = table[var]
+            fieldname = var
+            f = request.vars[fieldname]
+            fd = fieldname + '__delete'
+            if f == '' or f == None:
+                #if request.vars.get(fd, False) or not self.record:
+                if request.vars.get(fd, False):
+                    record[fieldname] = ''
+                else:
+                    #record[fieldname] = self.record[fieldname]
+                    pass
+            elif hasattr(f,'file'):
+                (source_file, original_filename) = (f.file, f.filename)
+            elif isinstance(f, (str, unicode)):
+                ### do not know why this happens, it should not
+                (source_file, original_filename) = \
+                    (cStringIO.StringIO(f), 'file.txt')
+            newfilename = field.store(source_file, original_filename)
+            request.vars['%s_newfilename' % fieldname] = record[fieldname] = newfilename 
+            if field.uploadfield and not field.uploadfield==True:
+                record[field.uploadfield] = source_file.read()
+        else:
+            record[var] = request.vars[var]
+            
+
+    # UUID is required for update
+    if method == 'update':
+        if uuid:
+            try:
+                original = db(table.uuid==uuid).select(table.ALL)[0]
+            except:
+                raise HTTP(404, body=json_message(False, 404, "Record not found!"))
+        else:
+            # You will never come to that point without having specified a
+            # record ID in the request. Nevertheless, we require a UUID to
+            # identify the record
+            raise HTTP(400, body=json_message(False, 400, "UUID required!"))
+
+    # Validate record
+    for var in record:
+        if var in table.fields:
+            value = record[var]
+            (value, error) = s3xrc.xml.validate(table, original, var, value)
+        else:
+            # Shall we just ignore non-existent fields?
+            # del record[var]
+            error = "Invalid field name."
+        if error:
+            raise HTTP(400, body=json_message(False, 400, var + " invalid: " + error))
+        else:
+            record[var] = value
+
+    form = Storage()
+    form.method = method
+    form.vars = record
+
+    # Onvalidation callback
+    if onvalidation:
+        onvalidation(form)
+
+    # Create/update record
+    try:
+        if jr.component:
+            record[jr.fkey]=jr.record[jr.pkey]
+        if method == 'create':
+            id = table.insert(**dict(record))
+            if id:
+                error = 201
+                item = json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
+                form.vars.id = id
+                if onaccept:
+                    onaccept(form)
+            else:
+                error = 403
+                item = json_message(False, error, "Could not create record!")
+
+        elif method == 'update':
+            result = db(table.uuid==uuid).update(**dict(record))
+            if result:
+                error = 200
+                item = json_message(True, error, "Record updated.")
+                form.vars.id = original.id
+                if onaccept:
+                    onaccept(form)
+            else:
+                error = 403
+                item = json_message(False, error, "Could not update record!")
+
+        else:
+            error = 501
+            item = json_message(False, error, "Unsupported Method!")
+    except:
+        error = 400
+        item = json_message(False, error, "Invalid request!")
+
+    raise HTTP(error, body=item)

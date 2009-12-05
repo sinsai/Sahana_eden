@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.3
+    @version: 1.4.4
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -1300,6 +1300,7 @@ class XRequest(object):
 
             tree.set("id", "%s_%s_%s" % (self.prefix, self.name, field))
             tree.set("name", "%s" % field)
+
             return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 

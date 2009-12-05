@@ -1842,18 +1842,19 @@ def shn_rest_controller(module, resource,
                 - can be inserted into DIVs via AJAX calls
                 - can be useful for clients on low-bandwidth or small screen sizes
             - B{ext}: is Ext layouts (experimental)
-            - B{json}: designed to be accessed via JavaScript
-                - responses in JSON format
-                - create/update/delete done via simple GET vars (no form displayed)
+            - B{json}: JSON export/import using XSLT
+            - B{xml}: XML export/import using XSLT
             - B{csv}: useful for synchronization/database migration
                 - List/Display/Create for now
-            - B{xml}: raw DB dump XML export/import
-            - B{rss}: list only
-            - B{ajax}: designed to be run asynchronously to refresh page elements
-            - B{popup}
-            - B{xls}: list/read only
             - B{pdf}: list/read only
-
+            - B{rss}: list only
+            - B{xls}: list/read only
+            - B{ajax}: designed to be run asynchronously to refresh page elements
+            - B{url}: designed to be accessed via JavaScript
+                - responses in JSON format
+                - create/update/delete done via simple GET vars (no form displayed)
+            - B{popup}: designed to be used inside popups
+            
         Request options:
         ================
 

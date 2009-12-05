@@ -136,12 +136,13 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('enabled', 'boolean', default=True, label=T('Enabled?')),
                 migrate=migrate)
 # Reusable field for other tables to reference
+ADD_FG = T('Add Feature Group')
 feature_group_id = SQLTable(None, 'feature_group_id',
             Field('feature_group_id', db.gis_feature_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Group'),
-                comment = '',
+                comment = DIV(A(ADD_FG, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FG), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -168,48 +169,6 @@ db.define_table(table, timestamp,
                 Field('apikey', length=128, notnull=True),
 				Field('description'),
                 migrate=migrate)
-
-# GIS Layers
-#gis_layer_types = ['features', 'georss', 'kml', 'gpx', 'shapefile', 'scan', 'bing', 'google', 'openstreetmap', 'wms', 'yahoo']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing']
-#gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
-gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
-gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
-gis_layer_yahoo_subtypes = ['Satellite', 'Maps', 'Hybrid']
-gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
-# Base table from which the rest inherit
-gis_layer = SQLTable(db, 'gis_layer', timestamp,
-            #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
-            Field('name', notnull=True, label=T('Name')),
-            Field('description', label=T('Description')),
-            #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
-            Field('enabled', 'boolean', default=True, label=T('Enabled?')))
-gis_layer.name.requires = IS_NOT_EMPTY()
-for layertype in gis_layer_types:
-    resource = 'layer_' + layertype
-    table = module + '_' + resource
-    # Create Type-specific Layer tables
-    if layertype == "openstreetmap":
-        t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
-        db.define_table(table, t, migrate=migrate)
-    if layertype == "google":
-        t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
-        db.define_table(table, t, migrate=migrate)
-    if layertype == "yahoo":
-        t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
-        db.define_table(table, t, migrate=migrate)
-    if layertype == "bing":
-        t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
-        t.subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
-        db.define_table(table, t, migrate=migrate)
 
 # GPS Tracks (files in GPX format)
 resource = 'track'
@@ -254,6 +213,53 @@ track_id = SQLTable(None, 'track_id',
                 ondelete = 'RESTRICT'
                 ))
     
+# GIS Layers
+#gis_layer_types = ['features', 'georss', 'kml', 'gpx', 'shapefile', 'scan', 'bing', 'google', 'openstreetmap', 'wms', 'yahoo']
+gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing', 'gpx']
+#gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
+gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
+gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
+gis_layer_yahoo_subtypes = ['Satellite', 'Maps', 'Hybrid']
+gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
+# Base table from which the rest inherit
+gis_layer = SQLTable(db, 'gis_layer', timestamp,
+            #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
+            Field('name', notnull=True, label=T('Name')),
+            Field('description', label=T('Description')),
+            #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
+            Field('enabled', 'boolean', default=True, label=T('Enabled?')))
+gis_layer.name.requires = IS_NOT_EMPTY()
+for layertype in gis_layer_types:
+    resource = 'layer_' + layertype
+    table = module + '_' + resource
+    # Create Type-specific Layer tables
+    if layertype == "openstreetmap":
+        t = SQLTable(db, table,
+            Field('subtype', label=T('Sub-type')),
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "google":
+        t = SQLTable(db, table,
+            Field('subtype', label=T('Sub-type')),
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "yahoo":
+        t = SQLTable(db, table,
+            Field('subtype', label=T('Sub-type')),
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "bing":
+        t = SQLTable(db, table,
+            Field('subtype', label=T('Sub-type')),
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "gpx":
+        t = SQLTable(db, table,
+            #Field('subtype', label=T('Sub-type')),
+            track_id,
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+
 # GIS Styles: SLD
 #db.define_table('gis_style', timestamp,
 #                Field('name', notnull=True, unique=True))

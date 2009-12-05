@@ -64,7 +64,7 @@ organisation_id = SQLTable(None, 'organisation_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
                 label = T('Organisation'),
-                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|The name of the Organisation."))),
+                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|The Organisation this record is associated with."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -79,7 +79,7 @@ resource = 'office'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
-                Field('organisation', db.or_organisation),
+                organisation_id,
                 Field('type', 'integer'),
                 admin_id,
                 location_id,
@@ -100,10 +100,6 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-db[table].organisation.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s'))
-db[table].organisation.represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0]
-db[table].organisation.label = T('Organisation')
-db[table].organisation.comment = DIV(A(s3.crud_strings.or_organisation.label_create_button, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.or_organisation.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Organisation|The Organisation this Office belongs to.")))
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
 db[table].parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))

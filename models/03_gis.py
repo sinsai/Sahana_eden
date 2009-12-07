@@ -53,39 +53,11 @@ projection_id = SQLTable(None, 'projection_id',
                 ondelete = 'RESTRICT'
                 ))
 
-# GIS Feature Classes
-resource_opts = {
-    'shelter':T('Shelter'),
-    'office':T('Office'),
-    }
-# These are used in groups (for display/export), for icons & for URLs to edit data
-resource = 'feature_class'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('name', length=128, notnull=True, unique=True),
-                Field('description'),
-                marker_id,
-                Field('module'),    # Used to build Edit URL
-                Field('resource'),  # Used to build Edit URL & to provide Attributes to Display
-                migrate=migrate)
-# Reusable field for other tables to reference
-ADD_FEATURE_CLASS = T('Add Feature Class')
-feature_class_id = SQLTable(None, 'feature_class_id',
-            Field('feature_class_id', db.gis_feature_class,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
-                represent = lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
-                label = T('Feature Class'),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class='thickbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
-                ondelete = 'RESTRICT'
-                ))
-
 # GIS Symbology
 resource = 'symbology'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 Field('name', length=128, notnull=True, unique=True),
-                feature_class_id,
-                marker_id,
                 migrate=migrate)
 # Reusable field for other tables to reference
 symbology_id = SQLTable(None, 'symbology_id',
@@ -112,6 +84,38 @@ db.define_table(table, timestamp, uuidstamp,
 				marker_id,
 				Field('map_height', 'integer', notnull=True),
 				Field('map_width', 'integer', notnull=True),
+                migrate=migrate)
+
+# GIS Feature Classes
+# These are used in groups (for display/export), for icons & for URLs to edit data
+resource = 'feature_class'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('name', length=128, notnull=True, unique=True),
+                Field('description'),
+                marker_id,
+                Field('module'),    # Used to build Edit URL
+                Field('resource'),  # Used to build Edit URL & to provide Attributes to Display
+                migrate=migrate)
+# Reusable field for other tables to reference
+ADD_FEATURE_CLASS = T('Add Feature Class')
+feature_class_id = SQLTable(None, 'feature_class_id',
+            Field('feature_class_id', db.gis_feature_class,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.gis_feature_class.id==id).select()[0].name] or ["None"])[0],
+                label = T('Feature Class'),
+                comment = DIV(A(ADD_FEATURE_CLASS, _class='thickbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
+                ondelete = 'RESTRICT'
+                ))
+
+# Symbology to Feature Class to Marker
+resource = 'symbology_to_feature_class'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('name', length=128, notnull=True, unique=True),
+                symbology_id,
+                feature_class_id,
+                marker_id,
                 migrate=migrate)
 
 # GIS Locations
@@ -233,14 +237,13 @@ track_id = SQLTable(None, 'track_id',
                 ))
     
 # GIS Layers
-#gis_layer_types = ['features', 'georss', 'kml', 'gpx', 'shapefile', 'scan', 'bing', 'google', 'openstreetmap', 'wms', 'yahoo']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing', 'gpx']
-#gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing']
+#gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing', 'gpx', 'kml', 'shapefile', 'scan', 'wms']
+gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx']
 #gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
 gis_layer_yahoo_subtypes = ['Satellite', 'Maps', 'Hybrid']
-gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
+gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
 # Base table from which the rest inherit
 gis_layer = SQLTable(db, 'gis_layer', timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync

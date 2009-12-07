@@ -442,6 +442,12 @@ if empty:
     table = 'gis_feature_class'
     if not db(db[table].id).count():
         db[table].insert(
+            name = 'Track',
+            #marker_id = db(db.gis_marker.name=='shelter').select()[0].id,
+            module = 'gis',
+            resource = 'track'
+        )
+        db[table].insert(
             name = 'Country',
         )
         db[table].insert(

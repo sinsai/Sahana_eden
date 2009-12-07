@@ -23,6 +23,26 @@
 {{except:}}
 {{pass}}
 
+<script type="text/javascript">//<![CDATA[
+
+$(function() {
+    
+    // Hide the DIV
+    //$("#replaceme").hide();
+    
+    // Replace contents
+    $.get('{{=URL(r=request,f='index')}}', function(data){
+        $("#replaceme").html(data);
+    });
+    
+});
+//]]></script>
+
+<div id='replaceme'>
+Old contents
+</div>
+
+<!--
 <div class='menuslide'>
 <ul>
 	<li><a href='#'>Modules</a>
@@ -53,3 +73,4 @@
     </li>
 </ul>
 </div>
+-->

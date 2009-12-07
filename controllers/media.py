@@ -94,25 +94,57 @@ def bulk_upload():
     
     return dict(form=form, gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, fg_widget=fg_widget, fg_label=fg_label, fg_comment=fg_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
  
-def upload():
+def upload_bulk():
     "Receive the Uploaded data from bulk_upload()"
-    # Is there a Feature Group to create?
     # Is there a GPX track to correlate timestamps with?
-    # Should we overwrite metadata?
-    # Receive file ( from import_url() )
+    track_id = form.vars.track_id
+    # Is there a Feature Group to add Features to?
+    feature_group_id = form.vars.feature_group_id
+    # Collect default metadata
+    description = form.vars.description
+    person_id = form.vars.person_id
+    source = form.vars.source
+    accuracy = form.vars.accuracy
+    sensitivity = form.vars.sensitivity
+    event_time = form.vars.event_time
+    expiry_time = form.vars.expiry_time
+    url = form.vars.url
     
+    # Insert initial metadata
+    metadata_id = db.media_metadata.insert(description=description, person_id=person_id, source=source, accuracy=accuracy, sensitivity=sensitivity, event_time=event_time, expiry_time=expiry_time)
+
+    # Extract timestamps from GPX file
+    # ToDo: Parse using lxml?
+	
+    # Receive file
+    location_id
+    image
+                
+    image_filename = db.insert()
+    
+    # Read EXIF Info from file
+    exec('import applications.%s.modules.EXIF as EXIF' % request.application)
+    # Faster for Production (where app-name won't change):
+    #import applications.sahana.modules.EXIF as EXIF
+
+    f = open(file_image), 'rb')
+    tags = EXIF.process_file(f, details=False)
+    for key in tags.keys():
+        # Timestamp
+        if key[tag] == '':
+            timestamp = key[tag]
+        # ToDo: LatLon
+        # ToDo: Metadata
+
+    # Add iamge to database
+    image_id = db.media_image.insert()
+    
+    return json_message(True, '200', "Files Processed.")
+
+def upload(module, resource, table, tablename, onvalidation=None, onaccept=None):
+    # Receive file ( from import_url() )
     record = Storage()
-    uuid = None
-    original = None
-
-    module, resource, table, tablename = jr.target()
-
-    if jr.component:
-        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
-        onaccept = s3xrc.model.get_attr(resource, "onaccept")
-
-    response.headers['Content-Type'] = 'text/x-json'
-
+    
     for var in request.vars:
         
         # Skip the Representation
@@ -145,20 +177,6 @@ def upload():
                 record[field.uploadfield] = source_file.read()
         else:
             record[var] = request.vars[var]
-            
-
-    # UUID is required for update
-    if method == 'update':
-        if uuid:
-            try:
-                original = db(table.uuid==uuid).select(table.ALL)[0]
-            except:
-                raise HTTP(404, body=json_message(False, 404, "Record not found!"))
-        else:
-            # You will never come to that point without having specified a
-            # record ID in the request. Nevertheless, we require a UUID to
-            # identify the record
-            raise HTTP(400, body=json_message(False, 400, "UUID required!"))
 
     # Validate record
     for var in record:

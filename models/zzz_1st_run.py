@@ -195,7 +195,6 @@ if empty:
             description="A library of digital resources, such as Photos.",
             enabled='True'
         )
-
     # Budget Module
     table = 'budget_setting'
     if not db(db[table].id).count():

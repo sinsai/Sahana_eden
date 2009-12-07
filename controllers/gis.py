@@ -817,14 +817,15 @@ def layers_enable():
                         # Disable
                         db(query_inner).update(enabled=False)
                         # Audit
-                        shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                        #shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                        shn_audit_update_m2m(resource, row.id, 'html')
                 else:
                     # Old state: Disabled
                     if var in request.vars:
                         # Enable
                         db(query_inner).update(enabled=True)
                         # Audit
-                        shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                        shn_audit_update_m2m(resource, row.id, 'html')
                     else:
                         # Do nothing
                         pass

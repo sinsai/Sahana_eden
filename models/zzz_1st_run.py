@@ -195,6 +195,15 @@ if empty:
             description="A library of digital resources, such as Photos.",
             enabled='True'
         )
+        db[table].insert(
+            name="nim",
+            name_nice="Nursing Information Manager",
+            priority=17,
+            module_type=3,
+            access='',
+            description="Module to assist disaster nurses.",
+            enabled='True'
+        )
     # Budget Module
     table = 'budget_setting'
     if not db(db[table].id).count():

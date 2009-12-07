@@ -22,10 +22,15 @@ def index():
 @auth.requires_membership('Administrator')
 def setting():
     "Modem and Mobile related settings"
+    try:
+        import serial
+    except:
+        session.error = T('pyserial module not available within the running Python - this needs installing for SMS!')
+        redirect(URL(r=request, c='mobile', f='index' ))
     module = 'mobile'
     resource = 'setting'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].port.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T("Port|The serial port where your modem is connected."))

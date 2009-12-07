@@ -363,3 +363,7 @@ def shn_as_local_time(value):
     else:
         dt = value
         return dt.strftime(str(format))+' +0000'
+
+def Tstr(text):
+    """Convenience function for non web2py modules"""
+    return str(T(text))

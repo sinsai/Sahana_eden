@@ -1161,7 +1161,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                    resource=resource,
                    representation=jr.representation)
 
-    if jr.representation=="html" or jr.representation=="ext":
+    if jr.representation=="html":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
         if jr.component:
@@ -1258,19 +1258,19 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             if onaccept:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session,module,resource,form.vars.id) and \
+                            s3xrc.store_session(session, module, resource, 0) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session,module,resource,form.vars.id)
+                            s3xrc.store_session(session, module, resource, 0)
 
             try:
                 message = s3.crud_strings[tablename].msg_record_created
             except:
                 message = s3.crud_strings.msg_record_created
 
-            # Display the Add form below List
+            # Display the Add form above List
             form = crud.create(table,
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
@@ -1290,10 +1290,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                 addtitle = s3.crud_strings.subtitle_create
 
             # Check for presence of Custom View
-            if jr.representation == "ext":
-                shn_custom_view(jr, 'list.html', format='ext')
-            else:
-                shn_custom_view(jr, 'list_create.html')
+            shn_custom_view(jr, 'list_create.html')
 
             # Add specificities to Return
             output.update(dict(form=form, addtitle=addtitle))
@@ -1313,11 +1310,88 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             output.update(dict(add_btn=add_btn))
 
             # Check for presence of Custom View
-            if jr.representation == "ext":
-                shn_custom_view(jr, 'list.html', format='ext')
-            else:
-                shn_custom_view(jr, 'list.html')
+            shn_custom_view(jr, 'list.html')
 
+        return output
+
+    elif jr.representation=="ext":
+        output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
+
+        if jr.component:
+            try:
+                title = s3.crud_strings[jr.tablename].title_display
+            except:
+                title = s3.crud_strings.title_display
+        else:
+            try:
+                title = s3.crud_strings[tablename].title_list
+            except:
+                title = s3.crud_strings.title_list
+
+        # Add to Return
+        output.update(title=title)
+
+        # Block join field
+        if jr.component:
+            _comment = table[jr.fkey].comment
+            table[jr.fkey].comment = None
+            table[jr.fkey].default = jr.record[jr.pkey]
+            table[jr.fkey].writable = False
+
+        if onaccept:
+            _onaccept = lambda form: \
+                        shn_audit_create(form, module, resource, jr.representation) and \
+                        s3xrc.store_session(session, module, resource, form.vars.id) and \
+                        onaccept(form)
+        else:
+            _onaccept = lambda form: \
+                        shn_audit_create(form, module, resource, jr.representation) and \
+                        s3xrc.store_session(session, module, resource, form.vars.id)
+
+        try:
+            message = s3.crud_strings[tablename].msg_record_created
+        except:
+            message = s3.crud_strings.msg_record_created
+
+        # Form is used to build the initial list view
+        form = crud.create(table,
+                           onvalidation=onvalidation,
+                           onaccept=_onaccept,
+                           message=message,
+                           next=jr.there())
+
+        if jr.component:
+            table[jr.fkey].comment = _comment
+
+        # Update the Return with the Form
+        output.update(form=form, pagesize=ROWSPERPAGE)
+
+        authorised = shn_has_permission('update', table)
+        if authorised:
+            # Provide an Editable Grid
+
+            # Check for presence of Custom View
+            shn_custom_view(jr, 'list_create.html', format='ext')
+            
+        else:
+            # Provide a read-only Ext grid
+            # (We could do this from the HTML table using TableGrid, but then we wouldn't have client-side pagination)
+
+            if listadd:
+                try:
+                    label_create_button = s3.crud_strings[tablename].label_create_button
+                except:
+                    label_create_button = s3.crud_strings.label_create_button
+                add_btn = A(label_create_button, _href=href_add, _id='add-btn')
+            else:
+                add_btn = ''
+
+            # Add to Return
+            output.update(dict(add_btn=add_btn))
+
+            # Check for presence of Custom View
+            shn_custom_view(jr, 'list.html', format='ext')
+            
         return output
 
     elif jr.representation == "plain":

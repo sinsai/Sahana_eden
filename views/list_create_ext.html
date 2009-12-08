@@ -1,6 +1,8 @@
 {{extend 'layout.html'}}
 
 {{include 'ext.html'}}
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/restful.css" />
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/silk.css" />
 {{include 'extEditorGrid.html'}}
 
 <script type="text/javascript">//<![CDATA[
@@ -8,42 +10,15 @@ Ext.onReady(function(){
 
     Ext.QuickTips.init();
 
-    {{include 'extlist.js'}}
+    {{include 'extlistcreate.js'}}
 });
 //]]></script>
-
-{{include 'thickbox.html'}}
 
 {{try:}}
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-<div id='pheader'>
-{{try:}}
- {{=pheader}}
-<p>&nbsp;</p>
-{{except:}}
- {{pass}}
-</div>
-{{try:}}
- {{=H3(subtitle)}}
-{{except:}}
-{{pass}}
 {{include 'formats.html'}}
 <div id='table-container'>
 <!-- Ext will render table here -->
-</div>
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
-<p>&nbsp;</p>
-{{try:}}
- {{=H3(addtitle)}}
-{{except:}}
-{{pass}}
-{{include 'key.html'}}
-<div class='form-container'>
-{{try:}}
- {{=form}}
-{{except:}}
-{{pass}}
 </div>

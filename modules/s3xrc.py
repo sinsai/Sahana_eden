@@ -986,8 +986,10 @@ class XRequest(object):
             else:
                 self.record = records[0]
 
-        # Check for ?id_label=
-        if not self.id and 'id_label' in self.request.vars:
+        # Check for ?select=
+        if not self.id and 'select' in self.request.vars:
+            if self.request.vars["select"] == "ALL":
+                return True
             id_label = str.strip(self.request.vars.id_label)
             if 'pr_pe_label' in self.table:
                 query = (self.table.pr_pe_label==id_label)

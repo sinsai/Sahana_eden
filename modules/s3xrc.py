@@ -1225,7 +1225,7 @@ class XRequest(object):
         return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
-    def export_json(self, permit=None, audit=None, template=None, filter=None, pretty_print=False):
+    def export_json(self, permit=None, audit=None, template=None, filterby=None, pretty_print=False):
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1253,7 +1253,7 @@ class XRequest(object):
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins,
-                               filter=filter,
+                               filterby=filterby,
                                permit=permit,
                                audit=audit,
                                start=start,

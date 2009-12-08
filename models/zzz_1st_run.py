@@ -620,15 +620,15 @@ if empty:
                     enabled = False
                 )
 
-    table = 'gis_layer_bing'
-    if not db(db[table].id).count():
+    #table = 'gis_layer_bing'
+    #if not db(db[table].id).count():
         # Populate table
-        for subtype in gis_layer_bing_subtypes:
-            db[table].insert(
-                    name = 'Bing ' + subtype,
-                    subtype = subtype,
-                    enabled = False
-                )
+    #    for subtype in gis_layer_bing_subtypes:
+    #        db[table].insert(
+    #                name = 'Bing ' + subtype,
+    #                subtype = subtype,
+    #                enabled = False
+    #            )
 
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)

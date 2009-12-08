@@ -1132,7 +1132,10 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         rss = jr.component.attr.rss
 
         query = shn_accessible_query('read', table)
-        query = (table[jr.fkey]==jr.record[jr.pkey]) & query
+        if jr.record:
+            query = (table[jr.fkey]==jr.record[jr.pkey]) & query
+        else:
+            query = (table[jr.fkey]==jr.table[jr.pkey]) & query
 
         if response.s3.jfilter:
             query = response.s3.jfilter & query
@@ -1854,7 +1857,7 @@ def shn_rest_controller(module, resource,
                 - responses in JSON format
                 - create/update/delete done via simple GET vars (no form displayed)
             - B{popup}: designed to be used inside popups
-            
+
         Request options:
         ================
 
@@ -1910,6 +1913,8 @@ def shn_rest_controller(module, resource,
     # Parse original request --------------------------------------------------
     jr = s3xrc.request(module, resource, request, session=session)
 
+    #print "%s %s %s %s %s" % (jr.prefix, jr.name, jr.method, jr.component_name, jr.representation)
+
     # Invalid request?
     if jr.invalid:
         if jr.badmethod:
@@ -1932,7 +1937,7 @@ def shn_rest_controller(module, resource,
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
 
     # Record ID is required in joined-table operations and read action:
-    if not jr.id and (jr.component or jr.method=="read") and not jr.method=="options":
+    if not jr.id and (jr.component or jr.method=="read") and not jr.method=="options" and not "select" in jr.request.vars:
 
         # TODO: Cleanup - this is PR specific
         if jr.prefix=="pr" and jr.name=="person" and jr.representation=='html':

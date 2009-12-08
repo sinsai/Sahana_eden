@@ -10,3 +10,7 @@
     var binghybrid = new OpenLayers.Layer.VirtualEarth( "{{=bing.Hybrid}}" , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
     map.addLayer(binghybrid);
 {{pass}}
+{{if bing.Terrain:}}
+    var bingterrain = new OpenLayers.Layer.VirtualEarth( "{{=bing.Terrain}}" , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
+    map.addLayer(bingterrain);
+{{pass}}

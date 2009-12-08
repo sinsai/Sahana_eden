@@ -42,7 +42,7 @@ def index():
 # Main controller functions
 def person():
     db.pr_pd_general.est_age.readable=False
-    crud.settings.delete_onvalidation=shn_pentity_ondelete
+    crud.settings.delete_onaccept = shn_pentity_ondelete
     return shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
@@ -50,7 +50,7 @@ def person():
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ),
-        onvalidation=lambda form: shn_pentity_onvalidation(form, table='pr_person', entity_class=1))
+        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
 
 def person_search():
     "Module's Home Page"

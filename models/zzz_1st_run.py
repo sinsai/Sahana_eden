@@ -186,7 +186,24 @@ if empty:
             description="Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
             enabled='True'
         )
-
+        db[table].insert(
+            name="media",
+            name_nice="Media Manager",
+            priority=16,
+            module_type=4,
+            access='',
+            description="A library of digital resources, such as Photos.",
+            enabled='True'
+        )
+        db[table].insert(
+            name="nim",
+            name_nice="Nursing Information Manager",
+            priority=17,
+            module_type=3,
+            access='',
+            description="Module to assist disaster nurses.",
+            enabled='True'
+        )
     # Budget Module
     table = 'budget_setting'
     if not db(db[table].id).count():
@@ -433,6 +450,12 @@ if empty:
 
     table = 'gis_feature_class'
     if not db(db[table].id).count():
+        db[table].insert(
+            name = 'Track',
+            #marker_id = db(db.gis_marker.name=='shelter').select()[0].id,
+            module = 'gis',
+            resource = 'track'
+        )
         db[table].insert(
             name = 'Country',
         )

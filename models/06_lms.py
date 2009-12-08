@@ -72,7 +72,6 @@ if not db(db[table].id).count():
     )
 
 db[table].base_unit.requires = IS_NULL_OR(IS_ONE_OF(db, "lms_unit.label", "lms_unit.name"))
-#db[table].base_unit.requires=IS_NULL_OR(IS_UNIT(db))
 db[table].label.requires=IS_NOT_IN_DB(db, '%s.label' % table)
 db[table].label.label = T('Unit')
 db[table].label.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Label| Unit Short Code for e.g. m for meter."))
@@ -117,7 +116,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				opt_site_category,
                 admin_id,
                 person_id,
-				db.Field('organisation', db.or_organisation),
+				organisation_id, #db.Field('organisation', db.or_organisation),
                 db.Field('address', 'text'),
 				db.Field('site_phone'),
 				db.Field('site_fax'),
@@ -127,20 +126,12 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
-# db[table].category.requires = IS_IN_DB(db, 'lms_site_category.id', 'lms_site_category.name')
-#db[table].category.requires=IS_IN_SET(['warehouse'])
-# db[table].site_category_id.comment = DIV(A(T('Add Category'), _class='popup', _href=URL(r=request, c='lms', f='site_category', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Category|The Category of Site.")))
 db[table].name.label = T("Site Name")
-DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
 db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Name|A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar."))
 db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Description|Use this space to add a description about the warehouse/site."))
-#db[table].name.comment = SPAN("*", _class="req")
 db[table].admin.label = T("Site Manager")
 db[table].person_id.label = T("Contact Person")
-#db[table].person_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contact Person|The point of contact for this Site. You can create a contact entry by clicking 'Add Person' and enter more details about the person if it does not exists."))
 db[table].address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Address|Detailed address of the site for informational/logistics purpose. Please note that you can add GIS/Mapping data about this site in the 'Location' field mentioned below."))
-db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
-db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender|Add sender to which the site belongs to.")))
 db[table].attachment.label = T("Image/Other Attachment")
 db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
 db[table].comments.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Additional Comments|Use this space to add additional comments and notes about the Site/Warehouse."))
@@ -178,12 +169,10 @@ db[table].name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to hav
 db[table].site_id.label = T("Site")
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
 db[table].capacity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
-#db[table].capacity_unit.requires=IS_UNIT(db, filter_opts=[1])
-db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
-#db[table].weight_unit.requires=IS_UNIT(db, filter_opts=[2])
-db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
+db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
 db[table].name.label = T("Storage Location Name")
 db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Name|A place within a Site like a Shelf, room, bin number etc."))
 db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Description|Use this space to add a description about the site location."))
@@ -251,21 +240,19 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
 db[table].site_id.label = T("Site/Warehouse")
-db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Bin belongs to.")))
+db[table].site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Bin belongs to.")))
 db[table].storage_id.label = T("Storage Location")
 db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
 db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this this Bin belongs to.")))
 db[table].number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names
 db[table].capacity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
-#db[table].capacity_unit.requires=IS_UNIT(db, filter_opts=[1])
-db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
-#db[table].weight_unit.requires=IS_UNIT(db, filter_opts=[2])
-db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].bin_type.requires = IS_IN_DB(db, 'lms_storage_bin_type.id', 'lms_storage_bin_type.name')
-db[table].bin_type.comment = DIV(A(T('Add Storage Bin Type'), _class='popup', _href=URL(r=request, c='lms', f='storage_bin_type', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin Type.")))
+db[table].bin_type.comment = DIV(A(T('Add Storage Bin Type'), _class='thickbox', _href=URL(r=request, c='lms', f='storage_bin_type', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin Type.")))
 db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
-db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this bin is located.")))
+db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='thickbox', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this bin is located.")))
 db[table].number.label = T("Storage Bin Number")
 db[table].number.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Number|Identification label of the Storage bin."))
 db[table].storage_id.label = T("Storage Location ID")
@@ -294,7 +281,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'catalog'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                db.Field('organisation', db.or_organisation),
+                organisation_id,#db.Field('organisation', db.or_organisation),
 				db.Field('name'),
                 db.Field('description'),
 				db.Field('comments', 'text'),
@@ -306,8 +293,6 @@ if not db(db[table].id).count():
 		comments="All items are by default added to this Catalog"
     )
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].organisation.requires = IS_IN_DB(db, 'or_organisation.id', 'or_organisation.name')
-db[table].organisation.comment = DIV(A(T('Add Organisation'), _class='popup', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|Add the name and additional information about the Organisation if it does not exists already.")))
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T("Catalog Name")
 db[table].name.comment = SPAN("*", _class="req")
@@ -367,7 +352,7 @@ db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T("Item Sub-Category")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].parent_category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
-db[table].parent_category.comment = DIV(A(T('Add Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+db[table].parent_category.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
 title_create = T('Add Item Sub-Category ')
 title_display = T('Item Sub-Category Details')
 title_list = T('List Item Sub-Categories')
@@ -395,15 +380,15 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].category_id.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
 db[table].category_id.label = T('Category')
 db[table].category_id.represent = lambda category_id: db(db.lms_catalog_cat.id==category_id).select()[0].name
-db[table].category_id.comment = DIV(A(T('Add Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+db[table].category_id.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
 db[table].subcategory_id.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
 db[table].subcategory_id.label = T('Sub Category')
 db[table].subcategory_id.represent = lambda subcategory_id: db(db.lms_catalog_subcat.id==subcategory_id).select()[0].name
-db[table].subcategory_id.comment = DIV(A(T('Add Item Sub-Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
+db[table].subcategory_id.comment = DIV(A(T('Add Item Sub-Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
 db[table].catalog_id.requires = IS_IN_DB(db, 'lms_catalog.id', 'lms_catalog.name')
 db[table].catalog_id.label = T('Catalog')
 db[table].catalog_id.represent = lambda catalog_id: db(db.lms_catalog.id==catalog_id).select()[0].name
-db[table].catalog_id.comment = DIV(A(T('Add Item Catalog'), _class='popup', _href=URL(r=request, c='lms', f='catalog', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Catalog.")))
+db[table].catalog_id.comment = DIV(A(T('Add Item Catalog'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Catalog.")))
 title_create = T('Add Category<>Sub-Category<>Catalog Relation ')
 title_display = T('Category<>Sub-Category<>Catalog Relation')
 title_list = T('List Category<>Sub-Category<>Catalog Relation')
@@ -439,9 +424,9 @@ db[table].way_bill.requires = IS_NOT_EMPTY()
 db[table].way_bill.label = T("Shipment/Way Bills")
 db[table].way_bill.comment = SPAN("*", _class="req")
 db[table].sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].sender_site.comment = DIV(A(T('Add Sender Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
+db[table].sender_site.comment = DIV(A(T('Add Sender Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
 db[table].recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient|Add a new Site where the Item is being sent to.")))
+db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient|Add a new Site where the Item is being sent to.")))
 title_create = T('Add Shipment/Way Bills')
 title_display = T('Shipment/Way Bills Details')
 title_list = T('List Shipment/Way Bills')
@@ -465,7 +450,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #No storage location assigned
 				db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #No Storage Bin assigned
 				db.Field('catalog', db.lms_catalog, writable=False, default=1), #default catalog assigned
-				#db.Field('ordered_list_item', notnull=True, unique=True),
 				#Shipment Details
 				db.Field('way_bill'),
 				db.Field('sender_site', db.lms_site),
@@ -494,33 +478,26 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name') #this should be automatically done. Using LMS User Preferences
 db[table].site_id.label = T("Site/Warehouse")
-db[table].site_id.comment = DIV(A(T('Add Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
+db[table].site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
 db[table].quantity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[5])
-#db[table].quantity_unit.requires=IS_UNIT(db, filter_opts=[5])
-db[table].quantity_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].quantity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].specifications_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
-#db[table].specifications_unit.requires=IS_UNIT(db, filter_opts=[1])
-db[table].specifications_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+db[table].specifications_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
-#db[table].weight_unit.requires=IS_UNIT(db, filter_opts=[2])
-db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='popup', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-#db[table].ordered_list_item.requires = IS_NOT_EMPTY()
+db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
 db[table].name.requires = IS_NOT_EMPTY()
-#db[table].ordered_list_item.label = T("Ordered List Item")
-#db[table].ordered_list_item.comment = SPAN("*", _class="req")
-#db[table].way_bill.label = T("Air Way Bill (AWB)")
 db[table].way_bill.comment = SPAN("*", _class="req")
 db[table].name.label = T("Product Name")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].description.label = T("Product Description")
 db[table].category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
-db[table].category.comment = DIV(A(T('Add Item Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+db[table].category.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
 db[table].sub_category.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
-db[table].sub_category.comment = DIV(A(T('Add Item Sub-Category'), _class='popup', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
+db[table].sub_category.comment = DIV(A(T('Add Item Sub-Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
 db[table].sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].sender_site.comment = DIV(A(T('Add Sender Organisation'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender Site.")))
+db[table].sender_site.comment = DIV(A(T('Add Sender Organisation'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender Site.")))
 db[table].recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='popup', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient Site.")))
+db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient Site.")))
 db[table].designated.label = T("Designated for")
 db[table].specifications.label = T("Volume/Dimensions")
 db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))

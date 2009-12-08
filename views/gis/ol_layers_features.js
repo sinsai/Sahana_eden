@@ -17,8 +17,9 @@ map.registerEvents(featuresLayer);
 
 // FeatureGroup Layers
 {{for feature_group in feature_groups:}}
-featuresLayer{{=feature_group.name}} = new OpenLayers.Layer.Vector("{{=feature_group.name}}", {displayInLayerSwitcher: true});
-map.addLayer(featuresLayer{{=feature_group.name}});
+{{fgname = feature_group.name.replace(' ', '_')}}
+var featuresLayer{{=fgname}} = new OpenLayers.Layer.Vector("{{=fgname}}", {displayInLayerSwitcher: true});
+map.addLayer(featuresLayer{{=fgname}});
 {{for feature in features[feature_group.id]:}}
   {{if feature.gis_location.id:}}
     parser = new OpenLayers.Format.WKT();
@@ -26,7 +27,7 @@ map.addLayer(featuresLayer{{=feature_group.name}});
     geom = geom.transform(proj4326, proj_current);
     var popupContentHTML = {{include 'gis/ol_features_popup.html'}}
     var iconURL = '{{=URL(r=request, c='default', f='download', args=[feature.marker])}}';
-    add_Feature_with_popup(featuresLayer{{=feature_group.name}}, '{{=feature.gis_location.uuid}}', geom, popupContentHTML, iconURL);
+    add_Feature_with_popup(featuresLayer{{=fgname}}, '{{=feature.gis_location.uuid}}', geom, popupContentHTML, iconURL);
   {{else:}}
   {{pass}}
 {{pass}}

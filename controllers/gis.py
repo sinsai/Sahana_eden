@@ -7,7 +7,39 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 response.menu_options = [
     [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
     [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
+    [T('Bulk Uploader'), False, URL(r=request, c='media', f='bulk_upload')],
 ]
+
+# Model options used in multiple Actions
+table = 'gis_location'
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+db[table].name.label = T('Name')
+db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+db[table].parent.label = T('Parent')
+db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
+db[table].gis_feature_type.label = T('Feature Type')
+db[table].lat.requires = IS_NULL_OR(IS_LAT())
+db[table].lat.label = T('Latitude')
+#db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+CONVERSION_TOOL = T("Conversion Tool")
+db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+db[table].lon.requires = IS_NULL_OR(IS_LON())
+db[table].lon.label = T('Longitude')
+db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+# WKT validation is done in the onvalidation callback
+#db[table].wkt.requires=IS_NULL_OR(IS_WKT())
+db[table].wkt.label = T('Well-Known Text')
+db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+# Joined Resource
+#s3xrc.model.add_component('media', 'metadata',
+#    multiple=True,
+#    joinby=dict(gis_location='location_id'),
+#    deletable=True,
+#    editable=True,
+#    list_fields = ['id', 'description', 'source', 'event_time', 'url'])
 
 # Web2Py Tools functions
 def download():
@@ -143,7 +175,7 @@ def feature_group():
     #db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 
     # CRUD Strings
-    title_create = T('Add Feature Group')
+    title_create = ADD_FG
     title_display = T('Feature Group Details')
     title_list = T('List Feature Groups')
     title_update = T('Edit Feature Group')
@@ -151,12 +183,38 @@ def feature_group():
     subtitle_create = T('Add New Feature Group')
     subtitle_list = T('Feature Groups')
     label_list_button = T('List Feature Groups')
-    label_create_button = T('Add Feature Group')
+    label_create_button = ADD_FG
     msg_record_created = T('Feature Group added')
     msg_record_modified = T('Feature Group updated')
     msg_record_deleted = T('Feature Group deleted')
     msg_list_empty = T('No Feature Groups currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource)
+
+    
+def location_to_feature_group():
+    "RESTlike CRUD controller"
+    resource = 'location_to_feature_group'
+    table = module + '_' + resource
+    
+    # Model options
+
+    # CRUD Strings
+    #title_create = ADD_FG
+    #title_display = T('Feature Group Details')
+    #title_list = T('List Feature Groups')
+    #title_update = T('Edit Feature Group')
+    #title_search = T('Search Feature Groups')
+    #subtitle_create = T('Add New Feature Group')
+    #subtitle_list = T('Feature Groups')
+    #label_list_button = T('List Feature Groups')
+    #label_create_button = ADD_FG
+    #msg_record_created = T('Feature Group added')
+    #msg_record_modified = T('Feature Group updated')
+    #msg_record_deleted = T('Feature Group deleted')
+    #msg_list_empty = T('No Feature Groups currently defined')
+    #s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     
     return shn_rest_controller(module, resource)
 
@@ -166,27 +224,7 @@ def location():
     table = module + '_' + resource
     
     # Model options
-    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-    db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
-    db[table].name.label = T('Name')
-    db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
-    db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
-    db[table].parent.label = T('Parent')
-    db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-    db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
-    db[table].gis_feature_type.label = T('Feature Type')
-    db[table].lat.requires = IS_NULL_OR(IS_LAT())
-    db[table].lat.label = T('Latitude')
-    #db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-    CONVERSION_TOOL = T("Conversion Tool")
-    db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-    db[table].lon.requires = IS_NULL_OR(IS_LON())
-    db[table].lon.label = T('Longitude')
-    db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-    # WKT validation is done in the onvalidation callback
-    #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
-    db[table].wkt.label = T('Well-Known Text')
-    db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+    # used in multiple controllers, so at the top of the file
 
     # CRUD Strings
     title_create = T('Add Location')
@@ -235,44 +273,6 @@ def marker():
     
     return shn_rest_controller(module, resource)
 
-def metadata():
-    "RESTlike CRUD controller"
-    resource = 'metadata'
-    table = module + '_' + resource
-    
-    # Model options
-    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-    db[table].description.label = T('Description')
-    db[table].person_id.label = T("Contact")
-    db[table].source.label = T('Source')
-    db[table].accuracy.label = T('Accuracy')
-    db[table].sensitivity.label = T('Sensitivity')
-    db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
-    db[table].event_time.label = T('Event Time')
-    db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())
-    db[table].expiry_time.label = T('Expiry Time')
-    db[table].url.requires = IS_NULL_OR(IS_URL())
-    db[table].url.label = 'URL'
-    db[table].image.label = T('Image')
-
-    # CRUD Strings
-    title_create = T('Add Metadata')
-    title_display = T('Metadata Details')
-    title_list = T('List Metadata')
-    title_update = T('Edit Metadata')
-    title_search = T('Search Metadata')
-    subtitle_create = T('Add New Metadata')
-    subtitle_list = T('Metadata')
-    label_list_button = T('List Metadata')
-    label_create_button = T('Add Metadata')
-    msg_record_created = T('Metadata added')
-    msg_record_modified = T('Metadata updated')
-    msg_record_deleted = T('Metadata deleted')
-    msg_list_empty = T('No Metadata currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
-    return shn_rest_controller(module, resource)
-
 def projection():
     "RESTlike CRUD controller"
     resource = 'projection'
@@ -313,6 +313,31 @@ def projection():
     
     return shn_rest_controller(module, resource, deletable=False)
 
+def track():
+    "RESTlike CRUD controller"
+    resource = 'track'
+    table = module + '_' + resource
+    
+    # Model options
+    # used in multiple controllers, so defined in model
+    
+    # CRUD Strings
+    # used in multiple controllers, so defined in model
+    
+    return shn_rest_controller(module, resource)
+
+title_create = T('Add Layer')
+title_display = T('Layer Details')
+title_list = T('List Layers')
+title_update = T('Edit Layer')
+title_search = T('Search Layers')
+subtitle_create = T('Add New Layer')
+subtitle_list = T('Layers')
+label_create_button = T('Add Layer')
+msg_record_created = T('Layer added')
+msg_record_modified = T('Layer updated')
+msg_record_deleted = T('Layer deleted')
+    
 def layer_openstreetmap():
     "RESTlike CRUD controller"
     resource = 'layer_openstreetmap'
@@ -322,18 +347,7 @@ def layer_openstreetmap():
     db[table].subtype.requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)
 
     # CRUD Strings
-    title_create = T('Add Layer')
-    title_display = T('Layer Details')
-    title_list = T('List Layers')
-    title_update = T('Edit Layer')
-    title_search = T('Search Layers')
-    subtitle_create = T('Add New Layer')
-    subtitle_list = T('Layers')
     label_list_button = T('List OpenStreetMap Layers')
-    label_create_button = T('Add Layer')
-    msg_record_created = T('Layer added')
-    msg_record_modified = T('Layer updated')
-    msg_record_deleted = T('Layer deleted')
     msg_list_empty = T('No OpenStreetMap Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     
@@ -348,18 +362,7 @@ def layer_google():
     db[table].subtype.requires = IS_IN_SET(gis_layer_google_subtypes)
 
     # CRUD Strings
-    title_create = T('Add Layer')
-    title_display = T('Layer Details')
-    title_list = T('List Layers')
-    title_update = T('Edit Layer')
-    title_search = T('Search Layers')
-    subtitle_create = T('Add New Layer')
-    subtitle_list = T('Layers')
     label_list_button = T('List Google Layers')
-    label_create_button = T('Add Layer')
-    msg_record_created = T('Layer added')
-    msg_record_modified = T('Layer updated')
-    msg_record_deleted = T('Layer deleted')
     msg_list_empty = T('No Google Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     
@@ -374,18 +377,7 @@ def layer_yahoo():
     db[table].subtype.requires = IS_IN_SET(gis_layer_yahoo_subtypes)
 
     # CRUD Strings
-    title_create = T('Add Layer')
-    title_display = T('Layer Details')
-    title_list = T('List Layers')
-    title_update = T('Edit Layer')
-    title_search = T('Search Layers')
-    subtitle_create = T('Add New Layer')
-    subtitle_list = T('Layers')
     label_list_button = T('List Yahoo Layers')
-    label_create_button = T('Add Layer')
-    msg_record_created = T('Layer added')
-    msg_record_modified = T('Layer updated')
-    msg_record_deleted = T('Layer deleted')
     msg_list_empty = T('No Yahoo Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     
@@ -400,22 +392,26 @@ def layer_bing():
     db[table].subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
 
     # CRUD Strings
-    title_create = T('Add Layer')
-    title_display = T('Layer Details')
-    title_list = T('List Layers')
-    title_update = T('Edit Layer')
-    title_search = T('Search Layers')
-    subtitle_create = T('Add New Layer')
-    subtitle_list = T('Layers')
     label_list_button = T('List Bing Layers')
-    label_create_button = T('Add Layer')
-    msg_record_created = T('Layer added')
-    msg_record_modified = T('Layer updated')
-    msg_record_deleted = T('Layer deleted')
     msg_list_empty = T('No Bing Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
     
     return shn_rest_controller(module, resource, deletable=False)
+
+def layer_gpx():
+    "RESTlike CRUD controller"
+    resource = 'layer_gpx'
+    table = module + '_' + resource
+    
+    # Model options
+    # Needed in multiple controllers, so defined in Model
+    
+    # CRUD Strings
+    label_list_button = T('List GPX Layers')
+    msg_list_empty = T('No GPX Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    
+    return shn_rest_controller(module, resource)
 
 # Module-specific functions
 def convert_gps():
@@ -548,7 +544,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.gis_metadata.location_id==id & db.gis_metadata.deleted==False).select()
+            metadata = db(db.media_metadata.location_id==id & db.media_metadata.deleted==False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -605,7 +601,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.gis_metadata.location_id==id & db.gis_metadata.deleted==False).select()
+            metadata = db(db.media_metadata.location_id==id & db.media_metadata.deleted==False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -787,12 +783,13 @@ def layers():
         redirect(URL(r=request, f=apikey))
         
     # Bing (Virtual Earth)
-    layers.bing = Storage()
-    layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
-    for layer in layers_bing:
-        for subtype in gis_layer_bing_subtypes:
-            if layer.subtype == subtype:
-                layers.bing['%s' % subtype] = layer.name
+    # Broken in GeoExt: http://www.geoext.org/pipermail/users/2009-December/000393.html
+    #layers.bing = Storage()
+    #layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
+    #for layer in layers_bing:
+    #    for subtype in gis_layer_bing_subtypes:
+    #        if layer.subtype == subtype:
+    #            layers.bing['%s' % subtype] = layer.name
                 
     return layers
     
@@ -821,14 +818,15 @@ def layers_enable():
                         # Disable
                         db(query_inner).update(enabled=False)
                         # Audit
-                        shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                        #shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                        shn_audit_update_m2m(resource, row.id, 'html')
                 else:
                     # Old state: Disabled
                     if var in request.vars:
                         # Enable
                         db(query_inner).update(enabled=True)
                         # Audit
-                        shn_audit_update_m2m(resource=resource, record=row.id, representation='html')
+                        shn_audit_update_m2m(resource, row.id, 'html')
                     else:
                         # Do nothing
                         pass
@@ -848,27 +846,31 @@ def map_viewing_client():
     output = dict(title=title, module_name=module_name)
     
     # Config
-    width = db(db.gis_config.id==1).select()[0].map_width
-    height = db(db.gis_config.id==1).select()[0].map_height
-    _projection = db(db.gis_config.id==1).select()[0].projection_id
+    config = db(db.gis_config.id==1).select()[0]
+    width = config.map_width
+    height = config.map_height
+    _projection = config.projection_id
     projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    # Support bookmarks (such as from the control)
     if 'lat' in request.vars:
         lat = request.vars.lat
     else:
-        lat = db(db.gis_config.id==1).select()[0].lat
+        lat = config.lat
     if 'lon' in request.vars:
         lon = request.vars.lon
     else:
-        lon = db(db.gis_config.id==1).select()[0].lon
+        lon = config.lon
     if 'zoom' in request.vars:
         zoom = request.vars.zoom
     else:
-        zoom = db(db.gis_config.id==1).select()[0].zoom
-    units = db(db.gis_projection.epsg==projection).select()[0].units
-    maxResolution = db(db.gis_projection.epsg==projection).select()[0].maxResolution
-    maxExtent = db(db.gis_projection.epsg==projection).select()[0].maxExtent
-    marker_default = db(db.gis_config.id==1).select()[0].marker_id
-    
+        zoom = config.zoom
+    epsg = db(db.gis_projection.epsg==projection).select()[0]
+    units = epsg.units
+    maxResolution = epsg.maxResolution
+    maxExtent = epsg.maxExtent
+    marker_default = config.marker_id
+    symbology = config.symbology_id
+                
     # Add the Config to the Return
     output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
     
@@ -887,7 +889,7 @@ def map_viewing_client():
         groups = db.gis_feature_group
         locations = db.gis_location
         classes = db.gis_feature_class
-        metadata = db.gis_metadata
+        metadata = db.media_metadata
         # Which Features are added to the Group directly?
         link = db.gis_location_to_feature_group
         features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
@@ -907,18 +909,24 @@ def map_viewing_client():
             # 1st choice for a Marker is the Feature's
             marker = feature.gis_location.marker_id
             if not marker:
-                # 2nd choice for a Marker is the Feature Class's
-                marker = feature.gis_feature_class.marker_id
-            if not marker:
-                # 3rd choice for a Marker is the default
-                marker = marker_default
+                # 2nd choice for a Marker is the Symbology for the Feature Class
+                query = (db.gis_symbology_to_feature_class.feature_class_id == feature.gis_feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+                try:
+                    marker = db(query).select()[0].marker_id
+                except:
+                    if not marker:
+                        # 3rd choice for a Marker is the Feature Class's
+                        marker = feature.gis_feature_class.marker_id
+                    if not marker:
+                        # 4th choice for a Marker is the default
+                        marker = marker_default
             feature.marker = db(db.gis_marker.id == marker).select()[0].image
             
             try:
                 # Metadata is M->1 to Features
                 # We use the most recent one
-                query = (db.gis_metadata.location_id == feature.gis_location.id) & (db.gis_metadata.deleted == False)
-                metadata = db(query).select(orderby=~db.gis_metadata.event_time)[0]
+                query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
+                metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
             except:
                 metadata = None
             feature.metadata = metadata

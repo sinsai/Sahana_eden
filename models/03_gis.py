@@ -53,6 +53,22 @@ projection_id = SQLTable(None, 'projection_id',
                 ondelete = 'RESTRICT'
                 ))
 
+# GIS Symbology
+resource = 'symbology'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+                Field('name', length=128, notnull=True, unique=True),
+                migrate=migrate)
+# Reusable field for other tables to reference
+symbology_id = SQLTable(None, 'symbology_id',
+            Field('symbology_id', db.gis_symbology,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_symbology.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.gis_symbology.id==id).select()[0].name] or ["None"])[0],
+                label = T('Symbology'),
+                comment = '',
+                ondelete = 'RESTRICT'
+                ))
+
 # GIS Config
 # id=1 = Default settings
 # separated from Framework settings above
@@ -64,16 +80,13 @@ db.define_table(table, timestamp, uuidstamp,
 				Field('lon', 'double'),
 				Field('zoom', 'integer'),
 				projection_id,
+				symbology_id,
 				marker_id,
 				Field('map_height', 'integer', notnull=True),
 				Field('map_width', 'integer', notnull=True),
                 migrate=migrate)
 
 # GIS Feature Classes
-resource_opts = {
-    'shelter':T('Shelter'),
-    'office':T('Office'),
-    }
 # These are used in groups (for display/export), for icons & for URLs to edit data
 resource = 'feature_class'
 table = module + '_' + resource
@@ -94,6 +107,16 @@ feature_class_id = SQLTable(None, 'feature_class_id',
                 comment = DIV(A(ADD_FEATURE_CLASS, _class='thickbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = 'RESTRICT'
                 ))
+
+# Symbology to Feature Class to Marker
+resource = 'symbology_to_feature_class'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('name', length=128, notnull=True, unique=True),
+                symbology_id,
+                feature_class_id,
+                marker_id,
+                migrate=migrate)
 
 # GIS Locations
 gis_feature_type_opts = {
@@ -136,12 +159,13 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('enabled', 'boolean', default=True, label=T('Enabled?')),
                 migrate=migrate)
 # Reusable field for other tables to reference
+ADD_FG = T('Add Feature Group')
 feature_group_id = SQLTable(None, 'feature_group_id',
             Field('feature_group_id', db.gis_feature_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Group'),
-                comment = '',
+                comment = DIV(A(ADD_FG, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FG), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -160,29 +184,6 @@ db.define_table(table, timestamp, deletion_status,
                 feature_class_id,
                 migrate=migrate)
 
-resource = 'metadata'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
-                location_id,
-                Field('description'),
-                person_id,
-                Field('source'),
-                Field('accuracy'),       # Drop-down on a IS_IN_SET[]?
-                Field('sensitivity'),    # Should be turned into a drop-down by referring to AAA's sensitivity table
-                Field('event_time', 'datetime'),
-                Field('expiry_time', 'datetime'),
-                Field('url'),
-                Field('image', 'upload'),
-                migrate=migrate)
-# Joined Resource
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(gis_location='location_id'),
-    deletable=True,
-    editable=True,
-    list_fields = ['id', 'description', 'source', 'event_time', 'url', 'image'])
-
-
 # GIS Keys - needed for commercial mapping services
 resource = 'apikey' # Can't use 'key' as this has other meanings for dicts!
 table = module + '_' + resource
@@ -192,14 +193,57 @@ db.define_table(table, timestamp,
 				Field('description'),
                 migrate=migrate)
 
+# GPS Tracks (files in GPX format)
+resource = 'track'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                #uuidstamp, # Tracks don't sync
+                Field('name', length=128, notnull=True, unique=True),
+                Field('description', length=128),
+                Field('track', 'upload', autodelete = True),
+                migrate=migrate)
+# upload folder needs to be visible to the download() function as well as the upload
+db[table].track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+db[table].track.requires = IS_UPLOAD_FILENAME(extension='gpx')
+db[table].track.description = T('Description')
+db[table].track.label = T('GPS Track File')
+db[table].track.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
+ADD_TRACK = T('Upload Track')
+title_create = ADD_TRACK
+title_display = T('Track Details')
+title_list = T('List Tracks')
+title_update = T('Edit Track')
+title_search = T('Search Tracks')
+subtitle_create = T('Add New Track')
+subtitle_list = T('Tracks')
+label_list_button = T('List Tracks')
+label_create_button = ADD_TRACK
+msg_record_created = T('Track uploaded')
+msg_record_modified = T('Track updated')
+msg_record_deleted = T('Track deleted')
+msg_list_empty = T('No Tracks currently available')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+track_id = SQLTable(None, 'track_id',
+            Field('track_id', db.gis_track,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_track.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.gis_track.id==id).select()[0].name] or ["None"])[0],
+                label = T('Track'),
+                comment = DIV(A(ADD_TRACK, _class='thickbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_TRACK), A(SPAN("[Help]"), _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                ondelete = 'RESTRICT'
+                ))
+    
 # GIS Layers
-#gis_layer_types = ['features', 'georss', 'kml', 'gpx', 'shapefile', 'scan', 'bing', 'google', 'openstreetmap', 'wms', 'yahoo']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing']
+#gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing', 'gpx', 'kml', 'shapefile', 'scan', 'wms']
+gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx']
 #gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
 gis_layer_yahoo_subtypes = ['Satellite', 'Maps', 'Hybrid']
-gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid']
+gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
 # Base table from which the rest inherit
 gis_layer = SQLTable(db, 'gis_layer', timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
@@ -231,7 +275,12 @@ for layertype in gis_layer_types:
         t = SQLTable(db, table,
             Field('subtype', label=T('Sub-type')),
             gis_layer)
-        t.subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "gpx":
+        t = SQLTable(db, table,
+            #Field('subtype', label=T('Sub-type')),
+            track_id,
+            gis_layer)
         db.define_table(table, t, migrate=migrate)
 
 # GIS Styles: SLD

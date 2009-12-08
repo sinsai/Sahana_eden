@@ -13,7 +13,7 @@ response.menu_options = [
     [T('Procurements'), False, URL(r=request, f='#')],
 	[T('Shipments'), False, URL(r=request, f='#')],
     [T('Warehouse Management'), False, URL(r=request, f='#'), [
-		[T('Receive'), False, 'intake',[
+		[T('Receive'), False, 'item',[
 			[T('Add Item (s)'), False, URL(r=request, f='item', args='create')],
 			[T('Search & List Items'), False, URL(r=request, f='item')],
 			[T('Advanced Item Search'), False, URL(r=request, f='item', args='search')]
@@ -24,19 +24,32 @@ response.menu_options = [
 			[T('Advanced Item Search'), False, URL(r=request, f='item', args='search')]
 		]],		
 		[T('Manage'), False, '#',[
-				[T('Adjust Item(s) Quantity'), False, URL(r=request, f='item_adjust')],
+				[T('Adjust Item(s) Quantity'), False, '#'],
 				[T('Manage Kits'), False, URL(r=request, f='kit')],
-				[T('Aggregate Items'), False, URL(r=request, f='item_aggregate')],
-				[T('Assign Storage Location'), False, URL(r=request, f='item_assign_storage')],
-				[T('Add to Catalog'), False, URL(r=request, f='item_assign_catalog')],
-				[T('Adjust Items due to Theft/Loss'), False, URL(r=request, f='item_adjust_theft')],
-				[T('Dispatch Items'), False, URL(r=request, f='item_dispatch')],
-				[T('Dispose Expired/Unusable Items'), False, URL(r=request, f='item_dispose')]
-    ]],
-	[T('Reports'), False, '#']
+				[T('Aggregate Items'), False, '#'],
+				[T('Assign Storage Location'), False, '#'],
+				[T('Add to Catalog'), False, '#'],
+				[T('Adjust Items due to Theft/Loss'), False, '#'],
+				[T('Dispatch Items'), False, '#'],
+				[T('Dispose Expired/Unusable Items'), False, '#']
+		]],
+		[T('Reports'), False, '#',[
+				[T('Inventory/Ledger'), False, '#'],
+				[T('Expected In'), False, '#'],
+				[T('Expected Out'), False, '#'],
+				[T('Movements (Filter In/Out/Lost)'), False, '#'],
+				[T('Forms'), False, '#',[
+				    [T('GRN'), False, '#'],
+				    [T('Way Bill(s)'), False, '#'],
+				    [T('WHIRF'), False, '#'],
+				    [T('Dispose'), False, '#']
+				]],
+				[T('Search for Items'), False, '#'],
+				[T('KPIs'), False, '#']
+		]],
 	]],
 	[T('Fleet Management'), False, URL(r=request, f='#')],
-	    [T('Module Administration'), False, URL(r=request, f='admin'), [
+	[T('Module Administration'), False, URL(r=request, f='admin'), [
 			[T('Units of Measure'), False, 'unit',[
 				[T('Add Unit'), False, URL(r=request, f='unit', args='create')],
 				[T('Search & List Unit'), False, URL(r=request, f='unit')],

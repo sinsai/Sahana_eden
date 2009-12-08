@@ -156,6 +156,7 @@ table { border-collapse: collapse }
 p.legend { margin-bottom: 1em; }
 p.legend em { color: #c00; font-style: normal; }
 
+div.form-container { width: 100%; overflow: auto; }
 div.form-container form { padding: 5px; background-color: #fff; border: #eee 1px solid; background-color: #fbfbfb; }
 div.form-container p { margin: 0.5em 0 0 0; }
 div.form-container form p { margin: 0; }
@@ -179,11 +180,13 @@ div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
 /* Tabular data view */
+div#table-container { width: 100%; overflow: auto; }
 div#table-container th { border: 1px solid #ccc; }
 div#table-container tr.even td { border: 1px solid #ccc; text-align: center;}
 div#table-container tr.odd td { border: 1px solid #ccc; text-align: center; }
  
 /* Display view */
+div.item-container { width: 100%; overflow: auto; }
 div.item-container { margin: 5px 0 5px 0; }
 
 /* Required Field indicator */
@@ -215,6 +218,9 @@ div.confirmation { color:#070; font-weight: bold; text-align: center; border: #0
 /* Joined Resources */
 div#pheader th { text-align: left; }
 div#pheader td { text-align: left; padding: 1px 6px 1px 1px; }
+
+/* Ext button (e.g. on Bulk Upload form */
+#show-dialog-btn { border:1px solid #efefef; margin:10px; padding:10px; }
 
 /* Delphi Decision Maker */
 .delphi_wide li { padding: 5px 20px; font-weight: bold; }

@@ -8,8 +8,7 @@ var proxy = new Ext.data.HttpProxy({
 
 // JsonReader.  Notice additional meta-data params for defining the core attributes of your json-response
 var reader = new Ext.data.JsonReader({
-    totalProperty: '@totalrecords',
-    //totalProperty: 'total',
+    totalProperty: '@results',
     successProperty: 'success',
     idProperty: 'id',
     root: '$_{{=table}}',       // We only want the data for our table
@@ -41,8 +40,8 @@ var store = new Ext.data.Store({
     proxy: proxy,
     reader: reader,
     paramNames: {
-        start : 'page',
-        limit : 'pagesize',
+        start : 'start',
+        limit : 'limit',
         sort : 'sort',
         dir : 'dir'
     }
@@ -50,7 +49,7 @@ var store = new Ext.data.Store({
     
 // Load the store immediately (for remote Store)
 // Server-side paging enabled.
-store.load({params:{page:0, pagesize:{{=pagesize}}}});
+store.load({params:{start:0, limit:{{=pagesize}}}});
 
 // Get list of columns from the 'form' var
 var userColumns =  [
@@ -94,7 +93,7 @@ var userGrid = new xg.GridPanel({
     store: store,
     // Paging bar on the bottom
     bbar: new Ext.PagingToolbar({
-        pageSize: 25,
+        pageSize: {{=pagesize}},
         store: store,
         pageSize: {{=pagesize}},
         displayInfo: true,

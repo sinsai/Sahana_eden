@@ -48,17 +48,26 @@ var writer = new Ext.data.JsonWriter({
 
 // Store collects the Proxy, Reader and Writer together.
 var store = new Ext.data.Store({
+    totalProperty: '@results',
+    successProperty: 'success',
+    idProperty: 'id',
     root: '$_{{=table}}',    // We only want the data for our table
     //id: 'user',
     restful: true,
     proxy: proxy,
     reader: reader,
-    writer: writer
+    writer: writer,
+    paramNames: {
+        start : 'start',
+        limit : 'limit',
+        sort : 'sort',
+        dir : 'dir'
+    }
 });
     
 // Load the store immediately (for remote Store)
 // Server-side paging enabled.
-store.load({params:{page:0, pagesize:{{=pagesize}}}});
+store.load({params:{start:0, limit:{{=pagesize}}}});
 
 ////
 // ***New*** centralized listening of DataProxy events "beforewrite", "write" and "writeexception"
@@ -138,7 +147,7 @@ var userGrid = new xg.GridPanel({
     }, '-'],
     // Paging bar on the bottom
     bbar: new Ext.PagingToolbar({
-        pageSize: 25,
+        pageSize: {{=pagesize}},
         store: store,
         displayInfo: true,
         displayMsg: '{{=T('Displaying records')}} {0} - {1} {{=T('of')}} {2}',

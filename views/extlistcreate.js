@@ -16,8 +16,7 @@ var editor = new Ext.ux.grid.RowEditor({
 
 // JsonReader.  Notice additional meta-data params for defining the core attributes of your json-response
 var reader = new Ext.data.JsonReader({
-    totalProperty: '@totalrecords',
-    //totalProperty: 'total',
+    totalProperty: '@results',
     successProperty: 'success',
     idProperty: 'id',
     root: '$_{{=table}}',       // We only want the data for our table

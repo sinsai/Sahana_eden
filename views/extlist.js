@@ -10,7 +10,7 @@ var proxy = new Ext.data.HttpProxy({
 var reader = new Ext.data.JsonReader({
     totalProperty: '@results',
     successProperty: 'success',
-    idProperty: 'id',
+    idProperty: '@uuid',
     root: '$_{{=table}}',       // We only want the data for our table
     messageProperty: 'message'  // <-- New "messageProperty" meta-data
 }, [
@@ -57,7 +57,7 @@ var userColumns =  [
   {{for field in form.fields:}}
     {{if form.custom.widget[field]:}}
         {{if form.custom.widget[field].attributes['_name'] != 'Id':}}
-            {header: "{{=form.custom.label[field]}}", sortable: true, dataIndex: '{{=form.custom.widget[field].attributes['_name']}}', editor: new Ext.form.TextField({})},
+            {header: "{{=form.custom.label[field]}}", sortable: true, dataIndex: '{{=form.custom.widget[field].attributes['_name']}}'},
         {{pass}}
     {{pass}}
   {{pass}}
@@ -87,9 +87,8 @@ var userGrid = new xg.GridPanel({
     //    }),
     sm: sm,
     columnLines: true,
-    width: 600,
     height: 300,
-    //autoHeight: true,
+    //autoHeight: true, // autoHeight means no scrollbars
     store: store,
     // Paging bar on the bottom
     bbar: new Ext.PagingToolbar({

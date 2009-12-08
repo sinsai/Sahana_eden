@@ -458,6 +458,12 @@ class ResourceController(object):
         if start:
             if not limit:
                 limit = start + self.ROWSPERPAGE
+            if limit < start:
+                start, limit = limit, start
+            if start <= 0:
+                start = 1
+            if limit <= 0:
+                limit = start
             limitby = (start-1, limit)
         else:
             limitby = None
@@ -1550,17 +1556,19 @@ class S3XML(object):
 
         root = etree.Element(self.TAG["root"])
 
+        root.set(self.ATTRIBUTE["success"], str(False))
+
         if resources is not None:
-            if start:
-                root.set(self.ATTRIBUTE["start"], str(start))
-            if limit:
-                root.set(self.ATTRIBUTE["limit"], str(limit))
-            if results:
+
+            if len(resources):
                 root.set(self.ATTRIBUTE["success"], str(True))
+
+            if start is not None:
+                root.set(self.ATTRIBUTE["start"], str(start))
+            if limit is not None:
+                root.set(self.ATTRIBUTE["limit"], str(limit))
+            if results is not None:
                 root.set(self.ATTRIBUTE["results"], str(results))
-            else:
-                root.set(self.ATTRIBUTE["success"], str(False))
-                root.set(self.ATTRIBUTE["results"], str(0))
 
             if NO_LXML:
                 map(lambda r: root.append(r), resources)

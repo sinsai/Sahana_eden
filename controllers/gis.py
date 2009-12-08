@@ -783,12 +783,13 @@ def layers():
         redirect(URL(r=request, f=apikey))
         
     # Bing (Virtual Earth)
-    layers.bing = Storage()
-    layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
-    for layer in layers_bing:
-        for subtype in gis_layer_bing_subtypes:
-            if layer.subtype == subtype:
-                layers.bing['%s' % subtype] = layer.name
+    # Broken in GeoExt: http://www.geoext.org/pipermail/users/2009-December/000393.html
+    #layers.bing = Storage()
+    #layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
+    #for layer in layers_bing:
+    #    for subtype in gis_layer_bing_subtypes:
+    #        if layer.subtype == subtype:
+    #            layers.bing['%s' % subtype] = layer.name
                 
     return layers
     
@@ -845,27 +846,31 @@ def map_viewing_client():
     output = dict(title=title, module_name=module_name)
     
     # Config
-    width = db(db.gis_config.id==1).select()[0].map_width
-    height = db(db.gis_config.id==1).select()[0].map_height
-    _projection = db(db.gis_config.id==1).select()[0].projection_id
+    config = db(db.gis_config.id==1).select()[0]
+    width = config.map_width
+    height = config.map_height
+    _projection = config.projection_id
     projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    # Support bookmarks (such as from the control)
     if 'lat' in request.vars:
         lat = request.vars.lat
     else:
-        lat = db(db.gis_config.id==1).select()[0].lat
+        lat = config.lat
     if 'lon' in request.vars:
         lon = request.vars.lon
     else:
-        lon = db(db.gis_config.id==1).select()[0].lon
+        lon = config.lon
     if 'zoom' in request.vars:
         zoom = request.vars.zoom
     else:
-        zoom = db(db.gis_config.id==1).select()[0].zoom
-    units = db(db.gis_projection.epsg==projection).select()[0].units
-    maxResolution = db(db.gis_projection.epsg==projection).select()[0].maxResolution
-    maxExtent = db(db.gis_projection.epsg==projection).select()[0].maxExtent
-    marker_default = db(db.gis_config.id==1).select()[0].marker_id
-    
+        zoom = config.zoom
+    epsg = db(db.gis_projection.epsg==projection).select()[0]
+    units = epsg.units
+    maxResolution = epsg.maxResolution
+    maxExtent = epsg.maxExtent
+    marker_default = config.marker_id
+    symbology = config.symbology_id
+                
     # Add the Config to the Return
     output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
     
@@ -904,11 +909,17 @@ def map_viewing_client():
             # 1st choice for a Marker is the Feature's
             marker = feature.gis_location.marker_id
             if not marker:
-                # 2nd choice for a Marker is the Feature Class's
-                marker = feature.gis_feature_class.marker_id
-            if not marker:
-                # 3rd choice for a Marker is the default
-                marker = marker_default
+                # 2nd choice for a Marker is the Symbology for the Feature Class
+                query = (db.gis_symbology_to_feature_class.feature_class_id == feature.gis_feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+                try:
+                    marker = db(query).select()[0].marker_id
+                except:
+                    if not marker:
+                        # 3rd choice for a Marker is the Feature Class's
+                        marker = feature.gis_feature_class.marker_id
+                    if not marker:
+                        # 4th choice for a Marker is the default
+                        marker = marker_default
             feature.marker = db(db.gis_marker.id == marker).select()[0].image
             
             try:

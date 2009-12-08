@@ -21,10 +21,15 @@ XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data 
 
 # XSLT available formats
 shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
-shn_xml_export_formats = ["xml", "lmx", "kml", "georss"] #: Supported XML output formats
+shn_xml_export_formats = dict(
+    xml = "application/xml",
+    lmx = "application/xml"
+) #: Supported XML output formats and corresponding response headers
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
-shn_json_export_formats = ["json"] #: Supported JSON output formats
+shn_json_export_formats = dict(
+    json = "text/x-json"
+) #: Supported JSON output formats and corresponding response headers
 
 # Error messages
 UNAUTHORISED = T('Not authorised!')
@@ -289,7 +294,10 @@ def export_json(jr):
 
     """ Export data as JSON """
 
-    response.headers['Content-Type'] = 'text/x-json'
+    try:
+        response.headers['Content-Type'] = shn_json_export_formats[jr.representation]
+    except:
+        response.headers['Content-Type'] = "text/x-json"
 
     if jr.representation=="json":
         template = None
@@ -322,7 +330,10 @@ def export_xml(jr):
 
     """ Export data as XML """
 
-    response.headers['Content-Type'] = 'application/xml'
+    try:
+        response.headers['Content-Type'] = shn_xml_export_formats[jr.representation]
+    except:
+        response.headers['Content-Type'] = "application/xml"
 
     if jr.representation=="xml":
         template = None

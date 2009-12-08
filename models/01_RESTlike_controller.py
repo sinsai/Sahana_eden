@@ -305,7 +305,8 @@ def export_json(jr):
     output = jr.export_json(permit=shn_has_permission,
                             audit=shn_audit,
                             template=template,
-                            pretty_print=PRETTY_PRINT)
+                            pretty_print=PRETTY_PRINT,
+                            filterby=response.s3.filter)
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error
@@ -337,7 +338,8 @@ def export_xml(jr):
     output = jr.export_xml(permit=shn_has_permission,
                            audit=shn_audit,
                            template=template,
-                           pretty_print=PRETTY_PRINT)
+                           pretty_print=PRETTY_PRINT,
+                            filterby=response.s3.filter)
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error

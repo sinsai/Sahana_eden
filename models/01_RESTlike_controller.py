@@ -339,7 +339,7 @@ def export_xml(jr):
                            audit=shn_audit,
                            template=template,
                            pretty_print=PRETTY_PRINT,
-                            filterby=response.s3.filter)
+                           filterby=response.s3.filter)
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error
@@ -1374,7 +1374,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
             # Check for presence of Custom View
             shn_custom_view(jr, 'list_create.html', format='ext')
-            
+
         else:
             # Provide a read-only Ext grid
             # (We could do this from the HTML table using TableGrid, but then we wouldn't have client-side pagination)
@@ -1393,7 +1393,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
             # Check for presence of Custom View
             shn_custom_view(jr, 'list.html', format='ext')
-            
+
         return output
 
     elif jr.representation == "plain":
@@ -1988,8 +1988,6 @@ def shn_rest_controller(module, resource,
 
     # Parse original request --------------------------------------------------
     jr = s3xrc.request(module, resource, request, session=session)
-
-    #print "%s %s %s %s %s" % (jr.prefix, jr.name, jr.method, jr.component_name, jr.representation)
 
     # Invalid request?
     if jr.invalid:

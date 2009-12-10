@@ -91,7 +91,6 @@ response.menu = [
             s3.menu_modules[2],
             s3.menu_modules[3],
             s3.menu_modules[4],
-            s3.menu_modules[5],
             s3.menu_auth,
             s3.menu_help,
         ]

@@ -95,7 +95,7 @@ def URL3(a=None, r=None):
     url = '/%s' % application
     return url
 
-# Modified version of MENU from gluon/html.py
+# Modified version of MENU2
 # Only supports 2 levels
 # Each menu is a UL not an LI
 # A tags have classes
@@ -120,39 +120,51 @@ class MENU2(DIV):
     def __init__(self, data, **args):
         self.data = data
         self.attributes = args
-        if not '_class' in self.attributes:
-            self['_class'] = 'S3menuInner'
-        if not 'ul_main_class' in self.attributes:
-            self['ul_main_class'] = 'S3menuUL'
-        if not 'ul_sub_class' in self.attributes:
-            self['ul_sub_class'] = 'S3menuSub'
-        if not 'li_class' in self.attributes:
-            self['li_class'] = 'S3menuLI'
-        if not 'a_class' in self.attributes:
-            self['a_class'] = 'S3menuA'
 
     def serialize(self, data, level=0):
         if level == 0:
             # Top-level menu
-            div = DIV(**self.attributes)
+            div = UL(**self.attributes)
             for item in data:
                 (name, active, link) = item[:3]
                 if len(item) > 3 and item[3]:
                     # Submenu
                     ul_inner = self.serialize(item[3], level+1)
                     if link:
-                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                        in_ul = LI(
+                                    DIV(
+                                        A(name, _href=link),
+                                        _class='hoverable'
+                                    ),
+                                    ul_inner
+                                )
                     else:
-                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                        in_ul = LI(
+                                    DIV(
+                                        A(name, _href='#null'),
+                                        _class='hoverable'
+                                    ),
+                                    ul_inner
+                                )
                 else:
                     if link:
-                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
+                        in_ul = LI(
+                                    DIV(
+                                        A(name, _href=link),
+                                        _class='hoverable'
+                                    )
+                                )
                     else:
-                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
-                div.append(ul)
+                        in_ul = LI(
+                                    DIV(
+                                        A(name, _href='#null'),
+                                        _class='hoverable'
+                                    )
+                                )
+                div.append(in_ul)
         else:
             # Submenu
-            div = UL(_class=self['ul_sub_class'])
+            div = UL()
             for item in data:
                 (name, active, link) = item[:3]
                 li = LI(A(name, _href=link))

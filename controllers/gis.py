@@ -131,6 +131,12 @@ def feature_class():
     table = module + '_' + resource
     
     # Model options
+    resource_opts = {
+        'shelter':T('Shelter'),
+        'office':T('Office'),
+        'track':T('Track'),
+        'image':T('Photo'),
+        }
     db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
     db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
     db[table].name.label = T('Name')

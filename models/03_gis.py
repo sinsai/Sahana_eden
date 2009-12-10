@@ -27,7 +27,7 @@ ADD_MARKER = T('Add Marker')
 marker_id = SQLTable(None, 'marker_id',
             Field('marker_id', db.gis_marker,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
-                represent = lambda id: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.gis_marker.id==id).select()[0].image] or ["None"])[0]),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden')),
+                represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select()[0].image), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select()[0].image),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden'))] or [''])[0],
                 label = T('Marker'),
                 comment = DIV(A(ADD_MARKER, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_MARKER), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'

@@ -23,13 +23,10 @@ Load JavaScript to:
 -->
 {{else:}}
 <div id="header">
-  <div id="menu_auth">
-   {{=MENU(response.menu_auth)}}
-  </div>
 </div>
 
 <div id="menu_modules">
-    {{=MENU2(response.menu_modules, _id='modulenav')}}
+    {{=MENU2(response.menu, _id='modulenav')}}
 </div>
 
 <div id="menu_options">

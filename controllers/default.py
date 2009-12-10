@@ -89,3 +89,8 @@ def about():
     web2py_version = open(apath('../VERSION'), 'r').read()[8:]
     sahana_version = open(os.path.join(request.folder, 'VERSION'), 'r').read()
     return dict(module_name=module_name, python_version=python_version, sahana_version=sahana_version, web2py_version=web2py_version)
+
+def help():
+    "Custom View"
+    response.title = T('Help')
+    return dict()

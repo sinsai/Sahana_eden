@@ -33,13 +33,13 @@ db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s',
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 
 # Modules Menu (available in all Controllers)
-response.menu_modules = []
+s3.menu_modules = []
 for module_type in [1, 2]:
-    query = (db.s3_module.enabled=='Yes')&(db.s3_module.module_type==module_type)
+    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:
         if not module.access:
-            response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
         else:
             authorised = False
             groups = re.split('\|', module.access)[1:-1]
@@ -47,16 +47,16 @@ for module_type in [1, 2]:
                 if auth.has_membership(group):
                     authorised = True
             if authorised == True:
-                response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
 for module_type in [3, 4]:
     module_type_name = str(s3_module_type_opts[module_type])
-    module_type_menu = ([T(module_type_name), False, '#'])
+    module_type_menu = ([module_type_name, False, '#'])
     modules_submenu = []
-    query = (db.s3_module.enabled=='Yes')&(db.s3_module.module_type==module_type)
+    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:
         if not module.access:
-            modules_submenu.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+            modules_submenu.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
         else:
             authorised = False
             groups = re.split('\|', module.access)[1:-1]
@@ -64,15 +64,15 @@ for module_type in [3, 4]:
                 if auth.has_membership(group):
                     authorised = True
             if authorised == True:
-                modules_submenu.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+                modules_submenu.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
     module_type_menu.append(modules_submenu)
-    response.menu_modules.append(module_type_menu)
+    s3.menu_modules.append(module_type_menu)
 for module_type in [5]:
-    query = (db.s3_module.enabled=='Yes')&(db.s3_module.module_type==module_type)
+    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:
         if not module.access:
-            response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
         else:
             authorised = False
             groups = re.split('\|', module.access)[1:-1]
@@ -80,24 +80,18 @@ for module_type in [5]:
                 if auth.has_membership(group):
                     authorised = True
             if authorised == True:
-                response.menu_modules.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
 
-# Test
-#response.menu_modules = []
-#module_type_menu = ([T('Modules'), False, '#'])
-#modules_submenu = []
-#query = db.s3_module.enabled=='Yes'
-#modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
-#for module in modules:
-#    if not module.access:
-#        modules_submenu.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-#    else:
-#        authorised = False
-#        groups = re.split('\|', module.access)[1:-1]
-#        for group in groups:
-#            if auth.has_membership(group):
-#                authorised = True
-#        if authorised == True:
-#            modules_submenu.append([T(module.name_nice), False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-#module_type_menu.append(modules_submenu)
-#response.menu_modules.append(module_type_menu)
+#s3.menu_home = [T('Home'), False, URL(request.application, 'default', 'index'), s3.menu_modules]
+
+response.menu = [
+            #s3.menu_home,
+            s3.menu_modules[0],
+            s3.menu_modules[1],
+            s3.menu_modules[2],
+            s3.menu_modules[3],
+            s3.menu_modules[4],
+            s3.menu_modules[5],
+            s3.menu_auth,
+            s3.menu_help,
+        ]

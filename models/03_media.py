@@ -49,10 +49,14 @@ metadata_id = SQLTable(None, 'metadata_id',
 resource = 'image'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+                Field('name', length=128, notnull=True, unique=True),
                 location_id,
                 metadata_id,
                 Field('image', 'upload'),
                 migrate=migrate)
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
 # upload folder needs to be visible to the download() function as well as the upload
 db[table].image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG', 'gif', 'GIF', 'tif', 'TIF', 'bmp', 'BMP']

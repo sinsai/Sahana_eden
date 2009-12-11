@@ -1,4 +1,4 @@
-// Show Busy cursor whilst loading Features
+// Show Busy cursor whilst loading Draft Features
 OpenLayers.Map.prototype.registerEvents = function(layer) {
 	layer.events.register("loadstart", layer, function() {
 		document.body.style.cursor = 'wait';

@@ -1,0 +1,140 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>OpenLayers Example</title>
+    <link rel="stylesheet" href="/{{=request.application}}/static/scripts/gis/openlayers/theme/default/style.css" type="text/css" />
+    <script src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
+    <script type="text/javascript">
+        // making this a global variable so that it is accessible for
+        // debugging/inspecting in Firebug
+        var map = null;
+
+        var lat = 6.0;
+        var lon = 79.4;
+        var zoom = 7;
+        
+        // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
+        var proj4326 = new OpenLayers.Projection('EPSG:4326');
+        var point = new OpenLayers.LonLat(lon, lat);
+        var center = point.transform(proj4326, projection_current);
+        
+        function onFeatureSelect(event) {
+            var feature = event.feature;
+            map.addPopup(feature.popup);
+        }
+        
+        function onFeatureUnselect(feature) {
+            var feature = event.feature;
+            if(feature.popup) {
+                map.removePopup(feature.popup);
+                feature.popup.destroy();
+                feature.popup = null;
+            }
+        }
+
+        function onPopupClose(event) {
+            //currentFeature.popup.hide();
+            var feature = event.feature;
+            //select.unselectAll();
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            feature.popup = null;
+        }
+
+        function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconURL) {
+            // Set icon dims
+            var icon_img = new Image();
+            icon_img.src = iconURL;
+            var max_w = 25;
+            var max_h = 35;
+            var width = icon_img.width;
+            var height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            // http://www.nabble.com/Markers-vs-Features--td16497389.html
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            //style_mark.pointRadius = 12;
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            style_marker.graphicOpacity = 1;
+            // Create Feature Vector
+            var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
+            featureVec.fid = feature_id;
+            // Create Popup
+            var fc_id = null;
+            var fc_lonlat = featureVec.geometry.getBounds().getCenterLonLat();
+            var fc_size = null;
+            var fc_contentHTML = popupContentHTML;
+            var fc_anchor = null;
+            var fc_closeBox = true;
+            var fc_closeBoxCallback = onPopupClose;
+            var framedCloud = new OpenLayers.Popup.FramedCloud(fc_id, fc_lonlat, fc_size, fc_contentHTML, fc_anchor, fc_closeBox, fc_closeBoxCallback);
+            framedCloud.autoSize = true;
+            framedCloud.minSize = new OpenLayers.Size(460,270);
+            // Add Popup
+            featureVec.popup = framedCloud;
+            // Add Feature
+            layer.addFeatures([featureVec]);
+        }
+        
+        function init(){
+
+            map = new OpenLayers.Map('map');
+
+            var ol_wms = new OpenLayers.Layer.WMS(
+                "OpenLayers WMS",
+                "http://labs.metacarta.com/wms/vmap0",
+                {layers: 'basic'}
+            );
+
+            map.addLayers([ol_wms]);
+            map.addControl(new OpenLayers.Control.LayerSwitcher());
+            map.zoomToMaxExtent();
+            
+            var proj_current = map.getProjectionObject();
+        
+            var featuresLayer1 = new OpenLayers.Layer.Vector("1", {displayInLayerSwitcher: true});
+            map.addLayer(featuresLayer1);
+            select = new OpenLayers.Control.SelectFeature(featuresLayer1);
+            featuresLayer1.events.on({
+                "featureselected": onFeatureSelect,
+                "featureunselected": onFeatureUnselect
+            });
+            map.addControl(select);
+            select.activate();
+            
+            var parser = new OpenLayers.Format.WKT();
+            var geom, popupContentHTML, iconURL;
+            
+            geom = parser.read('POINT(77.584917 6.880000)').geometry;
+            geom = geom.transform(proj4326, proj_current);
+            popupContentHTML = "<div class='gis_openlayers_popupbox' id='Feature_1'>Popup!</div>";
+            iconURL = '{{=URL(r=request, c='default', f='download', args='gis_marker.image.marker.png')}}';
+            add_Feature_with_popup(featuresLayer1, 'Feature_1', geom, popupContentHTML, iconURL);
+
+            geom = parser.read('POINT(80.0 9.666667)').geometry;
+            geom = geom.transform(proj4326, proj_current);
+            popupContentHTML = "<div class='gis_openlayers_popupbox' id='Feature_2'>Popup!</div>";
+            iconURL = '{{=URL(r=request, c='default', f='download', args='gis_marker.image.marker.png')}}';
+            add_Feature_with_popup(featuresLayer1, 'Feature_2', geom, popupContentHTML, iconURL);
+        }
+    </script>
+  </head>
+  <body onload="init()">
+    <h1 id="title">OpenLayers Example</h1>
+    <div id="tags"></div>
+    <p id="shortdesc">
+        Demonstrate a simple map with an overlay that includes layer switching controls.
+    </p>
+    <div id="map" class="smallmap"></div>
+    <div id="docs"></div>
+  </body>
+</html>

@@ -1,0 +1,60 @@
+﻿<div class='gis_popup' id='{{=feature.gis_location.uuid}}'>
+    <div class='gis_popup_header'>
+        <div class='gis_popup_header_r'>
+            {{if feature.metadata:}}
+            <div class='gis_popup_contact'><label for='gis_popup_contact'>{{=str(T("Contact"))}}:</label>
+                {{=feature.contact}}
+            </div>
+            <div class='gis_popup_date'><label for='gis_popup_date'>{{=str(T("Date"))}}:</label>
+                {{=feature.metadata.event_time}}
+            </div>
+            {{pass}}
+        </div>
+        <div class='gis_popup_header_l'>
+            <div class='gis_popup_name'><span>{{=feature.gis_location.name}}</span>
+            {{if feature.gis_feature_class.name:}}
+                ({{=feature.gis_feature_class.name}})
+            {{pass}}
+<!--
+     if(!(url === false)):
+          <a href='url' target='_blank'><div class='gis_popup_link'></div></a>
+-->
+            </div>
+        </div>
+    </div>
+    <div class='gis_popup_body'>
+    {{if feature.metadata:}}
+        <span class='gis_popup_text'>{{=feature.metadata.description}}</span>
+    {{pass}}
+    {{if feature.image:}}
+        <div class='gis_popup_image'>
+            <img src='{{=URL(r=request, c='default', f='download', args=feature.image)}}' alt='most recently uploaded image'/>
+        </div>
+    {{pass}}
+    </div>
+    <div class='gis_popup_footer'>
+    {{if feature.resource_id:}}
+        <span><a href='{{=URL(r=request, c=feature.module, f=feature.resource, args=['update', feature.resource_id])}}' target='_blank' alt='{{=str(T("edit"))}}'><div class='gis_popup_edit'></div><span>{{=str(T("Edit"))}}</span></a></span>
+    {{pass}}
+<!--
+# Options will want to display these based on ACL privileges (also make sure resulting actions are ACLed)
+#if(url_del === true):
+#          <span><a onclick='shn_gis_popup_delete(&#39feature_uuid&#39)' alt='" + str(T("delete")) + "'><div class='gis_popup_delete'></div><span>" + str(T("delete")) + "</span></a></span>
+#elif(!(url_del === false)):
+#          <span><a href='url_del' target='_blank' alt='" + str(T("delete")) + "'><div class='gis_popup_delete'></div><span>" + str(T("delete")) + "</span></a></span>
+#else:
+#          <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("delete")) + "'><div class='gis_popup_delete'></div><span>" + str(T("delete")) + "</span></a></span>
+#if(url_edit === true):
+#          <span><a onclick='shn_gis_popup_edit_details(&#39feature_uuid&#39)' alt='" + str(T("edit")) + "'><div class='gis_popup_edit'></div><span>" + str(T("edit")) + "</span></a></span>
+#elif(!(url_edit === false)):
+#          <span><a href='url_edit' target='_blank' alt='" + str(T("edit")) + "'><div class='gis_popup_edit'></div><span>" + str(T("edit")) + "</span></a></span>
+#else:
+#          <span><a onclick='shn_gis_popup_unable()' alt='" + str(T("edit")) + "'><div class='gis_popup_edit'></div><span>" + str(T("edit")) + "</span></a></span>
+#if(!(url_view === false)):
+#          <span><a href='url_view' target='_blank' alt='" + str(T("view")) + "'><div class='gis_popup_view'></div><span>" + str(T("view")) + "</span></a></span>
+#      <span class='gis_popup_refreshs'><a onclick='shn_gis_popup_refresh(&#39feature_uuid&#39)' alt='" + str(T("refresh")) + "'><div class='gis_popup_refresh'></div><span>" + str(T("refresh")) + "</span></a></span>
+-->
+    </div>
+    <div style='clear: both;'>
+    </div>
+</div>

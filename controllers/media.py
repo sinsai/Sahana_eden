@@ -5,6 +5,8 @@ module = 'media'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
+    [T('Images'), False, URL(r=request, f='image')],
+    [T('Metadata'), False, URL(r=request, f='metadata')],
     [T('Bulk Uploader'), False, URL(r=request, f='bulk_upload')]
 ]
 
@@ -127,7 +129,7 @@ def upload_bulk():
     # Faster for Production (where app-name won't change):
     #import applications.sahana.modules.EXIF as EXIF
 
-    f = open(file_image), 'rb')
+    f = open(file_image, 'rb')
     tags = EXIF.process_file(f, details=False)
     for key in tags.keys():
         # Timestamp

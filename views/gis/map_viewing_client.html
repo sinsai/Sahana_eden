@@ -64,7 +64,8 @@ Ext.onReady(function() {
         title: "{{=T("Layers")}}",
         root: new Ext.tree.AsyncTreeNode({
             expanded: true,
-            children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+            children: [layerTreeBase, layerTreeFeaturesInternal]
+            //children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
         }),
         rootVisible: false,
         split: true,

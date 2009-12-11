@@ -5,7 +5,7 @@ module = 'default'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions)
 response.menu_options = [
-    [T('About Sahana'), False, URL(r=request, f='about')],
+    #[T('About Sahana'), False, URL(r=request, f='about')],
 ]
 
 # Web2Py Tools functions

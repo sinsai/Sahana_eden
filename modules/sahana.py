@@ -148,7 +148,16 @@ class MENU2(DIV):
                                 _style=style
                             )
                 else:
-                    in_ul = LI(
+                    if name == 'Sahana Home':
+                        in_ul = LI(
+                                DIV(
+                                    A(name, SPAN(_class='S3menulogo'), _href=link),
+                                    _class='hoverable'
+                                ),
+                                _style=style
+                            )
+                    else:
+                        in_ul = LI(
                                 DIV(
                                     A(name, _href=link),
                                     _class='hoverable'

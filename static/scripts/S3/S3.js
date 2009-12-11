@@ -26,4 +26,30 @@ $(document).ready(function() {
         });
         return false;
     });
+    // IE6 non anchor hover hack
+    $('.hoverable').hover(
+        function() { $(this).addClass('hovered'); },
+        function() { $(this).removeClass('hovered'); }
+    );
+    // Menu popups (works in IE6)
+    $('#modulenav li').hover(
+        function() {
+                var popup_width = $(this).width()-2;
+                $('ul', this).css({
+                    'display': 'block',
+                    'width': popup_width.toString() + 'px'
+                });
+            },
+        function() { $('ul', this).css('display', 'none');  }
+    );
+    $('#subnav li').hover(
+        function() {
+                var popup_width = $(this).width()-2;
+                $('ul', this).css({
+                    'display': 'block',
+                    'width': popup_width.toString() + 'px'
+                });
+            },
+        function() { $('ul', this).css('display', 'none');  }
+    );
 });

@@ -95,14 +95,17 @@ def URL3(a=None, r=None):
     url = '/%s' % application
     return url
 
-# Modified version of MENU from gluon/html.py
+# Modified version of MENU2
 # Only supports 2 levels
 # Each menu is a UL not an LI
 # A tags have classes
 class MENU2(DIV):
     """
     Used to build modules menu
-
+    Each list has 3 options: Name, Right & Link
+    (NB In Web2Py's MENU, the 2nd option is 'Active')
+    Right=True means that menu item floats right
+    
     Optional arguments
       _class: defaults to 'S3menuInner'
       ul_main_class: defaults to 'S3menuUL'
@@ -120,123 +123,42 @@ class MENU2(DIV):
     def __init__(self, data, **args):
         self.data = data
         self.attributes = args
-        if not '_class' in self.attributes:
-            self['_class'] = 'S3menuInner'
-        if not 'ul_main_class' in self.attributes:
-            self['ul_main_class'] = 'S3menuUL'
-        if not 'ul_sub_class' in self.attributes:
-            self['ul_sub_class'] = 'S3menuSub'
-        if not 'li_class' in self.attributes:
-            self['li_class'] = 'S3menuLI'
-        if not 'a_class' in self.attributes:
-            self['a_class'] = 'S3menuA'
 
     def serialize(self, data, level=0):
         if level == 0:
             # Top-level menu
-            div = DIV(**self.attributes)
+            div = UL(**self.attributes)
             for item in data:
-                (name, active, link) = item[:3]
+                (name, right, link) = item[:3]
+                if not link:
+                        link = '#null'
+                if right:
+                    style = 'float: right;'
+                else:
+                    style = 'float: left;'
                 if len(item) > 3 and item[3]:
                     # Submenu
                     ul_inner = self.serialize(item[3], level+1)
-                    if link:
-                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
-                    else:
-                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
+                    in_ul = LI(
+                                DIV(
+                                    A(name, _href=link),
+                                    _class='hoverable'
+                                ),
+                                ul_inner,
+                                _style=style
+                            )
                 else:
-                    if link:
-                        ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
-                    else:
-                        ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
-                div.append(ul)
+                    in_ul = LI(
+                                DIV(
+                                    A(name, _href=link),
+                                    _class='hoverable'
+                                ),
+                                _style=style
+                            )
+                div.append(in_ul)
         else:
             # Submenu
-            div = UL(_class=self['ul_sub_class'])
-            for item in data:
-                (name, active, link) = item[:3]
-                li = LI(A(name, _href=link))
-                div.append(li)
-        return div
-
-    def xml(self):
-        return self.serialize(self.data, 0).xml()
-
-# Modified version of MENU from gluon/html.py
-# Only supports 2 levels
-# Each menu is a UL not an LI
-# A tags have classes
-class MENU3(DIV):
-    """
-    Used to build menu from a list of lists
-    Each list has 3 options: Name, Right & Link
-    (NB In Web2Py's MENU, the 2nd option is 'Active')
-    Right=False means that menu item follows the CSS to float: left
-    Right=True means that menu item floats right
-
-    Optional arguments
-      _class: defaults to 'S3menuInner'
-      ul_main_class: defaults to 'S3menuUL'
-      ul_sub_class: defaults to 'S3menuSub'
-      li_class: defaults to 'S3menuLI'
-      a_class: defaults to 'S3menuA'
-
-    Example:
-        menu = MENU3([['name', False, URL(...), [submenu]], ...])
-        {{=menu}}
-    """
-
-    tag = 'div'
-
-    def __init__(self, data, **args):
-        self.data = data
-        self.attributes = args
-        if not '_class' in self.attributes:
-            self['_class'] = 'S3menuInner'
-        if not 'ul_main_class' in self.attributes:
-            self['ul_main_class'] = 'S3menuUL'
-        if not 'ul_sub_class' in self.attributes:
-            self['ul_sub_class'] = 'S3menuSub'
-        if not 'li_class' in self.attributes:
-            self['li_class'] = 'S3menuLI'
-        if not 'a_class' in self.attributes:
-            self['a_class'] = 'S3menuA'
-
-    def serialize(self, data, level=0):
-        if level == 0:
-            # Top-level menu
-            div = DIV(**self.attributes)
-            for item in data:
-                (name, right, link) = item[:3]
-                if len(item) > 3 and item[3]:
-
-                    # Submenu present
-                    ul_inner = self.serialize(item[3], level+1)
-                    if link:
-                        if right:
-                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
-                        else:
-                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
-                    else:
-                        if right:
-                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
-                        else:
-                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), ul_inner, _class=self['li_class']), _class=self['ul_main_class'])
-                else:
-                    if link:
-                        if right:
-                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
-                        else:
-                            ul = UL(LI(A(name, _href=link, _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
-                    else:
-                        if right:
-                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'], _style='float: right;')
-                        else:
-                            ul = UL(LI(A(name, _href='#null', _class=self['a_class']), _class=self['li_class']), _class=self['ul_main_class'])
-                div.append(ul)
-        else:
-            # Submenu
-            div = UL(_class=self['ul_sub_class'])
+            div = UL()
             for item in data:
                 (name, right, link) = item[:3]
                 li = LI(A(name, _href=link))

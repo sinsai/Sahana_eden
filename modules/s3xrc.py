@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.5
+    @version: 1.4.6
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -73,7 +73,7 @@ except ImportError:
 # Error messages
 S3XRC_BAD_RESOURCE = "Invalid Resource"
 S3XRC_PARSE_ERROR = "XML Parse Error"
-S3XRC_TRANFORMATION_ERROR = "XSL Transformation Error"
+S3XRC_TRANSFORMATION_ERROR = "XSLT Transformation Error"
 S3XRC_NO_LXML = "lxml not installed"
 S3XRC_BAD_SOURCE = "Invalid XML Source"
 S3XRC_BAD_RECORD = "Invalid Record ID"
@@ -344,7 +344,7 @@ class ResourceController(object):
         delete="delete"
     )
 
-    ROWSPERPAGE=10
+    ROWSPERPAGE = 10
 
     def __init__(self, db, domain=None, base_url=None, rpp=None):
 
@@ -415,8 +415,8 @@ class ResourceController(object):
                    skip=[],
                    permit=None,
                    audit=None,
-                   start=None,
-                   limit=None,
+                   start=None,  # starting record
+                   limit=None,  # pagesize
                    show_urls=True):
 
         """ Exports data as XML tree """
@@ -443,9 +443,11 @@ class ResourceController(object):
         else:
             query = (table.id > 0)
 
+        # Filter out deleted records
         if "deleted" in table:
             query = (table.deleted == False) & query
 
+        # Optional Filter
         if filterby is not None:
             query = query & (filterby)
 
@@ -454,17 +456,18 @@ class ResourceController(object):
         else:
             url = "/%s/%s" % (prefix, name)
 
+        # Not GAE-compatible: .count()
         results = self.db(query).count()
-        if start:
+
+        # Server-side pagination
+        if start != None:   # Can't just use 'if start' as 0 is a valid value for start
             if not limit:
-                limit = start + self.ROWSPERPAGE
-            if limit < start:
-                start, limit = limit, start
-            if start <= 0:
-                start = 1
+                limit = self.ROWSPERPAGE
             if limit <= 0:
-                limit = start
-            limitby = (start-1, limit)
+                limit = 1
+            if start < 0:
+                start = 0
+            limitby = (start, start + limit)
         else:
             limitby = None
 
@@ -485,7 +488,7 @@ class ResourceController(object):
                 (c, pkey, fkey) = joins[i]
                 pkeys = map(lambda r: r[pkey], records)
 
-                # TODO: Modify this section for use on GAE:
+                # Not GAE-compatible: .belongs()
                 cquery = (c.table[fkey].belongs(pkeys))
                 if "deleted" in c.table:
                     cquery = (c.table.deleted==False) & cquery
@@ -1454,7 +1457,7 @@ class S3XML(object):
                     result = transformer(tree)
                     return result
                 except:
-                    self.error = S3XRC_TRANFORMATION_ERROR
+                    self.error = S3XRC_TRANSFORMATION_ERROR
                     return None
             else:
                 # Error parsing the XSL template

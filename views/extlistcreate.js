@@ -9,20 +9,26 @@ var proxy = new Ext.data.HttpProxy({
 
 
 var editor = new Ext.ux.grid.RowEditor({
-        saveText: '{{=T('Update')}}'
-    });
+    saveText: '{{=T('Update')}}',
+    cancelText: '{{=T('Cancel')}}',
+    commitChangesText: '{{=T('You need to commit or cancel your changes')}}',
+    errorText: '{{=T('Errors')}}'
+});
     
 {{table = request.controller + '_' + request.function}}
 
 // JsonReader.  Notice additional meta-data params for defining the core attributes of your json-response
 var reader = new Ext.data.JsonReader({
-    totalProperty: '@totalrecords',
-    //totalProperty: 'total',
+    totalProperty: '@results',
     successProperty: 'success',
-    idProperty: 'id',
+    //idProperty: '@uuid',      // We don't support URLs of the format: resource/uuid
     root: '$_{{=table}}',       // We only want the data for our table
     messageProperty: 'message'  // <-- New "messageProperty" meta-data
 }, [
+        {
+            name: '@uuid',
+            allowBlank: false
+        },
     {{for field in form.fields:}}
       {{if form.custom.widget[field]:}}
         {
@@ -50,7 +56,7 @@ var writer = new Ext.data.JsonWriter({
 var store = new Ext.data.Store({
     totalProperty: '@results',
     successProperty: 'success',
-    idProperty: 'id',
+    //idProperty: '@uuid',
     root: '$_{{=table}}',    // We only want the data for our table
     //id: 'user',
     restful: true,
@@ -100,7 +106,26 @@ var userColumns =  [
   {{for field in form.fields:}}
     {{if form.custom.widget[field]:}}
         {{if form.custom.widget[field].attributes['_name'] != 'Id':}}
-            {header: "{{=form.custom.label[field]}}", sortable: true, dataIndex: '{{=form.custom.widget[field].attributes['_name']}}', editor: new Ext.form.TextField({})},
+            {
+                header: "{{=form.custom.label[field]}}",
+                sortable: true,
+                dataIndex: '{{=form.custom.widget[field].attributes['_name']}}',
+            {{requires = form.custom.widget[field].attributes['requires']}}
+            {{if not isinstance(requires, (list, tuple)):}}
+              {{requires = [requires]}}
+            {{pass}}
+            {{is_date = 0}}
+            {{for require in requires:}}
+              {{if 'IS_DATE' in str(require):}}
+                {{is_date = 1}}
+              {{pass}}
+            {{pass}}
+            {{if is_date == 1:}}
+                editor: new Ext.form.DateField({})
+            {{else:}}
+                editor: new Ext.form.TextField({})
+            {{pass}}
+            },
         {{pass}}
     {{pass}}
   {{pass}}
@@ -130,9 +155,8 @@ var userGrid = new xg.GridPanel({
     //    }),
     sm: sm,
     columnLines: true,
-    width: 600,
     height: 300,
-    //autoHeight: true,
+    //autoHeight: true, // autoHeight means no scrollbars
     store: store,
     plugins: [editor],
     // Top toolbar for Add/Delete options (ToDo: Add Edit)

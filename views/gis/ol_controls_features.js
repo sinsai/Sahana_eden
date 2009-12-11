@@ -34,8 +34,8 @@ function shn_gis_popup_new_cancel(){
     currentFeature = null;
 }
 
-// Supports feature selectControl
-function onFeatureSelect_1(feature){
+// Supports toolbar selectControl for Draft Features & Internal FeatureGroup Layers
+function onFeatureSelect(feature){
     // Set global for back referencing
     currentFeature = feature;
     if (feature.popup.map == null) {
@@ -45,10 +45,9 @@ function onFeatureSelect_1(feature){
         feature.popup.toggle();
     }
 }
-function onFeatureUnselect_1(feature) {
+function onFeatureUnselect(feature) {
     feature.popup.hide();
 }
-
 
 // Add marker to map (called by ol_layers_features.js)
 function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconURL) {
@@ -97,6 +96,6 @@ function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconU
 }
 // Supports add_Feature_with_popup()
 function onPopupClose(evt) {
-    currentFeature.popup.hide();
+    //currentFeature.popup.hide();
+    select.unselectAll();
 }
-

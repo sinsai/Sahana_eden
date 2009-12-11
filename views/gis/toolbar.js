@@ -19,9 +19,10 @@ var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
     }
 });
 
+// Controls for Draft Features
 var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
-    onSelect: onFeatureSelect_1,
-    onUnselect: onFeatureUnselect_1,
+    onSelect: onFeatureSelect,
+    onUnselect: onFeatureUnselect,
     multiple: false,
     clickout: true,
     isDefault: true

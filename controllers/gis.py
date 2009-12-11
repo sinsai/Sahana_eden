@@ -51,6 +51,10 @@ def index():
     "Module's Home Page"
     return dict(module_name=module_name)
 
+def test():
+    "Test server-parsed GIS functions"
+    return dict()
+    
 def apikey():
     "RESTlike CRUD controller"
     resource = 'apikey'
@@ -898,6 +902,7 @@ def map_viewing_client():
         metadata = db.media_metadata
         # Which Features are added to the Group directly?
         link = db.gis_location_to_feature_group
+        # JOINs are efficient for RDBMS but not compatible with GAE
         features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
         # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
         # Which Features are added to the Group via their FeatureClass?
@@ -906,12 +911,14 @@ def map_viewing_client():
         # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
         features[feature_group.id] = features1 | features2
         for feature in features[feature_group.id]:
+            
             feature.module = feature.gis_feature_class.module
             feature.resource = feature.gis_feature_class.resource
             if feature.module and feature.resource:
                 feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
             else:
                 feature.resource_id = None
+            
             # 1st choice for a Marker is the Feature's
             marker = feature.gis_location.marker_id
             if not marker:
@@ -933,9 +940,24 @@ def map_viewing_client():
                 # We use the most recent one
                 query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
                 metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+                
+                # Person .represent is too complex to put into JOIN
+                contact = shn_pr_person_represent(metadata.person_id)
+                
             except:
                 metadata = None
+                contact = None
             feature.metadata = metadata
+            feature.contact = contact
+
+            try:
+                # Images are M->1 to Features
+                # We use the most recently uploaded one
+                query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
+                image = db(query).select(orderby=~db.media_image.created_on)[0].image
+            except:
+                image = None
+            feature.image = image
 
     # Add the Features to the Return
     #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))

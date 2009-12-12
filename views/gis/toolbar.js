@@ -47,7 +47,7 @@ var zoomout = new GeoExt.Action({
     map: map,
     iconCls: 'zoomout',
     tooltip: '{{=T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
     
 var zoomin = new GeoExt.Action({
@@ -55,7 +55,7 @@ var zoomin = new GeoExt.Action({
     map: map,
     iconCls: 'zoomin',
     tooltip: '{{=T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var pan = new GeoExt.Action({
@@ -65,7 +65,7 @@ var pan = new GeoExt.Action({
     tooltip: '{{=T("Pan Map: keep the left mouse button pressed and drag the map")}}',
     toggleGroup: toggleGroup,
     //allowDepress: false,
-    pressed: true,
+    pressed: true
 });
 
 var lengthButton = new GeoExt.Action({
@@ -73,7 +73,7 @@ var lengthButton = new GeoExt.Action({
     map: map,
     iconCls: 'measure-off',
     tooltip: '{{=T("Measure Length: Click the points along the path & end with a double-click")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var areaButton = new GeoExt.Action({
@@ -81,7 +81,7 @@ var areaButton = new GeoExt.Action({
     map: map,
     iconCls: 'measure-off',
     tooltip: '{{=T("Measure Area: Click the points around the polygon & end with a double-click")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var selectButton = new GeoExt.Action({
@@ -89,7 +89,7 @@ var selectButton = new GeoExt.Action({
     map: map,
     iconCls: 'searchclick',
     tooltip: '{{=T("Query Feature")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var pointButton = new GeoExt.Action({
@@ -97,7 +97,7 @@ var pointButton = new GeoExt.Action({
     map: map,
     iconCls: 'drawpoint-off',
     tooltip: '{{=T("Add Point")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var lineButton = new GeoExt.Action({
@@ -105,7 +105,7 @@ var lineButton = new GeoExt.Action({
     map: map,
     iconCls: 'drawline-off',
     tooltip: '{{=T("Add Line")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var polygonButton = new GeoExt.Action({
@@ -113,7 +113,7 @@ var polygonButton = new GeoExt.Action({
     map: map,
     iconCls: 'drawpolygon-off',
     tooltip: '{{=T("Add Polygon")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var dragButton = new GeoExt.Action({
@@ -121,7 +121,7 @@ var dragButton = new GeoExt.Action({
     map: map,
     iconCls: 'movefeature',
     tooltip: '{{=T("Move Feature: Drag feature to desired location")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var resizeButton = new GeoExt.Action({
@@ -129,7 +129,7 @@ var resizeButton = new GeoExt.Action({
     map: map,
     iconCls: 'resizefeature',
     tooltip: '{{=T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var rotateButton = new GeoExt.Action({
@@ -137,7 +137,7 @@ var rotateButton = new GeoExt.Action({
     map: map,
     iconCls: 'rotatefeature',
     tooltip: '{{=T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var modifyButton = new GeoExt.Action({
@@ -145,7 +145,7 @@ var modifyButton = new GeoExt.Action({
     map: map,
     iconCls: 'modifyfeature',
     tooltip: '{{=T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var removeButton = new GeoExt.Action({
@@ -153,7 +153,7 @@ var removeButton = new GeoExt.Action({
     map: map,
     iconCls: 'removefeature',
     tooltip: '{{=T("Remove Feature: Select the feature you wish to remove & press the delete key")}}',
-    toggleGroup: toggleGroup,
+    toggleGroup: toggleGroup
 });
 
 var navPreviousButton = new Ext.Toolbar.Button({

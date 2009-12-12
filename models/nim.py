@@ -33,16 +33,17 @@ def represent_user(id):
 
     return None
 
-
 user_id = SQLTable(None, 'user_id',
                    Field('user_id', auth.settings.table_user,
                          requires = IS_NULL_OR(IS_ONE_OF(db, auth.settings.table_user.id, represent_user)),
                          represent = lambda id: (id and [represent_user(id)] or ["None"])[0],
-                         default = auth.user.id,
                          ondelete = 'RESTRICT',
                          label = T('Nurse')
                         )
                   )
+
+if auth.user is not None:
+    user_id.user_id.default = auth.user.id
 
 # *****************************************************************************
 # Anamnesis: General

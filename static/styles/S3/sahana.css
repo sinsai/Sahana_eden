@@ -75,7 +75,7 @@ table { border-collapse: collapse }
 #header { border-bottom: #069 1px solid; padding: 0 1em; height: 70px; position: relative; background: url(../../img/sahanapy_logo.png) #336699 no-repeat left top; }
 
 /* response.menu_modules */
-#menu_modules { position:relative; height:36px; background: #CACACA  url(../../img/S3menu_back.png) repeat-x; padding-top:0px; z-index:9; min-width:800px }
+#menu_modules { position:relative; height:36px; background: #CACACA  url(../../img/S3menu_back.png) repeat-x; padding-top:0px; z-index:9; min-width:1060px; }
 
 #modulenav { position:relative; margin:0px; }
 #modulenav,
@@ -88,7 +88,7 @@ table { border-collapse: collapse }
 #modulenav li li a:hover { background:#d2eaff; color:#000; }
 #modulenav li { float: left; position: relative; text-align: left; cursor: default;  border-width: 1px 0; }
 /* Menu Buttons */
-#modulenav li div { text-align:center; background: url(../../img/S3menu_side.png) right 10px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 8px 25px 5px 25px; }
+#modulenav li div { text-align:center; background: url(../../img/S3menu_side.png) right 10px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 8px 15px 5px 15px; }
 #modulenav li div.hovered, #modulenav li div:hover { background: #676767 url(../../img/S3menu_hilight.png) repeat-x; }
 /* Menu Popups */
 #modulenav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align:left; background: #fff; border: #dedede 1px solid;
@@ -99,8 +99,11 @@ table { border-collapse: collapse }
 #modulenav li li { display: block; float: none; border: 0; }
 #modulenav li:hover ul, li.over ul { display: block; }
 
+.S3menulogo { background: url(../../img/S3menu_logo.png) left top no-repeat; text-shadow: none;  padding: none; width:35px; height:28px; display:inline-block; position:absolute; top:3px; left:2px; }
+.S3menuHome { padding-left:20px; }
+
 /* response.menu_options */
-#menu_options { position:relative; height:26px; background: #CACACA; padding-top:0px; z-index:8; min-width:800px }
+#menu_options { position:relative; height:26px; background: #CACACA; padding-top:0px; z-index:8; min-width:1060px }
 
 #subnav {position:relative; margin:0px; padding-left:5px;}
 #subnav,
@@ -113,7 +116,7 @@ table { border-collapse: collapse }
 #subnav li li a:hover { background:#d2eaff;  color:#000; }
 #subnav li { float: left;  position: relative;  text-align: left; cursor: default;  border-width: 1px 0; }
 /* Menu Buttons */
-#subnav li div { text-align:center; background: url(../../img/S3menu_side.png) right 6px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 4px 15px 2px 15px; }
+#subnav li div { text-align:center; background: url(../../img/S3menu_side.png) right 6px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 4px 10px 2px 10px; }
 #subnav li div.hovered, #subnav li div:hover { background: #fff; -moz-border-radius:5px; -webkit-border-radius:5px;}
 /* Menu Popups */
 #subnav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align:left; background: #fff; border:#dedede 1px solid;

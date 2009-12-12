@@ -42,6 +42,24 @@ jQuery(document).ready(function(){
 <script src="/{{=request.application}}/static/scripts/S3/S3.js" type="text/javascript" charset="utf-8"></script>
 <!--Scripts which need pre-processing by server must be called in-line-->
 <script type="text/javascript">//<![CDATA[
+function viewMap(feature_id) {
+    var url = '{{=URL(r=request, c='gis', f='display_feature')}}/' + feature_id;
+    var iframe = "<iframe width='810' height='610' src='" + url + "'></iframe>";
+    if (jQuery.support.scriptEval==true) {
+        // Firefox, Chrome
+        // ToDo: catch Chrome somehow as it prefers the IE method
+        $.get(url, function(data){
+            // Hack from http://stackoverflow.com/questions/1197575/can-scripts-be-inserted-with-innerhtml
+            var n = document.createElement("div");
+            n.innerHTML = data;
+            document.body.appendChild(n);
+        });
+    } else {
+        // IE
+        //$.getScript() will be too complex to engineer
+        $('#map').html(iframe);
+    }
+}
 jQuery(document).ready(function() {
     jQuery("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
     jQuery('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}")) {

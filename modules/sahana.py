@@ -139,22 +139,13 @@ class MENU2(DIV):
                 if len(item) > 3 and item[3]:
                     # Submenu
                     ul_inner = self.serialize(item[3], level+1)
-                    in_ul = LI(
-                                DIV(
-                                    A(name, _href=link),
-                                    _class='hoverable'
-                                ),
-                                ul_inner,
-                                _style=style
-                            )
+                    in_ul = LI(DIV(A(name, _href=link), _class='hoverable'), ul_inner, _style=style)
                 else:
-                    in_ul = LI(
-                                DIV(
-                                    A(name, _href=link),
-                                    _class='hoverable'
-                                ),
-                                _style=style
-                            )
+                    if name == 'Sahana Home':
+                        in_ul = LI(DIV(A(SPAN(_class='S3menulogo'), _href=link),
+                                    SPAN(A(name, _href=link, _class='S3menuHome')),_class='hoverable'), _style=style )
+                    else:
+                        in_ul = LI(DIV(A(name, _href=link), _class='hoverable'), _style=style)
                 div.append(in_ul)
         else:
             # Submenu

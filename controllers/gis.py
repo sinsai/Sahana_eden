@@ -973,6 +973,10 @@ def display_feature():
     Used as a .represent for location_id to show just this feature on the map.
     """
     
+    # The Feature
+    feature_id = request.args[0]
+    feature = db(db.gis_location.id == feature_id).select()[0]
+    
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width
@@ -984,11 +988,11 @@ def display_feature():
         lat = request.vars.lat
     else:
         # ToDo: Calculate an appropriate BBOX from min lon max lon min lat max lat
-        lat = config.lat
+        lat = feature.lat
     if 'lon' in request.vars:
         lon = request.vars.lon
     else:
-        lon = config.lon
+        lon = feature.lon
     if 'zoom' in request.vars:
         zoom = request.vars.zoom
     else:
@@ -1003,10 +1007,7 @@ def display_feature():
     # Add the config to the Return
     output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
     
-    # The Feature
-    feature_id = request.args[0]
-    
-    feature = db(db.gis_location.id == feature_id).select()[0]
+    # Feature details
     feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
     feature.module = feature_class.module
     feature.resource = feature_class.resource

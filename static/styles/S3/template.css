@@ -99,7 +99,9 @@ table { border-collapse: collapse }
 #modulenav li li { display: block; float: none; border: 0; }
 #modulenav li:hover ul, li.over ul { display: block; }
 
-.S3menulogo { background: url(../../img/S3menu_logo.png) no-repeat; width:35px; height:28px; display:inline-block; float:left; margin-left:-12px; margin-top:-5px; }
+.S3menulogo { background: url(../../img/S3menu_logo.png) left top no-repeat; text-shadow: none;  padding: none; width:35px; height:28px; display:inline-block; position:absolute; top:3px; left:2px; }
+.S3menuHome { padding-left:20px; }
+
 /* response.menu_options */
 #menu_options { position:relative; height:26px; background: #CACACA; padding-top:0px; z-index:8; min-width:1060px }
 

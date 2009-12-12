@@ -586,7 +586,9 @@ def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
 
         # Select form
         form = FORM(TABLE(
-                TR(T('Name and/or ID Label: '), INPUT(_type="text", _name="label", _size="40"), A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard."))),
+                TR(T('Name and/or ID Label: '),
+                   INPUT(_type="text", _name="label", _size="40"),
+                   A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."))),
                 TR("", INPUT(_type="submit", _value="Search"))
                 ))
 
@@ -595,6 +597,9 @@ def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
         # Accept action
         items = None
         if form.accepts(request.vars, session):
+
+            if form.vars.label == "":
+                form.vars.label = "%"
 
             results = shn_pr_get_person_id(form.vars.label)
 

@@ -947,25 +947,26 @@ def shn_custom_view(jr, default_name, format=None):
 
     """ Check for custom view """
 
+    prefix = jr.request.controller
+
     if jr.component:
 
         custom_view = '%s_%s_%s' % (jr.name, jr.component_name, default_name)
-        _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
+        _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
         if not os.path.exists(_custom_view):
             custom_view = '%s_%s' % (jr.name, default_name)
-            _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
+            _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
     else:
         if format:
             custom_view = '%s_%s_%s' % (jr.name, default_name, format)
         else:
             custom_view = '%s_%s' % (jr.name, default_name)
-        _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
-
+        _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
     if os.path.exists(_custom_view):
-        response.view = jr.prefix + '/' + custom_view
+        response.view = prefix + '/' + custom_view
     else:
         if format:
             response.view = default_name.replace('.html', '_%s.html' % format)
@@ -1015,6 +1016,10 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
         record_id = jr.id
         href_delete = URL(r=jr.request, f=jr.name, args=['delete', record_id])
         href_edit = URL(r=jr.request, f=jr.name, args=['update', record_id])
+
+    authorised = shn_has_permission('update', table, record_id)
+    if authorised:
+        redirect(href_edit)
 
     authorised = shn_has_permission('read', table, record_id)
     if authorised:

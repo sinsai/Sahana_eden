@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.4
+    @version: 1.4.5
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -344,7 +344,7 @@ class ResourceController(object):
         delete="delete"
     )
 
-    ROWSPERPAGE=10
+    ROWSPERPAGE = 10
 
     def __init__(self, db, domain=None, base_url=None, rpp=None):
 
@@ -356,7 +356,8 @@ class ResourceController(object):
         self.domain = domain
         self.base_url = base_url
 
-        self.rpp = rpp or self.ROWSPERPAGE
+        if rpp:
+            self.ROWSPERPAGE = rpp
 
         self.model = ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url)
@@ -410,20 +411,18 @@ class ResourceController(object):
 
     def export_xml(self, prefix, name, id,
                    joins=[],
+                   filterby=None,
                    skip=[],
                    permit=None,
                    audit=None,
-                   page=None,
-                   pagesize=None,
+                   start=None,  # starting record
+                   limit=None,  # pagesize
                    show_urls=True):
 
         """ Exports data as XML tree """
 
         self.error = None
         resources = []
-
-        if not pagesize:
-            pagesize = self.rpp
 
         _table = "%s_%s" % (prefix, name)
 
@@ -444,26 +443,32 @@ class ResourceController(object):
         else:
             query = (table.id > 0)
 
+        # Filter out deleted records
         if "deleted" in table:
             query = (table.deleted == False) & query
+
+        # Optional Filter
+        if filterby is not None:
+            query = query & (filterby)
 
         if self.base_url:
             url = "%s/%s/%s" % (self.base_url, prefix, name)
         else:
             url = "/%s/%s" % (prefix, name)
 
-        # TODO:
-        # Page count doesn't represent accessible records, so
-        # pages may be empty after filtering for permission
-        totalrecords = self.db(query).count()
-        if page:
-            totalpages = ((totalrecords - 1) / pagesize) + 1
-            start_record = (page - 1) * pagesize
-            end_record = start_record + pagesize
-            limitby = (start_record, end_record)
+        # Not GAE-compatible: .count()
+        results = self.db(query).count()
+        
+        # Server-side pagination
+        if start != None:   # Can't just use 'if start' as 0 is a valid value for start
+            if not limit:
+                limit = self.ROWSPERPAGE
+            if limit <= 0:
+                limit = 1
+            if start < 0:
+                start = 0
+            limitby = (start, start + limit)
         else:
-            totalpages = 0
-            pages = None
             limitby = None
 
         try:
@@ -483,7 +488,7 @@ class ResourceController(object):
                 (c, pkey, fkey) = joins[i]
                 pkeys = map(lambda r: r[pkey], records)
 
-                # TODO: Modify this section for use on GAE:
+                # Not GAE-compatible: .belongs()
                 cquery = (c.table[fkey].belongs(pkeys))
                 if "deleted" in c.table:
                     cquery = (c.table.deleted==False) & cquery
@@ -536,9 +541,9 @@ class ResourceController(object):
         return self.xml.tree(resources,
                              domain=self.domain,
                              url=burl,
-                             totalrecords=totalrecords,
-                             totalpages=totalpages,
-                             page=page)
+                             results=results,
+                             start=start,
+                             limit=limit)
 
 
     def import_xml(self, prefix, name, id, tree,
@@ -1180,28 +1185,39 @@ class XRequest(object):
             )
 
 
-    def export_xml(self, permit=None, audit=None, template=None, pretty_print=False):
+    def export_xml(self, permit=None, audit=None, template=None, filterby=None, pretty_print=False):
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
         else:
-            joins = self.rc.model.get_components(self.prefix, self.name)
+            if "components" in self.request.vars:
+                joins = []
+                if not self.request.vars["components"]=="NONE":
+                    components = self.request.vars["components"].split(",")
+                    for c in components:
+                        component, pkey, fkey = self.rc.model.get_component(self.prefix, self.name, c)
+                        if component is not None:
+                            joins.append([component, pkey, fkey])
+            else:
+                joins = self.rc.model.get_components(self.prefix, self.name)
 
-        if "page" in self.request.vars:
-            page = int(self.request.vars["page"])
+        if "start" in self.request.vars:
+            start = int(self.request.vars["start"])
         else:
-            page = None
+            start = None
 
-        if "pagesize" in self.request.vars:
-            pagesize = int(self.request.vars["pagesize"])
-            if not page:
-                page = 1
+        if "limit" in self.request.vars:
+            limit = int(self.request.vars["limit"])
         else:
-            pagesize = None
+            limit = None
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                                  joins=joins, permit=permit, audit=audit,
-                                  page=page, pagesize=pagesize)
+                                  joins=joins,
+                                  filterby=filterby,
+                                  permit=permit,
+                                  audit=audit,
+                                  start=start,
+                                  limit=limit)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)
@@ -1212,28 +1228,40 @@ class XRequest(object):
         return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
-    def export_json(self, permit=None, audit=None, template=None, pretty_print=False):
+    def export_json(self, permit=None, audit=None, template=None, filterby=None, pretty_print=False):
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
         else:
-            joins = self.rc.model.get_components(self.prefix, self.name)
+            if "components" in self.request.vars:
+                joins = []
+                if not components=="NONE":
+                    components = self.request.vars["components"].split(",")
+                    for c in components:
+                        component, pkey, fkey = self.model.get_component(self.prefix, self.name, c)
+                        if component is not None:
+                            joins.append(component, pkey, fkey)
+            else:
+                joins = self.rc.model.get_components(self.prefix, self.name)
 
-        if "page" in self.request.vars:
-            page = int(self.request.vars["page"])
+        if "start" in self.request.vars:
+            start = int(self.request.vars["start"])
         else:
-            page = None
+            start = None
 
-        if "pagesize" in self.request.vars:
-            pagesize = int(self.request.vars["pagesize"])
-            if not page:
-                page = 1
+        if "limit" in self.request.vars:
+            limit = int(self.request.vars["limit"])
         else:
-            pagesize = None
+            limit = None
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                               joins=joins, permit=permit, audit=audit,
-                               page=page, pagesize=pagesize, show_urls=False)
+                               joins=joins,
+                               filterby=filterby,
+                               permit=permit,
+                               audit=audit,
+                               start=start,
+                               limit=limit,
+                               show_urls=False)
 
         if template is not None:
             tree = self.rc.xml.transform(tree, template)
@@ -1370,9 +1398,10 @@ class S3XML(object):
         domain="domain",
         url="url",
         error="error",
-        totalrecords="totalrecords",
-        page="page",
-        totalpages="totalpages"
+        start="start",
+        limit="limit",
+        success="success",
+        results="results"
         )
 
     ACTION = dict(
@@ -1524,19 +1553,26 @@ class S3XML(object):
         return resource
 
 
-    def tree(self, resources, domain=None, url=None, totalrecords=None, totalpages=None, page=None):
+    def tree(self, resources, domain=None, url=None, start=None, limit=None, results=None):
 
         """ Builds a tree from a list of elements """
 
         root = etree.Element(self.TAG["root"])
 
+        root.set(self.ATTRIBUTE["success"], str(False))
+
         if resources is not None:
-            if totalrecords:
-                root.set(self.ATTRIBUTE["totalrecords"], str(totalrecords))
-            if totalpages:
-                root.set(self.ATTRIBUTE["totalpages"], str(totalpages))
-            if page:
-                root.set(self.ATTRIBUTE["page"], str(page))
+
+            if len(resources):
+                root.set(self.ATTRIBUTE["success"], str(True))
+
+            if start is not None:
+                root.set(self.ATTRIBUTE["start"], str(start))
+            if limit is not None:
+                root.set(self.ATTRIBUTE["limit"], str(limit))
+            if results is not None:
+                root.set(self.ATTRIBUTE["results"], str(results))
+
             if NO_LXML:
                 map(lambda r: root.append(r), resources)
             else:

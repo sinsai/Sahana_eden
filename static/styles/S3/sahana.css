@@ -74,47 +74,60 @@ table { border-collapse: collapse }
 /* Now to layout elements... */
 #header { border-bottom: #069 1px solid; padding: 0 1em; height: 70px; position: relative; background: url(../../img/sahanapy_logo.png) #336699 no-repeat left top; }
 
-    /* response.menu_auth */
-    /* Other CSS for this is at bottom: Web2Py menu */
-    #menu_auth { width: 200px; height: 50px; margin: 0 auto; background: #336699; }
-    #menu_auth ul { margin: 0;	margin-right: 30px;	padding: 0;	list-style: none; line-height: normal; }
-    #menu_auth li { float: left; }
-    #menu_auth a { padding: 5px 16px 5px 16px; text-decoration: none; font-family: Helvetica, sans-serif; font-size: 14px; font-weight: normal; color: #FFFFFF; }
-    #menu_auth a:hover, #menu_auth .current_page_item a { background: #0066cc; color: #FFFFFF; }
-    
-    /* response.menu_modules */
-    #menu_modules {position:relative; height:20px; padding-top:5px; }
-    /* IE6 defaults */
-    #menu_modules a,
-    #menu_modules a:hover,
-    #menu_modules a:active,
-    #menu_modules a:focus { outline:0; font-weight:normal; }
-    .modules_inner { position:absolute; z-index:100; width:100%; }
-    
-    /* response.menu_options */
-    #menu_options { position:relative; height:32px; padding-top:5px; padding-bottom: 5px; border-top:1px solid #FFFFFF;}
-    /* IE6 defaults */
-    #menu_options a,
-    #menu_options a:hover,
-    #menu_options a:active,
-    #menu_options a:focus { outline:0; font-weight:normal; }
-    .options_inner { position:absolute; z-index:60; width:100%; }
+/* response.menu_modules */
+#menu_modules { position:relative; height:36px; background: #CACACA  url(../../img/S3menu_back.png) repeat-x; padding-top:0px; z-index:9; min-width:1060px; }
 
-    /* CSS dropdown menus for modules & options */
-    ul.S3menuUL { padding:0; margin:0; list-style:none; overflow:hidden; float:left; margin-right:1px; }
-    ul.S3menuUL a { text-decoration:none; color:#fff; padding-left:5px; }
-    ul.S3menuUL li.S3menuLI { float:left; width:260px; margin:-32767px -130px 0 0; background:#336699; }
-    ul.S3menuUL li.S3menuLI a.S3menuA { position:relative; z-index:80; display:block; float:left; width:125px; margin-top:32767px; background:transparent; }
-    ul.S3menuUL li.S3menuLI a.S3menuA:hover,
-    ul.S3menuUL li.S3menuLI a.S3menuA:focus,
-    ul.S3menuUL li.S3menuLI a.S3menuA:active { margin-right:1px; background:#0066cc; }
-    ul.S3menuUL li:hover { background:#0077aa;}
-    ul.S3menuSub { float:left; padding:5px 0 0 0; margin:0; list-style:none; background:#0077aa; margin-top:-5px;}
-    ul.S3menuSub li a { float:left; width:125px; background:#0077aa; clear:left; padding-top: 2px; padding-bottom: 3px;}
-    ul.S3menuSub a:hover,
-    ul.S3menuSub a:focus,
-    ul.S3menuSub a:active { background:#0066cc; margin-right:1px; }
-    
+#modulenav { position:relative; margin:0px; }
+#modulenav,
+#modulenav li,
+#modulenav ul { list-style:none; }
+#modulenav li div a { color: #000; }
+#modulenav a { text-decoration: none; }
+#modulenav a:hover { color: #000; background:none;  }
+#modulenav li li a { display: block;  font-weight: normal; padding: 5px 5px 5px 10px; }
+#modulenav li li a:hover { background:#d2eaff; color:#000; }
+#modulenav li { float: left; position: relative; text-align: left; cursor: default;  border-width: 1px 0; }
+/* Menu Buttons */
+#modulenav li div { text-align:center; background: url(../../img/S3menu_side.png) right 10px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 8px 15px 5px 15px; }
+#modulenav li div.hovered, #modulenav li div:hover { background: #676767 url(../../img/S3menu_hilight.png) repeat-x; }
+/* Menu Popups */
+#modulenav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align:left; background: #fff; border: #dedede 1px solid;
+    -moz-border-radius:5px; -webkit-border-radius:5px;
+    -moz-box-shadow: 1px 1px 5px #454545; -webkit-box-shadow: 1px 1px 5px #454545;
+}
+#modulenav li>ul { top: auto;  left: auto; }
+#modulenav li li { display: block; float: none; border: 0; }
+#modulenav li:hover ul, li.over ul { display: block; }
+
+.S3menulogo { background: url(../../img/S3menu_logo.png) left top no-repeat; text-shadow: none;  padding: none; width:35px; height:28px; display:inline-block; position:absolute; top:3px; left:2px; }
+.S3menuHome { padding-left:20px; }
+
+/* response.menu_options */
+#menu_options { position:relative; height:26px; background: #CACACA; padding-top:0px; z-index:8; min-width:1060px }
+
+#subnav {position:relative; margin:0px; padding-left:5px;}
+#subnav,
+#subnav li,
+#subnav ul { list-style:none; }
+#subnav li div a { color: #000; }
+#subnav a { text-decoration: none;  }
+#subnav a:hover { color: #000;   background:none;  }
+#subnav li li a { display: block;  font-weight: normal; padding: 5px 5px 5px 10px; }
+#subnav li li a:hover { background:#d2eaff;  color:#000; }
+#subnav li { float: left;  position: relative;  text-align: left; cursor: default;  border-width: 1px 0; }
+/* Menu Buttons */
+#subnav li div { text-align:center; background: url(../../img/S3menu_side.png) right 6px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 4px 10px 2px 10px; }
+#subnav li div.hovered, #subnav li div:hover { background: #fff; -moz-border-radius:5px; -webkit-border-radius:5px;}
+/* Menu Popups */
+#subnav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align:left; background: #fff; border:#dedede 1px solid;
+    -moz-border-radius:5px; -webkit-border-radius:5px;
+    -moz-box-shadow: 1px 1px 5px #454545; -webkit-box-shadow: 1px 1px 5px #454545;
+}
+#subnav li>ul { top: auto;  left: auto; }
+#subnav li li { display: block; float: none; border: 0; }
+#subnav li:hover ul,
+#subnav li.over ul { display: block; }
+
 /* Column container */
 .colmask {
     position:relative;	/* This fixes the IE7 overflow hidden bug */
@@ -241,90 +254,6 @@ div#pheader td { text-align: left; padding: 1px 6px 1px 1px; }
 .delphi_q6 { border-left: 4px solid #75507b; padding-left: 60px; color: #888a85; }
 .delphi_post_text {	display: none; }
 .delphi_post_dbtitle { font-weight: bold;}
-
-/* Web2Py menu - as-used by Auth menu currently */
-ul.web2py-menu,
-ul.web2py-menu ul,
-ul.web2py-menu li,
-ul.web2py-menu a { display: block; margin: 0; padding: 0; }
-ul.web2py-menu,
-ul.web2py-menu li,
-ul.web2py-menu ul { list-style: none; background-color: #336699;}
-ul.web2py-menu ul { display: none; }
-ul.web2py-menu li { position: relative; z-index: 1; background-color: #336699; }
-ul.web2py-menu li:hover { z-index: 999; }
-ul.web2py-menu li:hover > ul { display: block; position: absolute; }
-ul.web2py-menu li a { position: relative; min-width: 0; border: solid 1px #247; padding: 2px 5px 3px; }
-ul.web2py-menu li a:link,
-ul.web2py-menu li a:hover,
-ul.web2py-menu li a:visited,
-ul.web2py-menu li a:active { text-decoration: none; }
-ul.web2py-menu li.sfhover a:active,
-ul.web2py-menu li:hover a:active { color: #fff; background-color: #0066cc; }
-ul.web2py-menu li:hover,
-ul.web2py-menu li.sfhover { background-color: #0077aa; }
-ul.web2py-menu li a:hover { background-color: #ffffcc; }
-ul.web2py-menu li.web2py-menu-expand a,
-ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand a,
-ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu-expand a { padding-right: 25px; }
-ul.web2py-menu li.web2py-menu-expand li a,
-ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand li a,
-ul.web2py-menu li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu-expand li a { padding-right: 5px; padding-left: 5px;}
-ul.web2py-menu-horizontal { padding-left: 1px ; }
-ul.web2py-menu-horizontal ul { top: auto; right: auto; left: auto; margin-top: -1px; }
-ul.web2py-menu-horizontal li { float: left; width: auto; margin-bottom: -1px; margin-left: -1px; }
-ul.web2py-menu-horizontal li.web2py-menu-expand a { padding-left: 5px; padding-right: 15px; }
-ul.web2py-menu-vertical { border-top: solid 1px #336699; }
-ul.web2py-menu-vertical,
-ul.web2py-menu-vertical ul { width: 10em; }
-ul.web2py-menu-vertical ul { left: 60%; right: auto; top: auto; margin-top: -0.5em; }
-ul.web2py-menu-vertical li { float: none; margin-left: 0; margin-top: -1px; }
-ul.web2py-menu-wide { width: 100%; }
-div.web2py-menu-center ul.web2py-menu { float: left; position: relative; left: 50%; }
-div.web2py-menu-center ul.web2py-menu li { position: relative; left: -50%; }
-div.web2py-menu-center ul.web2py-menu li li { left: auto; }
-ul.web2py-menu-vRight ul,
-ul.web2py-menu-hRight ul.web2py-menu-vertical ul,
-ul.web2py-menu-dRight,
-ul.web2py-menu-dRight ul { left: -60%; right: auto; top: auto; margin-top: -0.5em; }
-ul.web2py-menu-lFloat { float: left; }
-ul.web2py-menu-noFloat { float: none; }
-ul.web2py-menu-hRight ul { left: auto; right: 0; top: auto; margin-top: -1px; }
-ul.web2py-menu-hRight li { float: right; }
-ul.web2py-menu-hRight li.web2py-menu-expand a,
-ul.web2py-menu-hRight li.web2py-menu-expand li.web2py-menu-expand a,
-ul.web2py-menu-hRight li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu-expand a { padding-right: 5px; padding-left: 20px; }
-ul.web2py-menu-vRight { float: right; }
-ul.web2py-menu-vRight li.web2py-menu-expand a,
-ul.web2py-menu-vRight li.web2py-menu-expand li.web2py-menu-expand a,
-ul.web2py-menu-vRight li.web2py-menu-expand li.web2py-menu-expand li.web2py-menu-expand a,
-* html ul.web2py-menu { display: inline-block; display: block; position: relative; position: static;}
-* html ul.web2py-menu ul { float: none; }
-* html ul.web2py-menu-vertical li,
-* html ul.web2py-menu-horizontal li ul.web2py-menu-vertical li { width: 100%; float: left; clear: left; }
-* html ul.web2py-menu-horizontal li { width: 6em; width: auto; }
-* html div.web2py-menu-center { position: relative; z-index: 1; }
-*:first-child+html ul.web2py-menu-vertical > li:hover ul { min-width: 0; }
-html:not([lang*=""]) div.web2py-menu-center ul.web2py-menu li a:hover { height: 100%; }
-html:not([lang*=""]) div.web2py-menu-center ul.web2py-menu li a:hover { height: auto; }
-* html ul.web2py-menu ul { display: block; position: absolute; }
-* html ul.web2py-menu ul,
-* html ul.web2py-menu-horizontal ul,
-* html ul.web2py-menu-vertical ul,
-* html ul.web2py-menu-vRight ul,
-* html ul.web2py-menu-hRight ul.web2py-menu-vertical ul,
-* html ul.web2py-menu-hRight ul { left: -10000px; }
-* html ul.web2py-menu li.sfhover { z-index: 999; }
-* html ul.web2py-menu li.sfhover ul { left: auto; }
-* html ul.web2py-menu li.sfhover ul ul,
-* html ul.web2py-menu li.sfhover ul ul ul { display: none; }
-* html ul.web2py-menu li.sfhover ul,
-* html ul.web2py-menu li li.sfhover ul,
-* html ul.web2py-menu li li li.sfhover ul { display: block; }
-* html ul.web2py-menu-vertical li.sfhover ul { left: 60%; }
-* html ul.web2py-menu-vRight li.sfhover ul,
-* html ul.web2py-menu-hRight ul.web2py-menu-vertical li.sfhover ul { left: -60%; }
-* html ul.web2py-menu iframe { position: absolute; left: 0; top: 0; z-index: -1; }
 
 #add-btn,
 #contents-btn,

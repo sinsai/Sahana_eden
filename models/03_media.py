@@ -49,10 +49,14 @@ metadata_id = SQLTable(None, 'metadata_id',
 resource = 'image'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+                Field('name', length=128, notnull=True, unique=True),
                 location_id,
                 metadata_id,
                 Field('image', 'upload'),
                 migrate=migrate)
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
 # upload folder needs to be visible to the download() function as well as the upload
 db[table].image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG', 'gif', 'GIF', 'tif', 'TIF', 'bmp', 'BMP']
@@ -61,7 +65,7 @@ ADD_IMAGE = T('Add Image')
 image_id = SQLTable(None, 'image_id',
             Field('image_id', db.media_image,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'media_image.id', '%(name)s')),
-                represent = lambda id: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.media_image.id==id).select()[0].image] or ["None"])[0]), _height=40), _class='zoom', _href='#zoom-media_image-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=(id and [db(db.media_image.id==id).select()[0].image] or ["None"])[0]), _width=600), _id='zoom-media_image-%s' % id, _class='hidden')),
+                represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=db(db.media_image.id==id).select()[0].image), _height=40), _class='zoom', _href='#zoom-media_image-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.media_image.id==id).select()[0].image),_width=600), _id='zoom-media_image-%s' % id, _class='hidden'))] or [''])[0],
                 label = T('Image'),
                 comment = DIV(A(ADD_IMAGE, _class='thickbox', _href=URL(r=request, c='media', f='image', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_IMAGE), A(SPAN("[Help]"), _class="tooltip", _title=T("Photo|Add a Photo to describe this."))),
                 ondelete = 'RESTRICT'

@@ -1,32 +1,32 @@
 # -*- coding: utf-8 -*-
 
-# Auth Menu (available in all Modules)
+# Help Menu (available in all screens)
+s3.menu_help = [T('Help'), True, URL(request.application, 'default', 'help'), [
+        [T('About'), False, URL(request.application, 'default', 'about')],
+    ]]
+
+# Auth Menu (available in all screens)
 if not auth.is_logged_in():
     try:
         self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
     except:
         self_registration = True
     if self_registration:
-        response.menu_auth = [
-            [T('Login'), False, URL(request.application, 'default', 'user/login'),
+        s3.menu_auth = [T('Login'), True, URL(request.application, 'default', 'user/login'),
              [
                     [T('Register'), False,
                      URL(request.application, 'default', 'user/register')],
                     [T('Lost Password'), False,
                      URL(request.application, 'default', 'user/retrieve_password')]]
-             ],
-            ]
+             ]
     else:
-        response.menu_auth = [
-            [T('Login'), False, URL(request.application, 'default', 'user/login'),
+        s3.menu_auth = [T('Login'), True, URL(request.application, 'default', 'user/login'),
              [
                     [T('Lost Password'), False,
                      URL(request.application, 'default', 'user/retrieve_password')]]
              ],
-            ]
 else:
-    response.menu_auth = [
-        ['Logged-in as: ' + auth.user.first_name + ' ' + auth.user.last_name, False, None,
+    s3.menu_auth = ['Logged-in as: ' + auth.user.first_name + ' ' + auth.user.last_name, True, None,
          [
                 [T('Logout'), False, 
                  URL(request.application, 'default', 'user/logout')],
@@ -34,8 +34,7 @@ else:
                  URL(request.application, 'default', 'user/profile')],
                 [T('Change Password'), False,
                  URL(request.application, 'default', 'user/change_password')]]
-         ],
-        ]
+         ]
 
 # Menu for Admin module
 # (defined here as used in several different Controller files)        

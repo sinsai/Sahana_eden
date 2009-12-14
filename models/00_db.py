@@ -25,6 +25,11 @@ db = DAL('sqlite://storage.db')       # if not, use SQLite or other DB
 exec('from applications.%s.modules.sahana import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.sahana import *
+# We should change this to use:
+# sahana = local_import('sahana')
+# t2 = sahana.S3(request, response, session, cache, T, db)
+# auth = sahana.AuthS3(globals(), db)
+# etc
 t2 = S3(request, response, session, cache, T, db)
 
 # Custom validators

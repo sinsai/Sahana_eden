@@ -20,6 +20,28 @@ def test():
     #form = 
     return dict()
 
+def webgrid():
+    table = db.gis_feature_class
+    webgrid = local_import('webgrid')
+    grid = webgrid.WebGrid(crud)
+    grid.datasource = db(table.id > 0)
+    # We want client-side paging
+    grid.pagesize = 0
+    # dataTables off to start with
+    #grid.id = 'myTable'
+    # No add_links as they interfere with dataTables
+    #grid.enabled_rows = ['header', 'totals', 'pager', 'footer']
+    
+    # Show Edit/Delete links based on whether user can access them:
+    grid.action_links = ['view']
+    grid.action_headers = ['']
+    #if auth.has_permission(table, 'update'):
+    #    grid.action_links.append('edit')
+    #if auth.has_permission(table, 'delete'):
+    #    grid.action_links.append('delete')
+    
+    return dict(grid=grid())
+    
 def post():
     """Test for JSON POST
     #curl -i -X POST http://127.0.0.1:8000/sahana/test/post -H "Content-Type: application/json" -d {"name": "John"}

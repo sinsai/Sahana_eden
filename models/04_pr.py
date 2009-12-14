@@ -292,7 +292,7 @@ s3xrc.model.add_component(module, resource,
         title="%(time)s",
         description=shn_pr_presence_rss
     ),
-    list_fields = ['id','time','location','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
+    list_fields = ['id','time','location_id','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)

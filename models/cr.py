@@ -54,3 +54,12 @@ msg_record_modified = T('Shelter updated')
 msg_record_deleted = T('Shelter deleted')
 msg_list_empty = T('No Shelters currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+shelter_id = SQLTable(None, 'shelter_id',
+                      Field('shelter_id', db.pr_pentity,
+                            requires = IS_NULL_OR(IS_ONE_OF(db, 'cr_shelter.id', "%(name)s")),
+                            represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0],
+                            ondelete = 'RESTRICT',
+                            label = T('Shelter')
+                           )
+                     )

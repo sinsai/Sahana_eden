@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.5
+    @version: 1.4.6
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -73,7 +73,7 @@ except ImportError:
 # Error messages
 S3XRC_BAD_RESOURCE = "Invalid Resource"
 S3XRC_PARSE_ERROR = "XML Parse Error"
-S3XRC_TRANFORMATION_ERROR = "XSL Transformation Error"
+S3XRC_TRANSFORMATION_ERROR = "XSLT Transformation Error"
 S3XRC_NO_LXML = "lxml not installed"
 S3XRC_BAD_SOURCE = "Invalid XML Source"
 S3XRC_BAD_RECORD = "Invalid Record ID"
@@ -458,7 +458,7 @@ class ResourceController(object):
 
         # Not GAE-compatible: .count()
         results = self.db(query).count()
-        
+
         # Server-side pagination
         if start != None:   # Can't just use 'if start' as 0 is a valid value for start
             if not limit:
@@ -1457,7 +1457,7 @@ class S3XML(object):
                     result = transformer(tree)
                     return result
                 except:
-                    self.error = S3XRC_TRANFORMATION_ERROR
+                    self.error = S3XRC_TRANSFORMATION_ERROR
                     return None
             else:
                 # Error parsing the XSL template

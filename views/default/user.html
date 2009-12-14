@@ -27,3 +27,11 @@
  </p>
 {{pass}}
 </div>
+{{if request.args[0]=='register':}}
+<script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(function() {
+    $('.password').pstrength();
+});
+</script>
+{{pass}}

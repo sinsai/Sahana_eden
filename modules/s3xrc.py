@@ -964,8 +964,8 @@ class XRequest(object):
                         self.id = self.args[1]
 
         # Check format option
-        if 'format' in self.request.vars:
-            self.representation = str.lower(self.request.vars.format)
+        if 'format' in self.request.get_vars:
+            self.representation = str.lower(self.request.get_vars.format)
 
         # Representation fallback
         if not self.representation:

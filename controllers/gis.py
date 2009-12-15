@@ -987,6 +987,110 @@ def display_feature():
     if 'lat' in request.vars:
         lat = request.vars.lat
     else:
+        lat = feature.lat
+    if 'lon' in request.vars:
+        lon = request.vars.lon
+    else:
+        lon = feature.lon
+    if 'zoom' in request.vars:
+        zoom = request.vars.zoom
+    else:
+        zoom = config.zoom
+    epsg = db(db.gis_projection.epsg==projection).select()[0]
+    units = epsg.units
+    maxResolution = epsg.maxResolution
+    maxExtent = epsg.maxExtent
+    marker_default = config.marker_id
+    symbology = config.symbology_id
+
+    # Add the config to the Return
+    output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
+
+    # Feature details
+    feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+    feature.module = feature_class.module
+    feature.resource = feature_class.resource
+    if feature.module and feature.resource:
+        feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
+    else:
+        feature.resource_id = None
+    # provide an extra access so no need to duplicate popups code
+    feature.gis_location = Storage()
+    feature.gis_location = feature
+    feature.gis_feature_class = feature_class
+
+    # 1st choice for a Marker is the Feature's
+    marker = feature.marker_id
+    if not marker:
+        # 2nd choice for a Marker is the Symbology for the Feature Class
+        query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+        try:
+            marker = db(query).select()[0].marker_id
+        except:
+            if not marker:
+                # 3rd choice for a Marker is the Feature Class's
+                marker = feature_class.marker_id
+            if not marker:
+                # 4th choice for a Marker is the default
+                marker = marker_default
+    feature.marker = db(db.gis_marker.id == marker).select()[0].image
+
+    try:
+        # Metadata is M->1 to Features
+        # We use the most recent one
+        query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
+        metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+
+        # Person .represent is too complex to put into JOIN
+        contact = shn_pr_person_represent(metadata.person_id)
+
+    except:
+        metadata = None
+        contact = None
+    feature.metadata = metadata
+    feature.contact = contact
+
+    try:
+        # Images are M->1 to Features
+        # We use the most recently uploaded one
+        query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
+        image = db(query).select(orderby=~db.media_image.created_on)[0].image
+    except:
+        image = None
+    feature.image = image
+
+    # Add the feature to the Return
+    output.update(dict(feature=feature))
+
+    # Layers
+    baselayers = layers()
+    # Add the Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+
+    return output
+    
+def display_features():
+    """
+    Cut-down version of the Map Viewing Client.
+    Used as a link from the PHeader.
+    Shows all locations matching a query.
+    Most recent location is marked using a bigger Marker.
+    """
+
+    # The Feature
+    feature_id = request.args[0]
+    feature = db(db.gis_location.id == feature_id).select()[0]
+
+    # Config
+    config = db(db.gis_config.id==1).select()[0]
+    width = config.map_width
+    height = config.map_height
+    _projection = config.projection_id
+    projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    # Support bookmarks (such as from the control)
+    if 'lat' in request.vars:
+        lat = request.vars.lat
+    else:
         # ToDo: Calculate an appropriate BBOX from min lon max lon min lat max lat
         lat = feature.lat
     if 'lon' in request.vars:

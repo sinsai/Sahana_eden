@@ -1,21 +1,4 @@
 {{extend 'layout.html'}}
-
-{{include 'ext.html'}}
-<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/restful.css" />
-<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/silk.css" />
-
-{{table = request.controller + '_' + request.function}}
-
-<script type="text/javascript">//<![CDATA[
-Ext.onReady(function(){
-
-    Ext.QuickTips.init();
-    
-    {{include 'extlist.js'}}
-    
-});
-//]]></script>
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -29,3 +12,16 @@ Ext.onReady(function(){
  {{=add_btn}}
 {{except:}}
 {{pass}}
+{{include 'ext.html'}}
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/restful.css" />
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/silk.css" />
+{{table = request.controller + '_' + request.function}}
+<script type="text/javascript">//<![CDATA[
+Ext.onReady(function(){
+
+    Ext.QuickTips.init();
+    
+    {{include 'extlist.js'}}
+    
+});
+//]]></script>

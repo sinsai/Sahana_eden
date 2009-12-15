@@ -1,24 +1,9 @@
 {{extend 'layout.html'}}
-
-{{include 'ext.html'}}
-
-<script type="text/javascript">//<![CDATA[
-Ext.onReady(function(){
-
-    Ext.QuickTips.init();
-
-    {{include 'extform.js'}}
-});
-//]]></script>
-
 <div id="home">
-
 <h2>{{=response.title}}</h2>
-
 <div id="form-container">
 <!-- Ext will render form here -->
 </div>
-
 {{if self_registration:}}
     <p>
         <a id="register-btn" href="{{=URL(r=request, args='register')}}">{{=T('Register')}}</a>
@@ -28,3 +13,12 @@ Ext.onReady(function(){
         <a id="retrieve-btn" href="{{=URL(r=request, args='retrieve_password')}}">{{=T('Lost Password')}}</a>
     </p>
 </div>
+{{include 'ext.html'}}
+<script type="text/javascript">//<![CDATA[
+Ext.onReady(function(){
+
+    Ext.QuickTips.init();
+
+    {{include 'extform.js'}}
+});
+//]]></script>

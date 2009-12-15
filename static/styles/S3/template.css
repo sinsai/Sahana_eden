@@ -73,7 +73,6 @@ table { border-collapse: collapse }
 
 /* Now to layout elements... */
 #header { border-bottom: #069 1px solid; padding: 0 1em; height: 70px; position: relative; background: url(../../YOURLOGOHERE) #col_background no-repeat left top; }
-
 /* response.menu_modules */
 #menu_modules { position:relative; height:36px; background: #CACACA  url(../../img/S3menu_back.png) repeat-x; padding-top:0px; z-index:9; min-width:1000px; }
 
@@ -179,7 +178,6 @@ table { border-collapse: collapse }
 /*#home { border: 10px #fff solid; }*/
 #home p { text-align:center; text-align:justify; line-height:1.25; }
 #home h2 { font-size:16px; text-align:center; }
-#logo { padding:10px; }
 #footer { margin: 0 auto; clear: both; float: left; width:100%; text-align: center; color: #666; background: #col_background url(../../img/footback.gif) repeat-x; border-top: #fff 1px solid; padding-top:20px; }
     a.help, a:link.help { color: #fff; text-decoration: none;  margin-right:10px; }
     a:hover.help { background-color: #col_background; text-decoration: underline; }
@@ -293,6 +291,8 @@ div#pheader td { text-align: left; padding: 1px 6px 1px 1px; width: 20%; }
 #register-btn:hover,
 #retrieve-btn:hover { text-decoration: none; color: #fff; background-color: #col_btn_hover; border-right: 1px solid #col_border_btn_in; border-bottom: 1px solid #col_border_btn_in; border-left: 1px solid #000; border-top: 1px solid #000; padding: 2px 4px 2px 4px; }
 /* Home page specific */
+#logo {width: 350px; height: 70px; background: url(../../YOURLOGOHERE) top right; margin: 0 0 0 0px; }
+
 .modlist {
     list-style:none;
     clear:both;

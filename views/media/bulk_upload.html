@@ -1,7 +1,74 @@
 {{extend 'layout.html'}}
+{{try:}}
+ {{=H2(response.title)}}
+{{except:}}
+{{pass}}
+<p>
+{{=T('This screen allows you to upload a collection of photos to the server.')}}
+</p>
+<p>&nbsp;</p>
+{{=H3(T('Mapping'))}}
+<div class='form-container' id='form_question'>
+{{=T('Would you like to display the photos on the map?')}}
+<form>
+<table>
+<tr><td><label>Don't display on the map</label></td><td><input type="radio" value="No" name="method" checked="checked"/></td><td></td></tr>
+<!--
+<tr><td><label>Use Lat/Lon from file header</label></td><td><input type="radio" value="Header" name="method"/></td><td></td></tr>
+-->
+<tr><td><label>Upload GPS Track for timestamp correlation</label></td><td><input type="radio" value="Track" name="method"/></td><td></td></tr>
+</table>
+</form>
+</div>
+<p>&nbsp;</p>
+<div class='form-container' id='form_gps_track'>
+<form>
+<table>
+<tr id="gis_layer_gpx_track_id__row">
+    <td><label>{{=gpx_label}}:</label></td><td>{{=gpx_widget}}</td><td>{{=gpx_comment}}</td>
+</tr>
+<tr id="gis_location_to_feature_group_feature_group_id__row">
+    <td><label>{{=T('Layer')}}:</label></td><td>{{=fg_widget}}</td><td>{{=fg_comment}}</td>
+</tr>
+</table>
+</form>
+</div>
 
+{{=H3(T('Metadata'))}}
+<p>
+{{=T('Any available Metadata in the files will be read automatically, such as Timestamp, Author, Latitude & Longitude.')}}
+</p>
+<p>&nbsp;</p>
+<div class='form-container' id='form_question'>
+<form>
+<p>
+{{=T('Metadata can be supplied here to be applied to all uploaded photos, if desired.')}}
+</p>
+<table>
+<tr><td><label>{{=T('Do you want to over-write the file metadata with new default values?')}}</label></td><td><input type='checkbox' name='overwrite' id='overwrite'/></td><td></td></tr>
+</table>
+</form>
+</div>
+<p>&nbsp;</p>
+<div class='form-container' id='form_metadata'>
+{{=form}}
+</div>
+<div id='flash_uploader'>
+</div>
+<div id='js_uploader'>
+<!-- Backup option for when Flash not available in client or failing due to Proxy issues -->
+<form id="upload-confirmation" action="{{=URL(r=request)}}" method="POST">
+        <textarea id='file-list' name="file-list"></textarea>
+        <div id='show-dialog-btn'></div>
+        <!-- <input type="submit" value="confirm submissions"/> -->
+    </form>
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=list_btn}}
+{{except:}}
+{{pass}}
 {{include 'thickbox.html'}}
-
 <!-- Currently requires Ext20. To be replaced with main Ext3 -->
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-2.2.1/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/Ext.ux.UploadDialog.css" />
@@ -20,9 +87,7 @@
 <script type="text/javascript" src="http://extjs.cachefly.net/ext-2.2.1/ext-all.js"></script>
  -->
 {{pass}}
-
 <script type="text/javascript">//<![CDATA[
-
 // Ext for the Multiple Upload Widget
 Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/scripts/ext/resources/images/default/s.gif';
 
@@ -170,74 +235,3 @@ $(function() {
     })
 });
 //]]></script>
-
-{{try:}}
- {{=H2(response.title)}}
-{{except:}}
-{{pass}}
-<p>
-{{=T('This screen allows you to upload a collection of photos to the server.')}}
-</p>
-<p>&nbsp;</p>
-{{=H3(T('Mapping'))}}
-<div class='form-container' id='form_question'>
-{{=T('Would you like to display the photos on the map?')}}
-<form>
-<table>
-<tr><td><label>Don't display on the map</label></td><td><input type="radio" value="No" name="method" checked="checked"/></td><td></td></tr>
-<!--
-<tr><td><label>Use Lat/Lon from file header</label></td><td><input type="radio" value="Header" name="method"/></td><td></td></tr>
--->
-<tr><td><label>Upload GPS Track for timestamp correlation</label></td><td><input type="radio" value="Track" name="method"/></td><td></td></tr>
-</table>
-</form>
-</div>
-<p>&nbsp;</p>
-<div class='form-container' id='form_gps_track'>
-<form>
-<table>
-<tr id="gis_layer_gpx_track_id__row">
-    <td><label>{{=gpx_label}}:</label></td><td>{{=gpx_widget}}</td><td>{{=gpx_comment}}</td>
-</tr>
-<tr id="gis_location_to_feature_group_feature_group_id__row">
-    <td><label>{{=T('Layer')}}:</label></td><td>{{=fg_widget}}</td><td>{{=fg_comment}}</td>
-</tr>
-</table>
-</form>
-</div>
-
-{{=H3(T('Metadata'))}}
-<p>
-{{=T('Any available Metadata in the files will be read automatically, such as Timestamp, Author, Latitude & Longitude.')}}
-</p>
-<p>&nbsp;</p>
-<div class='form-container' id='form_question'>
-<form>
-<p>
-{{=T('Metadata can be supplied here to be applied to all uploaded photos, if desired.')}}
-</p>
-<table>
-<tr><td><label>{{=T('Do you want to over-write the file metadata with new default values?')}}</label></td><td><input type='checkbox' name='overwrite' id='overwrite'/></td><td></td></tr>
-</table>
-</form>
-</div>
-<p>&nbsp;</p>
-<div class='form-container' id='form_metadata'>
-{{=form}}
-</div>
-<div id='flash_uploader'>
-</div>
-<div id='js_uploader'>
-<!-- Backup option for when Flash not available in client or failing due to Proxy issues -->
-<form id="upload-confirmation" action="{{=URL(r=request)}}" method="POST">
-        <textarea id='file-list' name="file-list"></textarea>
-        <div id='show-dialog-btn'></div>
-        <!-- <input type="submit" value="confirm submissions"/> -->
-    </form>
-</div>
-<p>&nbsp;</p>
-{{try:}}
- {{=list_btn}}
-{{except:}}
-{{pass}}
-

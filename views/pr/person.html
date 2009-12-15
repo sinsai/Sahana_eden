@@ -1,11 +1,4 @@
 {{extend 'layout.html'}}
-
-<script type="text/javascript">//<![CDATA[
-$(document).ready(function() {
-	$('#list').dataTable();
-} );
-//]]></script>
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -33,3 +26,8 @@ $(document).ready(function() {
  {{=add_btn}}
 {{except:}}
 {{pass}}
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function() {
+	$('#list').dataTable();
+} );
+//]]></script>

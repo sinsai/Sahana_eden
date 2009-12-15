@@ -5,7 +5,7 @@ This file was developed by Fran Boon as a web2py extension.
 """
 
 #import os, re, copy, sys, types, datetime, time, cgi, hmac
-#try: 
+#try:
 #    import hashlib
 #    have_hashlib = True
 #except:
@@ -28,7 +28,7 @@ class IS_LAT(object):
 
     latitude has to be in degrees between -90 & 90
     """
-    def __init__(self, 
+    def __init__(self,
             error_message = 'Latitude/Northing should be between -90 & 90!'):
         self.minimum = -90
         self.maximum = 90
@@ -50,7 +50,7 @@ class IS_LON(object):
 
     longitude has to be in degrees between -180 & 180
     """
-    def __init__(self, 
+    def __init__(self,
             error_message = 'Longitude/Easting should be between -180 & 180!'):
         self.minimum = -180
         self.maximum = 180
@@ -222,7 +222,7 @@ class IS_NOT_ONE_OF(IS_NOT_IN_DB):
     """
     Filtered version of IS_NOT_IN_DB():
         Understands the 'deleted' field.
-    
+
     example::
 
         INPUT(_type='text', _name='name', requires=IS_NOT_ONE_OF(db, db.table))
@@ -234,7 +234,7 @@ class IS_NOT_ONE_OF(IS_NOT_IN_DB):
         if value in self.allowed_override:
             return (value, None)
         (tablename, fieldname) = str(self.field).split('.')
-        _table = self.dbset._db[tablename] 
+        _table = self.dbset._db[tablename]
         field = _table[fieldname]
         query = (field == value)
         if 'deleted' in _table:
@@ -281,7 +281,7 @@ class IS_UTC_OFFSET(Validator):
 
             offset = self.get_offset_value(_offset_str)
 
-            if offset and offset>-86340 and offset <86340:
+            if offset is not None and offset>-86340 and offset <86340:
                 # Add a leading 'UTC ',
                 # otherwise leading '+' and '0' will be stripped away by web2py
                 return ('UTC '+_offset_str[-5:], None)

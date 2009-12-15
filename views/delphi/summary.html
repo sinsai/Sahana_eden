@@ -1,13 +1,4 @@
-{{extend 'layout.html'}}{{ #TODO: Move styles and scripts to static/ }}
-
-<script type="text/javascript" language="javascript">//<![CDATA[
-$(document).ready(function(){
-	var can_vote = {{=(can_vote and "true" or "false")}};
-	$("#delphi_pairs tr:even").css({background: "#ccc"});
-	$(".bkclear").css({background: "none"});
-});
-//]]></script>
-
+{{extend 'layout.html'}}
 <div id="delphi_problem_header">
 	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
 	{{ pass }}
@@ -18,7 +9,6 @@ $(document).ready(function(){
 <h1>{{= problem.title }}</h1>
 </div>
 <p><b>{{= T("Description")}}:</b> {{= problem.description }}</p>
-
 <p><b>{{= T("Criteria")}}:</b> {{= problem.criteria }}</p>
 <hr/>
 <p>{{= T("List of Items:")}}</p>
@@ -33,3 +23,10 @@ $(document).ready(function(){
 </form>
 <p><a href="{{= URL(r=request, f='vote', args=problem.id) }}">{{= T("Vote") }}</a></p>
 {{ pass }}
+<script type="text/javascript" language="javascript">//<![CDATA[
+$(document).ready(function(){
+	var can_vote = {{=(can_vote and "true" or "false")}};
+	$("#delphi_pairs tr:even").css({background: "#ccc"});
+	$(".bkclear").css({background: "none"});
+});
+//]]></script>

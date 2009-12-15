@@ -27,6 +27,10 @@ def user():
     # Add newly-registered users to Person Registry & 'Authenticated' role
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
+    if request.args and request.args[0]=="profile":
+        auth.settings.table_user.utc_offset.readable = True
+        auth.settings.table_user.utc_offset.writable = True
+
     form = auth()
 
     self_registration = db().select(db.s3_setting.self_registration)[0].self_registration

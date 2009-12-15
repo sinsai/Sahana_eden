@@ -105,7 +105,7 @@ class MENU2(DIV):
     Each list has 3 options: Name, Right & Link
     (NB In Web2Py's MENU, the 2nd option is 'Active')
     Right=True means that menu item floats right
-    
+
     Optional arguments
       _class: defaults to 'S3menuInner'
       ul_main_class: defaults to 'S3menuUL'
@@ -360,7 +360,7 @@ class AuthS3(Auth):
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    db.Field('utc_offset'),
+                    db.Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
                     db.Field('username', length=128, default=''),
                     db.Field('email', length=512, default='',
                             label=self.messages.label_email),
@@ -384,7 +384,7 @@ class AuthS3(Auth):
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    db.Field('utc_offset'),
+                    db.Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
                     #db.Field('username', length=128, default=''),
                     db.Field('email', length=512, default='',
                             label=self.messages.label_email),
@@ -656,6 +656,7 @@ class AuthS3(Auth):
         # S3: Don't allow registration if disabled
         db = self.db
         self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
+        utc_offset = db().select(db.s3_setting.utc_offset)[0].utc_offset
         if not self_registration:
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=['login']))
@@ -673,7 +674,11 @@ class AuthS3(Auth):
             onaccept = self.settings.register_onaccept
         if log == DEFAULT:
             log = self.messages.register_log
+
         user = self.settings.table_user
+
+        user.utc_offset.default = utc_offset
+
         passfield = self.settings.password_field
         form = SQLFORM(user, hidden=dict(_next=request.vars._next),
                        showid=self.settings.showid,

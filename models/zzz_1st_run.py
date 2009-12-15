@@ -94,6 +94,14 @@ if empty:
             audit_read = False,
             audit_write = False
         )
+    
+    table = 'lms_catalog'
+    if not db(db[table].id).count():
+        db[table].insert(
+            name="Default",
+            description="Default Catalog",
+            comments="All items are by default added to this Catalog"
+        )
 
     # Messaging
     table = 'mobile_setting'
@@ -506,6 +514,23 @@ if empty:
     table = 'admin_theme'
     if not db(db[table].id).count():
         db[table].insert(
+            name = T('Sahana Steel'),
+            logo = 'img/sahanapy_logo.png',
+            footer = 'footer.html',
+            text_direction = 'ltr',
+            col_background = 'dbdbdb',
+            col_menu = '0066cc',
+            col_highlight = '0077aa',
+            col_txt_background = 'f3f6ff',
+            col_txt_border = 'c6d1f5',
+            col_txt_underline = '003366',
+            col_txt = 'eeeeee',
+            col_input = 'ffffcc',
+            col_border_btn_out = 'c6d1f5',
+            col_border_btn_in = '4589ce',
+            col_btn_hover = '3377bb',
+        )
+        db[table].insert(
             name = T('Sahana Blue'),
             logo = 'img/sahanapy_logo.png',
             footer = 'footer.html',
@@ -513,10 +538,10 @@ if empty:
             col_background = '336699',
             col_menu = '0066cc',
             col_highlight = '0077aa',
-            col_txt = '006699',
             col_txt_background = 'f3f6ff',
             col_txt_border = 'c6d1f5',
             col_txt_underline = '003366',
+            col_txt = '006699',
             col_input = 'ffffcc',
             col_border_btn_out = '6699cc',
             col_border_btn_in = '4589ce',
@@ -530,10 +555,10 @@ if empty:
             col_background = '337733',
             col_menu = 'cc7722',
             col_highlight = '338833',
-            col_txt = '006699',
             col_txt_background = 'f3f6ff',
             col_txt_border = 'c6d1f5',
             col_txt_underline = '003366',
+            col_txt = '006699',
             col_input = 'ffffcc',
             col_border_btn_out = '6699cc',
             col_border_btn_in = '4589ce',

@@ -23,22 +23,22 @@ response.menu_options = [
         [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
         [T('Whereabouts'), False, URL(r=request, f='person', args='presence')],
     ]],
-    [T('Anamnesis'), False, URL(r=request, f='index'),[
-        [T('Disabilities'), False, URL(r=request, f='index')],
-        [T('Diseases'), False, URL(r=request, f='index')],
-        [T('Injuries'), False, URL(r=request, f='index')],
-        [T('Treatments'), False, URL(r=request, f='index')],
+    [T('Anamnesis'), False, URL(r=request, f='person', args=['anamnesis']),[
+        [T('Disabilities'), False, URL(r=request,  f='person', args=['disabilities'])],
+        [T('Diseases'), False, URL(r=request,  f='person', args=['diseases'])],
+        [T('Injuries'), False, URL(r=request,  f='person', args=['injuries'])],
+        [T('Treatments'), False, URL(r=request,  f='person', args=['treatments'])],
     ]],
-    [T('Status'), False, URL(r=request, f='index'),[
-        [T('Physical'), False, URL(r=request, f='index')],
-        [T('Mental'), False, URL(r=request, f='index')],
-        [T('Social'), False, URL(r=request, f='index')],
-        [T('ADL'), False, URL(r=request, f='index')],
+    [T('Status'), False, URL(r=request, f='person', args=['care_status_physical']),[
+        [T('Physical'), False, URL(r=request, f='person', args=['care_status_physical'])],
+        [T('Mental'), False, URL(r=request, f='person', args=['care_status_mental'])],
+        [T('Social'), False, URL(r=request, f='person', args=['care_status_social'])],
+        [T('ADL'), False, URL(r=request, f='person', args=['care_status_adl'])],
     ]],
-    [T('Care Report'), False, URL(r=request, f='index'),[
-        [T('Problems'), False, URL(r=request, f='index')],
-        [T('Measures'), False, URL(r=request, f='index')],
-        [T('Planning'), False, URL(r=request, f='index')],
+    [T('Care Report'), False, URL(r=request, f='person', args=['care_report_measures']),[
+        [T('Problems'), False, URL(r=request, f='person', args=['care_report_problems'])],
+        [T('Measures'), False, URL(r=request, f='person', args=['care_report_measures'])],
+        [T('Planning'), False, URL(r=request, f='person', args=['care_report_planning'])],
     ]],
 ]
 

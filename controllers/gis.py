@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'gis'
 # Current Module (for sidebar title)
@@ -44,7 +44,7 @@ db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="t
 # Web2Py Tools functions
 def download():
     "Download a file."
-    return response.download(request, db) 
+    return response.download(request, db)
 
 # S3 framework functions
 def index():
@@ -54,16 +54,16 @@ def index():
 def test():
     "Test server-parsed GIS functions"
     return dict()
-    
+
 def apikey():
     "RESTlike CRUD controller"
     resource = 'apikey'
     table = module + '_' + resource
-    
+
     # Model options
     # FIXME
     # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
-    db[table].name.requires = IS_IN_SET(['google', 'multimap', 'yahoo']) 
+    db[table].name.requires = IS_IN_SET(['google', 'multimap', 'yahoo'])
     db[table].name.label = T("Service")
     #db[table].apikey.requires = THIS_NOT_IN_DB(db(db[table].name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
     db[table].apikey.requires = IS_NOT_EMPTY()
@@ -84,14 +84,14 @@ def apikey():
     msg_record_deleted = T('Key deleted')
     msg_list_empty = T('No Keys currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def config():
     "RESTlike CRUD controller"
     resource = 'config'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
     db[table].lat.requires = IS_LAT()
@@ -126,14 +126,14 @@ def config():
     msg_record_deleted = T('Config deleted')
     msg_list_empty = T('No Configs currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def feature_class():
     "RESTlike CRUD controller"
     resource = 'feature_class'
     table = module + '_' + resource
-    
+
     # Model options
     resource_opts = {
         'shelter':T('Shelter'),
@@ -166,14 +166,14 @@ def feature_class():
     msg_record_deleted = T('Feature Class deleted')
     msg_list_empty = T('No Feature Classes currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource)
 
 def feature_group():
     "RESTlike CRUD controller"
     resource = 'feature_group'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
     #db[table].author.requires = IS_ONE_OF(db, 'auth_user.id','%(id)s: %(first_name)s %(last_name)s')
@@ -199,15 +199,15 @@ def feature_group():
     msg_record_deleted = T('Feature Group deleted')
     msg_list_empty = T('No Feature Groups currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource)
 
-    
+
 def location_to_feature_group():
     "RESTlike CRUD controller"
     resource = 'location_to_feature_group'
     table = module + '_' + resource
-    
+
     # Model options
 
     # CRUD Strings
@@ -225,14 +225,14 @@ def location_to_feature_group():
     #msg_record_deleted = T('Feature Group deleted')
     #msg_list_empty = T('No Feature Groups currently defined')
     #s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource)
 
 def location():
     "RESTlike CRUD controller"
     resource = 'location'
     table = module + '_' + resource
-    
+
     # Model options
     # used in multiple controllers, so at the top of the file
 
@@ -251,14 +251,14 @@ def location():
     msg_record_deleted = T('Location deleted')
     msg_list_empty = T('No Locations currently available')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
 
 def marker():
     "RESTlike CRUD controller"
     resource = 'marker'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
     db[table].name.label = T('Name')
@@ -280,14 +280,14 @@ def marker():
     msg_record_deleted = T('Marker deleted')
     msg_list_empty = T('No Markers currently available')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource)
 
 def projection():
     "RESTlike CRUD controller"
     resource = 'projection'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
     db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -320,20 +320,20 @@ def projection():
     msg_record_deleted = T('Projection deleted')
     msg_list_empty = T('No Projections currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, deletable=False)
 
 def track():
     "RESTlike CRUD controller"
     resource = 'track'
     table = module + '_' + resource
-    
+
     # Model options
     # used in multiple controllers, so defined in model
-    
+
     # CRUD Strings
     # used in multiple controllers, so defined in model
-    
+
     return shn_rest_controller(module, resource)
 
 title_create = T('Add Layer')
@@ -347,12 +347,12 @@ label_create_button = T('Add Layer')
 msg_record_created = T('Layer added')
 msg_record_modified = T('Layer updated')
 msg_record_deleted = T('Layer deleted')
-    
+
 def layer_openstreetmap():
     "RESTlike CRUD controller"
     resource = 'layer_openstreetmap'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].subtype.requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)
 
@@ -360,14 +360,14 @@ def layer_openstreetmap():
     label_list_button = T('List OpenStreetMap Layers')
     msg_list_empty = T('No OpenStreetMap Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, deletable=False)
 
 def layer_google():
     "RESTlike CRUD controller"
     resource = 'layer_google'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].subtype.requires = IS_IN_SET(gis_layer_google_subtypes)
 
@@ -375,14 +375,14 @@ def layer_google():
     label_list_button = T('List Google Layers')
     msg_list_empty = T('No Google Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, deletable=False)
 
 def layer_yahoo():
     "RESTlike CRUD controller"
     resource = 'layer_yahoo'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].subtype.requires = IS_IN_SET(gis_layer_yahoo_subtypes)
 
@@ -390,14 +390,14 @@ def layer_yahoo():
     label_list_button = T('List Yahoo Layers')
     msg_list_empty = T('No Yahoo Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, deletable=False)
 
 def layer_bing():
     "RESTlike CRUD controller"
     resource = 'layer_bing'
     table = module + '_' + resource
-    
+
     # Model options
     db[table].subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
 
@@ -405,22 +405,22 @@ def layer_bing():
     label_list_button = T('List Bing Layers')
     msg_list_empty = T('No Bing Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource, deletable=False)
 
 def layer_gpx():
     "RESTlike CRUD controller"
     resource = 'layer_gpx'
     table = module + '_' + resource
-    
+
     # Model options
     # Needed in multiple controllers, so defined in Model
-    
+
     # CRUD Strings
     label_list_button = T('List GPX Layers')
     msg_list_empty = T('No GPX Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
-    
+
     return shn_rest_controller(module, resource)
 
 # Module-specific functions
@@ -500,7 +500,7 @@ def feature_create_map():
     baselayers = layers()
 
     return dict(title=title, module_name=module_name, form=form, projection=projection, openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing)
-    
+
 # Feature Groups
 def feature_group_contents():
     "Many to Many CRUD Controller"
@@ -510,7 +510,7 @@ def feature_group_contents():
     feature_group = request.args[0]
     tables = [db.gis_feature_class_to_feature_group, db.gis_location_to_feature_group]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
-    
+
     title = db.gis_feature_group[feature_group].name
     feature_group_description = db.gis_feature_group[feature_group].description
     # Start building the Return with the common items
@@ -523,7 +523,7 @@ def feature_group_contents():
         # Audit
         crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'feature_group_contents', 'html')
         # Display a List_Create page with checkboxes to remove items
-        
+
         # Feature Classes
         query = (tables[0].feature_group_id == feature_group) & (tables[0].deleted == False)
         sqlrows = db(query).select()
@@ -540,7 +540,7 @@ def feature_group_contents():
             id_link = A(id, _href=URL(r=request, f='feature_class', args=['read', id]))
             checkbox = INPUT(_type="checkbox", _value="on", _name='feature_class_' + str(id), _class="remove_item")
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-            
+
         # Features
         query = (tables[1].feature_group_id == feature_group) & (tables[1].deleted == False)
         sqlrows = db(query).select()
@@ -563,12 +563,12 @@ def feature_group_contents():
             id_link = A(id, _href=URL(r=request, f='location', args=['read', id]))
             checkbox = INPUT(_type="checkbox", _value="on", _name='feature_' + str(id), _class="remove_item")
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-        
+
         table_header = THEAD(TR(TH('ID'), TH('Name'), TH(T('Description')), TH(T('Remove'))))
         table_footer = TFOOT(TR(TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')))), _colspan=3, _align='right')
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='feature_group_update_items', args=[feature_group])))
         subtitle = T("Contents")
-        
+
         crud.messages.submit_button=T('Add')
         # Check for duplicates before Item is added to DB
         crud.settings.create_onvalidation = lambda form: feature_group_dupes(form)
@@ -597,7 +597,7 @@ def feature_group_contents():
             description = db.gis_feature_class[id].description
             id_link = A(id, _href=URL(r=request, f='feature_class', args=['read', id]))
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), _class=theclass, _align='right'))
-            
+
         # Features
         query = (tables[1].feature_group_id == feature_group) & (tables[1].deleted == False)
         sqlrows = db(query).select()
@@ -619,15 +619,15 @@ def feature_group_contents():
                 description = ''
             id_link = A(id, _href=URL(r=request, f='location', args=['read', id]))
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(description, _align='left'), _class=theclass, _align='right'))
-        
+
         table_header = THEAD(TR(TH('ID'), TH('Name'), TH(T('Description'))))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
-        
+
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/feature_group_contents_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
     return output
-	
+
 def feature_group_dupes(form):
     "Checks for duplicate Feature/FeatureClass before adding to DB"
     feature_group = form.vars.feature_group
@@ -648,7 +648,7 @@ def feature_group_dupes(form):
         redirect(URL(r=request, args=feature_group))
     else:
         return
-    
+
 def feature_group_update_items():
     "Update a Feature Group's items (Feature Classes & Features)"
     if len(request.args) == 0:
@@ -684,7 +684,7 @@ def map_service_catalogue():
     subtitle = T('List Layers')
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, subtitle=subtitle)
-    
+
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap
     authorised = shn_has_permission('update', table)
@@ -713,7 +713,7 @@ def map_service_catalogue():
                 else:
                     enabled = INPUT(_type="checkbox", _name=label)
                 item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
-                
+
         table_header = THEAD(TR(TH('Layer'), TH('Description'), TH('Enabled?')))
         table_footer = TFOOT(TR(TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')), _colspan=3)), _align='right')
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='layers_enable')))
@@ -740,7 +740,7 @@ def map_service_catalogue():
                 else:
                     enabled = INPUT(_type="checkbox", _disabled="disabled")
                 item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
-                
+
         table_header = THEAD(TR(TH('Layer'), TH('Description'), TH('Enabled?')))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
 
@@ -759,7 +759,7 @@ def layers():
         for subtype in gis_layer_openstreetmap_subtypes:
             if layer.subtype == subtype:
                 layers.openstreetmap['%s' % subtype] = layer.name
-    
+
     # Google
     layers.google = Storage()
     # Check for Google Key
@@ -775,7 +775,7 @@ def layers():
         # Redirect to Key entry screen
         session.warning = T('Please enter a Google Key if you wish to use Google Layers')
         redirect(URL(r=request, f=apikey))
-            
+
     # Yahoo
     layers.yahoo = Storage()
     # Check for Yahoo Key
@@ -791,7 +791,7 @@ def layers():
         # Redirect to Key entry screen
         session.warning = T('Please enter a Yahoo Key if you wish to use Yahoo Layers')
         redirect(URL(r=request, f=apikey))
-        
+
     # Bing (Virtual Earth)
     # Broken in GeoExt: http://www.geoext.org/pipermail/users/2009-December/000393.html
     #layers.bing = Storage()
@@ -800,12 +800,12 @@ def layers():
     #    for subtype in gis_layer_bing_subtypes:
     #        if layer.subtype == subtype:
     #            layers.bing['%s' % subtype] = layer.name
-                
+
     return layers
-    
+
 def layers_enable():
     "Enable/Disable Layers"
-    
+
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap
     authorised = shn_has_permission('update', table)
@@ -850,13 +850,13 @@ def map_viewing_client():
     Map Viewing Client.
     Main user UI for viewing the Maps with associated Features
     """
-    
+
     title = T('Map Viewing Client')
     response.title = title
 
     # Start building the Return with the Framework
     output = dict(title=title, module_name=module_name)
-    
+
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width
@@ -882,10 +882,10 @@ def map_viewing_client():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
-                
+
     # Add the Config to the Return
     output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
-    
+
     # Layers
     baselayers = layers()
     # Add the Layers to the Return
@@ -913,14 +913,14 @@ def map_viewing_client():
         # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
         features[feature_group.id] = features1 | features2
         for feature in features[feature_group.id]:
-            
+
             feature.module = feature.gis_feature_class.module
             feature.resource = feature.gis_feature_class.resource
             if feature.module and feature.resource:
                 feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
             else:
                 feature.resource_id = None
-            
+
             # 1st choice for a Marker is the Feature's
             marker = feature.gis_location.marker_id
             if not marker:
@@ -936,16 +936,16 @@ def map_viewing_client():
                         # 4th choice for a Marker is the default
                         marker = marker_default
             feature.marker = db(db.gis_marker.id == marker).select()[0].image
-            
+
             try:
                 # Metadata is M->1 to Features
                 # We use the most recent one
                 query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
                 metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
-                
+
                 # Person .represent is too complex to put into JOIN
                 contact = shn_pr_person_represent(metadata.person_id)
-                
+
             except:
                 metadata = None
                 contact = None
@@ -964,7 +964,7 @@ def map_viewing_client():
     # Add the Features to the Return
     #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
     output.update(dict(feature_groups=feature_groups, features=features))
-    
+
     return output
 
 def display_feature():
@@ -972,11 +972,11 @@ def display_feature():
     Cut-down version of the Map Viewing Client.
     Used as a .represent for location_id to show just this feature on the map.
     """
-    
+
     # The Feature
     feature_id = request.args[0]
     feature = db(db.gis_location.id == feature_id).select()[0]
-    
+
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width
@@ -1003,10 +1003,10 @@ def display_feature():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
-                
+
     # Add the config to the Return
     output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
-    
+
     # Feature details
     feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
     feature.module = feature_class.module
@@ -1019,7 +1019,7 @@ def display_feature():
     feature.gis_location = Storage()
     feature.gis_location = feature
     feature.gis_feature_class = feature_class
-    
+
     # 1st choice for a Marker is the Feature's
     marker = feature.marker_id
     if not marker:
@@ -1035,16 +1035,16 @@ def display_feature():
                 # 4th choice for a Marker is the default
                 marker = marker_default
     feature.marker = db(db.gis_marker.id == marker).select()[0].image
-    
+
     try:
         # Metadata is M->1 to Features
         # We use the most recent one
         query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
         metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
-        
+
         # Person .represent is too complex to put into JOIN
         contact = shn_pr_person_represent(metadata.person_id)
-        
+
     except:
         metadata = None
         contact = None
@@ -1059,10 +1059,10 @@ def display_feature():
     except:
         image = None
     feature.image = image
-            
+
     # Add the feature to the Return
     output.update(dict(feature=feature))
-    
+
     # Layers
     baselayers = layers()
     # Add the Layers to the Return

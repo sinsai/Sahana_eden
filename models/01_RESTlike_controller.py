@@ -23,7 +23,9 @@ XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data 
 shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
-    lmx = "application/xml"
+    lmx = "application/xml",
+    georss = "application/rss+xml",
+    kml = "application/vnd.google-earth.kml+xml"
 ) #: Supported XML output formats and corresponding response headers
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
@@ -532,7 +534,7 @@ def import_json(jr, onvalidation=None, onaccept=None):
         if os.path.exists(template_file):
             tree = s3xrc.xml.transform(tree, template_file)
             if not tree:
-                session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
         else:
             session.error = str(T("XSL Template Not Found: ")) + \
@@ -556,7 +558,7 @@ def import_json(jr, onvalidation=None, onaccept=None):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.error, tree=tree)
+        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)
@@ -584,10 +586,10 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         if os.path.exists(template_file):
             tree = s3xrc.xml.transform(tree, template_file)
             if not tree:
-                session.error = str(T("XSL Transformation Error: ")) + s3xml.error
+                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
         else:
-            session.error = str(T("XSL Template Not Found: ")) + \
+            session.error = str(T("XSLT Template Not Found: ")) + \
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
             #redirect(URL(r=request, f="index"))
             item = json_message(False, 501, session.error)
@@ -604,7 +606,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.error, tree=tree)
+        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)
@@ -945,25 +947,26 @@ def shn_custom_view(jr, default_name, format=None):
 
     """ Check for custom view """
 
+    prefix = jr.request.controller
+
     if jr.component:
 
         custom_view = '%s_%s_%s' % (jr.name, jr.component_name, default_name)
-        _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
+        _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
         if not os.path.exists(_custom_view):
             custom_view = '%s_%s' % (jr.name, default_name)
-            _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
+            _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
     else:
         if format:
             custom_view = '%s_%s_%s' % (jr.name, default_name, format)
         else:
             custom_view = '%s_%s' % (jr.name, default_name)
-        _custom_view = os.path.join(request.folder, 'views', jr.prefix, custom_view)
-
+        _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
     if os.path.exists(_custom_view):
-        response.view = jr.prefix + '/' + custom_view
+        response.view = prefix + '/' + custom_view
     else:
         if format:
             response.view = default_name.replace('.html', '_%s.html' % format)
@@ -1013,6 +1016,10 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
         record_id = jr.id
         href_delete = URL(r=jr.request, f=jr.name, args=['delete', record_id])
         href_edit = URL(r=jr.request, f=jr.name, args=['update', record_id])
+
+    authorised = shn_has_permission('update', table, record_id)
+    if authorised:
+        redirect(href_edit)
 
     authorised = shn_has_permission('read', table, record_id)
     if authorised:

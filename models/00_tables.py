@@ -148,6 +148,7 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('admin_name'),
                 Field('admin_email'),
                 Field('admin_tel'),
+                Field('utc_offset', length=16, default=S3_UTC_OFFSET), # default UTC offset of the instance
                 Field('theme', db.admin_theme),
                 Field('debug', 'boolean', default=False),
                 Field('self_registration', 'boolean', default=True),

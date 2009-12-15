@@ -1,40 +1,8 @@
 {{extend 'layout.html'}}
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-
-{{include 'admin/resources.js'}}
-
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // Hide the textarea
-    $("#textarea").hide();
-    // When the Representation changes:
-	$("select#representation").change(function() {
-        // What is the new representation?
-        representation=$(this).val();
-        if (representation=="csv") {
-            // Hide the textarea
-            $("#textarea").hide();
-            // Show the file upload
-            $("#file").show();
-        } else if (representation=="json") {
-            // Hide the file upload
-            $("#file").hide();
-            // Show the textarea
-            $("#textarea").show();
-        }
-    })
-    $("input#submit").click(function() {
-        // Set the Action URL
-        $("form#poster").attr("action","{{=URL3(r=request)}}/"+$("select#module").val()+"/"+$("select#resource").val()+"/create?format="+$("select#representation").val());
-        return True;
-    })
-});
-//]]></script>
-
 Import multiple tables as CSV:{{=A(SPAN("[Help]"), _class="tooltip", _title=T("Import multiple tables as CSV|This is the way to transfer data between machines as it maintains referential integrity...duplicate data should be removed manually 1st!"))}}
 <div class='form-container'>
 <form id="multi" action="{{=URL(r=request, f='import_csv')}}" method="POST" enctype="multipart/form-data">
@@ -81,3 +49,31 @@ Selective import:
 </form>
 </div>
 <div id='results'></div>
+{{include 'admin/resources.js'}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Hide the textarea
+    $("#textarea").hide();
+    // When the Representation changes:
+	$("select#representation").change(function() {
+        // What is the new representation?
+        representation=$(this).val();
+        if (representation=="csv") {
+            // Hide the textarea
+            $("#textarea").hide();
+            // Show the file upload
+            $("#file").show();
+        } else if (representation=="json") {
+            // Hide the file upload
+            $("#file").hide();
+            // Show the textarea
+            $("#textarea").show();
+        }
+    })
+    $("input#submit").click(function() {
+        // Set the Action URL
+        $("form#poster").attr("action","{{=URL3(r=request)}}/"+$("select#module").val()+"/"+$("select#resource").val()+"/create?format="+$("select#representation").val());
+        return True;
+    })
+});
+//]]></script>

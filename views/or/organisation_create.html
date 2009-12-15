@@ -1,5 +1,5 @@
 {{extend 'layout.html'}}
-
+{{include '_create.html'}}
 {{if session.s3.security_policy==1:}}
     <script type="text/javascript">//<![CDATA[
     $(function() {
@@ -7,7 +7,5 @@
             $("#or_organisation_admin__row").hide();
     });
     //]]></script>
-{{else:}}
 {{pass}}
 
-{{include '_create.html'}}

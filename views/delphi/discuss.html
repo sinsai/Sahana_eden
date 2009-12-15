@@ -1,23 +1,4 @@
 {{extend 'layout.html'}}
-
-<script type="text/javascript" language="javascript">//<![CDATA[
-$(document).ready(function(){
-	
-});
-function quote(pid) {
-	var t = "> Originally by " + $("#"+ pid + " .delphi_post_prefix").html() + "\n";
-	var post = $("#"+ pid + " .delphi_post_text").html().split("\n");
-	for (l in post) {
-		if (post[l].substr(0, 4) == "&gt;")
-			t += ">" + post[l] + "\n";
-		else
-			t += "> " + post[l] + "\n";
-	}
-	t += String($("#delphi_forum_post_post").html());
-	$("#delphi_forum_post_post").html(t);
-}
-//]]></script>
-
 <div id="delphi_problem_header">
 	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
 	{{ pass }}
@@ -43,5 +24,19 @@ function quote(pid) {
 {{ pass }}{{ pass }}
 {{ if can_post: }}
 <br />
-{{= form }}
-{{ pass }}
+{{=form}}
+{{pass}}
+<script type="text/javascript" language="javascript">//<![CDATA[
+function quote(pid) {
+	var t = "> Originally by " + $("#"+ pid + " .delphi_post_prefix").html() + "\n";
+	var post = $("#"+ pid + " .delphi_post_text").html().split("\n");
+	for (l in post) {
+		if (post[l].substr(0, 4) == "&gt;")
+			t += ">" + post[l] + "\n";
+		else
+			t += "> " + post[l] + "\n";
+	}
+	t += String($("#delphi_forum_post_post").html());
+	$("#delphi_forum_post_post").html(t);
+}
+//]]></script>

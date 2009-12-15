@@ -1,6 +1,4 @@
 {{extend 'layout.html'}}
-{{include 'dataTables.html'}}
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -29,3 +27,4 @@
  {{=add_btn}}
 {{except:}}
 {{pass}}
+{{include 'dataTables.html'}}

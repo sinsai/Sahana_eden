@@ -1,15 +1,4 @@
 {{extend 'layout.html'}}
-<script><!--
-$(document).ready(function(){
-  $("table.sortable tbody tr").mouseover( function() {
-     $(this).addClass("highlight"); }).mouseout( function() { 
-     $(this).removeClass("highlight"); });
-  $('table.sortable tbody tr:odd').addClass('odd');
-  $('table.sortable tbody tr:even').addClass('even');
-
-});
-//--></script>
-
 {{if request.function=='index':}}
   <h1>{{=T("Available databases and tables")}}</h1>
   {{if not databases:}}{{=T("No databases in this application")}}{{pass}}
@@ -20,8 +9,6 @@ $(document).ready(function(){
     <br /><br />
     {{pass}}
   {{pass}}
-
-
 {{elif request.function=='select':}}
   <h1>{{=XML(str(T("database %s select"))%A(request.args[0],_href=URL(r=request,f='index'))) }}
   </h1>
@@ -58,18 +45,12 @@ $(document).ready(function(){
   </h1>
   <h2>{{=T("New Record")}}</h2><br/>
   {{=form}}
-
-
-
 {{elif request.function=='update':}}
   <h1>{{=T("database")}} {{=A(request.args[0],_href=URL(r=request,f='index'))}}
     {{=T("table")}} {{=A(request.args[1],_href=URL(r=request,f='select',args=request.args[0],vars=dict(query='%s.%s.id>0'%tuple(request.args[:2]))))}}
     {{=T("record id")}} {{=A(request.args[2],_href=URL(r=request,f='update',args=request.args[:3]))}}
   </h1>
   <h2>{{=T("Edit current record")}}</h2><br/><br/>{{=form}}
-
-
-
 {{elif request.function=='state':}}
   <h1>{{=T("Internal State")}}</h1>
   <h2>{{=T("Current request")}}</h2>
@@ -79,3 +60,13 @@ $(document).ready(function(){
   <br/><h2>{{=T("Current session")}}</h2>
   {{=BEAUTIFY(session)}}
 {{pass}}
+<script><!--
+$(document).ready(function(){
+  $("table.sortable tbody tr").mouseover( function() {
+     $(this).addClass("highlight"); }).mouseout( function() { 
+     $(this).removeClass("highlight"); });
+  $('table.sortable tbody tr:odd').addClass('odd');
+  $('table.sortable tbody tr:even').addClass('even');
+
+});
+//--></script>

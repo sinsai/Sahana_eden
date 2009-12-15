@@ -1,3 +1,6 @@
+ <FORM id="searchform" method="get" enctype="multipart/form-data" action="{{=URL(r=request)}}">
+  <B>{{=T('Search')}}</B>: <INPUT size=30 id="searchbox" class="ac_input" type="text" autocomplete="off"/><input type="submit" id="search" value="{{=T('Details')}}"/>
+ </FORM>
 <script type="text/javascript">//<![CDATA[
 $(function() {
     $("#searchbox").autocomplete('{{=URL(r=request, args='search', vars={'format':'json', 'filter':'~', 'field':extra or main})}}', {
@@ -26,7 +29,3 @@ $(function() {
     })
 });
 //]]></script>
-
- <FORM id="searchform" method="get" enctype="multipart/form-data" action="{{=URL(r=request)}}">
-  <B>{{=T('Search')}}</B>: <INPUT size=30 id="searchbox" class="ac_input" type="text" autocomplete="off"/><input type="submit" id="search" value="{{=T('Details')}}"/>
- </FORM>

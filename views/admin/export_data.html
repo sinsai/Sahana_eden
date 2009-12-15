@@ -1,22 +1,8 @@
 {{extend 'layout.html'}}
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-
-{{include 'admin/resources.js'}}
-
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    $("input#submit").click(function() {
-        // Replace Action
-        top.location="{{=URL3(r=request)}}/"+$("select#module").val()+"/"+$("select#resource").val()+"?format="+$("select#representation").val()
-        return false;
-    })
-});
-//]]></script>
-
 <a href='{{=URL(r=request, f='export_csv')}}'>Export entire Database as CSV</a>{{=A(SPAN("[Help]"), _class="tooltip", _title=T("Export Database as CSV|This is the way to transfer data between machines as it maintains referential integrity."))}}
 <p>&nbsp;</p>
 <div class='form-container'>
@@ -52,3 +38,13 @@ Selective export:
 </form>
 </div>
 <div id='results'></div>
+{{include 'admin/resources.js'}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    $("input#submit").click(function() {
+        // Replace Action
+        top.location="{{=URL3(r=request)}}/"+$("select#module").val()+"/"+$("select#resource").val()+"?format="+$("select#representation").val()
+        return false;
+    })
+});
+//]]></script>

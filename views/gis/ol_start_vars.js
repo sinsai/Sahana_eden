@@ -14,16 +14,29 @@ OpenLayers.Util.onImageLoadErrorColor = "transparent";
 // Set Proxy Host
 OpenLayers.ProxyHost = '{{=URL(r=request, c='static', f='proxy.py?url=')}}';
 
-var lat = {{=lat}};
-var lon = {{=lon}};
-var zoom = {{=zoom}};
-var centered = false;
-
 // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
 var proj4326 = new OpenLayers.Projection('EPSG:4326');
 var projection_current = new OpenLayers.Projection('EPSG:{{=projection}}');
-var point = new OpenLayers.LonLat(lon, lat);
-var center = point.transform(proj4326, projection_current);
+
+{{if lat and lon:}}
+  // Provided by URL (Bookmark) or from feature (display_feature()) or from config (map_viewing_client())
+  var lat = {{=lat}};
+  var lon = {{=lon}};
+  var center = new OpenLayers.LonLat(lon, lat);
+  center.transform(proj4326, projection_current);
+{{else:}}
+  // Calculate from Bounds (display_features())
+  var bottom_left = new OpenLayers.LonLat({{=lon_min}}, {{=lat_min}});
+  bottom_left.transform(proj4326, projection_current);
+  var left = bottom_left.lon;
+  var bottom = bottom_left.lat;
+  top_right = new OpenLayers.LonLat({{=lon_max}}, {{=lat_max}});
+  top_right.transform(proj4326, projection_current);
+  var right = top_right.lon;
+  var top = top_right.lat;
+  var bounds = OpenLayers.Bounds.fromArray([left, bottom, right, top]);
+  var center = bounds.getCenterLonLat();
+{{pass}}
 
 // Map Options
 var options = {

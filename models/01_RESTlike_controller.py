@@ -620,7 +620,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
 def shn_has_permission(name, table_name, record_id = 0):
 
     """
-        S3 framework function to define whether a user can access a record
+        S3 framework function to define whether a user can access a record in manner 'name'
 
         Designed to be called from the RESTlike controller
 

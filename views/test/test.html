@@ -23,18 +23,39 @@
 {{except:}}
 {{pass}}
 
+<table>
+<tr>
+<td>request.vars</td>
+{{for var in request.vars:}}
+ <td>{{=var}}</td>
+ <td>{{=request.vars[var]}}</td>
+{{pass}}
+</tr>
+</table>
+<table>
+<tr>
+<td>request.get_vars</td>
+{{for var in request.get_vars:}}
+ <td>{{=var}}</td>
+ <td>{{=request.get_vars[var]}}</td>
+{{pass}}
+</tr>
+</table>
+<table>
+<tr>
+<td>request.post_vars</td>
+{{for var in request.post_vars:}}
+ <td>{{=var}}</td>
+ <td>{{=request.post_vars[var]}}</td>
+{{pass}}
+</tr>
+</table>
 <script type="text/javascript">//<![CDATA[
-
 $(function() {
-    
-    // Hide the DIV
-    //$("#replaceme").hide();
-    
     // Replace contents
-    $.get('{{=URL(r=request,f='index')}}', function(data){
-        $("#replaceme").html(data);
-    });
-    
+    //$.get('{{=URL(r=request,f='index')}}', function(data){
+    //    $("#replaceme").html(data);
+    //});
 });
 //]]></script>
 

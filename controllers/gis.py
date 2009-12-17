@@ -976,7 +976,12 @@ def display_feature():
     # The Feature
     feature_id = request.args[0]
     feature = db(db.gis_location.id == feature_id).select()[0]
-
+    
+    # Check user is authorised to access record
+    if not shn_has_permission('read', db.gis_location, feature.id):
+        session.error = str(T("No access to this record!"))
+        raise HTTP(401, body=json_message(False, 401, session.error))
+    
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width
@@ -1073,14 +1078,69 @@ def display_features():
     """
     Cut-down version of the Map Viewing Client.
     Used as a link from the PHeader.
+        URL generated server-side
     Shows all locations matching a query.
     Most recent location is marked using a bigger Marker.
     """
 
-    # The Feature
-    feature_id = request.args[0]
-    feature = db(db.gis_location.id == feature_id).select()[0]
-
+    # Parse the URL, check for implicit resources, extract the primary record
+    # http://127.0.0.1:8000/sahana/gis/display_features&module=pr&resource=person&instance=1&jresource=presence
+    ok = 0
+    if 'module' in request.vars:
+        res_module = request.vars.module
+        ok +=1
+    if 'resource' in request.vars:
+        resource = request.vars.resource
+        ok +=1
+    if 'instance' in request.vars:
+        instance = int(request.vars.instance)
+        ok +=1
+    if 'jresource' in request.vars:
+        jresource = request.vars.jresource
+        ok +=1
+    if ok != 4:
+        session.error = str(T("Insufficient vars: Need module, resource, jresource, instance"))
+        raise HTTP(400, body=json_message(False, 400, session.error))
+    
+    component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
+    table = db['%s_%s' % (res_module, resource)]
+    jtable = db[str(component.table)]
+    query = (jtable[fkey]==table[pkey]) & (table.id==instance)
+    # Filter out deleted
+    deleted = (table.deleted == False)
+    query = query & deleted
+    # Filter out inaccessible
+    query2 = db.gis_location.id==jtable.location_id
+    accessible = shn_accessible_query('read', db.gis_location)
+    query2 = query2 & accessible
+    
+    features = db(query).select(db.gis_location.ALL, left = [db.gis_location.on(query2)])
+    
+    # Implicit case for instance requires:
+    #request = the_web2py_way_to_build_a_request_from_url(button-data)
+    #jr = s3xrc.request(request)
+    #xml_tree = jr.export_xml()
+    #retrieve the location_id's from xml_tree using XPath
+    
+    # Calculate an appropriate BBox
+    lon_max = -180
+    lon_min = 180
+    lat_max = -90
+    lat_min = 90
+    for feature in features:
+        if feature.lon > lon_max:
+            lon_max = feature.lon
+        if feature.lon < lon_min:
+            lon_min = feature.lon
+        if feature.lat > lat_max:
+            lat_max = feature.lat
+        if feature.lat < lat_min:
+            lat_min = feature.lat
+    
+    #bbox = str(lon_min) + ',' + str(lat_min) + ',' + str(lon_max) + ',' + str(lat_max)
+    #We now project these client-side, so pass raw info (client-side projection means less server-side dependencies)
+    output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
+    
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width
@@ -1091,16 +1151,15 @@ def display_features():
     if 'lat' in request.vars:
         lat = request.vars.lat
     else:
-        # ToDo: Calculate an appropriate BBOX from min lon max lon min lat max lat
-        lat = feature.lat
+        lat = None
     if 'lon' in request.vars:
         lon = request.vars.lon
     else:
-        lon = feature.lon
+        lon = None
     if 'zoom' in request.vars:
         zoom = request.vars.zoom
     else:
-        zoom = config.zoom
+        zoom = None
     epsg = db(db.gis_projection.epsg==projection).select()[0]
     units = epsg.units
     maxResolution = epsg.maxResolution
@@ -1109,63 +1168,64 @@ def display_features():
     symbology = config.symbology_id
 
     # Add the config to the Return
-    output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
+    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
 
     # Feature details
-    feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
-    feature.module = feature_class.module
-    feature.resource = feature_class.resource
-    if feature.module and feature.resource:
-        feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
-    else:
-        feature.resource_id = None
-    # provide an extra access so no need to duplicate popups code
-    feature.gis_location = Storage()
-    feature.gis_location = feature
-    feature.gis_feature_class = feature_class
+    for feature in features:
+        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        feature.module = feature_class.module
+        feature.resource = feature_class.resource
+        if feature.module and feature.resource:
+            feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
+        else:
+            feature.resource_id = None
+        # provide an extra access so no need to duplicate popups code
+        feature.gis_location = Storage()
+        feature.gis_location = feature
+        feature.gis_feature_class = feature_class
 
-    # 1st choice for a Marker is the Feature's
-    marker = feature.marker_id
-    if not marker:
-        # 2nd choice for a Marker is the Symbology for the Feature Class
-        query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+        # 1st choice for a Marker is the Feature's
+        marker = feature.marker_id
+        if not marker:
+            # 2nd choice for a Marker is the Symbology for the Feature Class
+            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+            try:
+                marker = db(query).select()[0].marker_id
+            except:
+                if not marker:
+                    # 3rd choice for a Marker is the Feature Class's
+                    marker = feature_class.marker_id
+                if not marker:
+                    # 4th choice for a Marker is the default
+                    marker = marker_default
+        feature.marker = db(db.gis_marker.id == marker).select()[0].image
+
         try:
-            marker = db(query).select()[0].marker_id
+            # Metadata is M->1 to Features
+            # We use the most recent one
+            query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
+            metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+
+            # Person .represent is too complex to put into JOIN
+            contact = shn_pr_person_represent(metadata.person_id)
+
         except:
-            if not marker:
-                # 3rd choice for a Marker is the Feature Class's
-                marker = feature_class.marker_id
-            if not marker:
-                # 4th choice for a Marker is the default
-                marker = marker_default
-    feature.marker = db(db.gis_marker.id == marker).select()[0].image
+            metadata = None
+            contact = None
+        feature.metadata = metadata
+        feature.contact = contact
 
-    try:
-        # Metadata is M->1 to Features
-        # We use the most recent one
-        query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
-        metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+        try:
+            # Images are M->1 to Features
+            # We use the most recently uploaded one
+            query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
+            image = db(query).select(orderby=~db.media_image.created_on)[0].image
+        except:
+            image = None
+        feature.image = image
 
-        # Person .represent is too complex to put into JOIN
-        contact = shn_pr_person_represent(metadata.person_id)
-
-    except:
-        metadata = None
-        contact = None
-    feature.metadata = metadata
-    feature.contact = contact
-
-    try:
-        # Images are M->1 to Features
-        # We use the most recently uploaded one
-        query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
-        image = db(query).select(orderby=~db.media_image.created_on)[0].image
-    except:
-        image = None
-    feature.image = image
-
-    # Add the feature to the Return
-    output.update(dict(feature=feature))
+    # Add the features to the Return
+    output.update(dict(features=features))
 
     # Layers
     baselayers = layers()

@@ -238,8 +238,8 @@ track_id = SQLTable(None, 'track_id',
                 ))
     
 # GIS Layers
-#gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'bing', 'gpx', 'kml', 'shapefile', 'scan', 'wms']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx']
+#gis_layer_types = ['shapefile', 'scan', 'wfs']
+gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx', 'georss', 'kml', 'wms', 'tms']
 #gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
@@ -277,12 +277,54 @@ for layertype in gis_layer_types:
             Field('subtype', label=T('Sub-type')),
             gis_layer)
         db.define_table(table, t, migrate=migrate)
-    if layertype == "gpx":
+    if layertype == "wms":
         t = SQLTable(db, table,
-            #Field('subtype', label=T('Sub-type')),
-            track_id,
+            Field('url', label=T('Location')),
+            Field('base', 'boolean', default=True, label=T('Base Layer?')),
+            Field('map', label=T('Map')),
+            Field('layers', label=T('Layers')),
+            Field('format', label=T('Format')),
+            Field('transparent', 'boolean', default=False, label=T('Transparent?')),
+            projection_id,
             gis_layer)
         db.define_table(table, t, migrate=migrate)
+    if layertype == "tms":
+        t = SQLTable(db, table,
+            Field('url', label=T('Location')),
+            Field('layers', label=T('Layers')),
+            Field('format', label=T('Format')),
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "georss":
+        t = SQLTable(db, table,
+            Field('url', label=T('Location')),
+            projection_id,
+            marker_id,
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "kml":
+        t = SQLTable(db, table,
+            Field('url', label=T('Location')),
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "gpx":
+        t = SQLTable(db, table,
+            #Field('url', label=T('Location')),
+            track_id,
+            marker_id,
+            gis_layer)
+        db.define_table(table, t, migrate=migrate)
+
+# GIS Cache
+# (Store downloaded KML & GeoRSS feeds)
+resource = 'cache'
+table = module + '_' + resource
+db.define_table(table, timestamp,
+                Field('name', length=128, notnull=True, unique=True),
+                Field('file', 'upload', autodelete = True),
+                migrate=migrate)
+# upload folder needs to be visible to the download() function as well as the upload
+db[table].file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
 # GIS Styles: SLD
 #db.define_table('gis_style', timestamp,

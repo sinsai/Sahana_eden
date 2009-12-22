@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    SahanaPy RESTlike CRUD Controller
+    SahanaPy RESTful CRUD Controller
 
     @author: Fran Boon
     @author: nursix
@@ -355,7 +355,7 @@ def export_xml(jr):
                            filterby=response.s3.filter)
 
     if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + jr.error
+        session.error = str(T("XSLT Transformation Error: ")) + (jr.error or '')
         raise HTTP(400, body=json_message(False, 400, session.error))
         #redirect(URL(r=request, f="index"))
 

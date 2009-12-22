@@ -15,4 +15,15 @@
   {{else:}}
     // Disable other base layers since using a non-sphericalMercator WMS projection
   {{pass}}
+  {{include 'gis/ol_layers_wms.js'}}
+  var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+  style_marker.graphicOpacity = 1;
+  var icon_img = new Image();
+  var max_w = 25;
+  var max_h = 35;
+  var width, height;
+  var iconURL;
+  {{include 'gis/ol_layers_georss.js'}}
+  {{include 'gis/ol_layers_gpx.js'}}
+  {{include 'gis/ol_layers_kml.js'}}
 }

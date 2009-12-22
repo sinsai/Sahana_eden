@@ -68,7 +68,6 @@ function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconU
     }
     // http://www.nabble.com/Markers-vs-Features--td16497389.html
     var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-    //style_mark.pointRadius = 12;
     style_marker.graphicWidth = width;
     style_marker.graphicHeight = height;
     style_marker.graphicXOffset = -(width / 2);

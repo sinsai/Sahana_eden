@@ -336,6 +336,7 @@ def track():
 
     return shn_rest_controller(module, resource)
 
+# Common CRUD strings for all layers
 title_create = T('Add Layer')
 title_display = T('Layer Details')
 title_list = T('List Layers')
@@ -408,6 +409,22 @@ def layer_bing():
 
     return shn_rest_controller(module, resource, deletable=False)
 
+def layer_georss():
+    "RESTlike CRUD controller"
+    resource = 'layer_georss'
+    table = module + '_' + resource
+
+    # Model options
+    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.comment = SPAN("*", _class="req")
+    
+    # CRUD Strings
+    label_list_button = T('List GeoRSS Layers')
+    msg_list_empty = T('No GeoRSS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
 def layer_gpx():
     "RESTlike CRUD controller"
     resource = 'layer_gpx'
@@ -419,6 +436,59 @@ def layer_gpx():
     # CRUD Strings
     label_list_button = T('List GPX Layers')
     msg_list_empty = T('No GPX Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_kml():
+    "RESTlike CRUD controller"
+    resource = 'layer_kml'
+    table = module + '_' + resource
+
+    # Model options
+    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.comment = SPAN("*", _class="req")
+    
+    # CRUD Strings
+    label_list_button = T('List KML Layers')
+    msg_list_empty = T('No KML Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_tms():
+    "RESTlike CRUD controller"
+    resource = 'layer_tms'
+    table = module + '_' + resource
+
+    # Model options
+    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.comment = SPAN("*", _class="req")
+    db[table].layers.requires = IS_NOT_EMPTY()
+    db[table].layers.comment = SPAN("*", _class="req")
+    
+    # CRUD Strings
+    label_list_button = T('List TMS Layers')
+    msg_list_empty = T('No TMS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_wms():
+    "RESTlike CRUD controller"
+    resource = 'layer_wms'
+    table = module + '_' + resource
+
+    # Model options
+    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.comment = SPAN("*", _class="req")
+    db[table].layers.requires = IS_NOT_EMPTY()
+    db[table].layers.comment = SPAN("*", _class="req")
+    db[table].format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
+    
+    # CRUD Strings
+    label_list_button = T('List WMS Layers')
+    msg_list_empty = T('No WMS Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
     return shn_rest_controller(module, resource)
@@ -754,7 +824,7 @@ def layers():
 
     # OpenStreetMap
     layers.openstreetmap = Storage()
-    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select(db.gis_layer_openstreetmap.ALL)
+    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select()
     for layer in layers_openstreetmap:
         for subtype in gis_layer_openstreetmap_subtypes:
             if layer.subtype == subtype:
@@ -765,7 +835,7 @@ def layers():
     # Check for Google Key
     try:
         layers.google.key = db(db.gis_apikey.name=='google').select(db.gis_apikey.apikey)[0].apikey
-        layers_google = db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
+        layers_google = db(db.gis_layer_google.enabled==True).select()
         for layer in layers_google:
             for subtype in gis_layer_google_subtypes:
                 if layer.subtype == subtype:
@@ -781,7 +851,7 @@ def layers():
     # Check for Yahoo Key
     try:
         layers.yahoo.key = db(db.gis_apikey.name=='yahoo').select(db.gis_apikey.apikey)[0].apikey
-        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
+        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select()
         for layer in layers_yahoo:
             for subtype in gis_layer_yahoo_subtypes:
                 if layer.subtype == subtype:
@@ -795,12 +865,73 @@ def layers():
     # Bing (Virtual Earth)
     # Broken in GeoExt: http://www.geoext.org/pipermail/users/2009-December/000393.html
     #layers.bing = Storage()
-    #layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
+    #layers_bing = db(db.gis_layer_bing.enabled==True).select()
     #for layer in layers_bing:
     #    for subtype in gis_layer_bing_subtypes:
     #        if layer.subtype == subtype:
     #            layers.bing['%s' % subtype] = layer.name
 
+    # GPX
+    layers.gpx = Storage()
+    layers_gpx = db(db.gis_layer_gpx.enabled==True).select()
+    for layer in layers_gpx:
+        name = layer.name
+        layers.gpx[name] = Storage()
+        track = db(db.gis_track.id==layer.track_id).select()[0] 
+        layers.gpx[name].url = track.track
+        if layer.marker_id:
+            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
+        else:
+            marker_id = db(db.gis_config.id==1).select()[0].marker_id
+            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
+        
+    # GeoRSS
+    layers.georss = Storage()
+    layers_georss = db(db.gis_layer_georss.enabled==True).select()
+    for layer in layers_georss:
+        name = layer.name
+        layers.georss[name] = Storage()
+        layers.georss[name].url = layer.url
+        layers.georss[name].projection = layer.projection_id
+        layers.georss[name].marker = layer.marker_id
+        
+    # KML
+    layers.kml = Storage()
+    layers_kml = db(db.gis_layer_kml.enabled==True).select()
+    for layer in layers_kml:
+        name = layer.name
+        layers.kml[name] = Storage()
+        layers.kml[name].url = layer.url
+        #layers.kml[name].marker = layer.marker_id
+        #layers.kml[name].projection = layer.projection_id
+    
+    # WMS
+    layers.wms = Storage()
+    layers_wms = db(db.gis_layer_wms.enabled==True).select()
+    for layer in layers_wms:
+        name = layer.name
+        layers.wms[name] = Storage()
+        layers.wms[name].url = layer.url
+        layers.wms[name].base = layer.base
+        if layer.map:
+            layers.wms[name].map = layer.map
+        layers.wms[name].layers = layer.layers
+        layers.wms[name].projection = layer.projection_id
+        layers.wms[name].transparent = layer.transparent
+        if layer.format:
+            layers.wms[name].format = layer.format
+            
+    # TMS
+    layers.tms = Storage()
+    layers_tms = db(db.gis_layer_tms.enabled==True).select()
+    for layer in layers_tms:
+        name = layer.name
+        layers.tms[name] = Storage()
+        layers.tms[name].url = layer.url
+        layers.tms[name].layers = layer.layers
+        if layer.format:
+            layers.tms[name].format = layer.format
+        
     return layers
 
 def layers_enable():
@@ -890,6 +1021,7 @@ def map_viewing_client():
     baselayers = layers()
     # Add the Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms))
 
     # Internal Features
     features = Storage()

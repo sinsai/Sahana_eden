@@ -17,8 +17,8 @@ def call():
 
 def test():
     #items = 
-    #form = 
-    return dict()
+    form = crud.create(db.atable)
+    return dict(form=form)
 
 def webgrid():
     table = db.gis_feature_class

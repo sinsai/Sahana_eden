@@ -1,19 +1,4 @@
 {{extend 'layout.html'}}
-
-{{include 'ext.html'}}
-<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/restful.css" />
-<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/silk.css" />
-{{include 'extEditorGrid.html'}}
-
-<script type="text/javascript">//<![CDATA[
-Ext.onReady(function(){
-
-    Ext.QuickTips.init();
-
-    {{include 'extlistcreate.js'}}
-});
-//]]></script>
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -22,3 +7,15 @@ Ext.onReady(function(){
 <div id='table-container'>
 <!-- Ext will render table here -->
 </div>
+{{include 'ext.html'}}
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/restful.css" />
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/silk.css" />
+{{include 'extEditorGrid.html'}}
+<script type="text/javascript">//<![CDATA[
+Ext.onReady(function(){
+
+    Ext.QuickTips.init();
+
+    {{include 'extlistcreate.js'}}
+});
+//]]></script>

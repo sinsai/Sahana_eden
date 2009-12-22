@@ -1,19 +1,6 @@
 {{extend 'layout.html'}}
-
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // Set the Crud dropdown to the current Kit
-    var options = '<option value="' + {{=kit}} + '"></option>';
-    $("#budget_kit_item_kit_id").html(options);
-    // Hide the dropdown
-    $("#budget_kit_item_kit_id__row").hide();
-    });
-//]]></script>
-
 {{include 'budget/kit_item_header.html'}}
-
 {{=P(A(T("Edit Description"), _href=URL(r=request, f='kit', args=('update', kit))))}}
-
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
@@ -38,3 +25,12 @@ $(function() {
 {{pass}}
 </div>
 {{include 'key.html'}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Set the Crud dropdown to the current Kit
+    var options = '<option value="' + {{=kit}} + '"></option>';
+    $("#budget_kit_item_kit_id").html(options);
+    // Hide the dropdown
+    $("#budget_kit_item_kit_id__row").hide();
+    });
+//]]></script>

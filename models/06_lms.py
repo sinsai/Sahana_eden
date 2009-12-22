@@ -281,18 +281,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 resource = 'catalog'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                organisation_id,#db.Field('organisation', db.or_organisation),
+                organisation_id,
 				db.Field('name'),
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-if not db(db[table].id).count():
-    db[table].insert(
-        name="Default",
-        description="Default Catalog",
-		comments="All items are by default added to this Catalog"
-    )
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T("Catalog Name")
 db[table].name.comment = SPAN("*", _class="req")

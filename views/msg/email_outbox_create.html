@@ -1,39 +1,4 @@
 ﻿{{extend 'layout.html'}}
-<script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/thickbox.js"></script>            
-<link href="/{{=request.application}}/static/styles/S3/thickbox.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-
-
-{{include 'thickbox.html'}}
-
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // Hide the real Input Field
-    $("#msg_email_outbox_msg_group_id").hide();
-    // Autocomplete-enable the Dummy Input
-    $("#dummy").autocomplete('{{=URL(r=request, c='msg', f='group_search', vars={'type':'email'})}}', {
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
-            }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
-    });
-    // Populate the real Input when the Dummy is selected
-    $("#dummy").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#msg_email_outbox_msg_group_id").val(newvalue);
-    });
-});
-//]]></script>
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -98,3 +63,32 @@ $(function() {
  {{=list_btn}}
 {{except:}}
 {{pass}}
+{{include 'thickbox.html'}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Hide the real Input Field
+    $("#msg_email_outbox_msg_group_id").hide();
+    // Autocomplete-enable the Dummy Input
+    $("#dummy").autocomplete('{{=URL(r=request, c='msg', f='group_search', vars={'type':'email'})}}', {
+        minChars: 2,
+		//mustMatch: true,
+		matchContains: true,
+        dataType: 'json',
+        parse: function(data) {
+            var rows = new Array();
+            for(var i=0; i<data.length; i++){
+                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
+            }
+            return rows;
+        },
+        formatItem: function(row, i, n) {
+            return row.name;
+		}
+    });
+    // Populate the real Input when the Dummy is selected
+    $("#dummy").result(function(event, data, formatted) {
+        var newvalue = data.id;
+        $("#msg_email_outbox_msg_group_id").val(newvalue);
+    });
+});
+//]]></script>

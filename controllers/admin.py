@@ -354,7 +354,7 @@ def groups():
     table = db.auth_membership
     query = table.user_id==user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name
-    description = db.auth_user[user][username]
+    description = db.auth_user[user].email
     # Start building the Return
     output = dict(module_name=module_name, title=title, description=description, user=user)
 

@@ -27,6 +27,11 @@
   height: 20px !important;
   width: 20px !important;
 }
+.measure-area {
+  background-image: url(../../img/gis/measure-area-off.png) !important;
+  height: 20px !important;
+  width: 20px !important;
+}
 .modifyfeature {
     background-image:url(../../img/gis/mapfish/move_vertex_off.png) !important;
     height:20px !important;

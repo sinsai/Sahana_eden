@@ -1,10 +1,4 @@
 {{extend 'layout.html'}}
-
-<script type="text/javascript" language="javascript">//<![CDATA[
-$(document).ready(function(){
-});
-//]]></script>
-
 <div id="delphi_problem_header">
 	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
 	{{ pass }}

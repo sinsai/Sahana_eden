@@ -37,9 +37,9 @@ authorstamp = db.Table(None, 'authorstamp',
 import uuid
 from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
-                type ='string',
-                native ='VARCHAR(64)',
-                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'","''"))),
+                type = 'string',
+                native = 'VARCHAR(64)',
+                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
 

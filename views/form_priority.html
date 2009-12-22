@@ -3,14 +3,12 @@
 <td><select name="priority" type="select">
 {{for row in options_priority:}}
 <option
-
 {{try:}}
     {{if row==resource.priority:}}
         selected="selected"
     {{pass}}
 {{except:}}
 {{pass}}
-
 value="{{=row}}">{{=row}}</option>
 {{pass}}
 </select>

@@ -1,0 +1,5 @@
+{{extend 'layout.html'}}
+{{include '_update.html'}}
+<p>&nbsp;</p>
+<a id='contents-btn' href="{{=URL(r=request, f='users', args=request.args[1])}}">{{=T('Users')}}</a>
+

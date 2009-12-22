@@ -1,20 +1,7 @@
 {{extend 'layout.html'}}
-
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // Set the Crud dropdown to the current Group
-    var options = '<option value="' + {{=group}} + '"></option>';
-    $("#auth_membership_group_id").html(options);
-    // Hide the dropdown
-    $("#auth_membership_group_id__row").hide();
-    });
-//]]></script>
-
 {{=H2(title)}}
 {{=P(description)}}
-
 {{=P(A(T("Edit Role"), _href=URL(r=request, f='group', args=('update', group))))}}
-
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
@@ -39,3 +26,12 @@ $(function() {
 {{pass}}
 </div>
 {{include 'key.html'}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Set the Crud dropdown to the current Group
+    var options = '<option value="' + {{=group}} + '"></option>';
+    $("#auth_membership_group_id").html(options);
+    // Hide the dropdown
+    $("#auth_membership_group_id__row").hide();
+    });
+//]]></script>

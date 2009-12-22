@@ -1,7 +1,4 @@
 {{extend 'layout.html'}}
-
-{{include 'dataTables.html'}}
-
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -32,3 +29,4 @@
 {{except:}}
 {{pass}}
 <div id='map'></div>
+{{include 'dataTables.html'}}

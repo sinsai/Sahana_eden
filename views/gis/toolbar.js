@@ -79,7 +79,7 @@ var lengthButton = new GeoExt.Action({
 var areaButton = new GeoExt.Action({
     control: area,
     map: map,
-    iconCls: 'measure-off',
+    iconCls: 'measure-area',
     tooltip: '{{=T("Measure Area: Click the points around the polygon & end with a double-click")}}',
     toggleGroup: toggleGroup
 });

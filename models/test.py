@@ -1,5 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
 
+db.define_table('atable',
+                Field('afield'))
+
+
 def shn_m2m_widget(self,value,options=[]):
     """Many-to-Many widget
     Currently this is just a renamed copy of t2.tag_widget"""

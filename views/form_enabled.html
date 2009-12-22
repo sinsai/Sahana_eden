@@ -1,7 +1,6 @@
 ﻿<tr id="enabled">
 <td><label>{{=T("Enabled")}}</label></td>
 <td><input name="enabled" type="checkbox"
-
 {{try:}}
     {{if resource.enabled:}}
         checked="checked" value="on"
@@ -9,9 +8,5 @@
 {{except:}}
     checked="checked" value="on"
 {{pass}}
-
 /></td>
 </tr>
-
-
-

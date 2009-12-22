@@ -17,8 +17,7 @@
     style_marker.graphicXOffset = -(width / 2);
     style_marker.graphicYOffset = -height;
     style_marker.externalGraphic = iconURL;
-    var gpxLayer{{=name}} = new OpenLayers.Layer.GML( "gpxLayer{{=name}}", "{{=URL(r=request, c='default', f='download', args=gpx_layers[layer].url)}}", {
-        style: style_marker,
-        format: OpenLayers.Format.GPX, projection: proj4326});
+    var gpxLayer{{=name}} = new OpenLayers.Layer.GML( "{{=layer}}", "{{=URL(r=request, c='default', f='download', args=gpx_layers[layer].url)}}", {
+        format: OpenLayers.Format.GPX, style: style_marker, projection: proj4326});
     map.addLayer(gpxLayer{{=name}});
 {{pass}}

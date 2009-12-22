@@ -248,71 +248,70 @@ gis_layer_bing_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
 # Base table from which the rest inherit
 gis_layer = SQLTable(db, 'gis_layer', timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
-            Field('name', notnull=True, label=T('Name')),
+            Field('name', notnull=True, label=T('Name'), requires=IS_NOT_EMPTY(), comment=SPAN("*", _class="req")),
             Field('description', label=T('Description')),
             #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
             Field('enabled', 'boolean', default=True, label=T('Enabled?')))
-gis_layer.name.requires = IS_NOT_EMPTY()
 for layertype in gis_layer_types:
     resource = 'layer_' + layertype
     table = module + '_' + resource
     # Create Type-specific Layer tables
     if layertype == "openstreetmap":
         t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
+            gis_layer,
+            Field('subtype', label=T('Sub-type'))            )
         db.define_table(table, t, migrate=migrate)
     if layertype == "google":
         t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
+            gis_layer,
+            Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
     if layertype == "yahoo":
         t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
+            gis_layer,
+            Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
     if layertype == "bing":
         t = SQLTable(db, table,
-            Field('subtype', label=T('Sub-type')),
-            gis_layer)
+            gis_layer,
+            Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
     if layertype == "wms":
         t = SQLTable(db, table,
+            gis_layer,
             Field('url', label=T('Location')),
             Field('base', 'boolean', default=True, label=T('Base Layer?')),
             Field('map', label=T('Map')),
             Field('layers', label=T('Layers')),
             Field('format', label=T('Format')),
             Field('transparent', 'boolean', default=False, label=T('Transparent?')),
-            projection_id,
-            gis_layer)
+            projection_id)
         db.define_table(table, t, migrate=migrate)
     if layertype == "tms":
         t = SQLTable(db, table,
+            gis_layer,
             Field('url', label=T('Location')),
             Field('layers', label=T('Layers')),
-            Field('format', label=T('Format')),
-            gis_layer)
+            Field('format', label=T('Format')))
         db.define_table(table, t, migrate=migrate)
     if layertype == "georss":
         t = SQLTable(db, table,
+            gis_layer,
             Field('url', label=T('Location')),
             projection_id,
-            marker_id,
-            gis_layer)
+            marker_id)
         db.define_table(table, t, migrate=migrate)
     if layertype == "kml":
         t = SQLTable(db, table,
-            Field('url', label=T('Location')),
-            gis_layer)
+            gis_layer,
+            Field('url', label=T('Location')))
         db.define_table(table, t, migrate=migrate)
     if layertype == "gpx":
         t = SQLTable(db, table,
+            gis_layer,
             #Field('url', label=T('Location')),
             track_id,
-            marker_id,
-            gis_layer)
+            marker_id)
         db.define_table(table, t, migrate=migrate)
 
 # GIS Cache

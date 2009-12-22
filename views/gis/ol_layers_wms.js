@@ -1,6 +1,6 @@
 ﻿{{for layer in wms_layers:}}
   {{name = layer.replace(' ', '_')}}
-    var wmsLayer{{=name}} = new OpenLayers.Layer.WMS( "wmsLayer{{=name}}", "wms_layers[layer].url)}}", {
+    var wmsLayer{{=name}} = new OpenLayers.Layer.WMS( "{{=layer}}", "{{=wms_layers[layer].url}}", {
       {{if wms_layers[layer].base:}}
         isBaseLayer: 'true',
       {{pass}}
@@ -8,12 +8,17 @@
       {{if wms_layers[layer].map:}}
         map: '$map',
       {{pass}}
+      layers: '{{=wms_layers[layer].layers}}',
       {{if wms_layers[layer].format:}}
         type: '$format',
       {{pass}}
       {{if wms_layers[layer].transparent:}}
         transparent: true,
       {{pass}}
-        projection: new.OpenLayers.Projection('EPSG:{{=wms_layers[layer].projection}}')});
+      {{if wms_layers[layer].projection == 4326:}}
+        projection: proj4326});
+      {{else:}}
+        projection: new OpenLayers.Projection('EPSG:{{=wms_layers[layer].projection}}')});
+      {{pass}}  
     map.addLayer(wmsLayer{{=name}});
 {{pass}}

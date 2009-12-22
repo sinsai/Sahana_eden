@@ -193,6 +193,14 @@ if empty:
         #    image = "marker_r1.png"
         #)
         db[table].insert(
+            name = "earthquake",
+            image = "gis_marker.image.Geo_Earth_Quake_Epicenter.png"
+        )
+        db[table].insert(
+            name = "volcano",
+            image = "gis_marker.image.Geo_Volcanic_Threat.png"
+        )
+        db[table].insert(
             name = "shelter",
             image = "gis_marker.image.Emergency_Shelters_S1.png"
         )
@@ -467,6 +475,37 @@ if empty:
     #                enabled = False
     #            )
 
+    table = 'gis_layer_wms'
+    if not db(db[table].id).count():
+        # Populate table
+        db[table].insert(
+                name = 'VMap0',
+                description = 'A Free low-resolution Vector Map of the whole world',
+                url = 'http://labs.metacarta.com/wms/vmap0',
+                layers = 'basic',
+                enabled = False
+            )
+    
+    table = 'gis_layer_georss'
+    if not db(db[table].id).count():
+        # Populate table
+        db[table].insert(
+                name = 'Earthquakes',
+                description = 'USGS: Global 7-day',
+                url = 'http://earthquake.usgs.gov/eqcenter/catalogs/eqs7day-M2.5.xml',
+                projection_id = db(db.gis_projection.epsg == 4326).select()[0].id,
+                marker_id = db(db.gis_marker.name == 'earthquake').select()[0].id,
+                enabled = False
+            )
+        db[table].insert(
+                name = 'Volcanoes',
+                description = 'USGS: US recent',
+                url = 'http://volcano.wr.usgs.gov/rss/vhpcaprss.xml',
+                projection_id = db(db.gis_projection.epsg == 4326).select()[0].id,
+                marker_id = db(db.gis_marker.name == 'volcano').select()[0].id,
+                enabled = False
+            )
+    
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name

@@ -336,14 +336,18 @@ def track():
 
     return shn_rest_controller(module, resource)
 
+def layer():
+    "Custom View for Layer Catalogue"
+    return dict()
+
 # Common CRUD strings for all layers
 title_create = T('Add Layer')
 title_display = T('Layer Details')
-title_list = T('List Layers')
+title_list = T('Layers')
 title_update = T('Edit Layer')
 title_search = T('Search Layers')
 subtitle_create = T('Add New Layer')
-subtitle_list = T('Layers')
+subtitle_list = T('List Layers')
 label_create_button = T('Add Layer')
 msg_record_created = T('Layer added')
 msg_record_modified = T('Layer updated')
@@ -415,10 +419,16 @@ def layer_georss():
     table = module + '_' + resource
 
     # Model options
-    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
     db[table].url.comment = SPAN("*", _class="req")
+    db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
+    db[table].projection_id.default = 2
     
     # CRUD Strings
+    title_list = T('GeoRSS Layers')
+    subtitle_create = T('Add New GeoRSS Layer')
+    subtitle_list = T('List GeoRSS Layers')
     label_list_button = T('List GeoRSS Layers')
     msg_list_empty = T('No GeoRSS Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
@@ -434,6 +444,9 @@ def layer_gpx():
     # Needed in multiple controllers, so defined in Model
 
     # CRUD Strings
+    title_list = T('GPX Layers')
+    subtitle_create = T('Add New GPX Layer')
+    subtitle_list = T('List GPX Layers')
     label_list_button = T('List GPX Layers')
     msg_list_empty = T('No GPX Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
@@ -446,10 +459,14 @@ def layer_kml():
     table = module + '_' + resource
 
     # Model options
-    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
     db[table].url.comment = SPAN("*", _class="req")
     
     # CRUD Strings
+    title_list = T('KML Layers')
+    subtitle_create = T('Add New KML Layer')
+    subtitle_list = T('List KML Layers')
     label_list_button = T('List KML Layers')
     msg_list_empty = T('No KML Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
@@ -462,12 +479,16 @@ def layer_tms():
     table = module + '_' + resource
 
     # Model options
-    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
     db[table].url.comment = SPAN("*", _class="req")
     db[table].layers.requires = IS_NOT_EMPTY()
     db[table].layers.comment = SPAN("*", _class="req")
     
     # CRUD Strings
+    title_list = T('TMS Layers')
+    subtitle_create = T('Add New TMS Layer')
+    subtitle_list = T('List TMS Layers')
     label_list_button = T('List TMS Layers')
     msg_list_empty = T('No TMS Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
@@ -480,13 +501,19 @@ def layer_wms():
     table = module + '_' + resource
 
     # Model options
-    db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
     db[table].url.comment = SPAN("*", _class="req")
     db[table].layers.requires = IS_NOT_EMPTY()
     db[table].layers.comment = SPAN("*", _class="req")
     db[table].format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
+    db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
+    db[table].projection_id.default = 2
     
     # CRUD Strings
+    title_list = T('WMS Layers')
+    subtitle_create = T('Add New WMS Layer')
+    subtitle_list = T('List WMS Layers')
     label_list_button = T('List WMS Layers')
     msg_list_empty = T('No WMS Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
@@ -892,8 +919,12 @@ def layers():
         name = layer.name
         layers.georss[name] = Storage()
         layers.georss[name].url = layer.url
-        layers.georss[name].projection = layer.projection_id
-        layers.georss[name].marker = layer.marker_id
+        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select()[0].epsg
+        if layer.marker_id:
+            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
+        else:
+            marker_id = db(db.gis_config.id==1).select()[0].marker_id
+            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
         
     # KML
     layers.kml = Storage()
@@ -902,8 +933,6 @@ def layers():
         name = layer.name
         layers.kml[name] = Storage()
         layers.kml[name].url = layer.url
-        #layers.kml[name].marker = layer.marker_id
-        #layers.kml[name].projection = layer.projection_id
     
     # WMS
     layers.wms = Storage()
@@ -916,7 +945,7 @@ def layers():
         if layer.map:
             layers.wms[name].map = layer.map
         layers.wms[name].layers = layer.layers
-        layers.wms[name].projection = layer.projection_id
+        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select()[0].epsg
         layers.wms[name].transparent = layer.transparent
         if layer.format:
             layers.wms[name].format = layer.format

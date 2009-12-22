@@ -348,7 +348,11 @@ def shn_user_utc_offset():
     if auth.is_logged_in():
         return db(db.auth_user.id==session.auth.user.id).select()[0].utc_offset
     else:
-        return db().select(db.s3_setting.utc_offset)[0].utc_offset
+        try:
+            offset = db().select(db.s3_setting.utc_offset)[0].utc_offset
+        except:
+            offset = None
+        return offset
 
 def shn_as_local_time(value):
     """

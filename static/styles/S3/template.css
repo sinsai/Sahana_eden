@@ -55,12 +55,12 @@ fieldset { border: none; }
 input, select, textarea { font-size: 100%; }
 .hide { display: none;  }
 .mini { font-size: 80%; }
-.wide { width:100%; }
+.wide { width: 100%; }
 
 /* Input fields should give visual feedback when focussed */
-input:focus { background-color:#col_input; }
-select:focus { background-color:#col_input; }
-textarea:focus { background-color:#col_input; }
+input:focus { background-color: #col_input; }
+select:focus { background-color: #col_input; }
+textarea:focus { background-color: #col_input; }
 
 /* Links should ALWAYS be unvisited */
 a { color: #039; text-decoration: underline; outline:0; }
@@ -129,11 +129,10 @@ table { border-collapse: collapse }
 
 /* Column container */
 .colmask {
-    position:relative;	/* This fixes the IE7 overflow hidden bug */
-    clear:both;
-    float:left;
-    width:100%;			/* width of whole page */
-    overflow:hidden;    /* This chops off any overhanging divs */
+    position: relative;	/* This fixes the IE7 overflow hidden bug */
+    clear: both; float: left;
+    width: 100%;			/* width of whole page */
+    overflow: hidden;    /* This chops off any overhanging divs */
 }
 /* common column settings */
 .colright, .colmid, .colleft { float:left; width:100%; position:relative; }
@@ -150,25 +149,16 @@ table { border-collapse: collapse }
 
 /* common styles */
 #content {
-    background:#fff;
-    border:1px solid #bbb;
-    margin:5px;
-    -moz-box-shadow: 0px 0px 7px #888;
-    -webkit-box-shadow: 0px 0px 7px #888;
-    -moz-border-radius: 10px 10px 10px 10px;
-    -webkit-border-radius: 10px 10px 10px 10px;
-    padding: 0px 30px 10px 30px;
-    margin-bottom:50px;
+    background: #fff; border: 1px solid #bbb; margin: 5px; padding: 0px 30px 10px 30px; margin-bottom: 50px;
+    -moz-box-shadow: 0px 0px 7px #888; -webkit-box-shadow: 0px 0px 7px #888;
+    -moz-border-radius: 10px 10px 10px 10px; -webkit-border-radius: 10px 10px 10px 10px;
 }
-#content h1, #content h2 { color:#col_txt; font-size:16px; font-weight:bolder;
-    background:#col_txt_background;
-    border:1px #col_txt_border solid;
-    padding:6px 10px 7px 10px;
-    margin:0px -30px 10px -30px;
-    border-bottom:1px solid #bbb;
-    -moz-border-radius: 10px 10px 0px 0px;
-    -webkit-border-radius: 10px 10px 0px 0px;
-    text-shadow:1px 2px 1px #fff;
+#content h1, #content h2 { color: #col_txt; font-size: 16px; font-weight: bolder;
+    background: #col_txt_background;
+    border: 1px #col_txt_border solid;
+    padding: 6px 10px 7px 10px; margin: 0px -30px 10px -30px;
+    border-bottom: 1px solid #bbb; text-shadow: 1px 2px 1px #fff;
+    -moz-border-radius: 10px 10px 0px 0px; -webkit-border-radius: 10px 10px 0px 0px;
 }
 
 #content h3 { color:#col_txt; font-size:14px; font-weight:bolder; border-bottom:1px #col_txt solid; margin-bottom:10px; }
@@ -293,34 +283,12 @@ div#pheader td { text-align: left; padding: 1px 6px 1px 1px; width: 20%; }
 /* Home page specific */
 #logo {width: 350px; height: 70px; background: url(../../YOURLOGOHERE) top right; margin: 0 0 0 0px; }
 
-.modlist {
-    list-style:none;
-    clear:both;
-    padding:0px 5%;
+.modlist { list-style: none; clear: both; padding: 0px 5%; }
+.modlist li { display: inline-block; float: left; margin: 5px; padding: 10px; width: 180px; height: 80px; overflow: auto;
+    background: #E0F4FD url(../../img/home_modulebuttons.gif) repeat-x; border: 1px solid #ababab;
+    -moz-border-radius: 10px; -webkit-border-radius: 10px;
+    -moz-box-shadow: 2px 2px 5px #aaa; -webkit-box-shadow: 2px 2px 5px #aaa;
 }
-.modlist li {
-    display:inline-block;
-    float:left;
-    margin:5px;
-    padding:10px;
-    width:180px;
-    height:80px;
-    overflow:auto;
-    background: #E0F4FD url(../../img/home_modulebuttons.gif) repeat-x;
-    border:1px solid #ababab;
-    -moz-border-radius:10px;
-    -webkit-border-radius:10px;
-    -moz-box-shadow: 2px 2px 5px #aaa;
-    -webkit-box-shadow: 2px 2px 5px #aaa;
-}
-.modlist li.hovered, .modlist li:hover{
-    background:#ffff99;
-}
-.modlist li strong a {
-    text-decoration:none;
-    font-size:14px;
-}
-.modlist li strong {
-    display:block;
-    margin-bottom:5px;
-}
+.modlist li.hovered, .modlist li:hover{ background: #ffff99; }
+.modlist li strong a { text-decoration: none; font-size: 14px; }
+.modlist li strong { display: block; margin-bottom: 5px; }

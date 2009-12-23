@@ -424,7 +424,7 @@ def layer_georss():
     db[table].url.comment = SPAN("*", _class="req")
     db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
     db[table].projection_id.default = 2
-    
+
     # CRUD Strings
     title_list = T('GeoRSS Layers')
     subtitle_create = T('Add New GeoRSS Layer')
@@ -462,7 +462,7 @@ def layer_kml():
     #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
     db[table].url.requires = IS_NOT_EMPTY()
     db[table].url.comment = SPAN("*", _class="req")
-    
+
     # CRUD Strings
     title_list = T('KML Layers')
     subtitle_create = T('Add New KML Layer')
@@ -484,7 +484,7 @@ def layer_tms():
     db[table].url.comment = SPAN("*", _class="req")
     db[table].layers.requires = IS_NOT_EMPTY()
     db[table].layers.comment = SPAN("*", _class="req")
-    
+
     # CRUD Strings
     title_list = T('TMS Layers')
     subtitle_create = T('Add New TMS Layer')
@@ -509,7 +509,7 @@ def layer_wms():
     db[table].format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
     db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
     db[table].projection_id.default = 2
-    
+
     # CRUD Strings
     title_list = T('WMS Layers')
     subtitle_create = T('Add New WMS Layer')
@@ -970,7 +970,7 @@ def layers():
         else:
             marker_id = db(db.gis_config.id==1).select()[0].marker_id
             layers.georss[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
-        
+
     # KML
     layers.kml = Storage()
     layers_kml = db(db.gis_layer_kml.enabled==True).select()
@@ -1029,7 +1029,7 @@ def layers():
         layers.wms[name].transparent = layer.transparent
         if layer.format:
             layers.wms[name].format = layer.format
-            
+
     # TMS
     layers.tms = Storage()
     layers_tms = db(db.gis_layer_tms.enabled==True).select()
@@ -1040,7 +1040,7 @@ def layers():
         layers.tms[name].layers = layer.layers
         if layer.format:
             layers.tms[name].format = layer.format
-        
+
     return layers
 
 def layers_enable():
@@ -1217,12 +1217,12 @@ def display_feature():
     # The Feature
     feature_id = request.args[0]
     feature = db(db.gis_location.id == feature_id).select()[0]
-    
+
     # Check user is authorised to access record
     if not shn_has_permission('read', db.gis_location, feature.id):
         session.error = str(T("No access to this record!"))
         raise HTTP(401, body=json_message(False, 401, session.error))
-    
+
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width
@@ -1314,7 +1314,7 @@ def display_feature():
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
 
     return output
-    
+
 def display_features():
     """
     Cut-down version of the Map Viewing Client.
@@ -1342,7 +1342,7 @@ def display_features():
     if ok != 4:
         session.error = str(T("Insufficient vars: Need module, resource, jresource, instance"))
         raise HTTP(400, body=json_message(False, 400, session.error))
-    
+
     component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
     table = db['%s_%s' % (res_module, resource)]
     jtable = db[str(component.table)]
@@ -1354,15 +1354,15 @@ def display_features():
     query2 = db.gis_location.id==jtable.location_id
     accessible = shn_accessible_query('read', db.gis_location)
     query2 = query2 & accessible
-    
+
     features = db(query).select(db.gis_location.ALL, left = [db.gis_location.on(query2)])
-    
+
     # Implicit case for instance requires:
     #request = the_web2py_way_to_build_a_request_from_url(button-data)
     #jr = s3xrc.request(request)
     #xml_tree = jr.export_xml()
     #retrieve the location_id's from xml_tree using XPath
-    
+
     # Calculate an appropriate BBox
     lon_max = -180
     lon_min = 180
@@ -1377,11 +1377,11 @@ def display_features():
             lat_max = feature.lat
         if feature.lat < lat_min:
             lat_min = feature.lat
-    
+
     #bbox = str(lon_min) + ',' + str(lat_min) + ',' + str(lon_max) + ',' + str(lat_max)
     #We now project these client-side, so pass raw info (client-side projection means less server-side dependencies)
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
-    
+
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width

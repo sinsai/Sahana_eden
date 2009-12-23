@@ -951,7 +951,8 @@ def shn_custom_view(jr, default_name, format=None):
 
     if jr.component:
 
-        custom_view = '%s_%s_%s' % (jr.name, jr.component.name, default_name)
+        custom_view = '%s_%s_%s' % (jr.name, jr.component_name, default_name)
+
         _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
         if not os.path.exists(_custom_view):

@@ -351,7 +351,7 @@ def shn_user_utc_offset():
         try:
             offset = db().select(db.s3_setting.utc_offset)[0].utc_offset
         except:
-            offset = "UTC +0000"
+            offset = None
         return offset
 
 def shn_as_local_time(value):

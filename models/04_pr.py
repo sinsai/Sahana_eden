@@ -10,6 +10,7 @@
 #       - Contact
 #       - Image
 #       - Presence Log
+#
 #       - Physical Descriptions
 #       - Identity
 #       - Role
@@ -331,6 +332,83 @@ msg_record_modified = T('Log entry updated')
 msg_record_deleted = T('Log entry deleted')
 msg_list_empty = T('No Presence Log Entries currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# *****************************************************************************
+# Identity (identity)
+#
+
+#
+# ID Types --------------------------------------------------------------------
+#
+pr_id_type_opts = {
+    1:T('Passport'),
+    2:T('National ID Card'),
+    3:T('Driving License'),
+    99:T('other')
+    }
+
+#
+# identitiy table -------------------------------------------------------------
+#
+resource = 'identity'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                person_id,                          # Reference to person
+                Field('opt_pr_id_type',
+                      'integer',
+                      requires = IS_IN_SET(pr_id_type_opts),
+                      default = 1,
+                      label = T('ID type'),
+                      represent = lambda opt: opt and pr_id_type_opts[opt]),
+                Field('type'),                      # Description for type 'Other'
+                Field('value'),                     # ID value
+                Field('country_code', length=4),    # Country Code (for National ID Cards)
+                Field('ia_name'),                   # Name of issuing authority
+#                Field('ia_subdivision'),            # Name of issuing authority subdivision
+#                Field('ia_code'),                   # Code of issuing authority (if any)
+                Field('comment'),                   # a comment (optional)
+                migrate=migrate)
+
+# Joined Resource
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(pr_person='person_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
+
+# Field validation
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+# Field representation
+
+# Field labels
+db[table].ia_name.label = T("Issuing Authority")
+
+# CRUD Strings
+title_create = T('Add Identity')
+title_display = T('Identity Details')
+title_list = T('Known Identities')
+title_update = T('Edit Identity')
+title_search = T('Search Identity')
+subtitle_create = T('Add New Identity')
+subtitle_list = T('Current Identities')
+label_list_button = T('List Identities')
+label_create_button = T('Add Identity')
+msg_record_created = T('Identity added')
+msg_record_modified = T('Identity updated')
+msg_record_deleted = T('Identity deleted')
+msg_list_empty = T('No Identities currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# *****************************************************************************
+# Role, Status and Transition
+#
+
+resource = 'role'
+table = module + '_' + resource
+db.define_table(table, uuidstamp, deletion_status,
+                migrate=migrate)
 
 # *****************************************************************************
 # Physical Description (pd_xxx)
@@ -1154,88 +1232,6 @@ s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', d
 # Field labels
 
 # CRUD Strings
-
-# *****************************************************************************
-# Identity (identity)
-#
-
-#
-# ID Types --------------------------------------------------------------------
-#
-pr_id_type_opts = {
-    1:T('Passport'),
-    2:T('National ID Card'),
-    3:T('Driving License'),
-    99:T('other')
-    }
-
-#
-# identitiy table -------------------------------------------------------------
-#
-resource = 'identity'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                person_id,                          # Reference to person
-                Field('opt_pr_id_type',
-                      'integer',
-                      requires = IS_IN_SET(pr_id_type_opts),
-                      default = 1,
-                      label = T('ID type'),
-                      represent = lambda opt: opt and pr_id_type_opts[opt]),
-                Field('type'),                      # Description for type 'Other'
-                Field('value'),                     # ID value
-                Field('country_code', length=4),    # Country Code (for National ID Cards)
-                Field('ia_name'),                   # Name of issuing authority
-#                Field('ia_subdivision'),            # Name of issuing authority subdivision
-#                Field('ia_code'),                   # Code of issuing authority (if any)
-                Field('comment'),                   # a comment (optional)
-                migrate=migrate)
-
-# Joined Resource
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(pr_person='person_id'),
-    deletable=True,
-    editable=True,
-    list_fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
-
-# Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-
-# Field representation
-
-# Field labels
-db[table].ia_name.label = T("Issuing Authority")
-
-# CRUD Strings
-title_create = T('Add Identity')
-title_display = T('Identity Details')
-title_list = T('Known Identities')
-title_update = T('Edit Identity')
-title_search = T('Search Identity')
-subtitle_create = T('Add New Identity')
-subtitle_list = T('Current Identities')
-label_list_button = T('List Identities')
-label_create_button = T('Add Identity')
-msg_record_created = T('Identity added')
-msg_record_modified = T('Identity updated')
-msg_record_deleted = T('Identity deleted')
-msg_list_empty = T('No Identities currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-# *****************************************************************************
-# Role (role)
-#
-
-#
-# role table ------------------------------------------------------------------
-#
-resource = 'role'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                person_id,
-                Field('description'),
-                migrate=migrate)
 
 # *****************************************************************************
 # Group membership (group_membership)

@@ -847,6 +847,10 @@ def map_service_catalogue():
 def layers():
     "Provide the Enabled Layers"
 
+    from gluon.tools import fetch
+    
+    response.warning = ''
+    
     layers = Storage()
 
     # OpenStreetMap
@@ -904,21 +908,62 @@ def layers():
     for layer in layers_gpx:
         name = layer.name
         layers.gpx[name] = Storage()
-        track = db(db.gis_track.id==layer.track_id).select()[0]
+        track = db(db.gis_track.id==layer.track_id).select()[0] 
         layers.gpx[name].url = track.track
         if layer.marker_id:
             layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
         else:
             marker_id = db(db.gis_config.id==1).select()[0].marker_id
             layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
-
+    
+    cachepath = os.path.join(request.folder, 'uploads', 'gis_cache')
+    if os.access(cachepath, os.W_OK):
+        cache = True
+    else:
+        cache = False
+        
     # GeoRSS
     layers.georss = Storage()
     layers_georss = db(db.gis_layer_georss.enabled==True).select()
+    if layers_georss and not cache:
+        response.warning += cachepath + ' ' + str(T('not writable - unable to cache GeoRSS layers!')) + '\n'
     for layer in layers_georss:
         name = layer.name
+        url = layer.url
+        if cache:
+            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.xml'
+            filepath = os.path.join(cachepath, filename)
+            try:
+                # Download file to cache
+                file = fetch(url)
+                f = open(filepath, 'w')
+                f.write(file)
+                f.close()
+                records = db(db.gis_cache.name == name).select()
+                if records:
+                    records[0].update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c='default', f='download', args=[filename])
+            except:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    # Use cached version
+                    date = db(db.gis_cache.name == name).select()[0].modified_on
+                    response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
+                    url = URL(r=request, c='default', f='download', args=[filename])
+                else:
+                    # No cached version available
+                    response.warning += url + ' ' + str(T('not accessible - no cached version available!')) + '\n'
+                    # skip layer
+                    continue
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+        
+        # Add to return
         layers.georss[name] = Storage()
-        layers.georss[name].url = layer.url
+        layers.georss[name].url = url
         layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select()[0].epsg
         if layer.marker_id:
             layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
@@ -929,11 +974,46 @@ def layers():
     # KML
     layers.kml = Storage()
     layers_kml = db(db.gis_layer_kml.enabled==True).select()
+    if layers_kml and not cache:
+        response.warning += cachepath + ' ' + str(T('not writable - unable to cache KML layers!')) + '\n'
     for layer in layers_kml:
         name = layer.name
+        url = layer.url
+        if cache:
+            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
+            filepath = os.path.join(cachepath, filename)
+            try:
+                # Download file to cache
+                file = fetch(url)
+                f = open(filepath, 'w')
+                f.write(file)
+                f.close()
+                records = db(db.gis_cache.name == name).select()
+                if records:
+                    records[0].update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c='default', f='download', args=[filename])
+            except:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    # Use cached version
+                    date = db(db.gis_cache.name == name).select()[0].modified_on
+                    response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
+                    url = URL(r=request, c='default', f='download', args=[filename])
+                else:
+                    # No cached version available
+                    response.warning += url + ' ' + str(T('not accessible - no cached version available!')) + '\n'
+                    # skip layer
+                    continue
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+        
+        # Add to return
         layers.kml[name] = Storage()
-        layers.kml[name].url = layer.url
-
+        layers.kml[name].url = url
+    
     # WMS
     layers.wms = Storage()
     layers_wms = db(db.gis_layer_wms.enabled==True).select()

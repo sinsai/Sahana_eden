@@ -2,25 +2,33 @@
 <div id="delphi_problem_header">
 	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
 	{{ pass }}
-	<a href="{{= URL(r=request, f='discuss', args=problem.id) }}">{{= T("Discussion Forum") }}</a>
 	<a href="{{= URL(r=request, f='status', args=problem.id) }}">{{= T("Scale of Results") }}</a>
 	<a href="{{= URL(r=request, f='vote', args=problem.id) }}">{{= T("Vote") }}</a>
 	<strong>{{= T("Options") }}</strong>
 <h1>{{= problem.title }}</h1>
 </div>
+<p><b>{{= T("Group")}}:</b> {{= problem.grp.title }}</p>
 <p><b>{{= T("Description")}}:</b> {{= problem.description }}</p>
 <p><b>{{= T("Criteria")}}:</b> {{= problem.criteria }}</p>
-<hr/>
-<p>{{= T("List of Items:")}}</p>
-<ul class="delphi_wide">
+<h4>{{= T("List of Items:")}}</h4>
+<dl class="delphi_wide">
 {{ for item in items: }}
-	<li>{{= item.title }}{{ if authorised: }} <a href="{{= URL(r=request, f='solution_item', args=['update', item.id]) }}">({{= T("edit")}})</a>{{ pass }}</li>
+	<dt><strong>{{= item.title }}</strong> <a href="{{= URL(r=request, f='discuss', args=[item.id]) }}">({{= T("Discussion Forum")}})</a>{{ if authorised: }} <a href="{{= URL(r=request, f='solution_item', args=['update', item.id]) }}">({{= T("edit")}})</a>{{ pass }}
+	<dd><p>{{= item.description }}</p></dd>
 {{ pass }}
-</ul>
-{{ if can_vote: }}
+</dl>
+
 <form action="{{= URL(r=request, f='summary', args=problem.id) }}" method="post">
-	<p><label>New Item: <input name="item_title"/></label> <input type="submit" value="Add"/></p>
+	<h4>New Item</h4>
+	<dl>
+	<dt><label for="item_title">Title:</label></dt>
+	<dd><input id="item_title" name="item_title"/></dd>
+	<dt><label for="item_description">Description:</label></dt>
+	<dd><textarea id="item_description" name="item_description" rows="2" cols="50"></textarea></dd>
+	<input type="submit" value="Add"/>
 </form>
+
+{{ if can_vote: }}
 <p><a href="{{= URL(r=request, f='vote', args=problem.id) }}">{{= T("Vote") }}</a></p>
 {{ pass }}
 <script type="text/javascript" language="javascript">//<![CDATA[

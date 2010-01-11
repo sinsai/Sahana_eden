@@ -22,3 +22,4 @@ static/selenium/results/*
 static/*/.svn/*
 static/*test*
 tests/.cherrypy/*
+.DS_Store

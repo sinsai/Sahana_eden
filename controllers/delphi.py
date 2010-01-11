@@ -8,7 +8,12 @@ response.menu_options = [
     [T("Active Problems"), False, URL(r=request, f='index')],
 ]
 
-if auth.has_membership(1):
+if shn_has_permission("insert", db.delphi_grp):
+    response.menu_options.extend([
+        [T('New Group'), False, URL(r=request, f='grp', args='create')],
+    ])
+
+if shn_has_permission("insert", db.delphi_problem):
     response.menu_options.extend([
         [T('New Problem'), False, URL(r=request, f='problem', args='create')],
     ])
@@ -80,7 +85,7 @@ MIN_COLOR = (0xfc, 0xaf, 0x3e)
 MAX_COLOR = (0x4e, 0x9a, 0x06)
 
 
-def lookupTable(mp):
+def __lookupTable(mp):
     unitValue = 0.0
     
     for j in range(1, 50):
@@ -104,156 +109,178 @@ def lookupTable(mp):
     return unitValue
 
 
+def __cal_votes(pr, i_ids):
+    num_voted = 0
+    votes = {}
+    for i1 in i_ids:
+        for i2 in i_ids:
+            votes[(i1, i2)] = 0
+
+    users = db(db.auth_user.id>0).select()
+
+    for u in users:
+        query = (db.delphi_vote.problem == pr.id) & \
+                (db.delphi_vote.user == u.id) & \
+                (db.delphi_vote.rank < 9888)
+                
+        u_votes = [v.solution_item for v in db(query).select(
+                                db.delphi_vote.solution_item, 
+                                db.delphi_vote.rank, 
+                                orderby=db.delphi_vote.rank)]
+        
+        if len(u_votes) > 1: num_voted += 1
+        for i1 in range(len(u_votes)):
+            for i2 in range(i1+1, len(u_votes)):
+                votes[(u_votes[i1], u_votes[i2])] += 1
+    return (votes, num_voted)
+
+
+def __get_commons():
+    problem_id = request.args(0)
+    pr = db.delphi_problem[problem_id]
+    if not pr: raise HTTP(404)
+    
+    user = db.auth_user[auth.user.id] if (auth.is_logged_in() and session.auth) else 0
+    authorised = shn_has_permission("update", db.delphi_problem, problem_id) and auth.has_membership(1)
+    
+    can_vote = user is not 0
+    
+    return (pr, user, authorised, can_vote)
+
+
 def index():
     latest_problems = db(db.delphi_problem.active==True).select(orderby=~db.delphi_problem.last_modification)
     return dict(latest_problems=latest_problems, title="Active Problems",
                 module_name=module_name)
 
+def grp():
+    return shn_rest_controller(module, 'grp', list_fields=['title', 'moderator', 'last_modification'])    
+
 def problem():
-    return shn_rest_controller(module, 'problem', list_fields=['title', 'created_by', 'last_modification'])
+    return shn_rest_controller(module, 'problem', list_fields=['grp', 'title', 'created_by', 'last_modification'])
 
 def solution_item():
     return shn_rest_controller(module, 'solution_item', list_fields=['problem', 'title', 'suggested_by', 'last_modification'])
 
+
 def summary():
-    problem_id = request.args(0)
-    pr = db.delphi_problem[problem_id]
-    if not pr: raise HTTP(404)
-    authorised = shn_has_permission("update", db.delphi_problem, problem_id) and auth.has_membership(1)
-    user = db.auth_user[auth.user.id] if (auth.is_logged_in() and session.auth) else 0
-    can_vote = user is not 0
+    pr, user, authorised, can_vote = __get_commons()
     voted = user.delphi_vote.select() if user else False
     
     if can_vote and 'item_title' in request.post_vars:
-        db.delphi_solution_item.insert(problem=pr, title=request.post_vars['item_title'])
+        db.delphi_solution_item.insert(problem=pr, 
+                                       title=request.post_vars['item_title'],
+                                       description=request.post_vars['item_description'])
     
     return dict(problem=pr, items=pr.delphi_solution_item.select(),
                 authorised=authorised, can_vote=can_vote, voted=voted, title="Options")
 
 
-def vote():
-    def check(i, j):
-        if ('v_%d_%d' % (i, j) in request.post_vars) and \
-            request.post_vars['v_%d_%d' % (i, j)] == "+":
-            return True
-        if ('v_%d_%d' % (j, i) in request.post_vars) and \
-            request.post_vars['v_%d_%d' % (j, i)] == "-":
-            return True
-        return False
-    
-    problem_id = request.args(0)
-    pr = db.delphi_problem[problem_id]
-    if not pr: raise HTTP(404)
-    authorised = shn_has_permission("update", db.delphi_problem, problem_id) and auth.has_membership(1)
-    user = db.auth_user[auth.user.id] if (auth.is_logged_in() and session.auth) else 0
-    can_vote = user is not 0
-    voted = user.delphi_vote.select() if user else False
-    if can_vote and 'submit' in request.post_vars:
-        items = []
-        for si1 in pr.delphi_solution_item.select():
-            items.append(si1)
-        n = len(items)
-        for i in range(n):
-            top = i
-            for j in range(i+1, n):
-                if check(items[j].id, items[top].id):
-                    top = j
-            items[i], items[top] = items[top], items[i]
+def save_vote():
+    pr, user, authorised, can_vote = __get_commons()
+    if not can_vote: raise HTTP(403)
+
+    items = [i.id for i in pr.delphi_solution_item.select()]
+    ranks = {}
+    for item_id in items:
+        if str(item_id) in request.post_vars:
+            ranks[item_id] = request.post_vars[str(item_id)]
         
-        #FIXME: User's selection will be disappeared if there is an error
-        error = False
-        for i in range(n):
-            for j in range(i+1, n):
-                if check(items[j].id, items[i].id):
-                    session.error = T('There is a loop in the priority list you have submited!')
-                    redirect(URL(r=request, f='summary', args=problem_id))    
-                    error = True
-                if not check(items[i].id, items[j].id):
-                    session.error = T("You haven't completed all the available pairs!")
-                    redirect(URL(r=request, f='summary', args=problem_id))    
-                    error = True
-        
-        if not error:
-            if voted:
-                for old in voted:
-                    del db.delphi_vote[old.id]
-            for i in range(n):
-                db.delphi_vote.insert(solution_item=items[i].id, rank=i+1)
-            voted = user.delphi_vote.select(db.delphi_vote.solution_item, db.delphi_vote.rank)
-    
+    query = (db.delphi_vote.problem==pr.id) & (db.delphi_vote.user==user.id)
+    voted = db(query).select(orderby=db.delphi_vote.rank) if user else False
+
     if voted:
-        voted = dict([(v.solution_item, v.rank) for v in voted])
-    pairs = []
-    for si1 in pr.delphi_solution_item.select():
-        for si2 in pr.delphi_solution_item(db.delphi_solution_item.id>si1.id).select():
-            pairs.append((si1, si2, voted and (si1.id in voted) and (si2.id in voted) and (voted[si1.id] < voted[si2.id] and 1 or 2)))
-    return dict(problem=pr, pairs=pairs,
+        for old in voted:
+            del db.delphi_vote[old.id]
+
+    for item_id, rank in ranks.items():
+        db.delphi_vote.insert(problem=pr.id, solution_item=item_id, rank=rank)
+    
+    return '"OK"'
+
+
+def vote():
+    pr, user, authorised, can_vote = __get_commons()
+
+    items = dict([(i.id, i.title) for i in pr.delphi_solution_item.select()])
+    n = len(items)
+    
+    if user:
+        query = (db.delphi_vote.problem==pr.id) & (db.delphi_vote.user==user.id)
+        voted = db(query).select(orderby=db.delphi_vote.rank)
+    else:
+        voted = False
+    
+    # v.rank == 9999 -> user has selected not to vote on v.solution_item
+    #   rank == 9998 -> the solution_item is new and the user hasn't votted on it yet
+    if voted:
+        sorted_items = [v.solution_item for v in voted]
+        ranks = dict([(v.solution_item, v.rank) for v in voted])
+        n = len(sorted_items)
+        last_enabled = -1
+        while ((-last_enabled) <= n) and (ranks[sorted_items[last_enabled]] == 9999):
+            last_enabled -= 1
+        for i in items.keys():
+            if not i in ranks.keys():
+                if last_enabled == -1:
+                    sorted_items.append(i)
+                else:
+                    sorted_items.insert(last_enabled + 1, i)
+                ranks[i] = 9998
+    else:
+        votes, num_voted = __cal_votes(pr, items.keys())
+        def cc1(i1, i2):
+            if votes[(i1, i2)] > votes[(i2, i1)]: return -1
+            if votes[(i1, i2)] < votes[(i2, i1)]: return +1
+            return 0
+        sorted_items = sorted(list(items.keys()), cc1)
+        ranks = dict([(i, 9998) for i in sorted_items])
+
+    return dict(problem=pr, items=items, sorted_items=sorted_items, ranks=ranks,
                 authorised=authorised, can_vote=can_vote, voted=voted, title="Vote")
 
 
 def status():
-    problem_id = request.args(0)
-    pr = db.delphi_problem[problem_id]
-    user = db.auth_user[auth.user.id] if (auth.is_logged_in() and session.auth) else 0
+    pr, user, authorised, can_vote = __get_commons()
     can_view = True
     
-    votes = {}
     items = dict([(i.id, i.title) for i in pr.delphi_solution_item.select()])
     i_ids = items.keys()
     n = len(i_ids)
-    users = db(db.auth_user.id>0).select()
-    num_users = len(users)
+    
+    
+    empty = dict(problem=pr, can_view=can_view, items=items, beans=[],
+                authorised= authorised,
+                votes={}, scale={}, title="Scale of Results", num_voted=0)
     
     if n == 0:
-        return dict(problem=pr, can_view=can_view, items=items, beans=[],
-                    votes=votes, scale={}, title="Scale of Results", 
-                    num_users=num_users, num_voted=0, worst=[], best=[])
+        return empty
+    
+    votes, num_voted = __cal_votes(pr, i_ids)
+    
+    scale = {}
+    tt2 = float(num_voted)
+    
+    if tt2 == 0:
+        return empty
     
     for i1 in i_ids:
+        scale[i1] = 0
         for i2 in i_ids:
-            votes[(i1, i2)] = 0
-    num_voted = 0
-    for u in users:
-        u_votes = [v.solution_item for v in u.delphi_vote.select(db.delphi_vote.solution_item) if db.delphi_solution_item[v.solution_item].problem == pr.id] # FIXME
-        if u_votes: num_voted += 1
-        for i1 in range(len(u_votes)):
-            for i2 in range(i1+1, len(u_votes)):
-                votes[(u_votes[i1], u_votes[i2])] += 1
-    scale = {}
-    worst = {}
-    best = {}
-    tt = float(num_users)
-    tt2 = float(num_voted)
-    for i1 in i_ids:
-        scale[i1] = worst[i1] = best[i1] = 0
-        for i2 in i_ids:
-            if i1 == i2 or tt == 0:
+            if i1 == i2:
                 continue
             if votes[(i1, i2)] > votes[(i2, i1)]:
-                scale[i1] += lookupTable(votes[(i1, i2)]/tt2)
+                scale[i1] += __lookupTable(votes[(i1, i2)]/tt2)
             else:
-                scale[i1] -= lookupTable(votes[(i2, i1)]/tt2)
-
-            not_voted = num_users - votes[(i1, i2)] - votes[(i2, i1)]
-            b_votes = num_users - votes[(i2, i1)]
-            if b_votes > votes[(i2, i1)]:
-                best[i1] += lookupTable(b_votes/tt)
-            else:
-                best[i1] -= lookupTable(votes[(i2, i1)]/tt)
-            
-            w_votes = num_users - votes[(i1, i2)]
-            if votes[(i1, i2)] > w_votes:
-                worst[i1] += lookupTable(votes[(i1, i2)]/tt)
-            else:
-                worst[i1] -= lookupTable(w_votes/tt)
-
-    def cc(i1, i2):
+                scale[i1] -= __lookupTable(votes[(i2, i1)]/tt2)
+    
+    def cc2(i1, i2):
         if scale[i1] > scale[i2]: return -1
         if scale[i1] < scale[i2]: return +1
         return 0
     
-    i_ids.sort(cc)
-
+    i_ids.sort(cc2)
+    
     beans_num = int((n+1) * 2)
     bean_size = 10.0 * n / beans_num
     beans = []
@@ -266,19 +293,16 @@ def status():
             bean.append(i_ids[i])
             i += 1
         beans.append((color, bean))
-
-
+    
     return dict(problem=pr, can_view=can_view, items=items, beans=beans,
-                scale=scale,
-                title="Scale of Results", num_users=num_users,
-                votes=votes, is_admin=auth.has_membership(1),
-                num_voted=num_voted, worst=worst, best=best)
+                scale=scale, authorised= authorised,
+                title="Scale of Results", votes=votes, num_voted=num_voted)
 
 
 def discuss():
-    problem_id = request.args(0)
-    pr = db.delphi_problem[problem_id]
     user = db.auth_user[auth.user.id] if (auth.is_logged_in() and session.auth) else 0
+    item_id = request.args(0)
+    item = db.delphi_solution_item[item_id]
     can_post = user is not 0
     
     form=SQLFORM(db.delphi_forum_post, 
@@ -301,7 +325,7 @@ def discuss():
                 else:
                     post_html += "</p>"
                 if k > 0:
-                    post_html += "<blockquote class='delphi_q%d'>" % k
+                    post_html += "<blockquote class='delphi_q%d'>" % (((k-1) % 6) + 1)
                 else:
                     post_html += "<p>"
             else:
@@ -309,10 +333,10 @@ def discuss():
             post_html += l[k:]
         if k > 0:
             post_html += "</blockquote>"
-        db.delphi_forum_post.insert(title=title, problem=pr, post=post, post_html=post_html)
+        db.delphi_forum_post.insert(title=title, solution_item=item, post=post, post_html=post_html)
         response.flash='your post was added successfully.'
     elif form.errors:
         response.error='there are errors'
 
-    return dict(problem=pr, can_post=can_post, user=user, 
-                form=form, title="Discussion Forum")
+    return dict(item=item, problem=item.problem, can_post=can_post, user=user, 
+                form=form, title="Discussion Forum", authorised=False)

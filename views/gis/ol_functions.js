@@ -4,12 +4,6 @@
 function ReportErrors(div,text) {
      $(div).innerHTML = text;
 }
-// For KML layers
-function onFeatureUnselectK(feature) {
-    map.removePopup(feature.popup);
-    feature.popup.destroy();
-    feature.popup = null;
-}
 // For OSM File layers
 function on_feature_hover(feature) {
         var text ="<ul>";

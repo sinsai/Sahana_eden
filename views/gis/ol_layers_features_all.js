@@ -5,11 +5,11 @@ featuresLayer = new OpenLayers.Layer.Vector("Draft Features", {displayInLayerSwi
 map.addLayer(featuresLayer);
 
 featuresLayer.events.register('featureadded', featuresLayer, function(){
-       // ToDo: Support 2 Modes via if: else:
-       // Add a point with popup (for use from map_viewing_client)
-       shn_gis_map_create_feature;
-       // Add a point without popup (for use from add_feature during module CRUD)
-       //shn_gis_map_add_geometry;
+   // ToDo: Support 2 Modes via if: else:
+   // Add a point with popup (for use from map_viewing_client)
+   shn_gis_map_create_feature;
+   // Add a point without popup (for use from add_feature during module CRUD)
+   //shn_gis_map_add_geometry;
 });
 
 // Show Busy cursor whilst loading Draft Features

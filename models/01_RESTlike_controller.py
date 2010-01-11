@@ -257,13 +257,13 @@ def export_xls(table, query):
         row0.write(cell, str(field.label), xlwt.easyxf('font: bold True;'))
         cell += 1
     row = 1
+    style = xlwt.XFStyle()
     for item in items:
         # Item details
         rowx = sheet1.row(row)
         row += 1
         cell1 = 0
         for field in fields:
-            style = xlwt.XFStyle()
             tab, col = str(field).split('.')
             # Check for Date formats
             if db[tab][col].type == 'date':

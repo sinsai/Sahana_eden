@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# Person Registry, Identification, Tracking and Tracing system
+# Person Registry
 #
 # created 2009-07-24 by nursix
 #
@@ -17,22 +17,31 @@ except:
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Search for a Person'), False, URL(r=request, f='person', args='search_simple')],
-    [T('View/Edit Person Details'), False, URL(r=request, f='person', args='read'),[
-        [T('Basic Details'), False, URL(r=request, f='person', args='read')],
-        [T('Images'), False, URL(r=request, f='person', args='image')],
-        [T('Identity'), False, URL(r=request, f='person', args='identity')],
-        [T('Address'), False, URL(r=request, f='person', args='address')],
-        [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
-        [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
-#        [T('Roles'), False, URL(r=request, f='person', args='role')],
-#        [T('Status'), False, URL(r=request, f='person', args='status')],
-        [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
+    [T('Persons'), False, URL(r=request, f='person'), [
+        [T('List'), False, URL(r=request, f='person')],
+        [T('Add'), False, URL(r=request, f='person', args='create')],
     ]],
-    [T('Add Person'), False, URL(r=request, f='person', args='create')],
-    [T('Add Group'), False, URL(r=request, f='group', args='create')],
-    [T('List Persons'), False, URL(r=request, f='person')],
-    [T('List Groups'), False, URL(r=request, f='group')]
+    [T('Groups'), False, URL(r=request, f='group'), [
+        [T('List'), False, URL(r=request, f='group')],
+        [T('Add'), False, URL(r=request, f='group', args='create')],
+    ]]
 ]
+
+if session.rcvars and 'pr_person' in session.rcvars:
+    selection = shn_pr_person_represent(session.rcvars['pr_person'])
+    response.menu_options.append(
+        [str(T('Person:')) + ' ' + selection, False, URL(r=request, f='person', args='read'),[
+            [T('Basic Details'), False, URL(r=request, f='person', args='read')],
+            [T('Images'), False, URL(r=request, f='person', args='image')],
+            [T('Identity'), False, URL(r=request, f='person', args='identity')],
+            [T('Address'), False, URL(r=request, f='person', args='address')],
+            [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+            [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
+    #        [T('Roles'), False, URL(r=request, f='person', args='role')],
+    #        [T('Status'), False, URL(r=request, f='person', args='status')],
+    #        [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
+        ]]
+    )
 
 # S3 framework functions
 def index():
@@ -51,7 +60,7 @@ def index():
 # Main controller functions
 def person():
     crud.settings.delete_onaccept = shn_pentity_ondelete
-    return shn_rest_controller(module, 'person', main='first_name', extra='last_name',
+    output = shn_rest_controller(module, 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
         rss=dict(
@@ -59,6 +68,25 @@ def person():
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ),
         onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
+
+    if session.rcvars and 'pr_person' in session.rcvars:
+        selection = shn_pr_person_represent(session.rcvars['pr_person'])
+        response.menu_options.pop()
+        response.menu_options.append(
+            [str(T('Details for:')) + ' ' + selection, False, URL(r=request, f='person', args='read'),[
+                [T('Basic Details'), False, URL(r=request, f='person', args='read')],
+                [T('Images'), False, URL(r=request, f='person', args='image')],
+                [T('Identity'), False, URL(r=request, f='person', args='identity')],
+                [T('Address'), False, URL(r=request, f='person', args='address')],
+                [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+                [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
+        #        [T('Roles'), False, URL(r=request, f='person', args='role')],
+        #        [T('Status'), False, URL(r=request, f='person', args='status')],
+        #        [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
+            ]]
+        )
+
+    return output
 
 def group():
     response.s3.filter = (db.pr_group.system==False) # do not show system groups

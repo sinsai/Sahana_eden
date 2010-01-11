@@ -12,6 +12,18 @@
  {{pass}}
 </div>
 {{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+{{include 'formats.html'}}
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+ <p>&nbsp;</p>
+{{except:}}
+{{pass}}
+</div>
+{{try:}}
  {{=H3(addtitle)}}
 {{except:}}
 {{pass}}
@@ -22,17 +34,6 @@
 {{pass}}
 </div>
 {{include 'key.html'}}
-{{try:}}
- {{=H3(subtitle)}}
-{{except:}}
-{{pass}}
-{{include 'formats.html'}}
-<div id='table-container'>
-{{try:}}
- {{=items}}
-{{except:}}
-{{pass}}
-</div>
 {{include 'pagenav.html'}}
 {{include 'searchbox.html'}}
 <p>&nbsp;</p>

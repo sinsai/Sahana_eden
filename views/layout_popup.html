@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 {{if session.s3.debug:}}
@@ -26,18 +26,25 @@ function TB_refresh() {
     if (self.parent.$('#' + caller + ' >option').length ) {
         // We have been called next to a drop-down
         // Get the previously selected value
-        //var selectedvalue = self.parent.$('#' + caller).attr("selectedIndex")+1;
+        var selector = self.parent.$('#' + caller);
+        //var selectedvalue = selector.attr("selectedIndex")+1;
         // Clean up the caller
         self.parent.$('#' + caller + ' >option').remove();
         $.getJSON(url, function (data) {
-            var value, represent;
+            var value, represent, append;
             $.each(data['option'], function() {
                 value = this['@value'];
                 represent = this['$'];
-                self.parent.$('#' + caller).append($("<option></option>").val(value).html(represent));
+                if(typeof represent === "undefined") {
+                    represent = "";
+                } 
+                append = "<option value='" + value + "'>" + represent + "</option>";
+                selector.append(append);
             });
             // Set the newly-created value (last in list)
-            self.parent.$('#' + caller).val(value);
+            //selector.val(value);
+            // IE6 needs time for DOM to settle: http://csharperimage.jeremylikness.com/2009/05/jquery-ie6-and-could-not-set-selected.html
+            setTimeout(function() { selector.val(value); }, 1);
             // Also populate dummy, if present
             // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
             //self.parent.$('#dummy').val(represent);

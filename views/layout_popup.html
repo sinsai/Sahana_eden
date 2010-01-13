@@ -31,16 +31,17 @@ function TB_refresh() {
         // Clean up the caller
         self.parent.$('#' + caller + ' >option').remove();
         $.getJSON(url, function (data) {
-            var value, represent, append;
+            var value, represent;
+            var append = '';
             $.each(data['option'], function() {
                 value = this['@value'];
                 represent = this['$'];
                 if(typeof represent === "undefined") {
                     represent = "";
                 } 
-                append = "<option value='" + value + "'>" + represent + "</option>";
-                selector.append(append);
+                append += "<option value='" + value + "'>" + represent + "</option>";
             });
+            selector.append(append);
             // Set the newly-created value (last in list)
             //selector.val(value);
             // IE6 needs time for DOM to settle: http://csharperimage.jeremylikness.com/2009/05/jquery-ie6-and-could-not-set-selected.html

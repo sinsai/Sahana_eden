@@ -27,25 +27,25 @@ def index():
 @service.amfrpc
 def sector():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'sector')
+    return shn_rest_controller(module, 'sector', listadd=False)
 
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
 def organisation():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'organisation')
+    return shn_rest_controller(module, 'organisation', listadd=False)
 
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
 def office():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'office')
+    return shn_rest_controller(module, 'office', listadd=False)
 
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
 def contact():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'contact')
+    return shn_rest_controller(module, 'contact', listadd=False)

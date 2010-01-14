@@ -2,32 +2,17 @@
 <div id='home'>
 <div id='logo'>
 </div>
-<h2>{{=T("Welcome to the Sahana FOSS Disaster Management System")}}</h2>
+<h2>{{=T("Welcome to the Haiti Organisation Registry")}}</h2>
 <p>
-{{=T("Sahana is a collection of web based disaster management applications that provides solutions to large-scale humanitarian coordination and collaboration in disaster situation and its aftermath. Sahana consists of several modules for following functionalities")}}:
+{{=T("This site is used to show all the locations of response agencies working for the Haiti Quake Response 2010")}}:
 </p>
 <ul>
-{{for module in modules:}}
- {{if not module.access and not module.name=='default':}}
-  <li><strong>{{=A(T(module.name_nice), _href=URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id)))}}</strong> - {{=module.description}}.</li>
- {{else:}}
-  {{authorised = False}}
-  {{groups = re.split('\|', module.access)[1:-1]}}
-  {{for group in groups:}}
-   {{if auth.has_membership(group):}}
-    {{authorised = True}}
-   {{pass}}
-  {{pass}}
-  {{if authorised == True:}}
-   <li><strong>{{=A(T(module.name_nice), _href=URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id)))}}</strong> - {{=module.description}}.</li>
-  {{pass}}
- {{pass}}
-{{pass}}
+  <li><strong>{{=A(T('Add Office'), _href=URL(r=request, c='or', f='office', args=['create']))}}</strong></li>
+  <li><strong>{{=A(T('View Offices'), _href=URL(r=request, c='or', f='office'))}}</strong></li>
+  <li><strong>{{=A(T('View Offices in Google Earth'), _href=URL(r=request, c='gis', f='location.xml'))}}</strong></li>
 </ul>
 <p>
-{{=T("For more details on the Sahana system, see the")}} <a href="http://www.sahana.lk">{{=T("Sahana Website")}}</a>
 <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://www.sahana.lk/chat">{{=T("Sahana Community Chat")}}</a>
-<br/>{{=T("To access Sahana documentation, go to")}} <a href="https://trac.sahanapy.org/wiki">{{=T("SahanaPy Wiki")}}</a>
 </p>
 <p>
 {{=T("Administrator")}}: {{=admin_name}}

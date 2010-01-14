@@ -11,9 +11,9 @@ if empty:
     table = 's3_setting'
     if not db(db[table].id).count():
         db[table].insert(
-            admin_name = T("Sahana Administrator"),
-            admin_email = T("support@Not Set"),
-            admin_tel = T("Not Set"),
+            admin_name = T("Sahana Haiti Support Team"),
+            admin_email = T("haiti@sahanapy.org"),
+            admin_tel = T("+44-7789-746281"),
             theme = 1
         )
 

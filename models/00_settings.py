@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-S3_PUBLIC_URL = 'http://127.0.0.1:8000/sahana'
-S3_UTC_OFFSET = 'UTC +0000' # default UTC offset (timezone) of users
+S3_PUBLIC_URL = 'http://haiti-orgs.sahanafoundation.org/orgs'
+S3_UTC_OFFSET = 'UTC -0500' # default UTC offset (timezone) of users
 BREADCRUMB = '>> '
 
 # Default strings are in English
@@ -39,9 +39,9 @@ auth.settings.mailer = mail
 auth.messages.verify_email = 'Click on the link ' + S3_PUBLIC_URL + '/default/user/verify_email/%(key)s to verify your email'
 auth.settings.on_failed_authorization = URL(r=request, c='default', f='user', args='not_authorized')
 # Require Admin approval for self-registered users
-auth.settings.registration_requires_approval = False
+auth.settings.registration_requires_approval = True
 # Notify UserAdmin of new pending user registration to action
-# auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='adminwithapprovalpower@admindomain', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap: ' % form.email + S3_PUBLIC_URL + '/admin/user')
+auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='haiti@sahanapy.org', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap: ' % form.email + S3_PUBLIC_URL + '/admin/user')
 # Allow use of LDAP accounts for login
 # NB Currently this means that change password should be disabled:
 #auth.settings.actions_disabled.append('change_password')

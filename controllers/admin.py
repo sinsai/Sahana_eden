@@ -211,7 +211,7 @@ def user():
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.label = T('Disabled?')
-    db.auth_user.registration_key.requires = IS_IN_SET(['','disabled'])
+    db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
 
     return shn_rest_controller(module, resource, main='first_name')
     

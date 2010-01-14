@@ -39,7 +39,7 @@ auth.settings.mailer = mail
 auth.messages.verify_email = 'Click on the link ' + S3_PUBLIC_URL + '/default/user/verify_email/%(key)s to verify your email'
 auth.settings.on_failed_authorization = URL(r=request, c='default', f='user', args='not_authorized')
 # Require Admin approval for self-registered users
-auth.settings.registration_requires_approval = True
+auth.settings.registration_requires_approval = False # CHANGEME for Deployment!
 # Notify UserAdmin of new pending user registration to action
 auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='haiti@sahanapy.org', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap: ' % form.email + S3_PUBLIC_URL + '/admin/user')
 # Allow use of LDAP accounts for login

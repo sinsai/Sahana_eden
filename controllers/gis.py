@@ -336,13 +336,18 @@ def track():
 
     return shn_rest_controller(module, resource)
 
+def layer():
+    "Custom View for Layer Catalogue"
+    return dict()
+
+# Common CRUD strings for all layers
 title_create = T('Add Layer')
 title_display = T('Layer Details')
-title_list = T('List Layers')
+title_list = T('Layers')
 title_update = T('Edit Layer')
 title_search = T('Search Layers')
 subtitle_create = T('Add New Layer')
-subtitle_list = T('Layers')
+subtitle_list = T('List Layers')
 label_create_button = T('Add Layer')
 msg_record_created = T('Layer added')
 msg_record_modified = T('Layer updated')
@@ -408,6 +413,28 @@ def layer_bing():
 
     return shn_rest_controller(module, resource, deletable=False)
 
+def layer_georss():
+    "RESTlike CRUD controller"
+    resource = 'layer_georss'
+    table = module + '_' + resource
+
+    # Model options
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
+    db[table].url.comment = SPAN("*", _class="req")
+    db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
+    db[table].projection_id.default = 2
+
+    # CRUD Strings
+    title_list = T('GeoRSS Layers')
+    subtitle_create = T('Add New GeoRSS Layer')
+    subtitle_list = T('List GeoRSS Layers')
+    label_list_button = T('List GeoRSS Layers')
+    msg_list_empty = T('No GeoRSS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
 def layer_gpx():
     "RESTlike CRUD controller"
     resource = 'layer_gpx'
@@ -417,8 +444,78 @@ def layer_gpx():
     # Needed in multiple controllers, so defined in Model
 
     # CRUD Strings
+    title_list = T('GPX Layers')
+    subtitle_create = T('Add New GPX Layer')
+    subtitle_list = T('List GPX Layers')
     label_list_button = T('List GPX Layers')
     msg_list_empty = T('No GPX Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_kml():
+    "RESTlike CRUD controller"
+    resource = 'layer_kml'
+    table = module + '_' + resource
+
+    # Model options
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
+    db[table].url.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    title_list = T('KML Layers')
+    subtitle_create = T('Add New KML Layer')
+    subtitle_list = T('List KML Layers')
+    label_list_button = T('List KML Layers')
+    msg_list_empty = T('No KML Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_tms():
+    "RESTlike CRUD controller"
+    resource = 'layer_tms'
+    table = module + '_' + resource
+
+    # Model options
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
+    db[table].url.comment = SPAN("*", _class="req")
+    db[table].layers.requires = IS_NOT_EMPTY()
+    db[table].layers.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    title_list = T('TMS Layers')
+    subtitle_create = T('Add New TMS Layer')
+    subtitle_list = T('List TMS Layers')
+    label_list_button = T('List TMS Layers')
+    msg_list_empty = T('No TMS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_wms():
+    "RESTlike CRUD controller"
+    resource = 'layer_wms'
+    table = module + '_' + resource
+
+    # Model options
+    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
+    db[table].url.requires = IS_NOT_EMPTY()
+    db[table].url.comment = SPAN("*", _class="req")
+    db[table].layers.requires = IS_NOT_EMPTY()
+    db[table].layers.comment = SPAN("*", _class="req")
+    db[table].format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
+    db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
+    db[table].projection_id.default = 2
+
+    # CRUD Strings
+    title_list = T('WMS Layers')
+    subtitle_create = T('Add New WMS Layer')
+    subtitle_list = T('List WMS Layers')
+    label_list_button = T('List WMS Layers')
+    msg_list_empty = T('No WMS Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
     return shn_rest_controller(module, resource)
@@ -750,11 +847,15 @@ def map_service_catalogue():
 def layers():
     "Provide the Enabled Layers"
 
+    from gluon.tools import fetch
+    
+    response.warning = ''
+    
     layers = Storage()
 
     # OpenStreetMap
     layers.openstreetmap = Storage()
-    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select(db.gis_layer_openstreetmap.ALL)
+    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select()
     for layer in layers_openstreetmap:
         for subtype in gis_layer_openstreetmap_subtypes:
             if layer.subtype == subtype:
@@ -765,7 +866,7 @@ def layers():
     # Check for Google Key
     try:
         layers.google.key = db(db.gis_apikey.name=='google').select(db.gis_apikey.apikey)[0].apikey
-        layers_google = db(db.gis_layer_google.enabled==True).select(db.gis_layer_google.ALL)
+        layers_google = db(db.gis_layer_google.enabled==True).select()
         for layer in layers_google:
             for subtype in gis_layer_google_subtypes:
                 if layer.subtype == subtype:
@@ -781,7 +882,7 @@ def layers():
     # Check for Yahoo Key
     try:
         layers.yahoo.key = db(db.gis_apikey.name=='yahoo').select(db.gis_apikey.apikey)[0].apikey
-        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select(db.gis_layer_yahoo.ALL)
+        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select()
         for layer in layers_yahoo:
             for subtype in gis_layer_yahoo_subtypes:
                 if layer.subtype == subtype:
@@ -795,11 +896,150 @@ def layers():
     # Bing (Virtual Earth)
     # Broken in GeoExt: http://www.geoext.org/pipermail/users/2009-December/000393.html
     #layers.bing = Storage()
-    #layers_bing = db(db.gis_layer_bing.enabled==True).select(db.gis_layer_bing.ALL)
+    #layers_bing = db(db.gis_layer_bing.enabled==True).select()
     #for layer in layers_bing:
     #    for subtype in gis_layer_bing_subtypes:
     #        if layer.subtype == subtype:
     #            layers.bing['%s' % subtype] = layer.name
+
+    # GPX
+    layers.gpx = Storage()
+    layers_gpx = db(db.gis_layer_gpx.enabled==True).select()
+    for layer in layers_gpx:
+        name = layer.name
+        layers.gpx[name] = Storage()
+        track = db(db.gis_track.id==layer.track_id).select()[0] 
+        layers.gpx[name].url = track.track
+        if layer.marker_id:
+            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
+        else:
+            marker_id = db(db.gis_config.id==1).select()[0].marker_id
+            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
+    
+    cachepath = os.path.join(request.folder, 'uploads', 'gis_cache')
+    if os.access(cachepath, os.W_OK):
+        cache = True
+    else:
+        cache = False
+        
+    # GeoRSS
+    layers.georss = Storage()
+    layers_georss = db(db.gis_layer_georss.enabled==True).select()
+    if layers_georss and not cache:
+        response.warning += cachepath + ' ' + str(T('not writable - unable to cache GeoRSS layers!')) + '\n'
+    for layer in layers_georss:
+        name = layer.name
+        url = layer.url
+        if cache:
+            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.xml'
+            filepath = os.path.join(cachepath, filename)
+            try:
+                # Download file to cache
+                file = fetch(url)
+                f = open(filepath, 'w')
+                f.write(file)
+                f.close()
+                records = db(db.gis_cache.name == name).select()
+                if records:
+                    records[0].update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c='default', f='download', args=[filename])
+            except:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    # Use cached version
+                    date = db(db.gis_cache.name == name).select()[0].modified_on
+                    response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
+                    url = URL(r=request, c='default', f='download', args=[filename])
+                else:
+                    # No cached version available
+                    response.warning += url + ' ' + str(T('not accessible - no cached version available!')) + '\n'
+                    # skip layer
+                    continue
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+        
+        # Add to return
+        layers.georss[name] = Storage()
+        layers.georss[name].url = url
+        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select()[0].epsg
+        if layer.marker_id:
+            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
+        else:
+            marker_id = db(db.gis_config.id==1).select()[0].marker_id
+            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
+
+    # KML
+    layers.kml = Storage()
+    layers_kml = db(db.gis_layer_kml.enabled==True).select()
+    if layers_kml and not cache:
+        response.warning += cachepath + ' ' + str(T('not writable - unable to cache KML layers!')) + '\n'
+    for layer in layers_kml:
+        name = layer.name
+        url = layer.url
+        if cache:
+            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
+            filepath = os.path.join(cachepath, filename)
+            try:
+                # Download file to cache
+                file = fetch(url)
+                f = open(filepath, 'w')
+                f.write(file)
+                f.close()
+                records = db(db.gis_cache.name == name).select()
+                if records:
+                    records[0].update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c='default', f='download', args=[filename])
+            except:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    # Use cached version
+                    date = db(db.gis_cache.name == name).select()[0].modified_on
+                    response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
+                    url = URL(r=request, c='default', f='download', args=[filename])
+                else:
+                    # No cached version available
+                    response.warning += url + ' ' + str(T('not accessible - no cached version available!')) + '\n'
+                    # skip layer
+                    continue
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+        
+        # Add to return
+        layers.kml[name] = Storage()
+        layers.kml[name].url = url
+    
+    # WMS
+    layers.wms = Storage()
+    layers_wms = db(db.gis_layer_wms.enabled==True).select()
+    for layer in layers_wms:
+        name = layer.name
+        layers.wms[name] = Storage()
+        layers.wms[name].url = layer.url
+        layers.wms[name].base = layer.base
+        if layer.map:
+            layers.wms[name].map = layer.map
+        layers.wms[name].layers = layer.layers
+        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select()[0].epsg
+        layers.wms[name].transparent = layer.transparent
+        if layer.format:
+            layers.wms[name].format = layer.format
+
+    # TMS
+    layers.tms = Storage()
+    layers_tms = db(db.gis_layer_tms.enabled==True).select()
+    for layer in layers_tms:
+        name = layer.name
+        layers.tms[name] = Storage()
+        layers.tms[name].url = layer.url
+        layers.tms[name].layers = layer.layers
+        if layer.format:
+            layers.tms[name].format = layer.format
 
     return layers
 
@@ -890,6 +1130,7 @@ def map_viewing_client():
     baselayers = layers()
     # Add the Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms))
 
     # Internal Features
     features = Storage()
@@ -977,6 +1218,11 @@ def display_feature():
     feature_id = request.args[0]
     feature = db(db.gis_location.id == feature_id).select()[0]
 
+    # Check user is authorised to access record
+    if not shn_has_permission('read', db.gis_location, feature.id):
+        session.error = str(T("No access to this record!"))
+        raise HTTP(401, body=json_message(False, 401, session.error))
+
     # Config
     config = db(db.gis_config.id==1).select()[0]
     width = config.map_width
@@ -987,7 +1233,6 @@ def display_feature():
     if 'lat' in request.vars:
         lat = request.vars.lat
     else:
-        # ToDo: Calculate an appropriate BBOX from min lon max lon min lat max lat
         lat = feature.lat
     if 'lon' in request.vars:
         lon = request.vars.lon
@@ -1062,6 +1307,166 @@ def display_feature():
 
     # Add the feature to the Return
     output.update(dict(feature=feature))
+
+    # Layers
+    baselayers = layers()
+    # Add the Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+
+    return output
+
+def display_features():
+    """
+    Cut-down version of the Map Viewing Client.
+    Used as a link from the PHeader.
+        URL generated server-side
+    Shows all locations matching a query.
+    Most recent location is marked using a bigger Marker.
+    """
+
+    # Parse the URL, check for implicit resources, extract the primary record
+    # http://127.0.0.1:8000/sahana/gis/display_features&module=pr&resource=person&instance=1&jresource=presence
+    ok = 0
+    if 'module' in request.vars:
+        res_module = request.vars.module
+        ok +=1
+    if 'resource' in request.vars:
+        resource = request.vars.resource
+        ok +=1
+    if 'instance' in request.vars:
+        instance = int(request.vars.instance)
+        ok +=1
+    if 'jresource' in request.vars:
+        jresource = request.vars.jresource
+        ok +=1
+    if ok != 4:
+        session.error = str(T("Insufficient vars: Need module, resource, jresource, instance"))
+        raise HTTP(400, body=json_message(False, 400, session.error))
+
+    component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
+    table = db['%s_%s' % (res_module, resource)]
+    jtable = db[str(component.table)]
+    query = (jtable[fkey]==table[pkey]) & (table.id==instance)
+    # Filter out deleted
+    deleted = (table.deleted == False)
+    query = query & deleted
+    # Filter out inaccessible
+    query2 = db.gis_location.id==jtable.location_id
+    accessible = shn_accessible_query('read', db.gis_location)
+    query2 = query2 & accessible
+
+    features = db(query).select(db.gis_location.ALL, left = [db.gis_location.on(query2)])
+
+    # Implicit case for instance requires:
+    #request = the_web2py_way_to_build_a_request_from_url(button-data)
+    #jr = s3xrc.request(request)
+    #xml_tree = jr.export_xml()
+    #retrieve the location_id's from xml_tree using XPath
+
+    # Calculate an appropriate BBox
+    lon_max = -180
+    lon_min = 180
+    lat_max = -90
+    lat_min = 90
+    for feature in features:
+        if feature.lon > lon_max:
+            lon_max = feature.lon
+        if feature.lon < lon_min:
+            lon_min = feature.lon
+        if feature.lat > lat_max:
+            lat_max = feature.lat
+        if feature.lat < lat_min:
+            lat_min = feature.lat
+
+    #bbox = str(lon_min) + ',' + str(lat_min) + ',' + str(lon_max) + ',' + str(lat_max)
+    #We now project these client-side, so pass raw info (client-side projection means less server-side dependencies)
+    output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
+
+    # Config
+    config = db(db.gis_config.id==1).select()[0]
+    width = config.map_width
+    height = config.map_height
+    _projection = config.projection_id
+    projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    # Support bookmarks (such as from the control)
+    if 'lat' in request.vars:
+        lat = request.vars.lat
+    else:
+        lat = None
+    if 'lon' in request.vars:
+        lon = request.vars.lon
+    else:
+        lon = None
+    if 'zoom' in request.vars:
+        zoom = request.vars.zoom
+    else:
+        zoom = None
+    epsg = db(db.gis_projection.epsg==projection).select()[0]
+    units = epsg.units
+    maxResolution = epsg.maxResolution
+    maxExtent = epsg.maxExtent
+    marker_default = config.marker_id
+    symbology = config.symbology_id
+
+    # Add the config to the Return
+    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+
+    # Feature details
+    for feature in features:
+        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        feature.module = feature_class.module
+        feature.resource = feature_class.resource
+        if feature.module and feature.resource:
+            feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
+        else:
+            feature.resource_id = None
+        # provide an extra access so no need to duplicate popups code
+        feature.gis_location = Storage()
+        feature.gis_location = feature
+        feature.gis_feature_class = feature_class
+
+        # 1st choice for a Marker is the Feature's
+        marker = feature.marker_id
+        if not marker:
+            # 2nd choice for a Marker is the Symbology for the Feature Class
+            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+            try:
+                marker = db(query).select()[0].marker_id
+            except:
+                if not marker:
+                    # 3rd choice for a Marker is the Feature Class's
+                    marker = feature_class.marker_id
+                if not marker:
+                    # 4th choice for a Marker is the default
+                    marker = marker_default
+        feature.marker = db(db.gis_marker.id == marker).select()[0].image
+
+        try:
+            # Metadata is M->1 to Features
+            # We use the most recent one
+            query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
+            metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+
+            # Person .represent is too complex to put into JOIN
+            contact = shn_pr_person_represent(metadata.person_id)
+
+        except:
+            metadata = None
+            contact = None
+        feature.metadata = metadata
+        feature.contact = contact
+
+        try:
+            # Images are M->1 to Features
+            # We use the most recently uploaded one
+            query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
+            image = db(query).select(orderby=~db.media_image.created_on)[0].image
+        except:
+            image = None
+        feature.image = image
+
+    # Add the features to the Return
+    output.update(dict(features=features))
 
     # Layers
     baselayers = layers()

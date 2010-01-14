@@ -109,7 +109,7 @@ def getconf():
     """
     if not request.client == "127.0.0.1":
         # Only accept calls from localhost
-        return
+        return "ERROR: you aren't local machine"
     temp = db().select(db.sync_setting.ALL)[0]
     toreturn = {}
     for i in temp:
@@ -117,6 +117,20 @@ def getconf():
             toreturn[str(i)] = temp[str(i)]
     return toreturn
     
+@service.json
+@service.xml
+@service.jsonrpc
+@service.xmlrpc
+def getAllServers():
+    """
+    Returns IP, username and password of each server
+    Used by local DaemonX
+    """
+    if not request.client == "127.0.0.1":
+        return
+    temp = db().select(db.sync_partner.ALL)
+    return temp
+
 @service.json
 @service.xml
 @service.jsonrpc

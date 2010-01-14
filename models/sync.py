@@ -21,6 +21,7 @@ db.define_table(table,
                 opt_sync_policy,            # Default sync_policy for new partners
                 Field('username'),          # Default login username for new partners
                 Field('password'),          # Default login password for new partners
+                Field('ip'),		        # IP which might be entered manually or pushed in by zeroconf
                 Field('webservice_port', 'integer', default = 8000), # Port which our webservice is accessible on
                 Field('rpc_service_url', default = "/sync/call/jsonrpc"), # URL our webservice is accessible on
                 Field('zeroconf_description', length=64, default = "This is a SahanaPy instance, see http://www.sahanapy.org" ),

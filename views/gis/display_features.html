@@ -1,5 +1,4 @@
-{{extend 'layout.html'}}
-
+{{include 'jquery.html'}}
 {{include 'ext.html'}}
 
 {{include 'gis/ol_js_loaders.html'}}
@@ -16,15 +15,20 @@
 
 {{include 'gis/ol_functions.js'}}
 
-Ext.onReady(function() {
-    
     map = new OpenLayers.Map('center', options);
 	
     addLayers(map);
     
-    {{include 'gis/ol_layers_features_all.js'}}
+    {{include 'gis/ol_layers_features.js'}}
     
 	{{include 'gis/ol_controls.js'}}
+    
+  {{if zoom:}}
+    var zoom = {{=zoom}};
+  {{else:}}
+    // This fails to give the correct zoom, hence we map.zoomToExtent() later
+    var zoom = map.getZoomForExtent(bounds);
+  {{pass}}
     
     var mapPanel = new GeoExt.MapPanel({
         region: "center",
@@ -32,7 +36,7 @@ Ext.onReady(function() {
         xtype: "gx_mappanel",
         map: map,
         center: center,
-        zoom: {{=zoom}},
+        zoom: zoom,
         tbar: new Ext.Toolbar()
     });
     
@@ -64,8 +68,7 @@ Ext.onReady(function() {
         title: "{{=T("Layers")}}",
         root: new Ext.tree.AsyncTreeNode({
             expanded: true,
-            children: [layerTreeBase, layerTreeFeaturesInternal]
-            //children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+            children: [layerTreeBase]
         }),
         rootVisible: false,
         split: true,
@@ -98,13 +101,21 @@ Ext.onReady(function() {
                 ]
     });
 
-	win.show();
+// This is outside Ext.OnReady() so that it is called from a DIV imported via innerHTML
+win.show();
+
+{{if zoom:}}
+{{else:}}
+  map.zoomToExtent(bounds);
+{{pass}}
+    
+Ext.onReady(function() {
+
+	//win.show();
     Ext.QuickTips.init();
     
 });
 
 //]]></script>
-
-{{include 'gis/catalogue_toolbar.html'}}
 
 {{include 'gis/ol_status.html'}}

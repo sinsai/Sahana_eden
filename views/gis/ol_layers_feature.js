@@ -6,7 +6,6 @@ map.addLayer(featuresLayer);
 
 var parser = new OpenLayers.Format.WKT();
 var geom, popupContentHTML, iconURL;
-var featuresLayers = new Array();
 
 geom = parser.read('{{=feature.wkt}}').geometry;
 geom = geom.transform(proj4326, projection_current);

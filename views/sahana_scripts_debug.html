@@ -60,6 +60,24 @@ function viewMap(feature_id) {
         $('#map').html(iframe);
     }
 }
+function viewMapMulti(module, resource, instance, jresource) {
+    var url = '{{=URL(r=request, c='gis', f='display_features')}}/?module=' + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
+    var iframe = "<iframe width='810' height='610' src='" + url + "'></iframe>";
+    if (jQuery.support.scriptEval==true) {
+        // Firefox, Chrome
+        // ToDo: catch Chrome somehow as it prefers the IE method
+        $.get(url, function(data){
+            // Hack from http://stackoverflow.com/questions/1197575/can-scripts-be-inserted-with-innerhtml
+            var n = document.createElement("div");
+            n.innerHTML = data;
+            document.body.appendChild(n);
+        });
+    } else {
+        // IE
+        //$.getScript() will be too complex to engineer
+        $('#map').html(iframe);
+    }
+}
 jQuery(document).ready(function() {
     jQuery("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
     jQuery('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}")) {

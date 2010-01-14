@@ -14,6 +14,7 @@ import shutil
 # Change this if application name changes!
 #import applications.sahana.modules.Zeroconf
 import Zeroconf
+from struct import *
 import socket
 import time
 try:
@@ -56,8 +57,8 @@ class Config(object):
     """ (not to confuse with zeroConf) It saves configurations for the system  """
     def __init__(self):
         items = {}
-        items['localhost'] = "127.0.0.1"
-        items['localhost-port'] = 8000
+        items['localhost'] = "127.0.0.1" # this should be dealt with different approach
+        items['localhost-port'] = 8000 # this too
         items['servername'] = 'sahana'
         self.items = items
 
@@ -81,6 +82,7 @@ class Config(object):
             
             self.items.update(serveritems)
         except:
+            print "DEBUG: seems, server is down or you are not authenticated? are you being recognized as 127.0.0.1"
             raise Exception("invalid settings called from server, or server may be down")
 
 class DumpManager(object):
@@ -210,15 +212,19 @@ class ZeroConfSearch(object):
                 self.logger.log('ZeroConfSearch', logging.INFO, "Service "+ repr(name)+ " added")
             # Request more information about the service
             info = server.getServiceInfo(type, name)
+            print "addService called"
             if not info is None:
-                "printing for debuging purposes"
-                print info.getProperties()
-                # IP address as unsigned short, network byte order, translate it into string
-                print info.getAddress()
-                #conversion yet to be done 
-                print info.getPort()
-                self.servermanager.addServer(info.getAddress(), info.getPort(), info.getProperties())
-
+                "printing for debugging purposes"
+                # IP address is as unsigned short, network byte order
+                r = unpack('4c', info.getAddress())
+                r = [ord(i) for i in r]
+                r = reduce(lambda x, y: str(x)+"."+str(y) , r)
+                print "Found a server:"
+                print "address: ", r
+                print "port:", info.getPort()
+                print "properties: ", info.getProperties()
+                self.servermanager.addServer(r, info.getPort(), info.getProperties())
+                
     def __init__(self, conf, servermanager, localrpc, logger = None):
         self.conf = conf
         self.servermanager = servermanager
@@ -241,11 +247,14 @@ class ServerManager(object):
         
     def addServer(self, adress, port, properties):
         """server is URI of the server to be called"""
-        node = []
+        if adress is "127.0.0.1": #local server shouldn't be added
+            returnnode = []
         node.append( adress )
         node.append( port )
         node.append( properties )
         self.cue.append(node)
+        print "DEBUG: server " + adress + " added"
+        print "CUE" + str(self.cue)
         #log it
         
     def process(self):
@@ -272,7 +281,8 @@ class ServerManager(object):
                     if not self.logger == None:
                         self.logger.log('ServerManager', logging.ERROR, "error occured while processing: " + str(e) )
             
-            pausetime = 30 * 60 # 30 mins
+            #pausetime = 30 * 60 # 30 mins
+            pausetime = 1 * 60 # for debugging set to 1 mins
             if int(time.time()) - self.starttime < pausetime:
                 time.sleep(pausetime - time.time() + self.starttime)
             
@@ -326,16 +336,33 @@ class init(object):
                 break
             except Exception, e:
                 print "Couldn't call local server. " + str(e)
-                # Try it after a minute
-                time.sleep(60)
+                # Try it after 10 sec
+                time.sleep(10)
+        #print "Printing config settings from server"
+        #print c.items
         d = DumpManager(logger = logger)
         #ref = d.createdump(2,3,[1,2,3], "23")
         #d.createobj(ref)
         sm = ServerManager(c, d, r, logger=logger)
 
-        ze = ZeroConfExpose(c, logger=logger)
+        SyncByIp(r, sm, logger, c)
+        #ze = ZeroConfExpose(c, logger=logger)
         zs = ZeroConfSearch(c, sm, r, logger=logger)
         sm.process() # this is non returning
+
+class SyncByIp(object):
+    """ The class sync with IPs stored in database """
+    def __init__(self, localserver, serverManager, logger = LogManager(), c = Config()):
+        #r = RpcManager(c, logger=logger) #this instance deals with local server
+        content = localserver.execute('getAllServers')
+
+        for i in content:
+            if not i['ip'] is None and not i['ip'] is '':
+                print i
+                ip = i['ip'][:i['ip'].find(':')]
+                port = i['ip'][i['ip'].find(':')+1:]
+                properties={'discription':'This IP was manually entered by user'}
+                serverManager.addServer(ip, port, properties)
 
 if __name__ == '__main__':
     init()

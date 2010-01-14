@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    SahanaPy RESTlike CRUD Controller
+    SahanaPy RESTful CRUD Controller
 
     @author: Fran Boon
     @author: nursix
@@ -257,13 +257,13 @@ def export_xls(table, query):
         row0.write(cell, str(field.label), xlwt.easyxf('font: bold True;'))
         cell += 1
     row = 1
+    style = xlwt.XFStyle()
     for item in items:
         # Item details
         rowx = sheet1.row(row)
         row += 1
         cell1 = 0
         for field in fields:
-            style = xlwt.XFStyle()
             tab, col = str(field).split('.')
             # Check for Date formats
             if db[tab][col].type == 'date':
@@ -355,7 +355,7 @@ def export_xml(jr):
                            filterby=response.s3.filter)
 
     if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + jr.error
+        session.error = str(T("XSLT Transformation Error: ")) + (jr.error or '')
         raise HTTP(400, body=json_message(False, 400, session.error))
         #redirect(URL(r=request, f="index"))
 
@@ -620,7 +620,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
 def shn_has_permission(name, table_name, record_id = 0):
 
     """
-        S3 framework function to define whether a user can access a record
+        S3 framework function to define whether a user can access a record in manner 'name'
 
         Designed to be called from the RESTlike controller
 
@@ -952,6 +952,7 @@ def shn_custom_view(jr, default_name, format=None):
     if jr.component:
 
         custom_view = '%s_%s_%s' % (jr.name, jr.component_name, default_name)
+
         _custom_view = os.path.join(request.folder, 'views', prefix, custom_view)
 
         if not os.path.exists(_custom_view):

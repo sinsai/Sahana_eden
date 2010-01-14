@@ -1,16 +1,18 @@
 {{extend 'layout.html'}}
 <div id="delphi_problem_header">
+	<strong>{{= T("Discussion Forum") }}</strong>
 	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
 	{{ pass }}
-	<strong>{{= T("Discussion Forum") }}</strong>
 	<a href="{{= URL(r=request, f='status', args=problem.id) }}">{{= T("Scale of Results") }}</a>
 	<a href="{{= URL(r=request, f='vote', args=problem.id) }}">{{= T("Vote") }}</a>
 	<a href="{{= URL(r=request, f='summary', args=problem.id) }}">{{= T("Options") }}</a>
 <h1>{{= problem.title }}</h1>
 </div>
 <p><b>{{= T("Description")}}:</b> {{= problem.description }}</p>
-<hr/>
-{{ for post in problem.delphi_forum_post.select(orderby=db.delphi_forum_post.last_modification): }}{{ if post.post_html: }}
+<h3>{{= T("Discussion Forum on item:")}}{{= item.title }}</h3>
+<p>{{= item.description }}</p>
+
+{{ for post in item.delphi_forum_post.select(orderby=db.delphi_forum_post.last_modification): }}{{ if post.post_html: }}
 {{ u = db.auth_user[post.user] }}
 <div id="p_{{=post.id}}" class="delphi_post">
 	<div class="delphi_post_title">

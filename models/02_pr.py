@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-#
-# Sahanapy Person Registry
-#
-# created 2009-07-15 by nursix
-#
-# This part defines:
-#       - PersonEntity (pentity)    - a person entity
-#       - Person (person)           - an individual person
-#       - Group (group)             - a group of persons
+"""
+    SahanaPy Person Registry
+
+    @author: nursix
+
+    @see: U{http://trac.sahanapy.org/wiki/BluePrintVITA}
+"""
 
 module = 'pr'
 

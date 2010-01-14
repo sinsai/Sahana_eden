@@ -2211,7 +2211,7 @@ def shn_rest_controller(module, resource,
                 request_vars = {}
 
             # Redirect to search
-            # TODO: build a generic search function, this here is PR specific
+            # TODO: build a generic HTML search function, this here is PR specific
             if jr.prefix=="pr" and jr.name=="person" and jr.representation=="html":
                 redirect(URL(r=request, f='person', args='search_simple', vars=request_vars))
             else:

@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-#
-# DVI Disaster Victim Identification
-#
-# created 2009-08-06 by nursix
-#
+"""
+    DVI Disaster Victim Identification
+
+    @author: khushbu
+    @author: nursix
+"""
 
 module = 'dvi'
 
@@ -39,12 +40,12 @@ opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
 
 resource = 'personal_effects'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status, 
+db.define_table(table, timestamp, deletion_status,
                 pr_pe_id,
 #                pcase_id,
                 person_id,
                 db.Field('clothing'),    #TODO: elaborate
-                db.Field('jewellery'),   #TODO: elaborate  
+                db.Field('jewellery'),   #TODO: elaborate
                 db.Field('footwear'),    #TODO: elaborate
                 db.Field('watch'),       #TODO: elaborate
                 db.Field('other'),
@@ -77,12 +78,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'radiology'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status, 
+db.define_table(table, timestamp, deletion_status,
                 pr_pe_id,
 #               pcase_id,
                 person_id,
                 db.Field('number_of_images', 'integer'),
-                db.Field('findings'),    #TODO: elaborate  
+                db.Field('findings'),    #TODO: elaborate
                 db.Field('conclusion'),    #TODO: elaborate
                 db.Field('date', 'date'),       #TODO: elaborate
                 db.Field('other_details'),       #TODO: elaborate
@@ -111,12 +112,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'fingerprints'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status, 
+db.define_table(table, timestamp, deletion_status,
                 pr_pe_id,
 #               pcase_id,
                 person_id,
                 db.Field('condition_of_hands'),
-                db.Field('finger_printed'),    #TODO: elaborate  
+                db.Field('finger_printed'),    #TODO: elaborate
                 db.Field('conclusion'),    #TODO: elaborate
                 db.Field('date', 'date'),       #TODO: elaborate
                 db.Field('other_details'),       #TODO: elaborate
@@ -145,12 +146,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'anthropology'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status, 
+db.define_table(table, timestamp, deletion_status,
                 pr_pe_id,
 #               pcase_id,
                 person_id,
                 db.Field('condition_of_remains'),
-                db.Field('report'),         #TODO: elaborate  
+                db.Field('report'),         #TODO: elaborate
                 db.Field('cause_of_death'), #TODO: elaborate
                 db.Field('manner_of_death'),    #TODO: elaborate
                 db.Field('other_details'),      #TODO: elaborate
@@ -180,12 +181,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'pathology'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status, 
+db.define_table(table, timestamp, deletion_status,
                 pr_pe_id,
 #               pcase_id,
                 person_id,
                 db.Field('condition_of_remains'),
-                db.Field('physical_description'), #TODO: elaborate  
+                db.Field('physical_description'), #TODO: elaborate
                 db.Field('details'),      #TODO: elaborate
                 db.Field('unique_features'),  #TODO: elaborate
                 db.Field('other_details'),        #TODO: elaborate
@@ -215,12 +216,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'dna'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status, 
+db.define_table(table, timestamp, deletion_status,
                 pr_pe_id,
 #               pcase_id,
                 person_id,
                 db.Field('size_of_specimen'),
-                db.Field('description_of_specimen'),  #TODO: elaborate  
+                db.Field('description_of_specimen'),  #TODO: elaborate
                 db.Field('notes'),            #TODO: elaborate
                 db.Field('additional_information'),               #TODO: elaborate
                 db.Field('other_details'),        #TODO: elaborate
@@ -251,12 +252,12 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 resource = 'dental'
 table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status, 
+db.define_table(table, timestamp, deletion_status,
                 pr_pe_id,
 #               pcase_id,
                 person_id,
                 db.Field('dental_finding'),
-                db.Field('specific_description'), #TODO: elaborate  
+                db.Field('specific_description'), #TODO: elaborate
                 db.Field('conclusion'),           #TODO: elaborate
                 db.Field('additional_information'),               #TODO: elaborate
                 db.Field('other_details'),        #TODO: elaborate
@@ -285,13 +286,13 @@ msg_list_empty = T('No Details currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
-# PM Data Collection 
+# PM Data Collection
 #
 
 
 #
 # Checklist of Operation
-# 
+#
 resource = 'operation_checklist'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -307,7 +308,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('dna'),
                 db.Field('dental'),
                 migrate = migrate)
-# restrictions                
+# restrictions
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].recovery.requires = IS_IN_SET(dvi_task_status_opts)
 db[table].personal_effects.requires = IS_IN_SET(dvi_task_status_opts)
@@ -328,3 +329,175 @@ db[table].anthropology.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL
 db[table].pathology.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='pathology', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Pathology|Record Pathology Details.")))
 db[table].dna.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='dna', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("DNA Exam|Record DNA Exam Details.")))
 db[table].dental.comment = DIV(A(ADD_DETAILS, _class='thickbox', _href=URL(r=request, c='dvi', f='dental', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_DETAILS), A(SPAN("[Help]"), _class="tooltip", _title=T("Dental|Record Dental Examination Details.")))
+
+#
+# Option fields ---------------------------------------------------------------
+#
+dvi_task_status_opts = {
+    1:T('New'),
+    2:T('Assigned'),
+    3:T('In Progress'),
+    4:T('Completed')
+    }
+
+opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
+                    db.Field('opt_dvi_task_status','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Task Status'),
+                    represent = lambda opt: opt and dvi_task_status_opts[opt]))
+
+#
+# Find ------------------------------------------------------------------------
+#
+resource = 'find'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('find_date', 'datetime'),                 # Date and time of find
+                location_id,                                    # Place of find
+                Field('location_details'),                      # Details on location
+                person_id,                                      # Finder
+                Field('description'),                           # Description of find
+                Field('bodies_est', 'integer', default=1),      # Estimated number of dead bodies
+                opt_dvi_task_status,                            # Task status
+                Field('bodies_rcv', 'integer', default=0),      # Number of bodies recovered
+                migrate=migrate)
+
+# Settings and Restrictions
+#db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+# Labels
+db[table].find_date.label = T('Date and time of find')
+db[table].location_id.label = T('Place of find')
+db[table].person_id.label = T('Finder')
+db[table].bodies_est.label = T('Estimated number of bodies found')
+db[table].opt_dvi_task_status.label = T('Task status')
+db[table].bodies_rcv.label = T('Number of bodies recovered so far')
+
+# Representations
+
+# CRUD Strings
+# TODO: check language and spelling
+title_create = T('New Body Find')
+title_display = T('Find Details')
+title_list = T('List Body Finds')
+title_update = T('Update Find Report')
+title_search = T('Search Find Report')
+subtitle_create = T('Add New Find Report')
+subtitle_list = T('Body Finds')
+label_list_button = T('List Finds')
+label_create_button = T('Add Find Report')
+msg_record_created = T('Find Report added')
+msg_record_modified = T('Find Report updated')
+msg_record_deleted = T('Find Report deleted')
+msg_list_empty = T('No finds currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+dvi_find_id = db.Table(None, 'dvi_find_id',
+                Field('dvi_find_id', db.dvi_find,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'dvi_find.id', '%(find_date)s: %(location_details)s, %(bodies_est)s bodies')),
+                represent = lambda id: (id and [DIV(A(db(db.dvi_find.id==id).select()[0].id, _class='popup', _href=URL(r=request, c='hrm', f='find', args=['read', str(id).strip()], vars=dict(format='plain')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button))] or ["None"])[0],
+                comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='thickbox', _href=URL(r=request, c='hrm', f='find', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
+                ondelete = 'RESTRICT'
+                ))
+
+#
+# Body ------------------------------------------------------------------------
+#
+
+resource = 'body'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status, #uuidstamp,
+                pr_pe_fieldset,                             # Person Entity Fieldset
+#                db.Field('date_of_find', 'date'),          # from Khushbu
+                dvi_find_id,                                # Associated find report (if any)
+                db.Field('date_of_recovery', 'datetime'),
+                location_id,
+                db.Field('has_major_outward_damage','boolean'), # Khushbu, TODO: elaborate
+                db.Field('is_burned_or_charred','boolean'),     # Khushbu, TODO: elaborate
+                db.Field('is_decayed','boolean'),               # Khushbu, TODO: elaborate
+                db.Field('is_incomplete','boolean'),            # Khushbu, TODO: elaborate
+                opt_pr_gender,                                  # from VITA
+                opt_pr_age_group,                               # from VITA
+                migrate = migrate)
+
+# Settings and Restrictions
+db[table].pr_pe_parent.readable = True         # not visible in body registration form
+db[table].pr_pe_parent.writable = True         # not visible in body registration form
+db[table].pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
+
+# Labels
+db[table].dvi_find_id.label = T('Find report')
+db[table].opt_pr_gender.label=T('Apparent Gender')
+db[table].opt_pr_age_group.label=T('Apparent Age')
+
+# Representations
+db[table].has_major_outward_damage.represent = lambda has_major_outward_damage: (has_major_outward_damage and ["yes"] or [""])[0]
+db[table].is_burned_or_charred.represent = lambda is_burned_or_charred: (is_burned_or_charred and ["yes"] or [""])[0]
+db[table].is_decayed.represent = lambda is_decayed: (is_decayed and ["yes"] or [""])[0]
+db[table].is_incomplete.represent = lambda is_incomplete: (is_incomplete and ["yes"] or [""])[0]
+
+# CRUD Strings
+title_create = T('Add Body')
+title_display = T('Body Details')
+title_list = T('List Bodies')
+title_update = T('Edit Body Details')
+title_search = T('Search Body')
+subtitle_create = T('Add New Entry')
+subtitle_list = T('Dead Bodies')
+label_list_button = T('List Records')
+label_create_button = T('Add Body')
+msg_record_created = T('Record added')
+msg_record_modified = T('Record updated')
+msg_record_deleted = T('Record deleted')
+msg_list_empty = T('No bodies currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+def shn_dvi_pheader(resource, record_id, representation, next=None, same=None):
+
+    if resource == "body":
+
+        if representation == "html":
+
+            if next:
+                _next = next
+            else:
+                _next = URL(r=request, f=resource, args=['read'])
+
+            if same:
+                _same = same
+            else:
+                _same = URL(r=request, f=resource, args=['read', '[id]'])
+
+            body = db.dvi_body[record_id]
+            if not body:
+                print "not found"
+                return None
+
+
+            if body:
+                ph = TABLE(
+                    TR(
+                        TH(T('ID Label: ')),
+                        "%(pr_pe_label)s" % body,
+                        TH(A(T('Clear Selection'),
+                            _href=URL(r=request, f='body', args='clear', vars={'_next': _same})))
+                        ),
+                    TR(
+                        TH(T('Gender: ')),
+                        "%s" % pr_person_gender_opts[body.opt_pr_gender],
+                        TH(""),
+                        ),
+                    TR(
+                        TH(T('Age Group: ')),
+                        "%s" % pr_person_age_group_opts[body.opt_pr_age_group],
+                        TH(A(T('Edit Record'),
+                            _href=URL(r=request, f='body', args=['update', record_id], vars={'_next': _next})))
+                        )
+                )
+                return ph
+
+        else:
+            pass
+
+    return None

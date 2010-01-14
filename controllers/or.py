@@ -25,6 +25,13 @@ def index():
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
+def sector():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'sector')
+
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
 def organisation():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'organisation')

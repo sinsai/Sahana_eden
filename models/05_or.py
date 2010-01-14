@@ -10,6 +10,41 @@ db.define_table(table,
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
 
+# Sectors
+resource = 'sector'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('name', length=128, notnull=True, unique=True),
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+ADD_ORGANISATION = T('Add Sector')
+title_create = T('Add Sector')
+title_display = T('Sector Details')
+title_list = T('List Sectors')
+title_update = T('Edit Sector')
+title_search = T('Search Sectors')
+subtitle_create = T('Add New Sector')
+subtitle_list = T('Sectors')
+label_list_button = T('List Sectors')
+label_create_button = ADD_ORGANISATION
+msg_record_created = T('Sector added')
+msg_record_modified = T('Sector updated')
+msg_record_deleted = T('Sector deleted')
+msg_list_empty = T('No Sectors currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+sector_id = SQLTable(None, 'sector_id',
+            Field('sector_id', db.or_sector,
+                requires = IS_NULL_OR(IS_IN_DB(db, 'or_sector.id', 'or_sector.name', multiple=True)),
+                represent = lambda id: (id and [db(db.or_sector.id==id).select()[0].name] or ["None"])[0],
+                label = T('Sector'),
+                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='sector', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
+                ondelete = 'RESTRICT'
+                ))
+                
 # Organisations
 or_organisation_type_opts = {
     1:T('Government'),
@@ -28,6 +63,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
                 Field('acronym', length=8),
                 Field('type', 'integer'),
+                sector_id,
                 admin_id,
                 Field('registration'),	# Registration Number
                 Field('website'),
@@ -70,10 +106,10 @@ organisation_id = SQLTable(None, 'organisation_id',
 
 # Offices
 or_office_type_opts = {
-    1:T('Headquarters'),
-    2:T('Regional'),
-    3:T('Country'),
-    4:T('Satellite Office')
+    1:T('Satellite Office'),
+    2:T('Country'),
+    3:T('Regional'),
+    4:T('Headquarters')
     }
 resource = 'office'
 table = module + '_' + resource

@@ -1135,6 +1135,9 @@ def shn_list_jlinkto_update(field):
 
 def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None, rss=None):
 
+    # Hack!
+    listadd = False
+
     """ List records matching the request """
 
     module, resource, table, tablename = jr.target()

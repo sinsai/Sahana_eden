@@ -285,7 +285,7 @@ if empty:
        db[table].insert(
             lat = "18.58",
             lon = "-72.42",
-            zoom = 7,
+            zoom = 10,
             # Doesn't work on Postgres!
             projection_id = 1,
             marker_id = 1,

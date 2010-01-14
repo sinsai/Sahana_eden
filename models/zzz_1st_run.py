@@ -283,8 +283,8 @@ if empty:
        # We want to start at ID 1
        db[table].truncate()
        db[table].insert(
-            lat = "6",
-            lon = "79.4",
+            lat = "18.58",
+            lon = "-72.42",
             zoom = 7,
             # Doesn't work on Postgres!
             projection_id = 1,

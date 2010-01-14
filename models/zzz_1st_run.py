@@ -19,7 +19,7 @@ if empty:
 
     table = 'admin_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -27,7 +27,7 @@ if empty:
 
     table = 'appadmin_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -36,7 +36,7 @@ if empty:
     # Budget Module
     table = 'budget_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -45,7 +45,7 @@ if empty:
     # Shelter Registry
     table = 'cr_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -54,7 +54,7 @@ if empty:
     # Disaster Victim Identification
     table = 'dvi_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -63,7 +63,7 @@ if empty:
     # Disaster Victim Registration
     table = 'dvr_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -71,7 +71,7 @@ if empty:
 
     table = 'gis_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -80,7 +80,7 @@ if empty:
     # Human Remains Management
     table = 'hrm_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -89,7 +89,7 @@ if empty:
     # Logistics
     table = 'lms_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -106,11 +106,11 @@ if empty:
     # Messaging
     table = 'mobile_setting'
     if not db(db[table].id).count():
-       db[table].insert(baud=115200)
+        db[table].insert(baud=115200)
 
     table = 'msg_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             inbound_mail_server = 'imap.gmail.com',
             inbound_mail_type = 'imap',
             inbound_mail_ssl = True,
@@ -128,7 +128,7 @@ if empty:
     # Missing Person Registry
     table = 'mpr_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -137,12 +137,26 @@ if empty:
     # Organisation Registry
     table = 'or_setting'
     if not db(db[table].id).count():
-       db[table].insert(
+        db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
         )
 
+    table = 'or_sector'
+    if not db(db[table].id).count():
+        db[table].insert( name = 'Agriculture' )
+        db[table].insert( name = 'Shelter and Non-Food Items' )
+        db[table].insert( name = 'Coordination and Support Services' )
+        db[table].insert( name = 'Food' )
+        db[table].insert( name = 'Infrastructure and Rehabilitation' )
+        db[table].insert( name = 'Security' )
+        db[table].insert( name = 'Water and Sanitation' )
+        db[table].insert( name = 'Education' )
+        db[table].insert( name = 'Health' )
+        db[table].insert( name = 'Protection and Human Rights and Rule of Law' )
+        db[table].insert( name = 'Urban Search and Rescue' )
+        
     # Person Registry
     table = 'pr_setting'
     if not db(db[table].id).count():

@@ -210,6 +210,7 @@ def user():
     crud.settings.create_onaccept = lambda form: auth.shn_register(form)
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
+    db.auth_user.registration_key.readable = True
     db.auth_user.registration_key.label = T('Disabled?')
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
 

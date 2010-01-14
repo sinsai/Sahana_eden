@@ -20,10 +20,10 @@ mail = Mail()
 # These settings could be made configurable as part of the Messaging Module
 # - however also need to be used by Auth (order issues), DB calls are overheads
 # - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
-mail.settings.server = 'mail:25'
+mail.settings.server = '127.0.0.1:25'
 #mail.settings.server = 'smtp.gmail.com:587'
 #mail.settings.login = 'username:password'
-mail.settings.sender = 'sahana@sahanapy.org'
+mail.settings.sender = 'sahana@haiti.sahanapy.org'
 
 auth = AuthS3(globals(), db)
 #auth.settings.username_field = True

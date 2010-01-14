@@ -1,5 +1,5 @@
 {{extend 'layout_popup.html'}}
-
+{{include '_popup.html'}}
 {{if session.s3.security_policy==1:}}
     <script type="text/javascript">//<![CDATA[
     $(function() {
@@ -9,5 +9,20 @@
     //]]></script>
 {{else:}}
 {{pass}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+        // If coming from the OR then populate defaults for the fields & Hide
+        var office_name = self.parent.$('#or_office_name').val();
+        $("#gis_location_name").val(office_name);
+        $("#gis_location_name__row").hide();
+        $("#gis_location_parent__row").hide();
+        $("#gis_location_feature_class_id").val(8);
+        $("#gis_location_feature_class_id__row").hide();
+        $("#gis_location_marker_id").val(5);
+        $("#gis_location_marker_id__row").hide();
+        $("#gis_location_gis_feature_type__row").hide();
+        $("#gis_location_wkt__row").hide();
+        
+});
+//]]></script>
 
-{{include '_popup.html'}}

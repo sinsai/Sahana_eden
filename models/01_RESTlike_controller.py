@@ -572,7 +572,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
     """ Import XML data """
 
     if "filename" in jr.request.vars:
-        source = jr.request.vars["filename"]
+        source = jr.request.vars["filename"].file
     elif "fetchurl" in jr.request.vars:
         source = jr.request.vars["fetchurl"]
     else:

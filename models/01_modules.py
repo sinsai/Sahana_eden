@@ -211,7 +211,16 @@ for module_type in [1, 2, 3, 4]:
     query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:
-        s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+        if not module.access:
+            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+        else:
+            authorised = False
+            groups = re.split('\|', module.access)[1:-1]
+            for group in groups:
+                if auth.has_membership(group):
+                    authorised = True
+            if authorised == True:
+                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
 
 response.menu = s3.menu_modules
 response.menu.append(s3.menu_auth)

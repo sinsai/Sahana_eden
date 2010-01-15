@@ -206,15 +206,38 @@ def user():
     msg_list_empty = T('No Users currently registered')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     
+    onvalidation = None
     # Add users to Person Registry & 'Authenticated' role
     crud.settings.create_onaccept = lambda form: auth.shn_register(form)
+    # Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))
+    if len(request.args) and request.args[0] == 'update':
+        onvalidation = lambda form: user_approve(form)
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.readable = True
     db.auth_user.registration_key.label = T('Disabled?')
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
 
-    return shn_rest_controller(module, resource, main='first_name')
+    return shn_rest_controller(module, resource, main='first_name', onvalidation=onvalidation)
+
+def user_approve(form):
+    "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"
+    if form.vars.registration_key:
+        # Now non-blank
+        return
+    else:
+        # Now blank - lookup old value
+        status = db(db.auth_user.id == request.vars.id).select()[0].registration_key
+        if status == 'pending':
+            # Send email to user confirming that they are now able to login
+            if not auth.settings.mailer or \
+                   not auth.settings.mailer.send(to=form.vars.email,
+                        subject=s3.messages.confirmation_email_subject,
+                        message=s3.messages.confirmation_email):
+                    session.warning = auth.messages.unable_send_email
+                    return
+        else:
+            return
     
 @auth.requires_membership('Administrator')
 def group():

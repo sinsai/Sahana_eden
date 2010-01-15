@@ -72,3 +72,12 @@ crud = CrudS3(globals(), db)
 #crud.settings.keepvalues = True
 crud.messages.submit_button = T('Save')
 
+from gluon.storage import Storage
+# Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
+# Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
+s3 = Storage()
+
+from gluon.storage import Messages
+s3.messages = Messages(T)
+s3.messages.confirmation_email_subject = 'Haiti Organisation Registry access granted'
+s3.messages.confirmation_email = 'Welcome to the Haiti Organisation Registry at ' + S3_PUBLIC_URL + '. Thanks for your assistance.'

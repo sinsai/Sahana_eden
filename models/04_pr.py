@@ -1,24 +1,12 @@
 # -*- coding: utf-8 -*-
 
-#
-# Sahanapy Person Registry
-#
-# created 2009-07-23 by nursix
-#
-# This part defines PR joined resources:
-#       - Address
-#       - Contact
-#       - Image
-#       - Presence Log
-#
-#       - Physical Descriptions
-#       - Identity
-#       - Role
-#       - Group Membership
-#       - Network (network)
-#       - Network Membership
-#       - Case
-#       - Finding
+"""
+    SahanaPy Person Registry
+
+    @author: nursix
+
+    @see: U{http://trac.sahanapy.org/wiki/BluePrintVITA}
+"""
 
 module = 'pr'
 
@@ -242,6 +230,26 @@ pr_presence_condition_opts = vita.presence_conditions
 #
 # presence table --------------------------------------------------------------
 #
+orig_id = SQLTable(None, 'orig_id',
+                   Field('orig_id', db.gis_location,
+                         requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
+                         represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
+                         label = T('Origin'),
+                         comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         ondelete = 'RESTRICT'
+                        )
+                  )
+
+dest_id = SQLTable(None, 'dest_id',
+                   Field('dest_id', db.gis_location,
+                         requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
+                         represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
+                         label = T('Destination'),
+                         comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         ondelete = 'RESTRICT'
+                        )
+                  )
+
 resource = 'presence'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -250,8 +258,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('reporter', db.pr_person),    # Person reporting
                 location_id,                        # Named Location Reference
                 Field('location_details'),          # Details on Location
-                Field('lat'),                       # Latitude
-                Field('lon'),                       # Longitude
+                #Field('lat'),                       # Latitude
+                #Field('lon'),                       # Longitude
                 Field('time', 'datetime'),          # Time
                 Field('opt_pr_presence_condition', 'integer',
                       requires = IS_IN_SET(pr_presence_condition_opts),
@@ -259,8 +267,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                       label = T('Presence Condition'),
                       represent = lambda opt: opt and pr_presence_condition_opts[opt]),
                 Field('proc_desc'),                 # Procedure description (for procedure) TODO: replace by option field?
-                Field('origin'),                    # Origin (for transfer and transit) TODO: replace by location reference?
-                Field('destination'),               # Destination (for transfer and transit) TODO: replace by location reference?
+                orig_id,                            # Origin (for transfer and transit)
+                dest_id,                            # Destination (for transfer and transit)
                 Field('comment'),                   # a comment (optional)
                 migrate=migrate)
 
@@ -297,8 +305,8 @@ s3xrc.model.add_component(module, resource,
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].lat.requires = IS_NULL_OR(IS_LAT())
-db[table].lon.requires = IS_NULL_OR(IS_LON())
+#db[table].lat.requires = IS_NULL_OR(IS_LAT())
+#db[table].lon.requires = IS_NULL_OR(IS_LON())
 
 # Field representation
 db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))

@@ -97,11 +97,11 @@ if empty:
         )
         db[table].insert(
             name="hrm",
-            name_nice="Human Remains Management",
+            name_nice="Human Resources",
             priority=6,
-            module_type=3,
+            module_type=4,
             access='',
-            description="Helps to manage human remains",
+            description="Helps to manage human resources",
             enabled='True'
         )
         db[table].insert(

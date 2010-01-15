@@ -1,5 +1,5 @@
 {{extend 'layout_popup.html'}}
-
+{{include '_popup.html'}}
 {{if session.s3.security_policy==1:}}
     <script type="text/javascript">//<![CDATA[
     $(function() {
@@ -9,5 +9,3 @@
     //]]></script>
 {{else:}}
 {{pass}}
-
-{{include '_popup.html'}}

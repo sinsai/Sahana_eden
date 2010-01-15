@@ -2033,9 +2033,11 @@ def shn_rest_controller(module, resource,
     # Record ID is required in joined-table operations and read action:
     if not jr.id and (jr.component or jr.method=="read") and not jr.method=="options" and not "select" in jr.request.vars:
 
-        # TODO: Cleanup - this is PR specific
         if jr.prefix=="pr" and jr.name=="person" and jr.representation=='html':
             redirect(URL(r=request, f='person', args='search_simple', vars={"_next": same}))
+
+        elif jr.prefix=="dvi" and jr.name=="body" and jr.representation=='html':
+            redirect(URL(r=request, f='body', args='search_simple', vars={"_next": same}))
 
         else:
             raise HTTP(404, body=BADRECORD)
@@ -2212,11 +2214,12 @@ def shn_rest_controller(module, resource,
                 request_vars = {}
 
             # Redirect to search
-            # TODO: build a generic search function, this here is PR specific
             if jr.prefix=="pr" and jr.name=="person" and jr.representation=="html":
                 redirect(URL(r=request, f='person', args='search_simple', vars=request_vars))
+            elif jr.prefix=="dvi" and jr.name=="body" and jr.representation=="html":
+                redirect(URL(r=request, f='body', args='search_simple', vars=request_vars))
             else:
-                redirect(URL(r=request, c='pr', f=jr.name))
+                redirect(URL(r=request, f=jr.name))
 
         # HTTP Multi-Record Operation *****************************************
         elif not jr.method and not jr.id:

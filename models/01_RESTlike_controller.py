@@ -56,7 +56,7 @@ exec('from applications.%s.modules.s3xrc import json_message' % request.applicat
 
 s3xrc = ResourceController(db,
                            domain=request.env.server_name,
-                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+                           base_url="%s" % (S3_PUBLIC_URL),
                            rpp=ROWSPERPAGE)
 
 # *****************************************************************************

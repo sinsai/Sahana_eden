@@ -2,7 +2,6 @@
 <div id="delphi_problem_header">
 	{{ if authorised: }}<a href="{{= URL(r=request, f='problem', args=['update', problem.id]) }}">{{= T("Edit")}}</a>
 	{{ pass }}
-	<a href="{{= URL(r=request, f='discuss', args=problem.id) }}">{{= T("Discussion Forum") }}</a>
 	<a href="{{= URL(r=request, f='status', args=problem.id) }}">{{= T("Scale of Results") }}</a>
 	<strong>{{= T("Vote") }}</strong>
 	<a href="{{= URL(r=request, f='summary', args=problem.id) }}">{{= T("Options") }}</a>
@@ -13,9 +12,19 @@
 <p><b>{{= T("Criteria")}}:</b> {{= problem.criteria }}</p>
 <hr/>
 {{ if can_vote: }}
-	<div id="vote_div"><p>{{ if voted: }}{{= T("You can change your vote.")}} {{ pass }}{{= T("Please select the one item from each pair that you prefer over the other.")}}</p>
-<form action="{{= URL(r=request, f='vote', args=problem.id) }}" method="post"><table id="delphi_pairs" class="delphi_wide">
-{{ for pair in pairs: }}
+	<div id="vote_div">
+		<p>
+		{{ if voted: }}
+			{{= T("Your current ordered list ... (#TODO [String])")}}
+		{{ else: }}
+			{{= T("Ordered list ... (#TODO [String])")}}			
+		{{ pass }}
+		{{= T("After clicking on the Vote button ... (#TODO [String]) Please select the one item from each pair that you prefer over the other.")}}
+	</p>
+	<ul id="vote_items" style="margin-left: 40px;"></ul>
+	<p><button id="vote_button">{{ if voted: }}Update your (#TODO [String]){{ else: }}Vote{{ pass }}</button><span id="saving" style="display: none;"> </span></p>
+<form action="{{= URL(r=request, f='vote', args=problem.id) }}" method="post" style="display: none;"><table id="delphi_pairs" class="delphi_wide">
+{{ if False: }}
 <tr>
 	<td><label><input name="v_{{=pair[0].id}}_{{=pair[1].id}}" type="radio" value="+" {{ if pair[2]==1: }}checked="checked"{{ pass }}/>{{= pair[0].title }}</label></td>
 	<td><label><input name="v_{{=pair[0].id}}_{{=pair[1].id}}" type="radio" value="-" {{ if pair[2]==2: }}checked="checked"{{ pass }}/>{{= pair[1].title }}</label></td>
@@ -26,9 +35,163 @@
 </div>
 <p><a href="{{= URL(r=request, f='status', args=problem.id) }}">{{= T("Scale of Results") }}</a></p>
 {{ pass }}
+<style type="text/css">
+.delphi_li_i {
+	color: #888a85;
+	font-style: italic;
+}
+.delphi_li_n {
+}
+.delphi_li_v {
+	font-weight: bold;
+}
+.delphi_ic {
+	text-decoration: underline;
+	cursor: pointer;
+	font-weight: normal;
+}
+#saving {
+	padding: 3px 10px;
+	background-color: #a40000;
+	color: #eeeeec;
+}
+#saving.saved {
+	background-color: #4e9a06;
+}
+</style>
 <script type="text/javascript" language="javascript">//<![CDATA[
+var can_vote = {{=(can_vote and "true" or "false")}};
+var voted = {{=(voted and "true" or "false")}};
+{{ from gluon.serializers import json }}
+var sorted_items = {{= json(sorted_items) }};
+var items = {{= json(items) }};
+var ranks = {{= json(ranks) }};
+
+var IGNORE = "({{= T("ignore")}})";
+var CONSIDER = "({{= T("consider")}})";
+
+var comp_tb = {};
+
+cc = function(o1, o2) {
+	if (ranks[o1] == 9999 && ranks[o2] == 9999)
+		return 0;
+	if (ranks[o1] == 9999)
+		return 1;
+	if (ranks[o2] == 9999)
+		return -1;
+		
+	if (comp_tb[o1][o2] != 0)
+		return comp_tb[o1][o2];
+	
+	var i1 = o1;
+	var i2 = o2;
+	if (confirm("{{= T("Do you prefer")}} " + items[o1] + " {{= T("over")}} " + items[o2] + "?")) {
+		i1 = o2;
+		i2 = o1;
+	}
+	comp_tb[i1][i2] = 1;
+	comp_tb[i2][i1] = -1;
+
+	for (i in sorted_items) {
+		if (comp_tb[i2][sorted_items[i]] == 1 && comp_tb[i1][sorted_items[i]] != 1) {
+			comp_tb[i1][sorted_items[i]] = 1;
+			comp_tb[sorted_items[i]][i1] = -1;
+		}
+		if (comp_tb[i1][sorted_items[i]] == -1 && comp_tb[sorted_items[i]][i2] != 1) {
+			comp_tb[i2][sorted_items[i]] = -1;
+			comp_tb[sorted_items[i]][i2] = 1;
+		}
+	}
+	
+	return comp_tb[o1][o2];
+};
+
+fill_vote_items = function() {
+	var ul = $("#vote_items");
+	ul.empty();
+	
+	for (j in sorted_items) {
+		var i = sorted_items[j];
+		li = $("<li id='li_" + i + "'></li>").html(items[i] + " <span class='delphi_ic'></span>");
+		if (ranks[i] == 9999)
+			li.addClass("delphi_li_i");
+		else if (ranks[i] == 9998)
+			li.addClass("delphi_li_n");
+		else
+			li.addClass("delphi_li_v");
+		ul.append(li);
+	}
+	
+	$(".delphi_ic").text(IGNORE);
+	$(".delphi_li_i .delphi_ic").text(CONSIDER);
+	
+	$(".delphi_ic").click(function() {
+		var slf = $(this);
+		var item_id = slf.parent().attr('id').substr(3);
+		if (ranks[item_id] == 9999) {
+			ranks[item_id] = 9998;
+			slf.text(IGNORE);
+			slf.parent().removeClass("delphi_li_i");
+			slf.parent().addClass("delphi_li_n");
+		} else {
+			ranks[item_id] = 9999;
+			slf.text(CONSIDER);
+			slf.parent().removeClass("delphi_li_n");
+			slf.parent().removeClass("delphi_li_v");
+			slf.parent().addClass("delphi_li_i");			
+		}
+	});
+};
+
+update_status = function() {
+	$("#saving").hide();
+	$("#saving").addClass("saved");
+	$("#saving").html("{{=T("Saved.")}}");
+	$("#saving").show();
+	setTimeout(function(){
+		$("#saving").hide("slow");
+		$("#vote_button").show();
+	}, 2000);
+};
+error = function(a) {
+	$("#saving").html("{{=T("Failed!")}}");
+	$("#vote_button").show();
+};
+
 $(document).ready(function(){
-	var can_vote = {{=(can_vote and "true" or "false")}};
+	fill_vote_items();
+
+	$("#vote_button").click(function() {
+		$(this).hide();
+		$("#vote_items").hide();
+
+		comp_tb = {};
+		for (i in sorted_items) {
+			comp_tb[sorted_items[i]] = {};
+			for (j in sorted_items) {
+				comp_tb[sorted_items[i]][sorted_items[j]] = 0;
+			}
+		}
+		sorted_items.sort(cc);
+		for (i in sorted_items) {
+			if (ranks[sorted_items[i]] != 9999)
+				ranks[sorted_items[i]] = "1" + i;
+		}
+
+		fill_vote_items();
+		$("#vote_items").show("fast");
+		$.ajax({url: "{{= URL(r=request, f='save_vote', args=problem.id) }}",
+			type: "post",
+			dataType: "json",
+			data: ranks,
+			success: update_status,
+			error: error
+		});
+		$("#saving").removeClass("saved");
+		$("#saving").html("{{= T("Saving...")}}");
+		$("#saving").show("fast");
+	});
+	
 	$("#delphi_pairs tr:even").css({background: "#ccc"});
 	$(".bkclear").css({background: "none"});
 });

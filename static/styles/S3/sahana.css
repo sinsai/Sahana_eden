@@ -55,12 +55,12 @@ fieldset { border: none; }
 input, select, textarea { font-size: 100%; }
 .hide { display: none;  }
 .mini { font-size: 80%; }
-.wide { width:100%; }
+.wide { width: 100%; }
 
 /* Input fields should give visual feedback when focussed */
-input:focus { background-color:#ffffcc; }
-select:focus { background-color:#ffffcc; }
-textarea:focus { background-color:#ffffcc; }
+input:focus { background-color: #ffffcc; }
+select:focus { background-color: #ffffcc; }
+textarea:focus { background-color: #ffffcc; }
 
 /* Links should ALWAYS be unvisited */
 a { color: #039; text-decoration: underline; outline:0; }
@@ -74,52 +74,52 @@ table { border-collapse: collapse }
 /* Now to layout elements... */
 #header { border-bottom: #069 1px solid; padding: 0 1em; height: 70px; position: relative; background: url(../../img/sahanapy_logo.png) #336699 no-repeat left top; }
 /* response.menu_modules */
-#menu_modules { position:relative; height:36px; background: #CACACA  url(../../img/S3menu_back.png) repeat-x; padding-top:0px; z-index:9; min-width:1000px; }
+#menu_modules { position: relative; height: 36px; background: #CACACA  url(../../img/S3menu_back.png) repeat-x; padding-top: 0px; z-index: 9; min-width: 800px; }
 
-#modulenav { position:relative; margin:0px; }
+#modulenav { position: relative; margin: 0px; }
 #modulenav,
 #modulenav li,
-#modulenav ul { list-style:none; }
+#modulenav ul { list-style: none; }
 #modulenav li div a { color: #000; }
 #modulenav a { text-decoration: none; }
-#modulenav a:hover { color: #000; background:none;  }
+#modulenav a:hover { color: #000; background: none; }
 #modulenav li li a { display: block;  font-weight: normal; padding: 5px 5px 5px 10px; }
-#modulenav li li a:hover { background:#d2eaff; color:#000; }
+#modulenav li li a:hover { background: #d2eaff; color: #000; }
 #modulenav li { float: left; position: relative; text-align: left; cursor: default;  border-width: 1px 0; }
 /* Menu Buttons */
-#modulenav li div { text-align:center; background: url(../../img/S3menu_side.png) right 10px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 8px 15px 5px 15px; font-weight:bold; }
+#modulenav li div { text-align:center; background: url(../../img/S3menu_side.png) right 10px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 8px 25px 5px 25px; }
 #modulenav li div.hovered, #modulenav li div:hover { background: #676767 url(../../img/S3menu_hilight.png) repeat-x; }
 /* Menu Popups */
-#modulenav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align:left; background: #fff; border: #dedede 1px solid;
-    -moz-border-radius:5px; -webkit-border-radius:5px;
+#modulenav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align: left; background: #fff; border: #dedede 1px solid;
+    -moz-border-radius: 5px; -webkit-border-radius: 5px;
     -moz-box-shadow: 1px 1px 5px #454545; -webkit-box-shadow: 1px 1px 5px #454545;
 }
-#modulenav li>ul { top: auto;  left: auto; }
+#modulenav li>ul { top: auto; left: auto; }
 #modulenav li li { display: block; float: none; border: 0; }
 #modulenav li:hover ul, li.over ul { display: block; }
 
-.S3menulogo { background: url(../../img/S3menu_logo.png) left top no-repeat; text-shadow: none; padding: none; width:35px; height:28px; display:inline-block; position:absolute; top:3px; left:2px; }
-.S3menuHome { padding-left:20px; }
+.S3menulogo { background: url(../../img/S3menu_logo.png) left top no-repeat; text-shadow: none; padding: none; width: 35px; height: 28px; display: inline-block; position: absolute; top: 3px; left: 2px; }
+.S3menuHome { padding-left: 20px; }
 
 /* response.menu_options */
-#menu_options { position:relative; height:26px; background: #CACACA; padding-top:0px; z-index:8; min-width:1000px; }
+#menu_options { position: relative; height: 26px; background: #CACACA; padding-top: 0px; z-index: 8; min-width: 800px; }
 
-#subnav {position:relative; margin:0px; padding-left:5px;}
+#subnav { position: relative; margin: 0px; padding-left: 5px;}
 #subnav,
 #subnav li,
-#subnav ul { list-style:none; }
+#subnav ul { list-style: none; }
 #subnav li div a { color: #000; }
 #subnav a { text-decoration: none;  }
-#subnav a:hover { color: #000;   background:none;  }
-#subnav li li a { display: block;  font-weight: normal; padding: 5px 5px 5px 10px; }
-#subnav li li a:hover { background:#d2eaff;  color:#000; }
-#subnav li { float: left;  position: relative;  text-align: left; cursor: default;  border-width: 1px 0; }
+#subnav a:hover { color: #000;  background: none; }
+#subnav li li a { display: block; font-weight: normal; padding: 5px 5px 5px 10px; }
+#subnav li li a:hover { background: #d2eaff; color: #000; }
+#subnav li { float: left; position: relative; text-align: left; cursor: default; border-width: 1px 0; }
 /* Menu Buttons */
 #subnav li div { text-align:center; background: url(../../img/S3menu_side.png) right 6px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 4px 10px 2px 10px; }
-#subnav li div.hovered, #subnav li div:hover { background: #fff; -moz-border-radius:5px; -webkit-border-radius:5px;}
+#subnav li div.hovered, #subnav li div:hover { background: #fff; -moz-border-radius: 5px; -webkit-border-radius: 5px;}
 /* Menu Popups */
 #subnav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align:left; background: #fff; border:#dedede 1px solid;
-    -moz-border-radius:5px; -webkit-border-radius:5px;
+    -moz-border-radius: 5px; -webkit-border-radius: 5px;
     -moz-box-shadow: 1px 1px 5px #454545; -webkit-box-shadow: 1px 1px 5px #454545;
 }
 #subnav li>ul { top: auto;  left: auto; }
@@ -129,46 +129,36 @@ table { border-collapse: collapse }
 
 /* Column container */
 .colmask {
-    position:relative;	/* This fixes the IE7 overflow hidden bug */
-    clear:both;
-    float:left;
-    width:100%;			/* width of whole page */
-    overflow:hidden;    /* This chops off any overhanging divs */
+    position: relative;	/* This fixes the IE7 overflow hidden bug */
+    clear: both; float: left;
+    width: 100%;			/* width of whole page */
+    overflow: hidden;    /* This chops off any overhanging divs */
 }
 /* common column settings */
 .colright, .colmid, .colleft { float:left; width:100%; position:relative; }
 .col1, .col2, .col3 { float:left; position:relative; padding:0 0 1em 0; overflow:hidden; }
 /* Full page settings */
 .fullpage {
-    background:#ccc;    /* page background colour */
-    padding-top:10px;
+    background: #ccc;    /* page background colour */
+    padding-top: 1px;
 }
 .fullpage .col1 {
-    width:96%;			/* page width minus left and right padding */
-    left:2%;			/* page left padding */
+    width: 98%;			/* page width minus left and right padding */
+    left: 1%;			/* page left padding */
 }
 
 /* common styles */
 #content {
-    background:#fff;
-    border:1px solid #bbb;
-    margin:5px;
-    -moz-box-shadow: 0px 0px 7px #888;
-    -webkit-box-shadow: 0px 0px 7px #888;
-    -moz-border-radius: 10px 10px 10px 10px;
-    -webkit-border-radius: 10px 10px 10px 10px;
-    padding: 0px 30px 10px 30px;
-    margin-bottom:50px;
+    background: #fff; border: 1px solid #bbb; margin: 5px; padding: 0px 30px 10px 30px; margin-bottom: 2px;
+    -moz-box-shadow: 0px 0px 7px #888; -webkit-box-shadow: 0px 0px 7px #888;
+    -moz-border-radius: 10px 10px 10px 10px; -webkit-border-radius: 10px 10px 10px 10px;
 }
-#content h1, #content h2 { color:#006699; font-size:16px; font-weight:bolder;
-    background:#f3f6ff;
-    border:1px #c6d1f5 solid;
-    padding:6px 10px 7px 10px;
-    margin:0px -30px 10px -30px;
-    border-bottom:1px solid #bbb;
-    -moz-border-radius: 10px 10px 0px 0px;
-    -webkit-border-radius: 10px 10px 0px 0px;
-    text-shadow:1px 2px 1px #fff;
+#content h1, #content h2 { color: #006699; font-size: 16px; font-weight: bolder;
+    background: #f3f6ff;
+    border: 1px #c6d1f5 solid;
+    padding: 6px 10px 7px 10px; margin: 0px -30px 10px -30px;
+    border-bottom: 1px solid #bbb; text-shadow: 1px 2px 1px #fff;
+    -moz-border-radius: 10px 10px 0px 0px; -webkit-border-radius: 10px 10px 0px 0px;
 }
 
 #content h3 { color:#006699; font-size:14px; font-weight:bolder; border-bottom:1px #006699 solid; margin-bottom:10px; }
@@ -179,10 +169,10 @@ table { border-collapse: collapse }
 #home p { text-align:center; text-align:justify; line-height:1.25; }
 #home h2 { font-size:16px; text-align:center; }
 #footer { margin: 0 auto; clear: both; float: left; width:100%; text-align: center; color: #666; background: #336699 url(../../img/footback.gif) repeat-x; border-top: #fff 1px solid; padding-top:20px; }
-    a.help, a:link.help { color: #fff; text-decoration: none;  margin-right:10px; }
+    a.help, a:link.help { color: #fff; text-decoration: none;  margin-right: 10px; }
     a:hover.help { background-color: #336699; text-decoration: underline; }
-    a:visited.help { font-weight: normal; color: #aaa; }
-    p { padding:10px; margin:0; }
+    a:visited.help { font-weight: normal; color: #666; }
+    p { padding: 5px; margin: 0; }
 
 /* Form Layout styles */
 p.legend { margin-bottom: 1em; }
@@ -293,34 +283,12 @@ div#pheader td { text-align: left; padding: 1px 6px 1px 1px; width: 20%; }
 /* Home page specific */
 #logo {width: 350px; height: 70px; background: url(../../img/sahanapy_logo.png) top right; margin: 0 0 0 0px; }
 
-.modlist {
-    list-style:none;
-    clear:both;
-    padding:0px 5%;
+.modlist { list-style: none; clear: both; padding: 0px 5%; }
+.modlist li { display: inline-block; float: left; margin: 5px; padding: 10px; width: 180px; height: 80px; overflow: auto;
+    background: #E0F4FD url(../../img/home_modulebuttons.gif) repeat-x; border: 1px solid #ababab;
+    -moz-border-radius: 10px; -webkit-border-radius: 10px;
+    -moz-box-shadow: 2px 2px 5px #aaa; -webkit-box-shadow: 2px 2px 5px #aaa;
 }
-.modlist li {
-    display:inline-block;
-    float:left;
-    margin:5px;
-    padding:10px;
-    width:180px;
-    height:80px;
-    overflow:auto;
-    background: #E0F4FD url(../../img/home_modulebuttons.gif) repeat-x;
-    border:1px solid #ababab;
-    -moz-border-radius:10px;
-    -webkit-border-radius:10px;
-    -moz-box-shadow: 2px 2px 5px #aaa;
-    -webkit-box-shadow: 2px 2px 5px #aaa;
-}
-.modlist li.hovered, .modlist li:hover{
-    background:#ffff99;
-}
-.modlist li strong a {
-    text-decoration:none;
-    font-size:14px;
-}
-.modlist li strong {
-    display:block;
-    margin-bottom:5px;
-}
+.modlist li.hovered, .modlist li:hover{ background: #ffff99; }
+.modlist li strong a { text-decoration: none; font-size: 14px; }
+.modlist li strong { display: block; margin-bottom: 5px; }

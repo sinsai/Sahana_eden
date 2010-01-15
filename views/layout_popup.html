@@ -77,7 +77,34 @@ function getQueryParams(qs) {
 TB_refresh();
 {{pass}}
 
+$(document).ready(function () {
+    var $_GET = getQueryParams(document.location.search);
+    var caller = $_GET["caller"];
+	//alert(caller);
+	switch(caller)
+	{
+	case "but_add_office":
+		$("#or_office_organisation_id").val("{{=session.s3.organisation_id}}");
+		$("#or_office_organisation_id__row").hide();
+		break;
+	case "but_add_contact":
+		$("#or_contact_organisation_id").val("{{=session.s3.organisation_id}}");
+		$("#or_contact_organisation_id__row").hide();
+		break;
+	case "but_add_activity":
+		$("#or_activity_organisation_id").val("{{=session.s3.organisation_id}}");
+		$("#or_activity_organisation_id__row").hide();
+		break;  
+	default:
+		alert("woops");
+	}	
+	
+	
+});
+
 //]]></script>
+
+
 </head>
 
 <body>

@@ -76,6 +76,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 admin_id,
                 Field('registration'),	# Registration Number
                 Field('website'),
+				Field('donation_phone'), 
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -85,13 +86,15 @@ db[table].acronym.label = T('Acronym')
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
 db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
 db[table].type.label = T('Type')
-db[table].registration.label = T('Registration')
+db[table].registration.label = T('Registration #')
+db[table].donation_phone.label = T('Donation Phone #')
+db[table].donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
 ADD_ORGANISATION = T('Add Organisation')
 title_create = T('Add Organisation')
 title_display = T('Organisation Details')
-title_list = T('List Organisations')
+title_list = T('Organisation Registry')
 title_update = T('Edit Organisation')
 title_search = T('Search Organisations')
 subtitle_create = T('Add New Organisation')
@@ -194,9 +197,11 @@ resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 person_id,
+				organisation_id,
                 Field('office_id', db.or_office),
                 Field('title'),
                 Field('manager_id', db.pr_person),
+				Field('focal_point', 'boolean'),
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
 db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
@@ -207,6 +212,7 @@ db[table].manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_
 db[table].manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 db[table].manager_id.label = T('Manager')
 db[table].manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
+db[table].focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
 title_create = T('Add Contact')
 title_display = T('Contact Details')
 title_list = T('List Contacts')
@@ -222,6 +228,37 @@ msg_record_deleted = T('Contact deleted')
 msg_list_empty = T('No Contacts currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+# Activity
+# The activities whihc each orgnaization is engaged in 
+resource = 'activity'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status,
+				organisation_id,
+				location_id,
+				sector_id,
+				Field('description'),
+				Field('beneficiaries', 'integer'),
+				Field('start_date', 'date'),
+				Field('end_date', 'date'),
+				Field('funded', 'boolean'),
+                Field('budgeted_cost', 'double'),
+                migrate=migrate)
+db[table].budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))				
+title_create = T('Add Activity')
+title_display = T('Activity Details')
+title_list = T('Activities Report')
+title_update = T('Edit Activity')
+title_search = T('Search Activities')
+subtitle_create = T('Add New Activity')
+subtitle_list = T('Activities')
+label_list_button = T('List Activities')
+label_create_button = T('Add Activity')
+msg_record_created = T('Activity added')
+msg_record_modified = T('Activity updated')
+msg_record_deleted = T('Activity deleted')
+msg_list_empty = T('No Activities currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)				
+				
 # Offices to Organisations
 #resource='organisation_offices'
 resource = 'office_to_organisation'

@@ -9,6 +9,7 @@
 <ul>
   <li><strong>{{=A(T('View List of Organisations'), _href=URL(r=request, c='or', f='organisation'))}}</strong></li>
   <li><strong>{{=A(T('View Offices in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}</strong></li>
+  <li><strong>{{=A(T('Offices List as GeoRSS'), _href=URL(r=request, c='gis', f='location.georss'))}}</strong></li>
   <li><strong>{{=A(T('Add Office'), _href=URL(r=request, c='or', f='office', args=['create']))}}</strong></li>
 </ul>
 <p>

@@ -24,6 +24,7 @@ shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
     lmx = "application/xml",
+    pfif = "application/xml",
     georss = "application/rss+xml",
     kml = "application/vnd.google-earth.kml+xml"
 ) #: Supported XML output formats and corresponding response headers

@@ -7,6 +7,65 @@
 # Deployments can change settings live via appadmin
 
 if empty:
+
+    # Theme
+    table = 'admin_theme'
+    if not db(db[table].id).count():
+        db[table].insert(
+            name = T('Sahana Blue'),
+            logo = 'img/sahanapy_logo.png',
+            footer = 'footer.html',
+            text_direction = 'ltr',
+            col_background = '336699',
+            col_menu = '0066cc',
+            col_highlight = '0077aa',
+            col_txt_background = 'f3f6ff',
+            col_txt_border = 'c6d1f5',
+            col_txt_underline = '003366',
+            col_txt = '006699',
+            col_input = 'ffffcc',
+            col_border_btn_out = '6699cc',
+            col_border_btn_in = '4589ce',
+            col_btn_hover = '3377bb',
+        )
+        db[table].insert(
+            name = T('Sahana Green'),
+            logo = 'img/sahanapy_logo_green.png',
+            footer = 'footer.html',
+            text_direction = 'ltr',
+            col_background = '337733',
+            col_menu = 'cc7722',
+            col_highlight = '338833',
+            col_txt_background = 'f3f6ff',
+            col_txt_border = 'c6d1f5',
+            col_txt_underline = '003366',
+            col_txt = '006699',
+            col_input = 'ffffcc',
+            col_border_btn_out = '6699cc',
+            col_border_btn_in = '4589ce',
+            col_btn_hover = '3377bb',
+        )
+        db[table].insert(
+            # Needs work
+            # - some colours need changing independently of each other
+            # - logo size needs storing
+            name = T('Sahana Steel'),
+            logo = 'img/sahanapy_logo_ideamonk.png',
+            footer = 'footer.html',
+            text_direction = 'ltr',
+            col_background = 'dbdbdb',
+            col_menu = '0066cc',
+            col_highlight = '0077aa',
+            col_txt_background = 'f3f6ff',
+            col_txt_border = 'c6d1f5',
+            col_txt_underline = '003366',
+            col_txt = 'eeeeee',
+            col_input = 'ffffcc',
+            col_border_btn_out = 'c6d1f5',
+            col_border_btn_in = '4589ce',
+            col_btn_hover = '3377bb',
+        )
+
     # Settings
     table = 's3_setting'
     if not db(db[table].id).count():
@@ -94,7 +153,7 @@ if empty:
             audit_read = False,
             audit_write = False
         )
-    
+
     table = 'lms_catalog'
     if not db(db[table].id).count():
         db[table].insert(
@@ -506,7 +565,7 @@ if empty:
                 layers = 'basic',
                 enabled = False
             )
-    
+
     table = 'gis_layer_georss'
     if not db(db[table].id).count():
         # Populate table
@@ -526,7 +585,7 @@ if empty:
                 marker_id = db(db.gis_marker.name == 'volcano').select()[0].id,
                 enabled = False
             )
-    
+
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name
@@ -570,60 +629,3 @@ if empty:
         #auth.add_permission(id, 'update', db[table])
         #auth.add_permission(id, 'delete', db[table])
 
-    # Theme
-    table = 'admin_theme'
-    if not db(db[table].id).count():
-        db[table].insert(
-            name = T('Sahana Blue'),
-            logo = 'img/sahanapy_logo.png',
-            footer = 'footer.html',
-            text_direction = 'ltr',
-            col_background = '336699',
-            col_menu = '0066cc',
-            col_highlight = '0077aa',
-            col_txt_background = 'f3f6ff',
-            col_txt_border = 'c6d1f5',
-            col_txt_underline = '003366',
-            col_txt = '006699',
-            col_input = 'ffffcc',
-            col_border_btn_out = '6699cc',
-            col_border_btn_in = '4589ce',
-            col_btn_hover = '3377bb',
-        )
-        db[table].insert(
-            name = T('Sahana Green'),
-            logo = 'img/sahanapy_logo_green.png',
-            footer = 'footer.html',
-            text_direction = 'ltr',
-            col_background = '337733',
-            col_menu = 'cc7722',
-            col_highlight = '338833',
-            col_txt_background = 'f3f6ff',
-            col_txt_border = 'c6d1f5',
-            col_txt_underline = '003366',
-            col_txt = '006699',
-            col_input = 'ffffcc',
-            col_border_btn_out = '6699cc',
-            col_border_btn_in = '4589ce',
-            col_btn_hover = '3377bb',
-        )
-        db[table].insert(
-            # Needs work
-            # - some colours need changing independently of each other
-            # - logo size needs storing
-            name = T('Sahana Steel'),
-            logo = 'img/sahanapy_logo_ideamonk.png',
-            footer = 'footer.html',
-            text_direction = 'ltr',
-            col_background = 'dbdbdb',
-            col_menu = '0066cc',
-            col_highlight = '0077aa',
-            col_txt_background = 'f3f6ff',
-            col_txt_border = 'c6d1f5',
-            col_txt_underline = '003366',
-            col_txt = 'eeeeee',
-            col_input = 'ffffcc',
-            col_border_btn_out = 'c6d1f5',
-            col_border_btn_in = '4589ce',
-            col_btn_hover = '3377bb',
-        )

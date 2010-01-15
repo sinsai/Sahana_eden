@@ -1,26 +1,5 @@
 # -*- coding: utf-8 -*-
 
-<<<<<<< TREE
-#
-# Sahanapy Person Registry
-#
-# created 2009-07-23 by nursix
-#
-# This part defines PR joined resources:
-#       - Address
-#       - Contact
-#       - Image
-#       - Presence Log
-#
-#       - Physical Descriptions
-#       - Identity
-#       - Role
-#       - Group Membership
-#       - Network (network)
-#       - Network Membership
-#       - Case
-#       - Finding
-=======
 """
     SahanaPy Person Registry
 
@@ -28,7 +7,6 @@
 
     @see: U{http://trac.sahanapy.org/wiki/BluePrintVITA}
 """
->>>>>>> MERGE-SOURCE
 
 module = 'pr'
 

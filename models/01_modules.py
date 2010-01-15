@@ -29,7 +29,7 @@ db.define_table(table,
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True)) # IS_ONE_OF ignores multiple!
+db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True))
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 
 # Set to False in Production
@@ -207,7 +207,7 @@ if empty:
 
 # Modules Menu (available in all Controllers)
 s3.menu_modules = []
-for module_type in [1, 2, 3, 4]:
+for module_type in [1, 2, 4]:
     query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:

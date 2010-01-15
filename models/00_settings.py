@@ -33,7 +33,7 @@ auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key='PUBLIC_KEY', private_key='PRIVATE_KEY')
 # Require Email Verification
-auth.settings.registration_requires_verification = False
+auth.settings.registration_requires_verification = True
 # Email settings for registration verification
 auth.settings.mailer = mail
 auth.messages.verify_email = 'Click on the link ' + S3_PUBLIC_URL + '/default/user/verify_email/%(key)s to verify your email'

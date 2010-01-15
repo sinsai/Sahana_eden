@@ -36,10 +36,19 @@ msg_record_deleted = T('Sector deleted')
 msg_list_empty = T('No Sectors currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
+def sector_represent(sector_ids):
+    if not sector_ids:
+        return "None"
+    elif "|" in str(sector_ids):
+        sectors = [db(db.or_sector.id==id).select()[0].name for id in sector_ids.split('|') if id]
+        return ", ".join(sectors)
+    else:
+        return [db(db.or_sector.id==sector_ids).select()[0].name]
+
 sector_id = SQLTable(None, 'sector_id',
-            Field('sector_id', db.or_sector,
-                requires = IS_NULL_OR(IS_IN_DB(db, 'or_sector.id', 'or_sector.name', multiple=True)),
-                represent = lambda id: (id and [db(db.or_sector.id==id).select()[0].name] or ["None"])[0],
+            Field('sector_id',
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'or_sector.id', '%(name)s', multiple=True)),
+                represent = sector_represent,
                 label = T('Sector'),
                 comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='sector', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
                 ondelete = 'RESTRICT'

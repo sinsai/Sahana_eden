@@ -2,26 +2,98 @@
 
 module = 'dvi'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+try:
+    module_name = db(db.s3_module.name==module).select()[0].name_nice
+except:
+    module_name = T('Disaster Victim Identification')
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Checklist Of Operations'), False, URL(r=request, f='operation_checklist'),[
-        [T('Personal Effects'), False, URL(r=request, f='personal_effects')],
-        [T('Radiology'), False, URL(r=request, f='radiology')],
-        [T('Fingerprints'), False, URL(r=request, f='fingerprints')],
-        [T('Anthropology'), False, URL(r=request, f='anthropology')],
-        [T('Pathology'), False, URL(r=request, f='pathology')],
-        [T('DNA'), False, URL(r=request, f='dna')],
-        [T('Dental'), False, URL(r=request, f='dental')],
-        [T('Identification'), False, URL(r=request, f='identification')]
-    ]]
+    [T('Body Find'), False, URL(r=request, f='find', args='create'),[
+        [T('New Report'), False, URL(r=request, f='find', args='create')],
+        [T('List Reports'), False, URL(r=request, f='find')],
+    ]],
+    [T('Body Recovery'), False, URL(r=request, f='body', args='create'),[
+        [T('New Report'), False, URL(r=request, f='body', args='create')],
+        [T('List Reports'), False, URL(r=request, f='body')],
+    ]],
+    [T('Select Body'), False, URL(r=request, f='body', args='search_simple')]
 ]
+
+def shn_dvi_module_menu_ext():
+    if session.rcvars and 'dvi_body' in session.rcvars:
+        selection = db.dvi_body[session.rcvars['dvi_body']]
+        if selection:
+            selection = selection.pr_pe_label
+            response.menu_options = [
+                [T('Body Find'), False, URL(r=request, f='find', args='create'),[
+                    [T('New Report'), False, URL(r=request, f='find', args='create')],
+                    [T('List Reports'), False, URL(r=request, f='find')],
+                ]],
+                [T('Body Recovery'), False, URL(r=request, f='body', args='create'),[
+                    [T('New Report'), False, URL(r=request, f='body', args='create')],
+                    [T('List Reports'), False, URL(r=request, f='body')],
+                ]],
+                [T('Select Body'), False, URL(r=request, f='body', args='search_simple')],
+                [str(T('Body:')) + ' ' + selection, False, URL(r=request, f='body', args='read'),[
+                    [T('Recovery'), False, URL(r=request, f='body', args='read')],
+                    [T('Tracing'), False, URL(r=request, f='body', args='presence')],
+                    [T('Images'), False, URL(r=request, f='body', args='image')],
+                    [T('Effects Inventory'), False, URL(r=request, f='body', args='effects')],
+                ]],
+                [T('Physical Description'), False, URL(r=request, f='body', args=['pd_general']),[
+                    [T('Appearance'), False, URL(r=request, f='body', args=['pd_general'])],
+                    [T('Head'), False, URL(r=request, f='body', args=['pd_head'])],
+                    [T('Face'), False, URL(r=request, f='body', args=['pd_face'])],
+                    [T('Teeth'), False, URL(r=request, f='body', args=['pd_teeth'])],
+                    [T('Body'), False, URL(r=request, f='body', args=['pd_body'])],
+                ]],
+                [T('Identification'), False, URL(r=request, f='body', args=['identification']),[
+                    [T('Report'), False, URL(r=request, f='body', args=['identification'])],
+                    [T('Checklist'), False, URL(r=request, f='body', args=['checklist'])],
+                ]]
+            ]
+
+shn_dvi_module_menu_ext()
 
 # S3 framework functions
 def index():
     "Module's Home Page"
     return dict(module_name=module_name)
-    
+
+def find():
+    "RESTlike CRUD controller"
+    output = shn_rest_controller(module, 'find',
+        list_fields = [
+            'id',
+            'find_date',
+            'location_id',
+            'location_details',
+            'description',
+            'bodies_est',
+            'bodies_rcv',
+            'opt_dvi_task_status'
+        ]
+    )
+    return output
+
+def body():
+    crud.settings.delete_onaccept = shn_pentity_ondelete
+    output = shn_rest_controller(module, 'body', main='pr_pe_label', extra='opt_pr_gender',
+        pheader=shn_dvi_pheader,
+        onaccept=lambda form: shn_pentity_onaccept(form, table=db.dvi_body, entity_type=3),
+        list_fields=[
+            'id',
+            'pr_pe_label',
+            'opt_pr_gender',
+            'opt_pr_age_group',
+            'date_of_recovery',
+            'location_id',
+        ]
+    )
+    shn_dvi_module_menu_ext()
+    return output
+
 def personal_effects():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'personal_effects')

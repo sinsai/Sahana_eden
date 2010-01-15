@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-#
-# Sahanapy Person Registry
-#
-# created 2009-07-15 by nursix
-#
-# This part defines:
-#       - PersonEntity (pentity)    - a person entity
-#       - Person (person)           - an individual person
-#       - Group (group)             - a group of persons
+"""
+    SahanaPy Person Registry
+
+    @author: nursix
+
+    @see: U{http://trac.sahanapy.org/wiki/BluePrintVITA}
+"""
 
 module = 'pr'
 
@@ -108,7 +106,7 @@ def shn_pentity_represent(id):
 resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
-                    Field('parent'),                # Parent Entity
+#                    Field('parent'),                # Parent Entity
                     opt_pr_entity_type,             # Entity class
                     Field('label', length=128, unique=True),    # Recognition Label
                     migrate=migrate)
@@ -116,13 +114,13 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
+#db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
 
 # Field representation
 #db[table].deleted.readable = True
 
 # Field labels
-db[table].parent.label = T('belongs to')
+#db[table].parent.label = T('belongs to')
 
 # CRUD Strings
 
@@ -148,14 +146,14 @@ pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
                         readable = False,   # should be invisible in (most) forms
                         writable = False    # should be invisible in (most) forms
                     ),
-                    Field('pr_pe_parent', db.pr_pentity,
-                        requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
-                        represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
-                        ondelete = 'RESTRICT',
-                        label = T('belongs to'),
-                        readable = False,   # should be invisible in (most) forms
-                        writable = False    # should be invisible in (most) forms
-                    ),
+#                    Field('pr_pe_parent', db.pr_pentity,
+#                        requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+#                        represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+#                        ondelete = 'RESTRICT',
+#                        label = T('belongs to'),
+#                        readable = False,   # should be invisible in (most) forms
+#                        writable = False    # should be invisible in (most) forms
+#                    ),
                     Field('pr_pe_label',
                         label = T('ID Label'),
                         requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))

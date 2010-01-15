@@ -16,12 +16,12 @@
 
     <xsl:template match="/sahanapy">
         <pfif:pfif>
-            <xsl:apply-templates select="./resource[@prefix='pr' and @name='person']"/>
+            <xsl:apply-templates select="./resource[@name='pr_person']"/>
         </pfif:pfif>
     </xsl:template>
 
     <!-- Person -->
-    <xsl:template match="resource[@prefix='pr' and @name='person']">
+    <xsl:template match="resource[@name='pr_person']">
         <pfif:person>
             <pfif:person_record_id>
                 <xsl:value-of select="concat(/sahanapy/@domain, '/', ./@uuid)" />
@@ -55,13 +55,13 @@
                     <xsl:with-param name="name" select="./data[@field='last_name']/text()" />
                 </xsl:call-template>
             </pfif:last_name>
-            <xsl:apply-templates select="./resource[@prefix='pr' and @name='address' and ./data[@field='opt_pr_address_type']/@value=1][1]" />
-            <xsl:apply-templates select="./resource[@prefix='pr' and @name='presence']"/>
+            <xsl:apply-templates select="./resource[@name='pr_address' and ./data[@field='opt_pr_address_type']/@value=1][1]" />
+            <xsl:apply-templates select="./resource[@name='pr_presence']"/>
         </pfif:person>
     </xsl:template>
 
     <!-- Presence -->
-    <xsl:template match="resource[@prefix='pr' and @name='presence']">
+    <xsl:template match="resource[@name='pr_presence']">
         <pfif:note>
             <pfif:note_record_id>
                 <xsl:value-of select="concat(/sahanapy/@domain, '/', ./@uuid)" />

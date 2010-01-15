@@ -211,23 +211,20 @@ def location_to_feature_group():
     # Model options
 
     # CRUD Strings
-    #title_create = ADD_FG
-    #title_display = T('Feature Group Details')
-    #title_list = T('List Feature Groups')
-    #title_update = T('Edit Feature Group')
-    #title_search = T('Search Feature Groups')
-    #subtitle_create = T('Add New Feature Group')
-    #subtitle_list = T('Feature Groups')
-    #label_list_button = T('List Feature Groups')
-    #label_create_button = ADD_FG
-    #msg_record_created = T('Feature Group added')
-    #msg_record_modified = T('Feature Group updated')
-    #msg_record_deleted = T('Feature Group deleted')
-    #msg_list_empty = T('No Feature Groups currently defined')
-    #s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
     return shn_rest_controller(module, resource)
 
+def feature_class_to_feature_group():
+    "RESTlike CRUD controller"
+    resource = 'feature_class_to_feature_group'
+    table = module + '_' + resource
+
+    # Model options
+
+    # CRUD Strings
+
+    return shn_rest_controller(module, resource)
+    
 def location():
     "RESTlike CRUD controller"
     resource = 'location'

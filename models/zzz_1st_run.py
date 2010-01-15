@@ -390,9 +390,9 @@ if empty:
             name = 'Infrastructure',
         )
         db[table].insert(
-            name = 'Programme',
+            name = 'Offices',
         )
-
+        
     table = 'gis_feature_class_to_feature_group'
     if not db(db[table].id).count():
         db[table].insert(
@@ -430,6 +430,10 @@ if empty:
         db[table].insert(
             feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Water').select()[0].id,
+        )
+        db[table].insert(
+            feature_group_id = db(db.gis_feature_group.name == 'Offices').select()[0].id,
+            feature_class_id = db(db.gis_feature_class.name == 'Office').select()[0].id,
         )
 
     table = 'gis_apikey'

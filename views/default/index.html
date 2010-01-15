@@ -7,10 +7,14 @@
 {{=T("This site is used to show all the locations of response agencies working for the Haiti Quake Response 2010")}}:
 </p>
 <ul>
-  <li><strong>{{=A(T('View List of Organisations'), _href=URL(r=request, c='or', f='organisation'))}}</strong></li>
-  <li><strong>{{=A(T('View Offices in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}</strong></li>
+ <li><strong>{{=A(T('Organization Dashboard'), _href=URL(r=request, c='or', f='dashboard'))}}</strong></li>	
+  View, edit and add organizations and their Offices, Contacts and Activities<br/>
+  <li><strong>{{=A(T('Organizations Registry'), _href=URL(r=request, c='or', f='organisation'))}}</strong></li>
+  List of all Organizations<br/>
+  <li><strong>{{=A(T('Activities Report'), _href=URL(r=request, c='or', f='activity'))}}</strong></li>
+  Report of all Activities<br/>
   <li><strong>{{=A(T('Offices List as GeoRSS'), _href=URL(r=request, c='gis', f='location.georss'))}}</strong></li>
-  <li><strong>{{=A(T('Add Office'), _href=URL(r=request, c='or', f='office', args=['create']))}}</strong></li>
+  <li><strong>{{=A(T('View Offices in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}</strong></li>
 </ul>
 <p>
 <br/>{{=T("To add data to this database, see")}} <a href="http://trac.sahanapy.org/wiki/HaitiDataEntry">{{=T("Data Entry Process")}}</a>

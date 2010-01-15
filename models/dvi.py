@@ -24,7 +24,9 @@ dvi_task_status_opts = {
     1:T('New'),
     2:T('Assigned'),
     3:T('In Progress'),
-    4:T('Completed')
+    4:T('Completed'),
+    5:T('Not Applicable'),
+    6:T('Not Possible')
     }
 
 opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
@@ -126,8 +128,8 @@ db[table].is_incomplete.represent = lambda is_incomplete: (is_incomplete and ["y
 
 # CRUD Strings
 title_create = T('Add Recovery Report')
-title_display = T('Recovery Details')
-title_list = T('Recovery Reports')
+title_display = T('Dead Body Details')
+title_list = T('Body Recovery Reports')
 title_update = T('Edit Recovery Details')
 title_search = T('Find Recovery Report')
 subtitle_create = T('Add New Report')
@@ -326,7 +328,6 @@ resource = 'checklist'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,
-                db.Field('recovery'),
                 db.Field('personal_effects'),
                 db.Field('body_radiology'),
                 db.Field('fingerprints'),
@@ -336,8 +337,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 db.Field('dna'),
                 db.Field('dental'),
                 migrate = migrate)
-# restrictions
-db[table].recovery.requires = IS_IN_SET(dvi_task_status_opts)
+
+# Setting and restrictions
 db[table].personal_effects.requires = IS_IN_SET(dvi_task_status_opts)
 db[table].body_radiology.requires = IS_IN_SET(dvi_task_status_opts)
 db[table].fingerprints.requires = IS_IN_SET(dvi_task_status_opts)
@@ -346,6 +347,31 @@ db[table].pathology.requires = IS_IN_SET(dvi_task_status_opts)
 db[table].embalming.requires = IS_IN_SET(dvi_task_status_opts)
 db[table].dna.requires = IS_IN_SET(dvi_task_status_opts)
 db[table].dental.requires = IS_IN_SET(dvi_task_status_opts)
+
+db[table].personal_effects.label = 'Inventory of Effects'
+db[table].body_radiology.label = 'Radiology'
+db[table].fingerprints.label = 'Fingerprinting'
+db[table].anthropology.label = 'Anthropolgy'
+db[table].pathology.label = 'Pathology'
+db[table].embalming.label = 'Embalming'
+db[table].dna.label = 'DNA Profiling'
+db[table].dental.label = 'Dental Examination'
+
+# CRUD Strings
+title_create = T('Create Checklist')
+title_display = T('Checklist of Operations')
+title_list = T('List Checklists')
+title_update = T('Update Checklist')
+title_search = T('Search Checklists')
+subtitle_create = T('Create New Checklist')
+subtitle_list = T('Checklist of Operations')
+label_list_button = T('Show Checklist')
+label_create_button = T('Create Checklist')
+msg_record_created = T('Checklist created')
+msg_record_modified = T('Checklist updated')
+msg_record_deleted = T('Checklist deleted')
+msg_list_empty = T('No Checklist available')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,

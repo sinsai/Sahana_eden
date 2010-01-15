@@ -390,6 +390,9 @@ if empty:
             name = 'Infrastructure',
         )
         db[table].insert(
+            name = 'Programme',
+        )
+        db[table].insert(
             name = 'Offices',
         )
         

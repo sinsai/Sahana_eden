@@ -279,6 +279,7 @@ resource = 'person'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                         # Person Entity Field Set
+                Field('missing', 'boolean', default=False), # Missing?
                 Field('first_name', notnull=True),      # first or only name
                 Field('middle_name'),                   # middle name
                 Field('last_name'),                     # last name
@@ -314,6 +315,8 @@ db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|Th
 db[table].mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
 db[table].opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
 db[table].opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
+
+db[table].missing.represent = lambda missing: (missing and ['missing'] or [''])[0]
 
 # Field labels
 db[table].opt_pr_gender.label = T('Gender')

@@ -135,6 +135,14 @@ msg_record_deleted = T('Office deleted')
 msg_list_empty = T('No Offices currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+# Offices as component of Orgs
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(or_organisation='organisation_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'name', 'phone1', 'email'])
+
 # Contacts
 # Many-to-Many Persons to Offices with also the Title & Manager that the person has in this context
 # ToDo: Build an Organigram out of this data?

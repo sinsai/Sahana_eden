@@ -261,16 +261,16 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 				
 # Offices to Organisations
 #resource='organisation_offices'
-resource = 'office_to_organisation'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                Field('office_id', db.or_office),
-                Field('organisation_id', db.or_organisation),
-                migrate=migrate)
-db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
-db[table].office_id.label = T('Office')
-db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
-db[table].organisation_id.label = T('Organisation')
+#resource = 'office_to_organisation'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, deletion_status,
+#                Field('office_id', db.or_office),
+#                Field('organisation_id', db.or_organisation),
+#                migrate=migrate)
+#db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
+#db[table].office_id.label = T('Office')
+#db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
+#db[table].organisation_id.label = T('Organisation')
 
 # Contacts to Organisations
 # Do we want to allow contacts which are affiliated to an organisation but not to an office?

@@ -254,8 +254,8 @@ def location():
 
     if "feature_class" in request.vars:
         fgroup = request.vars["feature_class"]
-        print "Filtering for feature_class=%s" % fgroup
-        response.s3.filter = ((db.gis_location.feature_class_id==db.gis_feature_class.id) & (db.gis_feature_class.name.like(fgroup)))
+        response.s3.filter = ((db.gis_location.feature_class_id==db.gis_feature_class.id) &
+                              (db.gis_feature_class.name.like(fgroup)))
 
     return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
 

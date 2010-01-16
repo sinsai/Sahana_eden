@@ -600,7 +600,7 @@ if empty:
         auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
         auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')
         auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
-        
+        auth.add_group('DVI', description = 'DVI - allowed access to the DVI module')
     # Security Defaults for all tables
     # For performance we only populate this once (at system startup)
     # => need to populate manually when adding new tables to the database! (less RAD)

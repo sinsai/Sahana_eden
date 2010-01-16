@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
 
+# Only people with the DVI role should be able to access this module
+#try:
+#    dvi_group = db(db[auth.settings.table_group_name] == 'DVI').select()[0].id
+#    if auth.has_membership(dvi_group):
+#        pass
+#    else:
+#        session.error = T('Not Authorised!')
+#        redirect(URL(r=request, c='default', f='user', args='login'))
+#except:
+#    session.error=T('Not Authorised!')
+#    redirect(URL(r=request, c='default', f='user', args='login'))
+
+
 module = 'dvi'
 # Current Module (for sidebar title)
 try:

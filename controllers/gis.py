@@ -252,6 +252,11 @@ def location():
     msg_list_empty = T('No Locations currently available')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+    if "feature_class" in request.vars:
+        fgroup = request.vars["feature_class"]
+        print "Filtering for feature_class=%s" % fgroup
+        response.s3.filter = ((db.gis_location.feature_class_id==db.gis_feature_class.id) & (db.gis_feature_class.name.like(fgroup)))
+
     return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
 
 def marker():
@@ -848,9 +853,9 @@ def layers():
     "Provide the Enabled Layers"
 
     from gluon.tools import fetch
-    
+
     response.warning = ''
-    
+
     layers = Storage()
 
     # OpenStreetMap
@@ -908,20 +913,20 @@ def layers():
     for layer in layers_gpx:
         name = layer.name
         layers.gpx[name] = Storage()
-        track = db(db.gis_track.id==layer.track_id).select()[0] 
+        track = db(db.gis_track.id==layer.track_id).select()[0]
         layers.gpx[name].url = track.track
         if layer.marker_id:
             layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
         else:
             marker_id = db(db.gis_config.id==1).select()[0].marker_id
             layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
-    
+
     cachepath = os.path.join(request.folder, 'uploads', 'gis_cache')
     if os.access(cachepath, os.W_OK):
         cache = True
     else:
         cache = False
-        
+
     # GeoRSS
     layers.georss = Storage()
     layers_georss = db(db.gis_layer_georss.enabled==True).select()
@@ -960,7 +965,7 @@ def layers():
         else:
             # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
             pass
-        
+
         # Add to return
         layers.georss[name] = Storage()
         layers.georss[name].url = url
@@ -1009,11 +1014,11 @@ def layers():
         else:
             # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
             pass
-        
+
         # Add to return
         layers.kml[name] = Storage()
         layers.kml[name].url = url
-    
+
     # WMS
     layers.wms = Storage()
     layers_wms = db(db.gis_layer_wms.enabled==True).select()

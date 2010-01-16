@@ -1414,7 +1414,10 @@ def display_features():
         feature.module = feature_class.module
         feature.resource = feature_class.resource
         if feature.module and feature.resource:
-            feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
+            try:
+                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
+            except:
+                feature.resource_id = None
         else:
             feature.resource_id = None
         # provide an extra access so no need to duplicate popups code

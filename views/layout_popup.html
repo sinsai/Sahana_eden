@@ -8,6 +8,7 @@
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
+{{include 'thickbox.html'}}
 
 <script type="text/javascript">//<![CDATA[
 function TB_refresh() {
@@ -50,7 +51,7 @@ function TB_refresh() {
             // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
             //self.parent.$('#dummy').val(represent);
             // Clean-up
-            self.parent.tb_remove();
+            self.parent.tb_remove_last();
         });
     } else {
         // Clean-up

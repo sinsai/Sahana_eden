@@ -900,7 +900,7 @@ class XRequest(object):
 
         # Append record ID to request as necessary
         if self.id:
-            if len(self.args)>0 or len(self.args)==0 and ('id_label' in self.request.vars):
+            if len(self.args)>0 or len(self.args)==0 and ('select' in self.request.vars):
                 if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
                     if self.representation==self.DEFAULT_REPRESENTATION or self.extension:
@@ -1362,6 +1362,8 @@ class XRequest(object):
 class S3XML(object):
 
     UUID = "uuid"
+    Lat = "lat"
+    Lon = "lon"
 
     IGNORE_FIELDS = ["deleted", "id"]
 
@@ -1401,7 +1403,9 @@ class S3XML(object):
         start="start",
         limit="limit",
         success="success",
-        results="results"
+        results="results",
+        lat="lat",
+        lon="lon"
         )
 
     ACTION = dict(
@@ -1540,6 +1544,14 @@ class S3XML(object):
                         reference.set(self.ATTRIBUTE["resource"], _ktable)
                         reference.set(self.UUID, self.xml_encode(str(uuid)))
                         reference.text = text
+
+                        if self.Lat in ktable.fields and self.Lon in ktable.fields:
+                            LatLon = self.db(ktable.id==value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0,1))
+                            if LatLon:
+                                LatLon = LatLon[0]
+                                reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
+                                reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
+
             else:
                 data = etree.SubElement(resource, self.TAG["data"])
                 data.set(self.ATTRIBUTE["field"], f)

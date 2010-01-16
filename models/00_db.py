@@ -74,7 +74,7 @@ def shn_sessions(f):
     except:
         session.s3.security_policy = 1
     # Are we running in restricted mode?
-    session.s3.restricted = auth.has_membership(auth.id_group('Restricted'))
+    #session.s3.restricted = auth.has_membership(auth.id_group('Restricted'))
     # Select the theme
     if not session.s3.theme:
         session.s3.theme = Storage()

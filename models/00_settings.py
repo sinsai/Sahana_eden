@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-S3_PUBLIC_URL = 'http://127.0.0.1:8000/sahana'
+S3_PUBLIC_URL = 'http://127.0.0.1:8000'
 S3_UTC_OFFSET = 'UTC +0000' # default UTC offset (timezone) of users
 BREADCRUMB = '>> '
 

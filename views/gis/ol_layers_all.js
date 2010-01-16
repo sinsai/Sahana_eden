@@ -27,4 +27,5 @@
   {{include 'gis/ol_layers_georss.js'}}
   {{include 'gis/ol_layers_gpx.js'}}
   {{include 'gis/ol_layers_kml.js'}}
+  {{include 'gis/ol_layers_js.js'}}
 }

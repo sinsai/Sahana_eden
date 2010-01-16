@@ -239,7 +239,7 @@ track_id = SQLTable(None, 'track_id',
     
 # GIS Layers
 #gis_layer_types = ['shapefile', 'scan', 'wfs']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx', 'georss', 'kml', 'wms', 'tms']
+gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx', 'georss', 'kml', 'wms', 'tms', 'js']
 #gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
@@ -312,6 +312,11 @@ for layertype in gis_layer_types:
             #Field('url', label=T('Location')),
             track_id,
             marker_id)
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "js":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('code', 'text', label=T('Code'), default="var myNewLayer = new OpenLayers.Layer.XYZ();\nmap.addLayer(myNewLayer);"))
         db.define_table(table, t, migrate=migrate)
 
 # GIS Cache

@@ -111,7 +111,7 @@ if empty:
             module_type=3,
             access='',
             description="Disaster Victim Identification",
-            enabled='False'
+            enabled='True'
         )
         db[table].insert(
             name="or",
@@ -207,7 +207,8 @@ if empty:
 
 # Modules Menu (available in all Controllers)
 s3.menu_modules = []
-for module_type in [1, 2, 4]:
+
+for module_type in [1, 2, 3, 4]:
     query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:

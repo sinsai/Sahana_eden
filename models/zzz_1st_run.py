@@ -454,6 +454,9 @@ if empty:
         db[table].insert(
             name = 'Offices',
         )
+        db[table].insert(
+            name = 'Hospitals',
+        )
         
     table = 'gis_feature_class_to_feature_group'
     if not db(db[table].id).count():
@@ -474,7 +477,7 @@ if empty:
             feature_class_id = db(db.gis_feature_class.name == 'Port').select()[0].id,
         )
         db[table].insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Hospitals').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Hospital').select()[0].id,
         )
         db[table].insert(

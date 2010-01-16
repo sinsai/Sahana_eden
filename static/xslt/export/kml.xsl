@@ -35,17 +35,19 @@
                 </Placemark>
             </xsl:when>
             <xsl:otherwise>
-                <Placemark>
-                    <name><xsl:value-of select="data[@field='name']"/></name>
-                    <description><xsl:value-of select="@url"/></description>
-                    <Point>
-                        <coordinates>
-                            <xsl:value-of select="reference[@field='location_id']/@lon"/>
-                            <xsl:text>,</xsl:text>
-                            <xsl:value-of select="reference[@field='location_id']/@lat"/>
-                        </coordinates>
-                    </Point>
-                </Placemark>
+                <xsl:if test="./reference[@field='location_id']">
+                    <Placemark>
+                        <name><xsl:value-of select="data[@field='name']"/></name>
+                        <description><xsl:value-of select="@url"/></description>
+                        <Point>
+                            <coordinates>
+                                <xsl:value-of select="reference[@field='location_id']/@lon"/>
+                                <xsl:text>,</xsl:text>
+                                <xsl:value-of select="reference[@field='location_id']/@lat"/>
+                            </coordinates>
+                        </Point>
+                    </Placemark>
+                </xsl:otherwise>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>

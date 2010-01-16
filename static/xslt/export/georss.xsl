@@ -28,16 +28,18 @@
                 </entry>
             </xsl:when>
             <xsl:otherwise>
-                <entry>
-                    <title><xsl:value-of select="data[@field='name']"/></title>
-                    <link href="{@url}"/>
-                    <id><xsl:value-of select="@uuid"/></id>
-                    <georss:point>
-                        <xsl:value-of select="reference[@field='location_id']/@lat"/>
-                        <xsl:text> </xsl:text>
-                        <xsl:value-of select="reference[@field='location_id']/@lon"/>
-                    </georss:point>
-                </entry>
+                <xsl:if test="./reference[@field='location_id']">
+                    <entry>
+                        <title><xsl:value-of select="data[@field='name']"/></title>
+                        <link href="{@url}"/>
+                        <id><xsl:value-of select="@uuid"/></id>
+                        <georss:point>
+                            <xsl:value-of select="reference[@field='location_id']/@lat"/>
+                            <xsl:text> </xsl:text>
+                            <xsl:value-of select="reference[@field='location_id']/@lon"/>
+                        </georss:point>
+                    </entry>
+                </xsl:if>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>

@@ -486,11 +486,11 @@ if empty:
             feature_class_id = db(db.gis_feature_class.name == 'School').select()[0].id,
         )
         db[table].insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Offices').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Food').select()[0].id,
         )
         db[table].insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Offices').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Water').select()[0].id,
         )
         db[table].insert(

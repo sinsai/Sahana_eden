@@ -35,19 +35,19 @@ function tb_init_level(level){
 }
 
 function tb_show(caption, url, imageGroup, l) {//function called when the user clicks on a thickbox link
-	try {
-		parent = $("body");
+//	try {
+		var parent = $("body");
 		if (typeof document.body.style.maxHeight === "undefined") {//if IE 6
 			$("body","html").css({height: "100%", width: "100%"});
 			parent.css("overflow","hidden");
 			if (document.getElementById("TB_HideSelect"+l) === null) {//iframe to hide select elements in ie6
 				parent.append("<iframe class='TB_HideSelect' id='TB_HideSelect"+l+"'></iframe><div id='TB_overlay"+l+"' class='TB_overlay'></div><div id='TB_window"+l+"' class='TB_window'></div>");
-				$("#TB_overlay"+l).click(function(){tb_remove(l);});
+				$("#TB_overlay"+l).click(function(){tb_remove_l(l);});
 			}
 		}else{//all others
 			if(document.getElementById("TB_overlay"+l) === null){
 				parent.append("<div id='TB_overlay"+l+"' class='TB_overlay'></div><div id='TB_window"+l+"' class='TB_window'></div>");
-				$("#TB_overlay"+l).click(function(){tb_remove(l);});
+				$("#TB_overlay"+l).click(function(){tb_remove_l(l);});
 			}
 		}
 		
@@ -133,7 +133,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 			TB_HEIGHT = imageHeight + 60;
 			$("#TB_window"+l).append("<a href='' id='TB_ImageOff"+l+"' title='Close'><img id='TB_Image"+l+"' class='TB_Image' src='"+url+"' width='"+imageWidth+"' height='"+imageHeight+"' alt='"+caption+"'/></a>" + "<div class='TB_caption' id='TB_caption"+l+"'>"+caption+"<div class='TB_secondLine' id='TB_secondLine"+l+"'>" + TB_imageCount + TB_PrevHTML + TB_NextHTML + "</div></div><div class='TB_closeWindow' id='TB_closeWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a> or Esc Key</div>"); 		
 			
-			$("#TB_closeWindowButton"+l).click(function(){tb_remove(l);});
+			$("#TB_closeWindowButton"+l).click(function(){tb_remove_l(l);});
 			
 			if (!(TB_PrevHTML === "")) {
 				function goPrev(){
@@ -164,7 +164,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 					keycode = e.which;
 				}
 				if(keycode == 27){ // close
-					tb_remove(l);
+					tb_remove_l(l);
 				} else if(keycode == 190){ // display previous image
 					if(!(TB_NextHTML == "")){
 						document.onkeydown = "";
@@ -180,7 +180,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 			
 			tb_position(l);
 			$("#TB_load"+l).remove();
-			$("#TB_ImageOff"+l).click(function(){tb_remove(l);});
+			$("#TB_ImageOff"+l).click(function(){tb_remove_l(l);});
 			$("#TB_window"+l).css({display:"block"}); //for safari using css instead of show
 			};
 			
@@ -220,7 +220,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 					}
 			}
 					
-			$("#TB_closeWindowButton"+l).click(function(){tb_remove(l);});
+			$("#TB_closeWindowButton"+l).click(function(){tb_remove_l(l);});
 			
 				if(url.indexOf('TB_inline') != -1){	
 					$("#TB_ajaxContent"+l).append($('#' + params['inlineId']).children());
@@ -260,9 +260,9 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 			};
 		}
 		
-	} catch(e) {
+//	} catch(e) {
 		//nothing here
-	}
+//	}
 }
 
 //helper functions below
@@ -272,12 +272,12 @@ function tb_showIframe(frame, level){
 //	$(frame).contents().find("a.thickbox, area.thickbox, input.thickbox").click(tb_init_level(level+1));
 }
 
-function tb_remove_last() {
-	tb_remove(tb_last);
+function tb_remove() {
+	tb_remove_l(tb_last);
 	tb_last = tb_last - 1;
 }
 
-function tb_remove(l) {
+function tb_remove_l(l) {
  	$("#TB_imageOff"+l).unbind("click");
 	$("#TB_closeWindowButton"+l).unbind("click");
 	$("#TB_window"+l).fadeOut("fast",function(){$('#TB_window'+l+',#TB_overlay'+l+',#TB_HideSelect'+l).trigger("unload").unbind().remove();});

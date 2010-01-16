@@ -47,7 +47,7 @@
                             </coordinates>
                         </Point>
                     </Placemark>
-                </xsl:otherwise>
+                </xsl:if>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>

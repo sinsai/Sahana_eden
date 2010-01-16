@@ -1,6 +1,6 @@
 /*
  * File:        jquery.dataTables.js
- * Version:     1.5.3
+ * Version:     1.5.6
  * CVS:         $Id$
  * Description: Paginate, search and sort HTML tables
  * Author:      Allan Jardine (www.sprymedia.co.uk)
@@ -67,7 +67,7 @@
 	 * Purpose:  Version string for plug-ins to check compatibility
 	 * Scope:    jQuery.fn.dataTableExt
 	 */
-	_oExt.sVersion = "1.5.3";
+	_oExt.sVersion = "1.5.6";
 	
 	/*
 	 * Variable: iApiIndex
@@ -109,6 +109,20 @@
 	 *   which can be used for live DOM checking or formatted text filtering
 	 */
 	_oExt.ofnSearch = { };
+	
+	/*
+	 * Variable: afnSortData
+	 * Purpose:  Container for custom sorting data source functions
+	 * Scope:    jQuery.fn.dataTableExt
+	 * Notes:    Array (associative) of functions which is run prior to a column of this 
+	 *   'SortDataType' being sorted upon.
+	 *   Function input parameters:
+	 *     object:oSettings-  DataTables settings object
+	 *     int:iColumn - Target column number
+	 *   Return value: Array of data which exactly matched the full data set size for the column to
+	 *     be sorted upon
+	 */
+	_oExt.afnSortData = [ ];
 	
 	/*
 	 * Variable: oStdClasses
@@ -154,6 +168,7 @@
 		"sSortable": "sorting", /* Sortable in both directions */
 		"sSortableAsc": "sorting_asc_disabled",
 		"sSortableDesc": "sorting_desc_disabled",
+		"sSortableNone": "",
 		"sSortColumn": "sorting_", /* Note that an int is postfixed for the sorting order */
 		"sSortJUIAsc": "",
 		"sSortJUIDesc": "",
@@ -206,6 +221,7 @@
 		"sSortable": "ui-state-default",
 		"sSortableAsc": "ui-state-default",
 		"sSortableDesc": "ui-state-default",
+		"sSortableNone": "ui-state-default",
 		"sSortColumn": "sorting_", /* Note that an int is postfixed for the sorting order */
 		"sSortJUIAsc": "css_right ui-icon ui-icon-triangle-1-n",
 		"sSortJUIDesc": "css_right ui-icon ui-icon-triangle-1-s",
@@ -1031,21 +1047,27 @@
 			this.aoOpenRows = [];
 			
 			/*
-			 * Variable: sDomPositioning
+			 * Variable: sDom
 			 * Purpose:  Dictate the positioning that the created elements will take
 			 * Scope:    jQuery.dataTable.classSettings
-			 * Notes:    The following syntax is expected:
-			 *   'l' - Length changing
-			 *   'f' - Filtering input
-			 *   't' - The table!
-			 *   'i' - Information
-			 *   'p' - Pagination
-			 *   'r' - pRocessing
-			 *   '<' and '>' - div elements
-			 *   '<"class" and '>' - div with a class
-			 *    Examples: '<"wrapper"flipt>', '<lf<t>ip>'
+			 * Notes:    
+			 *   The following options are allowed:
+			 *     'l' - Length changing
+			 *     'f' - Filtering input
+			 *     't' - The table!
+			 *     'i' - Information
+			 *     'p' - Pagination
+			 *     'r' - pRocessing
+			 *   The following constants are allowed:
+			 *     'H' - jQueryUI theme "header" classes
+			 *     'F' - jQueryUI theme "footer" classes
+			 *   The following syntax is expected:
+			 *     '<' and '>' - div elements
+			 *     '<"class" and '>' - div with a class
+			 *   Examples:
+			 *     '<"wrapper"flipt>', '<lf<t>ip>'
 			 */
-			this.sDomPositioning = 'lfrtip';
+			this.sDom = 'lfrtip';
 			
 			/*
 			 * Variable: sPaginationType
@@ -1123,6 +1145,14 @@
 			 * Scope:    jQuery.dataTable.classSettings
 			 */
 			this.oClasses = _oExt.oStdClasses;
+			
+			/*
+			 * Variable: bFiltered and bSorted
+			 * Purpose:  Flag to allow callback functions to see what action has been performed
+			 * Scope:    jQuery.dataTable.classSettings
+			 */
+			this.bFiltered = false;
+			this.bSorted = false;
 		}
 		
 		/*
@@ -1811,6 +1841,7 @@
 			/* If there is default sorting required - let's do it. The sort function
 			 * will do the drawing for us. Otherwise we draw the table
 			 */
+				_fnSortingClasses( oSettings );
 			if ( oSettings.oFeatures.bSort )
 			{
 				_fnSort( oSettings, false );
@@ -1941,16 +1972,17 @@
 				"fnRender": null,
 				"bUseRendered": true,
 				"iDataSort": oSettings.aoColumns.length-1,
+				"sSortDataType": 'std',
 				"nTh": nTh ? nTh : document.createElement('th'),
 				"nTf": null
 			};
 			
-			/* User specified column options */
 			var iLength = oSettings.aoColumns.length-1;
+			var oCol = oSettings.aoColumns[ iLength ];
+			
+			/* User specified column options */
 			if ( typeof oOptions != 'undefined' && oOptions !== null )
 			{
-				var oCol = oSettings.aoColumns[ iLength ];
-				
 				if ( typeof oOptions.sType != 'undefined' )
 				{
 					oCol.sType = oOptions.sType;
@@ -1968,27 +2000,31 @@
 				_fnMap( oCol, oOptions, "bUseRendered" );
 				_fnMap( oCol, oOptions, "iDataSort" );
 				_fnMap( oCol, oOptions, "asSorting" );
-				
-				/* If asSorting is defined, then check that the class assignment is correct for sorting */
-				if ( typeof oOptions.asSorting != 'undefined' )
-				{
-					if ( $.inArray('asc', oOptions.asSorting) == -1 && $.inArray('desc', oOptions.asSorting) == -1 )
-					{
-						oCol.sSortingClass = "";
-						oCol.sSortingClassJUI = "";
-					}
-					else if ( $.inArray('asc', oOptions.asSorting) != -1 && $.inArray('desc', oOptions.asSorting) == -1 )
-					{
-						oCol.sSortingClass = oSettings.oClasses.sSortableAsc;
-						oCol.sSortingClassJUI = oSettings.oClasses.sSortJUIAscAllowed;
-					}
-					else if ( $.inArray('asc', oOptions.asSorting) == -1 && $.inArray('desc', oOptions.asSorting) != -1 )
-					{
-						oCol.sSortingClass = oSettings.oClasses.sSortableDesc;
-						oCol.sSortingClassJUI = oSettings.oClasses.sSortJUIDescAllowed;
-					}
-					/* Otherwise use default */
-				}
+				_fnMap( oCol, oOptions, "sSortDataType" );
+			}
+			
+			/* Feature sorting overrides column specific when off */
+			if ( !oSettings.oFeatures.bSort )
+			{
+				oCol.bSortable = false;
+			}
+			
+			/* Check that the class assignment is correct for sorting */
+			if ( !oCol.bSortable ||
+					 ($.inArray('asc', oCol.asSorting) == -1 && $.inArray('desc', oCol.asSorting) == -1) )
+			{
+				oCol.sSortingClass = oSettings.oClasses.sSortableNone;
+				oCol.sSortingClassJUI = "";
+			}
+			else if ( $.inArray('asc', oCol.asSorting) != -1 && $.inArray('desc', oCol.asSorting) == -1 )
+			{
+				oCol.sSortingClass = oSettings.oClasses.sSortableAsc;
+				oCol.sSortingClassJUI = oSettings.oClasses.sSortJUIAscAllowed;
+			}
+			else if ( $.inArray('asc', oCol.asSorting) == -1 && $.inArray('desc', oCol.asSorting) != -1 )
+			{
+				oCol.sSortingClass = oSettings.oClasses.sSortableDesc;
+				oCol.sSortingClassJUI = oSettings.oClasses.sSortJUIDescAllowed;
 			}
 			
 			/* Add a column specific filter */
@@ -2304,6 +2340,7 @@
 				{
 					if ( oSettings.aoColumns[i].bSortable === false )
 					{
+						$(oSettings.aoColumns[i].nTh).addClass( oSettings.oClasses.sSortableNone );
 						continue;
 					}
 					
@@ -2478,6 +2515,14 @@
 				return;
 			}
 			
+			/* Check and see if we have an initial draw position from state saving */
+			if ( typeof oSettings.iInitDisplayStart != 'undefined' && oSettings.iInitDisplayStart != -1 )
+			{
+				oSettings._iDisplayStart = oSettings.iInitDisplayStart;
+				oSettings.iInitDisplayStart = -1;
+				_fnCalculateEnd( oSettings );
+			}
+			
 			if ( oSettings.aiDisplay.length !== 0 )
 			{
 				var iStart = oSettings._iDisplayStart;
@@ -2645,6 +2690,10 @@
 			{
 				oSettings.fnDrawCallback( oSettings );
 			}
+			
+			/* Draw is complete, sorting and filtering must be as well */
+			oSettings.bSorted = false;
+			oSettings.bFiltered = false;
 		}
 		
 		/*
@@ -2705,6 +2754,7 @@
 					{
 						aoData.push( { "name": "sSearch_"+i,      "value": oSettings.aoPreSearchCols[i].sSearch } );
 						aoData.push( { "name": "bEscapeRegex_"+i, "value": oSettings.aoPreSearchCols[i].bEscapeRegex } );
+						aoData.push( { "name": "bSearchable_"+i,  "value": oSettings.aoColumns[i].bSearchable } );
 					}
 				}
 				
@@ -2726,6 +2776,11 @@
 						aoData.push( { "name": "iSortCol_"+(i+iFixed),  "value": oSettings.aaSorting[i][0] } );
 						aoData.push( { "name": "iSortDir_"+(i+iFixed),  "value": oSettings.aaSorting[i][1] } );
 						//1.6 aoData.push( { "name": "sSortDir_"+(i+iFixed),  "value": oSettings.aaSorting[i][1] } );
+					}
+					
+					for ( i=0 ; i<iColumns ; i++ )
+					{
+						aoData.push( { "name": "bSortable_"+i,  "value": oSettings.aoColumns[i].bSortable } );
 					}
 				}
 				
@@ -2774,7 +2829,7 @@
 			
 			/* Determine if reordering is required */
 			var sOrdering = _fnColumnOrdering(oSettings);
-			var bReOrder = (json.sColumns != 'undefined' && sOrdering !== "" && json.sColumns != sOrdering );
+			var bReOrder = (typeof json.sColumns != 'undefined' && sOrdering !== "" && json.sColumns != sOrdering );
 			if ( bReOrder )
 			{
 				var aiIndex = _fnReOrderIndex( oSettings, json.sColumns );
@@ -2839,14 +2894,16 @@
 			/* Track where we want to insert the option */
 			var nInsertNode = nWrapper;
 			
-			/* IE don't treat strings as arrays */
-			var sDom = oSettings.sDomPositioning.split('');
+			/* Substitute any constants in the dom string */
+			var sDom = oSettings.sDom.replace( "H", "fg-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix" );
+			sDom = sDom.replace( "F", "fg-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix" );
 			
 			/* Loop over the user set positioning and place the elements as needed */
+			var aDom = sDom.split('');
 			var nTmp;
-			for ( var i=0 ; i<sDom.length ; i++ )
+			for ( var i=0 ; i<aDom.length ; i++ )
 			{
-				var cOption = sDom[i];
+				var cOption = aDom[i];
 				
 				if ( cOption == '<' )
 				{
@@ -2854,14 +2911,14 @@
 					var nNewNode = document.createElement( 'div' );
 					
 					/* Check to see if we should append a class name to the container */
-					var cNext = sDom[i+1];
+					var cNext = aDom[i+1];
 					if ( cNext == "'" || cNext == '"' )
 					{
 						var sClass = "";
 						var j = 2;
-						while ( sDom[i+j] != cNext )
+						while ( aDom[i+j] != cNext )
 						{
-							sClass += sDom[i+j];
+							sClass += aDom[i+j];
 							j++;
 						}
 						nNewNode.className = sClass;
@@ -3138,16 +3195,11 @@
 				_fnFilterCustom( oSettings );
 			}
 			
+			/* Tell the draw function we have been filtering */
+			oSettings.bFiltered = true;
+			
 			/* Redraw the table */
-			if ( typeof oSettings.iInitDisplayStart != 'undefined' && oSettings.iInitDisplayStart != -1 )
-			{
-				oSettings._iDisplayStart = oSettings.iInitDisplayStart;
-				oSettings.iInitDisplayStart = -1;
-			}
-			else
-			{
-				oSettings._iDisplayStart = 0;
-			}
+			oSettings._iDisplayStart = 0;
 			_fnCalculateEnd( oSettings );
 			_fnDraw( oSettings );
 			
@@ -3356,7 +3408,7 @@
 			var aoData = oSettings.aoData;
 			var iDataSort;
 			var iDataType;
-			var i;
+			var i, j, jLen;
 			
 			if ( oSettings.aaSorting.length !== 0 || oSettings.aaSortingFixed !== null )
 			{
@@ -3367,6 +3419,28 @@
 				else
 				{
 					aaSort = oSettings.aaSorting.slice();
+				}
+				
+				/* If there is a sorting data type, and a fuction belonging to it, then we need to
+				 * get the data from the developer's function and apply it for this column
+				 */
+				for ( i=0 ; i<aaSort.length ; i++ )
+				{
+					var iColumn = aaSort[i][0];
+					var sDataType = oSettings.aoColumns[ iColumn ].sSortDataType;
+					if ( typeof _oExt.afnSortData[sDataType] != 'undefined' )
+					{
+						var iCorrector = 0;
+						var aData = _oExt.afnSortData[sDataType]( oSettings, iColumn );
+						for ( j=0, jLen=aoData.length ; j<jLen ; j++ )
+						{
+							if ( aoData[j] !== null )
+							{
+								aoData[j]._aData[iColumn] = aData[iCorrector];
+								iCorrector++;
+							}
+						}
+					}
 				}
 				
 				if ( !window.runtime )
@@ -3436,6 +3510,9 @@
 				_fnSortingClasses( oSettings );
 			}
 			
+			/* Tell the draw function that we have sorted the data */
+			oSettings.bSorted = true;
+			
 			/* Copy the master data into the draw array and re-draw */
 			if ( oSettings.oFeatures.bFilter )
 			{
@@ -3456,6 +3533,7 @@
 		 * Purpose:  Set the sortting classes on the header
 		 * Returns:  -
 		 * Inputs:   object:oSettings - dataTables settings object
+		 * Notes:    It is safe to call this function when bSort is false
 		 */
 		function _fnSortingClasses( oSettings )
 		{
@@ -3466,8 +3544,11 @@
 			
 			for ( i=0 ; i<iColumns ; i++ )
 			{
-				$(oSettings.aoColumns[i].nTh).removeClass( oClasses.sSortAsc +" "+ oClasses.sSortDesc +
-				 	" "+ oSettings.aoColumns[i].sSortingClass );
+				if ( oSettings.aoColumns[i].bSortable )
+				{
+					$(oSettings.aoColumns[i].nTh).removeClass( oClasses.sSortAsc +" "+ oClasses.sSortDesc +
+				 		" "+ oSettings.aoColumns[i].sSortingClass );
+				}
 			}
 			
 			if ( oSettings.aaSortingFixed !== null )
@@ -3482,7 +3563,7 @@
 			/* Apply the required classes to the header */
 			for ( i=0 ; i<oSettings.aoColumns.length ; i++ )
 			{
-				if ( oSettings.aoColumns[i].bSortable && oSettings.aoColumns[i].bVisible )
+				if ( oSettings.aoColumns[i].bSortable )
 				{
 					sClass = oSettings.aoColumns[i].sSortingClass;
 					iFound = -1;
@@ -3522,6 +3603,13 @@
 						jqSpan.addClass( sSpanClass );
 					}
 				}
+				else
+				{
+					/* No sorting on this column, so add the base class. This will have been assigned by
+					 * _fnAddColumn
+					 */
+					$(oSettings.aoColumns[i].nTh).addClass( oSettings.aoColumns[i].sSortingClass );
+				}
 			}
 			
 			/* 
@@ -3529,7 +3617,7 @@
 			 * Note that this is given as a feature switch since it can significantly slow down a sort
 			 * on large data sets (adding and removing of classes is always slow at the best of times..)
 			 */
-			if ( oSettings.oFeatures.bSortClasses )
+			if ( oSettings.oFeatures.bSort && oSettings.oFeatures.bSortClasses )
 			{
 				var nTrs = _fnGetTrNodes( oSettings );
 				sClass = oClasses.sSortColumn;
@@ -4490,7 +4578,8 @@
 				_fnMap( oSettings, oInit, "aaSortingFixed" );
 				_fnMap( oSettings, oInit, "sPaginationType" );
 				_fnMap( oSettings, oInit, "sAjaxSource" );
-				_fnMap( oSettings, oInit, "sDom", "sDomPositioning" );
+				_fnMap( oSettings, oInit, "iCookieDuration" );
+				_fnMap( oSettings, oInit, "sDom" );
 				_fnMap( oSettings, oInit, "oSearch", "oPreviousSearch" );
 				_fnMap( oSettings, oInit, "aoSearchCols", "aoPreSearchCols" );
 				_fnMap( oSettings, oInit, "iDisplayLength", "_iDisplayLength" );
@@ -4506,10 +4595,7 @@
 					if ( typeof oInit.sDom == 'undefined' )
 					{
 						/* Set the DOM to use a layout suitable for jQuery UI's theming */
-						oSettings.sDomPositioning = 
-							'<"fg-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix"lfr>'+
-							't'+
-							'<"fg-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix"ip>';
+						oSettings.sDom = '<"H"lfr>t<"F"ip>';
 					}
 				}
 				

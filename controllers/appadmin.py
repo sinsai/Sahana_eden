@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 import os
-import socket
+#import socket
 import datetime
 import copy
 import gluon.contenttype

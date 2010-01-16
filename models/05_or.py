@@ -135,6 +135,14 @@ msg_record_deleted = T('Office deleted')
 msg_list_empty = T('No Offices currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+# Offices as component of Orgs
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(or_organisation='organisation_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'name', 'phone1', 'email'])
+
 # Contacts
 # Many-to-Many Persons to Offices with also the Title & Manager that the person has in this context
 # ToDo: Build an Organigram out of this data?
@@ -147,7 +155,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('manager_id', db.pr_person),
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
-db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
+db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
 db[table].office_id.label = T('Office')
 db[table].title.label = T('Title')
 db[table].title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
@@ -172,16 +180,16 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 # Offices to Organisations
 #resource='organisation_offices'
-resource = 'office_to_organisation'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
-                Field('office_id', db.or_office),
-                Field('organisation_id', db.or_organisation),
-                migrate=migrate)
-db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
-db[table].office_id.label = T('Office')
-db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
-db[table].organisation_id.label = T('Organisation')
+#resource = 'office_to_organisation'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, deletion_status,
+#                Field('office_id', db.or_office),
+#                Field('organisation_id', db.or_organisation),
+#                migrate=migrate)
+#db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
+#db[table].office_id.label = T('Office')
+#db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
+#db[table].organisation_id.label = T('Organisation')
 
 # Contacts to Organisations
 # Do we want to allow contacts which are affiliated to an organisation but not to an office?

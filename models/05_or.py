@@ -155,7 +155,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('manager_id', db.pr_person),
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
-db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
+db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
 db[table].office_id.label = T('Office')
 db[table].title.label = T('Title')
 db[table].title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))

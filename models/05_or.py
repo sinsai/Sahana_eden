@@ -190,6 +190,14 @@ s3xrc.model.add_component('gis', 'location',
     editable = True,
     list_fields = ['id', 'lat', 'lon', 'marker_id'])
 
+# Offices as component of Orgs
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(or_organisation='organisation_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'name', 'phone1', 'email'])
+
 # Contacts
 # Many-to-Many Persons to Offices with also the Title & Manager that the person has in this context
 # ToDo: Build an Organigram out of this data?

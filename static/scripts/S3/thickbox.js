@@ -131,7 +131,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 			
 			TB_WIDTH = imageWidth + 30;
 			TB_HEIGHT = imageHeight + 60;
-			$("#TB_window"+l).append("<a href='' id='TB_ImageOff"+l+"' title='Close'><img id='TB_Image"+l+"' class='TB_Image' src='"+url+"' width='"+imageWidth+"' height='"+imageHeight+"' alt='"+caption+"'/></a>" + "<div class='TB_caption' id='TB_caption"+l+"'>"+caption+"<div class='TB_secondLine' id='TB_secondLine"+l+"'>" + TB_imageCount + TB_PrevHTML + TB_NextHTML + "</div></div><div class='TB_closeWindow' id='TB_closeWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a> or Esc Key</div>"); 		
+			$("#TB_window"+l).append("<a href='' id='TB_ImageOff"+l+"' title='Close'><img id='TB_Image"+l+"' class='TB_Image' src='"+url+"' width='"+imageWidth+"' height='"+imageHeight+"' alt='"+caption+"'/></a>" + "<div class='TB_caption' id='TB_caption"+l+"'>"+caption+"<div class='TB_secondLine' id='TB_secondLine"+l+"'>" + TB_imageCount + TB_PrevHTML + TB_NextHTML + "</div></div><div class='TB_closeWindow' id='TB_closeWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a></div>");
 			
 			$("#TB_closeWindowButton"+l).click(function(){tb_remove_l(l);});
 			
@@ -199,7 +199,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 					urlNoQuery = url.split('TB_');
 					$("#TB_iframeContent"+l).remove();
 					if(params['modal'] != "true"){//iframe no modal
-						$("#TB_window"+l).append("<div class='TB_title' id='TB_title"+l+"'><div class='TB_ajaxWindowTitle' id='TB_ajaxWindowTitle"+l+"'>"+caption+"</div><div class='TB_closeAjaxWindow' id='TB_closeAjaxWindow'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a> or Esc Key</div></div><iframe frameborder='0' hspace='0' src='"+urlNoQuery[0]+"tb_level="+(l+1)+"' class='TB_iframeContent' id='TB_iframeContent"+l+"' name='TB_iframeContent"+Math.round(Math.random()*1000)+"' onload='tb_showIframe(this, " + l + ")' style='width:"+(ajaxContentW + 29)+"px;height:"+(ajaxContentH + 17)+"px;' > </iframe>");
+						$("#TB_window"+l).append("<div class='TB_title' id='TB_title"+l+"'><div class='TB_ajaxWindowTitle' id='TB_ajaxWindowTitle"+l+"'>"+caption+"</div><div class='TB_closeAjaxWindow' id='TB_closeAjaxWindow'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a></div></div><iframe frameborder='0' hspace='0' src='"+urlNoQuery[0]+"tb_level="+(l+1)+"' class='TB_iframeContent' id='TB_iframeContent"+l+"' name='TB_iframeContent"+Math.round(Math.random()*1000)+"' onload='tb_showIframe(this, " + l + ")' style='width:"+(ajaxContentW + 29)+"px;height:"+(ajaxContentH + 17)+"px;' > </iframe>");
 					}else{//iframe modal
 					$("#TB_overlay").unbind();
 						$("#TB_window"+l).append("<iframe frameborder='0' hspace='0' src='"+urlNoQuery[0]+"tb_level="+(l+1)+"' class='TB_iframeContent' id='TB_iframeContent"+l+"' name='TB_iframeContent"+Math.round(Math.random()*1000)+"' onload='tb_showIframe(this, " + l + ")' style='width:"+(ajaxContentW + 29)+"px;height:"+(ajaxContentH + 17)+"px;'> </iframe>");
@@ -207,7 +207,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 			}else{// not an iframe, ajax
 					if($("#TB_window"+l).css("display") != "block"){
 						if(params['modal'] != "true"){//ajax no modal
-						$("#TB_window"+l).append("<div class='TB_title' id='TB_title"+l+"'><div class='TB_ajaxWindowTitle' id='TB_ajaxWindowTitle"+l+"'>"+caption+"</div><div class='TB_closeAjaxWindow' id='TB_closeAjaxWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"'>close</a> or Esc Key</div></div><div class='TB_ajaxContent' id='TB_ajaxContent"+l+"' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px'></div>");
+						$("#TB_window"+l).append("<div class='TB_title' id='TB_title"+l+"'><div class='TB_ajaxWindowTitle' id='TB_ajaxWindowTitle"+l+"'>"+caption+"</div><div class='TB_closeAjaxWindow' id='TB_closeAjaxWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"'>close</a></div></div><div class='TB_ajaxContent' id='TB_ajaxContent"+l+"' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px'></div>");
 						}else{//ajax modal
 						$("#TB_overlay"+l).unbind();
 						$("#TB_window"+l).append("<div id='TB_ajaxContent"+l+"' class='TB_modal TB_ajaxContent' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px;'></div>");	

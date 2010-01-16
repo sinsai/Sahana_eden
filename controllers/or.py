@@ -45,7 +45,7 @@ def sector():
 @service.amfrpc
 def organisation():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'organisation', listadd=False)
+    return shn_rest_controller(module, 'organisation', listadd=False, onaccept=lambda form: redirect(URL(r=request, f='dashboard', args=form.vars.id)))
 
 @service.jsonrpc
 @service.xmlrpc

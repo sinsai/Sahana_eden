@@ -900,7 +900,7 @@ class XRequest(object):
 
         # Append record ID to request as necessary
         if self.id:
-            if len(self.args)>0 or len(self.args)==0 and ('id_label' in self.request.vars):
+            if len(self.args)>0 or len(self.args)==0 and ('select' in self.request.vars):
                 if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
                     if self.representation==self.DEFAULT_REPRESENTATION or self.extension:

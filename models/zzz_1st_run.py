@@ -477,7 +477,7 @@ if empty:
             feature_class_id = db(db.gis_feature_class.name == 'Port').select()[0].id,
         )
         db[table].insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Hospital').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Hospitals').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Hospital').select()[0].id,
         )
         db[table].insert(

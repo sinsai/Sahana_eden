@@ -356,6 +356,8 @@ class ResourceController(object):
         self.domain = domain
         self.base_url = base_url
 
+        self.download_url = "%s/default/download" % base_url
+
         if rpp:
             self.ROWSPERPAGE = rpp
 
@@ -504,7 +506,7 @@ class ResourceController(object):
                 resource_url = "%s/%s" % (url, record.id)
             else:
                 resource_url = None
-            resource = self.xml.element(table, record, skip=skip, url=resource_url)
+            resource = self.xml.element(table, record, skip=skip, url=resource_url, download_url=self.download_url)
 
             for j in xrange(0, len(joins)):
                 (c, pkey, fkey) = joins[j]
@@ -533,7 +535,7 @@ class ResourceController(object):
                         resource_url = None
 
                     cresource = self.xml.element(c.table, crecord,
-                                                 skip=_skip, url=resource_url)
+                                                 skip=_skip, url=resource_url, download_url=self.download_url)
                     resource.append(cresource)
 
             resources.append(resource)
@@ -1502,9 +1504,12 @@ class S3XML(object):
         return obj
 
 
-    def element(self, table, record, skip=[], url=None):
+    def element(self, table, record, skip=[], url=None, download_url=None):
 
         """ Creates an element from a Storage() record """
+
+        if not download_url:
+            download_url = ""
 
         resource= etree.Element(self.TAG["resource"])
         resource.set(self.ATTRIBUTE["name"], table._tablename)
@@ -1555,6 +1560,13 @@ class S3XML(object):
                                 LatLon = LatLon[0]
                                 reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
                                 reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
+
+            elif isinstance(table[f].type, str) and \
+                table[f].type[:6]=="upload":
+
+                data = etree.SubElement(resource, self.TAG["data"])
+                data.set(self.ATTRIBUTE["field"], f)
+                data.text = "%s/%s" % (download_url, value)
 
             else:
                 data = etree.SubElement(resource, self.TAG["data"])

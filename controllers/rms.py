@@ -23,7 +23,7 @@ def index():
 @service.amfrpc
 def request_aid():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'request_aid')
+    return shn_rest_controller(module, 'aid_request')
 
 @service.jsonrpc
 @service.xmlrpc

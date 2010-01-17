@@ -42,7 +42,7 @@ admin_menu_options = [
     [T('Settings'), False, URL(r=request, c='admin', f='setting', args=['update', 1]), [
         [T('Edit Themes'), False, URL(r=request, c='admin', f='theme')]
     ]],
-    [T('User Management'), False, '#', [
+    [T('User Management'), False, URL(r=request, c='admin', f='user'), [
         [T('Users'), False, URL(r=request, c='admin', f='user')],
         [T('Roles'), False, URL(r=request, c='admin', f='group')],
         #[T('Membership'), False, URL(r=request, c='admin', f='membership')]

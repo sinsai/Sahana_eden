@@ -11,15 +11,15 @@ db.define_table(table,
                 migrate=migrate)
 
 # Organizations
-or_organisation_type_opts = [
-   (1,T('Government')),
-   (2,T('International Governmental Organization')),
-   (3,T('International NGO')),
-   (4,T('Misc')),
-   (5,T('National Institution')),
-   (6,T('National NGO')),
-   (7,T('United Nations'))
-]
+or_organisation_type_opts = {
+    1:T('Government'),
+    2:T('International Governmental Organization'),
+    3:T('International NGO'),
+    4:T('Misc'),
+    5:T('National Institution'),
+    6:T('National NGO'),
+    7:T('United Nations')
+    }
 resource = 'organisation'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -30,7 +30,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('type', 'integer'),
                 admin_id,
                 #Field('registration', label=T('Registration')),	# Registration Number
-                Field('country', label=T('Home Country'), requires=IS_IN_SET(shn_list_of_nations)),
+                Field('country', 'integer'),
                 Field('website'),
                 source_id,
                 migrate=migrate)
@@ -39,11 +39,12 @@ db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].acronym.label = T('Acronym')
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(
-   [x[0] for x in or_organisation_type_opts],
-   [x[1] for x in or_organisation_type_opts]))
+db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
 db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
 db[table].type.label = T('Type')
+db[table].country.requires=IS_IN_SET(shn_list_of_nations)
+db[table].country.represent = lambda opt: opt and shn_list_of_nations[opt]
+db[table].country.label = T('Home Country')
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
 ADD_ORGANISATION = T('Add Organization')

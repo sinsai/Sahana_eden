@@ -24,19 +24,10 @@ def index():
 def request_aid():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'request_aid')
-    #return dict(message=T("hello request_aid"))
 
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
 def pledge_aid():
     "RESTlike CRUD controller"
-    return dict(message=T("hello pledge_aid"))
-    #return shn_rest_controller(module, 'pledge_aid')
-
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
-def contact():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'contact')
+    return shn_rest_controller(module, 'pledge_aid')

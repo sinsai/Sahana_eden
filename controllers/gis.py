@@ -523,6 +523,7 @@ def layer_wms():
 
     return shn_rest_controller(module, resource)
 
+@auth.requires_membership('AdvancedJS')
 def layer_js():
     "RESTlike CRUD controller"
     resource = 'layer_js'

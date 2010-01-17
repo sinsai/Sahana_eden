@@ -50,7 +50,7 @@ rms_source_opts = {
     2:T('Sahana'),
     }
 
-resource = 'aid_request'
+resource = 'request_aid'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("title","string"),

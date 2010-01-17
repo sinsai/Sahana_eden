@@ -63,6 +63,7 @@
                 </xsl:call-template>
             </pfif:last_name>
             <xsl:apply-templates select="./resource[@name='pr_address' and ./data[@field='opt_pr_address_type']/@value=1][1]" />
+            <xsl:apply-templates select="./resource[@name='pr_image']"/>
             <xsl:apply-templates select="./resource[@name='pr_presence']"/>
         </pfif:person>
     </xsl:template>
@@ -110,11 +111,11 @@
             <pfif:text>
                 <xsl:value-of select="./data[@field='opt_pr_presence_condition']/text()"/>
                 <xsl:if test="string-length(./data[@field='procedure']/text())&gt;0">
-                    <xsl:text>: </xsl:text>
+                    <xsl:text> : </xsl:text>
                     <xsl:value-of select="./data[@field='procedure']/text()"/>
                 </xsl:if>
                 <xsl:if test="string-length(./data[@field='comment']/text())&gt;0">
-                    <xsl:text>- </xsl:text>
+                    <xsl:text> - Info: </xsl:text>
                     <xsl:value-of select="./data[@field='comment']/text()"/>
                 </xsl:if>
             </pfif:text>
@@ -122,7 +123,7 @@
     </xsl:template>
 
     <!-- Address -->
-    <xsl:template match="resource[@prefix='pr' and @name='person']/resource[@prefix='pr' and @name='address']">
+    <xsl:template match="resource[@name='pr_person']/resource[@name='pr_address']">
         <pfif:home_city>
             <xsl:call-template name="name2pfif">
                 <xsl:with-param name="name" select="./data[@field='city']/text()"/>
@@ -141,6 +142,20 @@
         <pfif:home_zip>
             <xsl:value-of select="./data[@field='postcode']/text()"/>
         </pfif:home_zip>
+    </xsl:template>
+
+    <!-- Photo URL -->
+    <xsl:template match="resource[@name='pr_person']/resource[@name='pr_image']">
+        <pfif:photo_url>
+            <xsl:choose>
+                <xsl:when test="./data[@field='url']/@value">
+                    <xsl:value-of select="./data[@field='url']/@value"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="./data[@field='image']/text()"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </pfif:photo_url>
     </xsl:template>
 
     <!-- Helper Templates -->

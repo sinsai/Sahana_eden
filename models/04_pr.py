@@ -182,6 +182,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                       represent = lambda opt: opt and pr_image_type_opts[opt]),
                 Field('title'),
                 Field('image', 'upload', autodelete=True),
+                Field('url'),
                 Field('description'),
                 Field('comment'),
                 migrate=migrate)
@@ -192,7 +193,7 @@ s3xrc.model.add_component(module, resource,
     joinby='pr_pe_id',
     deletable=True,
     editable=True,
-    list_fields = ['id', 'opt_pr_image_type', 'image', 'title','description'])
+    list_fields = ['id', 'opt_pr_image_type', 'image', 'url', 'title','description'])
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -201,6 +202,8 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].image.represent = lambda image: DIV(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60))
 
 # Field labels
+db[table].url.label = T("URL")
+db[table].url.represent = lambda url: len(url) and DIV(IMG(_src=url, _height=60))
 
 # CRUD Strings
 title_create = T('Image')

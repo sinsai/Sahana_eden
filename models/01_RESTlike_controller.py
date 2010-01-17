@@ -1020,7 +1020,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
         href_edit = URL(r=jr.request, f=jr.name, args=['update', record_id])
 
     authorised = shn_has_permission('update', table, record_id)
-    if authorised:
+    if authorised and jr.representation=="html":
         redirect(href_edit)
 
     authorised = shn_has_permission('read', table, record_id)

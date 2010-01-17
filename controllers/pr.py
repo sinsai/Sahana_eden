@@ -27,21 +27,35 @@ response.menu_options = [
     ]]
 ]
 
-if session.rcvars and 'pr_person' in session.rcvars:
-    selection = shn_pr_person_represent(session.rcvars['pr_person'])
-    response.menu_options.append(
-        [str(T('Person:')) + ' ' + selection, False, URL(r=request, f='person', args='read'),[
-            [T('Basic Details'), False, URL(r=request, f='person', args='read')],
-            [T('Images'), False, URL(r=request, f='person', args='image')],
-            [T('Identity'), False, URL(r=request, f='person', args='identity')],
-            [T('Address'), False, URL(r=request, f='person', args='address')],
-            [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
-            [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
-    #        [T('Roles'), False, URL(r=request, f='person', args='role')],
-    #        [T('Status'), False, URL(r=request, f='person', args='status')],
-    #        [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
-        ]]
-    )
+def shn_pr_module_menu_ext():
+    if session.rcvars and 'pr_person' in session.rcvars:
+        selection = db.pr_person[session.rcvars['pr_person']]
+        if selection:
+            selection = shn_pr_person_represent(selection.id)
+            response.menu_options = [
+                [T('Search for a Person'), False, URL(r=request, f='person', args='search_simple')],
+                [T('Persons'), False, URL(r=request, f='person'), [
+                    [T('List'), False, URL(r=request, f='person')],
+                    [T('Add'), False, URL(r=request, f='person', args='create')],
+                ]],
+                [T('Groups'), False, URL(r=request, f='group'), [
+                    [T('List'), False, URL(r=request, f='group')],
+                    [T('Add'), False, URL(r=request, f='group', args='create')],
+                ]],
+                [str(T('Person:')) + ' ' + selection, False, URL(r=request, f='person', args='read'),[
+                    [T('Basic Details'), False, URL(r=request, f='person', args='read')],
+                    [T('Images'), False, URL(r=request, f='person', args='image')],
+                    [T('Identity'), False, URL(r=request, f='person', args='identity')],
+                    [T('Address'), False, URL(r=request, f='person', args='address')],
+                    [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+                    [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
+            #        [T('Roles'), False, URL(r=request, f='person', args='role')],
+            #        [T('Status'), False, URL(r=request, f='person', args='status')],
+            #        [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
+                ]]
+            ]
+
+shn_pr_module_menu_ext()
 
 # S3 framework functions
 def index():
@@ -69,23 +83,7 @@ def person():
         ),
         onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
 
-    if session.rcvars and 'pr_person' in session.rcvars:
-        selection = shn_pr_person_represent(session.rcvars['pr_person'])
-        response.menu_options.pop()
-        response.menu_options.append(
-            [str(T('Details for:')) + ' ' + selection, False, URL(r=request, f='person', args='read'),[
-                [T('Basic Details'), False, URL(r=request, f='person', args='read')],
-                [T('Images'), False, URL(r=request, f='person', args='image')],
-                [T('Identity'), False, URL(r=request, f='person', args='identity')],
-                [T('Address'), False, URL(r=request, f='person', args='address')],
-                [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
-                [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
-        #        [T('Roles'), False, URL(r=request, f='person', args='role')],
-        #        [T('Status'), False, URL(r=request, f='person', args='status')],
-        #        [T('Group Memberships'), False, URL(r=request, f='person', args='group_membership')],
-            ]]
-        )
-
+    shn_pr_module_menu_ext()
     return output
 
 def group():

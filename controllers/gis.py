@@ -526,6 +526,23 @@ def layer_wms():
 
     return shn_rest_controller(module, resource)
 
+def layer_js():
+    "RESTlike CRUD controller"
+    resource = 'layer_js'
+    table = module + '_' + resource
+
+    # Model options
+    
+    # CRUD Strings
+    title_list = T('JS Layers')
+    subtitle_create = T('Add New JS Layer')
+    subtitle_list = T('List JS Layers')
+    label_list_button = T('List JS Layers')
+    msg_list_empty = T('No JS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
 # Module-specific functions
 def convert_gps():
     " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
@@ -1047,6 +1064,14 @@ def layers():
         if layer.format:
             layers.tms[name].format = layer.format
 
+    # JS
+    layers.js = Storage()
+    layers_js = db(db.gis_layer_js.enabled==True).select()
+    for layer in layers_js:
+        name = layer.name
+        layers.js[name] = Storage()
+        layers.js[name].code = layer.code
+    
     return layers
 
 def layers_enable():
@@ -1136,7 +1161,7 @@ def map_viewing_client():
     baselayers = layers()
     # Add the Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms, js_layers=baselayers.js))
 
     # Internal Features
     features = Storage()

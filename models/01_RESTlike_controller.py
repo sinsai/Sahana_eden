@@ -23,6 +23,7 @@ XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data 
 shn_xml_import_formats = ["xml", "lmx","pfif"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
+    gpx = "application/xml",
     lmx = "application/xml",
     pfif = "application/xml",
     georss = "application/rss+xml",
@@ -533,7 +534,7 @@ def import_json(jr, onvalidation=None, onaccept=None):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file)
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain)
             if not tree:
                 session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -572,7 +573,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
     """ Import XML data """
 
     if "filename" in jr.request.vars:
-        source = jr.request.vars["filename"].file
+        source = jr.request.vars["filename"]
     elif "fetchurl" in jr.request.vars:
         source = jr.request.vars["fetchurl"]
     else:
@@ -585,7 +586,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file)
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain)
             if not tree:
                 session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -1020,7 +1021,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
         href_edit = URL(r=jr.request, f=jr.name, args=['update', record_id])
 
     authorised = shn_has_permission('update', table, record_id)
-    if authorised:
+    if authorised and jr.representation=="html":
         redirect(href_edit)
 
     authorised = shn_has_permission('read', table, record_id)

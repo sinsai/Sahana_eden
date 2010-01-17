@@ -24,7 +24,14 @@
     <xsl:template match="resource[@name='pr_person']">
         <pfif:person>
             <pfif:person_record_id>
-                <xsl:value-of select="concat(/sahanapy/@domain, '/', ./@uuid)" />
+                <xsl:choose>
+                    <xsl:when test="contains(./@uuid, '/')">
+                        <xsl:value-of select="./@uuid" />
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="concat(/sahanapy/@domain, '/', ./@uuid)" />
+                    </xsl:otherwise>
+                </xsl:choose>
             </pfif:person_record_id>
             <pfif:entry_date>
                 <xsl:call-template name="datetime2pfif">

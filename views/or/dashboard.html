@@ -1,5 +1,26 @@
 {{extend 'layout.html'}}
 {{include 'thickbox.html'}}
+<p>
+<TABLE><TR id='but_add_org'><TD>{{=but_add_org}}</TD></TR></TABLE>
+<br/><DIV id=organisation_select>{{=T("Name:")}}{{=organisation_select}}</DIV>
+{{=org_details}}
+<TABLE><TR id='but_edit_org'><TD>{{=but_edit_org}}</TD></TR></TABLE>
+</p>
+<p>
+<br/><strong>{{=T("Offices:")}}</strong>
+<TABLE><TR id='but_add_office'><TD>{{=but_add_office}}</TD></TR></TABLE>
+{{=office_list}}
+</p>
+<p>
+<br/><strong>{{=T("Contacts:")}}</strong>
+<TABLE><TR id='but_add_contact'><TD>{{=but_add_contact}}</TD></TR></TABLE>
+{{=contact_list}}
+</p>
+<p>
+<br/><strong>{{=T("Activities:")}}</strong>
+<TABLE><TR id='but_add_activity'><TD>{{=but_add_activity}}</TD></TR></TABLE>
+{{=activity_list}}
+</p>
 <script type="text/javascript">//<![CDATA[
 $(function() {
     $("#organisation_select").change(function () { 		
@@ -8,33 +29,8 @@ $(function() {
 		window.location.replace("{{=URL(r=request, c="or", f="dashboard")}}/?name=" + $("select").val());
     });
 });
+{{if response.flash or response.confirmation:}}
+// Refresh the DIV and close the pop up
+self.parent.tb_remove();
+{{pass}}
 //]]></script>
- 
-<p>
-<TABLE><TR id='but_add_org'><TD>{{=but_add_org}}</TD></TR></TABLE>
-<br/><DIV id=organisation_select>{{=T("Name:")}}{{=organisation_select}}</DIV>
-{{=org_details}}
-<TABLE><TR id='but_edit_org'><TD>{{=but_edit_org}}</TD></TR></TABLE>
-</p>
-
-<p>
-<br/><strong>{{=T("Offices:")}}</strong>
-<TABLE><TR id='but_add_office'><TD>{{=but_add_office}}</TD></TR></TABLE>
-{{=office_list}}
-</p>
-
-<p>
-<br/><strong>{{=T("Contacts:")}}</strong>
-<TABLE><TR id='but_add_contact'><TD>{{=but_add_contact}}</TD></TR></TABLE>
-{{=contact_list}}
-</p>
-
-<p>
-<br/><strong>{{=T("Activities:")}}</strong>
-<TABLE><TR id='but_add_activity'><TD>{{=but_add_activity}}</TD></TR></TABLE>
-{{=activity_list}}
-</p>
-
-
-
-

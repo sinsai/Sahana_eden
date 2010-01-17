@@ -70,6 +70,20 @@
                         </data>
                     </resource>
                 </xsl:if>
+                <xsl:if test="./pfif:photo_url">
+                    <resource name="pr_image">
+                        <xsl:attribute name="uuid">
+                            <xsl:value-of select="concat($uuid, '_photo')"/>
+                        </xsl:attribute>
+                        <data field="opt_pr_image_type" value="1">Photograph</data>
+                        <data field="title">Photograph</data>
+                        <data field="description">external data source</data>
+                        <data field="image"/>
+                        <data field="url">
+                            <xsl:value-of select="./pfif:photo_url/text()"/>
+                        </data>
+                    </resource>
+                </xsl:if>
                 <xsl:apply-templates select="./pfif:note"/>
             </resource>
         </xsl:if>

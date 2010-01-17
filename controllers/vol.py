@@ -6,10 +6,14 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 
 # Options Menu (available in all Functions)
 response.menu_options = [
+        [T('Index'), False, URL(r=request, f='index'),[
+        [T('See  Index'), False, URL(r=request, f='index', args='create')],]],
         [T('Projects'), False, URL(r=request, f='projects'),[
         [T('Add Project'), False, URL(r=request, f='projects', args='create')],]],
-        [T('Details'), False, URL(r=request, f='details'),[
-        [T('Add Details'), False, URL(r=request, f='details', args='create')],
+        [T('Availability'), False, URL(r=request, f='details'),[
+        [T('Add Details'), False, URL(r=request, f='details', args='create')],]],
+        [T('Skills'), False, URL(r=request, f='skills'),[
+        [T('Add Skill'), False, URL(r=request, f='skills', args='create')],
         #[T('List Organisations'), False, URL(r=request, f='organisation')],
         #[T('Search Organisations'), False, URL(r=request, f='organisation', args='search')]
    ]]
@@ -37,3 +41,12 @@ def access_request():
 
 def access_constraint():
     return shn_rest_controller( module , 'access_constraint')
+    
+def position():
+    return shn_rest_controller( module , 'position')
+    
+def vol():
+    return shn_rest_controller( module , 'vol')
+    
+def skills():
+    return shn_rest_controller( module , 'skills')

@@ -23,6 +23,7 @@ XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data 
 shn_xml_import_formats = ["xml", "lmx","pfif"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
+    gpx = "application/xml",
     lmx = "application/xml",
     pfif = "application/xml",
     georss = "application/rss+xml",

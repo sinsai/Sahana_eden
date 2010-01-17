@@ -239,7 +239,7 @@ track_id = SQLTable(None, 'track_id',
     
 # GIS Layers
 #gis_layer_types = ['shapefile', 'scan', 'wfs']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx', 'georss', 'kml', 'wms', 'tms', 'js']
+gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx', 'georss', 'kml', 'wms', 'tms', 'xyz', 'js']
 #gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
@@ -293,6 +293,19 @@ for layertype in gis_layer_types:
             Field('url', label=T('Location')),
             Field('layers', label=T('Layers')),
             Field('format', label=T('Format')))
+        db.define_table(table, t, migrate=migrate)
+    if layertype == "xyz":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('url', label=T('Location')),
+            Field('base', 'boolean', default=True, label=T('Base Layer?')),
+            Field('sphericalMercator', 'boolean', default=False, label=T('Spherical Mercator?')),
+            Field('transitionEffect', requires=IS_NULL_OR(IS_IN_SET(['resize'])), label=T('Transition Effect')),
+            Field('numZoomLevels', 'integer', label=T('num Zoom Levels')),
+            Field('transparent', 'boolean', default=False, label=T('Transparent?')),
+            Field('visible', 'boolean', default=True, label=T('Visible?')),
+            Field('opacity', 'double', default=0.0, label=T('Transparent?'))
+            )
         db.define_table(table, t, migrate=migrate)
     if layertype == "georss":
         t = SQLTable(db, table,

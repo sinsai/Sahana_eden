@@ -9,3 +9,5 @@
 #*/5   *       *       *       *       root python web2py.py -S sahana/msg/email_send
 # Collect incoming emails every 15 minutes
 #*/15  *       *       *       *       root *applications/sahana/cron/email_receive.py
+#*/5   *       *       *       *       root *msg/email_send
+#*/5   *       *       *       *       root *applications/sahana/cron/rms_entry2record.py

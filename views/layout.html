@@ -11,21 +11,18 @@
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-12510226-2");
+pageTracker._setDomainName(".sahanafoundation.org");
+pageTracker._trackPageview();
+} catch(err) {}</script>
 </head>
 <body>
-
-{{if session.s3.restricted:}}
-<!--
-Load JavaScript to:
-* Go full-screen
-* Require Confirmation when leaving a page
-* Hide browser buttons, menu & URL bar
--->
-{{else:}}
-<!--
-<div id="header">
-</div>
--->
 
 <div id="menu_modules">
     {{=MENU2(response.menu, _id='modulenav')}}
@@ -35,7 +32,6 @@ Load JavaScript to:
   <div id="menu_options">
     {{=MENU2(response.menu_options, _id='subnav')}}
   </div>
-{{pass}}
 {{pass}}
 
 <div class="colmask fullpage">
@@ -51,12 +47,9 @@ Load JavaScript to:
 	</div>
 </div>
 
-{{if session.s3.restricted:}}
-{{else:}}
 <div id="footer">
     {{include session.s3.theme.footer}}
 </div>
-{{pass}}
 
 </body>
 </html>

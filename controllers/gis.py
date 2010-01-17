@@ -212,23 +212,20 @@ def location_to_feature_group():
     # Model options
 
     # CRUD Strings
-    #title_create = ADD_FG
-    #title_display = T('Feature Group Details')
-    #title_list = T('List Feature Groups')
-    #title_update = T('Edit Feature Group')
-    #title_search = T('Search Feature Groups')
-    #subtitle_create = T('Add New Feature Group')
-    #subtitle_list = T('Feature Groups')
-    #label_list_button = T('List Feature Groups')
-    #label_create_button = ADD_FG
-    #msg_record_created = T('Feature Group added')
-    #msg_record_modified = T('Feature Group updated')
-    #msg_record_deleted = T('Feature Group deleted')
-    #msg_list_empty = T('No Feature Groups currently defined')
-    #s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
+    
     return shn_rest_controller(module, resource)
 
+def feature_class_to_feature_group():
+    "RESTlike CRUD controller"
+    resource = 'feature_class_to_feature_group'
+    table = module + '_' + resource
+
+    # Model options
+
+    # CRUD Strings
+
+    return shn_rest_controller(module, resource)
+    
 def location():
     "RESTlike CRUD controller"
     resource = 'location'
@@ -341,10 +338,6 @@ def track():
     # used in multiple controllers, so defined in model
 
     return shn_rest_controller(module, resource)
-
-def layer():
-    "Custom View for Layer Catalogue"
-    return dict()
 
 # Common CRUD strings for all layers
 title_create = T('Add Layer')
@@ -522,6 +515,43 @@ def layer_wms():
     subtitle_list = T('List WMS Layers')
     label_list_button = T('List WMS Layers')
     msg_list_empty = T('No WMS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+@auth.requires_membership('AdvancedJS')
+def layer_js():
+    "RESTlike CRUD controller"
+    resource = 'layer_js'
+    table = module + '_' + resource
+
+    # Model options
+    
+    # CRUD Strings
+    title_list = T('JS Layers')
+    subtitle_create = T('Add New JS Layer')
+    subtitle_list = T('List JS Layers')
+    label_list_button = T('List JS Layers')
+    msg_list_empty = T('No JS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_xyz():
+    "RESTlike CRUD controller"
+    resource = 'layer_xyz'
+    table = module + '_' + resource
+
+    # Model options
+    db[table].url.requires = IS_NOT_EMPTY()
+    db[table].url.comment = SPAN("*", _class="req")
+    
+    # CRUD Strings
+    title_list = T('XYZ Layers')
+    subtitle_create = T('Add New XYZ Layer')
+    subtitle_list = T('List XYZ Layers')
+    label_list_button = T('List XYZ Layers')
+    msg_list_empty = T('No XYZ Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
     return shn_rest_controller(module, resource)
@@ -1047,6 +1077,29 @@ def layers():
         if layer.format:
             layers.tms[name].format = layer.format
 
+    # XYZ
+    layers.xyz = Storage()
+    layers_xyz = db(db.gis_layer_xyz.enabled==True).select()
+    for layer in layers_xyz:
+        name = layer.name
+        layers.xyz[name] = Storage()
+        layers.xyz[name].url = layer.url
+        layers.xyz[name].base = layer.base
+        layers.xyz[name].sphericalMercator = layer.sphericalMercator
+        layers.xyz[name].transitionEffect = layer.transitionEffect
+        layers.xyz[name].numZoomLevels = layer.numZoomLevels
+        layers.xyz[name].transparent = layer.transparent
+        layers.xyz[name].visible = layer.visible
+        layers.xyz[name].opacity = layer.opacity
+        
+    # JS
+    layers.js = Storage()
+    layers_js = db(db.gis_layer_js.enabled==True).select()
+    for layer in layers_js:
+        name = layer.name
+        layers.js[name] = Storage()
+        layers.js[name].code = layer.code
+    
     return layers
 
 def layers_enable():
@@ -1135,8 +1188,8 @@ def map_viewing_client():
     # Layers
     baselayers = layers()
     # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms))
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, js_layers=baselayers.js))
 
     # Internal Features
     features = Storage()
@@ -1164,7 +1217,10 @@ def map_viewing_client():
             feature.module = feature.gis_feature_class.module
             feature.resource = feature.gis_feature_class.resource
             if feature.module and feature.resource:
-                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+                try:
+                    feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+                except:
+                    feature.resource_id = None
             else:
                 feature.resource_id = None
 
@@ -1259,9 +1315,14 @@ def display_feature():
     output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
 
     # Feature details
-    feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
-    feature.module = feature_class.module
-    feature.resource = feature_class.resource
+    try:
+        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        feature.module = feature_class.module
+        feature.resource = feature_class.resource
+    except:
+        feature_class = None
+        feature.module = None
+        feature.resource = None
     if feature.module and feature.resource:
         feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
     else:
@@ -1275,16 +1336,18 @@ def display_feature():
     marker = feature.marker_id
     if not marker:
         # 2nd choice for a Marker is the Symbology for the Feature Class
-        query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-        try:
-            marker = db(query).select()[0].marker_id
-        except:
+        if feature_class:
+            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+            try:
+                marker = db(query).select()[0].marker_id
+            except:
+                pass
             if not marker:
                 # 3rd choice for a Marker is the Feature Class's
                 marker = feature_class.marker_id
-            if not marker:
-                # 4th choice for a Marker is the default
-                marker = marker_default
+        if not marker:
+            # 4th choice for a Marker is the default
+            marker = marker_default
     feature.marker = db(db.gis_marker.id == marker).select()[0].image
 
     try:
@@ -1316,8 +1379,10 @@ def display_feature():
 
     # Layers
     baselayers = layers()
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+    # Add the Base Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    # Don't want confusing overlays
+    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[]))
 
     return output
 
@@ -1419,7 +1484,10 @@ def display_features():
 
     # Feature details
     for feature in features:
-        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        try:
+            feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        except:
+            feature_class = None
         feature.module = feature_class.module
         feature.resource = feature_class.resource
         if feature.module and feature.resource:

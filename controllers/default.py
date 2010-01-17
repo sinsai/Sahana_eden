@@ -53,6 +53,10 @@ def index():
     response.title = T('Sahana FOSS Disaster Management System')
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
+def source():
+    "RESTlike CRUD controller"
+    return shn_rest_controller('s3', 'source')
+
 # NB These 4 functions are unlikely to get used in production
 def header():
     "Custom view designed to be pulled into an Ext layout's North Panel"

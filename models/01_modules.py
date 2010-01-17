@@ -29,7 +29,7 @@ db.define_table(table,
                 migrate=migrate)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True)) # IS_ONE_OF ignores multiple!
+db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True))
 db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 
 # Set to False in Production
@@ -84,7 +84,7 @@ if empty:
             module_type=3,
             access='',
             description="Helps to report and search for Missing Persons",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="dvr",
@@ -93,7 +93,7 @@ if empty:
             module_type=3,
             access='',
             description="Traces internally displaced people (IDPs) and their needs",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="hrm",
@@ -102,7 +102,7 @@ if empty:
             module_type=4,
             access='',
             description="Helps to manage human resources",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="dvi",
@@ -129,7 +129,7 @@ if empty:
             module_type=4,
             access='',
             description="Tracks the location, distibution, capacity and breakdown of victims in Shelters",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="vol",
@@ -147,7 +147,7 @@ if empty:
             module_type=4,
             access='',
             description="Several sub-modules that work together to provide for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="rms",
@@ -165,7 +165,7 @@ if empty:
             module_type=4,
             access='',
             description="Allows a Budget to be drawn up",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="msg",
@@ -174,7 +174,7 @@ if empty:
             module_type=5,
             access='',
             description="Sends & Receives Alerts via Email & SMS",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="delphi",
@@ -183,7 +183,7 @@ if empty:
             module_type=4,
             access='',
             description="Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="media",
@@ -192,7 +192,7 @@ if empty:
             module_type=4,
             access='',
             description="A library of digital resources, such as Photos.",
-            enabled='True'
+            enabled='False'
         )
         db[table].insert(
             name="nim",
@@ -201,66 +201,43 @@ if empty:
             module_type=3,
             access='',
             description="Module to assist disaster nurses.",
-            enabled='True'
+            enabled='False'
         )
 
 
 # Modules Menu (available in all Controllers)
 s3.menu_modules = []
-for module_type in [1, 2]:
-    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
-    modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
-    for module in modules:
-        if not module.access:
-            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-        else:
-            authorised = False
-            groups = re.split('\|', module.access)[1:-1]
-            for group in groups:
-                if auth.has_membership(group):
-                    authorised = True
-            if authorised == True:
-                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-for module_type in [3, 4]:
-    module_type_name = str(s3_module_type_opts[module_type])
-    module_type_menu = ([module_type_name, False, '#'])
-    modules_submenu = []
-    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
-    modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
-    for module in modules:
-        if not module.access:
-            modules_submenu.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-        else:
-            authorised = False
-            groups = re.split('\|', module.access)[1:-1]
-            for group in groups:
-                if auth.has_membership(group):
-                    authorised = True
-            if authorised == True:
-                modules_submenu.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-    module_type_menu.append(modules_submenu)
-    s3.menu_modules.append(module_type_menu)
-for module_type in [5]:
-    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
-    modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
-    for module in modules:
-        if not module.access:
-            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-        else:
-            authorised = False
-            groups = re.split('\|', module.access)[1:-1]
-            for group in groups:
-                if auth.has_membership(group):
-                    authorised = True
-            if authorised == True:
-                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
 
-#s3.menu_home = [T('Home'), False, URL(request.application, 'default', 'index'), s3.menu_modules]
-#response.menu = [
-#            s3.menu_home,
-#            s3.menu_auth,
-#            s3.menu_help,
-#        ]
+# Home
+s3.menu_modules.append([T('Home'), False, URL(r=request, c='default', f='open_module', vars=dict(id=1))])
+if auth.has_membership(1):
+    s3.menu_modules.append([T('Admin'), False, URL(r=request, c='default', f='open_module', vars=dict(id=2))])
+s3.menu_modules.append([T('Mapping'), False, URL(r=request, c='default', f='open_module', vars=dict(id=3))])
+s3.menu_modules.append([T('People'), False, URL(r=request, c='default', f='open_module', vars=dict(id=4))])
+module_id = db(db.s3_module.name == 'or').select()[0].id
+s3.menu_modules.append([T('Organizations'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+#dvi_group = db(db[auth.settings.table_group_name] == 'DVI').select()[0].id
+#if auth.has_membership(dvi_group):
+module_id = db(db.s3_module.name == 'dvi').select()[0].id
+s3.menu_modules.append([T('Victim Identification'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+module_id = db(db.s3_module.name == 'rms').select()[0].id
+s3.menu_modules.append([T('Request Management'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+
+#for module_type in [1, 2, 3, 4]:
+#    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
+#    modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
+#    for module in modules:
+#        if not module.access:
+#            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+#        else:
+#            authorised = False
+#            groups = re.split('\|', module.access)[1:-1]
+#            for group in groups:
+#                if auth.has_membership(group):
+#                    authorised = True
+#            if authorised == True:
+#                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+
 response.menu = s3.menu_modules
 response.menu.append(s3.menu_auth)
 response.menu.append(s3.menu_help)

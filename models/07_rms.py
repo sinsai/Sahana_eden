@@ -2,17 +2,6 @@
 
 module = 'rms'
 
-# ----------------------- #
-# Create nice looking dialog for adding organization info
-organisation_id = SQLTable(None, 'organisation_id',
-            Field('organisation_id', db.or_organisation,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
-                represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
-                label = T('Organisation'),
-                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|The Organisation this record is associated with."))),
-                ondelete = 'RESTRICT'
-                ))
-
 # Settings
 resource = 'setting'
 table = module + '_' + resource

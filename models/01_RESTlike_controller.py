@@ -20,9 +20,10 @@ XSLT_IMPORT_TEMPLATES = 'static/xslt/import' #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml", "lmx"] #: Supported XML import formats
+shn_xml_import_formats = ["xml", "lmx","pfif"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
+    gpx = "application/xml",
     lmx = "application/xml",
     pfif = "application/xml",
     georss = "application/rss+xml",
@@ -57,7 +58,7 @@ exec('from applications.%s.modules.s3xrc import json_message' % request.applicat
 
 s3xrc = ResourceController(db,
                            domain=request.env.server_name,
-                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+                           base_url="%s" % (S3_PUBLIC_URL),
                            rpp=ROWSPERPAGE)
 
 # *****************************************************************************
@@ -533,7 +534,7 @@ def import_json(jr, onvalidation=None, onaccept=None):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file)
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain)
             if not tree:
                 session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -572,7 +573,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
     """ Import XML data """
 
     if "filename" in jr.request.vars:
-        source = jr.request.vars["filename"].file
+        source = jr.request.vars["filename"]
     elif "fetchurl" in jr.request.vars:
         source = jr.request.vars["fetchurl"]
     else:
@@ -585,7 +586,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file)
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain)
             if not tree:
                 session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -1020,7 +1021,7 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
         href_edit = URL(r=jr.request, f=jr.name, args=['update', record_id])
 
     authorised = shn_has_permission('update', table, record_id)
-    if authorised:
+    if authorised and jr.representation=="html":
         redirect(href_edit)
 
     authorised = shn_has_permission('read', table, record_id)

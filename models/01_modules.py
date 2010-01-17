@@ -208,20 +208,35 @@ if empty:
 # Modules Menu (available in all Controllers)
 s3.menu_modules = []
 
-for module_type in [1, 2, 3, 4]:
-    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
-    modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
-    for module in modules:
-        if not module.access:
-            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
-        else:
-            authorised = False
-            groups = re.split('\|', module.access)[1:-1]
-            for group in groups:
-                if auth.has_membership(group):
-                    authorised = True
-            if authorised == True:
-                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+# Home
+s3.menu_modules.append([T('Home'), False, URL(r=request, c='default', f='open_module', vars=dict(id=1))])
+if auth.has_membership(1):
+    s3.menu_modules.append([T('Admin'), False, URL(r=request, c='default', f='open_module', vars=dict(id=2))])
+s3.menu_modules.append([T('Mapping'), False, URL(r=request, c='default', f='open_module', vars=dict(id=3))])
+s3.menu_modules.append([T('People'), False, URL(r=request, c='default', f='open_module', vars=dict(id=4))])
+module_id = db(db.s3_module.name == 'or').select()[0].id
+s3.menu_modules.append([T('Organizations'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+#dvi_group = db(db[auth.settings.table_group_name] == 'DVI').select()[0].id
+#if auth.has_membership(dvi_group):
+module_id = db(db.s3_module.name == 'dvi').select()[0].id
+s3.menu_modules.append([T('Victim Identification'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+module_id = db(db.s3_module.name == 'rms').select()[0].id
+s3.menu_modules.append([T('Request Management'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+
+#for module_type in [1, 2, 3, 4]:
+#    query = (db.s3_module.enabled=='Yes') & (db.s3_module.module_type==module_type)
+#    modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
+#    for module in modules:
+#        if not module.access:
+#            s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
+#        else:
+#            authorised = False
+#            groups = re.split('\|', module.access)[1:-1]
+#            for group in groups:
+#                if auth.has_membership(group):
+#                    authorised = True
+#            if authorised == True:
+#                s3.menu_modules.append([module.name_nice, False, URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id))])
 
 response.menu = s3.menu_modules
 response.menu.append(s3.menu_auth)

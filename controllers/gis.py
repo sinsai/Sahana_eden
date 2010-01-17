@@ -212,7 +212,7 @@ def location_to_feature_group():
     # Model options
 
     # CRUD Strings
-
+    
     return shn_rest_controller(module, resource)
 
 def feature_class_to_feature_group():
@@ -1188,8 +1188,8 @@ def map_viewing_client():
     # Layers
     baselayers = layers()
     # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz, js_layers=baselayers.js))
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, js_layers=baselayers.js))
 
     # Internal Features
     features = Storage()
@@ -1315,9 +1315,14 @@ def display_feature():
     output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
 
     # Feature details
-    feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
-    feature.module = feature_class.module
-    feature.resource = feature_class.resource
+    try:
+        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        feature.module = feature_class.module
+        feature.resource = feature_class.resource
+    except:
+        feature_class = None
+        feature.module = None
+        feature.resource = None
     if feature.module and feature.resource:
         feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
     else:
@@ -1331,16 +1336,18 @@ def display_feature():
     marker = feature.marker_id
     if not marker:
         # 2nd choice for a Marker is the Symbology for the Feature Class
-        query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-        try:
-            marker = db(query).select()[0].marker_id
-        except:
+        if feature_class:
+            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+            try:
+                marker = db(query).select()[0].marker_id
+            except:
+                pass
             if not marker:
                 # 3rd choice for a Marker is the Feature Class's
                 marker = feature_class.marker_id
-            if not marker:
-                # 4th choice for a Marker is the default
-                marker = marker_default
+        if not marker:
+            # 4th choice for a Marker is the default
+            marker = marker_default
     feature.marker = db(db.gis_marker.id == marker).select()[0].image
 
     try:
@@ -1372,8 +1379,10 @@ def display_feature():
 
     # Layers
     baselayers = layers()
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+    # Add the Base Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    # Don't want confusing overlays
+    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[]))
 
     return output
 
@@ -1475,7 +1484,10 @@ def display_features():
 
     # Feature details
     for feature in features:
-        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        try:
+            feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        except:
+            feature_class = None
         feature.module = feature_class.module
         feature.resource = feature_class.resource
         if feature.module and feature.resource:

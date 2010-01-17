@@ -24,9 +24,13 @@ def rss2record(entry):
 	myd['department'] = entry['department']
 	myd['summary'] = entry['summary']
 	myd['notes'] = entry['notes']
-	gpoint = entry['georss_point'].split()
-	myd['lat'] = gpoint[0]
-	myd['long'] = gpoint[1]
+
+	for key in entry.keys():
+		if key[-5:] == "point":
+			gpoint = entry[key].split()
+			myd['lat'] = gpoint[0]
+			myd['long'] = gpoint[1]
+
 	return myd
 
 # d.entries[0]['updated_parsed']

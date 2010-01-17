@@ -111,11 +111,11 @@
             <pfif:text>
                 <xsl:value-of select="./data[@field='opt_pr_presence_condition']/text()"/>
                 <xsl:if test="string-length(./data[@field='procedure']/text())&gt;0">
-                    <xsl:text>: </xsl:text>
+                    <xsl:text> : </xsl:text>
                     <xsl:value-of select="./data[@field='procedure']/text()"/>
                 </xsl:if>
                 <xsl:if test="string-length(./data[@field='comment']/text())&gt;0">
-                    <xsl:text>- </xsl:text>
+                    <xsl:text> - Info: </xsl:text>
                     <xsl:value-of select="./data[@field='comment']/text()"/>
                 </xsl:if>
             </pfif:text>

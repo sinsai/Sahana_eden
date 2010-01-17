@@ -1186,7 +1186,10 @@ def map_viewing_client():
             feature.module = feature.gis_feature_class.module
             feature.resource = feature.gis_feature_class.resource
             if feature.module and feature.resource:
-                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+                try:
+                    feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+                except:
+                    feature.resource_id = None
             else:
                 feature.resource_id = None
 

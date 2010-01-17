@@ -119,7 +119,7 @@
             </xsl:choose>
             <data field="time">
                 <xsl:call-template name="pfif2datetime">
-                    <xsl:with-param name="datetime" select="./pfif:source_date/text()"/>
+                    <xsl:with-param name="datetime" select="./pfif:entry_date/text()"/>
                 </xsl:call-template>
             </data>
             <data field="location_details">

@@ -74,9 +74,11 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('type', 'integer'),
                 sector_id,
                 admin_id,
-                Field('registration'),	# Registration Number
+                #Field('registration', label=T('Registration')),	# Registration Number
+                Field('country', label=T('Home Country'), requires=IS_IN_SET(shn_list_of_nations)),
                 Field('website'),
 				Field('donation_phone'), 
+                source_id,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -86,33 +88,32 @@ db[table].acronym.label = T('Acronym')
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
 db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
 db[table].type.label = T('Type')
-db[table].registration.label = T('Registration #')
 db[table].donation_phone.label = T('Donation Phone #')
 db[table].donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
-ADD_ORGANISATION = T('Add Organisation')
-title_create = T('Add Organisation')
-title_display = T('Organisation Details')
-title_list = T('Organisation Registry')
-title_update = T('Edit Organisation')
-title_search = T('Search Organisations')
-subtitle_create = T('Add New Organisation')
-subtitle_list = T('Organisations')
-label_list_button = T('List Organisations')
+ADD_ORGANISATION = T('Add Organization')
+title_create = T('Add Organization')
+title_display = T('Organization Details')
+title_list = T('List Organizations')
+title_update = T('Edit Organization')
+title_search = T('Search Organizations')
+subtitle_create = T('Add New Organization')
+subtitle_list = T('Organizations')
+label_list_button = T('List Organizations')
 label_create_button = ADD_ORGANISATION
-msg_record_created = T('Organisation added')
-msg_record_modified = T('Organisation updated')
-msg_record_deleted = T('Organisation deleted')
-msg_list_empty = T('No Organisations currently registered')
+msg_record_created = T('Organization added')
+msg_record_modified = T('Organization updated')
+msg_record_deleted = T('Organization deleted')
+msg_list_empty = T('No Organizations currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 # Reusable field for other tables to reference
 organisation_id = SQLTable(None, 'organisation_id',
             Field('organisation_id', db.or_organisation,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
-                label = T('Organisation'),
-                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organisation|The Organisation this record is associated with."))),
+                label = T('Organization'),
+                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organization|The Organization this record is associated with."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -143,6 +144,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('number_of_vehicles', 'integer'),
                 Field('vehicle_types'),
                 Field('equipment'),
+                source_id,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
@@ -210,6 +212,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('title'),
                 Field('manager_id', db.pr_person),
 				Field('focal_point', 'boolean'),
+                source_id,
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
 db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
@@ -278,7 +281,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #db[table].office_id.requires = IS_ONE_OF(db, 'or_office.id', '%(name)s')
 #db[table].office_id.label = T('Office')
 #db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
-#db[table].organisation_id.label = T('Organisation')
+#db[table].organisation_id.label = T('Organization')
 
 # Contacts to Organisations
 # Do we want to allow contacts which are affiliated to an organisation but not to an office?

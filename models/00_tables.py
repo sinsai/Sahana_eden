@@ -186,6 +186,44 @@ msg_record_deleted = T('Setting deleted')
 msg_list_empty = T('No Settings currently defined')
 s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
+# Common Source table
+resource = 'source'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp,
+            Field('name'),
+            Field('description'),
+            Field('url'))
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Source of Information')
+db[table].name.comment = SPAN("*", _class="req")
+db[table].url.requires = IS_NULL_OR(IS_URL())
+db[table].url.label = T('URL')
+ADD_SOURCE = T('Add Source')
+title_create = T('Add Source')
+title_display = T('Source Details')
+title_list = T('List Sources')
+title_update = T('Edit Source')
+title_search = T('Search Sources')
+subtitle_create = T('Add New Source')
+subtitle_list = T('Sources')
+label_list_button = T('List Sources')
+label_create_button = ADD_SOURCE
+msg_record_created = T('Source added')
+msg_record_modified = T('Source updated')
+msg_record_deleted = T('Source deleted')
+msg_list_empty = T('No Sources currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+source_id = SQLTable(None, 'source_id',
+            Field('source_id', db.s3_source,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 's3_source.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.s3_source.id==id).select()[0].name] or ["None"])[0],
+                label = T('Source of Information'),
+                comment = DIV(A(ADD_SOURCE, _class='thickbox', _href=URL(r=request, c='default', f='source', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SOURCE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Source|The Source this information came from."))),
+                ondelete = 'RESTRICT'
+                ))
+
 # Settings - appadmin
 module = 'appadmin'
 resource = 'setting'

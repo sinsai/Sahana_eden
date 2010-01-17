@@ -10,6 +10,9 @@ response.menu_options = [
     ]],
     [T('Pledge Aid'), False, URL(r=request, f='pledge_aid'),[
         [T('Pledge Aid'), False, URL(r=request, f='pledge_aid', args='create')],
+    ]],
+    [T('SMS Request'), False, URL(r=request, f='sms_request'),[
+        [T('SMS Request'), False, URL(r=request, f='sms_request', args='create')],
     ]]
 ]
 
@@ -31,3 +34,10 @@ def request_aid():
 def pledge_aid():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'pledge_aid')
+
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
+def sms_request():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'sms_request', editable=False)

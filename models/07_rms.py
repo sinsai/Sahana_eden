@@ -25,13 +25,74 @@ db.define_table(table,
 # -------------------------------
 # Create the Request Aid Database
 rms_request_aid_type_opts = {
-    1:T('Food'),
-    2:T('Find'),
-    3:T('Water'),
-    4:T('Medicine'),
-    5:T('Shelter'),
-    6:T('Report'),
+    "1"  : T('1: Emergency'),
+    "1A" : T('1A: Collapsed Structure'),
+    "1B" : T('1B: Fire'),
+    "1C" : T('1C: People Trapped'),
+    "1D" : T('1D: Contaminated Water Supply'),
+    "1E" : T('1E: Earthquake and Aftershocks'),
+    "1F" : T('1F: Medical Emergency'),
+    
+    "2"  : T('2: Threats'),
+    "2A" : T('2A: Structures at Risk'),
+    "2B" : T('2B: Looting'),
+    
+    "3"  : T('3: Vital Lines'),
+    "3A" : T('3A: Water Shortage'),
+    "3B" : T('3B: Road Blocked'),
+    "3C" : T('3C: Power Outage'),
+    
+    "4"  : T('4: Response'),
+    "4A" : T('4A: Health Services'),
+    "4B" : T('4B: USAR Search and Rescue'),
+    "4C" : T('4C: Shelter'),
+    "4D" : T('4D: Food Distribution'),
+    "4E" : T('4E: Water Sanitation and Hygiene Promotion'),
+    "4F" : T('4F: Non Food Items'),
+    "4G" : T('4G: Rubble Removal'),
+    "4H" : T('4H: Dead Bodies Management'),
+
+    "5"  : T('5: Other'),
+    
+    "6"  : T('6: Persons News'),
+    "6A" : T('6A: Deaths'),
+    "6B" : T('6B: Missing Persons'),
     }
+
+rms_request_aid_type_opts = [
+    T('1: Emergency'),
+    T('1A: Collapsed Structure'),
+    T('1B: Fire'),
+    T('1C: People Trapped'),
+    T('1D: Contaminated Water Supply'),
+    T('1E: Earthquake and Aftershocks'),
+    T('1F: Medical Emergency'),
+    T(''),
+    T('2: Threats'),
+    T('2A: Structures at Risk'),
+    T('2B: Looting'),
+    T(''),
+    T('3: Vital Lines'),
+    T('3A: Water Shortage'),
+    T('3B: Road Blocked'),
+    T('3C: Power Outage'),
+    T(''),
+    T('4: Response'),
+    T('4A: Health Services'),
+    T('4B: USAR Search and Rescue'),
+    T('4C: Shelter'),
+    T('4D: Food Distribution'),
+    T('4E: Water Sanitation and Hygiene Promotion'),
+    T('4F: Non Food Items'),
+    T('4G: Rubble Removal'),
+    T('4H: Dead Bodies Management'),
+    T(''),
+    T('5: Other'),
+    T(''),
+    T('6: Persons News'),
+    T('6A: Deaths'),
+    T('6B: Missing Persons'),
+    ]
 
 rms_priority_opts = {
     1:T('High'),
@@ -58,6 +119,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     organisation_id,
     location_id,
     Field("link","string"),
+    Field("type", "string"),
     Field("priority", "integer"),
     Field("comment","text"),
     Field("pubdate","datetime"),
@@ -80,9 +142,10 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 #db[table].title.requires = IS_NOT_EMPTY()
 #db[table].title.comment = SPAN("*", _class="req")
 
-#db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_request_aid_type_opts))
+db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_request_aid_type_opts))
 #db[table].type.represent = lambda opt: opt and rms_request_aid_type_opts[opt]
-#db[table].type.label = T('Aid type')
+db[table].type.represent = lambda opt: opt.split(':')[0]
+db[table].type.label = T('Aid type')
 
 #db[table].location.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
 #db[table].location.comment=A(SPAN("[Help]"), _class="tooltip", _title=T("Location|Enter any available location information, such as street, city, neighborhood, etc."))
@@ -106,7 +169,8 @@ db[table].status.represent = lambda status: status and rms_status_opts[status]
 db[table].status.label = T('Status')
 
 db[table].source.requires = IS_NULL_OR(IS_IN_SET(rms_source_opts))
-db[table].source.represent = lambda source: source and rms_source_opts[source]
+#db[table].source.represent = lambda source: source and rms_source_opts[source]
+db[table].source.represent = True
 db[table].source.label = T('Request Source')
 
 # Hide Source:
@@ -218,3 +282,46 @@ s3.crud_strings[table] = Storage( title_create        = "Add Pledge of Aid",
                                   msg_record_modified = "Pledge updated",
                                   msg_record_deleted  = "Pledge deleted",
                                   msg_list_empty      = "No pledges currently available")
+
+
+# ------------------
+resource = 'sms_request'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+    Field("ush_id", "string"), 
+    Field("link", "string"),
+    Field("updated", "datetime"),
+    Field("title", "string"),
+    Field("sms", "string"),
+    Field("smsrec", "integer"), 
+    Field("author", "string"),
+    Field("phone", "string"), 
+    Field("category_term", "string"),
+    Field("categorization", "string"), 
+    Field("firstname"), 
+    Field("lastname"), 
+    Field("status", "string"), 
+    Field("address", "text"), 
+    Field("city", "string"), 
+    Field("department", "string"), 
+    Field("summary", "string"), 
+    Field("notes", "string"),
+    Field("lat", "double"), 
+    Field("long", "double"),
+    migrate=migrate)
+
+s3.crud_strings[table] = Storage( title_create        = "Add SMS Request", 
+                                  title_display       = "SMS Request Details", 
+                                  title_list          = "List SMS Requests", 
+                                  title_update        = "Edit SMS Requests",  
+                                  title_search        = "Search SMS Requests",
+                                  subtitle_create     = "Add New SMS Request",
+                                  subtitle_list       = "SMS Requests",
+                                  label_list_button   = "List SMS Request",
+                                  label_create_button = "Add SMS Request",
+                                  msg_record_created  = "SMS Request Aded",
+                                  msg_record_modified = "SMS request updated",
+                                  msg_record_deleted  = "SMS request deleted",
+                                  msg_list_empty      = "No SMS requests currently available")
+
+db[table].writeable = False

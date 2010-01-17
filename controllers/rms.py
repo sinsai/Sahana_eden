@@ -5,11 +5,11 @@ module = 'rms'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Request Aid'), False, URL(r=request, f='organisation'),[
-        [T('Request Aid'), False, URL(r=request, f='organisation', args='create')],
+    [T('Request Aid'), False, URL(r=request, f='request_aid'),[
+        [T('Request Aid'), False, URL(r=request, f='request_aid', args='create')],
     ]],
-    [T('Pledge Aid'), False, URL(r=request, f='office'),[
-        [T('Pledge Aid'), False, URL(r=request, f='office', args='create')],
+    [T('Pledge Aid'), False, URL(r=request, f='pledge_aid'),[
+        [T('Pledge Aid'), False, URL(r=request, f='pledge_aid', args='create')],
     ]]
 ]
 
@@ -21,16 +21,18 @@ def index():
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
-def organisation():
+def request_aid():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'organisation')
+    return shn_rest_controller(module, 'request_aid')
+    #return dict(message=T("hello request_aid"))
 
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
-def office():
+def pledge_aid():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'office')
+    return dict(message=T("hello pledge_aid"))
+    #return shn_rest_controller(module, 'pledge_aid')
 
 @service.jsonrpc
 @service.xmlrpc

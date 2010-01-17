@@ -75,7 +75,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 sector_id,
                 admin_id,
                 #Field('registration', label=T('Registration')),	# Registration Number
-                Field('country', label=T('Home Country'), requires=IS_IN_SET(shn_list_of_nations)),
+                Field('country', 'integer'),
                 Field('website'),
 				Field('donation_phone'), 
                 source_id,
@@ -90,6 +90,9 @@ db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
 db[table].type.label = T('Type')
 db[table].donation_phone.label = T('Donation Phone #')
 db[table].donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
+db[table].country.requires=IS_IN_SET(shn_list_of_nations)
+db[table].country.represent = lambda opt: opt and shn_list_of_nations[opt]
+db[table].country.label = T('Home Country')
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
 ADD_ORGANISATION = T('Add Organization')

@@ -339,10 +339,6 @@ def track():
 
     return shn_rest_controller(module, resource)
 
-def layer():
-    "Custom View for Layer Catalogue"
-    return dict()
-
 # Common CRUD strings for all layers
 title_create = T('Add Layer')
 title_display = T('Layer Details')
@@ -537,6 +533,25 @@ def layer_js():
     subtitle_list = T('List JS Layers')
     label_list_button = T('List JS Layers')
     msg_list_empty = T('No JS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource)
+
+def layer_xyz():
+    "RESTlike CRUD controller"
+    resource = 'layer_xyz'
+    table = module + '_' + resource
+
+    # Model options
+    db[table].url.requires = IS_NOT_EMPTY()
+    db[table].url.comment = SPAN("*", _class="req")
+    
+    # CRUD Strings
+    title_list = T('XYZ Layers')
+    subtitle_create = T('Add New XYZ Layer')
+    subtitle_list = T('List XYZ Layers')
+    label_list_button = T('List XYZ Layers')
+    msg_list_empty = T('No XYZ Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
     return shn_rest_controller(module, resource)
@@ -1062,6 +1077,21 @@ def layers():
         if layer.format:
             layers.tms[name].format = layer.format
 
+    # XYZ
+    layers.xyz = Storage()
+    layers_xyz = db(db.gis_layer_xyz.enabled==True).select()
+    for layer in layers_xyz:
+        name = layer.name
+        layers.xyz[name] = Storage()
+        layers.xyz[name].url = layer.url
+        layers.xyz[name].base = layer.base
+        layers.xyz[name].sphericalMercator = layer.sphericalMercator
+        layers.xyz[name].transitionEffect = layer.transitionEffect
+        layers.xyz[name].numZoomLevels = layer.numZoomLevels
+        layers.xyz[name].transparent = layer.transparent
+        layers.xyz[name].visible = layer.visible
+        layers.xyz[name].opacity = layer.opacity
+        
     # JS
     layers.js = Storage()
     layers_js = db(db.gis_layer_js.enabled==True).select()
@@ -1159,7 +1189,7 @@ def map_viewing_client():
     baselayers = layers()
     # Add the Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms, js_layers=baselayers.js))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz, js_layers=baselayers.js))
 
     # Internal Features
     features = Storage()

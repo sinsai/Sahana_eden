@@ -3,20 +3,41 @@
 module = 'rms'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
-# Options Menu (available in all Functions)
+# Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [module_name, False, URL(r=request, f='index')],
+    [T('Request Aid'), False, URL(r=request, f='request_aid'),[
+        [T('Request Aid'), False, URL(r=request, f='request_aid', args='create')],
+    ]],
+    [T('Pledge Aid'), False, URL(r=request, f='pledge_aid'),[
+        [T('Pledge Aid'), False, URL(r=request, f='pledge_aid', args='create')],
+    ]],
+    [T('SMS Request'), False, URL(r=request, f='sms_request'),[
+        [T('SMS Request'), False, URL(r=request, f='sms_request', args='create')],
+    ]]
 ]
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    return dict(module_name=module_name, options=options)
-def open_option():
-    "Select Option from Module Menu"
-    id = request.vars.id
-    options = db(db['%s_menu_option' % module].id==id).select()
-    if not len(options):
-        redirect(URL(r=request, f='index'))
-    option = options[0].function
-    redirect(URL(r=request, f=option))
+    return dict(module_name=module_name)
+
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
+def request_aid():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'request_aid')
+
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
+def pledge_aid():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'pledge_aid')
+
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
+def sms_request():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'sms_request', editable=False)

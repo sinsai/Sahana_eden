@@ -2,7 +2,7 @@
 
 module = 'or'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Organisations'), False, URL(r=request, f='organisation'),[

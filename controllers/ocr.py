@@ -109,7 +109,7 @@ def create():
         redirect(URL(r=request))
     output = StringIO.StringIO()
     form = Form(pdfname=output)
-    _table = request.args[0]
+    _table = request.args(0)
     title = _table
     table = db[_table]
     import string

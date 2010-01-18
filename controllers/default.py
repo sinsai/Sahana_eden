@@ -2,7 +2,7 @@
 
 module = 'default'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions)
 response.menu_options = [
     #[T('About Sahana'), False, URL(r=request, f='about')],
@@ -27,7 +27,7 @@ def user():
     # Add newly-registered users to Person Registry & 'Authenticated' role
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
-    if request.args and request.args[0]=="profile":
+    if request.args and request.args(0)=="profile":
         auth.settings.table_user.utc_offset.readable = True
         auth.settings.table_user.utc_offset.writable = True
 
@@ -37,7 +37,7 @@ def user():
 
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
-    #if request.args[0] == 'login':
+    #if request.args(0) == 'login':
     #    response.title = T('Login')
     #    response.view = 'auth/login.html'
 

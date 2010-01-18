@@ -2,7 +2,7 @@
 
 module = 'msg'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Admin'), False, URL(r=request, f='admin')],
@@ -115,7 +115,7 @@ def email_send():
         query = table2.group_id == group
         recipients = db(query).select()
         for recipient in recipients:
-            to = db(db.pr_person.id==recipient.person_id).select()[0].email
+            to = db(db.pr_person.id==recipient.person_id).select().first().email
             # If the user has an email address
             if to:
                 # Use Tools API to send mail
@@ -144,7 +144,7 @@ def group_user():
     if len(request.args) == 0:
         session.error = T("Need to specify a group!")
         redirect(URL(r=request, f='group'))
-    group = request.args[0]
+    group = request.args(0)
     table = db.msg_group_user
     authorised = shn_has_permission('update', table)
     
@@ -231,11 +231,11 @@ def group_validation(form):
         # Which type of Group is this?
         table = db.msg_group
         query = table.id==group
-        group_type = db(query).select()[0].group_type
+        group_type = db(query).select().first().group_type
         table = db.pr_person
         query = table.id==user
-        email = db(query).select()[0].email
-        sms = db(query).select()[0].mobile_phone
+        email = db(query).select().first().email
+        sms = db(query).select().first().mobile_phone
         session.warning = ''
         # type 1 = Email
         # type 3 = Both
@@ -255,7 +255,7 @@ def group_update_users():
     if len(request.args) == 0:
         session.error = T("Need to specify a group!")
         redirect(URL(r=request, f='group'))
-    group = request.args[0]
+    group = request.args(0)
     table = db.msg_group_user
     authorised = shn_has_permission('update', table)
     if authorised:

@@ -2,7 +2,7 @@
 
 module = 'budget'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Parameters'), False, URL(r=request, f='parameters')],
@@ -43,10 +43,10 @@ db[table].comments.label = T('Comments')
 table = 'budget_kit_item'
 db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
 db[table].kit_id.label = T('Kit')
-db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select().first().code
 db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
 db[table].item_id.label = T('Item')
-db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
+db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select().first().description
 db[table].quantity.requires = IS_NOT_EMPTY()
 db[table].quantity.label = T('Quantity')
 db[table].quantity.comment = SPAN("*", _class="req")
@@ -63,10 +63,10 @@ db[table].comments.label = T('Comments')
 table = 'budget_bundle_kit'
 db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
 db[table].bundle_id.label = T('Bundle')
-db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().description
 db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
 db[table].kit_id.label = T('Kit')
-db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select().first().code
 db[table].quantity.requires = IS_NOT_EMPTY()
 db[table].quantity.label = T('Quantity')
 db[table].quantity.comment = SPAN("*", _class="req")
@@ -80,10 +80,10 @@ db[table].megabytes.comment = SPAN("*", _class="req")
 table = 'budget_bundle_item'
 db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
 db[table].bundle_id.label = T('Bundle')
-db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].description
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().description
 db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
 db[table].item_id.label = T('Item')
-db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select()[0].description
+db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select().first().description
 db[table].quantity.requires = IS_NOT_EMPTY()
 db[table].quantity.label = T('Quantity')
 db[table].quantity.comment = SPAN("*", _class="req")
@@ -137,16 +137,16 @@ db[table].comments.label = T('Comments')
 table = 'budget_budget_bundle'
 db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
 db[table].budget_id.label = T('Budget')
-db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
+db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select().first().name
 db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
 db[table].project_id.label = T('Project')
-db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
+db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select().first().code
 db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
 db[table].location_id.label = T('Location')
-db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
+db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select().first().code
 db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(name)s')
 db[table].bundle_id.label = T('Bundle')
-db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select()[0].name
+db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().name
 db[table].quantity.requires = IS_NOT_EMPTY()
 db[table].quantity.label = T('Quantity')
 db[table].quantity.comment = SPAN("*", _class="req")
@@ -157,16 +157,16 @@ db[table].months.comment = SPAN("*", _class="req")
 table = 'budget_budget_staff'
 db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
 db[table].budget_id.label = T('Budget')
-db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select()[0].name
+db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select().first().name
 db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
 db[table].project_id.label = T('Project')
-db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select()[0].code
+db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select().first().code
 db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
 db[table].location_id.label = T('Location')
-db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select()[0].code
+db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select().first().code
 db[table].staff_id.requires = IS_ONE_OF(db, 'budget_staff.id', '%(name)s')
 db[table].staff_id.label = T('Staff')
-db[table].staff_id.represent = lambda bundle_id: db(db.budget_staff.id==staff_id).select()[0].description
+db[table].staff_id.represent = lambda bundle_id: db(db.budget_staff.id==staff_id).select().first().description
 db[table].quantity.requires = IS_NOT_EMPTY()
 db[table].quantity.label = T('Quantity')
 db[table].quantity.comment = SPAN("*", _class="req")
@@ -424,7 +424,7 @@ def kit_item():
     if len(request.args) == 0:
         session.error = T("Need to specify a kit!")
         redirect(URL(r=request, f='kit'))
-    kit = request.args[0]
+    kit = request.args(0)
     table = db.budget_kit_item
     authorised = shn_has_permission('update', table)
     
@@ -542,10 +542,10 @@ def kit_totals(kit):
     total_megabyte_cost = 0
     for item in items:
         query = (table.kit_id==kit) & (table.item_id==item.item_id)
-        total_unit_cost += (db(db.budget_item.id==item.item_id).select()[0].unit_cost) * (db(query).select()[0].quantity)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select()[0].monthly_cost) * (db(query).select()[0].quantity)
-        total_minute_cost += (db(db.budget_item.id==item.item_id).select()[0].minute_cost) * (db(query).select()[0].quantity)
-        total_megabyte_cost += (db(db.budget_item.id==item.item_id).select()[0].megabyte_cost) * (db(query).select()[0].quantity)
+        total_unit_cost += (db(db.budget_item.id==item.item_id).select().first().unit_cost) * (db(query).select().first().quantity)
+        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().monthly_cost) * (db(query).select().first().quantity)
+        total_minute_cost += (db(db.budget_item.id==item.item_id).select().first().minute_cost) * (db(query).select().first().quantity)
+        total_megabyte_cost += (db(db.budget_item.id==item.item_id).select().first().megabyte_cost) * (db(query).select().first().quantity)
     db(db.budget_kit.id==kit).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost, total_minute_cost=total_minute_cost, total_megabyte_cost=total_megabyte_cost)
 
 def kit_update_items():
@@ -553,7 +553,7 @@ def kit_update_items():
     if len(request.args) == 0:
         session.error = T("Need to specify a kit!")
         redirect(URL(r=request, f='kit'))
-    kit = request.args[0]
+    kit = request.args(0)
     table = db.budget_kit_item
     authorised = shn_has_permission('update', table)
     if authorised:
@@ -635,7 +635,7 @@ def kit_export_xls():
         rowy = 1
         for content in contents:
             table = db.budget_item
-            item = db(table.id == content.item_id).select()[0]
+            item = db(table.id == content.item_id).select().first()
             rowx = sheet.row(rowy)
             rowy += 1
             cell = 0
@@ -849,7 +849,7 @@ def bundle_kit_item():
     if len(request.args) == 0:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f='bundle'))
-    bundle = request.args[0]
+    bundle = request.args(0)
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     
@@ -1063,20 +1063,20 @@ def bundle_totals(bundle):
     kits = db(query).select()
     for kit in kits:
         query = (table.bundle_id==bundle) & (table.kit_id==kit.kit_id)
-        total_unit_cost += (db(db.budget_kit.id==kit.kit_id).select()[0].total_unit_cost) * (db(query).select()[0].quantity)
-        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select()[0].total_monthly_cost) * (db(query).select()[0].quantity)
-        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select()[0].total_minute_cost) * (db(query).select()[0].quantity) * (db(query).select()[0].minutes)
-        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select()[0].total_megabyte_cost) * (db(query).select()[0].quantity) * (db(query).select()[0].megabytes)
+        total_unit_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_unit_cost) * (db(query).select().first().quantity)
+        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_monthly_cost) * (db(query).select().first().quantity)
+        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
+        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
     
     table = db.budget_bundle_item
     query = table.bundle_id==bundle
     items = db(query).select()
     for item in items:
         query = (table.bundle_id==bundle) & (table.item_id==item.item_id)
-        total_unit_cost += (db(db.budget_item.id==item.item_id).select()[0].unit_cost) * (db(query).select()[0].quantity)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select()[0].monthly_cost) * (db(query).select()[0].quantity)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select()[0].minute_cost) * (db(query).select()[0].quantity) * (db(query).select()[0].minutes)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select()[0].megabyte_cost) * (db(query).select()[0].quantity) * (db(query).select()[0].megabytes)
+        total_unit_cost += (db(db.budget_item.id==item.item_id).select().first().unit_cost) * (db(query).select().first().quantity)
+        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().monthly_cost) * (db(query).select().first().quantity)
+        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
+        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
     
     db(db.budget_bundle.id==bundle).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost)
 
@@ -1085,7 +1085,7 @@ def bundle_update_items():
     if len(request.args) == 0:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f='bundle'))
-    bundle = request.args[0]
+    bundle = request.args(0)
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:
@@ -1246,7 +1246,7 @@ def budget_staff_bundle():
     if len(request.args) == 0:
         session.error = T("Need to specify a Budget!")
         redirect(URL(r=request, f='budget'))
-    budget = request.args[0]
+    budget = request.args(0)
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     
@@ -1442,18 +1442,18 @@ def budget_totals(budget):
     staffs = db(query).select()
     for staff in staffs:
         query = (table.budget_id==budget) & (table.staff_id==staff.staff_id)
-        total_onetime_cost += (db(db.budget_staff.id==staff.staff_id).select()[0].travel) * (db(query).select()[0].quantity)
-        total_recurring_cost += (db(db.budget_staff.id==staff.staff_id).select()[0].salary) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
-        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select()[0].subsistence) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
-        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select()[0].hazard_pay) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
+        total_onetime_cost += (db(db.budget_staff.id==staff.staff_id).select().first().travel) * (db(query).select().first().quantity)
+        total_recurring_cost += (db(db.budget_staff.id==staff.staff_id).select().first().salary) * (db(query).select().first().quantity) * (db(query).select().first().months)
+        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select().first().subsistence) * (db(query).select().first().quantity) * (db(query).select().first().months)
+        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select().first().hazard_pay) * (db(query).select().first().quantity) * (db(query).select().first().months)
         
     table = db.budget_budget_bundle
     query = table.budget_id==budget
     bundles = db(query).select()
     for bundle in bundles:
         query = (table.budget_id==budget) & (table.bundle_id==bundle.bundle_id)
-        total_onetime_cost += (db(db.budget_bundle.id==bundle.bundle_id).select()[0].total_unit_cost) * (db(query).select()[0].quantity)
-        total_recurring_cost += (db(db.budget_bundle.id==bundle.bundle_id).select()[0].total_monthly_cost) * (db(query).select()[0].quantity) * (db(query).select()[0].months)
+        total_onetime_cost += (db(db.budget_bundle.id==bundle.bundle_id).select().first().total_unit_cost) * (db(query).select().first().quantity)
+        total_recurring_cost += (db(db.budget_bundle.id==bundle.bundle_id).select().first().total_monthly_cost) * (db(query).select().first().quantity) * (db(query).select().first().months)
         
     db(db.budget_budget.id==budget).update(total_onetime_costs=total_onetime_cost, total_recurring_costs=total_recurring_cost)
 
@@ -1462,7 +1462,7 @@ def budget_update_items():
     if len(request.args) == 0:
         session.error = T("Need to specify a budget!")
         redirect(URL(r=request, f='budget'))
-    budget = request.args[0]
+    budget = request.args(0)
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:

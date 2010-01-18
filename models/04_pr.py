@@ -413,13 +413,33 @@ msg_list_empty = T('No Identities currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # *****************************************************************************
-# Role, Status and Transition
+# Role, Status and Transition, TODO: currently unused, implement VITA2 here
 #
+pr_role_opts = {
+    1: T('Victim'),
+    2: T('Missing Person'),
+    3: T('Staff'),
+    4: T('Volunteer')
+}
 
 resource = 'role'
 table = module + '_' + resource
 db.define_table(table, uuidstamp, deletion_status,
+                pr_pe_id,
+                Field('role', 'integer',
+                      requires = IS_IN_SET(pr_role_opts),
+                      default = 1,
+                      label = T('Role'),
+                      represent = lambda opt: opt and pr_role_opts[opt]),
                 migrate=migrate)
+
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby='pr_pe_id',
+    deletable=True,
+    editable=True,
+    main='pr_pe_id', extra='role',
+    list_fields = ['id', 'pr_pe_id', 'role'])
 
 # *****************************************************************************
 # Physical Description (pd_xxx)

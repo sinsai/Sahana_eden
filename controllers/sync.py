@@ -2,7 +2,7 @@
 
 module = 'admin'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 # - can Insert/Delete items from default menus within a function, if required.
 response.menu_options = admin_menu_options
@@ -171,7 +171,7 @@ def putdata(uuid, username, password, nicedbdump):
     sync_partners = db().select(db.sync_partner.uuid)
     for partner in sync_partners:
         if uuid == partner[0].uuid:
-            sync_policy = db(db.sync_partner.uuid==uuid).select()[0].policy
+            sync_policy = db(db.sync_partner.uuid==uuid).select().first().policy
             # no need to carry on looping
             break
     if not sync_policy:

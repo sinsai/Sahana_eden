@@ -13,7 +13,7 @@ def create():
     if len(request.args) == 0:
         session.error = T("Need to specify a table!")
         redirect(URL(r=request))
-    _table = request.args[0]
+    _table = request.args(0)
 
     title = _table
     table = db[_table]

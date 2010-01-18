@@ -18,6 +18,8 @@ response.menu_options = [
     [T('Selected Person'), False, URL(r=request, f='person', args='read'),[
         [T('Volunteer Status'), False, URL(r=request, f='person', args='volunteer')],
         [T('Skills'), False, URL(r=request, f='person', args='skills')],
+        [T('Address'), False, URL(r=request, f='person', args='address')],
+        [T('Contact Info'), False, URL(r=request, f='person', args='contact')],
     ]],
 #        [T('Positions'), False, URL(r=request, f='position'),[
 #            [T('Add Position'), False, URL(r=request, f='position', args='create')],

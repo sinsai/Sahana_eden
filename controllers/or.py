@@ -77,7 +77,7 @@ def org_sub_table( table , org_id):
     fields = []
     headers = {}
     for Field in db[table]:
-        if Field.readable and Field.name <> "organisation_id":        
+        if Field.readable and Field.name <> "organisation_id" and Field.name <> "admin":        
             headers[Field.name] = str(Field.label)
             fields.append(Field.name)   
     

@@ -138,7 +138,7 @@ if empty:
             module_type=4,
             access='',
             description="Manage volunteers by capturing their skills, availability and allocation",
-            enabled='False'
+            enabled='True'
         )
         db[table].insert(
             name="lms",

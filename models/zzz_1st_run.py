@@ -465,6 +465,9 @@ if empty:
         db[table].insert(
             name = 'Hospitals',
         )
+        db[table].insert(
+            name = 'SMS Alerts',
+        )
         
     table = 'gis_feature_class_to_feature_group'
     if not db(db[table].id).count():
@@ -508,7 +511,10 @@ if empty:
             feature_group_id = db(db.gis_feature_group.name == 'Offices').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Office').select()[0].id,
         )
-
+        db[table].insert(
+            feature_group_id = db(db.gis_feature_group.name == 'SMS Alerts').select()[0].id,
+            feature_class_id = db(db.gis_feature_class.name == 'SMS').select()[0].id,
+        )
     table = 'gis_apikey'
     if not db(db[table].id).count():
        db[table].insert(

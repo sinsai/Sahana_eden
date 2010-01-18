@@ -16,6 +16,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 db[table].name.label = T('Name')
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+# comment this line out if parent features are deleted leaving dangling refs!
 db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 db[table].parent.label = T('Parent')
 db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)

@@ -8,14 +8,6 @@
 {{=T("This web portal includes applications that will help you with the following coordination problem areas during the aftermath of the disaster")}}:
 </p>
 <ul>
-  <li><strong>{{=A(T('Situation Map'), _href=URL(r=request, c='gis', f='map_viewing_client'))}}</strong></li>	
-
-{{=T("The situation map provides you with an integrated annotated map of what is happening in Haiti right now. We are pulling maps and events from multiple ")}} {{=A(T('Sources'), _href=URL(r=request, c='gis', f='map_service_catalogue'))}} 
-
-{{=T("Current Incidents shown against the latest high resolution satellite imagery & rapidly-updating OpenStreetMap layers")}}
-<br/>
-{{=A(T('Locations List as GeoRSS'), _href=URL(r=request, c='gis', f='location.georss'))}} | {{=A(T('View Locations in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}
-<br/>
 <li><strong>{{=A(T('Organizations Registry'), _href=URL(r=request, c='or', f='organisation'))}}</strong></li>
 
 {{=T("The Organization Registry provides a searchable database of organizations responding to the disaster, the sector where they are providing services, their activities and their contact details. Please do ")}} {{=A(T('add your organization'), _href=URL(r=request, c='or', f='organisation', args=['create']))}} 
@@ -27,10 +19,19 @@
 
   <li><strong>{{=A(T('Activities Report'), _href=URL(r=request, c='or', f='activity'))}}</strong></li>
   Report of all activities that organizations are engaged in<br/>
+  <li><strong>{{=A(T('Situation Map'), _href=URL(r=request, c='gis', f='map_viewing_client'))}}</strong></li>	
+
+{{=T("The situation map provides you with an integrated annotated map of what is happening in Haiti right now. We are pulling maps and events from multiple ")}} {{=A(T('sources'), _href=URL(r=request, c='gis', f='map_service_catalogue'))}}.
+
+{{=T("Current Incidents shown against the latest high resolution satellite imagery & rapidly-updating OpenStreetMap layers")}} and can be downloaded as <a href="http://wiki.sahana.lk/doku.php/haiti:status#location_feeds" target='_blank'>feeds in many formats</a> for viewing in Google Earth or using on a GPS.
+<br/>
+<!--
+{{=A(T('Locations List as GeoRSS'), _href=URL(r=request, c='gis', f='location.georss'))}} | {{=A(T('View Locations in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}
+-->
  </ul>
 <p>
-<br/>{{=T("To add data to this database, see")}} <a href="http://trac.sahanapy.org/wiki/HaitiDataEntry">{{=T("Data Entry Process")}}</a>
-<br/>{{=T("For live help from the Sahana community, go to")}} <a href="http://www.sahana.lk/chat">{{=T("Sahana Community Chat")}}</a>
+<br/>{{=T("To add data to this database, see")}} <a href="http://trac.sahanapy.org/wiki/HaitiDataEntry" target='_blank'>{{=T("Data Entry Process")}}</a>
+<br/>{{=T("For live help from the Sahana community, go to")}} <a href="http://www.sahana.lk/chat" target='_blank'>{{=T("Sahana Community Chat")}}</a>
 </p>
 <p>
 {{=T("Administrator")}}: {{=admin_name}}

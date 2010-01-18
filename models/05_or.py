@@ -43,7 +43,7 @@ def sector_represent(sector_ids):
         sectors = [db(db.or_sector.id==id).select()[0].name for id in sector_ids.split('|') if id]
         return ", ".join(sectors)
     else:
-        return [db(db.or_sector.id==sector_ids).select()[0].name]
+        return db(db.or_sector.id==sector_ids).select()[0].name
 
 sector_id = SQLTable(None, 'sector_id',
             Field('sector_id',

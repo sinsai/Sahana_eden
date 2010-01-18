@@ -25,6 +25,7 @@ var featuresLayers = new Array();
 var featuresLayer{{=fgname}} = new OpenLayers.Layer.Vector("{{=fgname}}", {displayInLayerSwitcher: true});
 map.addLayer(featuresLayer{{=fgname}});
 featuresLayers.push(featuresLayer{{=fgname}});
+featuresLayer{{=fgname}}.events.on({ "featureselected": onFeatureSelect, "featureunselected": onFeatureUnselect });
 {{for feature in features[feature_group.id]:}}
   {{if feature.gis_location.id:}}
     geom = parser.read('{{=feature.gis_location.wkt}}').geometry;
@@ -36,15 +37,6 @@ featuresLayers.push(featuresLayer{{=fgname}});
   {{pass}}
 {{pass}}
 {{pass}}
+allLayers = allLayers.concat(featuresLayers);
 
-// Select Control for Internal FeatureGroup Layers
-select = new OpenLayers.Control.SelectFeature(featuresLayers, {
-        clickout: true,
-        toggle: true,
-        multiple: false,
-        onSelect: onFeatureSelect,
-        onUnselect: onFeatureUnselect
-    }
-);
-map.addControl(select);
-select.activate();
+

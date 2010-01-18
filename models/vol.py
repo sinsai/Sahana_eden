@@ -29,7 +29,7 @@ vol_project_status_opts = {
 
 resource = 'project'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', 'string', length=50),
                 location_id,
                 Field('start_date', 'date'),
@@ -43,7 +43,7 @@ db.define_table(table, timestamp, uuidstamp,
                 migrate=migrate)
 
 # Settings and Restrictions
-db[table].name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')), IS_NOT_IN_DB(db,'vol_projects.name')]
+db[table].name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')), IS_NOT_IN_DB(db,'vol_project.name')]
 
 db[table].description.requires = IS_NOT_EMPTY()
 
@@ -73,8 +73,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 vol_project_id = db.Table(None, 'vol_project_id',
                           Field('vol_project_id', db.vol_project,
                           requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_project.id', '%(name)s')),
-                          represent = lambda id: lambda id: (id and [db.vol_project[id].name] or ["None"])[0],
+                          represent = lambda id: (id and [db.vol_project[id].name] or ["None"])[0],
                           comment = DIV(A(s3.crud_strings.vol_project.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_project.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Project|Add new project)."))),
+                          label = "Project",
                           ondelete = 'RESTRICT'
                          ))
 
@@ -131,7 +132,7 @@ vol_position_id = db.Table(None, 'vol_position_id',
                           ))
 
 s3xrc.model.add_component(module, resource,
-    multiple=False,
+    multiple=True,
     joinby=dict(vol_project='vol_project_id'),
     deletable=True,
     editable=True,
@@ -186,19 +187,19 @@ def shn_vol_volunteer_represent(id):
         return None
 
 # CRUD Strings
-title_create = T('Add Volunteer')
+title_create = T('Add Volunteer Status')
 title_display = T('Volunteer Details')
 title_list = T('Volunteers')
-title_update = T('Edit Volunteer')
+title_update = T('Edit Volunteer Status')
 title_search = T('Search Volunteers')
-subtitle_create = T('Add New Volunteer')
+subtitle_create = T('Add Volunteer Status')
 subtitle_list = T('Volunteers')
 label_list_button = T('List Volunteers')
-label_create_button = T('Add Volunteer')
-msg_record_created = T('Volunteer added')
-msg_record_modified = T('Volunteer updated')
-msg_record_deleted = T('Volunteer deleted')
-msg_list_empty = T('No volunteers currently registered')
+label_create_button = T('Add Volunteer Status')
+msg_record_created = T('Volunteer status added')
+msg_record_modified = T('Volunteer status updated')
+msg_record_deleted = T('Volunteer status deleted')
+msg_list_empty = T('No volunteer information registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Reusable field
@@ -401,3 +402,87 @@ db[table].shift_end.requires=[IS_NOT_EMPTY(),
 #    db.Field('request_id',db.vol_access_request),
 #    db.Field('constraint_id',db.vol_access_constraint),
 #    migrate=migrate)
+
+def shn_vol_project_search_location(xrequest, onvalidation=None, onaccept=None):
+
+    if not shn_has_permission('read', db.vol_project):
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
+
+    if xrequest.representation=="html":
+        # Check for redirection
+        if request.vars._next:
+            next = str.lower(request.vars._next)
+        else:
+            next = str.lower(URL(r=request, f='project', args='[id]'))
+
+        # Custom view
+        response.view = '%s/project_search.html' % xrequest.prefix
+
+        # Title and subtitle
+        title = T('Search for a Project')
+        subtitle = T('Matching Records')
+
+        # Select form:
+        l_opts = [OPTION(_value='')]
+        l_opts += [OPTION(location.name, _value=location.id)
+                  for location in db(db.gis_location.deleted==False).select(db.gis_location.ALL,cache=(cache.ram,3600))]
+        form = FORM(TABLE(
+                TR(T('Location: '),
+                SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id'))))),
+                TR("", INPUT(_type="submit", _value="Search"))
+                ))
+
+        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            table = db.vol_project
+            query = (table.deleted==False)
+
+            if form.vars.location is None:
+                results = db(query).select(table.ALL)
+            else:
+                query = query & (table.location_id==form.vars.location)
+                results = db(query).select(table.ALL)
+
+            if results and len(results):
+                records = []
+                for result in results:
+                    href = next.replace('%5bid%5d', '%s' % result.id)
+                    records.append(TR(
+                        A(result.name, _href=href),
+                        result.start_date or "None",
+                        result.end_date or "None",
+                        result.description or "None",
+                        result.status and vol_project_status_opts[result.status] or "unknown",
+                        ))
+                items=DIV(TABLE(THEAD(TR(
+                    TH("Name"),
+                    TH("Start date"),
+                    TH("End date"),
+                    TH("Description"),
+                    TH("Status"))),
+                    TBODY(records), _id='list', _class="display"))
+            else:
+                    items = T('None')
+
+        try:
+            label_create_button = s3.crud_strings['vol_project'].label_create_button
+        except:
+            label_create_button = s3.crud_strings.label_create_button
+
+        add_btn = A(label_create_button, _href=URL(r=request, f='project', args='create'), _id='add-btn')
+
+        output.update(dict(items=items, add_btn=add_btn))
+
+        return output
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Plug into REST controller
+s3xrc.model.set_method(module, 'project', method='search_location', action=shn_vol_project_search_location )

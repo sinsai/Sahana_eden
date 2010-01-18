@@ -311,7 +311,7 @@ db[table]["title"        ].writeable = db[table]["title"        ].readable = Fal
 db[table]["category_term"].writeable = db[table]["category_term"].readable = False
 db[table]["smsrec"       ].writeable = db[table]["smsrec"       ].readable = False
 db[table]["summary"      ].writeable = db[table]["summary"      ].readable = False
-
+db[table]["link"         ].writeable = db[table]["link"         ].readable = False
 
 
 if not auth.is_logged_in():

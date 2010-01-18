@@ -25,7 +25,7 @@ def shn_vol_menu_ext():
         selection = db.vol_project[session.rcvars['vol_project']]
         if selection:
             menu_project = [
-                    ["%s %s" % (T('Project:'), selection.name), False, URL(r=request, f='project', args=['read', selection.name]),[
+                    ["%s %s" % (T('Project:'), selection.name), False, URL(r=request, f='project', args=['read', selection.id]),[
                         [T('Tasks'), False, URL(r=request, f='project', args=[str(selection.id), 'task'])],
                         [T('Positions'), False, URL(r=request, f='project', args=[str(selection.id), 'position'])],
                     ]]

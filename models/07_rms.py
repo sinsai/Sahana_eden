@@ -315,6 +315,8 @@ db[table]["category_term"].writeable = db[table]["category_term"].readable = Fal
 db[table]["smsrec"       ].writeable = db[table]["smsrec"       ].readable = False
 db[table]["summary"      ].writeable = db[table]["summary"      ].readable = False
 
+if not auth.is_logged_in():
+    db[table]["phone"].writeable = db[table]["phone"].readable = False
 
 s3.crud_strings[table] = Storage( title_create        = "Add SMS Request", 
                                   title_display       = "SMS Request Details", 

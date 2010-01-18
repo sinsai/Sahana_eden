@@ -1,27 +1,34 @@
 {{extend 'layout.html'}}
 {{include 'thickbox.html'}}
+
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function() {
+	$('#or_organisation_name__row').hide()
+});
+//]]></script>
+
 <p>
 <TABLE><TR id='but_add_org'><TD>{{=but_add_org}}</TD></TR></TABLE>
-<br/><DIV id=organisation_select>{{=T("Name:")}}{{=organisation_select}}</DIV>
+<br/>
+<TABLE><TBODY><TR id=organisation_select><TD><LABEL>{{=T("Name:")}}&nbsp</LABEL></TD><TD>{{=organisation_select}}</TD><TD/></TR></TBODY></TABLE>
 {{=org_details}}
 <TABLE><TR id='but_edit_org'><TD>{{=but_edit_org}}</TD></TR></TABLE>
 </p>
 <p>
-<br/><strong>{{=T("Offices:")}}</strong>
-<TABLE><TR id='but_add_office'><TD>{{=but_add_office}}</TD></TR></TABLE>
+<br/>
+<TABLE><TR id='but_add_office'><TD><strong>{{=T("Offices:")}}&nbsp</TD><TD></strong>{{=but_add_office}}</TD></TR></TABLE>
 {{=office_list}}
 </p>
 <p>
-<br/><strong>{{=T("Contacts:")}}</strong>
-<TABLE><TR id='but_add_contact'><TD>{{=but_add_contact}}</TD></TR></TABLE>
+<TABLE><TR id='but_add_office'><TD><strong>{{=T("Contacts:")}}&nbsp</TD><TD></strong>{{=but_add_contact}}</TD></TR></TABLE>
 {{=contact_list}}
 </p>
 <p>
-<br/><strong>{{=T("Activities:")}}</strong>
-<TABLE><TR id='but_add_activity'><TD>{{=but_add_activity}}</TD></TR></TABLE>
+<TABLE><TR id='but_add_office'><TD><strong>{{=T("Activities:")}}&nbsp</TD><TD></strong>{{=but_add_activity}}</TD></TR></TABLE>
 {{=activity_list}}
 </p>
 <script type="text/javascript">//<![CDATA[
+
 $(function() {
     $("#organisation_select").change(function () { 		
 		//new_url = "Test" //{{=URL(r=request,c="or", f="dashboard")}} 

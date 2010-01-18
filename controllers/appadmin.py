@@ -41,7 +41,7 @@ except:
 
 module='admin'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = admin_menu_options
 
@@ -80,8 +80,8 @@ def eval_in_global_env(text):
 
 
 def get_database(request):
-    if request.args and request.args[0] in databases:
-        return eval_in_global_env(request.args[0])
+    if request.args and request.args(0) in databases:
+        return eval_in_global_env(request.args(0))
     else:
         session.flash = T('invalid request')
         redirect(URL(r=request, f='index'))
@@ -154,12 +154,12 @@ def import_csv(table, file):
 def select():
     import re
     db = get_database(request)
-    dbname = request.args[0]
+    dbname = request.args(0)
     regex = re.compile('(?P<table>\w+)\.(?P<field>\w+)=(?P<value>\d+)')
     if request.vars.query:
         match = regex.match(request.vars.query)
         if match:
-            request.vars.query = '%s.%s.%s==%s' % (request.args[0],
+            request.vars.query = '%s.%s.%s==%s' % (request.args(0),
                     match.group('table'), match.group('field'),
                     match.group('value'))
     else:
@@ -201,7 +201,7 @@ def select():
         except:
             response.flash = T('unable to parse csv file')
     if form.accepts(request.vars, formname=None):
-        regex = re.compile(request.args[0] + '\.(?P<table>\w+)\.id\>0')
+        regex = re.compile(request.args(0) + '\.(?P<table>\w+)\.id\>0')
         match = regex.match(form.vars.query.strip())
         if match:
             table = match.group('table')
@@ -244,7 +244,7 @@ def update():
     (db, table) = get_table(request)
     try:
         id = int(request.args[2])
-        record = db(db[table].id == id).select()[0]
+        record = db(db[table].id == id).select().first()
     except:
         session.flash = T('record does not exist')
         redirect(URL(r=request, f='select', args=request.args[:1],

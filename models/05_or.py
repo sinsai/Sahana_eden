@@ -43,7 +43,7 @@ def sector_represent(sector_ids):
         sectors = [db(db.or_sector.id==id).select()[0].name for id in sector_ids.split('|') if id]
         return ", ".join(sectors)
     else:
-        return [db(db.or_sector.id==sector_ids).select()[0].name]
+        return db(db.or_sector.id==sector_ids).select()[0].name
 
 sector_id = SQLTable(None, 'sector_id',
             Field('sector_id',
@@ -79,6 +79,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('website'),
 				Field('donation_phone'), 
                 source_id,
+                shn_comments_field,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
@@ -148,6 +149,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('vehicle_types'),
                 Field('equipment'),
                 source_id,
+                shn_comments_field,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
@@ -216,6 +218,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('manager_id', db.pr_person),
 				Field('focal_point', 'boolean'),
                 source_id,
+                shn_comments_field,
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
 db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))

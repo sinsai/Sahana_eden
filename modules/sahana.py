@@ -14,9 +14,9 @@ from gluon.validators import *
 from gluon.sqlhtml import *
 from gluon.contrib.markdown import WIKI
 try:
-    from gluon.contrib.gql import SQLTable, SQLStorage
+    from gluon.contrib.gql import Field, SQLTable, SQLStorage
 except ImportError:
-    from gluon.sql import SQLTable, SQLStorage
+    from gluon.sql import Field, SQLTable, SQLStorage
 import traceback
 
 # Copied from Selenium Plone Tool
@@ -350,9 +350,9 @@ class AuthS3(Auth):
             if self.settings.username_field:
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
-                    db.Field('first_name', length=128, default='',
+                    Field('first_name', length=128, default='',
                             label=self.messages.label_first_name),
-                    db.Field('last_name', length=128, default='',
+                    Field('last_name', length=128, default='',
                             label=self.messages.label_last_name),
 
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
@@ -360,13 +360,13 @@ class AuthS3(Auth):
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    db.Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
-                    db.Field('username', length=128, default=''),
-                    db.Field('email', length=512, default='',
+                    Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
+                    Field('username', length=128, default=''),
+                    Field('email', length=512, default='',
                             label=self.messages.label_email),
-                    db.Field(passfield, 'password', length=512,
+                    Field(passfield, 'password', length=512,
                              readable=False, label=self.messages.label_password),
-                    db.Field('registration_key', length=512,
+                    Field('registration_key', length=512,
                             writable=False, readable=False, default='',
                             label=self.messages.label_registration_key),
                     migrate=\
@@ -374,9 +374,9 @@ class AuthS3(Auth):
             else:
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
-                    db.Field('first_name', length=128, default='',
+                    Field('first_name', length=128, default='',
                             label=self.messages.label_first_name),
-                    db.Field('last_name', length=128, default='',
+                    Field('last_name', length=128, default='',
                             label=self.messages.label_last_name),
 
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
@@ -384,13 +384,13 @@ class AuthS3(Auth):
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    db.Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
-                    #db.Field('username', length=128, default=''),
-                    db.Field('email', length=512, default='',
+                    Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
+                    #Field('username', length=128, default=''),
+                    Field('email', length=512, default='',
                             label=self.messages.label_email),
-                    db.Field(passfield, 'password', length=512,
+                    Field(passfield, 'password', length=512,
                              readable=False, label=self.messages.label_password),
-                    db.Field('registration_key', length=512,
+                    Field('registration_key', length=512,
                             writable=False, readable=False, default='',
                             label=self.messages.label_registration_key),
                     migrate=\
@@ -418,9 +418,9 @@ class AuthS3(Auth):
         if not self.settings.table_group:
             self.settings.table_group = db.define_table(
                 self.settings.table_group_name,
-                db.Field('role', length=512, default='',
+                Field('role', length=512, default='',
                         label=self.messages.label_role),
-                db.Field('description', 'text',
+                Field('description', 'text',
                         label=self.messages.label_description),
                 migrate=self.__get_migrate(
                     self.settings.table_group_name, migrate))
@@ -430,9 +430,9 @@ class AuthS3(Auth):
         if not self.settings.table_membership:
             self.settings.table_membership = db.define_table(
                 self.settings.table_membership_name,
-                db.Field('user_id', self.settings.table_user,
+                Field('user_id', self.settings.table_user,
                         label=self.messages.label_user_id),
-                db.Field('group_id', self.settings.table_group,
+                Field('group_id', self.settings.table_group,
                         label=self.messages.label_group_id),
                 migrate=self.__get_migrate(
                     self.settings.table_membership_name, migrate))
@@ -446,13 +446,13 @@ class AuthS3(Auth):
         if not self.settings.table_permission:
             self.settings.table_permission = db.define_table(
                 self.settings.table_permission_name,
-                db.Field('group_id', self.settings.table_group,
+                Field('group_id', self.settings.table_group,
                         label=self.messages.label_group_id),
-                db.Field('name', default='default', length=512,
+                Field('name', default='default', length=512,
                         label=self.messages.label_name),
-                db.Field('table_name', length=512,
+                Field('table_name', length=512,
                         label=self.messages.label_table_name),
-                db.Field('record_id', 'integer',
+                Field('record_id', 'integer',
                         label=self.messages.label_record_id),
                 migrate=self.__get_migrate(
                     self.settings.table_permission_name, migrate))
@@ -466,17 +466,17 @@ class AuthS3(Auth):
         if not self.settings.table_event:
             self.settings.table_event = db.define_table(
                 self.settings.table_event_name,
-                db.Field('time_stamp', 'datetime',
+                Field('time_stamp', 'datetime',
                         default=self.environment.request.now,
                         label=self.messages.label_time_stamp),
-                db.Field('client_ip',
+                Field('client_ip',
                         default=self.environment.request.client,
                         label=self.messages.label_client_ip),
-                db.Field('user_id', self.settings.table_user, default=None,
+                Field('user_id', self.settings.table_user, default=None,
                         label=self.messages.label_user_id),
-                db.Field('origin', default='auth', length=512,
+                Field('origin', default='auth', length=512,
                         label=self.messages.label_origin),
-                db.Field('description', 'text', default='',
+                Field('description', 'text', default='',
                         label=self.messages.label_description),
                 migrate=self.__get_migrate(
                     self.settings.table_event_name, migrate))

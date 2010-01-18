@@ -123,13 +123,13 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("quantity", "double"),
     Field("unit","string"),
     Field("status","integer"),
-    Field("req_id", "integer"),
+    Field("req_id", db.rms_request_aid),
     migrate=migrate)
     
 #Joined resource (component) for request items subfield
 s3xrc.model.add_component(module, resource,
     multiple=True,
-    joinby=dict(rms_request_aid = 'rms_request_aid_id'),
+    joinby=dict(rms_request_aid = 'req_id'),
     deletable=True,
     editable=True,
     list_fields = ['id', 'type', 'quantity', 'unit', 'status'])
@@ -140,7 +140,7 @@ db[table].status.represent = lambda status: status and rms_status_opts[status]
 db[table].status.label = T('Status')
 
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
-db[table].type.represent = lambda opt: opt.split(':')[0]
+db[table].type.represent = lambda opt: rms_type_opts[opt]
 db[table].type.label = T('Aid type')
 
 # ------------------------------ #    
@@ -200,7 +200,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     migrate=migrate)
 
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
-db[table].type.represent = lambda opt: opt.split(':')[0]
+db[table].type.represent = lambda opt: rms_type_opts[opt]
 db[table].type.label = T('Aid type')
 
 # ------------------
@@ -266,4 +266,4 @@ s3.crud_strings[table] = Storage( title_create        = "Add SMS Request",
                                   msg_record_deleted  = "SMS request deleted",
                                   msg_list_empty      = "No SMS requests currently available")
 
-db[table].writeable = False
+#db[table].writeable = False

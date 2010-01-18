@@ -2,7 +2,7 @@
 
 module = 'or'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Dashboard'), False, URL(r=request, f='dashboard')],
@@ -71,6 +71,18 @@ def contact():
 def activity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'activity', listadd=False)	
+    
+    
+def org_sub_table( table , org_id):              
+    fields = []
+    headers = {}
+    for field in db[table]:
+        if field.readable and field.name <> "organisation_id" and field.name <> "admin":
+            headers[field.name] = str(field.label)
+            fields.append(field.name)
+    
+    return crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
+    
 	
 def dashboard():
     #print "args: " 
@@ -79,6 +91,7 @@ def dashboard():
     #print "vars:"
     #print request.vars
     
+    # Get Organization to display from Var or Arg or Default
     if len(request.args) > 0:
         #print "bugger"
         org_id = request.args[0]
@@ -87,7 +100,6 @@ def dashboard():
         except:
             session.error = T('Invalid Organisation ID!')
             redirect(URL(r=request, c='or', f='index'))
-            
     elif "name" in request.vars:
         org_name = request.vars["name"]
         try:
@@ -95,7 +107,6 @@ def dashboard():
         except:
             session.error = T('Invalid Organisation ID!')
             redirect(URL(r=request, c='or', f='index'))
-
     else:
         org_id = 1
         try:
@@ -107,12 +118,13 @@ def dashboard():
     org_list = []	
     for row in db(db.or_organisation.id > 0).select(orderby = db.or_organisation.name):	
         org_list.append(row.name)
-
     organisation_select = SELECT(org_list, id = 'organisation_select', value = org_name)
+    
     org_details = crud.read("or_organisation", org_id)
-    office_list = crud.select("or_office", query = db.or_office.organisation_id == org_id)
-    contact_list = crud.select("or_contact", query = db.or_contact.organisation_id == org_id)
-    activity_list = crud.select("or_activity", query = db.or_activity.organisation_id == org_id)	
+
+    office_list = org_sub_table("or_office", org_id)
+    contact_list = org_sub_table("or_contact", org_id)
+    activity_list = org_sub_table("or_activity", org_id)	
 
     but_add_org = A(T('Add Organization'),
                         _class='thickbox',

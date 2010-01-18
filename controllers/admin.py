@@ -2,7 +2,7 @@
 
 module = 'admin'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 # - can Insert/Delete items from default menus within a function, if required.
 response.menu_options = admin_menu_options
@@ -106,8 +106,8 @@ def theme_apply(form):
         lines = inpfile.readlines()
         inpfile.close()
         # Read settings from Database
-        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
-        default_theme = db(db.admin_theme.id == 1).select()[0]
+        theme = db(db.admin_theme.id == form.vars.theme).select().first()
+        default_theme = db(db.admin_theme.id == 1).select().first()
         if theme.logo:
             logo = theme.logo
         else:
@@ -160,7 +160,7 @@ def theme_check(form):
     # Check which form we're called by
     if form.vars.theme:
         # Called from Settings
-        theme = db(db.admin_theme.id == form.vars.theme).select()[0]
+        theme = db(db.admin_theme.id == form.vars.theme).select().first()
         logo = theme.logo
         footer = theme.footer
     elif form.vars.logo and form.vars.footer:
@@ -301,7 +301,7 @@ def users():
     if len(request.args) == 0:
         session.error = T("Need to specify a role!")
         redirect(URL(r=request, f='group'))
-    group = request.args[0]
+    group = request.args(0)
     table = db.auth_membership
     query = table.group_id==group
     title = str(T('Role')) + ': ' + db.auth_group[group].role
@@ -357,7 +357,7 @@ def group_remove_users():
     if len(request.args) == 0:
         session.error = T("Need to specify a group!")
         redirect(URL(r=request, f='group'))
-    group = request.args[0]
+    group = request.args(0)
     table = db.auth_membership
     for var in request.vars:
         user = var
@@ -374,7 +374,7 @@ def groups():
     if len(request.args) == 0:
         session.error = T("Need to specify a user!")
         redirect(URL(r=request, f='user'))
-    user = request.args[0]
+    user = request.args(0)
     table = db.auth_membership
     query = table.user_id==user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name
@@ -420,7 +420,7 @@ def user_remove_groups():
     if len(request.args) == 0:
         session.error = T("Need to specify a user!")
         redirect(URL(r=request, f='user'))
-    user = request.args[0]
+    user = request.args(0)
     table = db.auth_membership
     for var in request.vars:
         group = var

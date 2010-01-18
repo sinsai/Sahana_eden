@@ -20,13 +20,14 @@ var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
 });
 
 // Controls for Draft Features
-var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
-    onSelect: onFeatureSelect,
-    onUnselect: onFeatureUnselect,
-    multiple: false,
-    clickout: true,
-    isDefault: true
-});
+// - interferes with Feature Layers!
+//var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
+//    onSelect: onFeatureControlSelect,
+//    onUnselect: onFeatureControlUnselect,
+//    multiple: false,
+//    clickout: true,
+//    isDefault: true
+//});
 
 var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer, 
     {onDone: function(feature) {console.log(feature)}
@@ -85,7 +86,7 @@ var areaButton = new GeoExt.Action({
 });
 
 var selectButton = new GeoExt.Action({
-    control: selectControl,
+    //control: selectControl,
     map: map,
     iconCls: 'searchclick',
     tooltip: '{{=T("Query Feature")}}',

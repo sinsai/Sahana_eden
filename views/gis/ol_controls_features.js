@@ -34,8 +34,31 @@ function shn_gis_popup_new_cancel(){
     currentFeature = null;
 }
 
-// Supports toolbar selectControl for Draft Features & Internal FeatureGroup Layers
-function onFeatureSelect(feature){
+// Supports selectControl for All Feature Layers
+function onFeatureUnselect(event) {
+    var feature = event.feature;
+    if (feature.popup) {
+        map.removePopup(feature.popup);
+        feature.popup.destroy();
+        delete feature.popup;
+    }
+}
+
+// Supports Internal FeatureGroup Layers
+function onFeatureSelect(event) {
+    var feature = event.feature;
+    if (feature.popup == null) {
+        popup = feature.makePopup();
+        feature.popup = popup
+        map.addPopup(popup);
+        popup.show();
+    } else {
+        feature.popup.toggle();
+    }
+}
+
+// Supports toolbar selectControl for Draft Features
+function onFeatureControlSelect(feature){
     // Set global for back referencing
     currentFeature = feature;
     if (feature.popup.map == null) {
@@ -45,8 +68,10 @@ function onFeatureSelect(feature){
         feature.popup.toggle();
     }
 }
-function onFeatureUnselect(feature) {
-    feature.popup.hide();
+function onFeatureControlUnselect(feature) {
+    if (feature.popup != null) {
+        feature.popup.hide();
+    }
 }
 
 // Add marker to map (called by ol_layers_features.js)
@@ -85,16 +110,21 @@ function add_Feature_with_popup(layer, feature_id, geom, popupContentHTML, iconU
     var fc_anchor = null;
     var fc_closeBox = true;
     var fc_closeBoxCallback = onPopupClose;
-    var framedCloud = new OpenLayers.Popup.FramedCloud(fc_id, fc_lonlat, fc_size, fc_contentHTML, fc_anchor, fc_closeBox, fc_closeBoxCallback);
-    framedCloud.autoSize = true;
-    framedCloud.minSize = new OpenLayers.Size(460,270);
+    var makePopup = function(){
+        var framedCloud = new OpenLayers.Popup.FramedCloud(fc_id, fc_lonlat, fc_size, fc_contentHTML, fc_anchor, fc_closeBox, fc_closeBoxCallback);
+    	framedCloud.autoSize = true;
+    	framedCloud.minSize = new OpenLayers.Size(460,270);
+    	return framedCloud;
+    }
     // Add Popup
-    featureVec.popup = framedCloud;
+    featureVec.popup = null;
+    featureVec.makePopup = makePopup;
+
     // Add Feature
     layer.addFeatures([featureVec]);
 }
 // Supports add_Feature_with_popup()
 function onPopupClose(evt) {
     //currentFeature.popup.hide();
-    select.unselectAll();
+    popupControl.unselectAll();
 }

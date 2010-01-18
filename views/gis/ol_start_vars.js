@@ -6,6 +6,8 @@ var mapPanel, toolbar;
 var featuresLayer, currentFeature;
 //var pointControl, lineControl, polygonControl;
 //var selectControl, dragControl
+var popupControl;
+var allLayers = new Array();
 
 OpenLayers.ImgPath='/{{=request.application}}/static/img/gis/openlayers/'
 // avoid pink tiles

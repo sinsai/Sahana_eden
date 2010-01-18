@@ -8,14 +8,6 @@
 {{=T("This web portal includes applications that will help you with the following coordination problem areas during the aftermath of the disaster")}}:
 </p>
 <ul>
-  <li><strong>{{=A(T('Situation Map'), _href=URL(r=request, c='gis', f='map_viewing_client'))}}</strong></li>	
-
-{{=T("The situation map provides you with an integrated annotated map of what is happening in Haiti right now. We are pulling maps and events from multiple ")}} {{=A(T('Sources'), _href=URL(r=request, c='gis', f='map_service_catalogue'))}} 
-
-{{=T("Current Incidents shown against the latest high resolution satellite imagery & rapidly-updating OpenStreetMap layers")}}
-<br/>
-{{=A(T('Locations List as GeoRSS'), _href=URL(r=request, c='gis', f='location.georss'))}} | {{=A(T('View Locations in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}
-<br/>
 <li><strong>{{=A(T('Organizations Registry'), _href=URL(r=request, c='or', f='organisation'))}}</strong></li>
 
 {{=T("The Organization Registry provides a searchable database of organizations responding to the disaster, the sector where they are providing services, their activities and their contact details. Please do ")}} {{=A(T('add your organization'), _href=URL(r=request, c='or', f='organisation', args=['create']))}} 
@@ -27,23 +19,39 @@
 
   <li><strong>{{=A(T('Activities Report'), _href=URL(r=request, c='or', f='activity'))}}</strong></li>
   Report of all activities that organizations are engaged in<br/>
+  <li><strong>{{=A(T('Situation Map'), _href=URL(r=request, c='gis', f='map_viewing_client'))}}</strong></li>	
+
+{{=T("The situation map provides you with an integrated annotated map of what is happening in Haiti right now. We are pulling maps and events from multiple ")}} {{=A(T('sources'), _href=URL(r=request, c='gis', f='map_service_catalogue'))}}.
+
+{{=T("Current Incidents shown against the latest high resolution satellite imagery & rapidly-updating OpenStreetMap layers")}} and can be downloaded as <a href="http://wiki.sahana.lk/doku.php/haiti:status#location_feeds" target='_blank'>feeds in many formats</a> for viewing in Google Earth or using on a GPS.
+<br/>
+<!--
+{{=A(T('Locations List as GeoRSS'), _href=URL(r=request, c='gis', f='location.georss'))}} | {{=A(T('View Locations in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}
+-->
  </ul>
 <p>
-<br/>{{=T("To add data to this database, see")}} <a href="http://trac.sahanapy.org/wiki/HaitiDataEntry">{{=T("Data Entry Process")}}</a>
-<br/>{{=T("For live help from the Sahana community, go to")}} <a href="http://www.sahana.lk/chat">{{=T("Sahana Community Chat")}}</a>
+<br/>{{=T("To add data to this database, see")}} <a href="http://trac.sahanapy.org/wiki/HaitiDataEntry" target='_blank'>{{=T("Data Entry Process")}}</a>
+<br/>{{=T("For live help from the Sahana community, go to")}} <a href="http://www.sahana.lk/chat" target='_blank'>{{=T("Sahana Community Chat")}}</a>
 </p>
 <p>
 {{=T("Administrator")}}: {{=admin_name}}
 <br/>{{=T("Email")}} : {{=admin_email}}
 <br/>{{=T("Telephone")}} : {{=admin_tel}}
 </p>
-<p>Please report people status via Google, we will be importing Data from them:</p>
+<p>Please report people status via Google, we can import Data from them:</p>
 <div align='center'>
 <iframe
   src="http://haiticrisis.appspot.com/?small=yes"
   width=350 height=300 frameborder=0
   style="border: dashed 2px #77c">
 </iframe>
+<p>&nbsp;</p>
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="11209645">
+<input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
 </div>
 </div>
 <div style="float: right; width: 49%;">
@@ -79,9 +87,9 @@
         {title: 'Haiti',
          url: 'http://www.haiti.org/index.php?format=feed&type=rss'
         },
-        {title: 'Port-au-Prince',
-         url: 'http://haiti.usembassy.gov/index/latest-news-on-the-crisis-in-haiti.html.rss'
-        },
+        //{title: 'Port-au-Prince',
+        // url: 'http://haiti.usembassy.gov/index/latest-news-on-the-crisis-in-haiti.html.rss'
+        //},
         {title: 'UN',
          url: 'http://topics.nytimes.com/top/reference/timestopics/organizations/u/united_nations/index.html?rss=1'
         },

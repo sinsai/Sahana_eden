@@ -14,9 +14,9 @@ from gluon.validators import *
 from gluon.sqlhtml import *
 from gluon.contrib.markdown import WIKI
 try:
-    from gluon.contrib.gql import SQLTable, SQLStorage
+    from gluon.contrib.gql import Field, SQLTable, SQLStorage
 except ImportError:
-    from gluon.sql import SQLTable, SQLStorage
+    from gluon.sql import Field, SQLTable, SQLStorage
 import traceback
 
 # Copied from Selenium Plone Tool

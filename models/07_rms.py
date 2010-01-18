@@ -284,8 +284,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("updated", "datetime"),
     Field("title", "string"),
     Field("categorization", "string"), 
-    Field("lat", "double"), 
-    Field("long", "double"),
+    location_id,
     Field("smsrec", "integer"), 
     Field("author", "string"),
     Field("category_term", "string"),
@@ -300,8 +299,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     migrate=migrate)
 
 # Relable Field Names:
-db[table]["lat"      ].label = T("Latitude")
-db[table]["long"     ].label = T("Longitude")
 db[table]["sms"      ].label = T("SMS Message")
 db[table]["firstname"].label = T("First Name")
 db[table]["lastname" ].label = T("Last Name")

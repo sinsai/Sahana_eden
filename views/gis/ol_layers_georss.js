@@ -37,23 +37,30 @@
       {{pass}} 
     map.addLayer(georssLayer{{=name}});
     georssLayers.push(georssLayer{{=name}});
+    georssLayer{{=name}}.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
 {{pass}}
 {{if georss_layers:}}
-// Select Control for GeoRSS Layers
-var georsspopupControl = new OpenLayers.Control.SelectFeature(georssLayers, {
-    onSelect: function(feature) {
-        var pos = feature.geometry;
-        if (popup) {
-            map.removePopup(popup);
-        }
-        popup = new OpenLayers.Popup("popup",
-            new OpenLayers.LonLat(pos.x, pos.y),
-            new OpenLayers.Size(254, 320),
-            "<h3>" + feature.attributes.title + "</h3>" + feature.attributes.description,
-            true);
-        map.addPopup(popup);
-    }
-}); 
-map.addControl(georsspopupControl);
-georsspopupControl.activate();
+allLayers = allLayers.concat(georssLayers);
+
+function onGeorssFeatureSelect(event) {
+    var feature = event.feature;
+    var selectedFeature = feature;
+    if ("undefined" === feature.attributes.description) {
+        var popup = new OpenLayers.Popup.FramedCloud("chicken", 
+        feature.geometry.getBounds().getCenterLonLat(),
+        new OpenLayers.Size(200,200),
+        "<h2>" + feature.attributes.title + "</h2>" + feature.attributes.description,
+        null, true, onPopupClose);
+    } else {
+        var popup = new OpenLayers.Popup.FramedCloud("chicken",
+        feature.geometry.getBounds().getCenterLonLat(),
+        new OpenLayers.Size(200,200),
+        "<h2>" + feature.attributes.title + "</h2>",
+        null, true, onPopupClose);
+    };
+    feature.popup = popup;
+    popup.feature = feature;
+    map.addPopup(popup);
+}
+
 {{pass}}

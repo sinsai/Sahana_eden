@@ -7,4 +7,7 @@
 map.addControl(new OpenLayers.Control.ScaleLine());
 map.addControl(new OpenLayers.Control.MousePosition());
 map.addControl(new OpenLayers.Control.Permalink());
-map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));popupControl = new OpenLayers.Control.SelectFeature(allLayers);
+map.addControl(popupControl);
+popupControl.activate();
+

@@ -6,6 +6,8 @@ var mapPanel, toolbar;
 var featuresLayer, currentFeature;
 //var pointControl, lineControl, polygonControl;
 //var selectControl, dragControl
+var popupControl;
+var allLayers = new Array();
 
 // avoid pink tiles
 OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;

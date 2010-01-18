@@ -277,16 +277,18 @@ s3.crud_strings[table] = Storage( title_create        = "Add Pledge of Aid",
 resource = 'sms_request'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
+    Field("sms", "string"),
+    Field("notes", "string"),
+    Field("phone", "string"), 
     Field("ush_id", "string"), 
-    Field("link", "string"),
     Field("updated", "datetime"),
     Field("title", "string"),
-    Field("sms", "string"),
+    Field("categorization", "string"), 
+    Field("lat", "double"), 
+    Field("long", "double"),
     Field("smsrec", "integer"), 
     Field("author", "string"),
-    Field("phone", "string"), 
     Field("category_term", "string"),
-    Field("categorization", "string"), 
     Field("firstname"), 
     Field("lastname"), 
     Field("status", "string"), 
@@ -294,10 +296,25 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("city", "string"), 
     Field("department", "string"), 
     Field("summary", "string"), 
-    Field("notes", "string"),
-    Field("lat", "double"), 
-    Field("long", "double"),
+    Field("link", "string"),
     migrate=migrate)
+
+# Relable Field Names:
+db[table]["lat"      ].label = T("Latitude")
+db[table]["long"     ].label = T("Longitude")
+db[table]["sms"      ].label = T("SMS Message")
+db[table]["firstname"].label = T("First Name")
+db[table]["lastname" ].label = T("Last Name")
+
+
+# Make some fields invisible:
+db[table].ush_id.writable = db[table].ush_id.readable = False
+db[table].author.writable = db[table].author.readable = False
+db[table]["title"        ].writeable = db[table]["title"        ].readable = False
+db[table]["category_term"].writeable = db[table]["category_term"].readable = False
+db[table]["smsrec"       ].writeable = db[table]["smsrec"       ].readable = False
+db[table]["summary"      ].writeable = db[table]["summary"      ].readable = False
+
 
 s3.crud_strings[table] = Storage( title_create        = "Add SMS Request", 
                                   title_display       = "SMS Request Details", 

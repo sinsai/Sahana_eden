@@ -74,7 +74,7 @@ while done == False:
             locid = None
             if locd != {}:
                 # Calculate WKT for display on Map
-                locd['wkt'] = 'POINT(%f %f)' % (locd['lat'], locd['lon'])
+                locd['wkt'] = 'POINT(%f %f)' % (locd['lon'], locd['lat'])
                 locid = db.gis_location.insert(**locd)
 
             rec["location_id"] = locid

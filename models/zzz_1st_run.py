@@ -329,6 +329,10 @@ if empty:
             name = "water",
             image = "gis_marker.image.Water_Supply_Infrastructure_Theme_S1.png"
         )
+        db[table].insert(
+            name = "phone",
+            image = "gis_marker.image.SMS_Message_Phone.png"
+        )
 
     table = 'gis_projection'
     if not db(db[table].id).count():
@@ -435,6 +439,10 @@ if empty:
         db[table].insert(
             name = 'Water',
             marker_id = db(db.gis_marker.name=='water').select()[0].id,
+        )
+        db[table].insert(
+            name = 'SMS',
+            marker_id = db(db.gis_marker.name=='phone').select()[0].id,
         )
 
     table = 'gis_feature_group'

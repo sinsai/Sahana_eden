@@ -1,7 +1,19 @@
-print "Running Script"
+print "Running SMS request parse script"
+
+db.rms_sms_request.truncate()
+db.gis_location.truncate()
+#db.gis_marker.truncate()
+#db.gis_feature_class.truncate()
+
+marker  = db(db.gis_marker.name=="phon1e").select()
+feature = db(db.gis_feature_class.name=="S1MS").select()
+
+marker_id = marker[0]['id'] if len(marker) == 1 else None
+feature_id = feature[0]['id'] if len(feature) == 1 else None
 
 def rss2record(entry):
 	myd = {}
+	locd = {}
 	myd['ush_id'] = entry['id']
 	myd['link'] = entry['link']	 # url for the entry
  	myd['author'] = entry['author']
@@ -28,10 +40,25 @@ def rss2record(entry):
 	for key in entry.keys():
 		if key[-5:] == "point":
 			gpoint = entry[key].split()
-			myd['lat'] = gpoint[0]
-			myd['long'] = gpoint[1]
+			lat = float(gpoint[0])
+			lon = float(gpoint[1])
+			
+			if abs(lat) > 1.0e-8 and abs(lon) > 1.0e-8:
+				locd['lat' ] = lat
+				locd['lon' ] = lon
+				name = "SMS: "
+				if myd['categorization'] != "":
+					name += myd['categorization']
+				else: 
+					name += "No category"
 
-	return myd
+				locd['name'] = name
+				
+				if marker_id is not None:
+					locd['marker_id'] = marker_id
+				if feature_class_id is not None:
+					locd['feature_class_id'] = feature_id
+	return myd, locd
 
 import datetime
 import gluon.contrib.feedparser as feedparser
@@ -46,8 +73,14 @@ while done == False:
 	d = feedparser.parse(url)
 
 	for entry in d.entries:
-		rec = rss2record(entry)
+		rec, locd = rss2record(entry)
 		if db(db.rms_sms_request.ush_id == rec['ush_id']).count() == 0:
+
+			locid = None
+			if locd != {}:
+				locid = db.gis_location.insert(**locd)
+
+			rec["location_id"] = locid
 			db.rms_sms_request.insert(**rec)
 		else:
 			done = True

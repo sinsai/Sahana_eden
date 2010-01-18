@@ -12,6 +12,7 @@ response.menu_options = [
     ]],
     [T('Selected Project'), False, URL(r=request, f='project', args='read'),[
         [T('Positions'), False, URL(r=request, f='project', args='position')],
+        [T('Tasks'), False, URL(r=request, f='project', args='task')],
     ]],
     [T('Select Person'), False,  URL(r=request, f='person', args=['search_simple'],
                                      vars={"_next":URL(r=request, f='person', args=['[id]','volunteer'])})],
@@ -42,7 +43,7 @@ def index():
     return dict(module_name=module_name)
 
 def project():
-    return shn_rest_controller( module , 'project')
+    return shn_rest_controller( module , 'project', pheader=shn_vol_project_pheader)
 
 # Main controller functions
 def person():

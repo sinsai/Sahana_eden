@@ -176,7 +176,7 @@ db[table].special_needs.label = T('Special needs')
 
 # Representation function
 def shn_vol_volunteer_represent(id):
-    person = db((db.pr_volunteer.id==id)&(db.pr_person.id==db.pr_volunteer.person_id)).select(
+    person = db((db.vol_volunteer.id==id)&(db.pr_person.id==db.vol_volunteer.person_id)).select(
                 db.pr_person.first_name,
                 db.pr_person.middle_name,
                 db.pr_person.last_name,
@@ -203,10 +203,10 @@ msg_list_empty = T('No volunteer information registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Reusable field
-vol_volunteer_id = db.Table(None, 'vol_project_id',
-                            Field('vol_project_id', db.vol_volunteer,
+vol_volunteer_id = db.Table(None, 'vol_volunteer_id',
+                            Field('vol_volunteer_id', db.vol_volunteer,
                             requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_volunteer.id', shn_vol_volunteer_represent)),
-                            represent = lambda id: lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
+                            represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
                             comment = DIV(A(s3.crud_strings.vol_volunteer.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='volunteer', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_volunteer.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Volunteer|Add new volunteer)."))),
                             ondelete = 'RESTRICT'
                            ))
@@ -304,6 +304,49 @@ msg_record_deleted = T('Skills deleted')
 msg_list_empty = T('No skills currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+
+# -----------------------------------------------------------------------------
+# vol_hours:
+#   documents the hours a volunteer has a position
+#
+#resource = 'hours'
+#table = module + '_' + resource
+#db.define_table(table,
+#                person_id,
+#                vol_position_id,
+#                Field('shift_start','datetime',label=T('shift_start'), notnull=True),
+#                Field('shift_end','datetime',label=T('shift_end'), notnull=True),
+#                migrate=migrate)
+
+#db[table].shift_start.requires=[IS_NOT_EMPTY(),
+#                                      IS_DATETIME]
+#db[table].shift_end.requires=[IS_NOT_EMPTY(),
+#                                      IS_DATETIME]
+
+# -----------------------------------------------------------------------------
+# vol_mailbox
+#
+#resource = 'mailbox'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#                person_id,
+#                Field('message_id','integer', notnull=True,label=T('message_id'), default=0),
+#    db.Field('box','integer', notnull=True,label=T('box'), default=0),
+#    db.Field('checked','integer',label=T('checked'), default=0),
+#    migrate=migrate)
+
+
+# -----------------------------------------------------------------------------
+# vol_message
+#   a text message
+#
+#resource = 'message'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#                Field('message','text', label=T('message')),
+#                Field('time','datetime', label=T('time'),notnull=True, default=request.now),
+#                migrate=migrate)
+
 # -----------------------------------------------------------------------------
 # courier
 #resource = 'courier'
@@ -320,68 +363,74 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #db[table].from_id.requires=IS_NOT_EMPTY()
 #db[table].message_id.requires = IS_NOT_NULL()
 
-
 # -----------------------------------------------------------------------------
-# vol_hours:
-#   documents the hours a volunteer has a position
+# vol_task:
+#   a task within a project
 #
-resource = 'hours'
+vol_task_status_opts = {
+    1: T('new'),
+    2: T('assigned'),
+    3: T('completed'),
+    4: T('postponed'),
+    5: T('feedback'),
+    6: T('cancelled'),
+    99: T('unspecified')
+}
+
+vol_task_priority_opts = {
+    4: T('normal'),
+    1: T('immediately'),
+    2: T('urgent'),
+    3: T('high'),
+    5: T('low')
+}
+
+resource = 'task'
 table = module + '_' + resource
-db.define_table(table,
-                person_id,
-                vol_position_id,
-                Field('shift_start','datetime',label=T('shift_start'), notnull=True),
-                Field('shift_end','datetime',label=T('shift_end'), notnull=True),
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                vol_project_id,
+                Field('priority', 'integer',
+                      requires = IS_IN_SET(vol_task_priority_opts),
+                      default = 4,
+                      label = T('Priority'),
+                      represent = lambda opt: opt and vol_task_priority_opts[opt]),
+                Field('subject', length=80),
+                Field('description', 'text'),
+                vol_volunteer_id,
+                Field('status', 'integer',
+                      requires = IS_IN_SET(vol_task_status_opts),
+                      default = 1,
+                      label = T('Status'),
+                      represent = lambda opt: opt and vol_task_status_opts[opt]),
                 migrate=migrate)
 
-db[table].shift_start.requires=[IS_NOT_EMPTY(),
-                                      IS_DATETIME]
-db[table].shift_end.requires=[IS_NOT_EMPTY(),
-                                      IS_DATETIME]
+# Field labels
+db[table].vol_volunteer_id.label = T('Assigned to')
 
-# -----------------------------------------------------------------------------
-# vol_mailbox
-#resource = 'mailbox'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
-    #db.Field('p_uuid','string', length=60, notnull=True, default=' '),
-#    db.Field('message_id','integer', notnull=True,label=T('message_id'), default=0),
-#    db.Field('box','integer', notnull=True,label=T('box'), default=0),
-#    db.Field('checked','integer',label=T('checked'), default=0),
-#    migrate=migrate)
+# Component
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(vol_project='vol_project_id'),
+    deletable=True,
+    editable=True,
+    main='subject', extra='description',
+    list_fields = ['id', 'priority', 'subject', 'vol_volunteer_id', 'status'])
 
-
-# -----------------------------------------------------------------------------
-# vol_message
-#resource = 'message'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
-#    db.Field('message_id','integer', notnull=True),
-#    db.Field('message','text',label=T('message')),
-#    db.Field('time','datetime', label=T('time'),notnull=True, default=request.now),
-#    migrate=migrate)
-
-
-# -----------------------------------------------------------------------------
-# vol_access_classification_to_request
-#resource = 'access_classification_to_request'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
-#    db.Field('request_id','integer', length=11, notnull=True, default=0),
-#    db.Field('table_name','string', length=200, notnull=True, default=' ',label=T('table_name')),
-#    db.Field('crud','string', length=4, notnull=True, default=' ',label=T('crud')),
-#    migrate=migrate)
-
-
-# -----------------------------------------------------------------------------
-# vol_access_constraint
-#resource = 'access_constraint'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp,
-#    db.Field('constraint_id','string', length=30, notnull=True, default=' ',label=T('constraint_id')),
-#    db.Field('description','string', length=200,label=T('description')),
-#    migrate=migrate)
-
+# CRUD Strings
+title_create = T('Add Task')
+title_display = T('Task Details')
+title_list = T('List Tasks')
+title_update = T('Edit Task')
+title_search = T('Search Tasks')
+subtitle_create = T('Add New Task')
+subtitle_list = T('Tasks')
+label_list_button = T('List Tasks')
+label_create_button = T('Add Task')
+msg_record_created = T('Task added')
+msg_record_modified = T('Task updated')
+msg_record_deleted = T('Task deleted')
+msg_list_empty = T('No tasks currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # -----------------------------------------------------------------------------
 # vol_access_request
@@ -395,6 +444,15 @@ db[table].shift_end.requires=[IS_NOT_EMPTY(),
 #    migrate=migrate)
 
 # -----------------------------------------------------------------------------
+# vol_access_constraint
+#resource = 'access_constraint'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp,
+#    db.Field('constraint_id','string', length=30, notnull=True, default=' ',label=T('constraint_id')),
+#    db.Field('description','string', length=200,label=T('description')),
+#    migrate=migrate)
+
+# -----------------------------------------------------------------------------
 # vol_access_constraint_to_request
 #resource = 'access_constraint_to_request'
 #table = module + '_' + resource
@@ -403,6 +461,20 @@ db[table].shift_end.requires=[IS_NOT_EMPTY(),
 #    db.Field('constraint_id',db.vol_access_constraint),
 #    migrate=migrate)
 
+# -----------------------------------------------------------------------------
+# vol_access_classification_to_request
+#resource = 'access_classification_to_request'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp,
+#    db.Field('request_id','integer', length=11, notnull=True, default=0),
+#    db.Field('table_name','string', length=200, notnull=True, default=' ',label=T('table_name')),
+#    db.Field('crud','string', length=4, notnull=True, default=' ',label=T('crud')),
+#    migrate=migrate)
+
+# -----------------------------------------------------------------------------
+# shn_vol_project_search_location:
+#   form function to search projects by location
+#
 def shn_vol_project_search_location(xrequest, onvalidation=None, onaccept=None):
 
     if not shn_has_permission('read', db.vol_project):
@@ -486,3 +558,47 @@ def shn_vol_project_search_location(xrequest, onvalidation=None, onaccept=None):
 
 # Plug into REST controller
 s3xrc.model.set_method(module, 'project', method='search_location', action=shn_vol_project_search_location )
+
+# -----------------------------------------------------------------------------
+# shn_vol_project_search_location:
+#   form function to search projects by location
+#
+def shn_vol_project_pheader(resource, record_id, representation, next=None, same=None):
+
+    if resource == "project":
+        if representation == "html":
+
+            if next:
+                _next = next
+            else:
+                _next = URL(r=request, f=resource, args=['read'])
+
+            if same:
+                _same = same
+            else:
+                _same = URL(r=request, f=resource, args=['read', '[id]'])
+
+            project = db.vol_project[record_id]
+            if project:
+                pheader = TABLE(
+                    TR(
+                        TH(T('Name: ')),
+                        project.name,
+                        TH(A(T('Clear Selection'),
+                            _href=URL(r=request, f='project', args='clear', vars={'_next': _same})))
+                        ),
+                    TR(
+                        TH(T('Location: ')),
+                        location_id.location_id.represent(project.location_id),
+                        TH(""),
+                        ),
+                    TR(
+                        TH(T('Status: ')),
+                        "%s" % vol_project_status_opts[project.status],
+                        TH(A(T('Edit Project'),
+                            _href=URL(r=request, f='project', args=['update', record_id], vars={'_next': _next})))
+                        )
+                )
+                return pheader
+
+    return None

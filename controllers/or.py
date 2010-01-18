@@ -76,10 +76,10 @@ def activity():
 def org_sub_table( table , org_id):              
     fields = []
     headers = {}
-    for Field in db[table]:
-        if Field.readable and Field.name <> "organisation_id":        
-            headers[Field.name] = str(Field.label)
-            fields.append(Field.name)   
+    for field in db[table]:
+        if field.readable and field.name <> "organisation_id" and field.name <> "admin":
+            headers[field.name] = str(field.label)
+            fields.append(field.name)
     
     return crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
     

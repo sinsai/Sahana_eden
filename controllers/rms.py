@@ -5,12 +5,12 @@ module = 'rms'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Request Aid'), False, URL(r=request, f='request_aid'),[
-        [T('Request Aid'), False, URL(r=request, f='request_aid', args='create')],
-    ]],
-    [T('Pledge Aid'), False, URL(r=request, f='pledge_aid'),[
-        [T('Pledge Aid'), False, URL(r=request, f='pledge_aid', args='create')],
-    ]],
+    #[T('Request Aid'), False, URL(r=request, f='request_aid'),[
+    #    [T('Request Aid'), False, URL(r=request, f='request_aid', args='create')],
+    #]],
+    #[T('Pledge Aid'), False, URL(r=request, f='pledge_aid'),[
+    #    [T('Pledge Aid'), False, URL(r=request, f='pledge_aid', args='create')],
+    #]],
     [T('SMS Request'), False, URL(r=request, f='sms_request'),[
         [T('SMS Request'), False, URL(r=request, f='sms_request', args='create')],
     ]]

@@ -1,12 +1,7 @@
 print "Running SMS request parse script"
 
-db.rms_sms_request.truncate()
-db.gis_location.truncate()
-#db.gis_marker.truncate()
-#db.gis_feature_class.truncate()
-
-marker  = db(db.gis_marker.name=="phon1e").select()
-feature = db(db.gis_feature_class.name=="S1MS").select()
+marker  = db(db.gis_marker.name=="phone").select()
+feature = db(db.gis_feature_class.name=="SMS").select()
 
 marker_id = marker[0]['id'] if len(marker) == 1 else None
 feature_id = feature[0]['id'] if len(feature) == 1 else None

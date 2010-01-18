@@ -20,6 +20,7 @@ response.menu_options = [
         [T('Skills'), False, URL(r=request, f='person', args='skills')],
         [T('Address'), False, URL(r=request, f='person', args='address')],
         [T('Contact Info'), False, URL(r=request, f='person', args='contact')],
+        [T('Identity'), False, URL(r=request, f='person', args='identity')],
     ]],
 #        [T('Positions'), False, URL(r=request, f='position'),[
 #            [T('Add Position'), False, URL(r=request, f='position', args='create')],

@@ -33,14 +33,29 @@ def rss2record(entry):
 
 	return myd
 
-# d.entries[0]['updated_parsed']
-
 import datetime
 import gluon.contrib.feedparser as feedparser
-d = feedparser.parse("http://75.101.195.137/rss.php?key=yqNm7FHSwfdRb8nC2653")
-for entry in d.entries:
-	rec = rss2record(entry)
-        if db(db.rms_sms_request.ush_id == rec['ush_id']).count() == 0:
-		db.rms_sms_request.insert(**rec)
+url_base = "http://75.101.195.137/rss.php?key=yqNm7FHSwfdRb8nC2653"
+
+N = 50
+start = 0
+done = False
+while done == False:
+
+	url = url_base + "&limit=" + str(start) + "," + str(N)
+	d = feedparser.parse(url)
+
+	for entry in d.entries:
+		rec = rss2record(entry)
+		if db(db.rms_sms_request.ush_id == rec['ush_id']).count() == 0:
+			db.rms_sms_request.insert(**rec)
+		else:
+			done = True
+			break
+
+	start = start + N
+
+	if len(d["entries"]) == 0:
+		done = True
 
 db.commit()

@@ -40,4 +40,4 @@ def pledge_aid():
 @service.amfrpc
 def sms_request():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'sms_request', editable=False)
+    return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)

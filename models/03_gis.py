@@ -153,7 +153,7 @@ location_id = SQLTable(None, 'location_id',
 def shn_gis_location_represent(record_id):
     if record_id:
         try:
-            location_name = db(db.gis_location.id==id).select()[0].name
+            location_name = db(db.gis_location.id == record_id).select()[0].name
             return A(location_name, _href='#', _onclick='viewMap(' + str(id) +');return false')
         except:
             return 'Invalid'

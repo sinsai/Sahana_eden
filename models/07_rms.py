@@ -206,7 +206,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("updated", "string"), 
     Field("link", "string"),
     Field("tweet", "string"),
-    Field("guid", "string"), 
+    Field("ttt_id", "string"), 
     migrate=migrate)
 
 db[table].pledge.requires = IS_NULL_OR(IS_IN_SET(rms_status_opts))
@@ -215,13 +215,11 @@ db[table].pledge.label = T('Pledge Status')
 
 # Relabel Field Names:
 db[table].tweet.label = T("Tweet")
-#db[table]["firstname"].label = T("First Name")
-#db[table]["lastname" ].label = T("Last Name")
 db[table][person_id].label = T("Pledge Name")
 db[table][organisation_id].label = T("Pledge Organisation")
 
 # Make some fields invisible:
-db[table].guid.writable = db[table].guid.readable = False
+db[table].ttt_id.writable = db[table].ttt_id.readable = False
 
 # make all fields read only
 db[table].author.writable = False

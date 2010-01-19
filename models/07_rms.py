@@ -90,7 +90,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("updated", "datetime"),
     Field("title", "string"),
     Field("categorization", "string"), 
-    Field("location","string"),
+    location_id,
     Field("status", "string"), 
     Field("smsrec", "integer"), 
     Field("author", "string"),
@@ -137,7 +137,7 @@ db[table]["status"        ].writable = False
 db[table]["address"       ].writable = False
 db[table]["city"          ].writable = False
 db[table]["department"    ].writable = False
-db[table]["location"      ].writable = False
+db[table][location_id     ].writable = False
 
 db[table]["phone"      ].writable = False
 db[table]["firstname"  ].writable = False

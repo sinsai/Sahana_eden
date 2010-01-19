@@ -152,7 +152,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 shn_comments_field,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))

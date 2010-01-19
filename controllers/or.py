@@ -183,7 +183,7 @@ def dashboard():
 
     but_edit_org = A(T('Edit Organization'),
                         _href=URL(r=request, 
-                            c='or', f='organisation', args=['update', organisation_id]))	
+                            c='or', f='organisation', args=['update', org_id]))	
 
     but_add_office = A(T('Add Office'),
                         _class='thickbox',

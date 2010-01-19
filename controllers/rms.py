@@ -26,14 +26,14 @@ def index():
 @service.amfrpc
 def request_aid():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'request_aid', pheader=shn_rms_pheader)
+    return shn_rest_controller(module, 'request_aid', pheader=shn_rms_req_pheader)
 
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
 def pledge_aid():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'pledge_aid')
+    return shn_rest_controller(module, 'pledge_aid', pheader=shn_rms_plg_pheader)
 
 @service.jsonrpc
 @service.xmlrpc
@@ -43,7 +43,7 @@ def sms_request():
     return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)
     
     
-def shn_rms_pheader(resource, record_id, representation, next=None, same=None):
+def shn_rms_req_pheader(resource, record_id, representation, next=None, same=None):
 
     if representation == "html":
 
@@ -75,6 +75,44 @@ def shn_rms_pheader(resource, record_id, representation, next=None, same=None):
                 request_aid.person_id,
                 TH(T('Location: ')),
                 request_aid.location_id,
+            ),
+        )
+        return pheader
+
+    else:
+        return None
+        
+        
+def shn_rms_plg_pheader(resource, record_id, representation, next=None, same=None):
+
+    if representation == "html":
+
+        if next:
+            _next = next
+        else:
+            _next = URL(r=request, f=resource, args=['read'])
+
+        if same:
+            _same = same
+        else:
+            _same = URL(r=request, f=resource, args=['read', '[id]'])
+
+        pledge_aid = db(db.rms_pledge_aid.id == record_id).select().first()
+
+        pheader = TABLE(
+            TR(
+                TH(T('Pledge Aid: ')),
+                pledge_aid.id,
+                TH(T('Priority: ')),
+                pledge_aid.priority,
+                ),
+            TR(
+                TH(T('Organization: ')),
+                pledge_aid.organisation_id,
+                TH(T('Person: ')),
+                pledge_aid.person_id,
+                TH(T('Location: ')),
+                pledge_aid.location_id,
             ),
         )
         return pheader

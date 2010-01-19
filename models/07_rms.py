@@ -191,13 +191,21 @@ s3.crud_strings[table] = Storage( title_create        = "Add Pledge of Aid",
 # ------------------
 # Create the Pledge Items Database
                              
-resource = 'pledge_items'
+resource = 'pledge_item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("type", "integer"),
     Field("quantity", "double"),
     Field("unit","string"),
+    Field("pledge_id", db.rms_pledge_aid),
     migrate=migrate)
+       
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(rms_pledge_aid = 'pledge_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'type', 'quantity', 'unit'])
 
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
 db[table].type.represent = lambda opt: rms_type_opts[opt]

@@ -43,7 +43,8 @@ def test():
 @service.amfrpc
 def sms_request():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)
+    return shn_rest_controller(module, 'sms_request', editable=False, listadd=False    
+    )
 
 #def shn_rms_req_pheader(resource, record_id, representation, next=None, same=None):
 #    if representation == "html":

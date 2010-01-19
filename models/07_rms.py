@@ -90,7 +90,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("updated", "datetime"),
     Field("title", "string"),
     Field("categorization", "string"), 
-    location_id,
+    Field("location","string"),
     Field("status", "string"), 
     Field("smsrec", "integer"), 
     Field("author", "string"),
@@ -121,19 +121,34 @@ db[table][organisation_id].label = T("Pledge Organisation")
 # Make some fields invisible:
 db[table].ush_id.writable = db[table].ush_id.readable = False
 db[table].author.writable = db[table].author.readable = False
-db[table]["title"        ].writeable = db[table]["title"        ].readable = False
-db[table]["category_term"].writeable = db[table]["category_term"].readable = False
-db[table]["smsrec"       ].writeable = db[table]["smsrec"       ].readable = False
-db[table]["summary"      ].writeable = db[table]["summary"      ].readable = False
-db[table]["link"         ].writeable = db[table]["link"         ].readable = False
+db[table]["title"        ].writable = db[table]["title"        ].readable = False
+db[table]["category_term"].writable = db[table]["category_term"].readable = False
+db[table]["smsrec"       ].writable = db[table]["smsrec"       ].readable = False
+db[table]["summary"      ].writable = db[table]["summary"      ].readable = False
+db[table]["link"         ].writable = db[table]["link"         ].readable = False
 
+# make all fields read only
+db[table]["sms"           ].writable = False
+db[table]["notes"         ].writable = False
+db[table]["phone"         ].writable = False
+db[table]["updated"       ].writable = False
+db[table]["categorization"].writable = False
+db[table]["status"        ].writable = False
+db[table]["address"       ].writable = False
+db[table]["city"          ].writable = False
+db[table]["department"    ].writable = False
+db[table]["location"      ].writable = False
+
+db[table]["phone"      ].writable = False
+db[table]["firstname"  ].writable = False
+db[table]["lastname"   ].writable = False
 
 if not auth.is_logged_in():
-    db[table]["phone"    ].writeable = db[table]["phone"    ].readable = False
-    db[table]["firstname"].writeable = db[table]["firstname"].readable = False
-    db[table]["lastname" ].writeable = db[table]["lastname" ].readable = False
-    db[table][person_id  ].writeable = db[table][person_id  ].readable = False
-    db[table][organisation_id].writeable = db[table][organisation_id].readable = False
+    db[table]["phone"    ].readable = False
+    db[table]["firstname"].readable = False
+    db[table]["lastname" ].readable = False
+    db[table][person_id  ].writable = db[table][person_id  ].readable = False
+    db[table][organisation_id].writable = db[table][organisation_id].readable = False
 
 
 s3.crud_strings[table] = Storage( title_create        = "Add SMS Request", 

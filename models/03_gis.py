@@ -144,12 +144,22 @@ location_id = SQLTable(None, 'location_id',
             Field('location_id', db.gis_location,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                 #represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
-                represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
+                represent = lambda id: shn_gis_location_represent(id),
                 label = T('Location'),
                 comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
 
+def shn_gis_location_represent(record_id):
+    if record_id:
+        try:
+            location_name = db(db.gis_location.id==id).select()[0].name
+            return A(location_name, _href='#', _onclick='viewMap(' + str(id) +');return false')
+        except:
+            return 'Invalid'
+    else:
+        return None
+                
 # Feature Groups
 # Used to select a set of Features for either Display or Export
 resource = 'feature_group'

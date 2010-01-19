@@ -94,7 +94,7 @@ def activity_table_linkto_update(field):
     return URL(r=request, f = "activity", args=['update',field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})                 
                
-def org_sub_table( table , org_id):              
+def org_sub_list( table , org_id):              
     fields = []
     headers = {}
 
@@ -122,28 +122,19 @@ def org_sub_table( table , org_id):
         linkto = table_linkto[table]           
            
     query = db[table].organisation_id == org_id
-
-    return crud.select(table, query = query, fields = fields, headers = headers, linkto = linkto, truncate=48, _id = table + '_list', _class="display")
-
-    for field in db[table]:
-        if field.readable and field.name <> "organisation_id" and field.name <> "admin":
-            headers[field.name] = str(field.label)
-            fields.append(field.name)
     
-    return crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
-
+    list =  crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
     
+    #Required so that there is a table with an ID for the refresh after add
+    if list == None:
+        list = TABLE("None", _id = table + '_list')
+
+    return list
 	
 def dashboard():
-    #print "args: " 
-    #print request.args
-    #print "len a:" + str(len(request.args))
-    #print "vars:"
-    #print request.vars
     
     # Get Organization to display from Var or Arg or Default
     if len(request.args) > 0:
-        #print "bugger"
         org_id = request.args[0]
         try:
             org_name = db(db.or_organisation.id == org_id).select(db.or_organisation.name)[0]["name"]
@@ -172,9 +163,9 @@ def dashboard():
     
     org_details = crud.read("or_organisation", org_id)
 
-    office_list = org_sub_table("or_office", org_id)
-    contact_list = org_sub_table("or_contact", org_id)
-    activity_list = org_sub_table("or_activity", org_id)	
+    office_list = org_sub_list("or_office", org_id)
+    contact_list = org_sub_list("or_contact", org_id)
+    activity_list = org_sub_list("or_activity", org_id)	
 
     but_add_org = A(T('Add Organization'),
                         _class='thickbox',
@@ -211,6 +202,11 @@ def dashboard():
     session.s3.organisation_id = org_id
 
     return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, contact_list = contact_list, activity_list = activity_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_contact = but_add_contact, but_add_activity = but_add_activity)
+
+def who_what_where_when():
+    activity_list = crud.select("or_activity", query = db.or_activity.id > 0)
+    print activity_list
+    return dict(activity_list = activity_list)
 	
 def shn_office_pheader(resource, record_id, representation, next=None, same=None):
 

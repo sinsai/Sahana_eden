@@ -10,15 +10,15 @@
 <ul>
 <li><strong>{{=A(T('Organizations Registry'), _href=URL(r=request, c='or', f='organisation'))}}</strong></li>
 
-{{=T("The Organization Registry provides a searchable database of organizations responding to the disaster, the sector where they are providing services, their activities and their contact details. Please do ")}} {{=A(T('add your organization'), _href=URL(r=request, c='or', f='organisation', args=['create']))}} 
+{{=T("The Organization Registry provides a searchable database of organizations responding to the disaster, the sector where they are providing services, their projects and their contact details. Please do ")}} {{=A(T('add your organization'), _href=URL(r=request, c='or', f='organisation', args=['create']))}} 
   <br/>
 
   <!--
  <li><strong>{{=A(T('Organization Dashboard'), _href=URL(r=request, c='or', f='dashboard'))}}</strong></li>	
-  View, edit and add Organizations and their Offices, Contacts and Activities<br/> -->
+  View, edit and add Organizations and their Offices, Contacts and Projects<br/> -->
 
-  <li><strong>{{=A(T('Activities Report'), _href=URL(r=request, c='or', f='activity'))}}</strong></li>
-  Report of all activities that organizations are engaged in<br/>
+  <li><strong>{{=A(T('Projects Report'), _href=URL(r=request, c='or', f='project'))}}</strong></li>
+  Report of all projects that organizations are engaged in<br/>
   <li><strong>{{=A(T('Situation Map'), _href=URL(r=request, c='gis', f='map_viewing_client'))}}</strong></li>	
 
 {{=T("The situation map provides you with an integrated annotated map of what is happening in Haiti right now. We are pulling maps and events from multiple ")}} {{=A(T('sources'), _href=URL(r=request, c='gis', f='map_service_catalogue'))}}.

@@ -197,16 +197,16 @@ toolbar.add(lengthButton);
 toolbar.add(areaButton);
 toolbar.addSeparator();
 // Draw Controls
-toolbar.add(selectButton);
-toolbar.add(pointButton);
-toolbar.add(lineButton);
-toolbar.add(polygonButton);
-toolbar.add(dragButton);
-toolbar.add(resizeButton);
-toolbar.add(rotateButton);
-toolbar.add(modifyButton);
-toolbar.add(removeButton);
-toolbar.addSeparator();
+//toolbar.add(selectButton);
+//toolbar.add(pointButton);
+//toolbar.add(lineButton);
+//toolbar.add(polygonButton);
+//toolbar.add(dragButton);
+//toolbar.add(resizeButton);
+//toolbar.add(rotateButton);
+//toolbar.add(modifyButton);
+//toolbar.add(removeButton);
+//toolbar.addSeparator();
 // Navigation
 map.addControl(nav);
 nav.activate();

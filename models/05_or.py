@@ -266,7 +266,39 @@ msg_record_deleted = T('Contact deleted')
 msg_list_empty = T('No Contacts currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Activity
+# Projects
+# The projects whihc each orgnaization is engaged in 
+resource = 'Project'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status,
+				organisation_id,
+				location_id,
+				sector_id,
+				Field('description'),
+				Field('beneficiaries', 'integer'),
+				Field('start_date', 'date'),
+				Field('end_date', 'date'),
+				Field('funded', 'boolean'),
+                Field('budgeted_cost', 'double'),
+                migrate=migrate)
+db[table].budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))				
+title_create = T('Add Project')
+title_display = T('Project Details')
+title_list = T('Projects Report')
+title_update = T('Edit Project')
+title_search = T('Search Projects')
+subtitle_create = T('Add New Project')
+subtitle_list = T('Projects')
+label_list_button = T('List Projects')
+label_create_button = T('Add Project')
+msg_record_created = T('Project added')
+msg_record_modified = T('Project updated')
+msg_record_deleted = T('Project deleted')
+msg_list_empty = T('No Projects currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)				
+
+
+# Activity - This table is now redundant - USE Projects now!! Only for backwards compatable
 # The activities whihc each orgnaization is engaged in 
 resource = 'activity'
 table = module + '_' + resource

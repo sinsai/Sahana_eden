@@ -84,6 +84,7 @@ db.define_table(table, timestamp, uuidstamp,
 				marker_id,
 				Field('map_height', 'integer', notnull=True),
 				Field('map_width', 'integer', notnull=True),
+                Field('zoom_levels', 'integer', notnull=True),
                 migrate=migrate)
 
 # GIS Feature Classes

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 module = 'gis'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
@@ -101,7 +99,7 @@ def config():
     db[table].lon.requires = IS_LON()
     db[table].lon.label = T('Longitude')
     db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-    db[table].zoom.requires = IS_INT_IN_RANGE(0,19)
+    db[table].zoom.requires = IS_INT_IN_RANGE(0, 19)
     db[table].zoom.label = T('Zoom')
     db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
     db[table].marker_id.label = T('Default Marker')
@@ -111,7 +109,9 @@ def config():
     db[table].map_width.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
     db[table].map_width.label = T('Map Width')
     db[table].map_width.comment = SPAN("*", _class="req")
-
+    db[table].zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
+    db[table].zoom_levels.label = T('Zoom Levels')
+    
     # CRUD Strings
     title_create = T('Add Config')
     title_display = T('Config Details')
@@ -1160,6 +1160,7 @@ def map_viewing_client():
     config = db(db.gis_config.id==1).select().first()
     width = config.map_width
     height = config.map_height
+    numZoomLevels = config.zoom_levels
     _projection = config.projection_id
     projection = db(db.gis_projection.id==_projection).select().first().epsg
     # Support bookmarks (such as from the control)
@@ -1183,7 +1184,7 @@ def map_viewing_client():
     symbology = config.symbology_id
 
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
 
     # Layers
     baselayers = layers()
@@ -1289,6 +1290,7 @@ def display_feature():
     config = db(db.gis_config.id==1).select().first()
     width = config.map_width
     height = config.map_height
+    numZoomLevels = config.zoom_levels
     _projection = config.projection_id
     projection = db(db.gis_projection.id==_projection).select().first().epsg
     # Support bookmarks (such as from the control)
@@ -1312,7 +1314,7 @@ def display_feature():
     symbology = config.symbology_id
 
     # Add the config to the Return
-    output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
+    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
 
     # Feature details
     try:
@@ -1457,6 +1459,7 @@ def display_features():
     config = db(db.gis_config.id==1).select().first()
     width = config.map_width
     height = config.map_height
+    numZoomLevels = config.zoom_levels
     _projection = config.projection_id
     projection = db(db.gis_projection.id==_projection).select().first().epsg
     # Support bookmarks (such as from the control)
@@ -1480,7 +1483,7 @@ def display_features():
     symbology = config.symbology_id
 
     # Add the config to the Return
-    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
 
     # Feature details
     for feature in features:

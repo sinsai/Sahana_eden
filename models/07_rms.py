@@ -2,6 +2,10 @@
 
 module = 'rms'
 
+# this is code is for a simple flat table linked directly to sms_request
+# relational code in development
+
+
 # Settings
 resource = 'setting'
 table = module + '_' + resource
@@ -12,6 +16,7 @@ db.define_table(table,
  
 # -------------------------------
 # Load lists/dictionaries for drop down menus
+
 
 rms_request_aid_type_opts = [ # this list is from the Ushahidi RSS (not used here)
     T('1: Emergency'),
@@ -69,168 +74,29 @@ rms_type_opts = {
     6:T('Report'),
     }
 
-
-# ------------------
-# Create request table
-
-resource = 'request_aid'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-    person_id,
-    organisation_id,
-    location_id,
-    Field("priority", "integer"),
-    Field("comment","text"),
-    Field("pubdate","datetime"),
-    Field("verified","boolean"),
-    Field("numserved", "integer"),
-    migrate=migrate)
-
-# Automatically fill in the posting time:
-db[table].pubdate.default  = request.now
-db[table].pubdate.writable = False
-db[table].pubdate.label    = T("Date/Time")
-
-# Hide the verified field:
-db[table].verified.readable = False
-db[table].verified.writable = False
-
-db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
-db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
-db[table].priority.label = T('Priority Level')
-
-s3.crud_strings[table] = Storage( title_create        = "Add Aid Request", 
-                                  title_display       = "Aid Request Details", 
-                                  title_list          = "List Aid Requests", 
-                                  title_update        = "Edit Aid Request",  
-                                  title_search        = "Search Aid Requests",
-                                  subtitle_create     = "Add New Aid Request",
-                                  subtitle_list       = "Aid Requests",
-                                  label_list_button   = "List Aid Requests",
-                                  label_create_button = "Add Aid Request",
-                                  msg_record_created  = "Aid request added",
-                                  msg_record_modified = "Aid request updated",
-                                  msg_record_deleted  = "Aid request deleted",
-                                  msg_list_empty      = "No aid requests currently available")
-
-# ------------------------------ #    
-# Create the Request Items Database
-
-resource = 'request_item'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-    Field("type", "integer"),
-    Field("quantity", "double"),
-    Field("unit","string"),
-    Field("status","integer"),
-    Field("req_id", db.rms_request_aid),
-    migrate=migrate)
-    
-#Joined resource (component) for request items subfield
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(rms_request_aid = 'req_id'),
-    deletable=True,
-    editable=True,
-    list_fields = ['id', 'type', 'quantity', 'unit', 'status'])
-
-
-db[table].status.requires = IS_NULL_OR(IS_IN_SET(rms_status_opts))
-db[table].status.represent = lambda status: status and rms_status_opts[status]
-db[table].status.label = T('Status')
-
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
-db[table].type.represent = lambda opt: rms_type_opts[opt]
-db[table].type.label = T('Aid type')
-
-# ------------------------------ #    
-# Create the Pledge Aid Database
-    
-resource = 'pledge_aid'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-    person_id,
-    organisation_id,
-    location_id,
-    Field("priority", "integer"),
-    Field("comment","text"),
-    Field("pubdate","datetime"),
-    Field("verified","boolean"),
-    migrate=migrate)
-
-
-# Automatically fill in the posting time:
-db[table].pubdate.default  = request.now
-db[table].pubdate.writable = False
-db[table].pubdate.label    = T("Date/Time")
-
-# Hide Verified:
-db[table].verified.readable = False
-db[table].verified.writable = False
-
-
-db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
-db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
-db[table].priority.label = T('Priority Level')
-
-
-s3.crud_strings[table] = Storage( title_create        = "Add Pledge of Aid", 
-                                  title_display       = "Pledge Details", 
-                                  title_list          = "List Pledges", 
-                                  title_update        = "Edit Pledges",  
-                                  title_search        = "Search Pledges",
-                                  subtitle_create     = "Add New Pledge of Aid",
-                                  subtitle_list       = "Pledges",
-                                  label_list_button   = "List Pledges",
-                                  label_create_button = "Add Pledge",
-                                  msg_record_created  = "Pledge added",
-                                  msg_record_modified = "Pledge updated",
-                                  msg_record_deleted  = "Pledge deleted",
-                                  msg_list_empty      = "No pledges currently available")
-
-# ------------------
-# Create the Pledge Items Database
-                             
-resource = 'pledge_item'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-    Field("type", "integer"),
-    Field("quantity", "double"),
-    Field("unit","string"),
-    Field("pledge_id", db.rms_pledge_aid),
-    migrate=migrate)
-       
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(rms_pledge_aid = 'pledge_id'),
-    deletable=True,
-    editable=True,
-    list_fields = ['id', 'type', 'quantity', 'unit'])
-
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
-db[table].type.represent = lambda opt: rms_type_opts[opt]
-db[table].type.label = T('Aid type')
-
 # ------------------
 # Create the table for sms_request for Ushahidi
 
 resource = 'sms_request'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
+    person_id,
+    organisation_id,
+    Field("pledge", "integer"),
     Field("sms", "string"),
     Field("notes", "string"),
-    Field("phone", "string"), 
+    Field("phone", "string"),
     Field("ush_id", "string"), 
     Field("updated", "datetime"),
     Field("title", "string"),
     Field("categorization", "string"), 
     location_id,
+    Field("status", "string"), 
     Field("smsrec", "integer"), 
     Field("author", "string"),
     Field("category_term", "string"),
     Field("firstname"), 
     Field("lastname"), 
-    Field("status", "string"), 
     Field("address", "text"), 
     Field("city", "string"), 
     Field("department", "string"), 
@@ -238,11 +104,19 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("link", "string"),
     migrate=migrate)
 
+# for reusable
+ADD_SMS_REQUEST = T('Add SMS Request')
+
+db[table].pledge.requires = IS_NULL_OR(IS_IN_SET(rms_status_opts))
+db[table].pledge.represent = lambda pledge: pledge and rms_status_opts[pledge]
+db[table].pledge.label = T('Pledge Status')
+
 # Relable Field Names:
 db[table]["sms"      ].label = T("SMS Message")
 db[table]["firstname"].label = T("First Name")
 db[table]["lastname" ].label = T("Last Name")
-
+db[table][person_id].label = T("Pledge Name")
+db[table][organisation_id].label = T("Pledge Organisation")
 
 # Make some fields invisible:
 db[table].ush_id.writable = db[table].ush_id.readable = False
@@ -258,11 +132,13 @@ if not auth.is_logged_in():
     db[table]["phone"    ].writeable = db[table]["phone"    ].readable = False
     db[table]["firstname"].writeable = db[table]["firstname"].readable = False
     db[table]["lastname" ].writeable = db[table]["lastname" ].readable = False
+    db[table][person_id  ].writeable = db[table][person_id  ].readable = False
+    db[table][organisation_id].writeable = db[table][organisation_id].readable = False
 
 
 s3.crud_strings[table] = Storage( title_create        = "Add SMS Request", 
                                   title_display       = "SMS Request Details", 
-                                  title_list          = "List SMS Requests", 
+                                  title_list          = "List SMS Requests (please login and click a request id to make a pledge)", 
                                   title_update        = "Edit SMS Requests",  
                                   title_search        = "Search SMS Requests",
                                   subtitle_create     = "Add New SMS Request",
@@ -275,3 +151,127 @@ s3.crud_strings[table] = Storage( title_create        = "Add SMS Request",
                                   msg_list_empty      = "No SMS requests currently available")
 
 #db[table].writeable = False
+
+#Reusable field for other tables
+sms_request_id = SQLTable(None, 'sms_request_id',
+            Field('sms_request_id', db.rms_sms_request,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_sms_request.id', '%(updated)s')),
+                represent = lambda id: (id and [db(db.rms_sms_request.id==id).select()[0].updated] or ["None"])[0],
+                label = T('SMS Request'),
+                comment = DIV(A(ADD_SMS_REQUEST, _class='thickbox', _href=URL(r=request, c='or', f='sms_request', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SMS_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
+                ondelete = 'RESTRICT'
+                ))
+
+
+# ------------------
+# Create request table
+
+#resource = 'request_aid'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#    person_id,
+#    organisation_id,
+#    location_id,
+#    Field("priority", "integer"),
+#    Field("comment","text"),
+#    Field("pubdate","datetime"),
+#    Field("verified","boolean"),
+#    Field("numserved", "integer"),
+#    migrate=migrate)
+
+# Automatically fill in the posting time:
+#db[table].pubdate.default  = request.now
+#db[table].pubdate.writable = False
+#db[table].pubdate.label    = T("Date/Time")
+
+# Hide the verified field:
+#db[table].verified.readable = False
+#db[table].verified.writable = False
+#
+#db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
+#db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
+#db[table].priority.label = T('Priority Level')
+
+#s3.crud_strings[table] = Storage( title_create        = "Add Aid Request", 
+#                                  title_display       = "Aid Request Details", 
+#                                  title_list          = "List Aid Requests", 
+#                                  title_update        = "Edit Aid Request",  
+#                                  title_search        = "Search Aid Requests",
+#                                  subtitle_create     = "Add New Aid Request",
+#                                  subtitle_list       = "Aid Requests",
+#                                  label_list_button   = "List Aid Requests",
+#                                  label_create_button = "Add Aid Request",
+#                                  msg_record_created  = "Aid request added",
+#                                  msg_record_modified = "Aid request updated",
+#                                  msg_record_deleted  = "Aid request deleted",
+#                                  msg_list_empty      = "No aid requests currently available")
+
+
+# ------------------------------ #    
+# Create the Pledge Aid Database
+
+#resource = 'pledge_aid'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#    sms_request_id,
+#    person_id,
+#    organisation_id,
+#    location_id,
+#    Field("priority", "integer"),
+#    Field("comment","text"),
+#    Field("pubdate","datetime"),
+#    Field("verified","boolean"),
+#    migrate=migrate)
+
+
+# Automatically fill in the posting time:
+#db[table].pubdate.default  = request.now
+#db[table].pubdate.writable = False
+#db[table].pubdate.label    = T("Date/Time")
+
+# Hide Verified:
+#db[table].verified.readable = False
+#db[table].verified.writable = False
+
+
+#db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
+#db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
+#db[table].priority.label = T('Priority Level')
+
+
+#s3.crud_strings[table] = Storage( title_create        = "Add Pledge of Aid", 
+#                                  title_display       = "Pledge Details", 
+#                                  title_list          = "List Pledges", 
+#                                  title_update        = "Edit Pledges",  
+#                                  title_search        = "Search Pledges",
+#                                  subtitle_create     = "Add New Pledge of Aid",
+#                                  subtitle_list       = "Pledges",
+#                                  label_list_button   = "List Pledges",
+#                                  label_create_button = "Add Pledge",
+#                                  msg_record_created  = "Pledge added",
+#                                  msg_record_modified = "Pledge updated",
+#                                  msg_record_deleted  = "Pledge deleted",
+#                                  msg_list_empty      = "No pledges currently available")#
+
+# ------------------
+# Create the Pledge Items Database
+                             
+#resource = 'pledge_item'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#    Field("type", "integer"),
+#    Field("quantity", "double"),
+#    Field("unit","string"),
+#    Field("pledge_id", db.rms_pledge_aid),
+#    migrate=migrate)
+       
+#s3xrc.model.add_component(module, resource,
+#    multiple=True,
+#    joinby=dict(rms_pledge_aid = 'pledge_id'),
+#    deletable=True,
+#    editable=True,
+#    list_fields = ['id', 'type', 'quantity', 'unit'])
+
+#db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
+#db[table].type.represent = lambda opt: rms_type_opts[opt]
+#db[table].type.label = T('Aid type')

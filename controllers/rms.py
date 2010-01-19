@@ -9,7 +9,7 @@ response.menu_options = [
 #        [T('Request Aid'), False, URL(r=request, f='request_aid', args='create')],
 #    ]],
     [T('View SMS Requests and Pledge Aid'), False, URL(r=request, f='sms_request')],
-    [T('View Tweet Requests and Pledge Aid'), False, URL(r=request, f='sms_request')],
+    [T('View Tweet Requests and Pledge Aid'), False, URL(r=request, f='tweet_request')],
 #    [T('Pledge Aid'), False, URL(r=request, f='sms_request')],
 #    [T('Search SMS Requests'), False, URL(r=request, f='sms_request', args='search')]
     

@@ -2377,9 +2377,15 @@ def shn_rest_controller(module, resource,
                     value = request.vars.value or request.vars.q or None
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
+                        field2 = str.lower(request.vars.field2)
+                        field3 = str.lower(request.vars.field3)
                         filter = request.vars.filter
                         if filter == '~':
-                            query = query & (jr.table[field].like('%' + value + '%'))
+                            if field2 and field3:
+                                # pr_person name search
+                                query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                            else:
+                                query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:
                                 item = db(query).select(limitby=(0, limit)).json()

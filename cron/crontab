@@ -11,3 +11,4 @@
 #*/15  *       *       *       *       root *applications/sahana/cron/email_receive.py
 #*/5   *       *       *       *       root *msg/email_send
 #*/5   *       *       *       *       root *applications/sahana/cron/rms_entry2record.py
+#*/5   *       *       *       *       root *applications/sahana/cron/rms_tweet2request.py

@@ -6,8 +6,15 @@
 </p>
 <h3>{{=T("Features Include")}}:</h3>
 <ul>
-<li>{{=T("Basic information on the requests and donations, such as category, the units, contact details and the status.")}}</li>
+<li><a href="{{=URL(r=request, f='sms_request')}}">View Requests for Aid</a> texted to <a href="http://4636.ushahidi.com">Ushahidi's 4636</a></li>
+<li><a href="{{=URL(r=request, f='tweet_request')}}">View Requests for Aid</a> gathered from <a href="http://epic.cs.colorado.edu/helping_haiti_tweak_the_twe.html">Tweak the Tweet</a> hashtags</li>
+<li>Pledge Aid to match these Requests
+{{if not auth.is_logged_in():}}
+ (requires a login - please <a href="{{=URL(r=request, c='default', f='user', args='register')}}">register</a>)
+ {{pass}}
+ </li>
 <!--
+<li>{{=T("Basic information on the requests and donations, such as category, the units, contact details and the status.")}}</li>
 <li>{{=T("Customisable category of aid")}}</li>
 <li>{{=T("Filtered search of aid pledges and requests")}}</li>
 <li>{{=T("Ability to track partial fulfillment of the request")}}</li>

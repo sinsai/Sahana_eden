@@ -9,6 +9,7 @@ response.menu_options = [
 #        [T('Request Aid'), False, URL(r=request, f='request_aid', args='create')],
 #    ]],
     [T('View SMS Requests and Pledge Aid'), False, URL(r=request, f='sms_request')],
+    [T('View Tweet Requests and Pledge Aid'), False, URL(r=request, f='sms_request')],
 #    [T('Pledge Aid'), False, URL(r=request, f='sms_request')],
 #    [T('Search SMS Requests'), False, URL(r=request, f='sms_request', args='search')]
     
@@ -38,15 +39,15 @@ def test():
 #    "RESTlike CRUD controller"
 #    return shn_rest_controller(module, 'pledge_aid', pheader=shn_rms_plg_pheader)
 
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def sms_request():
     "RESTlike CRUD controller"
     # Don't provide ability to add Locations here
     db.gis_location.comment = ''
-    return shn_rest_controller(module, 'sms_request', editable=False, listadd=False    
-    )
+    return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)
+
+def tweet_request():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'tweet_request', editable=False, listadd=False)
 
 #def shn_rms_req_pheader(resource, record_id, representation, next=None, same=None):
 #    if representation == "html":

@@ -268,12 +268,13 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 
 # Projects
 # The projects whihc each orgnaization is engaged in 
-resource = 'Project'
+resource = 'project'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
 				organisation_id,
 				location_id,
 				sector_id,
+				Field('title'),
 				Field('description'),
 				Field('beneficiaries', 'integer'),
 				Field('start_date', 'date'),
@@ -297,6 +298,8 @@ msg_record_deleted = T('Project deleted')
 msg_list_empty = T('No Projects currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)				
 
+
+#"Organization Name", "Sector\Cluster Name" , "Sub Sector Name", "Country Name", "Admin 1 Name", "Admin 2 Name", "Admin 3 Name", "Admin 4 Name", "Place Name", "Project Title", "Project Objective", "Project Description", "Primary Beneficiary", "Number of Primary Beneficiaries", "Secondary Beneficiary (separated by , )", "Number of Secondary Beneficiaries", "Implementing Partners (separated by , )", "Project Type", "Project Status", "Project Theme", "CAP #", "Estimated Start Date (dd/mm/yyyy)", "Estimated End Date (dd/mm/yyyy)", "Funding Amount", "Funding Currency", "Funding Type", "Funding Status", "Funding Reported to FTS (Yes or No)", "Organization Funding Details For each organization funding the project, the details include: Organization Name,Amount Funded,Funding Currency;(separate the data by comma ,) (For multiple organizations separate each Organization's Dataset by a semi-colon ;) Example: "Org1,100000,US$ ; Org2,20000,Pound"" (end of line) 
 
 # Activity - This table is now redundant - USE Projects now!! Only for backwards compatable
 # The activities whihc each orgnaization is engaged in 

@@ -21,7 +21,7 @@ response.menu_options = [
         #[T('List Offices'), False, URL(r=request, f='office')],
         #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
     ]],	
-    [T('Activities'), False, URL(r=request, f='project'),[
+    [T('Projects'), False, URL(r=request, f='project'),[
         [T('Add Project'), False, URL(r=request, f='project', args='create')],
         #[T('List Offices'), False, URL(r=request, f='office')],
         #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
@@ -212,7 +212,7 @@ def dashboard():
 
 def who_what_where_when():
     project_list = crud.select("or_project", query = db.or_project.id > 0)
-    print project_list
+    #print project_list
     return dict(project_list = project_list)
 	
 def shn_office_pheader(resource, record_id, representation, next=None, same=None):

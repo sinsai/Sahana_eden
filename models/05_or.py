@@ -57,12 +57,15 @@ sector_id = SQLTable(None, 'sector_id',
 # Organizations
 or_organisation_type_opts = {
     1:T('Government'),
-    2:T('International Governmental Organization'),
+    2:T('Embassy'),
     3:T('International NGO'),
-    4:T('Misc'),
-    5:T('National Institution'),
+    4:T('Donor'),
     6:T('National NGO'),
-    7:T('United Nations')
+    7:T('UN'),
+    8:T('International Organization'),
+    9:T('MINUSTAH'),
+    10:T('Military'),
+    11:T('Private')
     }
 resource = 'organisation'
 table = module + '_' + resource

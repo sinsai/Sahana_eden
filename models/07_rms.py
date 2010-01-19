@@ -165,7 +165,6 @@ s3.crud_strings[table] = Storage( title_create        = "Add SMS Request",
                                   msg_record_deleted  = "SMS request deleted",
                                   msg_list_empty      = "No SMS requests currently available")
 
-#db[table].writeable = False
 
 #Reusable field for other tables
 sms_request_id = SQLTable(None, 'sms_request_id',
@@ -176,6 +175,22 @@ sms_request_id = SQLTable(None, 'sms_request_id',
                 comment = DIV(A(ADD_SMS_REQUEST, _class='thickbox', _href=URL(r=request, c='or', f='sms_request', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SMS_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
                 ondelete = 'RESTRICT'
                 ))
+
+#resource = 'sms_request'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#    person_id,
+#    organisation_id,
+#    Field("pledge", "integer"),
+#    Field("title", "string"),
+#    Field("author", "string"),
+#    Field("link", "string"),
+#    Field("description", "string"),
+#    Field("updated", "datetime"),
+#    Field("guid", "string"),
+#    migrate=migrate)
+
+
 
 
 # ------------------

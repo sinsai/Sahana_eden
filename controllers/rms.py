@@ -43,6 +43,8 @@ def test():
 @service.amfrpc
 def sms_request():
     "RESTlike CRUD controller"
+    # Don't provide ability to add Locations here
+    db.gis_location.comment = ''
     return shn_rest_controller(module, 'sms_request', editable=False, listadd=False    
     )
 

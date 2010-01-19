@@ -30,7 +30,7 @@ dvi_task_status_opts = {
     }
 
 opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
-                    db.Field('opt_dvi_task_status','integer',
+                    Field('opt_dvi_task_status','integer',
                     requires = IS_IN_SET(dvi_task_status_opts),
                     default = 1,
                     label = T('Task Status'),
@@ -101,10 +101,10 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
                 Field('date_of_recovery', 'datetime'),      # Date/Time of recovery
                 location_id,                                # Place of Recovery
                 Field('recovery_details','text'),           # Details of the Recovery
-                db.Field('has_major_outward_damage','boolean'), # Khushbu, TODO: elaborate
-                db.Field('is_burned_or_charred','boolean'),     # Khushbu, TODO: elaborate
-                db.Field('is_decayed','boolean'),               # Khushbu, TODO: elaborate
-                db.Field('is_incomplete','boolean'),            # Khushbu, TODO: elaborate
+                Field('has_major_outward_damage','boolean'), # Khushbu, TODO: elaborate
+                Field('is_burned_or_charred','boolean'),     # Khushbu, TODO: elaborate
+                Field('is_decayed','boolean'),               # Khushbu, TODO: elaborate
+                Field('is_incomplete','boolean'),            # Khushbu, TODO: elaborate
                 opt_pr_gender,                                  # from VITA
                 opt_pr_age_group,                               # from VITA
                 migrate = migrate)
@@ -328,14 +328,14 @@ resource = 'checklist'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,
-                db.Field('personal_effects'),
-                db.Field('body_radiology'),
-                db.Field('fingerprints'),
-                db.Field('anthropology'),
-                db.Field('pathology'),
-                db.Field('embalming'),
-                db.Field('dna'),
-                db.Field('dental'),
+                Field('personal_effects'),
+                Field('body_radiology'),
+                Field('fingerprints'),
+                Field('anthropology'),
+                Field('pathology'),
+                Field('embalming'),
+                Field('dna'),
+                Field('dental'),
                 migrate = migrate)
 
 # Setting and restrictions
@@ -389,11 +389,11 @@ table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,
 #                person_id,
-                db.Field('clothing', 'text'),    #TODO: elaborate
-                db.Field('jewellery', 'text'),   #TODO: elaborate
-                db.Field('footwear', 'text'),    #TODO: elaborate
-                db.Field('watch', 'text'),       #TODO: elaborate
-                db.Field('other', 'text'),
+                Field('clothing', 'text'),    #TODO: elaborate
+                Field('jewellery', 'text'),   #TODO: elaborate
+                Field('footwear', 'text'),    #TODO: elaborate
+                Field('watch', 'text'),       #TODO: elaborate
+                Field('other', 'text'),
                 migrate = migrate)
 
 # Settings and Restrictions
@@ -435,7 +435,7 @@ dvi_id_status_opts = {
     }
 
 opt_dvi_id_status = db.Table(None, 'opt_dvi_id_status',
-                    db.Field('opt_dvi_id_status','integer',
+                    Field('opt_dvi_id_status','integer',
                     requires = IS_IN_SET(dvi_id_status_opts),
                     default = 1,
                     label = T('Identification Status'),
@@ -452,7 +452,7 @@ dvi_id_method_opts = {
     }
 
 opt_dvi_id_method = db.Table(None, 'opt_dvi_id_method',
-                    db.Field('opt_dvi_id_method','integer',
+                    Field('opt_dvi_id_method','integer',
                     requires = IS_IN_SET(dvi_id_method_opts),
                     default = 99,
                     label = T('Method used'),

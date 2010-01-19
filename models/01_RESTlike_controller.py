@@ -721,7 +721,7 @@ def shn_audit_read(operation, module, resource, record=None, representation=None
 
     if session.s3.audit_read:
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = operation,
                 module = module,
                 resource = resource,
@@ -750,7 +750,7 @@ def shn_audit_create(form, module, resource, representation=None):
         for var in form.vars:
             new_value.append(var + ':' + str(form.vars[var]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'create',
                 module = module,
                 resource = resource,
@@ -780,7 +780,7 @@ def shn_audit_update(form, module, resource, representation=None):
         for var in form.vars:
             new_value.append(var + ':' + str(form.vars[var]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'update',
                 module = module,
                 resource = resource,
@@ -804,7 +804,7 @@ def shn_audit_update_m2m(module, resource, record, representation=None):
 
     if session.s3.audit_write:
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'update',
                 module = module,
                 resource = resource,
@@ -830,7 +830,7 @@ def shn_audit_delete(module, resource, record, representation=None):
         for field in _old_value:
             old_value.append(field + ':' + str(_old_value[field]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'delete',
                 module = module,
                 resource = resource,

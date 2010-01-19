@@ -54,7 +54,7 @@ sector_id = SQLTable(None, 'sector_id',
                 ondelete = 'RESTRICT'
                 ))
                 
-# Organisations
+# Organizations
 or_organisation_type_opts = {
     1:T('Government'),
     2:T('International Governmental Organization'),
@@ -152,6 +152,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 shn_comments_field,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+#db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
@@ -331,7 +332,7 @@ msg_record_deleted = T('Activity deleted')
 msg_list_empty = T('No Activities currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)				
 				
-# Offices to Organisations
+# Offices to Organizations
 #resource='organisation_offices'
 #resource = 'office_to_organisation'
 #table = module + '_' + resource
@@ -344,7 +345,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
 #db[table].organisation_id.label = T('Organization')
 
-# Contacts to Organisations
+# Contacts to Organizations
 # Do we want to allow contacts which are affiliated to an organisation but not to an office?
 # default can be HQ office
 #resource='contact_to_organisation'

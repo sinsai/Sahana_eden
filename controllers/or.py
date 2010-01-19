@@ -65,6 +65,7 @@ def contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact', listadd=False)
 	
+    
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
@@ -72,16 +73,65 @@ def activity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'activity', listadd=False)	
     
-    
+def office_table_linkto(field):
+    return URL(r=request, f = "office",  args=['read',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+def office_table_linkto_update(field):
+    return URL(r=request, f = "office", args=['update',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})    
+                
+def contact_table_linkto(field):
+    return URL(r=request, f = "contact",  args=['read',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})                
+def contact_table_linkto_update(field):
+    return URL(r=request, f = "contact", args=['update',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)}) 
+
+def activity_table_linkto(field):
+    return URL(r=request, f = "activity",  args=['read',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+def activity_table_linkto_update(field):
+    return URL(r=request, f = "activity", args=['update',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})                 
+               
 def org_sub_table( table , org_id):              
     fields = []
     headers = {}
+
+    for field in db[table]:
+        if field.readable and field.name <> "organisation_id" and field.name <> "admin":        
+            headers[str(field)] = str(field.label)        
+            fields.append(field)   
+            
+    table_linkto_update = dict( \
+    or_office = office_table_linkto_update,
+    or_contact =  contact_table_linkto_update,
+    or_activity = activity_table_linkto_update,
+    )
+
+    table_linkto = dict( \
+    or_office = office_table_linkto,
+    or_contact = contact_table_linkto,
+    or_activity = activity_table_linkto,
+    )            
+            
+    authorised = shn_has_permission('update', table)
+    if authorised:
+        linkto = table_linkto_update[table]
+    else:
+        linkto = table_linkto[table]           
+           
+    query = db[table].organisation_id == org_id
+
+    return crud.select(table, query = query, fields = fields, headers = headers, linkto = linkto, truncate=48, _id = table + '_list', _class="display")
+
     for field in db[table]:
         if field.readable and field.name <> "organisation_id" and field.name <> "admin":
             headers[field.name] = str(field.label)
             fields.append(field.name)
     
     return crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
+
     
 	
 def dashboard():

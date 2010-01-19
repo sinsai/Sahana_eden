@@ -6,4 +6,11 @@ $(document).ready(function () {
     $("#or_activity_organisation_id").val("{{=session.s3.organisation_id}}");
     $("#or_activity_organisation_id__row").hide();
 });
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+    // Refresh the activities list
+    var url = '{{=URL(r=request, c='or', f='dashboard') + '/' + str(session.s3.organisation_id)}}';    
+    self.parent.$("#or_activity_list").load(url + " #or_activity_list"); 
+{{pass}}
 //]]></script>

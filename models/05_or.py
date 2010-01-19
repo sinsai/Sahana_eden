@@ -190,6 +190,16 @@ msg_record_modified = T('Office updated')
 msg_record_deleted = T('Office deleted')
 msg_list_empty = T('No Offices currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+office_id = SQLTable(None, 'office_id',
+            Field('office_id', db.or_office,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0],
+                label = T('Office'),
+                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
+                ondelete = 'RESTRICT'
+                ))
+
 # JOINed resource (component)
 s3xrc.model.add_component('gis', 'location',
     multiple = False,
@@ -214,7 +224,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 person_id,
 				organisation_id,
-                Field('office_id', db.or_office),
+                office_id,
                 Field('title'),
                 Field('manager_id', db.pr_person),
 				Field('focal_point', 'boolean'),
@@ -222,14 +232,24 @@ db.define_table(table, timestamp, deletion_status,
                 shn_comments_field,
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
-db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
-db[table].office_id.label = T('Office')
 db[table].title.label = T('Title')
 db[table].title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
 db[table].manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
 db[table].manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 db[table].manager_id.label = T('Manager')
 db[table].manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
+shn_pr_person_represent
+#or_contact_focal_point_represent = {
+#    0:T('-'),
+#    1:T('Focal Point'),
+#    }
+def represent_focal_point(is_focal_point): 
+    if is_focal_point: 
+        return "Focal Point" 
+    else: 
+        return "-"
+db[table].focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
+#opt: opt and or_office_type_opts[opt]
 db[table].focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
 title_create = T('Add Contact')
 title_display = T('Contact Details')

@@ -29,8 +29,14 @@ $(function() {
     $("#dummy").result(function(event, data, formatted) {
         var newvalue = data.id;
         $("#or_office_organisation_id").val(newvalue);
-    }); 
-    
+    });     
 });
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+    // Refresh the office list
+    var url = '{{=URL(r=request, c='or', f='dashboard') + '/' + str(session.s3.organisation_id)}}';    
+    self.parent.$("#or_office_list").load(url + " #or_office_list"); 
+{{pass}}
 //]]></script>
 

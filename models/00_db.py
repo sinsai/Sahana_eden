@@ -37,7 +37,7 @@ exec('from applications.%s.modules.validators import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.validators import *
 
-def shn_sessions(f):
+def shn_sessions():
     """
     Extend session to support:
         Multiple flash classes
@@ -58,47 +58,34 @@ def shn_sessions(f):
     # Use session for persistent variables
     if not session.s3:
         session.s3 = Storage()
-    # Use response for one-off variables which are visible in views without explicit passing
+    # Use response for one-off variables which are visible in views without 
+    # explicit passing
     response.s3 = Storage()
+    settings = db(db.s3_setting.id>0).select().first()
+    controller_settings_table = '%s_setting' % request.controller
+    controller_settings = controller_settings_table in db.tables and \
+       db(db[controller_settings_table].id>0).select().first()
     # Are we running in debug mode?
-    if not 'debug' in request.vars:
-        try:
-            session.s3.debug = db().select(db.s3_setting.debug)[0].debug
-        except:
-            session.s3.debug = False
-    else:
-        session.s3.debug = True
-    # Which security policy are we running?
-    try:
-        session.s3.security_policy = db().select(db.s3_setting.security_policy)[0].security_policy
-    except:
-        session.s3.security_policy = 1
+    session.s3.debug = not 'debug' in request.vars and settings and settings.debug
+    session.s3.security_policy = (settings and settings.security_policy) or 1
+
     # Are we running in restricted mode?
     #session.s3.restricted = auth.has_membership(auth.id_group('Restricted'))
     # Select the theme
     if not session.s3.theme:
         session.s3.theme = Storage()
-    try:
-        session.s3.theme.footer = db().select(db.admin_theme.footer)[0].footer
-    except:
-        session.s3.theme.footer = 'footer.html'
-    # We Audit if either the Global or Module asks us to (ignore gracefully if module author hasn't implemented this)
-    try:
-        session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read or db().select(db['%s_setting' % request.controller].audit_read)[0].audit_read
-    except:
-        try:
-            session.s3.audit_read = db().select(db.s3_setting.audit_read)[0].audit_read
-        except:
-            session.s3.audit_read = False
-    try:
-        session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write or db().select(db['%s_setting' % request.controller].audit_write)[0].audit_write
-    except:
-        try:
-            session.s3.audit_write = db().select(db.s3_setting.audit_write)[0].audit_write
-        except:
-            session.s3.audit_write = False
-    return f()
-response._caller = lambda f: shn_sessions(f)
+    admin_theme = db().select(db.admin_theme.footer).first()
+    session.s3.theme.footer = admin_theme and admin_theme.footer or 'footer.html'
+    # We Audit if either the Global or Module asks us to 
+    # (ignore gracefully if module author hasn't implemented this)
+    session.s3.audit_read = (settings and settings.audit_read) \
+        or (controller_settings and controller_settings.audit_read)
+    session.s3.audit_write = (settings and settings.audit_write) \
+        or (controller_settings and controller_settings.audit_write)
+    return settings
+
+s3_settings = shn_sessions()
+
 
 # shn_on_login ----------------------------------------------------------------
 # added 2009-08-27 by nursix

@@ -30,7 +30,7 @@ while done == False:
 
     for entry in d.entries:
         rec = rss2record(entry)
-        if db(db.rms_tweet_request.ttt_guid == rec['ttt_guid']).count() == 0:
+        if db(db.rms_tweet_request.ttt_id == rec['ttt_id']).count() == 0:
             db.rms_tweet_request.insert(**rec)
         else:
             done = True

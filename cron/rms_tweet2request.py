@@ -13,6 +13,8 @@ def rss2record(entry):
     minute = entry.updated_parsed[4]
     myd['updated'] = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
 
+    # The twitter id is NOT stored in the ID field, you have to
+    # extract if from the end of the link
     myd['ttt_id'] = entry['link'].split('/')[-1]
 
     return myd
@@ -26,9 +28,8 @@ for entry in d.entries:
 
     rec = rss2record(entry)
 
+	# Make sure there are no duplicate entries before we add it:
     if db(db.rms_tweet_request.ttt_id == rec['ttt_id']).count() == 0:
         db.rms_tweet_request.insert(**rec)
-    else:
-        break
 
 db.commit()

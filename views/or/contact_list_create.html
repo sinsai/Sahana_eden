@@ -1,29 +1,51 @@
 {{extend 'layout.html'}}
 {{include '_list_create.html'}}
-{{if session.s3.security_policy==1:}}
-    <script type="text/javascript">//<![CDATA[
-    $(function() {
-            // Hide the Admin row for simple security_policy
-            $("#or_office_admin__row").hide();
-    });
-    //]]></script>
-{{pass}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
+    // Person AutoComplete
+    // Hide the real Input Field
+    $("#or_contact_person_id").hide();
+    
+    // Add a dummy field
+    $("#or_contact_person_id").after("<input id='dummy_person' class='ac_input' size=50 />");
+
+    {{include 'pr/person_autocomplete.js'}}
+
+    // Populate the real Input when the Dummy is selected
+    $("#dummy_person").result(function(event, data, formatted) {
+        var newvalue = data.id;
+        $("#or_contact_person_id").val(newvalue);
+    }); 
+
+    // Organisation AutoComplete
     // Hide the real Input Field
     $("#or_contact_organisation_id").hide();
     
     // Add a dummy field
-    $("#or_contact_organisation_id").after("<input id='dummy' class='ac_input' size=50 />");
+    $("#or_contact_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
 
     {{include 'or/organisation_autocomplete.js'}}
 
     // Populate the real Input when the Dummy is selected
-    $("#dummy").result(function(event, data, formatted) {
+    $("#dummy_organisation").result(function(event, data, formatted) {
         var newvalue = data.id;
         $("#or_contact_organisation_id").val(newvalue);
     }); 
     
+    // Office AutoComplete
+    // Hide the real Input Field
+    $("#or_contact_office_id").hide();
+    
+    // Add a dummy field
+    $("#or_contact_office_id").after("<input id='dummy_office' class='ac_input' size=50 />");
+
+    {{include 'or/office_autocomplete.js'}}
+
+    // Populate the real Input when the Dummy is selected
+    $("#dummy_office").result(function(event, data, formatted) {
+        var newvalue = data.id;
+        $("#or_contact_office_id").val(newvalue);
+    }); 
 });
 //]]></script>
 

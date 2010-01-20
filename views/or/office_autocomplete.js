@@ -1,5 +1,5 @@
 ﻿    // Autocomplete-enable the Dummy Input
-    $("#dummy_organisation").autocomplete('{{=URL(r=request, c='or', f='organisation', args='search.json', vars={'filter':'~', 'field':'name'})}}', {
+    $("#dummy_office").autocomplete('{{=URL(r=request, c='or', f='office', args='search.json', vars={'filter':'~', 'field':'name'})}}', {
         minChars: 2,
 		//mustMatch: true,
 		matchContains: true,

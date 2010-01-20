@@ -26,7 +26,7 @@ def shn_sessions():
     controller_settings = controller_settings_table in db.tables and \
        db(db[controller_settings_table].id > 0).select().first()
     # Are we running in debug mode?
-    session.s3.debug = not 'debug' in request.vars and settings and settings.debug
+    session.s3.debug = 'debug' in request.vars or settings and settings.debug
     session.s3.security_policy = (settings and settings.security_policy) or 1
 
     # Are we running in restricted mode?

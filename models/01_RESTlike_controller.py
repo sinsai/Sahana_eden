@@ -1141,6 +1141,17 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
     module, resource, table, tablename = jr.target()
 
+    # Provide the ability to get a subset of records
+    if request.vars.limit:
+        limit = int(request.vars.limit)
+        if request.vars.start:
+            start = int(request.vars.start)
+            limitby = (start, start + limit)
+        else:
+            limitby = (0, limit)
+    else:
+        limitby = None
+    
     if jr.component:
 
         listadd = jr.component.attr.listadd
@@ -1184,6 +1195,33 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                    resource=resource,
                    representation=jr.representation)
 
+    # dataTables representation
+    # Migrate to an XSLT in future?
+    if jr.representation=="aaData":
+        if "iDisplayStart" in request.vars:
+            start = int(request.vars.iDisplayStart)
+        else:
+            start = 0
+        if "iDisplayLength" in request.vars:
+            limit = int(request.vars.iDisplayLength)
+        else:
+            limit = None
+        sEcho = int(request.vars.sEcho)
+        from gluon.serializers import json
+        _table = '%s_%s' % (request.controller, request.function)
+        table = db[_table]
+        query = (table.id > 0)
+        totalrows = db(query).count()
+        if limit:
+            rows = db(query).select(limitby = (start, start + limit))
+        else:
+            rows = db(query).select()
+        r = dict(sEcho = sEcho,
+               iTotalRecords = len(rows),
+               iTotalDisplayRecords = totalrows,
+               aaData = [[row[f] for f in table.fields if table[f].readable] for row in rows])
+        return json(r)
+    
     if jr.representation=="html":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
@@ -1255,6 +1293,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         items = crud.select(table, query=query,
             fields=fields,
             orderby=orderby,
+            limitby=limitby,
             headers=headers,
             linkto=linkto,
             truncate=48, _id='list', _class='display')

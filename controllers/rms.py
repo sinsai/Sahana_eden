@@ -43,11 +43,13 @@ def sms_request():
     "RESTlike CRUD controller"
     # Don't provide ability to add Locations here
     db.gis_location.comment = ''
-    return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)
+    #response.s3.pagination = True
+    return shn_rest_controller(module, "sms_request", editable=False, listadd=False)
 
 def tweet_request():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'tweet_request', editable=False, listadd=False)
+    #response.s3.pagination = True
+    return shn_rest_controller(module, "tweet_request", editable=False, listadd=False)
 
 #def shn_rms_req_pheader(resource, record_id, representation, next=None, same=None):
 #    if representation == "html":

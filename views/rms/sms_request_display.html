@@ -30,7 +30,7 @@
 {{except:}}
 {{pass}}
 </div>
-<a id="edit-btn" href=>Pledge</a>
+<a id="edit-btn" href="{{=URL(r=request, args=['update', request.args(0)])}}">Pledge</a>
 <p>&nbsp;</p>
 {{try:}}
  {{=list_btn}}

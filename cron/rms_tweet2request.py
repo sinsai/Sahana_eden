@@ -2,7 +2,7 @@ print "Running Tweet request parse script"
 
 def rss2record(entry):
     myd = {}
-    myd['ttt_id'] = entry['id']
+
     myd['link'] = entry['link']	 # url for the entry
     myd['author'] = entry['author']
     myd['tweet'] = entry['title']
@@ -12,34 +12,23 @@ def rss2record(entry):
     hour = entry.updated_parsed[3]
     minute = entry.updated_parsed[4]
     myd['updated'] = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
-    
+
+    myd['ttt_id'] = entry['link'].split('/')[-1]
+
     return myd
 
 import datetime
 import gluon.contrib.feedparser as feedparser
-url_base = "http://epic.cs.colorado.edu:9090/tweets/atom"
+url = "http://epic.cs.colorado.edu:9090/tweets/atom"
+d = feedparser.parse(url)
 
-N = 50
-start = 0
-done = False
-while done == False:
+for entry in d.entries:
 
-    #url = url_base + "&limit=" + str(start) + "," + str(N)
-    url = url_base
-    d = feedparser.parse(url)
+    rec = rss2record(entry)
 
-    for entry in d.entries:
-        rec = rss2record(entry)
-        # Don't import duplicates
-        if db(db.rms_tweet_request.ttt_id == rec['ttt_id']).count() == 0:
-            db.rms_tweet_request.insert(**rec)
-        else:
-            done = True
-            break
-
-    start = start + N
-
-    if len(d["entries"]) == 0:
-        done = True
+    if db(db.rms_tweet_request.ttt_id == rec['ttt_id']).count() == 0:
+        db.rms_tweet_request.insert(**rec)
+    else:
+        break
 
 db.commit()

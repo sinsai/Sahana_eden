@@ -29,7 +29,7 @@ while done == False:
     d = feedparser.parse(url)
 
     for entry in d.entries:
-        rec, locd = rss2record(entry)
+        rec = rss2record(entry)
         if db(db.rms_tweet_request.ttt_guid == rec['ttt_guid']).count() == 0:
             db.rms_tweet_request.insert(**rec)
         else:

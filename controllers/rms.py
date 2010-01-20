@@ -43,13 +43,19 @@ def sms_request():
     "RESTlike CRUD controller"
     # Don't provide ability to add Locations here
     db.gis_location.comment = ''
+    # Uncomment to filter out non-actionable requests:
+    # response.s3.filter = (db.rms_sms_request.actionable == True)
+    
+    # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True
-    return shn_rest_controller(module, "sms_request", editable=False, listadd=False)
+    return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)
 
 def tweet_request():
     "RESTlike CRUD controller"
+    
+    # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True
-    return shn_rest_controller(module, "tweet_request", editable=False, listadd=False)
+    return shn_rest_controller(module, 'tweet_request', editable=False, listadd=False)
 
 #def shn_rms_req_pheader(resource, record_id, representation, next=None, same=None):
 #    if representation == "html":

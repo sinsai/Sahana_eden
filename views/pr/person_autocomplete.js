@@ -7,7 +7,17 @@
         parse: function(data) {
             var rows = new Array();
             for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].last_name };
+                var name = '';
+                if (data[i].first_name != null) {
+                    name += data[i].first_name + ' ';
+                }
+                if (data[i].middle_name != null) {
+                    name += data[i].middle_name + ' ';
+                }
+                if (data[i].last_name != null) {
+                    name += data[i].last_name;
+                }
+                rows[i] = { data:data[i], value:data[i].id, result:name };
             }
             return rows;
         },

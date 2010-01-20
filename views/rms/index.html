@@ -6,8 +6,10 @@
 </p>
 <h3>{{=T("Features Include")}}:</h3>
 <ul>
-<li><a href="{{=URL(r=request, f='sms_request')}}">View Requests for Aid</a> texted to <a href="http://4636.ushahidi.com">Ushahidi's 4636</a></li>
-<li><a href="{{=URL(r=request, f='tweet_request')}}">View Requests for Aid</a> gathered from <a href="http://epic.cs.colorado.edu/helping_haiti_tweak_the_twe.html">Tweak the Tweet</a> hashtags</li>
+<!-- <a href="http://4636.ushahidi.com", _target='blank'></a> -->
+<li>View Requests for Aid texted to <a href="{{=URL(r=request, f='sms_request')}}">Ushahidi's 4636</a></li>
+<!-- <a href="http://epic.cs.colorado.edu/helping_haiti_tweak_the_twe.html", _target='blank'></a> -->
+<li>View Requests for Aid gathered from <a href="{{=URL(r=request, f='tweet_request')}}">Tweak the Tweet</a> hashtags</li>
 <li>Pledge Aid to match these Requests
 {{if not auth.is_logged_in():}}
  (requires a login - please <a href="{{=URL(r=request, c='default', f='user', args='register')}}">register</a>)

@@ -30,6 +30,7 @@ while done == False:
 
     for entry in d.entries:
         rec = rss2record(entry)
+        # Don't import duplicates
         if db(db.rms_tweet_request.ttt_id == rec['ttt_id']).count() == 0:
             db.rms_tweet_request.insert(**rec)
         else:

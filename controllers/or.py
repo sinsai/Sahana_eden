@@ -21,8 +21,8 @@ response.menu_options = [
         #[T('List Offices'), False, URL(r=request, f='office')],
         #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
     ]],	
-    [T('Activities'), False, URL(r=request, f='activity'),[
-        [T('Add Activity'), False, URL(r=request, f='activity', args='create')],
+    [T('Projects'), False, URL(r=request, f='project'),[
+        [T('Add Project'), False, URL(r=request, f='project', args='create')],
         #[T('List Offices'), False, URL(r=request, f='office')],
         #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
     ]]	
@@ -65,35 +65,83 @@ def contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact', listadd=False)
 	
+    
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
 def activity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'activity', listadd=False)	
+	
+@service.jsonrpc
+@service.xmlrpc
+@service.amfrpc
+def project():
+    "RESTlike CRUD controller"
+    return shn_rest_controller(module, 'project', listadd=False)		
     
-    
-def org_sub_table( table , org_id):              
+def office_table_linkto(field):
+    return URL(r=request, f = "office",  args=['read',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+def office_table_linkto_update(field):
+    return URL(r=request, f = "office", args=['update',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})    
+                
+def contact_table_linkto(field):
+    return URL(r=request, f = "contact",  args=['read',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})                
+def contact_table_linkto_update(field):
+    return URL(r=request, f = "contact", args=['update',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)}) 
+
+def project_table_linkto(field):
+    return URL(r=request, f = "project",  args=['read',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+def project_table_linkto_update(field):
+    return URL(r=request, f = "project", args=['update',field],
+                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})                 
+               
+def org_sub_list( table , org_id):              
     fields = []
     headers = {}
+
     for field in db[table]:
-        if field.readable and field.name <> "organisation_id" and field.name <> "admin":
-            headers[field.name] = str(field.label)
-            fields.append(field.name)
+        if field.readable and field.name <> "organisation_id" and field.name <> "admin":        
+            headers[str(field)] = str(field.label)        
+            fields.append(field)   
+            
+    table_linkto_update = dict( \
+    or_office = office_table_linkto_update,
+    or_contact =  contact_table_linkto_update,
+    or_project = project_table_linkto_update,
+    )
+
+    table_linkto = dict( \
+    or_office = office_table_linkto,
+    or_contact = contact_table_linkto,
+    or_project = project_table_linkto,
+    )            
+            
+    authorised = shn_has_permission('update', table)
+    if authorised:
+        linkto = table_linkto_update[table]
+    else:
+        linkto = table_linkto[table]           
+           
+    query = db[table].organisation_id == org_id
     
-    return crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
+    list =  crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
     
+    #Required so that there is a table with an ID for the refresh after add
+    if list == None:
+        list = TABLE("None", _id = table + '_list')
+
+    return list
 	
 def dashboard():
-    #print "args: " 
-    #print request.args
-    #print "len a:" + str(len(request.args))
-    #print "vars:"
-    #print request.vars
     
     # Get Organization to display from Var or Arg or Default
     if len(request.args) > 0:
-        #print "bugger"
         org_id = request.args[0]
         try:
             org_name = db(db.or_organisation.id == org_id).select(db.or_organisation.name)[0]["name"]
@@ -122,9 +170,9 @@ def dashboard():
     
     org_details = crud.read("or_organisation", org_id)
 
-    office_list = org_sub_table("or_office", org_id)
-    contact_list = org_sub_table("or_contact", org_id)
-    activity_list = org_sub_table("or_activity", org_id)	
+    office_list = org_sub_list("or_office", org_id)
+    contact_list = org_sub_list("or_contact", org_id)
+    project_list = org_sub_list("or_project", org_id)	
 
     but_add_org = A(T('Add Organization'),
                         _class='thickbox',
@@ -135,7 +183,7 @@ def dashboard():
 
     but_edit_org = A(T('Edit Organization'),
                         _href=URL(r=request, 
-                            c='or', f='organisation', args=['update', organisation_id]))	
+                            c='or', f='organisation', args=['update', org_id]))	
 
     but_add_office = A(T('Add Office'),
                         _class='thickbox',
@@ -151,16 +199,21 @@ def dashboard():
                             vars=dict(format='popup', KeepThis='true')) + "&TB_iframe=true&mode=new",
                             _target='top', _title=T('Add Contact'))			
 
-    but_add_activity = A(T('Add Activity'),
+    but_add_project = A(T('Add Project'),
                         _class='thickbox',
                         _href=URL(r=request, 
-                            c='or', f='activity', args='create', 
+                            c='or', f='project', args='create', 
                             vars=dict(format='popup', KeepThis='true')) + "&TB_iframe=true&mode=new",
-                            _target='top', _title=T('Add Activity'))										
+                            _target='top', _title=T('Add Project'))										
 							
     session.s3.organisation_id = org_id
 
-    return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, contact_list = contact_list, activity_list = activity_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_contact = but_add_contact, but_add_activity = but_add_activity)
+    return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, contact_list = contact_list, project_list = project_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_contact = but_add_contact, but_add_project = but_add_project)
+
+def who_what_where_when():
+    project_list = crud.select("or_project", query = db.or_project.id > 0)
+    #print project_list
+    return dict(project_list = project_list)
 	
 def shn_office_pheader(resource, record_id, representation, next=None, same=None):
 

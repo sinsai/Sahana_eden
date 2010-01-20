@@ -65,6 +65,26 @@ auth.settings.create_user_groups = False
 # We need to allow basic logins for Webservices
 auth.settings.allow_basic_login = True
 # Logout session clearing
+# shn_on_login ----------------------------------------------------------------
+# added 2009-08-27 by nursix
+def shn_auth_on_login(form):
+    """
+        Actions that need to be performed on successful login (Do not redirect from here!)
+    """
+
+    # S3XRC
+    s3xrc.clear_session(session)
+
+# shn_on_logout ---------------------------------------------------------------
+# added 2009-08-27 by nursix
+def shn_auth_on_logout(user):
+    """
+        Actions that need to be performed on logout (Do not redirect from here!)
+    """
+
+    # S3XRC
+    s3xrc.clear_session(session)
+
 auth.settings.logout_onlogout = shn_auth_on_logout
 auth.settings.login_onaccept = shn_auth_on_login
 

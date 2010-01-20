@@ -1,51 +1,98 @@
 {{extend 'layout.html'}}
 <div id='home'>
-<h2>{{=T("Welcome to the Haiti 2010 Sahana Disaster Response Portal")}}</h2>
-<div style="float: left; width: 49%;">
-<div id='logo'>
+<h2>{{=T("Haiti 2010 Sahana Disaster Response Portal")}}</h2>
+ 
+<div style="font-size:x-large; line-height:110%;">
+<!--<div style="width:80%; margin-left: auto; margin-right: auto;"> -->
+ 
+<div style="border: 10px solid #; min-width:1px;"> <!-- border for table -->
+<table cellpadding="10"  style="margin: 3em auto; collapse-border:collapse;">
+ 
+<tr>
+  <td style="text-align:right; font-weight:bold;">
+    {{=A(T("Situation Mapping"), _href=URL(r=request, c='gis', f='map_viewing_client'))}}
+  </td>
+  <td>
+   {{=T("What is happening on the ground")}} 
+  </td>
+</tr><!-- http://haiti.sahanafoundation.org/gis/map_viewing_client -->
+ 
+<tr>
+  <td style="text-align:right; font-weight:bold;">
+    {{=A(T("Organization Registry"), _href=URL(r=request, c='or', f='organisation'))}}
+  </td>
+  <td>
+    {{=T("Which agencies are helping & contact details")}}
+  </td>
+</tr><!-- http://haiti.sahanafoundation.org/prod/or/organisation -->
+
+<!-- http://haiti.sahanafoundation.org/prod/pr/person
+<tr>
+  <td style="text-align:right; font-weight:bold;">
+    {{=A(T("Person Registry"), _href=URL(r=request, c='pr', f='person'))}}
+  </td>
+  <td>
+    {{=T("Missing persons & contact agencies")}}
+    </td>
+</tr>-->
+ 
+<tr>
+  <td style="text-align:right; font-weight:bold;">
+    {{=A(T("Assistance Requests"), _href=URL(r=request, c='rms', f='index'))}}
+  </td>
+  <td>
+    {{=T("View requests & make pledges")}}
+  </td>
+</tr> <!-- http://haiti.sahanafoundation.org/prod/rms/index -->
+ 
+<tr>
+  <td style="text-align:right; font-weight:bold;">
+    {{=A(T("Volunteer Information"), _href='http://bit.ly/sahana-haiti-todo')}}
+    {{}}
+  </td>
+  <td>
+    {{=T("Instructions on how to help")}}
+  </td>
+</tr> <!-- http://bit.ly/sahana-haiti-todo -->
+</table>
 </div>
-<p>
-{{=T("This web portal includes applications that will help you with the following coordination problem areas during the aftermath of the disaster")}}:
+<!-- </div>-->
+ 
+<p style="clear:both; line-height:110%;">
+  {{=T("This site is assisting the response and recovery of the")}}
+  {{=A(T('Haitian 2010 Earthquakes'), _href='http://en.wikipedia.org/wiki/2010_Haiti_earthquake')}}.
 </p>
-<ul>
-<li><strong>{{=A(T('Organizations Registry'), _href=URL(r=request, c='or', f='organisation'))}}</strong></li>
+</div>
+ 
+<!-- Column one-->
+<div style="float: left; width: 47%; margin-left:3px; font-size:medium; line-height:120%;">
+ 
+<h2>
+{{=T('Can you help?')}}
+</h2>
 
-{{=T("The Organization Registry provides a searchable database of organizations responding to the disaster, the sector where they are providing services, their activities and their contact details. Please do ")}} {{=A(T('add your organization'), _href=URL(r=request, c='or', f='organisation', args=['create']))}} 
-  <br/>
-
-  <!--
- <li><strong>{{=A(T('Organization Dashboard'), _href=URL(r=request, c='or', f='dashboard'))}}</strong></li>	
-  View, edit and add Organizations and their Offices, Contacts and Activities<br/> -->
-
-  <li><strong>{{=A(T('Activities Report'), _href=URL(r=request, c='or', f='activity'))}}</strong></li>
-  Report of all activities that organizations are engaged in<br/>
-  <li><strong>{{=A(T('Situation Map'), _href=URL(r=request, c='gis', f='map_viewing_client'))}}</strong></li>	
-
-{{=T("The situation map provides you with an integrated annotated map of what is happening in Haiti right now. We are pulling maps and events from multiple ")}} {{=A(T('sources'), _href=URL(r=request, c='gis', f='map_service_catalogue'))}}.
-
-{{=T("Current Incidents shown against the latest high resolution satellite imagery & rapidly-updating OpenStreetMap layers")}} and can be downloaded as <a href="http://wiki.sahana.lk/doku.php/haiti:status#location_feeds" target='_blank'>feeds in many formats</a> for viewing in Google Earth or using on a GPS.
-<br/>
-<!--
-{{=A(T('Locations List as GeoRSS'), _href=URL(r=request, c='gis', f='location.georss'))}} | {{=A(T('View Locations in Google Earth'), _href=URL(r=request, c='gis', f='location.kml'))}}
--->
- </ul>
-<p>
-<br/>{{=T("To add data to this database, see")}} <a href="http://trac.sahanapy.org/wiki/HaitiDataEntry" target='_blank'>{{=T("Data Entry Process")}}</a>
-<br/>{{=T("For live help from the Sahana community, go to")}} <a href="http://www.sahana.lk/chat" target='_blank'>{{=T("Sahana Community Chat")}}</a>
-</p>
-<p>
-{{=T("Administrator")}}: {{=admin_name}}
-<br/>{{=T("Email")}} : {{=admin_email}}
-<br/>{{=T("Telephone")}} : {{=admin_tel}}
-</p>
-<p>Please report people status via Google, we can import Data from them:</p>
 <div align='center'>
-<iframe
+  <iframe
   src="http://haiticrisis.appspot.com/?small=yes"
-  width=350 height=300 frameborder=0
-  style="border: dashed 2px #77c">
-</iframe>
-<p>&nbsp;</p>
+  width=90% height=300 frameborder=0
+  style="border: dashed 2px #fff">
+  </iframe>
+  <p>&nbsp;</p>
+</div>
+ 
+<p style="">
+{{=T('If you are able to spare some time, please visit us in')}} <a href="http://www.sahana.lk/chat">IRC</a> #sahana irc.freenode.net
+</p>
+<p>
+{{=T('You can see what tasks are needed to be done')}} {{=A('here', _href='http://bit.ly/sahana-haiti-todo')}}
+</p>
+<p>
+{{=T("To add data to this database, see")}} <a href="http://trac.sahanapy.org/wiki/HaitiDataEntry">{{=T("Data Entry Process")}}</a>
+</p>
+<p>
+{{=T("If you would prefer to provide cash:")}}
+</p>
+<div align='center'>
 <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
 <input type="hidden" name="cmd" value="_s-xclick">
 <input type="hidden" name="hosted_button_id" value="11209645">
@@ -53,8 +100,25 @@
 <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
 </form>
 </div>
+
+<h2 style="margin-top:1em;">
+{{=T('Contact Information')}}
+</h2>
+<p>
+{{=T('This site is administered by the Sahana Software Foundation, an organisation created in the wake of the 2005 Boxing Day Tsunami.')}}
+{{=T('More information can be found at')}} {{=A('http://sahanafoundation.org/', _href='http://sahanafoundation.org/')}}
+</p>
+ 
+ 
+<p>
+{{=admin_name}} :  {{=admin_email}}
+</p>
+ 
 </div>
-<div style="float: right; width: 49%;">
+ 
+ 
+<!-- Column 2 -->
+<div style="float: right; width: 47%;">
 <!-- ++Begin Dynamic Feed Wizard Generated Code++ -->
   <!--
   // Created with a Google AJAX Search and Feed Wizard
@@ -85,7 +149,7 @@
     function LoadDynamicFeedControl() {
       var feeds = [
         {title: 'Haiti',
-         url: 'http://www.haiti.org/index.php?format=feed&type=rss'
+         url: 'http://news.google.com/news?pz=1&cf=all&hl=en&q=haiti&cf=all&output=rss'
         },
         //{title: 'Port-au-Prince',
         // url: 'http://haiti.usembassy.gov/index/latest-news-on-the-crisis-in-haiti.html.rss'

@@ -54,15 +54,18 @@ sector_id = SQLTable(None, 'sector_id',
                 ondelete = 'RESTRICT'
                 ))
                 
-# Organisations
+# Organizations
 or_organisation_type_opts = {
     1:T('Government'),
-    2:T('International Governmental Organization'),
+    2:T('Embassy'),
     3:T('International NGO'),
-    4:T('Misc'),
-    5:T('National Institution'),
+    4:T('Donor'),
     6:T('National NGO'),
-    7:T('United Nations')
+    7:T('UN'),
+    8:T('International Organization'),
+    9:T('MINUSTAH'),
+    10:T('Military'),
+    11:T('Private')
     }
 resource = 'organisation'
 table = module + '_' + resource
@@ -91,7 +94,7 @@ db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
 db[table].type.label = T('Type')
 db[table].donation_phone.label = T('Donation Phone #')
 db[table].donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
-db[table].country.requires=IS_IN_SET(shn_list_of_nations)
+db[table].country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
 db[table].country.represent = lambda opt: opt and shn_list_of_nations[opt]
 db[table].country.label = T('Home Country')
 db[table].website.requires = IS_NULL_OR(IS_URL())
@@ -152,7 +155,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 shn_comments_field,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
+#db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
@@ -165,6 +169,7 @@ db[table].address.label = T('Address')
 db[table].postcode.label = T('Postcode')
 db[table].phone1.label = T('Phone 1')
 db[table].phone2.label = T('Phone 2')
+db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].email.label = T('Email')
 db[table].fax.label = T('FAX')
 db[table].national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
@@ -175,7 +180,8 @@ db[table].number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].number_of_vehicles.label = T('Number of Vehicles')
 db[table].vehicle_types.label = T('Vehicle Types')
 db[table].equipment.label = T('Equipment')
-title_create = T('Add Office')
+ADD_OFFICE = T('Add Office')
+title_create = ADD_OFFICE
 title_display = T('Office Details')
 title_list = T('List Offices')
 title_update = T('Edit Office')
@@ -183,12 +189,22 @@ title_search = T('Search Offices')
 subtitle_create = T('Add New Office')
 subtitle_list = T('Offices')
 label_list_button = T('List Offices')
-label_create_button = T('Add Office')
+label_create_button = ADD_OFFICE
 msg_record_created = T('Office added')
 msg_record_modified = T('Office updated')
 msg_record_deleted = T('Office deleted')
 msg_list_empty = T('No Offices currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+office_id = SQLTable(None, 'office_id',
+            Field('office_id', db.or_office,
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),
+                represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0],
+                label = T('Office'),
+                comment = DIV(A(ADD_OFFICE, _class='thickbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
+                ondelete = 'RESTRICT'
+                ))
+
 # JOINed resource (component)
 s3xrc.model.add_component('gis', 'location',
     multiple = False,
@@ -213,7 +229,7 @@ table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 person_id,
 				organisation_id,
-                Field('office_id', db.or_office),
+                office_id,
                 Field('title'),
                 Field('manager_id', db.pr_person),
 				Field('focal_point', 'boolean'),
@@ -221,14 +237,24 @@ db.define_table(table, timestamp, deletion_status,
                 shn_comments_field,
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
-db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
-db[table].office_id.label = T('Office')
-db[table].title.label = T('Title')
+db[table].title.label = T('Job Title')
 db[table].title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
 db[table].manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
 db[table].manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 db[table].manager_id.label = T('Manager')
 db[table].manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
+shn_pr_person_represent
+#or_contact_focal_point_represent = {
+#    0:T('-'),
+#    1:T('Focal Point'),
+#    }
+def represent_focal_point(is_focal_point): 
+    if is_focal_point: 
+        return "Focal Point" 
+    else: 
+        return "-"
+db[table].focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
+#opt: opt and or_office_type_opts[opt]
 db[table].focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
 title_create = T('Add Contact')
 title_display = T('Contact Details')
@@ -245,7 +271,41 @@ msg_record_deleted = T('Contact deleted')
 msg_list_empty = T('No Contacts currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-# Activity
+# Projects
+# The projects whihc each orgnaization is engaged in 
+resource = 'project'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status,
+				organisation_id,
+				location_id,
+				sector_id,
+				Field('title'),
+				Field('description'),
+				Field('beneficiaries', 'integer'),
+				Field('start_date', 'date'),
+				Field('end_date', 'date'),
+				Field('funded', 'boolean'),
+                Field('budgeted_cost', 'double'),
+                migrate=migrate)
+db[table].budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))				
+title_create = T('Add Project')
+title_display = T('Project Details')
+title_list = T('Projects Report')
+title_update = T('Edit Project')
+title_search = T('Search Projects')
+subtitle_create = T('Add New Project')
+subtitle_list = T('Projects')
+label_list_button = T('List Projects')
+label_create_button = T('Add Project')
+msg_record_created = T('Project added')
+msg_record_modified = T('Project updated')
+msg_record_deleted = T('Project deleted')
+msg_list_empty = T('No Projects currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)				
+
+#"Organization Name", "Sector\Cluster Name" , "Sub Sector Name", "Country Name", "Admin 1 Name", "Admin 2 Name", "Admin 3 Name", "Admin 4 Name", "Place Name", "Project Title", "Project Objective", "Project Description", "Primary Beneficiary", "Number of Primary Beneficiaries", "Secondary Beneficiary (separated by , )", "Number of Secondary Beneficiaries", "Implementing Partners (separated by , )", "Project Type", "Project Status", "Project Theme", "CAP #", "Estimated Start Date (dd/mm/yyyy)", "Estimated End Date (dd/mm/yyyy)", "Funding Amount", "Funding Currency", "Funding Type", "Funding Status", "Funding Reported to FTS (Yes or No)", "Organization Funding Details For each organization funding the project, the details include: Organization Name,Amount Funded,Funding Currency;(separate the data by comma ,) (For multiple organizations separate each Organization's Dataset by a semi-colon ;) Example: "Org1,100000,US$ ; Org2,20000,Pound"" (end of line) 
+
+# Activity - This table is now redundant - USE Projects now!! Only for backwards compatable
 # The activities whihc each orgnaization is engaged in 
 resource = 'activity'
 table = module + '_' + resource
@@ -276,7 +336,7 @@ msg_record_deleted = T('Activity deleted')
 msg_list_empty = T('No Activities currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)				
 				
-# Offices to Organisations
+# Offices to Organizations
 #resource='organisation_offices'
 #resource = 'office_to_organisation'
 #table = module + '_' + resource
@@ -289,7 +349,7 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #db[table].organisation_id.requires = IS_ONE_OF(db, 'or_organisation.id', '%(name)s')
 #db[table].organisation_id.label = T('Organization')
 
-# Contacts to Organisations
+# Contacts to Organizations
 # Do we want to allow contacts which are affiliated to an organisation but not to an office?
 # default can be HQ office
 #resource='contact_to_organisation'

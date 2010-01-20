@@ -61,6 +61,20 @@ s3xrc = ResourceController(db,
                            base_url="%s" % (S3_PUBLIC_URL),
                            rpp=ROWSPERPAGE)
 
+def shn_field_represent(field, row, col):
+    """
+        Representation of a field
+        Used by:
+         * export_xls()
+         * shn_list()
+           .aaData representation for dataTables' Server-side pagination
+    """
+    try:
+        represent = str(field.represent(row[col]))
+    except:
+        represent = row[col]
+    return represent
+    
 # *****************************************************************************
 # Exports
 
@@ -208,10 +222,10 @@ def export_rss(module, resource, query, rss=None, linkto=None):
                 description = ''
 
             entries.append(dict(
-                title=str(title).decode('utf-8'),
-                link=server + link + '/%d' % row.id,
-                description=str(description).decode('utf-8'),
-                created_on=row.created_on))
+                title = str(title).decode('utf-8'),
+                link = server + link + '/%d' % row.id,
+                description = str(description).decode('utf-8'),
+                created_on = row.created_on))
 
     import gluon.contrib.rss2 as rss2
 
@@ -276,11 +290,8 @@ def export_xls(table, query):
                 style.num_format_str = 'h:mm:ss'
 
             # Check for a custom.represent (e.g. for ref fields)
-            try:
-                represent = str(field.represent(item[col]))
-            except:
-                represent = item[col]
-
+            represent = shn_field_represent(field, item, col)
+            
             rowx.write(cell1, str(represent), style)
             cell1 += 1
     book.save(output)
@@ -889,60 +900,6 @@ def shn_list_item(table, resource, action, main='name', extra=None):
     return DIV(*items)
 
 #
-# pagenav ---------------------------------------------------------------------
-#
-def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last', pagenums=10):
-
-    """ Generate a page navigator around current record number """
-
-    # e.g. 1 < 3 4 5 > 36,
-    # derived from: http://99babysteps.appspot.com/how2/default/article_read/2
-
-    if not totalpages:
-        maxpages = page + 1
-    else:
-        maxpages = totalpages
-        page = min(page, totalpages)
-    pagerange = pagenums / 2 # half the page numbers will be below the startpage, half above
-    # create page selector list eg 1 2 3
-    pagelinks = [i for i in range(max(1, page - pagerange), min(page + pagerange, maxpages) + 1)]
-    startpagepos = pagelinks.index(page)
-    # make pagelist into hyperlinks:
-    pagelinks = [A(str(pagelink), _href=URL(r=request, vars={'page':pagelink})) for pagelink in pagelinks]
-    # remove link to current page & make text emphasised:
-    pagelinks[startpagepos] = B(str(page))
-    if page < maxpages:
-        nextlink = A(next, _href=URL(r=request, vars={'page':page + 1}))
-    else:
-        # no link if no next
-        nextlink = next
-    if page > 1:
-        prevlink = A(prev, _href=URL(r=request, vars={'page':page - 1}))
-        firstlink = A(first, _href=URL(r=request, vars={'page':1}))
-    else:
-        # no links if no prev
-        prevlink = prev
-        firstlink = DIV(first)
-    if last <> '':
-        if totalpages > 0:
-            lasttext = last + '(' + str(totalpages) + ')'
-        else:
-            lasttext = last + '...'
-    lastlink = A(lasttext, _href=URL(r=request, vars={'page':maxpages}))
-    delim = XML('&nbsp;') # nonbreaking delim
-    pagenav = firstlink
-    pagenav.append(delim)
-    pagenav.append(prevlink)
-    pagenav.append(delim)
-    for pageref in pagelinks:
-        pagenav.append(pageref)
-        pagenav.append(delim)
-    pagenav.append(nextlink)
-    pagenav.append(delim)
-    pagenav.append(lastlink)
-    return pagenav
-
-#
 # shn_custom_view -------------------------------------------------------------
 #
 def shn_custom_view(jr, default_name, format=None):
@@ -1219,7 +1176,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
-               aaData = [[row[f] for f in table.fields if table[f].readable] for row in rows])
+               #aaData = [[row[f].represent for f in table.fields if table[f].readable] for row in rows])
+               aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
         return json(r)
     
     if jr.representation=="html":
@@ -1993,13 +1951,15 @@ def shn_rest_controller(module, resource,
                 - responses in JSON format
                 - create/update/delete done via simple GET vars (no form displayed)
             - B{popup}: designed to be used inside popups
-
+            - B{aaData}: used by dataTables for server-side pagination
+            
         Request options:
         ================
 
             - B{response.s3.filter}: contains custom query to filter list views (primary resources)
             - B{response.s3.jfilter}: contains custom query to filter list views (joined resources)
             - B{response.s3.cancel}: adds a cancel button to forms & provides a location to direct to upon pressing
+            - B{response.s3.pagination}: enables server-side pagination (detected by view which then calls REST via AJAX)
 
         Description:
         ============

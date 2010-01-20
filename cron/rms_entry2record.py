@@ -69,6 +69,7 @@ while done == False:
 
     for entry in d.entries:
         rec, locd = rss2record(entry)
+        # Don't import duplicates
         if db(db.rms_sms_request.ush_id == rec['ush_id']).count() == 0:
 
             locid = None

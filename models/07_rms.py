@@ -200,12 +200,12 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     person_id,
     organisation_id,
     Field("pledge", "integer"),
-    Field("description", "string"), 
+    Field("details", "string"), 
+    Field("tweet", "string"),
     Field("author", "string"), 
     #Field("updated", 'datetime'), 
     Field("updated", "string"), 
     Field("link", "string"),
-    Field("tweet", "string"),
     Field("ttt_id", "string"), 
     migrate=migrate)
 
@@ -217,6 +217,7 @@ db[table].pledge.label = T('Pledge Status')
 db[table].tweet.label = T("Tweet")
 db[table].person_id.label = T("Pledge Name")
 db[table].organisation_id.label = T("Pledge Organisation")
+db[table].details.label = T("Pledge Details")
 
 # Make some fields invisible:
 db[table].ttt_id.writable = db[table].ttt_id.readable = False
@@ -226,6 +227,8 @@ db[table].author.writable = False
 db[table].updated.writable = False
 db[table].link.writable = False
 db[table].tweet.writable = False
+
+db[table].link.represent = lambda url: A(url, _href=url, _target='blank')
 
 ADD_TWEET_REQUEST = T('Add Tweet Request')
 s3.crud_strings[table] = Storage( title_create        = ADD_TWEET_REQUEST, 

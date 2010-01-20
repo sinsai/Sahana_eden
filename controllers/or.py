@@ -6,7 +6,7 @@ module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Dashboard'), False, URL(r=request, f='dashboard')],
-    [T('Organisations'), False, URL(r=request, f='organisation'),[
+    [T('Organizations'), False, URL(r=request, f='organisation'),[
         [T('Add Organisation'), False, URL(r=request, f='organisation', args='create')],
         #[T('List Organisations'), False, URL(r=request, f='organisation')],
         #[T('Search Organisations'), False, URL(r=request, f='organisation', args='search')]

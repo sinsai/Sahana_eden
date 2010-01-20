@@ -47,5 +47,6 @@ var options = {
 	projection: projection_current,
 	units: "{{=units}}",
 	maxResolution: {{=maxResolution}},
-	maxExtent: new OpenLayers.Bounds({{=maxExtent}})
+	maxExtent: new OpenLayers.Bounds({{=maxExtent}}),
+    numZoomLevels: {{=numZoomLevels}}
 };

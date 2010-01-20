@@ -135,7 +135,7 @@ budget_currency_type_opts = {
     3:T('Pounds')
     }
 opt_budget_currency_type = db.Table(None, 'budget_currency_type',
-                    db.Field('currency_type', 'integer', notnull=True,
+                    Field('currency_type', 'integer', notnull=True,
                     requires = IS_IN_SET(budget_currency_type_opts),
                     default = 1,
                     label = T('Currency'),

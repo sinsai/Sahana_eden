@@ -1,5 +1,36 @@
 {{extend 'layout.html'}}
-
+{{=H2(title)}}
+{{include 'gis/catalogue_toolbar.html'}}
+{{=P(description)}}
+{{=P(A(T("Edit Description"), _href=URL(r=request, f='feature_group', args=('update', feature_group))))}}
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+</div>
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=H3(addtitle)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=form1}}
+{{except:}}
+{{pass}}
+{{try:}}
+ {{=form2}}
+{{except:}}
+{{pass}}
+</div>
+{{include 'key.html'}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Set the Crud dropdowns to the current Feature Group
@@ -40,37 +71,3 @@ $(function() {
 	})
 });
 //]]></script>
-
-{{=H2(title)}}
-{{=P(description)}}
-
-{{=P(A(T("Edit Description"), _href=URL(r=request, f='feature_group', args=('update', feature_group))))}}
-
-{{try:}}
- {{=H3(subtitle)}}
-{{except:}}
-{{pass}}
-<div class='form-container'>
-<div id='table-container'>
-{{try:}}
- {{=items}}
-{{except:}}
-{{pass}}
-</div>
-</div>
-<p>&nbsp;</p>
-{{try:}}
- {{=H3(addtitle)}}
-{{except:}}
-{{pass}}
-<div class='form-container'>
-{{try:}}
- {{=form1}}
-{{except:}}
-{{pass}}
-{{try:}}
- {{=form2}}
-{{except:}}
-{{pass}}
-</div>
-{{include 'key.html'}}

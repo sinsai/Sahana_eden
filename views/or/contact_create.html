@@ -10,6 +10,7 @@
 {{pass}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
+    // Organisation AutoComplete
     // Hide the real Input Field
     $("#or_contact_organisation_id").hide();
     
@@ -24,6 +25,20 @@ $(function() {
         $("#or_contact_organisation_id").val(newvalue);
     }); 
     
+    // Person AutoComplete
+    // Hide the real Input Field
+    $("#or_contact_person_id").hide();
+    
+    // Add a dummy field
+    $("#or_contact_person_id").after("<input id='dummy_person' class='ac_input' size=50 />");
+
+    {{include 'pr/person_autocomplete.js'}}
+
+    // Populate the real Input when the Dummy is selected
+    $("#dummy_person").result(function(event, data, formatted) {
+        var newvalue = data.id;
+        $("#or_contact_person_id").val(newvalue);
+    }); 
 });
 //]]></script>
 

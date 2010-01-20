@@ -11,7 +11,7 @@ s3_module_type_opts = {
     5:T('Communications')
     }
 opt_s3_module_type = db.Table(None, 'opt_s3_module_type',
-                    db.Field('module_type', 'integer', notnull=True,
+                    Field('module_type', 'integer', notnull=True,
                     requires = IS_IN_SET(s3_module_type_opts),
                     default = 1,
                     represent = lambda opt: opt and s3_module_type_opts[opt]))

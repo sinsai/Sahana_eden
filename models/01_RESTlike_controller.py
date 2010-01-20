@@ -721,7 +721,7 @@ def shn_audit_read(operation, module, resource, record=None, representation=None
 
     if session.s3.audit_read:
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = operation,
                 module = module,
                 resource = resource,
@@ -750,7 +750,7 @@ def shn_audit_create(form, module, resource, representation=None):
         for var in form.vars:
             new_value.append(var + ':' + str(form.vars[var]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'create',
                 module = module,
                 resource = resource,
@@ -780,7 +780,7 @@ def shn_audit_update(form, module, resource, representation=None):
         for var in form.vars:
             new_value.append(var + ':' + str(form.vars[var]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'update',
                 module = module,
                 resource = resource,
@@ -804,7 +804,7 @@ def shn_audit_update_m2m(module, resource, record, representation=None):
 
     if session.s3.audit_write:
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'update',
                 module = module,
                 resource = resource,
@@ -830,7 +830,7 @@ def shn_audit_delete(module, resource, record, representation=None):
         for field in _old_value:
             old_value.append(field + ':' + str(_old_value[field]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'delete',
                 module = module,
                 resource = resource,
@@ -2377,9 +2377,15 @@ def shn_rest_controller(module, resource,
                     value = request.vars.value or request.vars.q or None
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
+                        field2 = str.lower(request.vars.field2)
+                        field3 = str.lower(request.vars.field3)
                         filter = request.vars.filter
                         if filter == '~':
-                            query = query & (jr.table[field].like('%' + value + '%'))
+                            if field2 and field3:
+                                # pr_person name search
+                                query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                            else:
+                                query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:
                                 item = db(query).select(limitby=(0, limit)).json()

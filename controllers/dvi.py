@@ -2,7 +2,7 @@
 
 # Only people with the DVI role should be able to access this module
 #try:
-#    dvi_group = db(db[auth.settings.table_group_name] == 'DVI').select()[0].id
+#    dvi_group = db(db[auth.settings.table_group_name] == 'DVI').select().first().id
 #    if auth.has_membership(dvi_group):
 #        pass
 #    else:
@@ -16,7 +16,7 @@
 module = 'dvi'
 # Current Module (for sidebar title)
 try:
-    module_name = db(db.s3_module.name==module).select()[0].name_nice
+    module_name = db(db.s3_module.name==module).select().first().name_nice
 except:
     module_name = T('Disaster Victim Identification')
 

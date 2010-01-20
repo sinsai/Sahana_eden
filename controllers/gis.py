@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 module = 'gis'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
@@ -16,7 +16,7 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 db[table].name.label = T('Name')
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
-db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0]
+db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 db[table].parent.label = T('Parent')
 db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
 db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
@@ -101,7 +101,7 @@ def config():
     db[table].lon.requires = IS_LON()
     db[table].lon.label = T('Longitude')
     db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-    db[table].zoom.requires = IS_INT_IN_RANGE(0,19)
+    db[table].zoom.requires = IS_INT_IN_RANGE(0, 19)
     db[table].zoom.label = T('Zoom')
     db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
     db[table].marker_id.label = T('Default Marker')
@@ -111,7 +111,9 @@ def config():
     db[table].map_width.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
     db[table].map_width.label = T('Map Width')
     db[table].map_width.comment = SPAN("*", _class="req")
-
+    db[table].zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
+    db[table].zoom_levels.label = T('Zoom Levels')
+    
     # CRUD Strings
     title_create = T('Add Config')
     title_display = T('Config Details')
@@ -212,23 +214,20 @@ def location_to_feature_group():
     # Model options
 
     # CRUD Strings
-    #title_create = ADD_FG
-    #title_display = T('Feature Group Details')
-    #title_list = T('List Feature Groups')
-    #title_update = T('Edit Feature Group')
-    #title_search = T('Search Feature Groups')
-    #subtitle_create = T('Add New Feature Group')
-    #subtitle_list = T('Feature Groups')
-    #label_list_button = T('List Feature Groups')
-    #label_create_button = ADD_FG
-    #msg_record_created = T('Feature Group added')
-    #msg_record_modified = T('Feature Group updated')
-    #msg_record_deleted = T('Feature Group deleted')
-    #msg_list_empty = T('No Feature Groups currently defined')
-    #s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
+    
     return shn_rest_controller(module, resource)
 
+def feature_class_to_feature_group():
+    "RESTlike CRUD controller"
+    resource = 'feature_class_to_feature_group'
+    table = module + '_' + resource
+
+    # Model options
+
+    # CRUD Strings
+
+    return shn_rest_controller(module, resource)
+    
 def location():
     "RESTlike CRUD controller"
     resource = 'location'
@@ -522,6 +521,7 @@ def layer_wms():
 
     return shn_rest_controller(module, resource)
 
+#@auth.requires_membership('AdvancedJS')
 def layer_js():
     "RESTlike CRUD controller"
     resource = 'layer_js'
@@ -628,8 +628,8 @@ def feature_create_map():
     "Show a map to draw the feature"
     title = T("Add GIS Feature")
     form = crud.create('gis_location', onvalidation=lambda form: wkt_centroid(form))
-    _projection = db(db.gis_config.id==1).select()[0].projection_id
-    projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    _projection = db(db.gis_config.id==1).select().first().projection_id
+    projection = db(db.gis_projection.id==_projection).select().first().epsg
 
     # Layers
     baselayers = layers()
@@ -642,7 +642,7 @@ def feature_group_contents():
     if len(request.args) == 0:
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f='feature_group'))
-    feature_group = request.args[0]
+    feature_group = request.args(0)
     tables = [db.gis_feature_class_to_feature_group, db.gis_location_to_feature_group]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
 
@@ -789,7 +789,7 @@ def feature_group_update_items():
     if len(request.args) == 0:
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f='feature_group'))
-    feature_group = request.args[0]
+    feature_group = request.args(0)
     tables = [db.gis_feature_class_to_feature_group, db.gis_location_to_feature_group]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:
@@ -946,13 +946,13 @@ def layers():
     for layer in layers_gpx:
         name = layer.name
         layers.gpx[name] = Storage()
-        track = db(db.gis_track.id==layer.track_id).select()[0]
+        track = db(db.gis_track.id==layer.track_id).select().first()
         layers.gpx[name].url = track.track
         if layer.marker_id:
-            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
+            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select().first().image
         else:
-            marker_id = db(db.gis_config.id==1).select()[0].marker_id
-            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
+            marker_id = db(db.gis_config.id==1).select().first().marker_id
+            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select().first().image
 
     cachepath = os.path.join(request.folder, 'uploads', 'gis_cache')
     if os.access(cachepath, os.W_OK):
@@ -987,7 +987,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select()[0].modified_on
+                    date = db(db.gis_cache.name == name).select().first().modified_on
                     response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
                     url = URL(r=request, c='default', f='download', args=[filename])
                 else:
@@ -1002,12 +1002,12 @@ def layers():
         # Add to return
         layers.georss[name] = Storage()
         layers.georss[name].url = url
-        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select()[0].epsg
+        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
         if layer.marker_id:
-            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select()[0].image
+            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select().first().image
         else:
-            marker_id = db(db.gis_config.id==1).select()[0].marker_id
-            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select()[0].image
+            marker_id = db(db.gis_config.id==1).select().first().marker_id
+            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select().first().image
 
     # KML
     layers.kml = Storage()
@@ -1036,7 +1036,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select()[0].modified_on
+                    date = db(db.gis_cache.name == name).select().first().modified_on
                     response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
                     url = URL(r=request, c='default', f='download', args=[filename])
                 else:
@@ -1063,7 +1063,7 @@ def layers():
         if layer.map:
             layers.wms[name].map = layer.map
         layers.wms[name].layers = layer.layers
-        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select()[0].epsg
+        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
         layers.wms[name].transparent = layer.transparent
         if layer.format:
             layers.wms[name].format = layer.format
@@ -1120,7 +1120,7 @@ def layers_enable():
                 query_inner = table.id==row.id
                 var = '%s_%i' % (type, row.id)
                 # Read current state
-                if db(query_inner).select()[0].enabled:
+                if db(query_inner).select().first().enabled:
                     # Old state: Enabled
                     if var in request.vars:
                         # Do nothing
@@ -1159,11 +1159,12 @@ def map_viewing_client():
     output = dict(title=title, module_name=module_name)
 
     # Config
-    config = db(db.gis_config.id==1).select()[0]
+    config = db(db.gis_config.id==1).select().first()
     width = config.map_width
     height = config.map_height
+    numZoomLevels = config.zoom_levels
     _projection = config.projection_id
-    projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    projection = db(db.gis_projection.id==_projection).select().first().epsg
     # Support bookmarks (such as from the control)
     if 'lat' in request.vars:
         lat = request.vars.lat
@@ -1177,7 +1178,7 @@ def map_viewing_client():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg==projection).select()[0]
+    epsg = db(db.gis_projection.epsg==projection).select().first()
     units = epsg.units
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
@@ -1185,13 +1186,13 @@ def map_viewing_client():
     symbology = config.symbology_id
 
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
 
     # Layers
     baselayers = layers()
     # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz, js_layers=baselayers.js))
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, js_layers=baselayers.js))
 
     # Internal Features
     features = Storage()
@@ -1219,7 +1220,10 @@ def map_viewing_client():
             feature.module = feature.gis_feature_class.module
             feature.resource = feature.gis_feature_class.resource
             if feature.module and feature.resource:
-                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select()[0].id
+                try:
+                    feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select().first().id
+                except:
+                    feature.resource_id = None
             else:
                 feature.resource_id = None
 
@@ -1229,7 +1233,7 @@ def map_viewing_client():
                 # 2nd choice for a Marker is the Symbology for the Feature Class
                 query = (db.gis_symbology_to_feature_class.feature_class_id == feature.gis_feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
                 try:
-                    marker = db(query).select()[0].marker_id
+                    marker = db(query).select().first().marker_id
                 except:
                     if not marker:
                         # 3rd choice for a Marker is the Feature Class's
@@ -1237,7 +1241,7 @@ def map_viewing_client():
                     if not marker:
                         # 4th choice for a Marker is the default
                         marker = marker_default
-            feature.marker = db(db.gis_marker.id == marker).select()[0].image
+            feature.marker = db(db.gis_marker.id == marker).select().first().image
 
             try:
                 # Metadata is M->1 to Features
@@ -1276,8 +1280,8 @@ def display_feature():
     """
 
     # The Feature
-    feature_id = request.args[0]
-    feature = db(db.gis_location.id == feature_id).select()[0]
+    feature_id = request.args(0)
+    feature = db(db.gis_location.id == feature_id).select().first()
 
     # Check user is authorised to access record
     if not shn_has_permission('read', db.gis_location, feature.id):
@@ -1285,11 +1289,12 @@ def display_feature():
         raise HTTP(401, body=json_message(False, 401, session.error))
 
     # Config
-    config = db(db.gis_config.id==1).select()[0]
+    config = db(db.gis_config.id==1).select().first()
     width = config.map_width
     height = config.map_height
+    numZoomLevels = config.zoom_levels
     _projection = config.projection_id
-    projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    projection = db(db.gis_projection.id==_projection).select().first().epsg
     # Support bookmarks (such as from the control)
     if 'lat' in request.vars:
         lat = request.vars.lat
@@ -1303,7 +1308,7 @@ def display_feature():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg==projection).select()[0]
+    epsg = db(db.gis_projection.epsg==projection).select().first()
     units = epsg.units
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
@@ -1311,14 +1316,19 @@ def display_feature():
     symbology = config.symbology_id
 
     # Add the config to the Return
-    output = dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
+    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
 
     # Feature details
-    feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
-    feature.module = feature_class.module
-    feature.resource = feature_class.resource
+    try:
+        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select().first()
+        feature.module = feature_class.module
+        feature.resource = feature_class.resource
+    except:
+        feature_class = None
+        feature.module = None
+        feature.resource = None
     if feature.module and feature.resource:
-        feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
+        feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select().first().id
     else:
         feature.resource_id = None
     # provide an extra access so no need to duplicate popups code
@@ -1330,17 +1340,19 @@ def display_feature():
     marker = feature.marker_id
     if not marker:
         # 2nd choice for a Marker is the Symbology for the Feature Class
-        query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-        try:
-            marker = db(query).select()[0].marker_id
-        except:
+        if feature_class:
+            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+            try:
+                marker = db(query).select().first().marker_id
+            except:
+                pass
             if not marker:
                 # 3rd choice for a Marker is the Feature Class's
                 marker = feature_class.marker_id
-            if not marker:
-                # 4th choice for a Marker is the default
-                marker = marker_default
-    feature.marker = db(db.gis_marker.id == marker).select()[0].image
+        if not marker:
+            # 4th choice for a Marker is the default
+            marker = marker_default
+    feature.marker = db(db.gis_marker.id == marker).select().first().image
 
     try:
         # Metadata is M->1 to Features
@@ -1371,8 +1383,10 @@ def display_feature():
 
     # Layers
     baselayers = layers()
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+    # Add the Base Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    # Don't want confusing overlays
+    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[]))
 
     return output
 
@@ -1444,11 +1458,12 @@ def display_features():
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
 
     # Config
-    config = db(db.gis_config.id==1).select()[0]
+    config = db(db.gis_config.id==1).select().first()
     width = config.map_width
     height = config.map_height
+    numZoomLevels = config.zoom_levels
     _projection = config.projection_id
-    projection = db(db.gis_projection.id==_projection).select()[0].epsg
+    projection = db(db.gis_projection.id==_projection).select().first().epsg
     # Support bookmarks (such as from the control)
     if 'lat' in request.vars:
         lat = request.vars.lat
@@ -1462,7 +1477,7 @@ def display_features():
         zoom = request.vars.zoom
     else:
         zoom = None
-    epsg = db(db.gis_projection.epsg==projection).select()[0]
+    epsg = db(db.gis_projection.epsg==projection).select().first()
     units = epsg.units
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
@@ -1470,16 +1485,19 @@ def display_features():
     symbology = config.symbology_id
 
     # Add the config to the Return
-    output.update(dict(width=width, height=height, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
 
     # Feature details
     for feature in features:
-        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select()[0]
+        try:
+            feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select().first()
+        except:
+            feature_class = None
         feature.module = feature_class.module
         feature.resource = feature_class.resource
         if feature.module and feature.resource:
             try:
-                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select()[0].id
+                feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.id).select().first().id
             except:
                 feature.resource_id = None
         else:
@@ -1495,7 +1513,7 @@ def display_features():
             # 2nd choice for a Marker is the Symbology for the Feature Class
             query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
             try:
-                marker = db(query).select()[0].marker_id
+                marker = db(query).select().first().marker_id
             except:
                 if not marker:
                     # 3rd choice for a Marker is the Feature Class's
@@ -1503,7 +1521,7 @@ def display_features():
                 if not marker:
                     # 4th choice for a Marker is the default
                     marker = marker_default
-        feature.marker = db(db.gis_marker.id == marker).select()[0].image
+        feature.marker = db(db.gis_marker.id == marker).select().first().image
 
         try:
             # Metadata is M->1 to Features

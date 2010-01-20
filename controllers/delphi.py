@@ -2,7 +2,7 @@
 
 module = 'delphi'
 # Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+module_name = db(db.s3_module.name==module).select().first().name_nice
 
 response.menu_options = [
     [T("Active Problems"), False, URL(r=request, f='index')],

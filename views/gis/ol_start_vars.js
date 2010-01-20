@@ -7,6 +7,7 @@ var featuresLayer, currentFeature;
 //var pointControl, lineControl, polygonControl;
 //var selectControl, dragControl
 
+OpenLayers.ImgPath='/{{=request.application}}/static/img/gis/openlayers/'
 // avoid pink tiles
 OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
 OpenLayers.Util.onImageLoadErrorColor = "transparent";
@@ -44,5 +45,6 @@ var options = {
 	projection: projection_current,
 	units: "{{=units}}",
 	maxResolution: {{=maxResolution}},
-	maxExtent: new OpenLayers.Bounds({{=maxExtent}})
+	maxExtent: new OpenLayers.Bounds({{=maxExtent}}),
+    numZoomLevels: {{=numZoomLevels}}
 };

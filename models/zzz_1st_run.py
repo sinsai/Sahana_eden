@@ -541,6 +541,7 @@ if empty:
                 name = 'VMap0',
                 description = 'A Free low-resolution Vector Map of the whole world',
                 url = 'http://labs.metacarta.com/wms/vmap0',
+                projection_id = db(db.gis_projection.epsg == 4326).select()[0].id,
                 layers = 'basic',
                 enabled = False
             )

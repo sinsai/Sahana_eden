@@ -354,13 +354,16 @@ class AuthS3(Auth):
                             label=self.messages.label_first_name),
                     db.Field('last_name', length=128, default='',
                             label=self.messages.label_last_name),
+                    db.Field('person_uuid', length=64, default='',
+                             readable=False, writable=False),
 
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    db.Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
+                    db.Field('utc_offset', length=16, default="UTC +0000",
+                             readable=False, writable=False),
                     db.Field('username', length=128, default=''),
                     db.Field('email', length=512, default='',
                             label=self.messages.label_email),
@@ -378,13 +381,16 @@ class AuthS3(Auth):
                             label=self.messages.label_first_name),
                     db.Field('last_name', length=128, default='',
                             label=self.messages.label_last_name),
+                    db.Field('person_uuid', length=64, default='',
+                             readable=False, writable=False),
 
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    db.Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
+                    db.Field('utc_offset', length=16, default="UTC +0000",
+                             readable=False, writable=False),
                     #db.Field('username', length=128, default=''),
                     db.Field('email', length=512, default='',
                             label=self.messages.label_email),
@@ -772,24 +778,31 @@ class AuthS3(Auth):
         self.add_membership(authenticated, form.vars.id)
         # S3: Add to Person Registry as well
         # Check to see whether User already exists
-        if len(db(db.pr_person.email==form.vars.email).select()):
+        if db(db.pr_person.email==form.vars.email).count():
             # Update
             #db(db.pr_person.email==form.vars.email).select()[0].update_record(
             #    name = form.vars.name
             #)
             pass
         else:
-            # Insert Person Entity
+            table_user = self.settings.table_user
+            # Insert person entity
             pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=1,label=None)
-            # Link to Person Entity
             if pr_pe_id:
-                db.pr_person.insert(
+                # Insert person record
+                new_id = db.pr_person.insert(
                     pr_pe_id = pr_pe_id,
                     pr_pe_label=None,
                     first_name = form.vars.first_name,
                     last_name = form.vars.last_name,
                     email = form.vars.email
                 )
+                # Write person UUID to user record
+                if new_id:
+                    person_uuid = db.pr_person[new_id].uuid
+                    db(table_user.id==form.vars.id).update(person_uuid=person_uuid)
+                    if auth.user and auth.user.id==form.vars.id:
+                        auth.user.person_uuid=person_uuid
 
     def requires_membership(self, role):
         """

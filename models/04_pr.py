@@ -457,15 +457,18 @@ pr_pe_id2 = SQLTable(None, 'pr_pe_id',
                     ondelete = 'RESTRICT',
                     label = T('ID')
                 ))
-#
-# Field options ---------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Field options for physical descriptions (MPR, DVI)
 #
 pr_pd_bodily_constitution_opts = {
-    1:T('light'),
-    2:T('medium'),
-    3:T('heavy'),
-    99:T('Data not available')
-    }
+    1: T('light'),
+    2: T('medium'),
+    3: T('heavy'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
 # D2-44/01 Lips, Shape
 # D2-39/03 Eyes, Distance between Eyes
 # D2-40/01 Nose, size
@@ -474,302 +477,481 @@ pr_pd_bodily_constitution_opts = {
 # D3-47/01 Chin, Size
 # D3-49/01 Hands, Size
 pr_pd_size_opts = {
-    1:T('small'),
-    2:T('medium'),
-    3:T('large'),
-    99:T('Data not available')
-    }
+    1: T('small'),
+    2: T('medium'),
+    3: T('large'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
 # D3-48/01 Neck, Length
 # D3-49/02 Hands, Nail length
 pr_pd_length_opts = {
-    1:T('short'),
-    2:T('medium'),
-    3:T('long'),
-    99:T('Data not available')
-    }
+    1: T('short'),
+    2: T('medium'),
+    3: T('long'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
 # D3-48/01 Neck, Shape
 # D1-36/05 Hair of the head, Thickness
 # D2-38/01 Eyebrows, Thickness
 pr_pd_thickness_opts = {
-    1:T('thin'),
-    2:T('medium'),
-    3:T('thick'),
-    99:T('Data not available')
-    }
+    1: T('thin'),
+    2: T('medium'),
+    3: T('thick'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
 # D1-36/03 Hair of the head, Colour
 # D2-41/02 Facial hair, Colour
 # D3-51/02 Body hair, Colour
 # D3-52/02 Pubic hair, Colour
 pr_pd_hair_colour_opts = {
-    1:T('blond'),
-    2:T('brown'),
-    3:T('black'),
-    4:T('red'),
-    5:T('grey'),
-    6:T('white'),
+    1: T('blond'),
+    2: T('brown'),
+    3: T('black'),
+    4: T('red'),
+    5: T('grey'),
+    6: T('white'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-35/01 Race, group
+pr_pd_race_group_opts = {
+    1: T('caucasoid'),
+    2: T('mongoloid'),
+    3: T('negroid'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-35/01 Race, complexion
+pr_pd_race_complexion_opts = {
+    1: T('light'),
+    2: T('medium'),
+    3: T('dark'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-34/02 Head form, front
+pr_pd_head_form_front_opts = {
+    1: T('oval'),
+    2: T('pointheaded'),
+    3: T('pyramidal'),
+    4: T('circular'),
+    5: T('rectangular'),
+    6: T('quadrangular'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-34/03 Head form, profile
+pr_pd_head_form_profile_opts = {
+    1: T('shallow'),
+    2: T('medium'),
+    3: T('deep'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-36/01 Hair of the head, Type
+pr_pd_hair_head_type_opts = {
+    1: T('none'),
+    2: T('natural'),
+    3: T('artificial'),
+    4: T('Hair-piece'),
+    5: T('Wig'),
+    6: T('braided'),
+    7: T('implanted'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-36/02 Hair of the head, Length
+pr_pd_hair_head_length_opts = {
+    1: T('short<6cm'),
+    2: T('medium<12cm'),
+    3: T('long>12cm'),
+    4: T('shaved'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-36/04 Hair of the head, Shade of colour
+pr_pd_hair_head_shade_opts = {
+    1: T('light'),
+    2: T('medium'),
+    3: T('dark'),
+    4: T('turning grey'),
+    5: T('dyed'),
+    6: T('streaked'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-36/06 Hair of the head, Style
+pr_pd_hair_head_style_opts = {
+    1: T('straight'),
+    2: T('wavy'),
+    3: T('curly'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-36/06 Hair of the head, Parting
+pr_pd_hair_head_parting_opts = {
+    1: T('none'),
+    2: T('left'),
+    3: T('right'),
+    4: T('middle'),
+    97:T('other'),
+    98:T('not applicable'),
     99:T('Data not available')
-    }
-pr_pd_race_group_opts = {                    # D1-35/01 Race, group
-    1:T('caucasoid'),
-    2:T('mongoloid'),
-    3:T('negroid'),
-    99:T('Data not available')
-    }
-pr_pd_race_complexion_opts = {               # D1-35/01 Race, complexion
-    1:T('light'),
-    2:T('medium'),
-    3:T('dark'),
-    99:T('Data not available')
-    }
-pr_pd_head_form_front_opts = {               # D1-34/02 Head form, front
-    1:T('oval'),
-    2:T('pointheaded'),
-    3:T('pyramidal'),
-    4:T('circular'),
-    5:T('rectangular'),
-    6:T('quadrangular'),
-    99:T('Data not available')
-    }
-pr_pd_head_form_profile_opts = {             # D1-34/03 Head form, profile
-    1:T('shallow'),
-    2:T('medium'),
-    3:T('deep'),
-    99:T('Data not available')
-    }
-pr_pd_hair_head_type_opts = {                # D1-36/01 Hair of the head, Type
-    1:T('natural'),
-    2:T('artificial'),
-    3:T('Hair-piece'),
-    4:T('Wig'),
-    5:T('braided'),
-    6:T('implanted'),
-    99:T('Data not available')
-    }
-pr_pd_hair_head_length_opts = {              # D1-36/02 Hair of the head, Length
-    1:T('short<6cm'),
-    2:T('medium<12cm'),
-    3:T('long>12cm'),
-    4:T('shaved'),
-    99:T('Data not available')
-    }
-pr_pd_hair_head_shade_opts = {               # D1-36/04 Hair of the head, Shade of colour
-    1:T('light'),
-    2:T('medium'),
-    3:T('dark'),
-    4:T('turning grey'),
-    5:T('dyed'),
-    6:T('streaked'),
-    99:T('Data not available')
-    }
-pr_pd_hair_head_style_opts = {               # D1-36/06 Hair of the head, Style
-    1:T('straight'),
-    2:T('wavy'),
-    3:T('curly'),
-    99:T('Data not available')
-    }
-pr_pd_hair_head_parting_opts = {             # D1-36/06 Hair of the head, Parting
-    1:T('left'),
-    2:T('right'),
-    3:T('middle'),
-    99:T('Data not available')
-    }
-pr_pd_hair_head_baldness_ext_opts = {        # D1-36/07 Hair of the head, Baldness (extent)
-    1:T('beginning'),
-    2:T('advanced'),
-    3:T('total'),
-    99:T('Data not available')
-    }
-pr_pd_hair_head_baldness_loc_opts = {        # D1-36/07 Hair of the head, Baldness (location)
-    1:T('forehead'),
-    2:T('sides'),
-    3:T('tonsure'),
-    99:T('Data not available')
-    }
-pr_pd_forehead_height_opts = {               # D2-37/01 Forehead, Height
-    1:T('low'),
-    2:T('medium'),
-    3:T('high'),
-    99:T('Data not available')
-    }
-pr_pd_forehead_width_opts = {                # D2-37/01 Forehead, Width
-    1:T('narrow'),
-    2:T('medium'),
-    3:T('wide'),
-    99:T('Data not available')
-    }
-pr_pd_forehead_inclination_opts = {          # D2-37/02 Forehead, Inclination
-    1:T('protruding'),
-    2:T('vertical'),
-    3:T('slightly receding'),
-    4:T('clearly receding'),
-    99:T('Data not available')
-    }
-pr_pd_eyebrows_shape_opts = {                # D2-38/01 Eyebrows, Shape
-    1:T('straight'),
-    2:T('arched'),
-    3:T('joining'),
-    99:T('Data not available')
-    }
-pr_pd_eyebrows_peculiarities_opts = {        # D2-38/02 Eyebrows, Peculiarities
-    1:T('plucked'),
-    2:T('tattooed'),
-    99:T('Data not available')
-    }
-pr_pd_eyes_colour_opts = {                   # D2-39/01 Eyes, Colour
-    1:T('blue'),
-    2:T('grey'),
-    3:T('green'),
-    4:T('brown'),
-    5:T('black'),
-    99:T('Data not available')
-    }
-pr_pd_eyes_shade_opts = {                    # D2-39/02 Eyes, Shade
-    1:T('light'),
-    2:T('medium'),
-    3:T('dark'),
-    4:T('mixed'),
-    99:T('Data not available')
-    }
-pr_pd_eyes_peculiarities_opts = {            # D2-39/04 Eyes, Peculiarities
-    1:T('cross-eyed'),
-    2:T('squint-eyed'),
-    3:T('Artificial eye left'),
-    4:T('Artificial eye right'),
-    99:T('Data not available')
-    }
-pr_pd_nose_shape_opts = {                    # D2-40/01 Nose, shape
-    1:T('pointed'),
-    2:T('Roman'),
-    3:T('Alcoholics'),
-    4:T('misshapen'),
-    99:T('Data not available')
-    }
-pr_pd_nose_curve_opts = {                    # D2-40/03 Nose, Curve
-    1:T('concave'),
-    2:T('straight'),
-    3:T('convex'),
-    99:T('Data not available')
-    }
-pr_pd_nose_angle_opts = {                    # D2-40/03 Nose, Angle
-    1:T('turned down'),
-    2:T('horizontal'),
-    3:T('turned up'),
-    99:T('Data not available')
-    }
-pr_pd_hair_facial_type_opts = {              # D2-41/01 Facial hair, Type
-    1:T('No beard'),
-    2:T('Moustache'),
-    3:T('Goatee'),
-    4:T('Whiskers'),
-    5:T('Full beard'),
-    99:T('Data not available')
-    }
-pr_pd_ears_angle_opts = {                    # D2-42/01 Ears, angle
-    1:T('close-set'),
-    2:T('medium'),
-    3:T('protruding'),
-    99:T('Data not available')
-    }
-pr_pd_chin_inclination_opts = {              # D3-47/01 Chin, Inclination
-    1:T('receding'),
-    2:T('medium'),
-    3:T('protruding'),
-    99:T('Data not available')
-    }
-pr_pd_chin_shape_opts = {                    # D3-47/02 Chin, Shape
-    1:T('pointed'),
-    2:T('round'),
-    3:T('angular'),
-    4:T('Cleft chin'),
-    5:T('groove'),
-    99:T('Data not available')
-    }
+}
+
+# D1-36/07 Hair of the head, Baldness (extent)
+pr_pd_hair_head_baldness_ext_opts = {
+    1: T('none'),
+    2: T('beginning'),
+    3: T('advanced'),
+    4: T('total'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D1-36/07 Hair of the head, Baldness (location)
+pr_pd_hair_head_baldness_loc_opts = {
+    1: T('forehead'),
+    2: T('sides'),
+    3: T('tonsure'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-37/01 Forehead, Height
+pr_pd_forehead_height_opts = {
+    1: T('low'),
+    2: T('medium'),
+    3: T('high'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-37/01 Forehead, Width
+pr_pd_forehead_width_opts = {
+    1: T('narrow'),
+    2: T('medium'),
+    3: T('wide'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-37/02 Forehead, Inclination
+pr_pd_forehead_inclination_opts = {
+    1: T('protruding'),
+    2: T('vertical'),
+    3: T('slightly receding'),
+    4: T('clearly receding'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-38/01 Eyebrows, Shape
+pr_pd_eyebrows_shape_opts = {
+    1: T('straight'),
+    2: T('arched'),
+    3: T('joining'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-38/02 Eyebrows, Peculiarities
+pr_pd_eyebrows_peculiarities_opts = {
+    1: T('normal'),
+    2: T('plucked'),
+    3: T('tattooed'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-39/01 Eyes, Colour
+pr_pd_eyes_colour_opts = {
+    1: T('blue'),
+    2: T('grey'),
+    3: T('green'),
+    4: T('brown'),
+    5: T('black'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-39/02 Eyes, Shade
+pr_pd_eyes_shade_opts = {
+    1: T('light'),
+    2: T('medium'),
+    3: T('dark'),
+    4: T('mixed'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-39/04 Eyes, Peculiarities
+pr_pd_eyes_peculiarities_opts = {
+    1: T('normal'),
+    2: T('cross-eyed'),
+    3: T('squint-eyed'),
+    4: T('Artificial eye left'),
+    5: T('Artificial eye right'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-40/01 Nose, shape
+pr_pd_nose_shape_opts = {
+    1: T('pointed'),
+    2: T('Roman'),
+    3: T('Alcoholics'),
+    4: T('misshapen'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-40/03 Nose, Curve
+pr_pd_nose_curve_opts = {
+    1: T('concave'),
+    2: T('straight'),
+    3: T('convex'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-40/03 Nose, Angle
+pr_pd_nose_angle_opts = {
+    1: T('turned down'),
+    2: T('horizontal'),
+    3: T('turned up'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-41/01 Facial hair, Type
+pr_pd_hair_facial_type_opts = {
+    1: T('none'),
+    2: T('Moustache'),
+    3: T('Goatee'),
+    4: T('Whiskers'),
+    5: T('Full beard'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-42/01 Ears, angle
+pr_pd_ears_angle_opts = {
+    1: T('close-set'),
+    2: T('medium'),
+    3: T('protruding'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-47/01 Chin, Inclination
+pr_pd_chin_inclination_opts = {
+    1: T('receding'),
+    2: T('medium'),
+    3: T('protruding'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-47/02 Chin, Shape
+pr_pd_chin_shape_opts = {
+    1: T('pointed'),
+    2: T('round'),
+    3: T('angular'),
+    4: T('Cleft chin'),
+    5: T('groove'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
 # D2-45/02 Teeth, Gaps between front teeth
 # D2-45/02 Teeth, Missing teeth
 # D2-45/02 Teeth, Toothless
 pr_pd_ul_opts = {
-    1:T('upper'),
-    2:T('lower'),
-    3:T('upper+lower'),
-    99:T('Data not available')
-    }
-pr_pd_teeth_dentures_lower_opts = {          # D2-45/03 Teeth, Dentures
-    1:T('part'),
-    2:T('full'),
-    99:T('Data not available')
-    }
-pr_pd_teeth_dentures_upper_opts = {          # D2-45/03 Teeth, Dentures
-    1:T('part'),
-    2:T('full'),
-    99:T('Data not available')
-    }
-pr_pd_neck_peculiarities_opts = {            # D3-48/02 Neck, Peculiarities
-    1:T('Goitre'),
-    2:T('Prominent Adams apple'),
-    99:T('Data not available')
-    }
-pr_pd_hands_shape_opts = {                   # D3-49/01 Hands, Shape
-    1:T('slender'),
-    2:T('medium'),
-    3:T('broad'),
-    99:T('Data not available')
-    }
-pr_pd_hands_nails_peculiarities_opts = {     # D3-49/03 Hands, Nail peculiarities
-    1:T('bitten short'),
-    2:T('manicured'),
-    3:T('painted'),
-    4:T('artificial'),
-    99:T('Data not available')
-    }
-pr_pd_hands_nicotine_opts = {                # D3-49/03 Hands, Nicotine
-    1:T('left'),
-    2:T('right'),
-    99:T('Data not available')
-    }
-pr_pd_feet_shape_opts = {                    # D3-50/01 Feet, Shape
-    1:T('slender'),
-    2:T('medium'),
-    3:T('broad'),
-    4:T('flatfooted'),
-    5:T('arched'),
-    99:T('Data not available')
-    }
-pr_pd_feet_condition_opts = {                # D3-50/02 Feet, Condition
-    1:T('Bunion'),
-    2:T('Corn'),
-    99:T('Data not available')
-    }
-pr_pd_feet_nails_opts = {                    # D3-50/02 Feet, Nails
-    1:T('painted'),
-    2:T('defective'),
-    99:T('Data not available')
-    }
-pr_pd_hair_body_extent_opts = {              # D3-51/01 Body hair, Extent
-    1:T('none'),
-    2:T('slight'),
-    3:T('medium'),
-    4:T('pronounced'),
-    99:T('Data not available')
-    }
-pr_pd_hair_pubic_extent_opts = {             # D3-52/01 Pubic hair, Extent
-    1:T('none'),
-    2:T('slight'),
-    3:T('medium'),
-    4:T('pronounced'),
-    5:T('shaved'),
-    99:T('Data not available')
-    }
-pr_pd_smoking_habits_opts = {                # D2-46/01 Smoking Habits, Type
-    1:T('none'),
-    2:T('Cigarettes'),
-    3:T('Cigars'),
-    4:T('Pipe'),
-    5:T('Chewing tobacco'),
-    99:T('Data not available')
-    }
+    1: T('no'),
+    2: T('upper'),
+    3: T('lower'),
+    4: T('upper+lower'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
 
-#
-# Physical Description Tables -------------------------------------------------
+# D2-45/03 Teeth, Dentures
+pr_pd_teeth_dentures_lower_opts = {
+    1: T('none'),
+    2: T('part'),
+    3: T('full'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-45/03 Teeth, Dentures
+pr_pd_teeth_dentures_upper_opts = {
+    1: T('none'),
+    2: T('part'),
+    3: T('full'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-48/02 Neck, Peculiarities
+pr_pd_neck_peculiarities_opts = {
+    1: T('normal'),
+    2: T('Goitre'),
+    3: T('Prominent Adams apple'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-49/01 Hands, Shape
+pr_pd_hands_shape_opts = {
+    1: T('slender'),
+    2: T('medium'),
+    3: T('broad'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-49/03 Hands, Nail peculiarities
+pr_pd_hands_nails_peculiarities_opts = {
+    1: T('normal'),
+    2: T('bitten short'),
+    3: T('manicured'),
+    4: T('painted'),
+    5: T('artificial'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-49/03 Hands, Nicotine
+pr_pd_hands_nicotine_opts = {
+    1: T('none'),
+    2: T('left'),
+    3: T('right'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-50/01 Feet, Shape
+pr_pd_feet_shape_opts = {
+    1: T('slender'),
+    2: T('medium'),
+    3: T('broad'),
+    4: T('flatfooted'),
+    5: T('arched'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-50/02 Feet, Condition
+pr_pd_feet_condition_opts = {
+    1: T('normal'),
+    2: T('Bunion'),
+    3: T('Corn'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-50/02 Feet, Nails Conditions
+pr_pd_feet_nails_opts = {
+    1: T('normal'),
+    2: T('painted'),
+    3: T('defective'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-51/01 Body hair, Extent
+pr_pd_hair_body_extent_opts = {
+    1: T('none'),
+    2: T('slight'),
+    3: T('medium'),
+    4: T('pronounced'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D3-52/01 Pubic hair, Extent
+pr_pd_hair_pubic_extent_opts = {
+    1: T('none'),
+    2: T('slight'),
+    3: T('medium'),
+    4: T('pronounced'),
+    5: T('shaved'),
+    97:T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# D2-46/01 Smoking Habits, Type
+pr_pd_smoking_habits_opts = {
+    1: T('none'),
+    2: T('Cigarettes'),
+    3: T('Cigars'),
+    4: T('Pipe'),
+    5: T('Chewing tobacco'),
+    97: T('other'),
+    98: T('not applicable'),
+    99: T('Data not available')
+}
+
+# -----------------------------------------------------------------------------
+# Physical Description Tables
 #
 
 #
@@ -1311,141 +1493,6 @@ msg_record_modified = T('Group Membership updated')
 msg_record_deleted = T('Group Membership deleted')
 msg_list_empty = T('No Group Memberships currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-# *****************************************************************************
-# Network (network)
-#
-#pr_network_type_opts = {
-#    1:T('Family'),
-#    2:T('Friends'),
-#    3:T('Colleagues'),
-#    99:T('other')
-#    }
-
-#opt_pr_network_type = SQLTable(None, 'opt_pr_network_type',
-#                    Field('opt_pr_network_type','integer',
-#                        requires = IS_IN_SET(pr_network_type_opts),
-#                        default = 99,
-#                        label = T('Network Type'),
-#                        represent = lambda opt: opt and pr_network_type_opts[opt]))
-
-#
-# network table ---------------------------------------------------------------
-#
-#resource = 'network'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp, deletion_status,
-#                person_id,                          # Reference to person (owner)
-#                opt_pr_network_type,                # Network type
-#                Field('comment'),                   # a comment (optional)
-#                migrate=migrate)
-
-# Joined Resource
-#s3xrc.model.add_component(module, resource,
-#    multiple=True,
-#    joinby=dict(pr_person='person_id'),
-#    deletable=True,
-#    editable=True,
-#    list_fields = ['id', 'opt_pr_network_type', 'comment'])
-
-# Field validation
-#db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-
-# Field representation
-
-# Field labels
-
-# CRUD Strings
-
-#
-# network_id: reusable field for other tables to reference ----------------------
-#
-#network_id = SQLTable(None, 'network_id',
-#                Field('network_id', db.pr_network,
-#                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_network.id', '%(id)s')),
-#                represent = lambda id: (id and [db(db.pr_network.id==id).select()[0].id] or ["None"])[0],
-#                comment = DIV(A(T('Add Network'), _class='thickbox', _href=URL(r=request, c='pr', f='network', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Network')), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Network|Create a social network layer for a person."))),
-#                ondelete = 'RESTRICT'
-#                ))
-
-# *****************************************************************************
-# Network membership (network_membership)
-#
-
-#
-# network_membership table ----------------------------------------------------
-#
-#resource = 'network_membership'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, deletion_status,
-#                network_id,
-#                person_id,
-#                Field('description'),
-#                Field('comment'),
-#                migrate=migrate)
-
-# Joined Resource
-#s3xrc.model.add_component(module, resource,
-#    multiple=True,
-#    joinby=dict(pr_person='person_id'),
-#    deletable=True,
-#    editable=True,
-#    list_fields = ['id','network_id','person_id','description','comment'])
-
-# Field validation
-
-# Field representation
-
-# Field labels
-
-# CRUD Strings
-
-# *****************************************************************************
-# Case (case)
-#
-
-#
-# case table ------------------------------------------------------------------
-#
-resource = 'case'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('description'),               # Short Description
-                Field('details','text'),            # Detailed Description
-                Field('comment'),                   # a comment (optional)
-                migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-
-# Reusable field for other tables to reference
-pcase_id = SQLTable(None, 'pcase_id',
-                Field('pcase_id', db.pr_case,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_case.id', '%(description)s')),
-                represent = lambda id: (id and [db(db.pr_case.id==id).select()[0].description] or ["None"])[0],
-                comment = DIV(A(T('Add Case'), _class='thickbox', _href=URL(r=request, c='pr', f='case', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Case')), A(SPAN("[Help]"), _class="tooltip", _title=T("Case|Add new case."))),
-                ondelete = 'RESTRICT'
-                ))
-
-# *****************************************************************************
-# Finding (finding)
-#
-
-#
-# finding table ---------------------------------------------------------------
-#
-resource = 'finding'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
-                pr_pe_id,                      # about which entity?
-#                opt_pr_findings_type,           # Finding type
-                Field('description'),           # Descriptive title
-                Field('module', db.s3_module),  # Access module
-                Field('resource'),              # Access resource
-                Field('resource_id'),           # Access ID
-                migrate=migrate)
-
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].module.requires = IS_NULL_OR(IS_ONE_OF(db, 's3_module.name', '%(name_nice)s'))
-db[table].module.represent = lambda name: (name and [db(db.s3_module.name==name).select()[0].name_nice] or ["None"])[0]
 
 # *****************************************************************************
 # Functions:

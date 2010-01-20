@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# Volunteer Management Module
+#
+
 module = 'vol'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 
@@ -13,6 +17,7 @@ response.menu_options = [
     [T('Persons'), False,  URL(r=request, f='person', args=['search_simple'],
                                vars={"_next":URL(r=request, f='person', args=['[id]','volunteer'])})],
 ]
+
 
 def shn_vol_menu_ext():
     menu = [
@@ -32,7 +37,7 @@ def shn_vol_menu_ext():
             ]
             menu.extend(menu_project)
     menu_persons = [
-            [T('Persons'), False, URL(r=request, f='person', args=['search_simple'], vars={"_next":URL(r=request, f='person', args=['[id]','volunteer'])})]
+        [T('Persons'), False, URL(r=request, f='person', args=['search_simple'], vars={"_next":URL(r=request, f='person', args=['[id]','volunteer'])})]
     ]
     menu.extend(menu_persons)
     if session.rcvars and 'pr_person' in session.rcvars:
@@ -49,24 +54,38 @@ def shn_vol_menu_ext():
                 ]]
             ]
             menu.extend(menu_person)
+    if auth.user is not None:
+        menu_user = [
+            [T('My Tasks'), False, URL(r=request, f='mytasks', args='')]
+        ]
+        menu.extend(menu_user)
     response.menu_options = menu
 
 shn_vol_menu_ext()
 
-# S3 framework functions
+
 def index():
-    "Module's Home Page"
+
+    """ Module's Home Page """
+
     return dict(module_name=module_name)
 
+
 def project():
+
+    """ Person Controller """
+
     output = shn_rest_controller( module , 'project', pheader=shn_vol_project_pheader)
     shn_vol_menu_ext()
     return output
 
-# Main controller functions
+
 def person():
-    db.pr_pd_general.est_age.readable=False
+
+    """ Person Controller """
+
     db.pr_person.missing.default = False
+
     crud.settings.delete_onaccept = shn_pentity_ondelete
     output = shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
@@ -76,17 +95,33 @@ def person():
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ),
         onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
+
     shn_vol_menu_ext()
     return output
 
-def position():
-    return shn_rest_controller( module , 'position')
 
-def volunteer():
-    return shn_rest_controller( module , 'volunteer')
+def mytasks():
 
-def skills():
-    return shn_rest_controller( module , 'skills')
+    """ Manage current user's tasks """
 
-def hours():
-    return shn_rest_controller( module , 'hours')
+    my_person_id = None
+
+    if auth.user is not None and auth.user.person_uuid:
+        my_person_id = db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1))
+        if my_person_id:
+            my_person_id = my_person_id[0]
+
+    if not my_person_id:
+        session.error = T('No person record found for current user.')
+        redirect(URL(r=request, f='index'))
+
+    db.vol_task.person_id.default = my_person_id
+    #db.vol_task.person_id.writable = False
+
+    response.s3.filter = (db.vol_task.person_id==my_person_id)
+
+    s3.crud_strings['vol_task'].title_list = T('My Tasks')
+    s3.crud_strings['vol_task'].subtitle_list = T('Task List')
+
+    return shn_rest_controller(module, 'task', listadd=False,
+        list_fields=['id', 'vol_project_id', 'subject', 'priority', 'status'])

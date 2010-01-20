@@ -333,7 +333,7 @@ shn_list_of_nations = {
     201:T('Transnistria'),
     999:T('unknown')
     }
-    
+
 # User Time Zone Operations:
 # TODO: don't know if that fits here, should perhaps be moved into sahana.py
 

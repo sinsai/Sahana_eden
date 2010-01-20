@@ -55,6 +55,9 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 # Settings and Restrictions
 #db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
+db[table].find_date.comment = SPAN("*", _class="req")
+db[table].find_date.requires = IS_DATETIME()
+
 # Labels
 db[table].find_date.label = T('Date and time of find')
 db[table].location_id.label = T('Place of find')
@@ -113,6 +116,11 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
 #db[table].pr_pe_parent.readable = True         # not visible in body registration form
 #db[table].pr_pe_parent.writable = True         # not visible in body registration form
 #db[table].pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
+
+db[table].pr_pe_label.comment = SPAN("*", _class="req")
+db[table].pr_pe_label.requires = IS_NOT_EMPTY()
+db[table].date_of_recovery.comment = SPAN("*", _class="req")
+db[table].date_of_recovery.requires = IS_DATETIME()
 
 # Labels
 db[table].dvi_find_id.label = T('Find report')

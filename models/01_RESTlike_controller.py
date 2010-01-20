@@ -2377,8 +2377,12 @@ def shn_rest_controller(module, resource,
                     value = request.vars.value or request.vars.q or None
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
-                        field2 = str.lower(request.vars.field2)
-                        field3 = str.lower(request.vars.field3)
+                        if request.vars.field2 and request.vars.field3:
+                            field2 = str.lower(request.vars.field2)
+                            field3 = str.lower(request.vars.field3)
+                        else:
+                            field2 = None
+                            field3 = None
                         filter = request.vars.filter
                         if filter == '~':
                             if field2 and field3:

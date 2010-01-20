@@ -215,8 +215,8 @@ db[table].pledge.label = T('Pledge Status')
 
 # Relabel Field Names:
 db[table].tweet.label = T("Tweet")
-db[table][person_id].label = T("Pledge Name")
-db[table][organisation_id].label = T("Pledge Organisation")
+db[table].person_id.label = T("Pledge Name")
+db[table].organisation_id.label = T("Pledge Organisation")
 
 # Make some fields invisible:
 db[table].ttt_id.writable = db[table].ttt_id.readable = False

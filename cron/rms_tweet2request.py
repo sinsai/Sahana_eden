@@ -2,10 +2,10 @@ print "Running Tweet request parse script"
 
 def rss2record(entry):
     myd = {}
-    myd['ttt_id'] = entry['ttt_id']
+    myd['ttt_id'] = entry['id']
     myd['link'] = entry['link']	 # url for the entry
     myd['author'] = entry['author']
-    myd['tweet'] = entry['description']
+    myd['tweet'] = entry['title']
     year = entry.updated_parsed[0]
     month = entry.updated_parsed[1]
     day = entry.updated_parsed[2]
@@ -24,7 +24,8 @@ start = 0
 done = False
 while done == False:
 
-    url = url_base + "&limit=" + str(start) + "," + str(N)
+    #url = url_base + "&limit=" + str(start) + "," + str(N)
+    url = url_base
     d = feedparser.parse(url)
 
     for entry in d.entries:

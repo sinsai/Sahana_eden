@@ -102,6 +102,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("department", "string"), 
     Field("summary", "string"), 
     Field("link", "string"),
+    Field("actionable", "boolean"),
     migrate=migrate)
 
 # for reusable
@@ -138,6 +139,7 @@ db[table]["address"       ].writable = False
 db[table]["city"          ].writable = False
 db[table]["department"    ].writable = False
 db[table][location_id     ].writable = False
+db[table]["actionable"    ].writeble = False
 
 db[table]["phone"      ].writable = False
 db[table]["firstname"  ].writable = False

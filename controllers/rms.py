@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'rms'
 # Current Module (for sidebar title)
@@ -43,6 +43,10 @@ def sms_request():
     "RESTlike CRUD controller"
     # Don't provide ability to add Locations here
     db.gis_location.comment = ''
+    
+    # Uncomment to filter out non-actionable requests:
+    # response.s3.filter = (db.rms_sms_request.actionable == True)
+    
     return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)
 
 def tweet_request():

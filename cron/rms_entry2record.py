@@ -1,5 +1,9 @@
 print "Running SMS request parse script"
 
+db.rms_sms_request.truncate()
+db.media_metadata.truncate()
+db.gis_location.truncate()
+
 marker  = db(db.gis_marker.name=="phone").select()
 feature = db(db.gis_feature_class.name=="SMS").select()
 
@@ -32,7 +36,8 @@ def rss2record(entry):
     myd['department'] = entry['department']
     myd['summary'] = entry['summary']
     myd['notes'] = entry['notes']
-    
+    myd['actionable'] = True if entry['actionable'] != '0' else False
+
     # Fix escape characters: 
     myd["notes"] = " ".join(myd["notes"].split())
     myd["notes"] = myd["notes"].replace('\\"', '"')

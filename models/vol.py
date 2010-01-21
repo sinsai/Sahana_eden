@@ -187,25 +187,25 @@ def shn_vol_volunteer_represent(id):
         return None
 
 # CRUD Strings
-title_create = T('Add Volunteer Status')
-title_display = T('Volunteer Details')
-title_list = T('Volunteers')
-title_update = T('Edit Volunteer Status')
-title_search = T('Search Volunteers')
-subtitle_create = T('Add Volunteer Status')
-subtitle_list = T('Volunteers')
-label_list_button = T('List Volunteers')
-label_create_button = T('Add Volunteer Status')
-msg_record_created = T('Volunteer status added')
-msg_record_modified = T('Volunteer status updated')
-msg_record_deleted = T('Volunteer status deleted')
+title_create = T('Add Volunteer Registration')
+title_display = T('Volunteer Registration')
+title_list = T('Volunteer Registration')
+title_update = T('Edit Volunteer Registration')
+title_search = T('Search Volunteer Registrations')
+subtitle_create = T('Add Volunteer Registration')
+subtitle_list = T('Volunteer Registration')
+label_list_button = T('List Registrations')
+label_create_button = T('Add Volunteer Registration')
+msg_record_created = T('Volunteer registration added')
+msg_record_modified = T('Volunteer registration updated')
+msg_record_deleted = T('Volunteer registration deleted')
 msg_list_empty = T('No volunteer information registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # Reusable field
 vol_volunteer_id = db.Table(None, 'vol_volunteer_id',
                             Field('vol_volunteer_id', db.vol_volunteer,
-                            requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_volunteer.id', shn_vol_volunteer_represent)),
+                            requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status==1), 'vol_volunteer.id', shn_vol_volunteer_represent)),
                             represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
                             comment = DIV(A(s3.crud_strings.vol_volunteer.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='volunteer', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_volunteer.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Volunteer|Add new volunteer)."))),
                             ondelete = 'RESTRICT'
@@ -304,7 +304,6 @@ msg_record_deleted = T('Skills deleted')
 msg_list_empty = T('No skills currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-
 # -----------------------------------------------------------------------------
 # vol_hours:
 #   documents the hours a volunteer has a position
@@ -396,7 +395,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                       represent = lambda opt: opt and vol_task_priority_opts[opt]),
                 Field('subject', length=80),
                 Field('description', 'text'),
-                vol_volunteer_id,
+                person_id,
                 Field('status', 'integer',
                       requires = IS_IN_SET(vol_task_status_opts),
                       default = 1,
@@ -405,7 +404,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field labels
-db[table].vol_volunteer_id.label = T('Assigned to')
+db[table].person_id.label = T('Assigned to')
 
 # Component
 s3xrc.model.add_component(module, resource,

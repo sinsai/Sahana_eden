@@ -152,17 +152,18 @@ location_id = SQLTable(None, 'location_id',
 
 def shn_gis_location_represent(id):
     try:
-        # Simple
-        #represent = db(db.gis_location.id==id).select().first().name
-        # Fancy Map
-        #represent = A(db(db.gis_location.id==id).select().first().name, _href='#', _onclick='viewMap(' + str(id) +');return false')
-        # Hyperlink
         location  = db(db.gis_location.id==id).select().first()
+        # Simple
+        #represent = location.name
+        # Fancy Map
+        #represent = A(location.name, _href='#', _onclick='viewMap(' + str(id) +');return false')
+        # Hyperlink
         represent = A(location.name, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
         # ToDo: Convert to popup? (HTML again!)
         # Export Lat/Lon if available, otherwise name
         # tbc
     except:
+        # Could also be 'Invalid' if data consistency wrong
         represent = None
     return represent
                 

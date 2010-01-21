@@ -354,6 +354,8 @@ class AuthS3(Auth):
                             label=self.messages.label_first_name),
                     Field('last_name', length=128, default='',
                             label=self.messages.label_last_name),
+                    Field('person_uuid', length=64, default='',
+                             readable=False, writable=False),
 
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
@@ -378,6 +380,8 @@ class AuthS3(Auth):
                             label=self.messages.label_first_name),
                     Field('last_name', length=128, default='',
                             label=self.messages.label_last_name),
+                    Field('person_uuid', length=64, default='',
+                             readable=False, writable=False),
 
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
@@ -766,30 +770,52 @@ class AuthS3(Auth):
             * adds them to the 'Authenticated' role
             * adds their name to the Person Registry
         """
-        db = self.db
+
         # Add to 'Authenticated' role
         authenticated = self.id_group('Authenticated')
         self.add_membership(authenticated, form.vars.id)
+
         # S3: Add to Person Registry as well
-        # Check to see whether User already exists
-        if len(db(db.pr_person.email==form.vars.email).select()):
-            # Update
-            #db(db.pr_person.email==form.vars.email).select()[0].update_record(
-            #    name = form.vars.name
-            #)
-            pass
+        self.shn_link_to_person(user=form.vars)
+
+
+    def shn_link_to_person(self, user=None):
+
+        db = self.db
+        table = self.settings.table_user
+
+        if user is None:
+            users = db(table.person_uuid==None).select(table.ALL)
         else:
-            # Insert Person Entity
-            pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=1,label=None)
-            # Link to Person Entity
-            if pr_pe_id:
-                db.pr_person.insert(
-                    pr_pe_id = pr_pe_id,
-                    pr_pe_label=None,
-                    first_name = form.vars.first_name,
-                    last_name = form.vars.last_name,
-                    email = form.vars.email
-                )
+            users = [user]
+
+        for user in users:
+            if 'email' in user:
+
+                email = user.email
+                if db(db.pr_person.email==email).count():
+                    person = db(db.pr_person.email==email).select(db.pr_person.ALL, limitby=(0,1))[0]
+                    if not db(table.person_uuid==person.uuid).count():
+                        db(table.id==user.id).update(person_uuid=person.uuid)
+                        continue
+                    else:
+                        email = None
+
+                pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=1)
+                if pr_pe_id:
+                    new_id = db.pr_person.insert(
+                        pr_pe_id = pr_pe_id,
+                        first_name = user.first_name,
+                        last_name = user.last_name,
+                        email = email
+                    )
+                    if new_id:
+                        person_uuid = db.pr_person[new_id].uuid
+                        db(table.id==user.id).update(person_uuid=person_uuid)
+
+                if self.user and self.user.id==user.id:
+                    self.user.person_uuid=person_uuid
+
 
     def requires_membership(self, role):
         """

@@ -300,7 +300,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
    Field('submitted_by', db.auth_user),
    organisation_id,
    location_id,
-   person_id,
 #   Field('comment_id', db.comment),
    migrate=migrate)
 

@@ -100,6 +100,7 @@ db[table]["category_term"].writable = db[table]["category_term"].readable = Fals
 db[table]["smsrec"       ].writable = db[table]["smsrec"       ].readable = False
 db[table]["summary"      ].writable = db[table]["summary"      ].readable = False
 db[table]["link"         ].writable = db[table]["link"         ].readable = False
+db[table]["actionable"   ].writeble = db[table]["actionable"   ].readable = False
 
 # make all fields read only
 db[table]["sms"           ].writable = False
@@ -112,7 +113,6 @@ db[table]["address"       ].writable = False
 db[table]["city"          ].writable = False
 db[table]["department"    ].writable = False
 db[table][location_id     ].writable = False
-db[table]["actionable"    ].writeble = False
 
 db[table]["phone"      ].writable = False
 db[table]["firstname"  ].writable = False

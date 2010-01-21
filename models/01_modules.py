@@ -203,6 +203,15 @@ if empty:
             description="Module to assist disaster nurses.",
             enabled='True'
         )
+        db[table].insert(
+            name="hms",
+            name_nice="Hospital Management",
+            priority=18,
+            module_type=4,
+            access='',
+            description="Helps to monitor status of hospitals",
+            enabled='True'
+        )
 
 
 # Modules Menu (available in all Controllers)

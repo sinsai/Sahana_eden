@@ -3,6 +3,7 @@ print "Running SMS request parse script"
 db.rms_sms_request.truncate()
 db.media_metadata.truncate()
 db.gis_location.truncate()
+db.rms_req.truncate()
 
 marker  = db(db.gis_marker.name=="phone").select()
 feature = db(db.gis_feature_class.name=="SMS").select()
@@ -39,6 +40,10 @@ def rss2record(entry):
     myd['actionable'] = True if entry['actionable'] != '0' else False
 
     # Fix escape characters: 
+    myd["sms"] = " ".join(myd["sms"].split())
+    myd["sms"] = myd["sms"].replace('\\"', '"')
+    myd["sms"] = myd["sms"].replace("\\'", "'")
+
     myd["notes"] = " ".join(myd["notes"].split())
     myd["notes"] = myd["notes"].replace('\\"', '"')
     myd["notes"] = myd["notes"].replace("\\'", "'")
@@ -73,11 +78,51 @@ def rss2record(entry):
 
     return myd, locd
 
+
+def sms_to_metadata(sms_dict):
+
+    metadata = {}
+    metadata["event_time" ] = sms_dict["updated"]
+
+    desc = sms_to_description(sms_dict)
+    desc = " ".join(desc.split())
+    desc = desc.replace('"', '\\"')
+    desc = desc.replace("'", "\\'")
+    
+    metadata["description"] = desc
+    metadata["location_id"] = locid
+
+    return metadata
+
+def sms_to_description(sms_dict):
+
+    desc = sms_dict["sms"]
+
+    if sms_dict["notes"] != "":
+        if desc == "":
+            desc += sms_dict["notes"]
+        else:
+            desc += " NOTE: " + sms_dict["notes"]
+
+    if sms_dict["categorization"] != "":
+        desc = sms_dict["categorization"] + ": " + desc
+    
+    return desc
+
+def sms_to_request(sms_dict, sms_id):
+
+    d = rms_req_source_type
+    request_dict = {}
+    request_dict["location_id"] = sms_dict["location_id"]
+    request_dict["timestamp"  ] = sms_dict["updated"    ]
+    request_dict["message"    ] = sms_to_description(sms_dict)
+    request_dict["source_id"  ] = sms_id
+    request_dict["source_type"] = d.keys()[d.values().index("SMS")]
+    return request_dict
+
 import datetime
 import gluon.contrib.feedparser as feedparser
 url_base = "http://75.101.195.137/rss.php?key=yqNm7FHSwfdRb8nC2653"
-
-ids = []
 
 N = 100
 start = 0
@@ -100,45 +145,23 @@ while done == False:
 
             rec["location_id"] = locid
             smsid = db.rms_sms_request.insert(**rec)
+
             if locid != None:
-                ids.append((smsid,locid))
+                db(db.gis_location.id == locid).update(name="SMS " + repr(smsid))
 
             # Add media_metadata entry to show additional
             # information on the map
-            metadata = {}
-            metadata["event_time" ] = rec["updated"]
+            db.media_metadata.insert(**sms_to_metadata(rec))
 
-            desc = rec["sms"]
-
-            # If there is a note, append it to the description:
-            if rec["notes"] != "":
-                # New lines, apstrophes, and quotes break the mapping.
-                rec["notes"] = " ".join(rec["notes"].split())
-                rec["notes"] = rec["notes"].replace('"', '\\"')
-                rec["notes"] = rec["notes"].replace("'", "\\'")
-
-                #rec["notes"] = rec["notes"].replace('\\', '\\\\')
-                #rec["notes"] = rec["notes"].replace('\\\\"', '\\"')
-                #rec["notes"] = rec["notes"].replace("\\\\'", "\\'")
-
-                desc = rec["sms"] + " NOTE: " + rec["notes"]
-
-            metadata["description"] = desc
-            metadata["location_id"] = locid
-            db.media_metadata.insert(**metadata)
+            # Insert the request:
+            db.rms_req.insert(**sms_to_request(rec, smsid))
         else:
             done = True
             break
-
+        
     start = start + N
     
     if len(d["entries"]) == 0:
         done = True
-
-db.commit()
-
-# Now loop through and set the location names with the sms id numbers:
-for smsid, locid in ids:
-    db(db.gis_location.id == locid).update(name="SMS " + repr(smsid))
 
 db.commit()

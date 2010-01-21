@@ -39,6 +39,10 @@ rms_type_opts = {
     6:T('Report'),
     }
 
+rms_req_source_type = { 1 : 'Manual',
+                        2 : 'SMS',
+                        3 : 'Tweet' }
+
 # ------------------
 # Create the table for sms_request for Ushahidi
 
@@ -221,6 +225,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
    Field("verified","boolean"),
    Field("city", "string"),
    Field("completion_status","boolean"),
+   Field("source_type", "integer"),
+   Field("source_id", "integer"),
    migrate=migrate)
 
 #Hide the verified field:
@@ -234,6 +240,11 @@ db[table].priority.label = T('Priority Level')
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
 db[table].type.represent = lambda type: type and rms_type_opts[type]
 db[table].type.label = T('Request Type')
+
+db[table].source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
+db[table].source_type.represent = lambda stype: stype and rms_req_source_type[stype]
+db[table].source_type.label = T(' Source Type')
+
 
 s3.crud_strings[table] = Storage(title_create        = "Add Aid Request", 
                                  title_display       = "Aid Request Details", 

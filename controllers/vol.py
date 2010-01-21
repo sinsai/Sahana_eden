@@ -47,7 +47,7 @@ def shn_vol_menu_ext():
             menu_person = [
                 ["%s %s" % (T('Person:'), selection), False, URL(r=request, f='person', args='read'),[
                     [T('Volunteer Status'), False, URL(r=request, f='person', args='volunteer')],
-                    [T('Skills'), False, URL(r=request, f='person', args='skills')],
+                    [T('Resources'), False, URL(r=request, f='person', args='resource')],
                     [T('Address'), False, URL(r=request, f='person', args='address')],
                     [T('Contact'), False, URL(r=request, f='person', args='contact')],
                     [T('Identity'), False, URL(r=request, f='person', args='identity')],

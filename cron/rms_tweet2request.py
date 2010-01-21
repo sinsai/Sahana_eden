@@ -1,7 +1,5 @@
 print "Running Tweet request parse script"
 
-db.rms_tweet_request.truncate()
-
 def rss2record(entry):
     myd = {}
 

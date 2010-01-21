@@ -1,10 +1,5 @@
 print "Running SMS request parse script"
 
-db.rms_sms_request.truncate()
-db.media_metadata.truncate()
-db.gis_location.truncate()
-db.rms_req.truncate()
-
 marker  = db(db.gis_marker.name=="phone").select()
 feature = db(db.gis_feature_class.name=="SMS").select()
 

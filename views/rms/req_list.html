@@ -1,0 +1,35 @@
+{{extend 'layout.html'}}
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='pheader'>
+{{try:}}
+ {{=pheader}}
+<p>&nbsp;</p>
+{{except:}}
+ {{pass}}
+</div>
+<p>
+Click on an ID in the left-hand column to make a Pledge to match a request for aid.
+</p>
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+{{include 'formats.html'}}
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{include 'pagenav.html'}}
+{{include 'searchbox.html'}}
+{{try:}}
+ {{=add_btn}}
+{{except:}}
+{{pass}}
+<div id='map'></div>
+{{include 'dataTables.html'}}

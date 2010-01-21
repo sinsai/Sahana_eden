@@ -82,7 +82,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('website'),
 				Field('donation_phone'), 
                 source_id,
-                shn_comments_field,
+                #shn_comments_field,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]

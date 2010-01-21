@@ -21,14 +21,14 @@ authorstamp = db.Table(None, 'authorstamp',
             Field('created_by', db.auth_user,
                           readable=False, # Enable when needed, not by default
                           writable=False,
-                          default=session.auth.user.id if auth.is_logged_in() else 0,
+                          default=session.auth.user.id if auth.is_logged_in() else None,
                           represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
                           ondelete='RESTRICT'),
             Field('modified_by', db.auth_user,
                           readable=False, # Enable when needed, not by default
                           writable=False,
-                          default=session.auth.user.id if auth.is_logged_in() else 0,
-                          update=session.auth.user.id if auth.is_logged_in() else 0,
+                          default=session.auth.user.id if auth.is_logged_in() else None,
+                          update=session.auth.user.id if auth.is_logged_in() else None,
                           represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
                           ondelete='RESTRICT')
             )

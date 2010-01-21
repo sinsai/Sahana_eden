@@ -69,14 +69,18 @@ function TB_refresh() {
     }
 }
 // Function to get the URL parameters
+// duplicate of layout_popup.html's
 function getQueryParams(qs) {
-    qs = qs.split("+").join(" ");
+    // We want everything after the ?
+    qs = qs.split('?')[1]
+    var pairs = qs.split('&');
     var params = {};
-    var tokens;
-    while (tokens = /[?&]?([^=]+)=([^&]*)/g.exec(qs)) {
-        params[decodeURIComponent(tokens[1])]
-            = decodeURIComponent(tokens[2]);
-    }
+    var check = [];
+    for( var i = 0; i < pairs.length; i++ ) {
+            check = pairs[i].split('=');
+            params[decodeURIComponent(check[0])] = decodeURIComponent(check[1]);
+        }
+
     return params;
 }
 

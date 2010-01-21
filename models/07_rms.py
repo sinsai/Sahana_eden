@@ -18,41 +18,6 @@ db.define_table(table,
 # Load lists/dictionaries for drop down menus
 
 
-rms_request_aid_type_opts = [ # this list is from the Ushahidi RSS (not used here)
-    T('1: Emergency'),
-    T('1A: Collapsed Structure'),
-    T('1B: Fire'),
-    T('1C: People Trapped'),
-    T('1D: Contaminated Water Supply'),
-    T('1E: Earthquake and Aftershocks'),
-    T('1F: Medical Emergency'),
-    T(''),
-    T('2: Threats'),
-    T('2A: Structures at Risk'),
-    T('2B: Looting'),
-    T(''),
-    T('3: Vital Lines'),
-    T('3A: Water Shortage'),
-    T('3B: Road Blocked'),
-    T('3C: Power Outage'),
-    T(''),
-    T('4: Response'),
-    T('4A: Health Services'),
-    T('4B: USAR Search and Rescue'),
-    T('4C: Shelter'),
-    T('4D: Food Distribution'),
-    T('4E: Water Sanitation and Hygiene Promotion'),
-    T('4F: Non Food Items'),
-    T('4G: Rubble Removal'),
-    T('4H: Dead Bodies Management'),
-    T(''),
-    T('5: Other'),
-    T(''),
-    T('6: Persons News'),
-    T('6A: Deaths'),
-    T('6B: Missing Persons'),
-    ]
-
 rms_priority_opts = {
     1:T('High'),
     2:T('Medium'),
@@ -73,6 +38,10 @@ rms_type_opts = {
     5:T('Shelter'),
     6:T('Report'),
     }
+
+rms_req_source_type = { 1 : 'Manual',
+                        2 : 'SMS',
+                        3 : 'Tweet' }
 
 # ------------------
 # Create the table for sms_request for Ushahidi
@@ -178,21 +147,6 @@ sms_request_id = SQLTable(None, 'sms_request_id',
                 ondelete = 'RESTRICT'
                 ))
 
-#resource = 'sms_request'
-#table = module + '_' + resource
-#db.define_table(table, timestamp, uuidstamp, deletion_status,
-#    person_id,
-#    organisation_id,
-#    Field("pledge", "integer"),
-#    Field("title", "string"),
-#    Field("author", "string"),
-#    Field("link", "string"),
-#    Field("description", "string"),
-#    Field("updated", "datetime"),
-#    Field("guid", "string"),
-#    migrate=migrate)
-
-
 # ------------------
 # Create the table for tweet_request for Tweak the Tweet
 
@@ -258,7 +212,53 @@ tweet_request_id = SQLTable(None, 'tweet_request_id',
                 ondelete = 'RESTRICT'
                 ))
 
+# -----------------
 
+resource = 'req'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+   Field("message","text"),
+   location_id,
+   Field("timestamp","datetime"),
+   Field("type","integer"),
+   Field("priority", "integer"),
+   Field("verified","boolean"),
+   Field("city", "string"),
+   Field("completion_status","boolean"),
+   Field("source_type", "integer"),
+   Field("source_id", "integer"),
+   migrate=migrate)
+
+#Hide the verified field:
+db[table].verified.readable = False
+db[table].verified.writable = False
+
+db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
+db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
+db[table].priority.label = T('Priority Level')
+
+db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
+db[table].type.represent = lambda type: type and rms_type_opts[type]
+db[table].type.label = T('Request Type')
+
+db[table].source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
+db[table].source_type.represent = lambda stype: stype and rms_req_source_type[stype]
+db[table].source_type.label = T(' Source Type')
+
+
+s3.crud_strings[table] = Storage(title_create        = "Add Aid Request", 
+                                 title_display       = "Aid Request Details", 
+                                 title_list          = "List Aid Requests", 
+                                 title_update        = "Edit Aid Request",  
+                                 title_search        = "Search Aid Requests",
+                                 subtitle_create     = "Add New Aid Request",
+                                 subtitle_list       = "Aid Requests",
+                                 label_list_button   = "List Aid Requests",
+                                 label_create_button = "Add Aid Request",
+                                 msg_record_created  = "Aid request added",
+                                 msg_record_modified = "Aid request updated",
+                                 msg_record_deleted  = "Aid request deleted",
+                                 msg_list_empty      = "No aid requests currently available")
 
 # ------------------
 # Create request table

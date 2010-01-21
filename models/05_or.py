@@ -10,8 +10,8 @@ db.define_table(table,
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
 
-# Sectors
-resource = 'sector'
+# Services
+resource = 'service'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
@@ -20,7 +20,52 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
-ADD_ORGANISATION = T('Add Sector')
+ADD_SERVICE = T('Add Service')
+title_create = T('Add Service')
+title_display = T('Service Details')
+title_list = T('List Services')
+title_update = T('Edit Service')
+title_search = T('Search Services')
+subtitle_create = T('Add New Service')
+subtitle_list = T('Services')
+label_list_button = T('List Services')
+label_create_button = ADD_SERVICE
+msg_record_created = T('Service added')
+msg_record_modified = T('Service updated')
+msg_record_deleted = T('Service deleted')
+msg_list_empty = T('No Services currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+# Reusable field for other tables to reference
+def service_represent(service_ids):
+    if not service_ids:
+        return "None"
+    elif "|" in str(service_ids):
+        services = [db(db.or_service.id==id).select()[0].name for id in service_ids.split('|') if id]
+        return ", ".join(services)
+    else:
+        return db(db.or_service.id==service_ids).select()[0].name
+
+service_id = SQLTable(None, 'service_id',
+            Field('service_id',
+                requires = IS_NULL_OR(IS_ONE_OF(db, 'or_service.id', '%(name)s', multiple=True)),
+                represent = service_represent,
+                label = T('Service'),
+                comment = DIV(A(ADD_SERVICE, _class='thickbox', _href=URL(r=request, c='or', f='service', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SERVICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Service|The Service(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
+                ondelete = 'RESTRICT'
+                ))
+
+# Sectors (to be renamed as Clusters)
+resource = 'sector'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('name', length=128, notnull=True, unique=True),
+                service_id,
+                migrate=migrate)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+db[table].name.label = T('Name')
+db[table].name.comment = SPAN("*", _class="req")
+ADD_SECTOR = T('Add Sector')
 title_create = T('Add Sector')
 title_display = T('Sector Details')
 title_list = T('List Sectors')
@@ -29,7 +74,7 @@ title_search = T('Search Sectors')
 subtitle_create = T('Add New Sector')
 subtitle_list = T('Sectors')
 label_list_button = T('List Sectors')
-label_create_button = ADD_ORGANISATION
+label_create_button = ADD_SECTOR
 msg_record_created = T('Sector added')
 msg_record_modified = T('Sector updated')
 msg_record_deleted = T('Sector deleted')
@@ -50,10 +95,11 @@ sector_id = SQLTable(None, 'sector_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_sector.id', '%(name)s', multiple=True)),
                 represent = sector_represent,
                 label = T('Sector'),
-                comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='sector', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
+                comment = DIV(A(ADD_SECTOR, _class='thickbox', _href=URL(r=request, c='or', f='sector', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SECTOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
                 ondelete = 'RESTRICT'
                 ))
                 
+
 # Organizations
 or_organisation_type_opts = {
     1:T('Government'),
@@ -123,6 +169,14 @@ organisation_id = SQLTable(None, 'organisation_id',
                 comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organization|The Organization this record is associated with."))),
                 ondelete = 'RESTRICT'
                 ))
+
+# Orgs as component of Clusters
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(or_sector='sector_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'name', 'acronym', 'type', 'country'])
 
 # Offices
 or_office_type_opts = {
@@ -271,8 +325,16 @@ msg_record_deleted = T('Contact deleted')
 msg_list_empty = T('No Contacts currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
+# Contacts as component of Orgs
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(or_organisation='organisation_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'person_id', 'office_id', 'title', 'manager_id', 'focal_point'])
+
 # Projects
-# The projects whihc each orgnaization is engaged in 
+# The projects which each orgnaization is engaged in 
 resource = 'project'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,

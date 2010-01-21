@@ -1222,7 +1222,7 @@ class XRequest(object):
                                   limit=limit)
 
         if template is not None:
-            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain)
+            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain, base_url=self.rc.base_url)
             if not tree:
                 self.error = self.rc.error
                 return None
@@ -1266,7 +1266,7 @@ class XRequest(object):
                                show_urls=False)
 
         if template is not None:
-            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain)
+            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain, base_url=self.rc.base_url)
             if not tree:
                 self.error = self.rc.error
                 return None
@@ -1451,18 +1451,24 @@ class S3XML(object):
             return None
 
 
-    def transform(self, tree, template_path, domain=None):
+    def transform(self, tree, template_path, domain=None, base_url=None):
 
         self.error = None
+
+        ac = etree.XSLTAccessControl(read_file=True, read_network=True)
 
         if not NO_LXML:
             template = self.parse(template_path)
             if template:
                 try:
-                    transformer = etree.XSLT(template)
+                    transformer = etree.XSLT(template, access_control=ac)
                     if domain is not None:
                         domain = "'%s'" % domain
-                        result = transformer(tree, domain=domain)
+                        if base_url is not None:
+                            base_url = "'%s'" % base_url
+                            result = transformer(tree, domain=domain, base_url=base_url)
+                        else:
+                            result = transformer(tree, domain=domain)
                     else:
                         result = transformer(tree)
                     return result

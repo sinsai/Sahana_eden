@@ -22,11 +22,19 @@ def rss2record(entry):
 
     return myd
 
+def tweet_to_request(tweet_dict, tweet_id):
+
+    d = rms_req_source_type
+    request_dict = {}
+    request_dict["timestamp"  ] = tweet_dict["updated"]
+    request_dict["message"    ] = tweet_dict["tweet"]
+    request_dict["source_id"  ] = tweet_id
+    request_dict["source_type"] = d.keys()[d.values().index("Tweet")]
+    return request_dict
+
 import datetime
 import gluon.contrib.feedparser as feedparser
 url_base = "http://epic.cs.colorado.edu:9090/tweets/atom"
-
-count = 0
 
 N = 100
 start = 0
@@ -42,8 +50,8 @@ while done == False:
         
         # Make sure there are no duplicate entries before we add it:
         if db(db.rms_tweet_request.ttt_id == rec['ttt_id']).count() == 0:
-            db.rms_tweet_request.insert(**rec)
-            count += 1
+            tweet_id = db.rms_tweet_request.insert(**rec)
+            db.rms_req.insert(**tweet_to_request(rec, tweet_id))
         #else:
         #    done = True
         #    break
@@ -52,5 +60,4 @@ while done == False:
     if len(d.entries) == 0:
         done = True
 
-print count
 db.commit()

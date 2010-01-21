@@ -18,7 +18,7 @@ db.define_table(table,
 
 # *****************************************************************************
 #
-def represent_user(id):
+def shn_nim_represent_user(id):
 
     table = auth.settings.table_user
 
@@ -35,8 +35,8 @@ def represent_user(id):
 
 user_id = SQLTable(None, 'user_id',
                    Field('user_id', auth.settings.table_user,
-                         requires = IS_NULL_OR(IS_ONE_OF(db, auth.settings.table_user.id, represent_user)),
-                         represent = lambda id: (id and [represent_user(id)] or ["None"])[0],
+                         requires = IS_NULL_OR(IS_ONE_OF(db, auth.settings.table_user.id, shn_nim_represent_user)),
+                         represent = lambda id: (id and [shn_nim_represent_user(id)] or ["None"])[0],
                          ondelete = 'RESTRICT',
                          label = T('Nurse')
                         )

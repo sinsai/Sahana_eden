@@ -15,8 +15,8 @@ def rss2record(entry):
 
     # The twitter id is NOT stored in the ID field, you have to
     # extract if from the end of the link
-    #myd['ttt_id'] = entry['link'].split('/')[-1]
-    myd['ttt_id'] = ":".join(entry['id'].split(':')[-2:])
+    myd['ttt_id'] = entry['link'].split('/')[-1]
+    #myd['ttt_id'] = ":".join(entry['id'].split(':')[-2:])
 
     return myd
 
@@ -50,9 +50,9 @@ while done == False:
         if db(db.rms_tweet_request.ttt_id == rec['ttt_id']).count() == 0:
             tweet_id = db.rms_tweet_request.insert(**rec)
             db.rms_req.insert(**tweet_to_request(rec, tweet_id))
-        else:
-            done = True
-            break
+        #else:
+        #    done = True
+        #    break
 
     start += N
     if len(d.entries) == 0:

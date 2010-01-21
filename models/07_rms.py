@@ -207,7 +207,7 @@ def shn_rms_req_search_simple(xrequest, onvalidation=None, onaccept=None):
                         row.completion_status,
                         row.message,
                         row.timestamp,
-                        row.location_id & shn_gis_location_represent(row.location_id) or 'unknown',
+                        row.location_id and shn_gis_location_represent(row.location_id) or 'unknown',
                         ))
                 items=DIV(TABLE(THEAD(TR(
                     TH("Completion Status"),

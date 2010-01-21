@@ -32,7 +32,10 @@ def req():
     #response.s3.filter = (db.rms_req.actionable == True)
     
     # Uncomment to enable Server-side pagination:
-    response.s3.pagination = True
+    if request.args(0) and request.args(0) == 'search_simple':
+        response.s3.pagination = False
+    else:
+        response.s3.pagination = True
     
     return shn_rest_controller(module, resource, editable=False, pheader=shn_rms_req_pheader)
 

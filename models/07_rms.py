@@ -220,6 +220,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
    Field("priority", "integer"),
    Field("verified","boolean"),
    Field("city", "string"),
+   Field("completion_status","boolean"),
    migrate=migrate)
 
 #Hide the verified field:

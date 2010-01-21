@@ -220,10 +220,10 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['organisation_id', 'status'])
 
 # -----------------------------------------------------------------------------
-# vol_skills (Component of pr_person)
-#   describes Capabilities/Restrictions of a Volunteer
+# vol_resource (Component of pr_person)
+#   describes resources (skills, tools) of a volunteer
 #
-vol_skills_resource_opts = {
+vol_resource_type_opts = {
     1:T('General Skills'),
     2:T('Resources'),
     3:T('Restrictions'),
@@ -232,7 +232,7 @@ vol_skills_resource_opts = {
     99:T('Other')
 }
 
-vol_skills_subject_opts = {
+vol_resource_subject_opts = {
     1:T('Animals'),
     2:T('Automotive'),
     3:T('Baby And Child Care'),
@@ -241,43 +241,43 @@ vol_skills_subject_opts = {
     99:T('Other')
 }
 
-vol_skills_deployment_opts = {
+vol_resource_deployment_opts = {
     1:T('Building Aide'),
     2:T('Vehicle'),
     3:T('Warehouse'),
     99:T('Other')
 }
 
-vol_skills_status_opts = {
+vol_resource_status_opts = {
     1:T('approved'),
     2:T('unapproved'),
     3:T('denied')
 }
 
-resource = 'skills'
+resource = 'resource'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp,
                 person_id,
-                Field('resource', 'integer',
-                      requires = IS_IN_SET(vol_skills_resource_opts),
+                Field('type', 'integer',
+                      requires = IS_IN_SET(vol_resource_type_opts),
                       default = 99,
                       label = T('Resource'),
-                      represent = lambda opt: opt and vol_skills_resource_opts[opt]),
+                      represent = lambda opt: opt and vol_resource_type_opts[opt]),
                 Field('subject', 'integer',
-                      requires = IS_IN_SET(vol_skills_subject_opts),
+                      requires = IS_IN_SET(vol_resource_subject_opts),
                       default = 99,
                       label = T('Subject'),
-                      represent = lambda opt: opt and vol_skills_subject_opts[opt]),
+                      represent = lambda opt: opt and vol_resource_subject_opts[opt]),
                 Field('deployment', 'integer',
-                      requires = IS_IN_SET(vol_skills_deployment_opts),
+                      requires = IS_IN_SET(vol_resource_deployment_opts),
                       default = 99,
                       label = T('Deployment'),
-                      represent = lambda opt: opt and vol_skills_deployment_opts[opt]),
+                      represent = lambda opt: opt and vol_resource_deployment_opts[opt]),
                 Field('status', 'integer',
-                      requires = IS_IN_SET(vol_skills_status_opts),
+                      requires = IS_IN_SET(vol_resource_status_opts),
                       default = 2,
                       label = T('Status'),
-                      represent = lambda opt: opt and vol_skills_status_opts[opt]),
+                      represent = lambda opt: opt and vol_resource_status_opts[opt]),
                 migrate=migrate)
 
 s3xrc.model.add_component(module, resource,
@@ -289,19 +289,19 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'resource', 'subject', 'deployment', 'status'])
 
 # CRUD Strings
-title_create = T('Add Skills')
-title_display = T('Skills Details')
-title_list = T('Skills')
-title_update = T('Edit Skills')
-title_search = T('Search Skills')
-subtitle_create = T('Add New Skills')
-subtitle_list = T('Skills')
-label_list_button = T('List Skills')
-label_create_button = T('Add Skills')
-msg_record_created = T('Skills added')
-msg_record_modified = T('Skills updated')
-msg_record_deleted = T('Skills deleted')
-msg_list_empty = T('No skills currently registered')
+title_create = T('Add Resource')
+title_display = T('Resource Details')
+title_list = T('Resources')
+title_update = T('Edit Resource')
+title_search = T('Search Resources')
+subtitle_create = T('Add New Resource')
+subtitle_list = T('Resources')
+label_list_button = T('List Resources')
+label_create_button = T('Add Resource')
+msg_record_created = T('Resource added')
+msg_record_modified = T('Resource updated')
+msg_record_deleted = T('Resource deleted')
+msg_list_empty = T('No resources currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # -----------------------------------------------------------------------------

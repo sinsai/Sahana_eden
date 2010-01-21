@@ -46,6 +46,8 @@ rms_req_source_type = { 1 : 'Manual',
 # ------------------
 # Create the table for sms_request for Ushahidi
 
+
+
 resource = 'sms_request'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -73,6 +75,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
     Field("link", "string"),
     Field("actionable", "boolean"),
     migrate=migrate)
+
+
 
 # for reusable
 ADD_SMS_REQUEST = T('Add SMS Request')
@@ -214,6 +218,9 @@ tweet_request_id = SQLTable(None, 'tweet_request_id',
 
 # -----------------
 
+def shn_req_aid_represent(id): 
+    return  A(id,_href=URL(r=request,f="make_pledge",args=id))
+
 resource = 'req'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -229,9 +236,12 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
    Field("source_id", "integer"),
    migrate=migrate)
 
+
+db.rms_req.id.represent = shn_req_aid_represent
+
 #Hide the verified field:
-db[table].verified.readable = False
-db[table].verified.writable = False
+db[table].verified.readable = db[table].verified.writable = False
+db[table].source_id.writable = db[table].source_id.readable = False
 
 db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
 db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
@@ -240,6 +250,8 @@ db[table].priority.label = T('Priority Level')
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
 db[table].type.represent = lambda type: type and rms_type_opts[type]
 db[table].type.label = T('Request Type')
+
+
 
 db[table].source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
 db[table].source_type.represent = lambda stype: stype and rms_req_source_type[stype]
@@ -259,6 +271,70 @@ s3.crud_strings[table] = Storage(title_create        = "Add Aid Request",
                                  msg_record_modified = "Aid request updated",
                                  msg_record_deleted  = "Aid request deleted",
                                  msg_list_empty      = "No aid requests currently available")
+
+
+# ------------------
+# Create pledge table
+
+#resource = 'request_aid'
+#table = module + '_' + resource
+#db.define_table(table, timestamp, uuidstamp, deletion_status,
+#    person_id,
+#    organisation_id,
+#    location_id,
+#    Field("priority", "integer"),
+#    Field("comment","text"),
+#    Field("pubdate","datetime"),
+#    Field("verified","boolean"),
+#    Field("numserved", "integer"),
+#    migrate=migrate)
+
+
+resource = 'pledge'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, deletion_status,
+   Field("req_id", db.rms_req),
+   Field("status", "integer"),
+   person_id,
+   Field('submitted_on', 'datetime'),
+   Field('submitted_by', db.auth_user),
+   organisation_id,
+   location_id,
+   person_id,
+#   Field('comment_id', db.comment),
+   migrate=migrate)
+
+# autofill submitted_by forms & make read only
+db[table].submitted_by.default = auth.user.id if auth.user else 0
+db[table].submitted_by.writable = False
+
+# hide unnecessary fields
+db[table].req_id.writable = db[table].req_id.readable = False
+
+
+# set pledge default
+db[table].status.default = 1
+
+# auto fill posted_on field and make it readonly
+db[table].submitted_on.default = request.now
+db[table].submitted_on.writable = False
+
+db[table].status.requires = IS_IN_SET(rms_status_opts)
+db[table].status.represent = lambda status: status and rms_status_opts[status]
+db[table].status.label = T('Pledge Status')
+
+
+# ------------------
+# Create comments table TODO
+
+#db.define_table('comment',
+#Field('pledge_id'),
+#Field('body'),
+#Field('timestamp', 'datetime')
+#)
+
+
+
 
 # ------------------
 # Create request table

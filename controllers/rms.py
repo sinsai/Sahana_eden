@@ -41,13 +41,16 @@ def test():
 
 def sms_request():
     "RESTlike CRUD controller"
+    
     # Don't provide ability to add Locations here
     db.gis_location.comment = ''
+    
     # Uncomment to filter out non-actionable requests:
     # response.s3.filter = (db.rms_sms_request.actionable == True)
     
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True
+    
     return shn_rest_controller(module, 'sms_request', editable=False, listadd=False)
 
 def tweet_request():
@@ -55,7 +58,25 @@ def tweet_request():
     
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True
+    
     return shn_rest_controller(module, 'tweet_request', editable=False, listadd=False)
+
+def req_aid():
+    "RESTlike CRUD controller"
+    
+    # Uncomment to enable Server-side pagination:
+    #response.s3.pagination = True
+    
+    return shn_rest_controller(module, 'req', editable=False, listadd=False)
+
+@auth.requires_login()
+def make_pledge():
+   req_id = request.args(0) or redirect(URL(r=request,f="index"))
+   db.rms_pledge.req_id.default = req_id
+   db.rms_pledge.req_id.writable = False
+#   db.pledge.req_id.writable = db.pledge.req_id.readable = False
+   return dict(form1=crud.read(db.rms_req, req_id),pledges=db(db.rms_pledge.req_id==req_id).select(orderby=db.rms_pledge.submitted_on), form2=crud.create(db.rms_pledge))
+
 
 #def shn_rms_req_pheader(resource, record_id, representation, next=None, same=None):
 #    if representation == "html":

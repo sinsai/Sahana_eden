@@ -2039,6 +2039,9 @@ def shn_rest_controller(module, resource,
         elif jr.prefix=="dvi" and jr.name=="body" and jr.representation=='html':
             redirect(URL(r=request, f='body', args='search_simple', vars={"_next": same}))
 
+        elif jr.prefix=="rms" and jr.name=="req" and jr.representation=='html':
+            redirect(URL(r=request, f='req', args='search_simple', vars={"_next": same}))
+
         else:
             raise HTTP(404, body=BADRECORD)
             #session.error = BADRECORD

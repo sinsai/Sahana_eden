@@ -113,6 +113,7 @@ def sms_to_request(sms_dict, sms_id):
     request_dict["message"    ] = sms_to_description(sms_dict)
     request_dict["source_id"  ] = sms_id
     request_dict["source_type"] = d.keys()[d.values().index("SMS")]
+    request_dict["actionable" ] = sms_dict["actionable" ]
     return request_dict
 
 import datetime

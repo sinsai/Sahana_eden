@@ -1176,7 +1176,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
-               #aaData = [[row[f].represent for f in table.fields if table[f].readable] for row in rows])
+               #ToDo: check for component list_fields & use them where available
                aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
         return json(r)
     

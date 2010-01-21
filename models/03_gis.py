@@ -144,13 +144,28 @@ ADD_LOCATION = T('Add Location')
 location_id = SQLTable(None, 'location_id',
             Field('location_id', db.gis_location,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
-                #represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
-                represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
+                represent = lambda id: shn_gis_location_represent(id),
                 label = T('Location'),
                 comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
 
+def shn_gis_location_represent(id):
+    try:
+        # Simple
+        #represent = db(db.gis_location.id==id).select().first().name
+        # Fancy Map
+        #represent = A(db(db.gis_location.id==id).select().first().name, _href='#', _onclick='viewMap(' + str(id) +');return false')
+        # Hyperlink
+        location  = db(db.gis_location.id==id).select().first()
+        represent = A(location.name, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
+        # ToDo: Convert to popup? (HTML again!)
+        # Export Lat/Lon if available, otherwise name
+        # tbc
+    except:
+        represent = None
+    return represent
+                
 # Feature Groups
 # Used to select a set of Features for either Display or Export
 resource = 'feature_group'

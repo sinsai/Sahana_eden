@@ -1,5 +1,6 @@
 print "Running SMS request parse script"
 
+
 marker  = db(db.gis_marker.name=="phone").select()
 feature = db(db.gis_feature_class.name=="SMS").select()
 
@@ -104,7 +105,41 @@ def sms_to_description(sms_dict):
     
     return desc
 
+
 def sms_to_request(sms_dict, sms_id):
+    # usha_cats maps Ushahidi categorizations to 
+    # sahana-style categorizations
+    usha_cats = {
+             "1. Emergency": 6, 
+             "1a. Collapsed Structure": 5,
+             "1b. Fire": 6,
+             "1c. People Trapped": 2,
+             "1d. Contaminated water supply": 3,
+             "1e. Earthquake and aftershocks": 6,
+             "1f. Medical Emergency": 4,
+             "2. Threats": 6,
+             "2a. Structures at risk": 5,
+             "2b. Looting": 6,
+             "3. Vital Lines": 6,
+             "3a. Water shortage": 3,
+             "3b. Roads blocked": 6,
+             "3c. Power Outage": 6,
+             "4. Response": 6,
+             "4a. Health Services": 4,
+             "4b. USAR search and rescue": 2,
+             "4c. Shelter": 5,
+             "4d. Food distribution": 1,
+             "4e. Water sanitation and hygiene promotion": 3,
+             "4f. Non food items": 6,
+             "4g. Rubble removal": 6,
+             "4h. Died bodies management": 6,
+             "5. Other": 6,
+             "6. Person News": 2,
+             "6a. Deaths": 2,
+             "6b. Missing Persons": 2,
+             "7. Child Alone": 2,
+             "8. Asking to forward a message": 6,
+             }
 
     d = rms_req_source_type
     request_dict = {}
@@ -114,6 +149,8 @@ def sms_to_request(sms_dict, sms_id):
     request_dict["source_id"  ] = sms_id
     request_dict["source_type"] = d.keys()[d.values().index("SMS")]
     request_dict["actionable" ] = sms_dict["actionable" ]
+    if sms_dict["categorization"] in usha_cats :
+      request_dict["type"] = usha_cats[sms_dict["categorization"]]
     return request_dict
 
 import datetime

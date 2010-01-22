@@ -118,7 +118,7 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
 #db[table].pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
 
 db[table].pr_pe_label.comment = SPAN("*", _class="req")
-db[table].pr_pe_label.requires = IS_NOT_EMPTY()
+db[table].pr_pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, 'dvi_body.pr_pe_label')]
 db[table].date_of_recovery.comment = SPAN("*", _class="req")
 db[table].date_of_recovery.requires = IS_DATETIME()
 

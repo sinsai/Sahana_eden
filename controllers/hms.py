@@ -44,6 +44,10 @@ def index():
 def hospital():
     output = shn_rest_controller( module , 'hospital', listadd=False,
         pheader = shn_hms_hospital_pheader,
+        rss=dict(
+            title="%(name)s",
+            description=shn_hms_hospital_rss
+        ),
         list_fields=['id', 'name', 'location_id', 'phone1', 'fax', 'status', 'total_beds', 'available_beds'])
     shn_hms_menu_ext()
     return output

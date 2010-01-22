@@ -212,7 +212,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
                 title=str(title).decode('utf-8'),
                 link=server + link + '/%d' % row.id,
                 description=str(description).decode('utf-8'),
-                created_on=row.created_on))
+                modified_on=row.modified_on))
 
     import gluon.contrib.rss2 as rss2
 
@@ -220,7 +220,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
         title = entry['title'],
         link = entry['link'],
         description = entry['description'],
-        pubDate = entry['created_on']) for entry in entries]
+        pubDate = entry['modified_on']) for entry in entries]
 
     rss = rss2.RSS2(
         title = str(title_list).decode('utf-8'),

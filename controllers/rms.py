@@ -123,7 +123,7 @@ def sms_request():
     db.gis_location.comment = ''
     
     # Uncomment to filter out non-actionable requests:
-    # response.s3.filter = (db.rms_sms_request.actionable == True)
+    response.s3.filter = (db.rms_sms_request.actionable == True)
     
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True

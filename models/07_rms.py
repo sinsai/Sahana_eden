@@ -462,7 +462,6 @@ tweet_request_id = SQLTable(None, 'tweet_request_id',
                 ))
 
 
-
 # ------------------
 # Create comments table TODO
 

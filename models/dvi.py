@@ -88,8 +88,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 dvi_find_id = db.Table(None, 'dvi_find_id',
                 Field('dvi_find_id', db.dvi_find,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'dvi_find.id', '[%(id)s] %(find_date)s: %(bodies_est)s bodies')),
-                represent = lambda id: (id and [DIV(A(db(db.dvi_find.id==id).select()[0].id, _class='popup', _href=URL(r=request, c='hrm', f='find', args=['read', str(id).strip()], vars=dict(format='plain')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button))] or ["None"])[0],
-                comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='thickbox', _href=URL(r=request, c='hrm', f='find', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
+                represent = lambda id: (id and [DIV(A(db(db.dvi_find.id==id).select()[0].id, _class='popup', _href=URL(r=request, c='dvi', f='find', args=['read', str(id).strip()], vars=dict(format='plain')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button))] or ["None"])[0],
+                comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='thickbox', _href=URL(r=request, c='dvi', f='find', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -118,7 +118,7 @@ db.define_table(table, timestamp, deletion_status, #uuidstamp,
 #db[table].pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,'pr_pentity.id',shn_pentity_represent,filterby='opt_pr_entity_type',filter_opts=(3,)))
 
 db[table].pr_pe_label.comment = SPAN("*", _class="req")
-db[table].pr_pe_label.requires = IS_NOT_EMPTY()
+db[table].pr_pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, 'dvi_body.pr_pe_label')]
 db[table].date_of_recovery.comment = SPAN("*", _class="req")
 db[table].date_of_recovery.requires = IS_DATETIME()
 

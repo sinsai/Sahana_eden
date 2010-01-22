@@ -203,6 +203,15 @@ if empty:
             description="Module to assist disaster nurses.",
             enabled='False'
         )
+        db[table].insert(
+            name="hms",
+            name_nice="Hospital Management",
+            priority=18,
+            module_type=4,
+            access='',
+            description="Helps to monitor status of hospitals",
+            enabled='True'
+        )
 
 
 # Modules Menu (available in all Controllers)
@@ -215,11 +224,13 @@ if auth.has_membership(1):
 s3.menu_modules.append([T('Mapping'), False, URL(r=request, c='default', f='open_module', vars=dict(id=3))])
 module_id = db(db.s3_module.name == 'or').select()[0].id
 s3.menu_modules.append([T('Organizations'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+module_id = db(db.s3_module.name == 'hms').select()[0].id
+s3.menu_modules.append([T('Hospitals'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
 s3.menu_modules.append([T('People'), False, URL(r=request, c='default', f='open_module', vars=dict(id=4))])
 #dvi_group = db(db[auth.settings.table_group_name] == 'DVI').select()[0].id
 #if auth.has_membership(dvi_group):
 module_id = db(db.s3_module.name == 'dvi').select()[0].id
-s3.menu_modules.append([T('Victim Identification'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+s3.menu_modules.append([T('Victims'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
 module_id = db(db.s3_module.name == 'rms').select()[0].id
 s3.menu_modules.append([T('Requests'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
 module_id = db(db.s3_module.name == 'vol').select()[0].id

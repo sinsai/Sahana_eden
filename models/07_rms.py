@@ -76,6 +76,8 @@ db[table].source_type.writable = db[table].source_type.readable = False
 db[table].actionable.default = 1
 db[table].source_type.default = 1
 
+db[table].message.requires = IS_NOT_EMPTY()
+db[table].message.comment = SPAN("*", _class="req")
 
 db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
 db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
@@ -220,7 +222,7 @@ def shn_rms_req_search_simple(xrequest, onvalidation=None, onaccept=None):
                         row.completion_status,
                         row.message,
                         row.timestamp,
-                        row.location_id & shn_gis_location_represent(row.location_id) or 'unknown',
+                        row.location_id and shn_gis_location_represent(row.location_id) or 'unknown',
                         ))
                 items=DIV(TABLE(THEAD(TR(
                     TH("Completion Status"),

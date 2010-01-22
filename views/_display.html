@@ -13,16 +13,30 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-<div class='form-container'>
 {{try:}}
- {{=form}}
+ {{include}}
+{{except:}}
+{{pass}}
+{{try:}}
+ <p>
+ {{=edit}}
+ </p>
+{{except:}}
+{{pass}}
+<div class='item-container'>
+{{try:}}
+ {{=item}}
 {{except:}}
 {{pass}}
 </div>
-{{include 'key.html'}}
+<!--
+{{try:}}
+ {{=delete}}
+{{except:}}
+{{pass}}
+-->
 <p>&nbsp;</p>
 {{try:}}
  {{=list_btn}}
 {{except:}}
 {{pass}}
-{{include 'thickbox.html'}}

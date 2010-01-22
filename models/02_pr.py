@@ -106,13 +106,13 @@ resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 #                    Field('parent'),                # Parent Entity
-                    opt_pr_entity_type,             # Entity class
-                    Field('label', length=128, unique=True),    # Recognition Label
+                    opt_pr_entity_type,              # Entity class
+                    Field('label', length=128),      # Recognition Label
                     migrate=migrate)
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
+#db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
 #db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
 
 # Field representation
@@ -153,10 +153,10 @@ pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
 #                        readable = False,   # should be invisible in (most) forms
 #                        writable = False    # should be invisible in (most) forms
 #                    ),
-                    Field('pr_pe_label',
+                    Field('pr_pe_label', length=128, unique=True,
                         label = T('ID Label'),
                         requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-                    ))
+                    )) # Can't be unique if we allow Null!
 
 # *****************************************************************************
 # Person (person)
@@ -304,6 +304,7 @@ db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have uni
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
+#db[table].pr_pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, 'pr_person.pr_pe_label')] # Need to allow null for non-MPR/DVI purposes
 
 # Field representation
 db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
@@ -332,11 +333,12 @@ subtitle_create = T('Add Person')
 subtitle_list = T('Persons')
 label_list_button = T('List Persons')
 label_create_button = T('Add Person')
+label_delete_button = T('Delete Person')
 msg_record_created = T('Person added')
 msg_record_modified = T('Person details updated')
 msg_record_deleted = T('Person deleted')
 msg_list_empty = T('No Persons currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
 # person_id: reusable field for other tables to reference ---------------------
@@ -404,6 +406,7 @@ db[table].pr_pe_label.readable = False
 db[table].pr_pe_label.writable = False
 db[table].system.readable = False
 db[table].system.writable = False
+db[table].pr_pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, 'pr_group.pr_pe_label')]
 
 # Field labels
 db[table].opt_pr_group_type.label = T("Group type")
@@ -420,11 +423,12 @@ subtitle_create = T('Add New Group')
 subtitle_list = T('Groups')
 label_list_button = T('List Groups')
 label_create_button = T('Add Group')
+label_delete_button = T('Delete Group')
 msg_record_created = T('Group added')
 msg_record_modified = T('Group updated')
 msg_record_deleted = T('Group deleted')
 msg_list_empty = T('No Groups currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
 # group_id: reusable field for other tables to reference ----------------------

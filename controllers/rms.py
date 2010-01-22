@@ -5,8 +5,10 @@ module = 'rms'
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
     [T('View Requests & Pledge Aid'), False, URL(r=request, f='req')],
-#    [T('Search Requests'), False, URL(r=request, f='req', args='pledge')],
+    [T('Make New Request'), False, URL(r=request, f='req', args='create')],
+    #[T('Pledge Aid'), False, URL(r=request, f='req', args='pledge')],
     #[T('View Tweet Requests and Pledge Aid'), False, URL(r=request, f='tweet_request')],
     #[T('View SMS Requests and Pledge Aid'), False, URL(r=request, f='sms_request')],
 #    [T('Search Requests'), False, URL(r=request, f='req', args='search')]
@@ -29,22 +31,23 @@ def req():
     
     # Filter out non-actionable SMS requests:
     response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2)
-    #response.s3.filter = (db.rms_req.actionable == True)
     
-    # Uncomment to enable Server-side pagination:
- #   response.s3.pagination = True
+    if request.args(0) and request.args(0) == 'search_simple':
+        pass
+    else:
+        # Uncomment to enable Server-side pagination:
+        #response.s3.pagination = True
+        pass
     
-#    return shn_rest_controller(module, resource, editable=False, pheader=shn_rms_req_pheader)
-    return shn_rest_controller(module, resource, editable=False)
-
-
+    return shn_rest_controller(module, resource, editable=False, listadd=False, pheader=shn_rms_req_pheader)
+    
 def pledge():
     "RESTlike CRUD controller"
     
     resource = 'pledge'
     
     # Uncomment to enable Server-side pagination:
- #   response.s3.pagination = True
+    #response.s3.pagination = True
     
     return shn_rest_controller(module, resource)
 
@@ -71,25 +74,25 @@ def shn_rms_req_pheader(resource, record_id, representation, next=None, same=Non
         pheader = TABLE(
                     TR(
                         TH(T('Message: ')),
-                        aid_request.message,
-                        TH(T('Source Type: ')),
-                        rms_req_source_type[aid_request.source_type],
+                        TD(aid_request.message, _colspan=3),
                         ),
                     TR(
                         TH(T('Priority: ')),
                         aid_request.priority,
-                        TH(T('Verified: ')),
-                        aid_request.verified,
+                        TH(T('Source Type: ')),
+                        rms_req_source_type[aid_request.source_type],
                         ),
                     TR(
                         TH(T('Time of Request: ')),
                         aid_request.timestamp,
-                        TH(T('Actionable: ')),
-                        aid_request.actionable,
+                        TH(T('Verified: ')),
+                        aid_request.verified,
                         ),
                     TR(
                         TH(T('Location: ')),
                         location_represent,
+                        TH(T('Actionable: ')),
+                        aid_request.actionable,
                         TH(T('Completion status: ')),
                         aid_request.completion_status,
                         ),

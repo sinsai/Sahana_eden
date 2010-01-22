@@ -40,8 +40,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('email'),
                 Field('fax'),
                 Field('status', 'integer',              # Status
-                      requires = IS_IN_SET(hms_hospital_status_opts),
-                      default = 99,
+                      requires = IS_NULL_OR(IS_IN_SET(hms_hospital_status_opts)),
+                      #default = 99,
                       label = T('Status'),
                       represent = lambda opt: opt and hms_hospital_status_opts[opt]),
                 Field('doctors', 'integer'),            # Number of Doctors

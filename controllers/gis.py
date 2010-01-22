@@ -255,13 +255,16 @@ def location():
 
     if "feature_class" in request.vars:
         fclass = request.vars["feature_class"]
-        response.s3.filter = ((db.gis_location.feature_class_id==db.gis_feature_class.id) &
+        response.s3.filter = ((db.gis_location.feature_class_id == db.gis_feature_class.id) &
                               (db.gis_feature_class.name.like(fclass)))
 
     if "feature_group" in request.vars:
         fgroup = request.vars["feature_group"]
-        response.s3.filter = ((db.gis_location.feature_group_id==db.gis_feature_group.id) &
-                              (db.gis_feature_group.name.like(fgroup)))
+        # ToDo support direct Features in Feature Groups
+        #response.s3.filter = ((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+        #                      (db.gis_feature_class_to_feature_group.feature_class_id == db.gis_feature_class.id) &
+        #                      (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
+        #                      (db.gis_feature_group.name.like(fgroup)))
     
     response.s3.pagination = True
     

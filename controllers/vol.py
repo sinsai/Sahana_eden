@@ -73,7 +73,7 @@ def index():
 
 def project():
 
-    """ Person Controller """
+    """ Project Controller """
 
     output = shn_rest_controller( module , 'project', pheader=shn_vol_project_pheader)
     shn_vol_menu_ext()

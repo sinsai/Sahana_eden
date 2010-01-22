@@ -112,6 +112,156 @@ hospital_id = SQLTable(None, 'hospital_id',
                              ondelete = 'RESTRICT'))
 
 # -----------------------------------------------------------------------------
+# Contacts
+#
+resource = 'contact'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status,
+                hospital_id,
+                person_id,
+                Field('title'),
+                Field('phone1'),
+                Field('phone2'),
+                Field('email'),
+                Field('fax'),
+                Field('skype'),
+                migrate=migrate)
+
+db[table].person_id.label = T('Contact')
+db[table].title.label = T('Job Title')
+db[table].title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this hospital."))
+
+db[table].phone1.label = T('Phone 1')
+db[table].phone2.label = T('Phone 2')
+db[table].email.requires = IS_NULL_OR(IS_EMAIL())
+db[table].email.label = T('Email')
+db[table].fax.label = T('FAX')
+db[table].skype.label = T('Skype ID')
+
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(hms_hospital='hospital_id'),
+    deletable=True,
+    editable=True,
+    main='person_id', extra='title',
+    list_fields = ['id', 'person_id', 'title', 'phone1', 'phone2', 'email', 'fax', 'skype'])
+
+# CRUD Strings
+title_create = T('Add Contact')
+title_display = T('Contact Details')
+title_list = T('Contacts')
+title_update = T('Edit Contact')
+title_search = T('Search Contacts')
+subtitle_create = T('Add New Contact')
+subtitle_list = T('Contacts')
+label_list_button = T('List Contacts')
+label_create_button = T('Add Contact')
+msg_record_created = T('Contact added')
+msg_record_modified = T('Contact updated')
+msg_record_deleted = T('Contact deleted')
+msg_list_empty = T('No contacts currently registered')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# -----------------------------------------------------------------------------
+# Shortages
+#
+hms_shortage_type_opts = {
+    1: T('Water'),
+    2: T('Power'),
+    3: T('Food'),
+    4: T('Medicines'),
+    5: T('Materials'),
+    6: T('Medical Staff'),
+    7: T('Non-medical Staff'),
+    8: T('Security'),
+    9: T('Transport'),
+    99: T('Other')
+}
+
+hms_shortage_impact_opts = {
+    1: T('highly critical'),
+    2: T('critical'),
+    3: T('not critical'),
+}
+
+hms_shortage_priority_opts = {
+    1: T('immediately'),
+    2: T('urgent'),
+    3: T('high'),
+    4: T('normal'),
+    5: T('low')
+}
+
+hms_shortage_status_opts = {
+    1: T('open'),
+    2: T('compensated'),
+    3: T('feedback'),
+    4: T('remedied')
+}
+
+from datetime import datetime
+
+resource = 'shortage'
+table = module + '_' + resource
+db.define_table(table, timestamp, deletion_status,
+                hospital_id,
+                Field('date','datetime'),
+                Field('type', 'integer',
+                      requires = IS_IN_SET(hms_shortage_type_opts),
+                      default = 99,
+                      label = T('Type'),
+                      represent = lambda opt: opt and hms_shortage_type_opts[opt]),
+                Field('impact', 'integer',
+                      requires = IS_IN_SET(hms_shortage_impact_opts),
+                      default = 3,
+                      label = T('Impact'),
+                      represent = lambda opt: opt and hms_shortage_impact_opts[opt]),
+                Field('priority', 'integer',
+                      requires = IS_IN_SET(hms_shortage_priority_opts),
+                      default = 4,
+                      label = T('Priority'),
+                      represent = lambda opt: opt and hms_shortage_priority_opts[opt]),
+                Field('subject'),
+                Field('description', 'text'),
+                Field('status', 'integer',
+                      requires = IS_IN_SET(hms_shortage_status_opts),
+                      default = 1,
+                      label = T('Status'),
+                      represent = lambda opt: opt and hms_shortage_status_opts[opt]),
+                Field('feedback', 'text'),
+                migrate=migrate)
+
+db[table].date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
+db[table].date.represent = lambda value: shn_as_local_time(value)
+
+db[table].subject.requires = IS_NOT_EMPTY()
+
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(hms_hospital='hospital_id'),
+    deletable=True,
+    editable=True,
+    main='hospital_id', extra='subject',
+    list_fields = ['id', 'hospital_id', 'type', 'impact', 'priority', 'subject', 'status'])
+
+# CRUD Strings
+title_create = T('Report Shortage')
+title_display = T('Shortage Details')
+title_list = T('Shortages')
+title_update = T('Edit Shortage')
+title_search = T('Search Shortages')
+subtitle_create = T('Add New Shortage')
+subtitle_list = T('Shortages')
+label_list_button = T('List Shortages')
+label_create_button = T('Add Shortage')
+label_delete_button = T('Delete Shortage')
+msg_record_created = T('Shortage added')
+msg_record_modified = T('Shortage updated')
+msg_record_deleted = T('Shortage deleted')
+msg_list_empty = T('No shortages currently reported')
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+
+# -----------------------------------------------------------------------------
 # shn_hms_hospital_pheader:
 #   Page Header for hospitals
 #
@@ -136,17 +286,23 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                     TR(
                         TH(T('Name: ')),
                         hospital.name,
+                        TH(T('Total Beds: ')),
+                        hospital.total_beds,
                         TH(A(T('Clear Selection'),
                             _href=URL(r=request, f='hospital', args='clear', vars={'_next': _same})))
                         ),
                     TR(
                         TH(T('Location: ')),
-                        location_id.location_id.represent(hospital.location_id),
+                        db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
+                        TH(T('Available Beds: ')),
+                        hospital.available_beds,
                         TH(""),
                         ),
                     TR(
                         TH(T('Status: ')),
                         "%s" % hms_hospital_status_opts[hospital.status],
+                        TH(""),
+                        "",
                         TH(A(T('Edit Hospital'),
                             _href=URL(r=request, f='hospital', args=['update', record_id], vars={'_next': _next})))
                         )

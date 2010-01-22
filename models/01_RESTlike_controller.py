@@ -1653,8 +1653,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
     else:
         record_id = jr.id
-
-    deletable = shn_has_permission('delete', table, record_id)
+        deletable = shn_has_permission('delete', table, record_id)
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised:
@@ -1699,7 +1698,16 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 label_list_button = s3.crud_strings.label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
 
-            output.update(title=title, list_btn=list_btn)
+            del_href = jr.other(method='delete', representation=jr.representation)
+            if s3.crud_strings[tablename]:
+                label_del_button = s3.crud_strings[tablename].label_delete_button
+            else:
+                label_del_button = None
+            if label_del_button is None:
+                label_del_button = s3.crud_strings.label_delete_button
+            del_btn = A(label_del_button, _href=del_href, _id='delete-btn')
+
+            output.update(title=title, list_btn=list_btn, del_btn=del_btn)
 
             if jr.component:
                 # Block join field

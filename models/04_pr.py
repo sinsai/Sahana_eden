@@ -282,12 +282,10 @@ def shn_pr_presence_rss(record):
             location_details = record.location_details.strip()
         else:
             location_details = None
-        return "<b>%s</b>: %s %s<br/>[Lat: %s Lon: %s]<br/>%s" % (
+        return "<b>%s</b>: %s %s<br/>%s" % (
             pr_presence_condition_opts[record.opt_pr_presence_condition],
             record.location_id and location_id.location_id.represent(record.location_id) or "Unknown location",
             location_details and "/ %s" % location_details or "",
-            record.lat and "Lat: %s " % record.lat or "",
-            record.lon and "Lon: %s " % record.lon or "",
 #            opt_pr_presence_condition.opt_pr_presence_condition.represent(record.opt_pr_presence_condition),
             record.proc_desc or "-")
     else:

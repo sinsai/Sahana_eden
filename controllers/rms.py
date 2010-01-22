@@ -1,7 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
 
-#db.rms_pledge.truncate()
-
 module = 'rms'
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice

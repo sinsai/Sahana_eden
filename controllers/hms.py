@@ -5,6 +5,7 @@ module = 'hms'
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
     [T('Hospitals'), False, URL(r=request, f='hospital'), [
         [T('List All'), False, URL(r=request, f='hospital')],
         [T('List by Location'), False, URL(r=request, f='hospital', args='search_location')],
@@ -15,7 +16,8 @@ response.menu_options = [
 
 def shn_hms_menu_ext():
     menu = [
-        [T('Hospitals'), False, URL(r=request, f='hospital'), [
+    [T('Home'), False, URL(r=request, f='index')],
+    [T('Hospitals'), False, URL(r=request, f='hospital'), [
             [T('List All'), False, URL(r=request, f='hospital')],
             [T('List by Location'), False, URL(r=request, f='hospital', args='search_location')],
             [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],

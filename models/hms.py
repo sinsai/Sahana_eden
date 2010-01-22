@@ -111,6 +111,29 @@ hospital_id = SQLTable(None, 'hospital_id',
                              comment = DIV(A(title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Hospital|The hospital this record is associated with."))),
                              ondelete = 'RESTRICT'))
 
+# RSS
+def shn_hms_hospital_rss(record):
+    if record:
+        if record.location_id:
+            location = db.gis_location[record.location_id]
+            if location:
+                lat = location.lat
+                lon = location.lon
+                location_name = location.name
+            else:
+                lat = lon = T("unknown")
+                location_name = T("unknown")
+        return "<b>%s</b>: <br/>Location: %s [Lat: %.6f Lon: %.6f]<br/>Status: %s<br/>Beds available: %s" % (
+            record.name,
+            location_name,
+            lat,
+            lon,
+            record.status and hms_hospital_status_opts[record.status] or T("unknown"),
+            (record.available_beds is not None) and record.available_beds or T("unknown")
+            )
+    else:
+        return None
+
 # -----------------------------------------------------------------------------
 # Contacts
 #

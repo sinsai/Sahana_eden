@@ -332,11 +332,12 @@ subtitle_create = T('Add Person')
 subtitle_list = T('Persons')
 label_list_button = T('List Persons')
 label_create_button = T('Add Person')
+label_delete_button = T('Delete Person')
 msg_record_created = T('Person added')
 msg_record_modified = T('Person details updated')
 msg_record_deleted = T('Person deleted')
 msg_list_empty = T('No Persons currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
 # person_id: reusable field for other tables to reference ---------------------
@@ -420,11 +421,12 @@ subtitle_create = T('Add New Group')
 subtitle_list = T('Groups')
 label_list_button = T('List Groups')
 label_create_button = T('Add Group')
+label_delete_button = T('Delete Group')
 msg_record_created = T('Group added')
 msg_record_modified = T('Group updated')
 msg_record_deleted = T('Group deleted')
 msg_list_empty = T('No Groups currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
 # group_id: reusable field for other tables to reference ----------------------

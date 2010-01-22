@@ -5,7 +5,9 @@ module = 'rms'
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
+    [T('Home'), False, URL(r=request, f='index')],
     [T('View Requests & Pledge Aid'), False, URL(r=request, f='req')],
+    [T('Make New Request'), False, URL(r=request, f='req', args='create')],
     #[T('Pledge Aid'), False, URL(r=request, f='req', args='pledge')],
     #[T('View Tweet Requests and Pledge Aid'), False, URL(r=request, f='tweet_request')],
     #[T('View SMS Requests and Pledge Aid'), False, URL(r=request, f='sms_request')],
@@ -29,16 +31,15 @@ def req():
     
     # Filter out non-actionable SMS requests:
     response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2)
-    #response.s3.filter = (db.rms_req.actionable == True)
     
-    # Uncomment to enable Server-side pagination:
     if request.args(0) and request.args(0) == 'search_simple':
         pass
     else:
+        # Uncomment to enable Server-side pagination:
         #response.s3.pagination = True
         pass
     
-    return shn_rest_controller(module, resource, editable=False, pheader=shn_rms_req_pheader)
+    return shn_rest_controller(module, resource, editable=False, listadd=False, pheader=shn_rms_req_pheader)
     
 def pledge():
     "RESTlike CRUD controller"

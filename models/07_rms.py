@@ -76,6 +76,8 @@ db[table].source_type.writable = db[table].source_type.readable = False
 db[table].actionable.default = 1
 db[table].source_type.default = 1
 
+db[table].message.requires = IS_NOT_EMPTY()
+db[table].message.comment = SPAN("*", _class="req")
 
 db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
 db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]

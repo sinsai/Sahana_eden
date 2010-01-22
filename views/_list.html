@@ -13,16 +13,19 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-<div class='form-container'>
+{{include 'formats.html'}}
+<div id='table-container'>
 {{try:}}
- {{=form}}
+ {{=items}}
 {{except:}}
 {{pass}}
 </div>
-{{include 'key.html'}}
 <p>&nbsp;</p>
+{{include 'pagenav.html'}}
+{{include 'searchbox.html'}}
 {{try:}}
- {{=list_btn}}
+ {{=add_btn}}
 {{except:}}
 {{pass}}
-{{include 'thickbox.html'}}
+<div id='map'></div>
+{{include 'dataTables.html'}}

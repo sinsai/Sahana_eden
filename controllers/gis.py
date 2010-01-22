@@ -253,10 +253,15 @@ def location():
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
     if "feature_class" in request.vars:
-        fgroup = request.vars["feature_class"]
+        fclass = request.vars["feature_class"]
         response.s3.filter = ((db.gis_location.feature_class_id==db.gis_feature_class.id) &
-                              (db.gis_feature_class.name.like(fgroup)))
+                              (db.gis_feature_class.name.like(fclass)))
 
+    if "feature_group" in request.vars:
+        fgroup = request.vars["feature_group"]
+        response.s3.filter = ((db.gis_location.feature_group_id==db.gis_feature_group.id) &
+                              (db.gis_feature_group.name.like(fgroup)))
+    
     response.s3.pagination = True
     
     return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))

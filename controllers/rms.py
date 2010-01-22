@@ -5,8 +5,8 @@ module = 'rms'
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('View Requests'), False, URL(r=request, f='req')],
-    [T('Pledge Aid'), False, URL(r=request, f='req', args='pledge')],
+    [T('View Requests & Pledge Aid'), False, URL(r=request, f='req')],
+    #[T('Pledge Aid'), False, URL(r=request, f='req', args='pledge')],
     #[T('View Tweet Requests and Pledge Aid'), False, URL(r=request, f='tweet_request')],
     #[T('View SMS Requests and Pledge Aid'), False, URL(r=request, f='sms_request')],
 #    [T('Search Requests'), False, URL(r=request, f='req', args='search')]
@@ -38,7 +38,8 @@ def req():
         #response.s3.pagination = True
         pass
     
-    return shn_rest_controller(module, resource, editable=False, pheader=shn_rms_req_pheader)
+    #return shn_rest_controller(module, resource, editable=False, pheader=shn_rms_req_pheader)
+    return shn_rest_controller(module, resource, editable=False)
 
 def pledge():
     "RESTlike CRUD controller"

@@ -62,9 +62,20 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 db.rms_req.id.represent = lambda id: shn_req_aid_represent(id)
 
-#Hide the verified field:
+#label the fields for the view
+db[table].timestamp.label = T('Date & Time')
+
+#Hide fields from user:
 db[table].verified.readable = db[table].verified.writable = False
 db[table].source_id.writable = db[table].source_id.readable = False
+db[table].completion_status.writable = db[table].completion_status.readable = False
+db[table].actionable.writable = db[table].actionable.readable = False
+db[table].source_type.writable = db[table].source_type.readable = False
+
+#set default values
+db[table].actionable.default = 1
+db[table].source_type.default = 1
+
 
 db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
 db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
@@ -77,6 +88,8 @@ db[table].type.label = T('Request Type')
 db[table].source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
 db[table].source_type.represent = lambda stype: stype and rms_req_source_type[stype]
 db[table].source_type.label = T(' Source Type')
+
+
 
 s3.crud_strings[table] = Storage(title_create        = "Add Aid Request", 
                                  title_display       = "Aid Request Details", 
@@ -241,20 +254,20 @@ s3xrc.model.set_method(module, resource, method='search_simple', action=shn_rms_
 
 resource = 'pledge'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
+   Field('submitted_on', 'datetime'), 
    Field("req_id", db.rms_req),
    Field("status", "integer"),
    organisation_id,
    person_id,
-   Field('submitted_on', 'datetime'),
-   Field('submitted_by', db.auth_user),
-   location_id,
+#   Field('submitted_by', db.auth_user),
+#   location_id,
 #   Field('comment_id', db.comment),
    migrate=migrate)
 
 # autofill submitted_by forms & make read only
-db[table].submitted_by.default = auth.user.id if auth.user else 0
-db[table].submitted_by.writable = False
+#db[table].submitted_by.default = auth.user.id if auth.user else 0
+#db[table].submitted_by.writable = False
 
 # hide unnecessary fields
 db[table].req_id.writable = db[table].req_id.readable = False
@@ -270,13 +283,15 @@ db[table].status.requires = IS_IN_SET(rms_status_opts)
 db[table].status.represent = lambda status: status and rms_status_opts[status]
 db[table].status.label = T('Pledge Status')
 
+
+
 # Pledges as a component of requests
 s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby=dict(rms_req = 'req_id'),
     deletable=True,
     editable=True,
-    list_fields = ['id', 'organisation_id', 'person_id', 'submitted_on'])
+    list_fields = ['id', 'organisation_id', 'person_id', 'submitted_on', 'status'])
 
 s3.crud_strings[table] = Storage(title_create        = "Add Pledge", 
                                  title_display       = "Pledge Details", 
@@ -291,6 +306,7 @@ s3.crud_strings[table] = Storage(title_create        = "Add Pledge",
                                  msg_record_modified = "Pledge updated",
                                  msg_record_deleted  = "Pledge deleted",
                                  msg_list_empty      = "No Pledges currently available")
+
 
     
 # ------------------

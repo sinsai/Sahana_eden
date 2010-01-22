@@ -38,9 +38,8 @@ def req():
         #response.s3.pagination = True
         pass
     
-    #return shn_rest_controller(module, resource, editable=False, pheader=shn_rms_req_pheader)
-    return shn_rest_controller(module, resource, editable=False)
-
+    return shn_rest_controller(module, resource, editable=False, pheader=shn_rms_req_pheader)
+    
 def pledge():
     "RESTlike CRUD controller"
     
@@ -74,25 +73,25 @@ def shn_rms_req_pheader(resource, record_id, representation, next=None, same=Non
         pheader = TABLE(
                     TR(
                         TH(T('Message: ')),
-                        aid_request.message,
-                        TH(T('Source Type: ')),
-                        rms_req_source_type[aid_request.source_type],
+                        TD(aid_request.message, _colspan=3),
                         ),
                     TR(
                         TH(T('Priority: ')),
                         aid_request.priority,
-                        TH(T('Verified: ')),
-                        aid_request.verified,
+                        TH(T('Source Type: ')),
+                        rms_req_source_type[aid_request.source_type],
                         ),
                     TR(
                         TH(T('Time of Request: ')),
                         aid_request.timestamp,
-                        TH(T('Actionable: ')),
-                        aid_request.actionable,
+                        TH(T('Verified: ')),
+                        aid_request.verified,
                         ),
                     TR(
                         TH(T('Location: ')),
                         location_represent,
+                        TH(T('Actionable: ')),
+                        aid_request.actionable,
                         TH(T('Completion status: ')),
                         aid_request.completion_status,
                         ),

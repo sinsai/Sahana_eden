@@ -62,6 +62,7 @@ hms_ems_traffic_opts = {
     4: T('Not Applicable')
 }
 
+
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -78,32 +79,32 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('total_beds', 'integer'),         # Total Beds
                 Field('available_beds', 'integer'),     # Available Beds
                 Field('ems_status', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_ems_traffic_opts)),
                       label = T('EMS Traffic Status'),
-                      represent = lambda opt: opt and hms_ems_traffic_opts[opt]),
+                      represent = lambda opt: hms_ems_traffic_opts.get(opt, T('Unknown'))),
                 Field('ems_reason', length=128),
                 Field('facility_status', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_facility_status_opts)),
                       label = T('Facility Status'),
-                      represent = lambda opt: opt and hms_facility_status_opts[opt]),
+                      represent = lambda opt: hms_facility_status_opts.get(opt, T('Unknown'))),
                 Field('clinical_status', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_clinical_status_opts)),
                       label = T('Clinical Status'),
-                      represent = lambda opt: opt and hms_clinical_status_opts[opt]),
+                      represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
                 Field('morgue_status', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_morgue_status_opts)),
                       label = T('Morgue Status'),
-                      represent = lambda opt: opt and hms_clinical_status_opts[opt]),
+                      represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
                 Field('morgue_units', 'integer'),
                 Field('security_status', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_security_status_opts)),
                       label = T('Security Status'),
-                      represent = lambda opt: opt and hms_security_status_opts[opt]),
+                      represent = lambda opt: hms_security_status_opts.get(opt, T('Unknown'))),
                 Field('doctors', 'integer'),            # Number of Doctors
                 Field('nurses', 'integer'),             # Number of Nurses
                 Field('non_medical_staff', 'integer'),  # Number of Non-Medical Staff
@@ -112,20 +113,20 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('discharges24', 'integer'),       # Discharges in the past 24 hours
                 Field('deaths24', 'integer'),           # Deaths in the past 24 hours
                 Field('staffing', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Staffing'),
-                      represent = lambda opt: opt and hms_resource_status_opts[opt]),
+                      represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
                 Field('facility_operations', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Facility Operations'),
-                      represent = lambda opt: opt and hms_resource_status_opts[opt]),
+                      represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
                 Field('clinical_operations', 'integer',
-                      default = 1,
+                      default = None,
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Clinical Operations'),
-                      represent = lambda opt: opt and hms_resource_status_opts[opt]),
+                      represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
                 #Field('services', 'text'),              # Services Available, TODO: make component
                 #Field('needs', 'text'),                 # Needs, TODO: make component
                 #Field('damage', 'text'),                # Damage, TODO: make component

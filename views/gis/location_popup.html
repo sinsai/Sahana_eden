@@ -12,7 +12,7 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
         // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
-        if (self.parent.$("input[name='_formname']").val() == "or_office/None") {
+        if (self.parent.$("input[name='_formname']").val().match("or_office")) {
             var office_name = self.parent.$('#or_office_name').val();
             $("#gis_location_name").val(office_name);
             $("#gis_location_name__row").hide();

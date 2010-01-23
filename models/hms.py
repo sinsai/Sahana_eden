@@ -122,7 +122,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('services', 'text'),              # Services Available, TODO: make component
                 #Field('needs', 'text'),                 # Needs, TODO: make component
                 #Field('damage', 'text'),                # Damage, TODO: make component
-                shn_comments_field,
                 migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -219,24 +218,23 @@ hospital_id = SQLTable(None, 'hospital_id',
 # RSS
 def shn_hms_hospital_rss(record):
     if record:
+        lat = lon = T("unknown")
+        location_name = T("unknown")
         if record.location_id:
             location = db.gis_location[record.location_id]
             if location:
-                lat = location.lat
-                lon = location.lon
+                lat = "%.6f" % location.lat
+                lon = "%.6f" % location.lon
                 location_name = location.name
-            else:
-                lat = lon = T("unknown")
-                location_name = T("unknown")
-        return "<b>%s</b>: <br/>Location: %s [Lat: %.6f Lon: %.6f]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
+        return "<b>%s</b>: <br/>Location: %s [Lat: %s Lon: %s]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
             record.name,
             location_name,
             lat,
             lon,
-            record.facility_status and hms_facility_status_opts[record.facility_status] or T("unknown"),
-            record.clinical_status and hms_clinical_status_opts[record.clinical_status] or T("unknown"),
-            record.morgue_status and hms_morgue_status_opts[record.morgue_status] or T("unknown"),
-            record.security_status and hms_security_status_opts[record.security_status] or T("unknown"),
+            db.hms_hospital.facility_status.represent(record.facility_status),
+            db.hms_hospital.clinical_status.represent(record.clinical_status),
+            db.hms_hospital.morgue_status.represent(record.morgue_status),
+            db.hms_hospital.security_status.represent(record.security_status),
             (record.available_beds is not None) and record.available_beds or T("unknown")
             )
     else:

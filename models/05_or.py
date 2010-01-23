@@ -126,7 +126,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('registration', label=T('Registration')),	# Registration Number
                 Field('country', 'integer'),
                 Field('website'),
-				Field('donation_phone'), 
+                Field('donation_phone'), 
                 shn_comments_field,
                 source_id,
                 migrate=migrate)

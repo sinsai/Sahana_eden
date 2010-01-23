@@ -85,6 +85,19 @@ var areaButton = new GeoExt.Action({
     toggleGroup: toggleGroup
 });
 
+{{if mgrs:}}
+// MGRS Control
+var mgrsButton = new GeoExt.Action({
+    text: "Select {{=mgrs.name}}",
+    control: selectPdfControl,
+    map: map,
+    // button options toggleGroup: "draw",
+    allowDepress: false,
+    tooltip: "Select {{=mgrs.name}}",
+    // check item options group: "draw"
+});
+{{pass}}
+
 var selectButton = new GeoExt.Action({
     //control: selectControl,
     map: map,
@@ -196,6 +209,10 @@ toolbar.addSeparator();
 toolbar.add(lengthButton);
 toolbar.add(areaButton);
 toolbar.addSeparator();
+{{if mgrs:}}
+toolbar.add(mgrsButton);
+toolbar.addSeparator();
+{{pass}}
 // Draw Controls
 //toolbar.add(selectButton);
 //toolbar.add(pointButton);

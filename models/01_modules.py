@@ -129,7 +129,7 @@ if empty:
             module_type=4,
             access='',
             description="Tracks the location, distibution, capacity and breakdown of victims in Shelters",
-            enabled='False'
+            enabled='True'
         )
         db[table].insert(
             name="vol",
@@ -233,6 +233,8 @@ module_id = db(db.s3_module.name == 'dvi').select()[0].id
 s3.menu_modules.append([T('Victims'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
 module_id = db(db.s3_module.name == 'rms').select()[0].id
 s3.menu_modules.append([T('Requests'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
+module_id = db(db.s3_module.name == 'cr').select()[0].id
+s3.menu_modules.append([T('Shelters'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
 module_id = db(db.s3_module.name == 'vol').select()[0].id
 s3.menu_modules.append([T('Volunteers'), False, URL(r=request, c='default', f='open_module', vars=dict(id=module_id))])
 

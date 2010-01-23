@@ -256,7 +256,7 @@ track_id = SQLTable(None, 'track_id',
     
 # GIS Layers
 #gis_layer_types = ['shapefile', 'scan', 'wfs']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx', 'georss', 'kml', 'wms', 'tms', 'xyz', 'js']
+gis_layer_types = ['openstreetmap', 'georss', 'google', 'gpx', 'js', 'kml', 'mgrs', 'tms', 'wms', 'xyz', 'yahoo']
 #gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
@@ -278,22 +278,48 @@ for layertype in gis_layer_types:
             gis_layer,
             Field('subtype', label=T('Sub-type'))            )
         db.define_table(table, t, migrate=migrate)
-    if layertype == "google":
+    elif layertype == "georss":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('url', label=T('Location')),
+            projection_id,
+            marker_id)
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "google":
         t = SQLTable(db, table,
             gis_layer,
             Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "yahoo":
+    elif layertype == "gpx":
         t = SQLTable(db, table,
             gis_layer,
-            Field('subtype', label=T('Sub-type')))
+            #Field('url', label=T('Location')),
+            track_id,
+            marker_id)
         db.define_table(table, t, migrate=migrate)
-    if layertype == "bing":
+    elif layertype == "kml":
         t = SQLTable(db, table,
             gis_layer,
-            Field('subtype', label=T('Sub-type')))
+            Field('url', label=T('Location')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "wms":
+    elif layertype == "js":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('code', 'text', label=T('Code'), default="var myNewLayer = new OpenLayers.Layer.XYZ();\nmap.addLayer(myNewLayer);"))
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "mgrs":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('url', label=T('Location')))
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "tms":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('url', label=T('Location')),
+            Field('layers', label=T('Layers')),
+            Field('format', label=T('Format')))
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "wms":
         t = SQLTable(db, table,
             gis_layer,
             Field('url', label=T('Location')),
@@ -304,14 +330,7 @@ for layertype in gis_layer_types:
             Field('transparent', 'boolean', default=False, label=T('Transparent?')),
             projection_id)
         db.define_table(table, t, migrate=migrate)
-    if layertype == "tms":
-        t = SQLTable(db, table,
-            gis_layer,
-            Field('url', label=T('Location')),
-            Field('layers', label=T('Layers')),
-            Field('format', label=T('Format')))
-        db.define_table(table, t, migrate=migrate)
-    if layertype == "xyz":
+    elif layertype == "xyz":
         t = SQLTable(db, table,
             gis_layer,
             Field('url', label=T('Location')),
@@ -324,31 +343,17 @@ for layertype in gis_layer_types:
             Field('opacity', 'double', default=0.0, label=T('Transparent?'))
             )
         db.define_table(table, t, migrate=migrate)
-    if layertype == "georss":
+    elif layertype == "yahoo":
         t = SQLTable(db, table,
             gis_layer,
-            Field('url', label=T('Location')),
-            projection_id,
-            marker_id)
+            Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "kml":
+    elif layertype == "bing":
         t = SQLTable(db, table,
             gis_layer,
-            Field('url', label=T('Location')))
+            Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "gpx":
-        t = SQLTable(db, table,
-            gis_layer,
-            #Field('url', label=T('Location')),
-            track_id,
-            marker_id)
-        db.define_table(table, t, migrate=migrate)
-    if layertype == "js":
-        t = SQLTable(db, table,
-            gis_layer,
-            Field('code', 'text', label=T('Code'), default="var myNewLayer = new OpenLayers.Layer.XYZ();\nmap.addLayer(myNewLayer);"))
-        db.define_table(table, t, migrate=migrate)
-
+    
 # GIS Cache
 # (Store downloaded KML & GeoRSS feeds)
 resource = 'cache'

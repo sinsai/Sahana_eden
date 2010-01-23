@@ -2,9 +2,17 @@
 <div id="home">
 {{=H2(T(module_name))}}
 <p>
-{{=T("The")}} {{=T(module_name)}} {{=T("module help monitoring the status of hospitals.")}}
+{{=T("The")}} {{=T(module_name)}} {{=T("module helps monitoring the status of hospitals.")}}
 </p>
 <h3>{{=T("Features Include")}}:</h3>
 <ul>
+<li>{{=A(T('List Hospitals'), _href=URL(r=request, f='hospital'))}}</li>
+<li>{{=A(T('List Hospitals by Location'), _href=URL(r=request, f='hospital', args='search_location'))}}</li>
+<li>{{=A(T('Search for a Hospital by Name'), _href=URL(r=request, f='hospital', args='search_simple'))}}</li>
+<li>{{=A(T('Add Hospitals'), _href=URL(r=request, f='hospital', args='create'))}}</li>
+<li>View hospitals on the <a href="{{=URL(r=request, c='gis', f='map_viewing_client')}}">map</a></li>
+<li>View hospitals in <a href="{{=URL(r=request, f='hospital.kml')}}">Google Earth</a></li>
+<li>Export hospital information as <a href="{{=URL(r=request, f='hospital.have')}}">EDXL-HAVE</a></li>
+<li>Import hospital information from EDXL-HAVE (coming soon...)</li>
 </ul>
 </div>

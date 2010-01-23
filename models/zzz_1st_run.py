@@ -578,7 +578,7 @@ if empty:
         db[table].insert(
                 name = 'MGRS Atlas PDFs',
                 description = 'http://en.wikipedia.org/wiki/Military_grid_reference_system',
-                url = 'http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&&request=GetFeature&typename=wfs_all_maps',
+                url = 'http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps',
                 enabled = False
             )
 

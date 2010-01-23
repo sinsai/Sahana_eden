@@ -10,7 +10,7 @@ module = 'nim'
 
 # Current Module (for sidebar title)
 try:
-    module_name = db(db.s3_module.name==module).select()[0].name_nice
+    module_name = db(db.s3_module.name==module).select().first().name_nice
 except:
     module_name = T('Nursing Information Manager')
 

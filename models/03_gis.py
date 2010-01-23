@@ -27,7 +27,7 @@ ADD_MARKER = T('Add Marker')
 marker_id = SQLTable(None, 'marker_id',
             Field('marker_id', db.gis_marker,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
-                represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select()[0].image), _height=40), _class='zoom', _href='#zoom-gis_config-marker-%s' % id), DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select()[0].image),_width=600), _id='zoom-gis_config-marker-%s' % id, _class='hidden'))] or [''])[0],
+                represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select().first().image), _height=40))] or [''])[0],
                 label = T('Marker'),
                 comment = DIV(A(ADD_MARKER, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_MARKER), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'
@@ -84,6 +84,7 @@ db.define_table(table, timestamp, uuidstamp,
 				marker_id,
 				Field('map_height', 'integer', notnull=True),
 				Field('map_width', 'integer', notnull=True),
+                Field('zoom_levels', 'integer', default=16, notnull=True),
                 migrate=migrate)
 
 # GIS Feature Classes
@@ -143,13 +144,29 @@ ADD_LOCATION = T('Add Location')
 location_id = SQLTable(None, 'location_id',
             Field('location_id', db.gis_location,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
-                #represent = lambda id: (id and [db(db.gis_location.id==id).select()[0].name] or ["None"])[0],
-                represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
+                represent = lambda id: shn_gis_location_represent(id),
                 label = T('Location'),
                 comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
 
+def shn_gis_location_represent(id):
+    try:
+        location  = db(db.gis_location.id==id).select().first()
+        # Simple
+        #represent = location.name
+        # Fancy Map
+        #represent = A(location.name, _href='#', _onclick='viewMap(' + str(id) +');return false')
+        # Hyperlink
+        represent = A(location.name, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
+        # ToDo: Convert to popup? (HTML again!)
+        # Export Lat/Lon if available, otherwise name
+        # tbc
+    except:
+        # Could also be 'Invalid' if data consistency wrong
+        represent = None
+    return represent
+                
 # Feature Groups
 # Used to select a set of Features for either Display or Export
 resource = 'feature_group'

@@ -10,7 +10,7 @@ module = 'pr'
 
 # Current Module (for sidebar title)
 try:
-    module_name = db(db.s3_module.name==module).select()[0].name_nice
+    module_name = db(db.s3_module.name==module).select().first().name_nice
 except:
     module_name = T('Person Registry')
 
@@ -82,7 +82,7 @@ def person():
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ),
         onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
-
+    #response.s3.pagination = True
     shn_pr_module_menu_ext()
     return output
 

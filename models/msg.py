@@ -38,7 +38,7 @@ msg_group_type_opts = {
     3:T('Both')
     }
 opt_msg_group_type = db.Table(None, 'opt_msg_group_type',
-                    db.Field('group_type', 'integer', notnull=True,
+                    Field('group_type', 'integer', notnull=True,
                     requires = IS_IN_SET(msg_group_type_opts),
                     default = 1,
                     label = T('Type'),

@@ -16,6 +16,7 @@ response.menu_options = [
 
 def shn_hms_menu_ext():
     menu = [
+        [T('Home'), False, URL(r=request, f='index')],
         [T('Hospitals'), False, URL(r=request, f='hospital'), [
             [T('List All'), False, URL(r=request, f='hospital')],
             [T('List by Location'), False, URL(r=request, f='hospital', args='search_location')],

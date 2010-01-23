@@ -330,8 +330,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #db.define_table(table, timestamp, uuidstamp, deletion_status,
 #                person_id,
 #                Field('message_id','integer', notnull=True,label=T('message_id'), default=0),
-#    db.Field('box','integer', notnull=True,label=T('box'), default=0),
-#    db.Field('checked','integer',label=T('checked'), default=0),
+#    Field('box','integer', notnull=True,label=T('box'), default=0),
+#    Field('checked','integer',label=T('checked'), default=0),
 #    migrate=migrate)
 
 
@@ -436,10 +436,10 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #resource = 'access_request'
 #table = module + '_' + resource
 #db.define_table(table, timestamp, uuidstamp,
-#    db.Field('request_id','integer', notnull=True),
-#    db.Field('act','string', length=100,label=T('act')),
-#    db.Field('vm_action','string', length=100,label=T('vm_action')),
-#    db.Field('description','string', length=300,label=T('description')),
+#    Field('request_id','integer', notnull=True),
+#    Field('act','string', length=100,label=T('act')),
+#    Field('vm_action','string', length=100,label=T('vm_action')),
+#    Field('description','string', length=300,label=T('description')),
 #    migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -447,8 +447,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #resource = 'access_constraint'
 #table = module + '_' + resource
 #db.define_table(table, timestamp, uuidstamp,
-#    db.Field('constraint_id','string', length=30, notnull=True, default=' ',label=T('constraint_id')),
-#    db.Field('description','string', length=200,label=T('description')),
+#    Field('constraint_id','string', length=30, notnull=True, default=' ',label=T('constraint_id')),
+#    Field('description','string', length=200,label=T('description')),
 #    migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -456,8 +456,8 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #resource = 'access_constraint_to_request'
 #table = module + '_' + resource
 #db.define_table(table, timestamp, uuidstamp,
-#    db.Field('request_id',db.vol_access_request),
-#    db.Field('constraint_id',db.vol_access_constraint),
+#    Field('request_id',db.vol_access_request),
+#    Field('constraint_id',db.vol_access_constraint),
 #    migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -465,9 +465,9 @@ s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_d
 #resource = 'access_classification_to_request'
 #table = module + '_' + resource
 #db.define_table(table, timestamp, uuidstamp,
-#    db.Field('request_id','integer', length=11, notnull=True, default=0),
-#    db.Field('table_name','string', length=200, notnull=True, default=' ',label=T('table_name')),
-#    db.Field('crud','string', length=4, notnull=True, default=' ',label=T('crud')),
+#    Field('request_id','integer', length=11, notnull=True, default=0),
+#    Field('table_name','string', length=200, notnull=True, default=' ',label=T('table_name')),
+#    Field('crud','string', length=4, notnull=True, default=' ',label=T('crud')),
 #    migrate=migrate)
 
 # -----------------------------------------------------------------------------

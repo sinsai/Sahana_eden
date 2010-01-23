@@ -52,17 +52,16 @@ def shn_pentity_represent(id):
 
     pentity_str = default = T('None (no such record)')
 
-    try:
-        table = db.pr_pentity
-        pentity = db(table.id==id).select(
-                    table.opt_pr_entity_type,
-                    table.label,
-                    limitby=(0,1))[0]
-        entity_type = pentity.opt_pr_entity_type
-        label = pentity.label or "no label"
-    except:
+    table = db.pr_pentity
+    pentity = db(table.id==id).select(
+        table.opt_pr_entity_type,
+        table.label,
+        limitby=(0,1)).first()
+    if not pentity:
         return default
-
+    entity_type = pentity.opt_pr_entity_type
+    label = pentity.label or "no label"
+    
     etype = lambda entity_type: vita.trackable_types[entity_type]
 
     if entity_type == 1:
@@ -154,10 +153,10 @@ pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
 #                        readable = False,   # should be invisible in (most) forms
 #                        writable = False    # should be invisible in (most) forms
 #                    ),
-                    Field('pr_pe_label', length=128, unique=True,
+                    Field('pr_pe_label', length=128,
                         label = T('ID Label'),
                         requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-                    ))
+                    )) # Can't be unique if we allow Null!
 
 # *****************************************************************************
 # Person (person)
@@ -368,7 +367,7 @@ pr_group_type_opts = {
     }
 
 opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
-                    db.Field('opt_pr_group_type', 'integer',
+                    Field('opt_pr_group_type', 'integer',
                         requires = IS_IN_SET(pr_group_type_opts),
                         default = 4,
                         label = T('Group Type'),
@@ -488,9 +487,9 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
         onaccept-callback for create/update of subentities.
     """
 
-    if "pr_pe_id" in table:
-        try:
-            record = db(table.id==form.vars.id).select(table.pr_pe_id, table.pr_pe_label)[0]
+    if "pr_pe_id" in table.fields:
+        record = db(table.id==form.vars.id).select(table.pr_pe_id, table.pr_pe_label).first()
+        if record:
             pr_pe_id = record.pr_pe_id
             label = record.pr_pe_label
             if pr_pe_id:
@@ -502,8 +501,6 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
                                                 label=label)
                 if pr_pe_id:
                     db(table.id==form.vars.id).update(pr_pe_id=pr_pe_id)
-        except:
-            pass
 
     return True
 

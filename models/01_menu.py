@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 
 # Help Menu (available in all screens)
-s3.menu_help = [T('Help'), True, URL(request.application, 'default', 'help'), [
-        [T('About'), False, URL(request.application, 'default', 'about')],
-    ]]
+s3.menu_help = [
+        T('Help'), True, URL(request.application, 'default', 'help'), [
+            [T('About'), False, URL(request.application, 'default', 'about')],
+        ]
+    ]
 
 # Auth Menu (available in all screens)
 if not auth.is_logged_in():
-    try:
-        self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
-    except:
-        self_registration = True
+    
+    self_registration = s3_settings.self_registration if s3_settings else True
+    
     if self_registration:
         s3.menu_auth = [T('Login'), True, URL(request.application, 'default', 'user/login'),
              [

@@ -62,6 +62,20 @@ s3xrc = ResourceController(db,
                            base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
                            rpp=ROWSPERPAGE)
 
+def shn_field_represent(field, row, col):
+    """
+        Representation of a field
+        Used by:
+         * export_xls()
+         * shn_list()
+           .aaData representation for dataTables' Server-side pagination
+    """
+    try:
+        represent = str(field.represent(row[col]))
+    except:
+        represent = row[col]
+    return represent
+    
 # *****************************************************************************
 # Exports
 
@@ -209,10 +223,10 @@ def export_rss(module, resource, query, rss=None, linkto=None):
                 description = ''
 
             entries.append(dict(
-                title=str(title).decode('utf-8'),
-                link=server + link + '/%d' % row.id,
-                description=str(description).decode('utf-8'),
-                modified_on=row.modified_on))
+                title = str(title).decode('utf-8'),
+                link = server + link + '/%d' % row.id,
+                description = str(description).decode('utf-8'),
+                modified_on = row.modified_on))
 
     import gluon.contrib.rss2 as rss2
 
@@ -277,11 +291,8 @@ def export_xls(table, query):
                 style.num_format_str = 'h:mm:ss'
 
             # Check for a custom.represent (e.g. for ref fields)
-            try:
-                represent = str(field.represent(item[col]))
-            except:
-                represent = item[col]
-
+            represent = shn_field_represent(field, item, col)
+            
             rowx.write(cell1, str(represent), style)
             cell1 += 1
     book.save(output)
@@ -722,7 +733,7 @@ def shn_audit_read(operation, module, resource, record=None, representation=None
 
     if session.s3.audit_read:
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = operation,
                 module = module,
                 resource = resource,
@@ -751,7 +762,7 @@ def shn_audit_create(form, module, resource, representation=None):
         for var in form.vars:
             new_value.append(var + ':' + str(form.vars[var]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'create',
                 module = module,
                 resource = resource,
@@ -781,7 +792,7 @@ def shn_audit_update(form, module, resource, representation=None):
         for var in form.vars:
             new_value.append(var + ':' + str(form.vars[var]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'update',
                 module = module,
                 resource = resource,
@@ -805,7 +816,7 @@ def shn_audit_update_m2m(module, resource, record, representation=None):
 
     if session.s3.audit_write:
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'update',
                 module = module,
                 resource = resource,
@@ -831,7 +842,7 @@ def shn_audit_delete(module, resource, record, representation=None):
         for field in _old_value:
             old_value.append(field + ':' + str(_old_value[field]))
         db.s3_audit.insert(
-                person = auth.user.id if session.auth else 0,
+                person = auth.user_id,
                 operation = 'delete',
                 module = module,
                 resource = resource,
@@ -888,60 +899,6 @@ def shn_list_item(table, resource, action, main='name', extra=None):
         item_list.extend(eval(extra))
     items = DIV(TABLE(TR(item_list)))
     return DIV(*items)
-
-#
-# pagenav ---------------------------------------------------------------------
-#
-def pagenav(page=1, totalpages=None, first='1', prev='<', next='>', last='last', pagenums=10):
-
-    """ Generate a page navigator around current record number """
-
-    # e.g. 1 < 3 4 5 > 36,
-    # derived from: http://99babysteps.appspot.com/how2/default/article_read/2
-
-    if not totalpages:
-        maxpages = page + 1
-    else:
-        maxpages = totalpages
-        page = min(page, totalpages)
-    pagerange = pagenums / 2 # half the page numbers will be below the startpage, half above
-    # create page selector list eg 1 2 3
-    pagelinks = [i for i in range(max(1, page - pagerange), min(page + pagerange, maxpages) + 1)]
-    startpagepos = pagelinks.index(page)
-    # make pagelist into hyperlinks:
-    pagelinks = [A(str(pagelink), _href=URL(r=request, vars={'page':pagelink})) for pagelink in pagelinks]
-    # remove link to current page & make text emphasised:
-    pagelinks[startpagepos] = B(str(page))
-    if page < maxpages:
-        nextlink = A(next, _href=URL(r=request, vars={'page':page + 1}))
-    else:
-        # no link if no next
-        nextlink = next
-    if page > 1:
-        prevlink = A(prev, _href=URL(r=request, vars={'page':page - 1}))
-        firstlink = A(first, _href=URL(r=request, vars={'page':1}))
-    else:
-        # no links if no prev
-        prevlink = prev
-        firstlink = DIV(first)
-    if last <> '':
-        if totalpages > 0:
-            lasttext = last + '(' + str(totalpages) + ')'
-        else:
-            lasttext = last + '...'
-    lastlink = A(lasttext, _href=URL(r=request, vars={'page':maxpages}))
-    delim = XML('&nbsp;') # nonbreaking delim
-    pagenav = firstlink
-    pagenav.append(delim)
-    pagenav.append(prevlink)
-    pagenav.append(delim)
-    for pageref in pagelinks:
-        pagenav.append(pageref)
-        pagenav.append(delim)
-    pagenav.append(nextlink)
-    pagenav.append(delim)
-    pagenav.append(lastlink)
-    return pagenav
 
 #
 # shn_custom_view -------------------------------------------------------------
@@ -1142,6 +1099,17 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
     module, resource, table, tablename = jr.target()
 
+    # Provide the ability to get a subset of records
+    if request.vars.limit:
+        limit = int(request.vars.limit)
+        if request.vars.start:
+            start = int(request.vars.start)
+            limitby = (start, start + limit)
+        else:
+            limitby = (0, limit)
+    else:
+        limitby = None
+    
     if jr.component:
 
         listadd = jr.component.attr.listadd
@@ -1185,6 +1153,34 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                    resource=resource,
                    representation=jr.representation)
 
+    # dataTables representation
+    # Migrate to an XSLT in future?
+    if jr.representation=="aaData":
+        if "iDisplayStart" in request.vars:
+            start = int(request.vars.iDisplayStart)
+        else:
+            start = 0
+        if "iDisplayLength" in request.vars:
+            limit = int(request.vars.iDisplayLength)
+        else:
+            limit = None
+        sEcho = int(request.vars.sEcho)
+        from gluon.serializers import json
+        _table = '%s_%s' % (request.controller, request.function)
+        table = db[_table]
+        query = (table.id > 0)
+        totalrows = db(query).count()
+        if limit:
+            rows = db(query).select(limitby = (start, start + limit))
+        else:
+            rows = db(query).select()
+        r = dict(sEcho = sEcho,
+               iTotalRecords = len(rows),
+               iTotalDisplayRecords = totalrows,
+               #ToDo: check for component list_fields & use them where available
+               aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
+        return json(r)
+    
     if jr.representation=="html":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
@@ -1256,6 +1252,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         items = crud.select(table, query=query,
             fields=fields,
             orderby=orderby,
+            limitby=limitby,
             headers=headers,
             linkto=linkto,
             truncate=48, _id='list', _class='display')
@@ -1963,13 +1960,15 @@ def shn_rest_controller(module, resource,
                 - responses in JSON format
                 - create/update/delete done via simple GET vars (no form displayed)
             - B{popup}: designed to be used inside popups
-
+            - B{aaData}: used by dataTables for server-side pagination
+            
         Request options:
         ================
 
             - B{response.s3.filter}: contains custom query to filter list views (primary resources)
             - B{response.s3.jfilter}: contains custom query to filter list views (joined resources)
             - B{response.s3.cancel}: adds a cancel button to forms & provides a location to direct to upon pressing
+            - B{response.s3.pagination}: enables server-side pagination (detected by view which then calls REST via AJAX)
 
         Description:
         ============
@@ -2386,9 +2385,19 @@ def shn_rest_controller(module, resource,
                     value = request.vars.value or request.vars.q or None
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
+                        if request.vars.field2 and request.vars.field3:
+                            field2 = str.lower(request.vars.field2)
+                            field3 = str.lower(request.vars.field3)
+                        else:
+                            field2 = None
+                            field3 = None
                         filter = request.vars.filter
                         if filter == '~':
-                            query = query & (jr.table[field].like('%' + value + '%'))
+                            if field2 and field3:
+                                # pr_person name search
+                                query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                            else:
+                                query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:
                                 item = db(query).select(limitby=(0, limit)).json()

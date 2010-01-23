@@ -1,11 +1,20 @@
 {{extend 'layout_popup.html'}}
 {{include '_popup.html'}}
-{{if session.s3.security_policy==1:}}
-    <script type="text/javascript">//<![CDATA[
-    $(function() {
-            // Hide the Admin row for simple security_policy
-            $("#or_office_admin__row").hide();
-    });
-    //]]></script>
-{{pass}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Hide the real Input Field
+    $("#or_office_organisation_id").hide();
+    
+    // Add a dummy field
+    $("#or_office_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
+
+    {{include 'or/organisation_autocomplete.js'}}
+
+    // Populate the real Input when the Dummy is selected
+    $("#dummy_organisation").result(function(event, data, formatted) {
+        var newvalue = data.id;
+        $("#or_office_organisation_id").val(newvalue);
+    });     
+});
+//]]></script>
 

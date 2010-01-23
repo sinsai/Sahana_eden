@@ -9,6 +9,9 @@ map.addControl(new OpenLayers.Control.ScaleLine());
 map.addControl(new OpenLayers.Control.MGRSMousePosition());
 map.addControl(new OpenLayers.Control.Permalink());
 map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+popupControl = new OpenLayers.Control.SelectFeature(allLayers);
+map.addControl(popupControl);
+popupControl.activate();
 
 {{if mgrs:}}
 // MGRS

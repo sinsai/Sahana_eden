@@ -177,8 +177,11 @@ def shn_gis_location_represent(id):
         represent = A(text, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
         # ToDo: Convert to popup? (HTML again!)
     except:
-        # Could also be 'Invalid' if data consistency wrong
-        represent = location.id or None
+        try:
+            # 'Invalid' => data consistency wrong
+            represent = location.id
+        except:
+            represent = None
     return represent
                 
 # Feature Groups

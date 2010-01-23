@@ -44,7 +44,18 @@
     {{=T("View requests & make pledges")}}
   </td>
 </tr> <!-- http://haiti.sahanafoundation.org/prod/rms/index -->
- 
+
+<tr>
+  <td style="text-align:right; font-weight:bold;">
+    {{=A(T("Hospital Information"), _href=URL(r=request, c='hms', f='index'))}}
+    {{}}
+  </td>
+  <td>
+    {{=T("The status of medical facilities in Haiti")}}
+  </td>
+</tr> <!-- http://bit.ly/sahana-haiti-todo -->
+
+
 <tr>
   <td style="text-align:right; font-weight:bold;">
     {{=A(T("Volunteer Information"), _href='http://bit.ly/sahana-haiti-todo')}}
@@ -60,8 +71,18 @@
  
 <p style="clear:both; padding: 2em;line-height:110%; text-align:center;">
   {{=T("This site is assisting the response and recovery of the")}}
-  {{=A(T('Haitian 2010 Earthquake'), _href='http://en.wikipedia.org/wiki/2010_Haiti_earthquake')}}.
+  {{=A(T('Haitian 2010 Earthquake'), _href='http://en.wikipedia.org/wiki/2010_Haiti_earthquake')}}.<br />
+  {{=T('Please consider donating to assist us assist others:')}}
 </p>
+
+<div align='center' style="margin-bottom:2em;">
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="11209645">
+<input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
+
 </div>
  
 <!-- Column one-->

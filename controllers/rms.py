@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'rms'
 # Current Module (for sidebar title)
@@ -272,3 +272,35 @@ def shn_rms_plg_pheader(resource, record_id, representation, next=None, same=Non
 
     else:
         return None
+
+def sms_complete():
+
+    def t(record):
+        return "Sahana Record Number: " + str(record.id)
+
+    def d(record):
+        ush_id = db(db.rms_sms_request.id == record.id).select("ush_id")[0]["ush_id"]
+        smsrec = db(db.rms_sms_request.id == record.id).select("smsrec")[0]["smsrec"]
+
+        return \
+            "Ushahidi Link: " + A(ush_id, _href=ush_id).xml() + '<br>' + \
+            "SMS Record: " + str(smsrec)
+
+    rss = { "title" : t , "description" : d }    
+    response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 2)
+    return shn_rest_controller(module, 'req', editable=False, listadd=False, rss=rss)
+
+
+def tweet_complete():
+
+    def t(record):
+        return "Sahana Record Number: " + str(record.id)
+
+    def d(record):
+        ttt_id = db(db.rms_tweet_request.id == record.id).select("ttt_id")[0]["ttt_id"]
+        return "Twitter: " + ttt_id
+
+    rss = { "title" : t , "description" : d }
+    response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 3)
+    return shn_rest_controller(module, 'req', editable=False, listadd=False, rss = rss)
+

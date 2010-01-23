@@ -1648,8 +1648,8 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             session.error = BADRECORD
             redirect(jr.there())
 
-        onvalidation = s3xrc.model.get_attr(resource, 'update_onvalidation')
-        onaccept = s3xrc.model.get_attr(resource, 'update_onaccept')
+        onvalidation = s3xrc.model.get_attr(resource, 'onvalidation')
+        onaccept = s3xrc.model.get_attr(resource, 'onaccept')
         deletable = s3xrc.model.get_attr(resource, 'deletable')
 
     else:
@@ -1700,7 +1700,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
 
             del_href = jr.other(method='delete', representation=jr.representation)
-            if s3.crud_strings[tablename]:
+            if tablename in s3.crud_strings and "label_delete_button" in s3.crud_strings[tablename]:
                 label_del_button = s3.crud_strings[tablename].label_delete_button
             else:
                 label_del_button = None

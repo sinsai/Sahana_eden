@@ -27,8 +27,11 @@ def shn_hms_menu_ext():
         if selection:
             menu_hospital = [
                     [selection.name, False, URL(r=request, f='hospital', args=['read', selection.id]), [
-                        [T('Contacts'), False, URL(r=request, f='hospital', args=[selection.id, 'contact'])],
+                        [T('Bed Capacity'), False, URL(r=request, f='hospital', args=[selection.id, 'bed_capacity'])],
+                        [T('Services'), False, URL(r=request, f='hospital', args=[selection.id, 'services'])],
+                        #[T('Resources'), False, URL(r=request, f='hospital', args=[selection.id, 'resources'])],
                         [T('Shortages'), False, URL(r=request, f='hospital', args=[selection.id, 'shortage'])],
+                        [T('Contacts'), False, URL(r=request, f='hospital', args=[selection.id, 'contact'])],
                     ]]
             ]
             menu.extend(menu_hospital)
@@ -42,12 +45,12 @@ def index():
     return dict(module_name=module_name)
 
 def hospital():
-    output = shn_rest_controller( module , 'hospital', listadd=False,
+    output = shn_rest_controller(module , 'hospital', listadd=False,
         pheader = shn_hms_hospital_pheader,
         rss=dict(
             title="%(name)s",
             description=shn_hms_hospital_rss
         ),
-        list_fields=['id', 'name', 'location_id', 'phone1', 'fax', 'status', 'total_beds', 'available_beds'])
+        list_fields=['id', 'name', 'organisation_id', 'location_id', 'phone_business', 'ems_status', 'facility_status', 'clinical_status', 'security_status', 'total_beds', 'available_beds'])
     shn_hms_menu_ext()
     return output

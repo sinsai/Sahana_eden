@@ -12,6 +12,7 @@ map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
 popupControl = new OpenLayers.Control.SelectFeature(allLayers);
 map.addControl(popupControl);
 popupControl.activate();
+
 {{if mgrs:}}
 // MGRS
 var selectPdfControl = new OpenLayers.Control();

@@ -335,7 +335,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'person_id', 'office_id', 'title', 'manager_id', 'focal_point'])
 
 # Projects
-# The projects which each orgnaization is engaged in 
+# The projects which each organization is engaged in 
 resource = 'project'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,

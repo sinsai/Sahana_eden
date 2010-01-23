@@ -62,7 +62,7 @@ def office():
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
         db[table].admin.readable = db[table].admin.writable = False
-    response.s3.pagination = True
+    #response.s3.pagination = True
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
 @service.jsonrpc

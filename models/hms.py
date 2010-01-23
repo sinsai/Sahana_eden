@@ -628,7 +628,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Name: ')),
                         hospital.name,
                         TH(T('EMS Status: ')),
-                        "%s" % hms_ems_traffic_opts[hospital.ems_status],
+                        "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status),
                         TH(A(T('Clear Selection'),
                             _href=URL(r=request, f='hospital', args='clear', vars={'_next': _same})))
                         ),
@@ -636,7 +636,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Location: ')),
                         db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
                         TH(T('Facility Status: ')),
-                        "%s" % hms_facility_status_opts[hospital.facility_status],
+                        "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status),
                         TH(""),
                         "",
                       ),
@@ -644,7 +644,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Total Beds: ')),
                         hospital.total_beds,
                         TH(T('Clinical Status: ')),
-                        "%s" % hms_clinical_status_opts[hospital.clinical_status],
+                        "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status),
                         TH(""),
                         "",
                       ),
@@ -652,7 +652,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Available Beds: ')),
                         hospital.available_beds,
                         TH(T('Security Status: ')),
-                        "%s" % hms_security_status_opts[hospital.security_status],
+                        "%s" % db.hms_hospital.security_status.represent(hospital.security_status),
                         TH(A(T('Edit Hospital'),
                             _href=URL(r=request, f='hospital', args=['update', record_id], vars={'_next': _next})))
                         )

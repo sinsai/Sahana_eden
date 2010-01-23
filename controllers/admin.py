@@ -215,6 +215,7 @@ def user():
 
     return shn_rest_controller(module, resource, main='first_name')
     
+
 @auth.requires_membership('Administrator')
 def group():
     "RESTlike CRUD controller"
@@ -447,6 +448,32 @@ def export_csv():
     response.headers['Content-disposition'] = "attachment; filename=%s" % filename
     return output.read()
     
+
+# Unstructured Data Import
+@auth.requires_membership('Administrator')
+def import_job():
+    "RESTlike CRUD controller to handle 'jobs' for importing unstructured data."
+    module = 'admin'
+    resource = 'import_job'
+    table = module + '_' + resource
+
+    # Model options
+    
+    # CRUD Strings
+    s3.crud_strings[table] = Storage(
+            title_create=T('Create New Import Job'),
+            title_display=T('Import Job'),
+            title_list=T('List Import Jobs'),
+            subtitle_create=T('Create New Import Job'),
+            subtitle_list=T('Import Jobs'),
+            label_list_button=T('Import Jobs'),
+            label_create_button=T('Create Import Job'),
+            msg_record_created=T('Import job created'),
+            msg_list_empty=T('No import jobs')
+    )
+    return shn_rest_controller(module, resource)
+
+
 # Functional Testing
 def handleResults():
     """Process the POST data returned from Selenium TestRunner.

@@ -90,7 +90,7 @@ var mgrsButton = new GeoExt.Action({
     text: "Select {{=mgrs.name}}",
     control: selectPdfControl,
     map: map,
-    // button options toggleGroup: "draw",
+    toggleGroup: toggleGroup,
     allowDepress: false,
     tooltip: "Select {{=mgrs.name}}",
     // check item options group: "draw"

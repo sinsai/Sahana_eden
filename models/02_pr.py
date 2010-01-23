@@ -153,7 +153,7 @@ pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
 #                        readable = False,   # should be invisible in (most) forms
 #                        writable = False    # should be invisible in (most) forms
 #                    ),
-                    Field('pr_pe_label', length=128, unique=True,
+                    Field('pr_pe_label', length=128,
                         label = T('ID Label'),
                         requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
                     )) # Can't be unique if we allow Null!
@@ -304,7 +304,7 @@ db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have uni
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
-#db[table].pr_pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, 'pr_person.pr_pe_label')] # Need to allow null for non-MPR/DVI purposes
+db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_person.pr_pe_label'))
 
 # Field representation
 db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
@@ -406,7 +406,7 @@ db[table].pr_pe_label.readable = False
 db[table].pr_pe_label.writable = False
 db[table].system.readable = False
 db[table].system.writable = False
-db[table].pr_pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, 'pr_group.pr_pe_label')]
+db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_group.pr_pe_label'))
 
 # Field labels
 db[table].opt_pr_group_type.label = T("Group type")

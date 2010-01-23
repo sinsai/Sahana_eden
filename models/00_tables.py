@@ -33,6 +33,8 @@ authorstamp = db.Table(None, 'authorstamp',
                           ondelete='RESTRICT')
             )
 
+shn_comments_field = db.Table(None, 'comments', Field('comments', 'text', comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Comments|Please use this field to show a history of the record."))))
+
 # Reusable UUID field (needed as part of database synchronization)
 import uuid
 from gluon.sql import SQLCustomType

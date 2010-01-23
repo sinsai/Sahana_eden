@@ -106,10 +106,10 @@ def config():
     db[table].zoom.label = T('Zoom')
     db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
     db[table].marker_id.label = T('Default Marker')
-    db[table].map_height.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+    db[table].map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
     db[table].map_height.label = T('Map Height')
     db[table].map_height.comment = SPAN("*", _class="req")
-    db[table].map_width.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+    db[table].map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1280)]
     db[table].map_width.label = T('Map Width')
     db[table].map_width.comment = SPAN("*", _class="req")
     db[table].zoom_levels.requires = IS_INT_IN_RANGE(1, 30)

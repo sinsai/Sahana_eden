@@ -587,7 +587,115 @@ def layer_xyz():
 def convert_gps():
     " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
     return dict()
+    
+def proxy():
+    """Based on http://trac.openlayers.org/browser/trunk/openlayers/examples/proxy.cgi
+This is a blind proxy that we use to get around browser
+restrictions that prevent the Javascript from loading pages not on the
+same server as the Javascript. This has several problems: it's less
+efficient, it might break some sites, and it's a security risk because
+people can use this proxy to browse the web and possibly do bad stuff
+with it. It only loads pages via http and https, but it can load any
+content type. It supports GET and POST requests."""
 
+    import urllib2
+    import cgi
+    import sys, os
+    
+    # prevent Open Proxy abuse
+    allowedHosts = []
+    #allowedHosts = ['www.openlayers.org', 'openlayers.org',
+    #                'labs.metacarta.com', 'world.freemap.in',
+    #                'prototype.openmnnd.org', 'geo.openplans.org',
+    #                'sigma.openplans.org', 'demo.opengeo.org',
+    #                'www.openstreetmap.org', 'sample.avencia.com',
+    #                'v-swe.uni-muenster.de:8080']
+    
+    method = request['wsgi'].environ['REQUEST_METHOD']
+    
+    if method == "POST":
+        qs = request['wsgi'].environ["QUERY_STRING"]
+        
+        d = cgi.parse_qs(qs)
+        if d.has_key("url"):
+            url = d["url"][0]
+        else:
+            url = "http://www.openlayers.org"
+    else:
+        fs = cgi.FieldStorage()
+        url = fs.getvalue('url', "http://www.openlayers.org")
+    
+    try:
+        host = url.split("/")[2]
+        if allowedHosts and not host in allowedHosts:
+            msg = "Status: 502 Bad Gateway\n"
+            msg += "Content-Type: text/plain\n\n"
+            msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
+           
+            msg += os.environ
+            return msg
+     
+        elif url.startswith("http://") or url.startswith("https://"):
+            if method == "POST":
+                length = int(request['wsgi'].environ["CONTENT_LENGTH"])
+                headers = {"Content-Type": request['wsgi'].environ["CONTENT_TYPE"]}
+                body = request.body.read(length)
+                r = urllib2.Request(url, body, headers)
+                y = urllib2.urlopen(r)
+            else:
+                y = urllib2.urlopen(url)
+           
+            # print content type header
+            # TODO: this doesn't work in web2py, need to figure out how that happens?
+            #i = y.info()
+            #if i.has_key("Content-Type"):
+            # msg = "Content-Type: %s" % (i["Content-Type"])
+            #else:
+            # msg = "Content-Type: text/plain"
+           
+            #msg += "\n" + y.read()
+           
+            msg = y.read()
+            y.close()
+            return msg
+        else:
+            msg = "Content-Type: text/plain\n\n"
+           
+            msg += "Illegal request."
+            return msg
+    
+    except Exception, E:
+        msg = "Status: 500 Unexpected Error\n"
+        msg += "Content-Type: text/plain\n\n"
+        msg += "Some unexpected error occurred. Error text was:", E
+        return msg
+    
+def proxy2():
+    " Provide a proxy for WFS/GeoRSS/MGRS layers. by Massimo diPierro"
+    import httplib 
+    PROXY_USER = None 
+    PROXY_PASSWORD = None 
+    PROXY_URL = 'web2py.com:80' 
+    path = '/'+'/'.join(request.args) 
+    query = request.env.query_string 
+    method = request.env.request_method 
+    if PROXY_USER and PROXY_PASSWORD: 
+        conn.add_credentials(PROXY_USER, PROXY_PASSWORD) 
+    conn =  httplib.HTTPConnection(PROXY_URL) 
+    if method == 'GET': 
+        conn.request(method, path, query) 
+    elif method == 'POST': 
+        data = request.body.read() 
+        conn.request(method, path, data) 
+    else: 
+        return 'oops' 
+    res = conn.getresponse() 
+    content = res.read() 
+    headers = dict(res.getheaders()) 
+    response.headers['Content-Type'] = headers['content-type'] 
+    response.status = int(res.status) 
+    return content 
+    
 def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
     >>> shn_latlon_to_wkt(6, 80)

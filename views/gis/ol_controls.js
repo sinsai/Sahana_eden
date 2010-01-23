@@ -36,7 +36,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         html += "</ul>";
-        //console.log(html);
+        console.log(html);
         this.w = new Ext.Window({
             'html': html,
             width: 300,
@@ -47,11 +47,11 @@ OpenLayers.Util.extend( selectPdfControl, {
     },
     getPdf: function (bounds) {
         var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
-        //console.log(ll);
+        console.log(ll);
         var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
         var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
         bbox = boundsgeog.toBBOX();
-        //console.log(bbox);
+        console.log(bbox);
         OpenLayers.Request.GET({
             url: '{{=mgrs.url}}&bbox=' + bbox,
             callback: OpenLayers.Function.bind(this.response, this)

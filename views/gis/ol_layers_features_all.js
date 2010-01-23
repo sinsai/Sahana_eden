@@ -38,5 +38,3 @@ featuresLayer{{=fgname}}.events.on({ "featureselected": onFeatureSelect, "featur
 {{pass}}
 {{pass}}
 allLayers = allLayers.concat(featuresLayers);
-
-

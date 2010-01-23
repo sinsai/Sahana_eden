@@ -152,19 +152,33 @@ location_id = SQLTable(None, 'location_id',
 
 def shn_gis_location_represent(id):
     try:
-        location  = db(db.gis_location.id==id).select().first()
+        location = db(db.gis_location.id==id).select().first()
         # Simple
         #represent = location.name
         # Fancy Map
         #represent = A(location.name, _href='#', _onclick='viewMap(' + str(id) +');return false')
+        # Lat/Lon
+        lat = location.lat
+        lon = location.lon
+        if lat and lon:
+            if lat > 0:
+                lat_prefix = 'N'
+            else:
+                lat_prefix = 'S'
+            if lon > 0:
+                lon_prefix = 'E'
+            else:
+                lon_prefix = 'W'
+            text = lat_prefix + ' ' + str(lat) + ' ' + lon_prefix + ' ' + str(lon)
+        else:
+            text = location.name
+        represent = text
         # Hyperlink
-        represent = A(location.name, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
+        represent = A(text, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
         # ToDo: Convert to popup? (HTML again!)
-        # Export Lat/Lon if available, otherwise name
-        # tbc
     except:
         # Could also be 'Invalid' if data consistency wrong
-        represent = None
+        represent = location.id or None
     return represent
                 
 # Feature Groups

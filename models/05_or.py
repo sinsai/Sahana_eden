@@ -205,7 +205,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('number_of_vehicles', 'integer'),
                 Field('vehicle_types'),
                 Field('equipment'),
-                shn_comments_field,
                 source_id,
                 shn_comments_field,
                 migrate=migrate)

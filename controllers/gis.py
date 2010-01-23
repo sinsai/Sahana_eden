@@ -602,6 +602,7 @@ content type. It supports GET and POST requests."""
     import cgi
     import sys, os
     
+    # ToDo - need to link to map_service_catalogue
     # prevent Open Proxy abuse
     allowedHosts = []
     #allowedHosts = ['www.openlayers.org', 'openlayers.org',
@@ -614,6 +615,7 @@ content type. It supports GET and POST requests."""
     method = request['wsgi'].environ['REQUEST_METHOD']
     
     if method == "POST":
+        # THis can probably use same call as GET in web2py
         qs = request['wsgi'].environ["QUERY_STRING"]
         
         d = cgi.parse_qs(qs)
@@ -622,8 +624,14 @@ content type. It supports GET and POST requests."""
         else:
             url = "http://www.openlayers.org"
     else:
-        fs = cgi.FieldStorage()
-        url = fs.getvalue('url', "http://www.openlayers.org")
+        # GET
+        #fs = cgi.FieldStorage()
+        #url = fs.getvalue('url', "http://www.openlayers.org")
+        if 'url' in request.vars:
+            url = request.vars.url
+        else:
+            session.error = str(T("Need a 'url' argument!"))
+            raise HTTP(400, body=json_message(False, 400, session.error))
     
     try:
         host = url.split("/")[2]

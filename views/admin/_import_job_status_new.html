@@ -1,0 +1,23 @@
+<div id='table-container'>
+    <table>
+        <tr>
+            <th>CSV Header</th>
+            <th>Destination Field</th>
+        </tr>
+        {{for header in job.column_map:}}
+        <tr>
+            <td>{{=header[0]}}</td>
+            <td>
+                <select>
+                {{for field in model_fields:}}
+                <option value="{{=field}}"{{=header[1]==field and ' selected' or ''}}>{{=field}}</option>
+                {{pass}}
+            </td>
+        </tr>
+        {{pass}}
+        <tr>
+            <td>&nbsp;</td>
+            <td><input type="submit" value="Begin Processing"></td>
+        </tr>
+    </table>
+</div>

@@ -1,4 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
+import cPickle as pickle
+import csv
 
 module = 'admin'
 # Current Module (for sidebar title)
@@ -413,7 +415,15 @@ def user_remove_groups():
 def import_data():
     "Import data via POST upload to CRUD controller."
     title = T('Import Data')
-    return dict(module_name=module_name, title=title)
+    crud.messages.submit_button = 'Upload'
+    import_job_form = crud.create(db.admin_import_job)
+    # Doesn't seem to be any proper way to tell the CRUD create form to post to
+    # a different location!!! 
+    import_job_form.custom.begin.text = str(import_job_form.custom.begin).replace(
+            'action=""', 
+            'action="%s"' % URL(r=request, f='import_job', args=['create']))
+    return dict(module_name=module_name, title=title,
+                import_job_form=import_job_form)
 
 @auth.requires_membership('Administrator')
 def import_csv():
@@ -453,25 +463,100 @@ def export_csv():
 @auth.requires_membership('Administrator')
 def import_job():
     "RESTlike CRUD controller to handle 'jobs' for importing unstructured data."
+    # CRUD Strings
     module = 'admin'
     resource = 'import_job'
-    table = module + '_' + resource
-
-    # Model options
-    
-    # CRUD Strings
+    table = '%s_%s' % (module, resource)
+    jr = s3xrc.request(module, resource, request, session=session)
     s3.crud_strings[table] = Storage(
             title_create=T('Create New Import Job'),
             title_display=T('Import Job'),
             title_list=T('List Import Jobs'),
+            title_update=T('Update Import Job'),
             subtitle_create=T('Create New Import Job'),
             subtitle_list=T('Import Jobs'),
-            label_list_button=T('Import Jobs'),
+            label_list_button=T('List Import Jobs'),
             label_create_button=T('Create Import Job'),
             msg_record_created=T('Import job created'),
             msg_list_empty=T('No import jobs')
     )
-    return shn_rest_controller(module, resource)
+
+    if len(request.args) == 0:
+        return _import_job_list(jr)
+    action = request.args[0]
+    if action == 'create':
+        return _import_job_create(jr)
+    if action == 'update':
+        return _import_job_update(jr)
+
+def _import_job_list(jr):
+    return shn_list(jr, listadd=False)
+
+def _import_job_create(jr):
+    if jr.http != 'POST':
+        redirect(jr.there())
+        
+    def process_new_file_and_redirect(form):
+        filename = form.vars.source_file_newfilename
+        filepath = os.path.join(request.folder, 'uploads', filename)
+        query = jr.table.id==form.vars.id
+        column_map = []
+        model_fields = dict(map(
+                lambda x:(x.lower(), x),
+                get_matchable_fields(form.vars.module, form.vars.resource)))
+        try:
+            reader = csv.reader(open(filepath, 'r'))
+            for line in reader:
+                for col in line:
+                    field = None
+                    col_match = col.lower()
+                    if col_match in model_fields:
+                        # Explicit name match.
+                        field = model_fields.pop(col_match)
+                    if not field:
+                        # Partial name patch.
+                        for field_name in model_fields:
+                            if col_match in field_name or field_name in col_match:
+                                field = model_fields.pop(field_name)
+                                break
+                    column_map.append((col, field))
+                break
+            pickled_map = pickle.dumps(column_map, pickle.HIGHEST_PROTOCOL)
+            db(query).update(column_map=pickled_map)
+        except:
+            db(query).update(status='failed')
+        redirect(URL(r=request, f='import_job', args=['update', form.vars.id]))
+
+    form = crud.create(jr.table, onaccept=proces_new_file_and_redirect)
+    response.flash = 'Form errors!'
+    redirect(URL(r=request, f='import_data'))
+
+def _import_job_update(jr):
+    if len(request.args) < 2:
+        redirect(jr.there())
+    id = request.args[1]
+    query = jr.table.id==id
+    job = db(query).select()
+    if not job:
+        raise HTTP(404)
+    job = job[0]
+    try:
+        job.column_map = pickle.loads(job.column_map)
+    except pickle.UnpicklingError:
+        job.column_map = []
+    model_fields = get_matchable_fields(job.module, job.resource)
+
+    title = '%s - %s' % (T('Input Job'), job.description)
+    output = dict(module_name=module_name, title=title, job=job, model_fields=model_fields)
+    response.view = 'admin/import_job_update.html'
+    return output
+
+def get_matchable_fields(module, resource):
+    model_fields = getattr(db, '%s_%s' % (module, resource)).fields
+    for name in ['created_on', 'modified_on', 'id', 'uuid', 'deleted']:
+        model_fields.remove(name)
+    model_fields.insert(0, 'None (Ignore)')
+    return model_fields
 
 
 # Functional Testing

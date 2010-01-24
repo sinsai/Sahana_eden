@@ -18,11 +18,13 @@ db.define_table(table,
                       default='or', notnull=True),
                 Field('resource', 'string',
                       widget=SQLFORM.widgets.options.widget,
-                      default='organization', notnull=True),
+                      default='organisation', notnull=True),
                 Field('description', 'string', notnull=True),
                 Field('source_file', 'upload', notnull=True),
                 Field('status', 'string', default='new', writable=False),
+                Field('column_map', 'blob', writable=False, readable=False),
                 )
-db[table].module.requires = IS_IN_DB(db, 's3_module.name', '%(name_nice)s')
-db[table].resource.requires = IS_IN_SET(['organization', 'office', 'contact'])
 db[table].status.requires = IS_IN_SET(['new', 'failed', 'processing', 'completed'])
+db[table].module.requires = IS_IN_DB(db, 's3_module.name', '%(name_nice)s')
+# TODO(mattb): These need to be pulled dynamically!!
+db[table].resource.requires = IS_IN_SET(['organisation', 'office', 'contact'])

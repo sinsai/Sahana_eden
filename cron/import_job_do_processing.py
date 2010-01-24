@@ -1,11 +1,13 @@
 ﻿# -*- coding: utf-8 -*-
+import cPickle as pickle
+import csv
 
 # This script process import_job records from the admin module that are in the
 # 'processing' state. This indicates that the user has matched up the columns
 # and the records are ready to be validated and prepared for import.
 #
 
-jobs = db(db.admin_input_job.status == 'processing').select()
+jobs = db(db.admin_import_job.status == 'processing').select()
 for job in jobs:
     # Get job column map.
     try:
@@ -13,8 +15,11 @@ for job in jobs:
     except pickle.UnpicklingError:
         column_map = []
     
+    # Create a form to use for validation.
+    form = SQLFORM(db['%s_%s' % (job.module, job.resource)])
+
     # Open the input file.
-    filepath = os.path.join(request.folder, 'uploads', filename)
+    filepath = os.path.join(request.folder, 'uploads', job.source_file)
     reader = csv.reader(open(filepath, 'r'))
     
     # Retrieve column headings from the first line.
@@ -28,19 +33,38 @@ for job in jobs:
         continue
 
     # Read each line
+    valid_lines = 0
     for line_num, line in enumerate(reader, 0):
         line_data = {}
+        # Map CSV headers to model fields.
         for idx, col in enumerate(line):
             field = column_map[idx][1]
             if not field:
                 continue
             line_data[field] = col
-        print line_data
+        # Validate data via the SQLFORM instance.
+        valid = form.accepts(line_data, session, dbio=False)
+        # store into an ImportLine model.
+        db_data = dict(
+                import_job=job.id,
+                line_no=line_num + 1,  # +1 to account for header line.
+                data=pickle.dumps(line_data, pickle.HIGHEST_PROTOCOL),
+                valid=valid,
+                )
+        if valid:
+            db_data.update(errors=None, status='import')
+        else:
+            db_data.update(errors=', '.join(form.errors), status='ignore')
+        db.admin_import_line.insert(**db_data)
 
-    # Map CSV headers to model fields
-    # validate via SQLFORM
-    # store field, value pairs and validity status into an ImportLine model.
-    pass
+    # Update job status.
+    if valid_lines:
+        db(db.admin_import_job.id==job.id).update(status='processed')
+    else:
+        db(db.admin_import_job.id==job.id).update(
+                status='failed',
+                failure_reason='no valid lines in file'
+                )
 
 # Explicitly commit DB operations when running from Cron
 db.commit()

@@ -564,7 +564,6 @@ def _import_job_update_GET(jr, job):
     
     if job.status == 'processing':
         num_lines = db(db.admin_import_line.import_job==job.id).count()
-        print 'num_lines', num_lines
         return dict(num_lines=num_lines, update_speed=60)
 
 def _import_job_update_POST(jr, job):
@@ -585,7 +584,6 @@ def _import_job_update_POST(jr, job):
                 column_map[idx] = (column_map[idx][0], value)
             else:
                 column_map[idx] = (column_map[idx][0], None)
-        print column_map
         jr.table[job.id] = dict(
                 column_map=pickle.dumps(column_map, pickle.HIGHEST_PROTOCOL),
                 status='processing')

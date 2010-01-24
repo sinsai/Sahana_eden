@@ -1,11 +1,52 @@
+
 {{extend 'layout.html'}}
-{{include '_list_create.html'}}
 <!-- Uncomment if not using MPR/DVI
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Hide the ID Label Field (not relevant to an OR deployment)
     $("#pr_person_pr_pe_label__row").hide();
-    
+
 });
 //]]></script>
 -->
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='pheader'>
+{{try:}}
+ {{=pheader}}
+<a onclick="viewMapMulti('{{=request.controller}}','{{=request.function}}',{{=request.args[0]}},'{{=request.args[1]}}');return false" href="#">View All on Map</a>
+<p>&nbsp;</p>
+{{except:}}
+ {{pass}}
+</div>
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+{{include 'formats.html'}}
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+ <p>&nbsp;</p>
+{{except:}}
+{{pass}}
+</div>
+{{try:}}
+ {{=H3(addtitle)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+</div>
+{{include 'key.html'}}
+{{include 'pagenav.html'}}
+{{include 'searchbox.html'}}
+<p>&nbsp;</p>
+<div id='map'></div>
+{{include 'thickbox.html'}}
+{{include 'dataTables.html'}}

@@ -61,7 +61,7 @@ def shn_pentity_represent(id):
         return default
     entity_type = pentity.opt_pr_entity_type
     label = pentity.label or "no label"
-    
+
     etype = lambda entity_type: vita.trackable_types[entity_type]
 
     if entity_type == 1:
@@ -299,7 +299,8 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # Field validation
-db[table].date_of_birth.requires = IS_NULL_OR(IS_DATE())
+db[table].date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
+                                        error_message="%s " % T("Enter a date before") + "%(max)s!"))
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())

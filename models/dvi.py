@@ -17,8 +17,8 @@ db.define_table(table,
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
 
-#
-# Option fields ---------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Option fields
 #
 dvi_task_status_opts = {
     1:T('New'),
@@ -36,62 +36,64 @@ opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
                     label = T('Task Status'),
                     represent = lambda opt: opt and dvi_task_status_opts[opt]))
 
-#
-# Find ------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Find Report
 #
 resource = 'find'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('find_date', 'datetime'),                 # Date and time of find
-                location_id,                                    # Place of find
-                Field('location_details'),                      # Details on location
-                person_id,                                      # Finder
-                Field('description'),                           # Description of find
-                Field('bodies_est', 'integer', default=1),      # Estimated number of dead bodies
-                opt_dvi_task_status,                            # Task status
-                Field('bodies_rcv', 'integer', default=0),      # Number of bodies recovered
+                Field('find_date', 'datetime'),     # Date and time of find
+                location_id,                        # Place of find
+                Field('location_details'),          # Details on location
+                person_id,                          # Finder
+                Field('description'),               # Description of find
+                Field('bodies_est', 'integer'),     # Estimated number of dead bodies
+                opt_dvi_task_status,                # Task status
+                Field('bodies_rcv', 'integer'),     # Number of bodies recovered
                 migrate=migrate)
 
 # Settings and Restrictions
-#db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].find_date.comment = SPAN("*", _class="req")
-db[table].find_date.requires = IS_DATETIME()
-
-# Labels
-db[table].find_date.label = T('Date and time of find')
-db[table].location_id.label = T('Place of find')
-db[table].person_id.label = T('Finder')
 db[table].bodies_est.label = T('Bodies found')
-db[table].opt_dvi_task_status.label = T('Task status')
+db[table].bodies_est.comment = SPAN("*", _class="req")
+db[table].bodies_est.requires = IS_INT_IN_RANGE(1, 99999)
 db[table].bodies_rcv.label = T('Bodies recovered')
+db[table].bodies_rcv.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 
-# Representations
+db[table].find_date.label = T('Date/Time of Find')
+db[table].find_date.comment = SPAN("*", _class="req")
+db[table].find_date.requires = IS_UTC_DATETIME(
+                                    utc_offset=shn_user_utc_offset(),
+                                    allow_future=False)
+
+db[table].person_id.label = T('Finder')
+db[table].location_id.label = T('Place of find')
+db[table].opt_dvi_task_status.label = T('Task status')
 
 # CRUD Strings
-# TODO: check language and spelling
-title_create = T('New Body Find')
-title_display = T('Find Details')
-title_list = T('List Body Finds')
-title_update = T('Update Find Report')
-title_search = T('Search Find Report')
-subtitle_create = T('Add New Find Report')
-subtitle_list = T('Body Finds')
-label_list_button = T('List Finds')
-label_create_button = T('Add Find Report')
-msg_record_created = T('Find Report added')
-msg_record_modified = T('Find Report updated')
-msg_record_deleted = T('Find Report deleted')
-msg_list_empty = T('No finds currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('New Body Find'),
+    title_display = T('Find Details'),
+    title_list = T('List Body Finds'),
+    title_update = T('Update Find Report'),
+    title_search = T('Search Find Report'),
+    subtitle_create = T('Add New Find Report'),
+    subtitle_list = T('Body Finds'),
+    label_list_button = T('List Finds'),
+    label_create_button = T('Add Find Report'),
+    label_delete_button = T('Delete Find Report'),
+    msg_record_created = T('Find Report added'),
+    msg_record_modified = T('Find Report updated'),
+    msg_record_deleted = T('Find Report deleted'),
+    msg_list_empty = T('No finds currently registered'))
 
 dvi_find_id = db.Table(None, 'dvi_find_id',
-                Field('dvi_find_id', db.dvi_find,
-                requires = IS_NULL_OR(IS_ONE_OF(db, 'dvi_find.id', '[%(id)s] %(find_date)s: %(bodies_est)s bodies')),
-                represent = lambda id: (id and [DIV(A(db(db.dvi_find.id==id).select()[0].id, _class='popup', _href=URL(r=request, c='dvi', f='find', args=['read', str(id).strip()], vars=dict(format='plain')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button))] or ["None"])[0],
-                comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='thickbox', _href=URL(r=request, c='dvi', f='find', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
-                ondelete = 'RESTRICT'
-                ))
+                       Field('dvi_find_id', db.dvi_find,
+                             requires = IS_NULL_OR(IS_ONE_OF(db, 'dvi_find.id', '[%(id)s] %(find_date)s: %(bodies_est)s bodies')),
+                             represent = lambda id: (id and [DIV(A(db(db.dvi_find.id==id).select()[0].id, _class='popup', _href=URL(r=request, c='dvi', f='find', args=['read', str(id).strip()], vars=dict(format='plain')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button))] or ["None"])[0],
+                             comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='thickbox', _href=URL(r=request, c='dvi', f='find', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
+                             ondelete = 'RESTRICT'))
 
 #
 # Body ------------------------------------------------------------------------
@@ -135,199 +137,21 @@ db[table].is_decayed.represent = lambda is_decayed: (is_decayed and ["yes"] or [
 db[table].is_incomplete.represent = lambda is_incomplete: (is_incomplete and ["yes"] or [""])[0]
 
 # CRUD Strings
-title_create = T('Add Recovery Report')
-title_display = T('Dead Body Details')
-title_list = T('Body Recovery Reports')
-title_update = T('Edit Recovery Details')
-title_search = T('Find Recovery Report')
-subtitle_create = T('Add New Report')
-subtitle_list = T('Available Recovery Reports')
-label_list_button = T('List Reports')
-label_create_button = T('Add Recovery Report')
-msg_record_created = T('Recovery report added')
-msg_record_modified = T('Recovery report updated')
-msg_record_deleted = T('Recovery report deleted')
-msg_list_empty = T('No recovery reports available')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-
-#
-# Functions -------------------------------------------------------------------
-#
-def shn_dvi_pheader(resource, record_id, representation, next=None, same=None):
-
-    if resource == "body":
-        if representation == "html":
-            if next:
-                _next = next
-            else:
-                _next = URL(r=request, f=resource, args=['read'])
-
-            if same:
-                _same = same
-            else:
-                _same = URL(r=request, f=resource, args=['read', '[id]'])
-
-            body = db.dvi_body[record_id]
-
-            if body:
-                pheader = TABLE(
-                    TR(
-                        TH(T('ID Label: ')),
-                        "%(pr_pe_label)s" % body,
-                        TH(A(T('Clear Selection'),
-                            _href=URL(r=request, f='body', args='clear', vars={'_next': _same})))
-                        ),
-                    TR(
-                        TH(T('Gender: ')),
-                        "%s" % pr_person_gender_opts[body.opt_pr_gender],
-                        TH(""),
-                        ),
-                    TR(
-                        TH(T('Age Group: ')),
-                        "%s" % pr_person_age_group_opts[body.opt_pr_age_group],
-                        TH(A(T('Edit Record'),
-                            _href=URL(r=request, f='body', args=['update', record_id], vars={'_next': _next})))
-                        )
-                )
-                return pheader
-
-    return None
-
-
-def shn_dvi_get_body_id(label, fields=None, filterby=None):
-
-    if fields and isinstance(fields, (list,tuple)):
-        search_fields = []
-        for f in fields:
-            if db.dvi_body.has_key(f):     # TODO: check for field type?
-                search_fields.append(f)
-        if not len(search_fields):
-            # Error: none of the specified search fields exists
-            return None
-    else:
-        # No search fields specified at all => fallback
-        search_fields = ['pr_pe_label']
-
-    if label and isinstance(label,str):
-        labels = label.split()
-        results = []
-        query = None
-        # TODO: make a more sophisticated search function (levenshtein?)
-        for l in labels:
-
-            # append wildcards
-            wc = "%"
-            _l = "%s%s%s" % (wc, l, wc)
-
-            # build query
-            for f in search_fields:
-                if query:
-                    query = (db.dvi_body[f].like(_l)) | query
-                else:
-                    query = (db.dvi_body[f].like(_l))
-
-            # undeleted records only
-            query = (db.dvi_body.deleted==False) & (query)
-            # restrict to prior results (AND)
-            if len(results):
-                query = (db.dvi_body.id.belongs(results)) & query
-            if filterby:
-                query = (filterby) & (query)
-            records = db(query).select(db.dvi_body.id)
-            # rebuild result list
-            results = [r.id for r in records]
-            # any results left?
-            if not len(results):
-                return None
-        return results
-    else:
-        # no label given or wrong parameter type
-        return None
-
-
-def shn_dvi_body_search_simple(xrequest, onvalidation=None, onaccept=None):
-
-    if not shn_has_permission('read', db.dvi_body):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
-
-    if xrequest.representation=="html":
-        # Check for redirection
-        if request.vars._next:
-            next = str.lower(request.vars._next)
-        else:
-            next = str.lower(URL(r=request, f='body', args='[id]'))
-
-        # Custom view
-        response.view = '%s/body_search.html' % xrequest.prefix
-
-        # Title and subtitle
-        title = T('Find Recovery Report')
-        subtitle = T('Matching Records')
-
-        # Select form
-        form = FORM(TABLE(
-                TR(T('ID Label: '),
-                   INPUT(_type="text", _name="label", _size="40"),
-                   A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."))),
-                TR("", INPUT(_type="submit", _value="Search"))
-                ))
-
-        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-        # Accept action
-        items = None
-        if form.accepts(request.vars, session):
-
-            if form.vars.label == "":
-                form.vars.label = "%"
-
-            results = shn_dvi_get_body_id(form.vars.label)
-
-            if results and len(results):
-                rows = db(db.dvi_body.id.belongs(results)).select()
-            else:
-                rows = None
-
-            # Build table rows from matching records
-            if rows:
-                records = []
-                for row in rows:
-                    href = next.replace('%5bid%5d', '%s' % row.id)
-                    records.append(TR(
-                        A(row.pr_pe_label or '[no label]', _href=href),
-                        row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
-                        row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
-                        row.date_of_recovery,
-                        (row.location_id and [db.gis_location[row.location_id].name] or [''])[0],
-#                        location_id.location_id.represent(row.location_id)
-                        ))
-                items=DIV(TABLE(THEAD(TR(
-                    TH("ID Label"),
-                    TH("Gender"),
-                    TH("Age Group"),
-                    TH("Recovery Date"),
-                    TH("Recovery Site"))),
-                    TBODY(records), _id='list', _class="display"))
-            else:
-                items = T('None')
-
-        try:
-            label_create_button = s3.crud_strings['dvi_body'].label_create_button
-        except:
-            label_create_button = s3.crud_strings.label_create_button
-
-        add_btn = A(label_create_button, _href=URL(r=request, f='body', args='create'), _id='add-btn')
-
-        output.update(dict(items=items, add_btn=add_btn))
-        return output
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request))
-
-# Plug into REST controller
-s3xrc.model.set_method(module, 'body', method='search_simple', action=shn_dvi_body_search_simple )
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Recovery Report'),
+    title_display = T('Dead Body Details'),
+    title_list = T('Body Recovery Reports'),
+    title_update = T('Edit Recovery Details'),
+    title_search = T('Find Recovery Report'),
+    subtitle_create = T('Add New Report'),
+    subtitle_list = T('Available Recovery Reports'),
+    label_list_button = T('List Reports'),
+    label_create_button = T('Add Recovery Report'),
+    label_delete_button = T('Delete Recovery Report'),
+    msg_record_created = T('Recovery report added'),
+    msg_record_modified = T('Recovery report updated'),
+    msg_record_deleted = T('Recovery report deleted'),
+    msg_list_empty = T('No recovery reports available'))
 
 #
 # Checklist of operations -----------------------------------------------------
@@ -336,42 +160,57 @@ resource = 'checklist'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,
-                Field('personal_effects'),
-                Field('body_radiology'),
-                Field('fingerprints'),
-                Field('anthropology'),
-                Field('pathology'),
-                Field('embalming'),
-                Field('dna'),
-                Field('dental'),
+                Field('personal_effects','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Inventory of Effects'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
+                Field('body_radiology','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Radiology'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
+                Field('fingerprints','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Fingerprinting'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
+                Field('anthropology','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Anthropolgy'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
+                Field('pathology','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Pathology'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
+                Field('embalming','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Embalming'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
+                Field('dna','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('DNA Profiling'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
+                Field('dental','integer',
+                    requires = IS_IN_SET(dvi_task_status_opts),
+                    default = 1,
+                    label = T('Dental Examination'),
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                 migrate = migrate)
 
 # Setting and restrictions
-db[table].personal_effects.requires = IS_IN_SET(dvi_task_status_opts)
-db[table].body_radiology.requires = IS_IN_SET(dvi_task_status_opts)
-db[table].fingerprints.requires = IS_IN_SET(dvi_task_status_opts)
-db[table].anthropology.requires = IS_IN_SET(dvi_task_status_opts)
-db[table].pathology.requires = IS_IN_SET(dvi_task_status_opts)
-db[table].embalming.requires = IS_IN_SET(dvi_task_status_opts)
-db[table].dna.requires = IS_IN_SET(dvi_task_status_opts)
-db[table].dental.requires = IS_IN_SET(dvi_task_status_opts)
-
-db[table].personal_effects.label = 'Inventory of Effects'
-db[table].body_radiology.label = 'Radiology'
-db[table].fingerprints.label = 'Fingerprinting'
-db[table].anthropology.label = 'Anthropolgy'
-db[table].pathology.label = 'Pathology'
-db[table].embalming.label = 'Embalming'
-db[table].dna.label = 'DNA Profiling'
-db[table].dental.label = 'Dental Examination'
 
 # CRUD Strings
 title_create = T('Create Checklist')
 title_display = T('Checklist of Operations')
 title_list = T('List Checklists')
-title_update = T('Update Checklist')
+title_update = T('Update Task Status')
 title_search = T('Search Checklists')
-subtitle_create = T('Create New Checklist')
+subtitle_create = T('New Checklist')
 subtitle_list = T('Checklist of Operations')
 label_list_button = T('Show Checklist')
 label_create_button = T('Create Checklist')
@@ -519,3 +358,191 @@ s3xrc.model.add_component(module, resource,
     deletable = True,
     editable = True,
     list_fields = ['id'])
+
+# -----------------------------------------------------------------------------
+#
+def shn_dvi_pheader(resource, record_id, representation, next=None, same=None):
+
+    """ page header for component pages """
+
+    if resource == "body":
+        if representation == "html":
+            if next:
+                _next = next
+            else:
+                _next = URL(r=request, f=resource, args=['read'])
+
+            if same:
+                _same = same
+            else:
+                _same = URL(r=request, f=resource, args=['read', '[id]'])
+
+            body = db.dvi_body[record_id]
+
+            if body:
+                pheader = TABLE(
+                    TR(
+                        TH(T('ID Label: ')),
+                        "%(pr_pe_label)s" % body,
+                        TH(A(T('Clear Selection'),
+                            _href=URL(r=request, f='body', args='clear', vars={'_next': _same})))
+                    ),
+                    TR(
+                        TH(T('Gender: ')),
+                        "%s" % pr_person_gender_opts[body.opt_pr_gender],
+                        TH(""),
+                    ),
+                    TR(
+                        TH(T('Age Group: ')),
+                        "%s" % pr_person_age_group_opts[body.opt_pr_age_group],
+                        TH(A(T('Edit Record'),
+                            _href=URL(r=request, f='body', args=['update', record_id], vars={'_next': _next})))
+                    )
+                )
+                return pheader
+
+    return None
+
+# -----------------------------------------------------------------------------
+#
+def shn_dvi_get_body_id(label, fields=None, filterby=None):
+
+    """" find IDs for all body records matching a label """
+
+    if fields and isinstance(fields, (list,tuple)):
+        search_fields = []
+        for f in fields:
+            if db.dvi_body.has_key(f):     # TODO: check for field type?
+                search_fields.append(f)
+        if not len(search_fields):
+            # Error: none of the specified search fields exists
+            return None
+    else:
+        # No search fields specified at all => fallback
+        search_fields = ['pr_pe_label']
+
+    if label and isinstance(label,str):
+        labels = label.split()
+        results = []
+        query = None
+        # TODO: make a more sophisticated search function (levenshtein?)
+        for l in labels:
+
+            # append wildcards
+            wc = "%"
+            _l = "%s%s%s" % (wc, l, wc)
+
+            # build query
+            for f in search_fields:
+                if query:
+                    query = (db.dvi_body[f].like(_l)) | query
+                else:
+                    query = (db.dvi_body[f].like(_l))
+
+            # undeleted records only
+            query = (db.dvi_body.deleted==False) & (query)
+            # restrict to prior results (AND)
+            if len(results):
+                query = (db.dvi_body.id.belongs(results)) & query
+            if filterby:
+                query = (filterby) & (query)
+            records = db(query).select(db.dvi_body.id)
+            # rebuild result list
+            results = [r.id for r in records]
+            # any results left?
+            if not len(results):
+                return None
+        return results
+    else:
+        # no label given or wrong parameter type
+        return None
+
+# -----------------------------------------------------------------------------
+#
+def shn_dvi_body_search_simple(xrequest, onvalidation=None, onaccept=None):
+
+    """ Simple Search form for body recovery reports """
+
+    if not shn_has_permission('read', db.dvi_body):
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
+
+    if xrequest.representation=="html":
+        # Check for redirection
+        if request.vars._next:
+            next = str.lower(request.vars._next)
+        else:
+            next = str.lower(URL(r=request, f='body', args='[id]'))
+
+        # Custom view
+        response.view = '%s/body_search.html' % xrequest.prefix
+
+        # Title and subtitle
+        title = T('Find Recovery Report')
+        subtitle = T('Matching Records')
+
+        # Select form
+        form = FORM(TABLE(
+                TR(T('ID Label: '),
+                   INPUT(_type="text", _name="label", _size="40"),
+                   A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."))),
+                TR("", INPUT(_type="submit", _value="Search"))
+                ))
+
+        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            if form.vars.label == "":
+                form.vars.label = "%"
+
+            results = shn_dvi_get_body_id(form.vars.label)
+
+            if results and len(results):
+                rows = db(db.dvi_body.id.belongs(results)).select()
+            else:
+                rows = None
+
+            # Build table rows from matching records
+            if rows:
+                records = []
+                for row in rows:
+                    href = next.replace('%5bid%5d', '%s' % row.id)
+                    records.append(TR(
+                        A(row.pr_pe_label or '[no label]', _href=href),
+                        row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
+                        row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                        row.date_of_recovery,
+                        (row.location_id and [db.gis_location[row.location_id].name] or [''])[0],
+#                        location_id.location_id.represent(row.location_id)
+                        ))
+                items=DIV(TABLE(THEAD(TR(
+                    TH("ID Label"),
+                    TH("Gender"),
+                    TH("Age Group"),
+                    TH("Recovery Date"),
+                    TH("Recovery Site"))),
+                    TBODY(records), _id='list', _class="display"))
+            else:
+                items = T('None')
+
+        try:
+            label_create_button = s3.crud_strings['dvi_body'].label_create_button
+        except:
+            label_create_button = s3.crud_strings.label_create_button
+
+        add_btn = A(label_create_button, _href=URL(r=request, f='body', args='create'), _id='add-btn')
+
+        output.update(dict(items=items, add_btn=add_btn))
+        return output
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Plug into REST controller
+s3xrc.model.set_method(module, 'body', method='search_simple', action=shn_dvi_body_search_simple )
+
+# -----------------------------------------------------------------------------

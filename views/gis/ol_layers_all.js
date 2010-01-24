@@ -15,6 +15,7 @@ function addLayers(map) {
   {{else:}}
     // Disable other base layers since using a non-sphericalMercator WMS projection
   {{pass}}
+  {{include 'gis/ol_layers_tms.js'}}
   {{include 'gis/ol_layers_wms.js'}}
   {{include 'gis/ol_layers_xyz.js'}}
   var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
@@ -24,7 +25,6 @@ function addLayers(map) {
   var max_h = 35;
   var width, height;
   var iconURL;
-
   {{include 'gis/ol_layers_georss.js'}}
   {{include 'gis/ol_layers_gpx.js'}}
   {{include 'gis/ol_layers_kml.js'}}

@@ -23,6 +23,8 @@ db.define_table(table,
                 Field('source_file', 'upload', notnull=True),
                 Field('status', 'string', default='new', writable=False),
                 Field('column_map', 'blob', writable=False, readable=False),
+                timestamp,
+                authorstamp,
                 )
 db[table].status.requires = IS_IN_SET(['new', 'failed', 'processing', 'completed'])
 db[table].module.requires = IS_IN_DB(db, 's3_module.name', '%(name_nice)s')

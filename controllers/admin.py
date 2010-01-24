@@ -527,7 +527,7 @@ def _import_job_create(jr):
             db(query).update(status='failed')
         redirect(URL(r=request, f='import_job', args=['update', form.vars.id]))
 
-    form = crud.create(jr.table, onaccept=proces_new_file_and_redirect)
+    form = crud.create(jr.table, onaccept=process_new_file_and_redirect)
     response.flash = 'Form errors!'
     redirect(URL(r=request, f='import_data'))
 

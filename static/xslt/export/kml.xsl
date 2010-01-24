@@ -34,6 +34,65 @@
                     </Point>
                 </Placemark>
             </xsl:when>
+            <xsl:when test="@name='hms_hospital'">
+                <Placemark>
+                    <name><xsl:value-of select="data[@field='name']"/></name>
+                    <description>
+                        <table border="0" padding="3">
+                            <tr>
+                                <td>EMS Status:</td>
+                                <td>
+                                    <xsl:value-of select="./data[@field='ems_status']/text()"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Facility Status:</td>
+                                <td>
+                                    <xsl:value-of select="./data[@field='facility_status']/text()"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Clinical Status:</td>
+                                <td>
+                                    <xsl:value-of select="./data[@field='clinical_status']/text()"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Morgue Status:</td>
+                                <td>
+                                    <xsl:value-of select="./data[@field='morgue_status']/text()"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Staffing:</td>
+                                <td>
+                                    <xsl:value-of select="./data[@field='staffing']/text()"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Beds total:</td>
+                                <td>
+                                    <xsl:value-of select="./data[@field='total_beds']/text()"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Beds available:</td>
+                                <td>
+                                    <xsl:value-of select="./data[@field='available_beds']/text()"/>
+                                </td>
+                            </tr>
+                        </table>
+                        <p><xsl:value-of select="@url"/></p>
+                    </description>
+                    <Point>
+                        <coordinates>
+                            <xsl:value-of select="data[@field='lon']"/>
+                            <xsl:text>,</xsl:text>
+                            <xsl:value-of select="data[@field='lat']"/>
+                        </coordinates>
+                    </Point>
+                </Placemark>
+            </xsl:when>
             <xsl:otherwise>
                 <xsl:if test="./reference[@field='location_id']">
                     <Placemark>

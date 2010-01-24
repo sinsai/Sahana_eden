@@ -23,6 +23,7 @@ db.define_table(table,
                 Field('source_file', 'upload', notnull=True),
                 Field('status', 'string', default='new', writable=False),
                 Field('column_map', 'blob', writable=False, readable=False),
+                Field('failure_reason', 'string', writable=False),
                 timestamp,
                 authorstamp,
                 )
@@ -39,6 +40,7 @@ db.define_table(table,
                 Field('import_job', db.admin_import_job, writable=False),
                 Field('line_no', 'integer'),
                 Field('valid', 'boolean', writable=False),
+                Field('errors', 'string', writable=False),
                 Field('status', 'string'),
                 Field('data', 'blob', writable=False)
                 )

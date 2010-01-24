@@ -6,6 +6,8 @@ var mapPanel, toolbar;
 var featuresLayer, currentFeature;
 //var pointControl, lineControl, polygonControl;
 //var selectControl, dragControl
+var popupControl;
+var allLayers = new Array();
 
 OpenLayers.ImgPath='/{{=request.application}}/static/img/gis/openlayers/'
 // avoid pink tiles
@@ -13,7 +15,7 @@ OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
 OpenLayers.Util.onImageLoadErrorColor = "transparent";
 
 // Set Proxy Host
-OpenLayers.ProxyHost = '{{=URL(r=request, c='static', f='proxy.py?url=')}}';
+OpenLayers.ProxyHost = '{{=URL(r=request, c='gis', f='proxy?url=')}}';
 
 // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
 var proj4326 = new OpenLayers.Projection('EPSG:4326');

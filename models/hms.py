@@ -191,21 +191,21 @@ db[table].deaths24.label = T('Deaths/24hrs')
 #db[table].needs.label = T('Needs')
 #db[table].damage.label = T('Damage')
 
-title_create = T('Add Hospital')
-title_display = T('Hospital Details')
-title_list = T('List Hospitals')
-title_update = T('Edit Hospital')
-title_search = T('Search Hospitals')
-subtitle_create = T('Add New Hospital')
-subtitle_list = T('Hospitals')
-label_list_button = T('List Hospitals')
-label_create_button = T('Add Hospital')
-label_delete_button = T('Delete Hospital')
-msg_record_created = T('Hospital information added')
-msg_record_modified = T('Hospital information updated')
-msg_record_deleted = T('Hospital information deleted')
-msg_list_empty = T('No hospitals currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Hospital'),
+    title_display = T('Hospital Details'),
+    title_list = T('List Hospitals'),
+    title_update = T('Edit Hospital'),
+    title_search = T('Search Hospitals'),
+    subtitle_create = T('Add New Hospital'),
+    subtitle_list = T('Hospitals'),
+    label_list_button = T('List Hospitals'),
+    label_create_button = T('Add Hospital'),
+    label_delete_button = T('Delete Hospital'),
+    msg_record_created = T('Hospital information added'),
+    msg_record_modified = T('Hospital information updated'),
+    msg_record_deleted = T('Hospital information deleted'),
+    msg_list_empty = T('No Hospitals currently registered'))
 
 # Reusable field for other tables to reference
 hospital_id = SQLTable(None, 'hospital_id',
@@ -219,24 +219,23 @@ hospital_id = SQLTable(None, 'hospital_id',
 # RSS
 def shn_hms_hospital_rss(record):
     if record:
+        lat = lon = T("unknown")
+        location_name = T("unknown")
         if record.location_id:
             location = db.gis_location[record.location_id]
             if location:
-                lat = location.lat
-                lon = location.lon
+                lat = "%.6f" % location.lat
+                lon = "%.6f" % location.lon
                 location_name = location.name
-            else:
-                lat = lon = T("unknown")
-                location_name = T("unknown")
-        return "<b>%s</b>: <br/>Location: %s [Lat: %.6f Lon: %.6f]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
+        return "<b>%s</b>: <br/>Location: %s [Lat: %s Lon: %s]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
             record.name,
             location_name,
             lat,
             lon,
-            record.facility_status and hms_facility_status_opts[record.facility_status] or T("unknown"),
-            record.clinical_status and hms_clinical_status_opts[record.clinical_status] or T("unknown"),
-            record.morgue_status and hms_morgue_status_opts[record.morgue_status] or T("unknown"),
-            record.security_status and hms_security_status_opts[record.security_status] or T("unknown"),
+            db.hms_hospital.facility_status.represent(record.facility_status),
+            db.hms_hospital.clinical_status.represent(record.clinical_status),
+            db.hms_hospital.morgue_status.represent(record.morgue_status),
+            db.hms_hospital.security_status.represent(record.security_status),
             (record.available_beds is not None) and record.available_beds or T("unknown")
             )
     else:
@@ -279,20 +278,20 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'person_id', 'title', 'phone1', 'phone2', 'email', 'fax', 'skype'])
 
 # CRUD Strings
-title_create = T('Add Contact')
-title_display = T('Contact Details')
-title_list = T('Contacts')
-title_update = T('Edit Contact')
-title_search = T('Search Contacts')
-subtitle_create = T('Add New Contact')
-subtitle_list = T('Contacts')
-label_list_button = T('List Contacts')
-label_create_button = T('Add Contact')
-msg_record_created = T('Contact information added')
-msg_record_modified = T('Contact information updated')
-msg_record_deleted = T('Contact information deleted')
-msg_list_empty = T('No contacts currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Contact'),
+    title_display = T('Contact Details'),
+    title_list = T('Contacts'),
+    title_update = T('Edit Contact'),
+    title_search = T('Search Contacts'),
+    subtitle_create = T('Add New Contact'),
+    subtitle_list = T('Contacts'),
+    label_list_button = T('List Contacts'),
+    label_create_button = T('Add Contact'),
+    msg_record_created = T('Contact information added'),
+    msg_record_modified = T('Contact information updated'),
+    msg_record_deleted = T('Contact information deleted'),
+    msg_list_empty = T('No contacts currently registered'))
 
 # -----------------------------------------------------------------------------
 # Bed Capacity (multiple)
@@ -347,10 +346,10 @@ db[table].beds_add24.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Additional Beds / 24hrs|Number of additional beds of that type expected to become available in this unit within the next 24 hours."))
 
 # -----------------------------------------------------------------------------
-# shn_hms_bedcount_update:
-#   updates the number of total/available beds of a hospital
 #
 def shn_hms_bedcount_update(form):
+
+    """ updates the number of total/available beds of a hospital """
 
     query = ((db.hms_bed_capacity.id==form.vars.id) &
              (db.hms_hospital.id==db.hms_bed_capacity.hospital_id))
@@ -370,9 +369,7 @@ def shn_hms_bedcount_update(form):
             total_beds=t_beds,
             available_beds=a_beds)
 
-# -----------------------------------------------------------------------------
 # add as component
-#
 s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby=dict(hms_hospital='hospital_id'),
@@ -382,21 +379,21 @@ s3xrc.model.add_component(module, resource,
     main='hospital_id', extra='id',
     list_fields = ['id', 'unit_name', 'bed_type', 'date', 'beds_baseline', 'beds_available', 'beds_add24'])
 
-title_create = T('Add Unit')
-title_display = T('Unit Bed Capacity')
-title_list = T('List Units')
-title_update = T('Update Unit')
-title_search = T('Search Units')
-subtitle_create = T('Add Unit')
-subtitle_list = T('Bed Capacity per Unit')
-label_list_button = T('List Units')
-label_create_button = T('Add Unit')
-label_delete_button = T('Delete Unit')
-msg_record_created = T('Unit added')
-msg_record_modified = T('Unit updated')
-msg_record_deleted = T('Unit deleted')
-msg_list_empty = T('No units currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Unit'),
+    title_display = T('Unit Bed Capacity'),
+    title_list = T('List Units'),
+    title_update = T('Update Unit'),
+    title_search = T('Search Units'),
+    subtitle_create = T('Add Unit'),
+    subtitle_list = T('Bed Capacity per Unit'),
+    label_list_button = T('List Units'),
+    label_create_button = T('Add Unit'),
+    label_delete_button = T('Delete Unit'),
+    msg_record_created = T('Unit added'),
+    msg_record_modified = T('Unit updated'),
+    msg_record_deleted = T('Unit deleted'),
+    msg_list_empty = T('No units currently registered')),
 
 # -----------------------------------------------------------------------------
 # Services
@@ -440,21 +437,21 @@ db[table].psya.label = T('Psychiatrics/Adult')
 db[table].psyp.label = T('Psychiatrics/Pediatric')
 db[table].obgy.label = T('Obstetrics/Gynecology')
 
-title_create = T('Add Service Profile')
-title_display = T('Services Available')
-title_list = T('Services Available')
-title_update = T('Update Service Profile')
-title_search = T('Search Service Profiles')
-subtitle_create = T('Add Service Profile')
-subtitle_list = T('Services Available')
-label_list_button = T('List Service Profiles')
-label_create_button = T('Add Service Profile')
-label_delete_button = T('Delete Service Profile')
-msg_record_created = T('Service profile added')
-msg_record_modified = T('Service profile updated')
-msg_record_deleted = T('Service profile deleted')
-msg_list_empty = T('No service profile available')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Service Profile'),
+    title_display = T('Services Available'),
+    title_list = T('Services Available'),
+    title_update = T('Update Service Profile'),
+    title_search = T('Search Service Profiles'),
+    subtitle_create = T('Add Service Profile'),
+    subtitle_list = T('Services Available'),
+    label_list_button = T('List Service Profiles'),
+    label_create_button = T('Add Service Profile'),
+    label_delete_button = T('Delete Service Profile'),
+    msg_record_created = T('Service profile added'),
+    msg_record_modified = T('Service profile updated'),
+    msg_record_deleted = T('Service profile deleted'),
+    msg_list_empty = T('No service profile available'))
 
 s3xrc.model.add_component(module, resource,
     multiple=False,
@@ -465,7 +462,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id'])
 
 # -----------------------------------------------------------------------------
-# Resources (multiple) - TODO: this incomplete
+# Resources (multiple) - TODO: to be completed!
 #
 resource = 'resources'
 table = module + '_' + resource
@@ -478,21 +475,21 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # CRUD Strings
-title_create = T('Report Resource')
-title_display = T('Resource Details')
-title_list = T('Resources')
-title_update = T('Edit Resource')
-title_search = T('Search Resources')
-subtitle_create = T('Add New Resource')
-subtitle_list = T('Resources')
-label_list_button = T('List Resources')
-label_create_button = T('Add Resource')
-label_delete_button = T('Delete Resource')
-msg_record_created = T('Resource added')
-msg_record_modified = T('Resource updated')
-msg_record_deleted = T('Resource deleted')
-msg_list_empty = T('No resources currently reported')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Report Resource'),
+    title_display = T('Resource Details'),
+    title_list = T('Resources'),
+    title_update = T('Edit Resource'),
+    title_search = T('Search Resources'),
+    subtitle_create = T('Add New Resource'),
+    subtitle_list = T('Resources'),
+    label_list_button = T('List Resources'),
+    label_create_button = T('Add Resource'),
+    label_delete_button = T('Delete Resource'),
+    msg_record_created = T('Resource added'),
+    msg_record_modified = T('Resource updated'),
+    msg_record_deleted = T('Resource deleted'),
+    msg_list_empty = T('No resources currently reported'))
 
 # Add as component
 s3xrc.model.add_component(module, resource,
@@ -540,8 +537,6 @@ hms_shortage_status_opts = {
     4: T('remedied')
 }
 
-from datetime import datetime
-
 resource = 'shortage'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
@@ -586,27 +581,27 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'hospital_id', 'type', 'impact', 'priority', 'subject', 'status'])
 
 # CRUD Strings
-title_create = T('Report Shortage')
-title_display = T('Shortage Details')
-title_list = T('Shortages')
-title_update = T('Edit Shortage')
-title_search = T('Search Shortages')
-subtitle_create = T('Add New Shortage')
-subtitle_list = T('Shortages')
-label_list_button = T('List Shortages')
-label_create_button = T('Add Shortage')
-label_delete_button = T('Delete Shortage')
-msg_record_created = T('Shortage added')
-msg_record_modified = T('Shortage updated')
-msg_record_deleted = T('Shortage deleted')
-msg_list_empty = T('No shortages currently reported')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Report Shortage'),
+    title_display = T('Shortage Details'),
+    title_list = T('Shortages'),
+    title_update = T('Edit Shortage'),
+    title_search = T('Search Shortages'),
+    subtitle_create = T('Add New Shortage'),
+    subtitle_list = T('Shortages'),
+    label_list_button = T('List Shortages'),
+    label_create_button = T('Add Shortage'),
+    label_delete_button = T('Delete Shortage'),
+    msg_record_created = T('Shortage added'),
+    msg_record_modified = T('Shortage updated'),
+    msg_record_deleted = T('Shortage deleted'),
+    msg_list_empty = T('No shortages currently reported'))
 
 # -----------------------------------------------------------------------------
-# shn_hms_hospital_pheader:
-#   Page Header for hospitals
 #
 def shn_hms_hospital_pheader(resource, record_id, representation, next=None, same=None):
+
+    """ Page header for component resources """
 
     if resource == "hospital":
         if representation == "html":
@@ -628,7 +623,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Name: ')),
                         hospital.name,
                         TH(T('EMS Status: ')),
-                        "%s" % hms_ems_traffic_opts[hospital.ems_status],
+                        "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status),
                         TH(A(T('Clear Selection'),
                             _href=URL(r=request, f='hospital', args='clear', vars={'_next': _same})))
                         ),
@@ -636,7 +631,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Location: ')),
                         db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
                         TH(T('Facility Status: ')),
-                        "%s" % hms_facility_status_opts[hospital.facility_status],
+                        "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status),
                         TH(""),
                         "",
                       ),
@@ -644,7 +639,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Total Beds: ')),
                         hospital.total_beds,
                         TH(T('Clinical Status: ')),
-                        "%s" % hms_clinical_status_opts[hospital.clinical_status],
+                        "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status),
                         TH(""),
                         "",
                       ),
@@ -652,7 +647,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
                         TH(T('Available Beds: ')),
                         hospital.available_beds,
                         TH(T('Security Status: ')),
-                        "%s" % hms_security_status_opts[hospital.security_status],
+                        "%s" % db.hms_hospital.security_status.represent(hospital.security_status),
                         TH(A(T('Edit Hospital'),
                             _href=URL(r=request, f='hospital', args=['update', record_id], vars={'_next': _next})))
                         )
@@ -662,10 +657,10 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
     return None
 
 # -----------------------------------------------------------------------------
-# shn_hms_hospital_search_location:
-#   form function to search hospitals by location
 #
 def shn_hms_hospital_search_location(xrequest, onvalidation=None, onaccept=None):
+
+    """ List hospitals by location """
 
     if not shn_has_permission('read', db.hms_hospital):
         session.error = UNAUTHORISED
@@ -707,6 +702,7 @@ def shn_hms_hospital_search_location(xrequest, onvalidation=None, onaccept=None)
             if form.vars.location is None:
                 results = db(query).select(table.ALL)
             else:
+                #TODO: Make this query include all child locations of this location!
                 query = query & (table.location_id==form.vars.location)
                 results = db(query).select(table.ALL)
 
@@ -720,13 +716,17 @@ def shn_hms_hospital_search_location(xrequest, onvalidation=None, onaccept=None)
                         result.facility_status and hms_facility_status_opts[result.facility_status] or "unknown",
                         result.clinical_status and hms_clinical_status_opts[result.clinical_status] or "unknown",
                         result.security_status and hms_security_status_opts[result.security_status] or "unknown",
+                        result.total_beds,
+                        result.available_beds
                         ))
                 items=DIV(TABLE(THEAD(TR(
                     TH("Name"),
                     TH("EMS Status"),
                     TH("Facility Status"),
                     TH("Clinical Status"),
-                    TH("Security Status"))),
+                    TH("Security Status"),
+                    TH("Total Beds"),
+                    TH("Available Beds"))),
                     TBODY(records), _id='list', _class="display"))
             else:
                     items = T('None')
@@ -750,10 +750,113 @@ def shn_hms_hospital_search_location(xrequest, onvalidation=None, onaccept=None)
 s3xrc.model.set_method(module, 'hospital', method='search_location', action=shn_hms_hospital_search_location )
 
 # -----------------------------------------------------------------------------
-# shn_hms_get_hospital:
-#   form function to search hospitals by name
+#
+def shn_hms_hospital_search_bedtype(xrequest, onvalidation=None, onaccept=None):
+
+    """ Find hospitals by bed type """
+
+    if not shn_has_permission('read', db.hms_hospital):
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
+
+    if xrequest.representation=="html":
+        # Check for redirection
+        if request.vars._next:
+            next = str.lower(request.vars._next)
+        else:
+            next = str.lower(URL(r=request, f='hospital', args='[id]'))
+
+        # Custom view
+        response.view = '%s/hospital_search.html' % xrequest.prefix
+
+        # Title and subtitle
+        title = T('Search for a Hospital')
+        subtitle = T('Matching Records')
+
+        # Select form:
+        t_opts = [OPTION(_value='')]
+        t_opts += [OPTION(hms_bed_type_opts[t], _value=t) for t in hms_bed_type_opts.keys()]
+        form = FORM(TABLE(
+                    TR(T('Bed Type: '),
+                    SELECT(_name="bed_type", *t_opts, **dict(name="bed_type",
+                        requires=IS_NULL_OR(IS_IN_SET(hms_bed_type_opts))))),
+                    TR("", INPUT(_type="submit", _value="Search"))
+                ))
+
+        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            table = db.hms_hospital
+            query = (table.deleted==False)
+
+            if form.vars.bed_type is not None:
+                bed_type = int(form.vars.bed_type)
+                subtitle = "Hospitals providing: %s" % \
+                    hms_bed_type_opts.get(bed_type, T('Unknown'))
+
+                output.update(subtitle=subtitle)
+                query = query & ((table.id==db.hms_bed_capacity.hospital_id)&
+                                 (db.hms_bed_capacity.bed_type==bed_type))
+
+            results = db(query).select(
+                db.hms_hospital.id,
+                db.hms_hospital.name,
+                db.hms_bed_capacity.unit_name,
+                db.hms_bed_capacity.beds_available,
+                db.hms_bed_capacity.beds_add24,
+                db.hms_hospital.facility_status,
+                db.hms_hospital.clinical_status
+            )
+
+            if results and len(results):
+                records = []
+                for result in results:
+                    href = next.replace('%5bid%5d', '%s' % result.hms_hospital.id)
+                    records.append(TR(
+                        A(result.hms_hospital.name, _href=href),
+                        result.hms_bed_capacity.unit_name,
+                        result.hms_bed_capacity.beds_available,
+                        result.hms_bed_capacity.beds_add24,
+                        db.hms_hospital.facility_status.represent(result.hms_hospital.facility_status),
+                        db.hms_hospital.clinical_status.represent(result.hms_hospital.clinical_status),
+                        ))
+                items=DIV(TABLE(THEAD(TR(
+                    TH("Name"),
+                    TH("Unit"),
+                    TH("Beds available"),
+                    TH("Additional Beds /24hrs"),
+                    TH("Facility Status"),
+                    TH("Clinical Status"))),
+                    TBODY(records), _id='list', _class="display"))
+            else:
+                    items = T('None')
+
+        try:
+            label_create_button = s3.crud_strings['hms_hospital'].label_create_button
+        except:
+            label_create_button = s3.crud_strings.label_create_button
+
+        add_btn = A(label_create_button, _href=URL(r=request, f='hospital', args='create'), _id='add-btn')
+
+        output.update(dict(items=items, add_btn=add_btn))
+
+        return output
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Plug into REST controller
+s3xrc.model.set_method(module, 'hospital', method='search_bedtype', action=shn_hms_hospital_search_bedtype )
+
+# -----------------------------------------------------------------------------
 #
 def shn_hms_get_hospital(label, fields=None, filterby=None):
+
+    """ Helper function to find hospital records matching a label """
 
     if fields and isinstance(fields, (list,tuple)):
         search_fields = []
@@ -763,7 +866,7 @@ def shn_hms_get_hospital(label, fields=None, filterby=None):
         if not len(search_fields):
             return None
     else:
-        search_fields = ['name', 'address']
+        search_fields = ['name'] #, 'address']
 
     if label and isinstance(label,str):
         labels = label.split()
@@ -801,13 +904,10 @@ def shn_hms_get_hospital(label, fields=None, filterby=None):
         return None
 
 # -----------------------------------------------------------------------------
-# shn_hms_hospital_search_simple:
-#   form function to search hospitals by name
 #
 def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
-    """
-        Simple search form for hospitals
-    """
+
+    """ Find hospitals by their name """
 
     if not shn_has_permission('read', db.hms_hospital):
         session.error = UNAUTHORISED
@@ -897,3 +997,5 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
 
 # Plug into REST controller
 s3xrc.model.set_method(module, 'hospital', method='search_simple', action=shn_hms_hospital_search_simple )
+#
+# -----------------------------------------------------------------------------

@@ -75,7 +75,7 @@ def shn_field_represent(field, row, col):
     except:
         represent = row[col]
     return represent
-    
+
 # *****************************************************************************
 # Exports
 
@@ -292,7 +292,7 @@ def export_xls(table, query):
 
             # Check for a custom.represent (e.g. for ref fields)
             represent = shn_field_represent(field, item, col)
-            
+
             rowx.write(cell1, str(represent), style)
             cell1 += 1
     book.save(output)
@@ -1109,7 +1109,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limitby = (0, limit)
     else:
         limitby = None
-    
+
     if jr.component:
 
         listadd = jr.component.attr.listadd
@@ -1180,7 +1180,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                #ToDo: check for component list_fields & use them where available
                aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
         return json(r)
-    
+
     if jr.representation=="html":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
@@ -1651,7 +1651,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 
     else:
         record_id = jr.id
-        deletable = shn_has_permission('delete', table, record_id)
+        deletable = deletable and shn_has_permission('delete', table, record_id)
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised:
@@ -1696,16 +1696,18 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 label_list_button = s3.crud_strings.label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
 
-            del_href = jr.other(method='delete', representation=jr.representation)
-            if tablename in s3.crud_strings and "label_delete_button" in s3.crud_strings[tablename]:
-                label_del_button = s3.crud_strings[tablename].label_delete_button
-            else:
-                label_del_button = None
-            if label_del_button is None:
-                label_del_button = s3.crud_strings.label_delete_button
-            del_btn = A(label_del_button, _href=del_href, _id='delete-btn')
+            if deletable:
+                del_href = jr.other(method='delete', representation=jr.representation)
+                if tablename in s3.crud_strings and "label_delete_button" in s3.crud_strings[tablename]:
+                    label_del_button = s3.crud_strings[tablename].label_delete_button
+                else:
+                    label_del_button = None
+                if label_del_button is None:
+                    label_del_button = s3.crud_strings.label_delete_button
+                del_btn = A(label_del_button, _href=del_href, _id='delete-btn')
+                output.update(del_btn=del_btn)
 
-            output.update(title=title, list_btn=list_btn, del_btn=del_btn)
+            output.update(title=title, list_btn=list_btn)
 
             if jr.component:
                 # Block join field
@@ -1961,7 +1963,7 @@ def shn_rest_controller(module, resource,
                 - create/update/delete done via simple GET vars (no form displayed)
             - B{popup}: designed to be used inside popups
             - B{aaData}: used by dataTables for server-side pagination
-            
+
         Request options:
         ================
 

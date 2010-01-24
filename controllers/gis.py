@@ -113,6 +113,10 @@ def config():
     db[table].map_width.comment = SPAN("*", _class="req")
     db[table].zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
     db[table].zoom_levels.label = T('Zoom Levels')
+    db[table].cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
+    db[table].cluster_distance.label = T('Cluster Distance')
+    db[table].cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+    db[table].cluster_threshold.label = T('Cluster Threshold')
     
     # CRUD Strings
     title_create = T('Add Config')
@@ -265,7 +269,7 @@ def location():
         #                      (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
         #                      (db.gis_feature_group.name.like(fgroup)))
     
-    response.s3.pagination = True
+    #response.s3.pagination = True
     
     return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
 
@@ -377,7 +381,7 @@ def layer_openstreetmap():
     msg_list_empty = T('No OpenStreetMap Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_google():
     "RESTlike CRUD controller"
@@ -392,7 +396,7 @@ def layer_google():
     msg_list_empty = T('No Google Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_yahoo():
     "RESTlike CRUD controller"
@@ -407,7 +411,21 @@ def layer_yahoo():
     msg_list_empty = T('No Yahoo Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+
+def layer_mgrs():
+    "RESTlike CRUD controller"
+    resource = 'layer_mgrs'
+    table = module + '_' + resource
+
+    # Model options
+    
+    # CRUD Strings
+    label_list_button = T('List MGRS Layers')
+    msg_list_empty = T('No MGRS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_bing():
     "RESTlike CRUD controller"
@@ -422,7 +440,7 @@ def layer_bing():
     msg_list_empty = T('No Bing Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_georss():
     "RESTlike CRUD controller"
@@ -572,7 +590,123 @@ def layer_xyz():
 def convert_gps():
     " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
     return dict()
+    
+def proxy():
+    """Based on http://trac.openlayers.org/browser/trunk/openlayers/examples/proxy.cgi
+This is a blind proxy that we use to get around browser
+restrictions that prevent the Javascript from loading pages not on the
+same server as the Javascript. This has several problems: it's less
+efficient, it might break some sites, and it's a security risk because
+people can use this proxy to browse the web and possibly do bad stuff
+with it. It only loads pages via http and https, but it can load any
+content type. It supports GET and POST requests."""
 
+    import urllib2
+    import cgi
+    import sys, os
+    
+    # ToDo - need to link to map_service_catalogue
+    # prevent Open Proxy abuse
+    allowedHosts = []
+    #allowedHosts = ['www.openlayers.org', 'openlayers.org',
+    #                'labs.metacarta.com', 'world.freemap.in',
+    #                'prototype.openmnnd.org', 'geo.openplans.org',
+    #                'sigma.openplans.org', 'demo.opengeo.org',
+    #                'www.openstreetmap.org', 'sample.avencia.com',
+    #                'v-swe.uni-muenster.de:8080']
+    
+    method = request['wsgi'].environ['REQUEST_METHOD']
+    
+    if method == "POST":
+        # THis can probably use same call as GET in web2py
+        qs = request['wsgi'].environ["QUERY_STRING"]
+        
+        d = cgi.parse_qs(qs)
+        if d.has_key("url"):
+            url = d["url"][0]
+        else:
+            url = "http://www.openlayers.org"
+    else:
+        # GET
+        #fs = cgi.FieldStorage()
+        #url = fs.getvalue('url', "http://www.openlayers.org")
+        if 'url' in request.vars:
+            url = request.vars.url
+        else:
+            session.error = str(T("Need a 'url' argument!"))
+            raise HTTP(400, body=json_message(False, 400, session.error))
+    
+    try:
+        host = url.split("/")[2]
+        if allowedHosts and not host in allowedHosts:
+            msg = "Status: 502 Bad Gateway\n"
+            msg += "Content-Type: text/plain\n\n"
+            msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
+           
+            msg += os.environ
+            return msg
+     
+        elif url.startswith("http://") or url.startswith("https://"):
+            if method == "POST":
+                length = int(request['wsgi'].environ["CONTENT_LENGTH"])
+                headers = {"Content-Type": request['wsgi'].environ["CONTENT_TYPE"]}
+                body = request.body.read(length)
+                r = urllib2.Request(url, body, headers)
+                y = urllib2.urlopen(r)
+            else:
+                y = urllib2.urlopen(url)
+           
+            # print content type header
+            # TODO: this doesn't work in web2py, need to figure out how that happens?
+            #i = y.info()
+            #if i.has_key("Content-Type"):
+            # msg = "Content-Type: %s" % (i["Content-Type"])
+            #else:
+            # msg = "Content-Type: text/plain"
+           
+            #msg += "\n" + y.read()
+           
+            msg = y.read()
+            y.close()
+            return msg
+        else:
+            msg = "Content-Type: text/plain\n\n"
+           
+            msg += "Illegal request."
+            return msg
+    
+    except Exception, E:
+        msg = "Status: 500 Unexpected Error\n"
+        msg += "Content-Type: text/plain\n\n"
+        msg += "Some unexpected error occurred. Error text was:", E
+        return msg
+    
+def proxy2():
+    " Provide a proxy for WFS/GeoRSS/MGRS layers. by Massimo diPierro"
+    import httplib 
+    PROXY_USER = None 
+    PROXY_PASSWORD = None 
+    PROXY_URL = 'web2py.com:80' 
+    path = '/'+'/'.join(request.args) 
+    query = request.env.query_string 
+    method = request.env.request_method 
+    if PROXY_USER and PROXY_PASSWORD: 
+        conn.add_credentials(PROXY_USER, PROXY_PASSWORD) 
+    conn =  httplib.HTTPConnection(PROXY_URL) 
+    if method == 'GET': 
+        conn.request(method, path, query) 
+    elif method == 'POST': 
+        data = request.body.read() 
+        conn.request(method, path, data) 
+    else: 
+        return 'oops' 
+    res = conn.getresponse() 
+    content = res.read() 
+    headers = dict(res.getheaders()) 
+    response.headers['Content-Type'] = headers['content-type'] 
+    response.status = int(res.status) 
+    return content 
+    
 def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
     >>> shn_latlon_to_wkt(6, 80)
@@ -1089,6 +1223,13 @@ def layers():
         if layer.format:
             layers.tms[name].format = layer.format
 
+    # MGRS - only a single one of these should be defined & it actually appears as a Control not a Layer
+    mgrs = db(db.gis_layer_mgrs.enabled==True).select().first()
+    if mgrs:
+        layers.mgrs = Storage()
+        layers.mgrs.name = mgrs.name
+        layers.mgrs.url = mgrs.url
+    
     # XYZ
     layers.xyz = Storage()
     layers_xyz = db(db.gis_layer_xyz.enabled==True).select()
@@ -1194,15 +1335,19 @@ def map_viewing_client():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
 
     # Layers
     baselayers = layers()
     # Add the Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, js_layers=baselayers.js))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, js_layers=baselayers.js, kml_layers=baselayers.kml))
+    # MGRS isn't a Layer, but added here anyway
+    output.update(dict(mgrs=baselayers.mgrs))
 
     # Internal Features
     features = Storage()
@@ -1324,9 +1469,11 @@ def display_feature():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the config to the Return
-    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
+    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold)
 
     # Feature details
     try:
@@ -1493,9 +1640,11 @@ def display_features():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
 
     # Feature details
     for feature in features:

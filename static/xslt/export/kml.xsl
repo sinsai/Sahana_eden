@@ -34,6 +34,53 @@
                     </Point>
                 </Placemark>
             </xsl:when>
+            <xsl:when test="@name='hms_hospital'">
+                <Placemark>
+                    <name><xsl:value-of select="data[@field='name']"/></name>
+                    <!-- <description><xsl:value-of select="@url"/></description> -->
+                    <description>
+                        &lt;table&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;EMS Status: &lt;/td&gt;
+                                &lt;td&gt;<xsl:value-of select="./data[@field='ems_status']/text()"/>&lt;/td&gt;
+                            &lt;/tr&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;Facility Status: &lt;/td&gt;
+                                &lt;td&gt;<xsl:value-of select="./data[@field='facility_status']/text()"/>&lt;/td&gt;
+                            &lt;/tr&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;Clinical Status: &lt;/td&gt;
+                                &lt;td&gt;<xsl:value-of select="./data[@field='clinical_status']/text()"/>&lt;/td&gt;
+                            &lt;/tr&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;Beds total: &lt;/td&gt;
+                                &lt;td&gt;<xsl:value-of select="./data[@field='total_beds']/text()"/>&lt;/td&gt;
+                            &lt;/tr&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;Beds available: &lt;/td&gt;
+                                &lt;td&gt;<xsl:value-of select="./data[@field='available_beds']/text()"/>&lt;/td&gt;
+                            &lt;/tr&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;Details: &lt;/td&gt;
+                                &lt;td&gt;&lt;a href=<xsl:value-of select="@url"/>&gt;<xsl:value-of select="@url"/>&lt;/a&gt;&lt;/td&gt;
+                            &lt;/tr&gt;
+                        &lt;/table&gt;
+                        <xsl:if test="./resource[@name='hms_shortage']/data[@field='status']/@value='1' or ./resource[@name='hms_shortage']/data[@field='status']/@value='2'">
+                            &lt;ul&gt;
+                            <xsl:apply-templates select="./resource[@name='hms_shortage']"/>
+                            &lt;/ul&gt;
+                        </xsl:if>
+                    </description>
+                    <Point>
+                        <coordinates>
+                            <xsl:value-of select="reference[@field='location_id']/@lon"/>
+                            <xsl:text>,</xsl:text>
+                            <xsl:value-of select="reference[@field='location_id']/@lat"/>
+                        </coordinates>
+                    </Point>
+                </Placemark>
+            </xsl:when>
+            -->
             <xsl:otherwise>
                 <xsl:if test="./reference[@field='location_id']">
                     <Placemark>
@@ -51,4 +98,11 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
+
+    <xsl:template match="resource[@name='hms_shortage']">
+        <xsl:if test="./data[@field='status']/@value='1' or ./data[@field='status']/@value='2'">
+            &lt;li&gt;Shortage [<xsl:value-of select="./data[@field='priority']/text()"/>/<xsl:value-of select="./data[@field='impact']/text()"/>/<xsl:value-of select="./data[@field='type']/text()"/>]: <xsl:value-of select="./data[@field='description']/text()"/>&lt;/li&gt;
+        </xsl:if>
+    </xsl:template>
+
 </xsl:stylesheet>

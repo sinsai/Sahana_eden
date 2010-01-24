@@ -22,8 +22,8 @@ var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
 // Controls for Draft Features
 // - interferes with Feature Layers!
 //var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
-//    onSelect: onFeatureControlSelect,
-//    onUnselect: onFeatureControlUnselect,
+//    onSelect: onFeatureSelect,
+//    onUnselect: onFeatureUnselect,
 //    multiple: false,
 //    clickout: true,
 //    isDefault: true

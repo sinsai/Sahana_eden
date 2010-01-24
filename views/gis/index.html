@@ -1,13 +1,77 @@
 {{extend 'layout.html'}}
-
 <div id="home">
-{{=H2(T(module_name))}}
-<p>
-{{=T("The")}} {{=T(module_name)}} {{=T("module provides a mechanism to collaboratively provide an overview of the developing disaster, using online mapping (GIS). You can add markers and pictures to pin point incidents on the map.")}}
-</p>
-<h3>{{=T("Features Include")}}:</h3>
-<ul>
-<li>{{=T("Provides a map based view of the disaster situation")}}</li>
-<li>{{=T("Allow users to collaboratively add markers of the developing disaster situation")}}</li>
-</ul>
+<div style="margin:20px auto; width:96%; max-width:1000px;" >
+    <div style="float:left; font-size:x-large; line-height:110%; width:50%; margin-right:50px;">
+    
+    {{=OL(
+      LI(
+        SPAN(A(T('View Situation Map'), 
+          _href=URL(r=request, c='gis', f='map_viewing_client')),_style="font-weight:bold;"),
+        P(T('Use this link to review the situation.')),
+          _style="margin-top:1em;"),
+
+      LI(
+        SPAN(A(T('Edit Map Services'),
+          _href=URL(r=request, c='gis', f='map_service_catalogue')),_style="font-weight:bold;"),
+        P(T('Allows authorized users to control which layers are available to the situation map.')),
+          _style="margin-top:1em;"),
+      
+      LI(
+        SPAN(A(T('Bulk Uploader'),
+          _href=URL(r=request, c='gis', f='bulk_upload')),_style="font-weight:bold;"),
+       P(T('Allows authorized users to upload multiple features into the situation map.')),
+          _style="margin-top:1em;"),
+       
+       _style="list-style-type: none;"
+     )}} 
+      
+    </div>
+
+    <div style="width:200px; padding:0 10px; float:right; margin:0 auto;">
+      {{=H4(T('ACCESS DATA'))}}
+      {{=DIV(T('Use these links to download data that is currently in the database.'))}}
+      
+      {{=UL(
+        LI(A('CSV',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'csv'})),
+          _style='padding:3px; margin-left: 18px;'),
+       LI(A('JSON',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'json'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('KML',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'kml'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('GeoRSS',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'georss'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('GPX',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'gpx'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('RSS',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'rss'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('XML',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'xml'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('XLS',
+          _href=URL(r=request, c='gis', f='location', vars={'format':'xls'})),
+          _style='padding:3px; margin-left: 18px;'))
+      }}
+
+      {{=H4(T('LICENCE'))}}
+      {{=DIV(T('All data provided by the Sahana Software Foundation from this site is licenced under a Creative Commons Attribution licence. However, not all data originates here. Please consult the source field of each entry.'))}}
+    </div>
+
+  <div style="width:200px; float:right; padding:0 10px; margin: 0 auto;">
+    {{=H4(T('ABOUT THIS MODULE'))}}
+    {{=T("The")}} {{=T(module_name)}} {{=T("module provides a mechanism to collaboratively provide an overview of the developing disaster, using online mapping (GIS). You can add markers and pictures to pin point incidents on the map.")}}
+    {{=H3(T("Features Include"), _style='margin-top:15px;')}}
+    {{=UL(
+      LI(T("An interactive map the situtation.")),
+      LI(T('All data is able to be shared with other sites in real time.')),
+      LI(T("Users can collaboratively add markers of what is occuring.")),
+      _style="margin-left:20px;")
+    }}
+  </div>
 </div>
+</div><!-- home -->

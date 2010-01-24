@@ -138,7 +138,7 @@ def org_sub_list( table , org_id):
            
     query = db[table].organisation_id == org_id
     
-    list =  crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
+    list =  crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, linkto = linkto, truncate=48, _id = table + '_list', _class="display")
     
     #Required so that there is a table with an ID for the refresh after add
     if list == None:

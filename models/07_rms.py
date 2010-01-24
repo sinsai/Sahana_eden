@@ -14,9 +14,9 @@ db.define_table(table,
 # Load lists/dictionaries for drop down menus
 
 rms_priority_opts = {
-    1:T('High'),
+    3:T('High'),
     2:T('Medium'),
-    3:T('Low')
+    1:T('Low')
 }
 
 rms_status_opts = {
@@ -80,7 +80,8 @@ db[table].message.requires = IS_NOT_EMPTY()
 db[table].message.comment = SPAN("*", _class="req")
 
 db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
-db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
+#db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
+db[table].priority.represent = lambda id: (id and [DIV(IMG(_src='/sahana/static/img/priority/priority_%d.gif' % (id,), _height=12))] or [DIV(IMG(_src='/sahana/static/img/priority/priority_4.gif'), _height=12)])
 db[table].priority.label = T('Priority Level')
 
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))

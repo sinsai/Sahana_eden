@@ -83,11 +83,11 @@ table { border-collapse: collapse }
 #modulenav li div a { color: #000; }
 #modulenav a { text-decoration: none; }
 #modulenav a:hover { color: #000; background: none; }
-#modulenav li li a { display: block;  font-weight: normal; padding: 5px 5px 5px 10px; }
+#modulenav li li a { display: block;  font-weight: normal; padding: 5px 0px 5px 5px; }
 #modulenav li li a:hover { background: #d2eaff; color: #000; }
 #modulenav li { float: left; position: relative; text-align: left; cursor: default;  border-width: 1px 0; }
 /* Menu Buttons */
-#modulenav li div { text-align:center; background: url(../../img/S3menu_side.png) right 10px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 8px 25px 5px 25px; }
+#modulenav li div { text-align:center; background: url(../../img/S3menu_side.png) right 10px no-repeat; text-shadow: 1px 1px 1px #ffffff;  padding: 8px 10px 5px 15px; }
 #modulenav li div.hovered, #modulenav li div:hover { background: #676767 url(../../img/S3menu_hilight.png) repeat-x; }
 /* Menu Popups */
 #modulenav li ul { display: none; position: absolute; top: 100%; left: 0; font-weight: normal; text-align: left; background: #fff; border: #dedede 1px solid;

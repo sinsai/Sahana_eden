@@ -139,6 +139,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('lat', 'double'), # Only needed for Points
                 Field('lon', 'double'), # Only needed for Points
                 Field('wkt'),           # WKT is auto-calculated from lat/lon for Points
+                Field('osm_id'),
                 admin_id,
                 migrate=migrate)
 # Reusable field for other tables to reference

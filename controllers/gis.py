@@ -34,6 +34,8 @@ db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="t
 #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
 db[table].wkt.label = T('Well-Known Text')
 db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+db[table].osm_id.label = 'OpenStreetMap'
+db[table].osm_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 # Joined Resource
 #s3xrc.model.add_component('media', 'metadata',
 #    multiple=True,

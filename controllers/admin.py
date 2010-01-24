@@ -538,18 +538,60 @@ def _import_job_update(jr):
     query = jr.table.id==id
     job = db(query).select()
     if not job:
-        raise HTTP(404)
+        raise HTTP(404, body=json_message(False, 404, session.error))
     job = job[0]
-    try:
-        job.column_map = pickle.loads(job.column_map)
-    except pickle.UnpicklingError:
-        job.column_map = []
-    model_fields = get_matchable_fields(job.module, job.resource)
+
+    if jr.http == 'GET':
+        output = _import_job_update_GET(jr, job)
+    elif jr.http == 'POST':
+        output = _import_job_update_POST(jr, job)
+    else:
+        raise HTTP(400, body=INVALIDREQUEST)
 
     title = '%s - %s' % (T('Input Job'), job.description)
-    output = dict(module_name=module_name, title=title, job=job, model_fields=model_fields)
+    output.update(dict(module_name=module_name, title=title, job=job))
     response.view = 'admin/import_job_update.html'
     return output
+
+def _import_job_update_GET(jr, job):
+    if job.status == 'new':
+        try:
+            job.column_map = pickle.loads(job.column_map)
+        except pickle.UnpicklingError:
+            job.column_map = []
+        model_fields = get_matchable_fields(job.module, job.resource)
+        return dict(model_fields=model_fields)
+    
+    if job.status == 'processing':
+        num_lines = db(db.admin_import_line.import_job==job.id).count()
+        print 'num_lines', num_lines
+        return dict(num_lines=num_lines, update_speed=60)
+
+def _import_job_update_POST(jr, job):
+    if job.status == 'new':
+        # Update column map.
+        try:
+            column_map = pickle.loads(job.column_map)
+        except pickle.UnpicklingError:
+            column_map = []
+        for key, value in request.vars.iteritems():
+            if not key.startswith('column_map_'):
+                continue
+            try:
+                idx = int(key.split('_')[-1])
+            except ValueError:
+                continue
+            if value != 'None (Ignore)':
+                column_map[idx] = (column_map[idx][0], value)
+            else:
+                column_map[idx] = (column_map[idx][0], None)
+        print column_map
+        jr.table[job.id] = dict(
+                column_map=pickle.dumps(column_map, pickle.HIGHEST_PROTOCOL),
+                status='processing')
+        job.status = 'processing'
+
+    return _import_job_update_GET(jr, job)
 
 def get_matchable_fields(module, resource):
     model_fields = getattr(db, '%s_%s' % (module, resource)).fields

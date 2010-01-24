@@ -89,59 +89,38 @@ def test():
 
 # LOCATION LOADING
 
-def get_name(d):
-    return d.get('name')
-    
-def get_wkt(d):
-    return d.get('wkt')
-
-def load_gis_locations(data, get_name=get_name, get_wkt=get_wkt, feature_class_id=None, get_parent=None):
+def load_gis_locations(data, make_feature_group=False):
+    """Loads locations from a list of dictionaries which must have, 
+        at minimum 'name' and either 'wkt' or 'lat' and 'lon'.
+        Also accepts:
+            'parent'
+            'feature_class_id'
+        If make_feature_group is True, 
+        a feature_group with the same name will be created.
+        This function changes the dictionaries passed to it.
+    """
     for i, d in enumerate(data):
-        name = get_name(d)
-
-        wkt = get_wkt(d)
-        shape = wkt_loads(wkt)
-        if shape.type.lower() == "point":
-            centroid = shape
+        wkt = d.get('wkt')
+        if not wkt:
+            assert d.get('lon') is not None and d.get('lat') is not None, "Need either wkt or lat/lon"
+            wkt = "POINT(%f %f)" % (d['lon'], d['lat'])
         else:
-            centroid = shape.centroid
-
-        parent = None        
-        if get_parent:
-            parent = get_parent(d)
-            assert parent, "no parent found"
+            shape = wkt_loads(wkt)
+            if shape.type.lower() == "point":
+                d['lon'] = shape.x
+                d['lat'] = shape.y
+            else:
+                centroid = shape.centroid
+                d['lon'] = centroid.x
+                d['lat'] = centroid.y
         
-        location_id = db.gis_location.insert(
-            name=name, 
-            wkt=wkt, 
-            parent=parent,
-            gis_feature_type = GEOM_TYPES[shape.type],
-            lat = centroid.y,
-            lon = centroid.x,
-            feature_class_id = feature_class_id,
-        )
-        db.gis_feature_group.insert(name=name, enabled=False)
-        print i, name
+        location_id = db.gis_location.insert(**d)
+        if make_feature_group:
+            db.gis_feature_group.insert(name=d['name'], enabled=False)
+        print i, d['name']
     db.commit()
 
 # HAITI-SPECIFIC
-
-def make_name(name, admin_type):
-    return ': '.join([PREFIXES[admin_type], name.title()])
-    
-def name_getter(admin_type):
-    def get_name(d):
-        return make_name(d[NAME_MAP[admin_type]], admin_type)
-    return get_name
-
-def parent_getter(parent_type):
-    def fn(d):
-        parent_name = d[NAME_MAP[parent_type]]
-        parent_db_name = make_name(parent_name, parent_type)
-        parent_count = db(db.gis_location.name==parent_db_name).count()
-        assert parent_count == 1, "%d parents found" % parent_count
-        return db(db.gis_location.name==parent_db_name).select().first()
-    return fn
 
 def ensure_admin_feature_class():
     admin_area_class = db(db.gis_feature_class.name==ADMIN_FEATURE_CLASS_NAME).select().first()
@@ -150,10 +129,22 @@ def ensure_admin_feature_class():
     else:
         return db.gis_feature_class.insert(name=ADMIN_FEATURE_CLASS_NAME)
 
+def make_name(name, admin_type):
+    return ': '.join([PREFIXES[admin_type], name.title()])
+    
+def get_name(d, admin_type):
+    return make_name(d[NAME_MAP[admin_type]], admin_type)
+
+def get_parent_id(d, parent_type):
+    parent_name = d[NAME_MAP[parent_type]]
+    parent_db_name = make_name(parent_name, parent_type)
+    parent_count = db(db.gis_location.name==parent_db_name).count()
+    assert parent_count == 1, "%d parents found" % parent_count
+    return db(db.gis_location.name==parent_db_name).select().first().id
+
 def make_unique_sections(data):
     """Some Haiti Sections have duplicate names, but are in different Communes.
-    If that is the case, postpend the Commune name to the Section name.
-    """
+    If that is the case, postpend the Commune name to the Section name."""
     names = {}
     for d in data:
         if 'NOM_SECTIO' in d:  # only looking at sections
@@ -167,25 +158,28 @@ def make_unique_sections(data):
                 print old, "=>", new
 
 def load_level(admin_type, parent_type=None):
+    """Load an administrative level.  Transforms dictionaries from csv, resolves naming conflicts for sections, and calls load_gis_locations to load into database."""
     filename = '/'.join([BASEDIR, FILES[admin_type]])
     
     admin_area_class_id = db(db.gis_feature_class.name==ADMIN_FEATURE_CLASS_NAME).select().first().id
-    
-    if parent_type:
-        get_parent = parent_getter(parent_type)
-    else:
-        get_parent = None
         
     data = list(latin_dict_reader(open(filename)))
+
     if admin_type == 'Sections':
         make_unique_sections(data)
-    load_gis_locations(
-        data, 
-        get_name=name_getter(admin_type), 
-        get_wkt=lambda d: d.get('WKT'), 
-        feature_class_id=admin_area_class_id,
-        get_parent=get_parent,
-    )
+
+    def transformed_dict_gen():
+        for d in data:
+            transformed = {
+                'name': get_name(d, admin_type),
+                'wkt': d['WKT'],
+                'feature_class_id': admin_area_class_id
+            }
+            if parent_type:
+                transformed['parent'] = get_parent_id(d, parent_type)
+            yield transformed
+            
+    load_gis_locations(transformed_dict_gen(), make_feature_group=True)
 
 def create_haiti_admin_areas():
     ensure_admin_feature_class()

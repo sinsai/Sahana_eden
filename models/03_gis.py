@@ -85,6 +85,8 @@ db.define_table(table, timestamp, uuidstamp,
 				Field('map_height', 'integer', notnull=True),
 				Field('map_width', 'integer', notnull=True),
                 Field('zoom_levels', 'integer', default=16, notnull=True),
+                Field('cluster_distance', 'integer', default=5, notnull=True),
+                Field('cluster_threshold', 'integer', default=2, notnull=True),
                 migrate=migrate)
 
 # GIS Feature Classes

@@ -19,6 +19,7 @@
     style_marker.graphicYOffset = -height;
     style_marker.externalGraphic = iconURL;
     var georssLayer{{=name}} = new OpenLayers.Layer.GML( "{{=layer}}", "{{=georss_layers[layer].url}}", {
+        strategies: [ strategy ],
         format: OpenLayers.Format.GeoRSS, style: style_marker,
         formatOptions: {
             // adds the thumbnail attribute to the feature

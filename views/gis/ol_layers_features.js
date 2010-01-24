@@ -1,7 +1,10 @@
 ﻿var proj_current = map.getProjectionObject();
 
 // Layer to hold the Features
-featuresLayer = new OpenLayers.Layer.Vector("Locations", {displayInLayerSwitcher: false});
+featuresLayer = new OpenLayers.Layer.Vector("Locations", {
+    strategies: [ strategy ],
+    displayInLayerSwitcher: false
+});
 map.addLayer(featuresLayer);
 
 var parser = new OpenLayers.Format.WKT();

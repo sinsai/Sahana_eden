@@ -25,6 +25,7 @@
   var max_h = 35;
   var width, height;
   var iconURL;
+  var strategy = new OpenLayers.Strategy.Cluster({distance: {{=cluster_distance}}, threshold: {{=cluster_threshold}}});
   {{include 'gis/ol_layers_georss.js'}}
   {{include 'gis/ol_layers_gpx.js'}}
   {{include 'gis/ol_layers_kml.js'}}

@@ -113,6 +113,10 @@ def config():
     db[table].map_width.comment = SPAN("*", _class="req")
     db[table].zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
     db[table].zoom_levels.label = T('Zoom Levels')
+    db[table].cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
+    db[table].cluster_distance.label = T('Cluster Distance')
+    db[table].cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+    db[table].cluster_threshold.label = T('Cluster Threshold')
     
     # CRUD Strings
     title_create = T('Add Config')
@@ -1331,9 +1335,11 @@ def map_viewing_client():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
 
     # Layers
     baselayers = layers()
@@ -1463,9 +1469,11 @@ def display_feature():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the config to the Return
-    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
+    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold)
 
     # Feature details
     try:
@@ -1632,9 +1640,11 @@ def display_features():
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
     symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
 
     # Feature details
     for feature in features:

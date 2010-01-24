@@ -65,6 +65,11 @@
                                 &lt;td&gt;&lt;a href=<xsl:value-of select="@url"/>&gt;<xsl:value-of select="@url"/>&lt;/a&gt;&lt;/td&gt;
                             &lt;/tr&gt;
                         &lt;/table&gt;
+                        <xsl:if test="./resource[@name='hms_shortage']/data[@field='status']/@value='1' or ./resource[@name='hms_shortage']/data[@field='status']/@value='2'">
+                            &lt;ul&gt;
+                            <xsl:apply-templates select="./resource[@name='hms_shortage']"/>
+                            &lt;/ul&gt;
+                        </xsl:if>
                     </description>
                     <Point>
                         <coordinates>
@@ -93,4 +98,11 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
+
+    <xsl:template match="resource[@name='hms_shortage']">
+        <xsl:if test="./data[@field='status']/@value='1' or ./data[@field='status']/@value='2'">
+            &lt;li&gt;Shortage [<xsl:value-of select="./data[@field='priority']/text()"/>/<xsl:value-of select="./data[@field='impact']/text()"/>/<xsl:value-of select="./data[@field='type']/text()"/>]: <xsl:value-of select="./data[@field='description']/text()"/>&lt;/li&gt;
+        </xsl:if>
+    </xsl:template>
+
 </xsl:stylesheet>

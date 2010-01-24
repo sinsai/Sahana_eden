@@ -126,6 +126,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('registration', label=T('Registration')),	# Registration Number
                 Field('country', 'integer'),
                 Field('website'),
+                Field('twitter'),
                 Field('donation_phone'), 
                 shn_comments_field,
                 source_id,
@@ -145,6 +146,8 @@ db[table].country.represent = lambda opt: opt and shn_list_of_nations[opt]
 db[table].country.label = T('Home Country')
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
+db[table].twitter.label = T('Twitter')
+db[table].twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
 ADD_ORGANISATION = T('Add Organization')
 title_create = T('Add Organization')
 title_display = T('Organization Details')

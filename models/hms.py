@@ -204,7 +204,7 @@ s3.crud_strings[table] = Storage(
     msg_record_created = T('Hospital information added'),
     msg_record_modified = T('Hospital information updated'),
     msg_record_deleted = T('Hospital information deleted'),
-    msg_list_empty = T('No hospitals currently registered'))
+    msg_list_empty = T('No Hospitals currently registered'))
 
 # Reusable field for other tables to reference
 hospital_id = SQLTable(None, 'hospital_id',

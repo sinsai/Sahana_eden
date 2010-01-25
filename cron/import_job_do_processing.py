@@ -43,18 +43,24 @@ for job in jobs:
                 continue
             line_data[field] = col
         # Validate data via the SQLFORM instance.
-        valid = form.accepts(line_data, session, dbio=False)
+        validate_data = line_data.copy()
+        validate_data.update({'_formname': 'import'})
+        valid = form.accepts(validate_data, None, formname='import',
+                             dbio=False)
         # store into an ImportLine model.
         db_data = dict(
                 import_job=job.id,
-                line_no=line_num + 1,  # +1 to account for header line.
+                line_no=line_num + 2,  # +2 (zero offset + header line).
                 data=pickle.dumps(line_data, pickle.HIGHEST_PROTOCOL),
                 valid=valid,
                 )
         if valid:
             db_data.update(errors=None, status='import')
+            valid_lines += 1
         else:
-            db_data.update(errors=', '.join(form.errors), status='ignore')
+            db_data.update(
+                    errors='Invalid Fields: %s' % ', '.join(form.errors),
+                    status='ignore')
         db.admin_import_line.insert(**db_data)
 
     # Update job status.

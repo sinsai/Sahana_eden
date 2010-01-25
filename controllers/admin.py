@@ -569,7 +569,7 @@ def _import_job_update_GET(jr, job):
         num_lines = db(query).count()
         return dict(num_lines=num_lines, update_speed=60)
 
-    if job.status == 'processed':
+    if job.status in ['processed', 'failed', 'imported']:
         def _include_field(f):
             if f in ['import_job']:
                 return False

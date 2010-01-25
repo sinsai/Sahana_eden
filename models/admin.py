@@ -44,8 +44,8 @@ def display_dict_pickle_as_str(data):
 
 
 def display_status_select(data):
-    if data == 'ignore':
-        return 'ignore'
+    if data in ['ignore', 'imported']:
+        return data
     return SELECT('ignore', 'import', value=data, _class='import_line_status')
 
 resource = 'import_line'

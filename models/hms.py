@@ -800,6 +800,8 @@ def shn_hms_hospital_search_bedtype(xrequest, onvalidation=None, onaccept=None):
                 output.update(subtitle=subtitle)
                 query = query & ((table.id==db.hms_bed_capacity.hospital_id)&
                                  (db.hms_bed_capacity.bed_type==bed_type))
+            else:
+                query = query & (table.id==db.hms_bed_capacity.hospital_id)
 
             results = db(query).select(
                 db.hms_hospital.id,

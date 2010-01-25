@@ -1,4 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
+import cPickle as pickle
 
 module = 'admin'
 
@@ -34,6 +35,19 @@ db[table].resource.requires = IS_IN_SET(['organisation', 'office', 'contact'])
 
 
 # Import lines
+def display_dict_pickle_as_str(data):
+    try:
+        t = pickle.loads(data)
+    except pickle.UnpicklingError:
+        t = {}
+    return ', '.join(['%s: %s' % (k, v) for k, v in t.iteritems() if v])
+
+
+def display_status_select(data):
+    if data == 'ignore':
+        return 'ignore'
+    return SELECT('ignore', 'import', value=data, _class='import_line_status')
+
 resource = 'import_line'
 table = '%s_%s' % (module, resource)
 db.define_table(table,
@@ -41,8 +55,11 @@ db.define_table(table,
                 Field('line_no', 'integer'),
                 Field('valid', 'boolean', writable=False),
                 Field('errors', 'string', writable=False),
-                Field('status', 'string'),
-                Field('data', 'blob', writable=False)
+                Field('status', 'string',
+                      represent=display_status_select),
+                Field('data', 'blob', writable=False,
+                      represent=display_dict_pickle_as_str)
                 )
 db[table].import_job.requires = IS_IN_DB(db, 'admin_import_job.id', '%(description)')
 db[table].status.requires = IS_IN_SET(['ignore', 'import', 'imported'])
+

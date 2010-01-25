@@ -554,6 +554,9 @@ def _import_job_update(jr):
     return output
 
 def _import_job_update_GET(jr, job):
+    table = db.admin_import_line
+    query = table.import_job==job.id
+
     if job.status == 'new':
         try:
             job.column_map = pickle.loads(job.column_map)
@@ -563,8 +566,40 @@ def _import_job_update_GET(jr, job):
         return dict(model_fields=model_fields)
     
     if job.status == 'processing':
-        num_lines = db(db.admin_import_line.import_job==job.id).count()
+        num_lines = db(query).count()
         return dict(num_lines=num_lines, update_speed=60)
+
+    if job.status == 'processed':
+        def _include_field(f):
+            if f in ['import_job']:
+                return False
+            return table[f].readable
+
+        fields = [table[f] for f in table.fields if _include_field(f)]
+        headers = dict(map(lambda f: (str(f), f.label), fields))
+        items = crud.select(
+                db['admin_import_line'],
+                query=query,
+                fields=fields,
+                headers=headers,
+                truncate=48, _id='list', _class='display')
+        response.extra_styles = ['admin/import_job.css']
+        return dict(items=items)
+
+    if job.status == 'import':
+        query = (table.import_job==job.id) & (table.status=='imported')
+        num_lines = db(query).count()
+        return dict(num_lines=num_lines, update_speed=60)
+
+    return {}
+
+#      items = crud.select(table, query=query,
+#            fields=fields,
+#            orderby=orderby,
+#            limitby=limitby,
+#            headers=headers,
+#            linkto=linkto,
+#            truncate=48, _id='list', _class='display')
 
 def _import_job_update_POST(jr, job):
     if job.status == 'new':
@@ -588,6 +623,19 @@ def _import_job_update_POST(jr, job):
                 column_map=pickle.dumps(column_map, pickle.HIGHEST_PROTOCOL),
                 status='processing')
         job.status = 'processing'
+
+    if job.status == 'processed':
+        query = db.admin_import_line.id
+        for var, status in request.vars.iteritems():
+            if not var.startswith('status_'):
+                continue
+            try:
+                import_line_id = int(var.split('_')[-1])
+            except ValueError:
+                continue
+            db(db.admin_import_line.id==import_line_id).update(status=status)
+        jr.table[job.id] = dict(status='import')
+        job.status = 'import'
 
     return _import_job_update_GET(jr, job)
 

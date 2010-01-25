@@ -80,7 +80,6 @@
                     </Point>
                 </Placemark>
             </xsl:when>
-            -->
             <xsl:otherwise>
                 <xsl:if test="./reference[@field='location_id']">
                     <Placemark>

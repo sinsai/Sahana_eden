@@ -1312,7 +1312,8 @@ def map_viewing_client():
     output = dict(title=title, module_name=module_name)
 
     # Config
-    config = db(db.gis_config.id==1).select().first()
+    # ToDo return all of these to the view via a single 'config' var
+    config = gis.read_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1336,7 +1337,6 @@ def map_viewing_client():
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
-    symbology = config.symbology_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
 
@@ -1352,12 +1352,11 @@ def map_viewing_client():
     output.update(dict(mgrs=baselayers.mgrs))
 
     # Internal Features
+    # ToDo: Replace with self-referring KML feed (easier to maintain 1 source of good popups for both internal & external purposes)
     features = Storage()
     # Features are displayed in a layer per FeatureGroup
     feature_groups = db(db.gis_feature_group.enabled == True).select()
     for feature_group in feature_groups:
-        # FIXME: Use OL's Cluster Strategy to ensure no more than 200 features displayed to prevent overloading the browser!
-        # - better than doing a server-side spatial query to show ones visible within viewport on every Pan/Zoom!
         groups = db.gis_feature_group
         locations = db.gis_location
         classes = db.gis_feature_class
@@ -1373,56 +1372,46 @@ def map_viewing_client():
         # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
         features[feature_group.id] = features1 | features2
         for feature in features[feature_group.id]:
-
-            feature.module = feature.gis_feature_class.module
-            feature.resource = feature.gis_feature_class.resource
-            if feature.module and feature.resource:
-                try:
-                    feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select().first().id
-                except:
+            try:
+                # Deprecated since we'll be using KML to populate Popups with Edit URLs, etc
+                feature.module = feature.gis_feature_class.module
+                feature.resource = feature.gis_feature_class.resource
+                if feature.module and feature.resource:
+                    try:
+                        feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select().first().id
+                    except:
+                        feature.resource_id = None
+                else:
                     feature.resource_id = None
-            else:
-                feature.resource_id = None
 
-            # 1st choice for a Marker is the Feature's
-            marker = feature.gis_location.marker_id
-            if not marker:
-                # 2nd choice for a Marker is the Symbology for the Feature Class
-                query = (db.gis_symbology_to_feature_class.feature_class_id == feature.gis_feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+                # Look up the marker to display
+                feature.marker = gis.get_marker(feature.gis_location.id)
+
                 try:
-                    marker = db(query).select().first().marker_id
+                    # Metadata is M->1 to Features
+                    # We use the most recent one
+                    query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
+                    metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+
+                    # Person .represent is too complex to put into JOIN
+                    contact = shn_pr_person_represent(metadata.person_id)
+
                 except:
-                    if not marker:
-                        # 3rd choice for a Marker is the Feature Class's
-                        marker = feature.gis_feature_class.marker_id
-                    if not marker:
-                        # 4th choice for a Marker is the default
-                        marker = marker_default
-            feature.marker = db(db.gis_marker.id == marker).select().first().image
+                    metadata = None
+                    contact = None
+                feature.metadata = metadata
+                feature.contact = contact
 
-            try:
-                # Metadata is M->1 to Features
-                # We use the most recent one
-                query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
-                metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
-
-                # Person .represent is too complex to put into JOIN
-                contact = shn_pr_person_represent(metadata.person_id)
-
+                try:
+                    # Images are M->1 to Features
+                    # We use the most recently uploaded one
+                    query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
+                    image = db(query).select(orderby=~db.media_image.created_on)[0].image
+                except:
+                    image = None
+                feature.image = image
             except:
-                metadata = None
-                contact = None
-            feature.metadata = metadata
-            feature.contact = contact
-
-            try:
-                # Images are M->1 to Features
-                # We use the most recently uploaded one
-                query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
-                image = db(query).select(orderby=~db.media_image.created_on)[0].image
-            except:
-                image = None
-            feature.image = image
+                pass
 
     # Add the Features to the Return
     #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
@@ -1446,7 +1435,7 @@ def display_feature():
         raise HTTP(401, body=json_message(False, 401, session.error))
 
     # Config
-    config = db(db.gis_config.id==1).select().first()
+    config = gis.read_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1470,7 +1459,6 @@ def display_feature():
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
-    symbology = config.symbology_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
 
@@ -1495,23 +1483,8 @@ def display_feature():
     feature.gis_location = feature
     feature.gis_feature_class = feature_class
 
-    # 1st choice for a Marker is the Feature's
-    marker = feature.marker_id
-    if not marker:
-        # 2nd choice for a Marker is the Symbology for the Feature Class
-        if feature_class:
-            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-            try:
-                marker = db(query).select().first().marker_id
-            except:
-                pass
-            if not marker:
-                # 3rd choice for a Marker is the Feature Class's
-                marker = feature_class.marker_id
-        if not marker:
-            # 4th choice for a Marker is the default
-            marker = marker_default
-    feature.marker = db(db.gis_marker.id == marker).select().first().image
+    # Look up the marker to display
+    feature.marker = gis.get_marker(feature_id)
 
     try:
         # Metadata is M->1 to Features
@@ -1598,6 +1571,7 @@ def display_features():
     #retrieve the location_id's from xml_tree using XPath
 
     # Calculate an appropriate BBox
+    # ToDo: Move to modules/s3gis
     lon_max = -180
     lon_min = 180
     lat_max = -90
@@ -1617,7 +1591,7 @@ def display_features():
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
 
     # Config
-    config = db(db.gis_config.id==1).select().first()
+    config = gis.read_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1641,7 +1615,6 @@ def display_features():
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
-    symbology = config.symbology_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
 
@@ -1668,21 +1641,8 @@ def display_features():
         feature.gis_location = feature
         feature.gis_feature_class = feature_class
 
-        # 1st choice for a Marker is the Feature's
-        marker = feature.marker_id
-        if not marker:
-            # 2nd choice for a Marker is the Symbology for the Feature Class
-            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-            try:
-                marker = db(query).select().first().marker_id
-            except:
-                if not marker:
-                    # 3rd choice for a Marker is the Feature Class's
-                    marker = feature_class.marker_id
-                if not marker:
-                    # 4th choice for a Marker is the default
-                    marker = marker_default
-        feature.marker = db(db.gis_marker.id == marker).select().first().image
+        # Look up the marker to display
+        feature.marker = gis.get_marker(feature.id)
 
         try:
             # Metadata is M->1 to Features

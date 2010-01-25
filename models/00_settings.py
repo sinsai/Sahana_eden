@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-S3_PUBLIC_URL = 'http://haiti.sahanafoundation.org'
-S3_UTC_OFFSET = 'UTC -0500' # default UTC offset (timezone) of users
+S3_PUBLIC_URL = 'http://127.0.0.1:8000'
+S3_UTC_OFFSET = 'UTC +0000' # default UTC offset (timezone) of users
 BREADCRUMB = '>> '
 
 # Default strings are in English

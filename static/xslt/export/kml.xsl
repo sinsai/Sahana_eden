@@ -35,8 +35,16 @@
                 </Placemark>
             </xsl:when>
             <xsl:when test="@name='hms_hospital'">
+                <Style id="hospital">
+                    <IconStyle>
+                        <Icon>
+                            <href>http://haiti.sahanafoundation.org/prod/default/download/gis_marker.image.E_Med_Hospital_S1.png</href>
+                        </Icon>
+                    </IconStyle>
+                </Style>
                 <Placemark>
                     <name><xsl:value-of select="data[@field='name']"/></name>
+                    <styleUrl>#hospital</styleUrl>
                     <!-- <description><xsl:value-of select="@url"/></description> -->
                     <description>
                         &lt;table&gt;
@@ -82,8 +90,16 @@
             </xsl:when>
             <xsl:otherwise>
                 <xsl:if test="./reference[@field='location_id']">
+                    <Style><xsl:attribute name="id"><xsl:value-of select="reference[@field='location_id']/@uuid"/></xsl:attribute>
+                        <IconStyle>
+                            <Icon>
+                                <href><xsl:value-of select="reference[@field='location_id']/@marker"/></href>
+                            </Icon>
+                        </IconStyle>
+                    </Style>
                     <Placemark>
                         <name><xsl:value-of select="data[@field='name']"/></name>
+                        <styleUrl>#<xsl:value-of select="reference[@field='location_id']/@uuid"/></styleUrl>
                         <description><xsl:value-of select="@url"/></description>
                         <Point>
                             <coordinates>

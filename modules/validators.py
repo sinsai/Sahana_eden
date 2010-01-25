@@ -15,6 +15,7 @@ This file was developed by Fran Boon as a web2py extension.
 
 import time
 import uuid
+import re
 from datetime import datetime, timedelta
 from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB
 
@@ -148,7 +149,7 @@ class IS_ONE_OF(Validator):
 
         self.error_message = error_message
 
-        self.multiple = False # ignore multiple
+        self.multiple = multiple
 
         if hasattr(dbset, 'define_table'):
             self.dbset = dbset()
@@ -201,16 +202,33 @@ class IS_ONE_OF(Validator):
         try:
             _table = self.dbset._db[self.ktable]
 
-            query = (_table[self.kfield]==value)
+            if self.multiple:
+                values = re.compile("[\w\-:]+").findall(str(value))
+            else:
+                values = [value]
 
-            if 'deleted' in _table:
-                query = (_table['deleted']==False) & query
+            deleted_q = ('deleted' in _table) and (_table['deleted']==False) or False
+            
+            filter_opts_q = False
 
             if self.filterby and self.filterby in _table:
                 if self.filter_opts:
-                    query = (_table[self.filterby].belongs(self.filter_opts)) & query
+                    filter_opts_q = _table[self.filterby].belongs(self.filter_opts)
 
-            if self.dbset(query).count():
+            for v in values:
+
+                query = (_table[self.kfield]==v)
+                if deleted_q != False:
+                    query = deleted_q & query
+                if filter_opts_q != False:
+                    query = filter_opts_q & query
+
+                if self.dbset(query).count() < 1:
+                    return (value, self.error_message)                    
+
+            if self.multiple:
+                return ('|%s|' % '|'.join(values), None)                
+            else:
                 return (value, None)
 
         except:

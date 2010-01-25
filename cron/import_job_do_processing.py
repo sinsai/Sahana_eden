@@ -2,7 +2,7 @@
 import cPickle as pickle
 import csv
 
-# This script process import_job records from the admin module that are in the
+# This script processes import_job records from the admin module that are in the
 # 'processing' state. This indicates that the user has matched up the columns
 # and the records are ready to be validated and prepared for import.
 #

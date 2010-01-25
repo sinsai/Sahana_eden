@@ -45,12 +45,12 @@ PREFIXES = {
 }
 
 GEOM_TYPES = {
-    "Point": 1,
-    "MultiPoint": 1,
-    "LineString": 2,
-    "MultiLineString": 2,
-    "Polygon": 3,
-    "MultiPolygon": 3,
+    "point": 1,
+    "multipoint": 1,
+    "linestring": 2,
+    "multilinestring": 2,
+    "polygon": 3,
+    "multipolygon": 3,
 }
 
 # CSV READER
@@ -101,19 +101,16 @@ def load_gis_locations(data, make_feature_group=False):
     """
     for i, d in enumerate(data):
         wkt = d.get('wkt')
-        if not wkt:
-            assert d.get('lon') is not None and d.get('lat') is not None, "Need either wkt or lat/lon"
-            wkt = "POINT(%f %f)" % (d['lon'], d['lat'])
+        if not wkt and ('lon' in d and 'lat' in d):
+            shape = shapely.geometry.point.Point(d['lon'], d['lat'])
+            d['wkt']= 'POINT(%f %f)' % (d['lon'], d['lat'])
         else:
             shape = wkt_loads(wkt)
-            if shape.type.lower() == "point":
-                d['lon'] = shape.x
-                d['lat'] = shape.y
-            else:
+            if d.get('lat') is None or d.get('lon') is None:
                 centroid = shape.centroid
                 d['lon'] = centroid.x
                 d['lat'] = centroid.y
-        
+        d['gis_feature_type'] = GEOM_TYPES[shape.type.lower()]
         location_id = db.gis_location.insert(**d)
         if make_feature_group:
             db.gis_feature_group.insert(name=d['name'], enabled=False)
@@ -130,7 +127,9 @@ def ensure_admin_feature_class():
         return db.gis_feature_class.insert(name=ADMIN_FEATURE_CLASS_NAME)
 
 def make_name(name, admin_type):
-    return ': '.join([PREFIXES[admin_type], name.title()])
+    if admin_type != 'Sections':  # Sections happen to be already appropriately capitalized
+        name = name.title()
+    return ': '.join([PREFIXES[admin_type], name])
     
 def get_name(d, admin_type):
     return make_name(d[NAME_MAP[admin_type]], admin_type)
@@ -153,7 +152,7 @@ def make_unique_sections(data):
         if len(ds) > 1:
             for d in ds:
                 old = d['NOM_SECTIO']
-                new = "%s [%s]" % (old, d['COMMUNE'])
+                new = "%s [%s]" % (old, d['COMMUNE'].title())
                 d['NOM_SECTIO'] = new
                 print old, "=>", new
 

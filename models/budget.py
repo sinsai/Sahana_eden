@@ -29,9 +29,9 @@ budget_cost_type_opts = {
 opt_budget_cost_type = db.Table(None, 'budget_cost_type',
                         Field('cost_type', 'integer', notnull=True,
                             requires = IS_IN_SET(budget_cost_type_opts),
-                            default = 1,
+                            # default = 1,
                             label = T('Cost Type'),
-                            represent = lambda opt: opt and budget_cost_type_opts[opt]))
+                            represent = lambda opt: budget_cost_type_opts.get(opt, T('Unknown'))))
 budget_category_type_opts = {
     1:T('Consumable'),
     2:T('Satellite'),
@@ -56,9 +56,9 @@ budget_category_type_opts = {
 opt_budget_category_type = db.Table(None, 'budget_category_type',
                             Field('category_type', 'integer', notnull=True,
                                 requires = IS_IN_SET(budget_category_type_opts),
-                                default = 1,
+                                # default = 1,
                                 label = T('Category'),
-                                represent = lambda opt: opt and budget_category_type_opts[opt]))
+                                represent = lambda opt: budget_category_type_opts.get(opt, T('Unknown'))))
 resource = 'item'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -137,9 +137,9 @@ budget_currency_type_opts = {
 opt_budget_currency_type = db.Table(None, 'budget_currency_type',
                     Field('currency_type', 'integer', notnull=True,
                     requires = IS_IN_SET(budget_currency_type_opts),
-                    default = 1,
+                    # default = 1,
                     label = T('Currency'),
-                    represent = lambda opt: opt and budget_currency_type_opts[opt]))
+                    represent = lambda opt: budget_currency_type_opts.get(opt, T('Unknown'))))
 
 resource = 'staff'
 table = module + '_' + resource

@@ -19,7 +19,7 @@ db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)
 db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 db[table].parent.label = T('Parent')
 db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
+db[table].gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown')))
 db[table].gis_feature_type.label = T('Feature Type')
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lat.label = T('Latitude')

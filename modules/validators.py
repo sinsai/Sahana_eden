@@ -127,7 +127,8 @@ class IS_ONE_OF(Validator):
         filterby=None,
         filter_opts=None,
         error_message='invalid value!',
-        multiple=False
+        multiple=False,
+        alphasort=True
         ):
 
         self.error_message = error_message
@@ -150,6 +151,7 @@ class IS_ONE_OF(Validator):
         self.error_message = error_message
 
         self.multiple = multiple
+        self.alphasort = alphasort
 
         if hasattr(dbset, 'define_table'):
             self.dbset = dbset()
@@ -192,6 +194,10 @@ class IS_ONE_OF(Validator):
                     else:
                         set.append(( r[self.kfield], r[self.kfield] ))
 
+            # AlphaSort:
+            if self.alphasort:
+                set.sort(key=lambda opt: opt[1])
+
             return( set )
 
         else:
@@ -208,7 +214,7 @@ class IS_ONE_OF(Validator):
                 values = [value]
 
             deleted_q = ('deleted' in _table) and (_table['deleted']==False) or False
-            
+
             filter_opts_q = False
 
             if self.filterby and self.filterby in _table:
@@ -224,10 +230,10 @@ class IS_ONE_OF(Validator):
                     query = filter_opts_q & query
 
                 if self.dbset(query).count() < 1:
-                    return (value, self.error_message)                    
+                    return (value, self.error_message)
 
             if self.multiple:
-                return ('|%s|' % '|'.join(values), None)                
+                return ('|%s|' % '|'.join(values), None)
             else:
                 return (value, None)
 

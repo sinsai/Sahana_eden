@@ -174,7 +174,7 @@ pr_person_gender_opts = {
 opt_pr_gender = SQLTable(None, 'opt_pr_gender',
                     Field('opt_pr_gender', 'integer',
                         requires = IS_IN_SET(pr_person_gender_opts),
-                        # default = 1,
+                        default = 1,
                         label = T('Gender'),
                         represent = lambda opt: pr_person_gender_opts.get(opt, T('Unknown'))))
 
@@ -193,7 +193,7 @@ pr_person_age_group_opts = {
 opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                     Field('opt_pr_age_group', 'integer',
                         requires = IS_IN_SET(pr_person_age_group_opts),
-                        # default = 1,
+                        default = 1,
                         label = T('Age Group'),
                         represent = lambda opt: pr_person_age_group_opts.get(opt, T('Unknown'))))
 
@@ -212,8 +212,8 @@ pr_marital_status_opts = {
 
 opt_pr_marital_status = SQLTable(None, 'opt_pr_marital_status',
                         Field('opt_pr_marital_status', 'integer',
-                            requires = IS_IN_SET(pr_marital_status_opts),
-                            # default = 1,
+                            requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
+                            default = 1,
                             label = T('Marital Status'),
                             represent = lambda opt: opt and pr_marital_status_opts.get(opt, T('Unknown'))))
 
@@ -232,7 +232,7 @@ pr_religion_opts = {
 
 opt_pr_religion = SQLTable(None, 'opt_pr_religion',
                     Field('opt_pr_religion', 'integer',
-                        requires = IS_IN_SET(pr_religion_opts),
+                        requires = IS_NULL_OR(IS_IN_SET(pr_religion_opts)),
                         # default = 1,
                         label = T('Religion'),
                         represent = lambda opt: pr_religion_opts.get(opt, T('Unknown'))))
@@ -244,14 +244,14 @@ pr_nationality_opts = shn_list_of_nations
 
 opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
                         Field('opt_pr_nationality', 'integer',
-                            requires = IS_IN_SET(pr_nationality_opts),
+                            requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
                             label = T('Nationality'),
                             represent = lambda opt: pr_nationality_opts.get(opt, T('Unknown'))))
 
 opt_pr_country = SQLTable(None, 'opt_pr_country',
                         Field('opt_pr_country', 'integer',
-                            requires = IS_IN_SET(pr_nationality_opts),
+                            requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
                             label = T('Country of Residence'),
                             represent = lambda opt: pr_nationality_opts.get(opt, T('Unknown'))))

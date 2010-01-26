@@ -137,12 +137,12 @@ db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].acronym.label = T('Acronym')
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
-db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
+db[table].type.represent = lambda opt: or_organisation_type_opts.get(opt, UNKNOWN_OPT)
 db[table].type.label = T('Type')
 db[table].donation_phone.label = T('Donation Phone #')
 db[table].donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
 db[table].country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
-db[table].country.represent = lambda opt: opt and shn_list_of_nations[opt]
+db[table].country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
 db[table].country.label = T('Home Country')
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
@@ -219,7 +219,7 @@ db[table].name.comment = SPAN("*", _class="req")
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
 db[table].parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))
-db[table].type.represent = lambda opt: opt and or_office_type_opts[opt]
+db[table].type.represent = lambda opt: or_office_type_opts.get(opt, UNKNOWN_OPT)
 db[table].type.label = T('Type')
 db[table].parent.label = T('Parent')
 db[table].address.label = T('Address')

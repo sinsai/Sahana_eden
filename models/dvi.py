@@ -34,7 +34,7 @@ opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
                     requires = IS_IN_SET(dvi_task_status_opts),
                     default = 1,
                     label = T('Task Status'),
-                    represent = lambda opt: opt and dvi_task_status_opts[opt]))
+                    represent = lambda opt: dvi_task_status_opts.get(opt, T('Unknown'))))
 
 # -----------------------------------------------------------------------------
 # Find Report
@@ -286,7 +286,7 @@ opt_dvi_id_status = db.Table(None, 'opt_dvi_id_status',
                     requires = IS_IN_SET(dvi_id_status_opts),
                     default = 1,
                     label = T('Identification Status'),
-                    represent = lambda opt: opt and dvi_id_status_opts[opt]))
+                    represent = lambda opt: dvi_id_status_opts.get(opt, T('Unknown'))))
 
 dvi_id_method_opts = {
     1:T('Visual Recognition'),
@@ -303,7 +303,7 @@ opt_dvi_id_method = db.Table(None, 'opt_dvi_id_method',
                     requires = IS_IN_SET(dvi_id_method_opts),
                     default = 99,
                     label = T('Method used'),
-                    represent = lambda opt: opt and dvi_id_method_opts[opt]))
+                    represent = lambda opt: dvi_id_method_opts.get(opt, T('Unknown'))))
 
 resource = 'identification'
 table = module + '_' + resource

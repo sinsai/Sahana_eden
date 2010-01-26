@@ -110,6 +110,7 @@ def load_gis_locations(data, make_feature_group=False):
                 centroid = shape.centroid
                 d['lon'] = centroid.x
                 d['lat'] = centroid.y
+        d['lon_min'], d['lat_min'], d['lon_max'], d['lat_max'] = shape.bounds
         d['gis_feature_type'] = GEOM_TYPES[shape.type.lower()]
         location_id = db.gis_location.insert(**d)
         if make_feature_group:

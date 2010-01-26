@@ -714,7 +714,7 @@ def shn_latlon_to_wkt(lat, lon):
     >>> shn_latlon_to_wkt(6, 80)
     'POINT(80 6)'
     """
-    WKT = 'POINT(%d %d)' % (lon, lat)
+    WKT = 'POINT(%f %f)' % (lon, lat)
     return WKT
 
 # Onvalidation callback

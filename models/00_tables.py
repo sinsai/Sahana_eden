@@ -79,11 +79,6 @@ document = db.Table(None, 'document',
                 #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
                 ))
 
-from gluon.storage import Storage
-# Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
-# Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
-s3 = Storage()
-
 s3.crud_strings = Storage()
 s3.crud_strings.title_create = T('Add Record')
 s3.crud_strings.title_display = T('Record Details')
@@ -161,7 +156,7 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('audit_write', 'boolean', default=False),
                 migrate=migrate)
 db[table].security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
-db[table].security_policy.represent = lambda opt: opt and s3_setting_security_policy_opts[opt]
+db[table].security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, T('Unknown'))
 db[table].security_policy.label = T('Security Policy')
 db[table].security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
 db[table].theme.label = T('Theme')

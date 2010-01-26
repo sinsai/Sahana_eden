@@ -346,7 +346,7 @@ class ResourceController(object):
 
     ROWSPERPAGE = 10
 
-    def __init__(self, db, domain=None, base_url=None, rpp=None):
+    def __init__(self, db, domain=None, base_url=None, rpp=None, gis=None):
 
         assert db is not None, "Database must not be None."
         self.db = db
@@ -362,7 +362,7 @@ class ResourceController(object):
             self.ROWSPERPAGE = rpp
 
         self.model = ObjectModel(self.db)
-        self.xml = S3XML(self.db, domain=domain, base_url=base_url)
+        self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis)
 
     def get_session(self, session, prefix, name):
 
@@ -1366,7 +1366,9 @@ class S3XML(object):
     UUID = "uuid"
     Lat = "lat"
     Lon = "lon"
-
+    Marker = "marker_id"
+    FeatureClass = "feature_class_id"
+    
     IGNORE_FIELDS = ["deleted", "id"]
 
     FIELDS_TO_ATTRIBUTES = [
@@ -1407,7 +1409,8 @@ class S3XML(object):
         success="success",
         results="results",
         lat="lat",
-        lon="lon"
+        lon="lon",
+        marker="marker"
         )
 
     ACTION = dict(
@@ -1429,13 +1432,15 @@ class S3XML(object):
     XML2PY = [('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;'), ('&', '&amp;')]
 
 
-    def __init__(self, db, domain=None, base_url=None):
+    def __init__(self, db, domain=None, base_url=None, gis=None):
 
         self.db = db
         self.error = None
 
         self.domain = domain
         self.base_url = base_url
+        
+        self.gis = gis
 
 
     def parse(self, source):
@@ -1545,13 +1550,13 @@ class S3XML(object):
                 resource.set(f, text)
 
             elif isinstance(table[f].type, str) and \
-                table[f].type[:9]=="reference":
+                table[f].type[:9] == "reference":
 
                 _ktable = table[f].type[10:]
                 ktable = self.db[_ktable]
 
                 if self.UUID in ktable.fields:
-                    uuid = self.db(ktable.id==value).select(ktable[self.UUID], limitby=(0,1))
+                    uuid = self.db(ktable.id==value).select(ktable[self.UUID], limitby=(0, 1))
                     if uuid:
                         uuid = uuid[0].uuid
                         reference = etree.SubElement(resource, self.TAG["reference"])
@@ -1561,14 +1566,19 @@ class S3XML(object):
                         reference.text = text
 
                         if self.Lat in ktable.fields and self.Lon in ktable.fields:
-                            LatLon = self.db(ktable.id==value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0,1))
+                            LatLon = self.db(ktable.id == value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
                             if LatLon:
                                 LatLon = LatLon[0]
                                 reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
                                 reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
-
+                                # Look up the marker to display
+                                marker = self.gis.get_marker(value)
+                                marker_url = "%s/%s" % (download_url, marker)
+                                reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
+                                    
+                                    
             elif isinstance(table[f].type, str) and \
-                table[f].type[:6]=="upload":
+                table[f].type[:6] == "upload":
 
                 data = etree.SubElement(resource, self.TAG["data"])
                 data.set(self.ATTRIBUTE["field"], f)

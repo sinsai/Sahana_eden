@@ -6,8 +6,8 @@ module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Dashboard'), False, URL(r=request, f='dashboard')],
-    [T('Organisations'), False, URL(r=request, f='organisation'),[
-        [T('Add Organisation'), False, URL(r=request, f='organisation', args='create')],
+    [T('Organizations'), False, URL(r=request, f='organisation'),[
+        [T('Add Organization'), False, URL(r=request, f='organisation', args='create')],
         #[T('List Organisations'), False, URL(r=request, f='organisation')],
         #[T('Search Organisations'), False, URL(r=request, f='organisation', args='search')]
     ]],
@@ -62,7 +62,7 @@ def office():
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
         db[table].admin.readable = db[table].admin.writable = False
-    response.s3.pagination = True
+    #response.s3.pagination = True
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
 @service.jsonrpc
@@ -138,7 +138,7 @@ def org_sub_list( table , org_id):
            
     query = db[table].organisation_id == org_id
     
-    list =  crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, truncate=48, _id = table + '_list', _class="display")
+    list =  crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, linkto = linkto, truncate=48, _id = table + '_list', _class="display")
     
     #Required so that there is a table with an ID for the refresh after add
     if list == None:

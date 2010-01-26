@@ -3,6 +3,7 @@
 S3_PUBLIC_URL = 'http://127.0.0.1:8000'
 S3_UTC_OFFSET = 'UTC +0000' # default UTC offset (timezone) of users
 BREADCRUMB = '>> '
+UNKNOWN_OPT = T('Unknown')
 
 # Default strings are in English
 T.current_languages = ['en', 'en-us']
@@ -20,10 +21,10 @@ mail = Mail()
 # These settings could be made configurable as part of the Messaging Module
 # - however also need to be used by Auth (order issues), DB calls are overheads
 # - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
-mail.settings.server = 'mail:25'
+mail.settings.server = '127.0.0.1:25'
 #mail.settings.server = 'smtp.gmail.com:587'
 #mail.settings.login = 'username:password'
-mail.settings.sender = 'sahana@sahanapy.org'
+mail.settings.sender = 'sahana@your.org'
 
 auth = AuthS3(globals(), db)
 #auth.settings.username_field = True
@@ -33,15 +34,16 @@ auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key='PUBLIC_KEY', private_key='PRIVATE_KEY')
 # Require Email Verification
-auth.settings.registration_requires_verification = False
+auth.settings.registration_requires_verification = False # CHANGEME for Deployment!
 # Email settings for registration verification
 auth.settings.mailer = mail
 auth.messages.verify_email = 'Click on the link ' + S3_PUBLIC_URL + '/' + request.application + '/default/user/verify_email/%(key)s to verify your email'
 auth.settings.on_failed_authorization = URL(r=request, c='default', f='user', args='not_authorized')
 # Require Admin approval for self-registered users
-auth.settings.registration_requires_approval = False
+auth.settings.registration_requires_approval = False # CHANGEME for Deployment!
+auth.messages.registration_pending = 'Email address verified, however registration is still pending approval - please wait until confirmation received.'
 # Notify UserAdmin of new pending user registration to action
-# auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='adminwithapprovalpower@admindomain', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap: ' % form.email + S3_PUBLIC_URL + '/' + request.application + '/admin/user')
+auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='useradmin@your.org', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap: ' % form.email + S3_PUBLIC_URL + '/' + request.application + '/admin/user')
 # Allow use of LDAP accounts for login
 # NB Currently this means that change password should be disabled:
 #auth.settings.actions_disabled.append('change_password')
@@ -63,7 +65,6 @@ auth.settings.registration_requires_approval = False
 auth.settings.create_user_groups = False
 # We need to allow basic logins for Webservices
 auth.settings.allow_basic_login = True
-
 # Logout session clearing
 # shn_on_login ----------------------------------------------------------------
 # added 2009-08-27 by nursix
@@ -92,3 +93,13 @@ crud = CrudS3(globals(), db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
 #crud.settings.keepvalues = True
 crud.messages.submit_button = T('Save')
+
+from gluon.storage import Storage
+# Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
+# Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
+s3 = Storage()
+
+from gluon.storage import Messages
+s3.messages = Messages(T)
+s3.messages.confirmation_email_subject = 'Sahana access granted'
+s3.messages.confirmation_email = 'Welcome to the Sahana Portal at ' + S3_PUBLIC_URL + '. Thanks for your assistance.'

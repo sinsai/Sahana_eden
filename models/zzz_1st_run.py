@@ -485,7 +485,7 @@ if empty:
             feature_class_id = db(db.gis_feature_class.name == 'Port').select()[0].id,
         )
         db[table].insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Hospitals').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'Hospital').select()[0].id,
         )
         db[table].insert(
@@ -568,6 +568,16 @@ if empty:
     #                subtype = subtype,
     #                enabled = False
     #            )
+
+    table = 'gis_layer_mgrs'
+    if not db(db[table].id).count():
+        # Populate table
+        db[table].insert(
+                name = 'MGRS Atlas PDFs',
+                description = 'http://en.wikipedia.org/wiki/Military_grid_reference_system',
+                url = 'http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps',
+                enabled = False
+            )
 
     table = 'gis_layer_wms'
     if not db(db[table].id).count():

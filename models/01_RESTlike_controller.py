@@ -60,7 +60,8 @@ exec('from applications.%s.modules.s3xrc import json_message' % request.applicat
 s3xrc = ResourceController(db,
                            domain=request.env.server_name,
                            base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
-                           rpp=ROWSPERPAGE)
+                           rpp=ROWSPERPAGE,
+                           gis=gis)
 
 def shn_field_represent(field, row, col):
     """

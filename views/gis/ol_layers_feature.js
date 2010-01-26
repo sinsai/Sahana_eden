@@ -18,8 +18,8 @@ select = new OpenLayers.Control.SelectFeature(featuresLayer, {
         clickout: true,
         toggle: true,
         multiple: false,
-        onSelect: onFeatureSelect,
-        onUnselect: onFeatureUnselect
+        onSelect: onFeatureControlSelect,
+        onUnselect: onFeatureControlUnselect
     }
 );
 map.addControl(select);

@@ -123,9 +123,10 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('type', 'integer'),
                 sector_id,
                 admin_id,
-                #Field('registration', label=T('Registration')),	# Registration Number
+                #Field('registration', label=T('Registration')),    # Registration Number
                 Field('country', 'integer'),
                 Field('website'),
+                Field('twitter'),
                 Field('donation_phone'), 
                 shn_comments_field,
                 source_id,
@@ -136,15 +137,17 @@ db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 db[table].acronym.label = T('Acronym')
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
-db[table].type.represent = lambda opt: opt and or_organisation_type_opts[opt]
+db[table].type.represent = lambda opt: or_organisation_type_opts.get(opt, UNKNOWN_OPT)
 db[table].type.label = T('Type')
 db[table].donation_phone.label = T('Donation Phone #')
 db[table].donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
 db[table].country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
-db[table].country.represent = lambda opt: opt and shn_list_of_nations[opt]
+db[table].country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
 db[table].country.label = T('Home Country')
 db[table].website.requires = IS_NULL_OR(IS_URL())
 db[table].website.label = T('Website')
+db[table].twitter.label = T('Twitter')
+db[table].twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
 ADD_ORGANISATION = T('Add Organization')
 title_create = T('Add Organization')
 title_display = T('Organization Details')
@@ -205,8 +208,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('number_of_vehicles', 'integer'),
                 Field('vehicle_types'),
                 Field('equipment'),
-                shn_comments_field,
                 source_id,
+                shn_comments_field,
                 migrate=migrate)
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
@@ -216,7 +219,7 @@ db[table].name.comment = SPAN("*", _class="req")
 db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
 db[table].parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
 db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))
-db[table].type.represent = lambda opt: opt and or_office_type_opts[opt]
+db[table].type.represent = lambda opt: or_office_type_opts.get(opt, UNKNOWN_OPT)
 db[table].type.label = T('Type')
 db[table].parent.label = T('Parent')
 db[table].address.label = T('Address')
@@ -282,12 +285,13 @@ resource = 'contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 person_id,
-				organisation_id,
+                organisation_id,
                 office_id,
                 Field('title'),
                 Field('manager_id', db.pr_person),
-				Field('focal_point', 'boolean'),
+                Field('focal_point', 'boolean'),
                 source_id,
+                shn_comments_field,
                 migrate=migrate)
 db[table].person_id.label = T('Contact')
 db[table].title.label = T('Job Title')
@@ -333,22 +337,22 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'person_id', 'office_id', 'title', 'manager_id', 'focal_point'])
 
 # Projects
-# The projects which each orgnaization is engaged in 
+# The projects which each organization is engaged in 
 resource = 'project'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
-				organisation_id,
-				location_id,
-				sector_id,
-				Field('title'),
-				Field('description'),
-				Field('beneficiaries', 'integer'),
-				Field('start_date', 'date'),
-				Field('end_date', 'date'),
-				Field('funded', 'boolean'),
+                organisation_id,
+                location_id,
+                sector_id,
+                Field('title'),
+                Field('description'),
+                Field('beneficiaries', 'integer'),
+                Field('start_date', 'date'),
+                Field('end_date', 'date'),
+                Field('funded', 'boolean'),
                 Field('budgeted_cost', 'double'),
                 migrate=migrate)
-db[table].budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))				
+db[table].budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
 title_create = T('Add Project')
 title_display = T('Project Details')
 title_list = T('Projects Report')
@@ -362,7 +366,7 @@ msg_record_created = T('Project added')
 msg_record_modified = T('Project updated')
 msg_record_deleted = T('Project deleted')
 msg_list_empty = T('No Projects currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)				
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #"Organization Name", "Sector\Cluster Name" , "Sub Sector Name", "Country Name", "Admin 1 Name", "Admin 2 Name", "Admin 3 Name", "Admin 4 Name", "Place Name", "Project Title", "Project Objective", "Project Description", "Primary Beneficiary", "Number of Primary Beneficiaries", "Secondary Beneficiary (separated by , )", "Number of Secondary Beneficiaries", "Implementing Partners (separated by , )", "Project Type", "Project Status", "Project Theme", "CAP #", "Estimated Start Date (dd/mm/yyyy)", "Estimated End Date (dd/mm/yyyy)", "Funding Amount", "Funding Currency", "Funding Type", "Funding Status", "Funding Reported to FTS (Yes or No)", "Organization Funding Details For each organization funding the project, the details include: Organization Name,Amount Funded,Funding Currency;(separate the data by comma ,) (For multiple organizations separate each Organization's Dataset by a semi-colon ;) Example: "Org1,100000,US$ ; Org2,20000,Pound"" (end of line) 
 				

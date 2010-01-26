@@ -40,7 +40,7 @@ opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
                         requires = IS_IN_SET(vita.trackable_types),
                         default = vita.DEFAULT_TRACKABLE,
                         label = T('Entity Type'),
-                        represent = lambda opt: opt and vita.trackable_types[opt]))
+                        represent = lambda opt: vita.trackable_types.get(opt, T('Unknown'))))
 
 # -----------------------------------------------------------------------------
 # shn_pentity_represent
@@ -174,9 +174,9 @@ pr_person_gender_opts = {
 opt_pr_gender = SQLTable(None, 'opt_pr_gender',
                     Field('opt_pr_gender', 'integer',
                         requires = IS_IN_SET(pr_person_gender_opts),
-                        default = 1,
+                        # default = 1,
                         label = T('Gender'),
-                        represent = lambda opt: opt and pr_person_gender_opts[opt]))
+                        represent = lambda opt: pr_person_gender_opts.get(opt, T('Unknown'))))
 
 #
 # Age Group -------------------------------------------------------------------
@@ -193,9 +193,9 @@ pr_person_age_group_opts = {
 opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                     Field('opt_pr_age_group', 'integer',
                         requires = IS_IN_SET(pr_person_age_group_opts),
-                        default = 1,
+                        # default = 1,
                         label = T('Age Group'),
-                        represent = lambda opt: opt and pr_person_age_group_opts[opt]))
+                        represent = lambda opt: pr_person_age_group_opts.get(opt, T('Unknown'))))
 
 #
 # Marital Status --------------------------------------------------------------
@@ -213,9 +213,9 @@ pr_marital_status_opts = {
 opt_pr_marital_status = SQLTable(None, 'opt_pr_marital_status',
                         Field('opt_pr_marital_status', 'integer',
                             requires = IS_IN_SET(pr_marital_status_opts),
-                            default = 1,
+                            # default = 1,
                             label = T('Marital Status'),
-                            represent = lambda opt: opt and pr_marital_status_opts[opt]))
+                            represent = lambda opt: opt and pr_marital_status_opts.get(opt, T('Unknown'))))
 
 #
 # Religion --------------------------------------------------------------------
@@ -233,9 +233,9 @@ pr_religion_opts = {
 opt_pr_religion = SQLTable(None, 'opt_pr_religion',
                     Field('opt_pr_religion', 'integer',
                         requires = IS_IN_SET(pr_religion_opts),
-                        default = 1,
+                        # default = 1,
                         label = T('Religion'),
-                        represent = lambda opt: opt and pr_religion_opts[opt]))
+                        represent = lambda opt: pr_religion_opts.get(opt, T('Unknown'))))
 
 #
 # Nationality and Country of Residence ----------------------------------------
@@ -245,16 +245,16 @@ pr_nationality_opts = shn_list_of_nations
 opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
                         Field('opt_pr_nationality', 'integer',
                             requires = IS_IN_SET(pr_nationality_opts),
-                            default = 999, # unknown
+                            # default = 999, # unknown
                             label = T('Nationality'),
-                            represent = lambda opt: opt and pr_nationality_opts[opt]))
+                            represent = lambda opt: pr_nationality_opts.get(opt, T('Unknown'))))
 
 opt_pr_country = SQLTable(None, 'opt_pr_country',
                         Field('opt_pr_country', 'integer',
                             requires = IS_IN_SET(pr_nationality_opts),
-                            default = 999, # unknown
+                            # default = 999, # unknown
                             label = T('Country of Residence'),
-                            represent = lambda opt: opt and pr_nationality_opts[opt]))
+                            represent = lambda opt: pr_nationality_opts.get(opt, T('Unknown'))))
 
 #
 # shn_pr_person_represent -----------------------------------------------------
@@ -286,7 +286,8 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('local_name'),                    # name in local language and script, Sahana legacy
                 opt_pr_gender,
                 opt_pr_age_group,
-                Field('email', length=128, unique=True), # Needed for AAA (change this!)
+                #Field('email', length=128, unique=True), # Needed for AAA (change this!)
+                Field('email', length=128), # Needed for AAA (change this!)
                 Field('mobile_phone'),                   # Needed for SMS (change this!)
                 # Person Details
                 Field('date_of_birth', 'date'),         # Sahana legacy
@@ -370,9 +371,9 @@ pr_group_type_opts = {
 opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
                     Field('opt_pr_group_type', 'integer',
                         requires = IS_IN_SET(pr_group_type_opts),
-                        default = 4,
+                        # default = 4,
                         label = T('Group Type'),
-                        represent = lambda opt: opt and pr_group_type_opts[opt]))
+                        represent = lambda opt: pr_group_type_opts.get(opt, T('Unknown'))))
 
 #
 # group table -----------------------------------------------------------------

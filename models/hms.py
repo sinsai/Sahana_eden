@@ -122,6 +122,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 #Field('services', 'text'),              # Services Available, TODO: make component
                 #Field('needs', 'text'),                 # Needs, TODO: make component
                 #Field('damage', 'text'),                # Damage, TODO: make component
+                shn_comments_field,
                 migrate=migrate)
 
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
@@ -204,7 +205,7 @@ s3.crud_strings[table] = Storage(
     msg_record_created = T('Hospital information added'),
     msg_record_modified = T('Hospital information updated'),
     msg_record_deleted = T('Hospital information deleted'),
-    msg_list_empty = T('No hospitals currently registered'))
+    msg_list_empty = T('No Hospitals currently registered'))
 
 # Reusable field for other tables to reference
 hospital_id = SQLTable(None, 'hospital_id',

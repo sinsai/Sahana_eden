@@ -1,4 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
+import cPickle as pickle
+import csv
 
 module = 'admin'
 # Current Module (for sidebar title)
@@ -206,15 +208,40 @@ def user():
     msg_list_empty = T('No Users currently registered')
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     
+    onvalidation = None
     # Add users to Person Registry & 'Authenticated' role
     crud.settings.create_onaccept = lambda form: auth.shn_register(form)
+    # Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))
+    if len(request.args) and request.args[0] == 'update':
+        onvalidation = lambda form: user_approve(form)
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
+    db.auth_user.registration_key.readable = True
     db.auth_user.registration_key.label = T('Disabled?')
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
 
-    return shn_rest_controller(module, resource, main='first_name')
+    return shn_rest_controller(module, resource, main='first_name', onvalidation=onvalidation)
+
+def user_approve(form):
+    "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"
+    if form.vars.registration_key:
+        # Now non-blank
+        return
+    else:
+        # Now blank - lookup old value
+        status = db(db.auth_user.id == request.vars.id).select()[0].registration_key
+        if status == 'pending':
+            # Send email to user confirming that they are now able to login
+            if not auth.settings.mailer or \
+                   not auth.settings.mailer.send(to=form.vars.email,
+                        subject=s3.messages.confirmation_email_subject,
+                        message=s3.messages.confirmation_email):
+                    session.warning = auth.messages.unable_send_email
+                    return
+        else:
+            return
     
+
 @auth.requires_membership('Administrator')
 def group():
     "RESTlike CRUD controller"
@@ -412,7 +439,15 @@ def user_remove_groups():
 def import_data():
     "Import data via POST upload to CRUD controller."
     title = T('Import Data')
-    return dict(module_name=module_name, title=title)
+    crud.messages.submit_button = 'Upload'
+    import_job_form = crud.create(db.admin_import_job)
+    # Doesn't seem to be any proper way to tell the CRUD create form to post to
+    # a different location!!! 
+    import_job_form.custom.begin.text = str(import_job_form.custom.begin).replace(
+            'action=""', 
+            'action="%s"' % URL(r=request, f='import_job', args=['create']))
+    return dict(module_name=module_name, title=title,
+                import_job_form=import_job_form)
 
 @auth.requires_membership('Administrator')
 def import_csv():
@@ -447,6 +482,195 @@ def export_csv():
     response.headers['Content-disposition'] = "attachment; filename=%s" % filename
     return output.read()
     
+
+# Unstructured Data Import
+@auth.requires_membership('Administrator')
+def import_job():
+    "RESTlike CRUD controller to handle 'jobs' for importing unstructured data."
+    # CRUD Strings
+    module = 'admin'
+    resource = 'import_job'
+    table = '%s_%s' % (module, resource)
+    jr = s3xrc.request(module, resource, request, session=session)
+    s3.crud_strings[table] = Storage(
+            title_create=T('Create New Import Job'),
+            title_display=T('Import Job'),
+            title_list=T('List Import Jobs'),
+            title_update=T('Update Import Job'),
+            subtitle_create=T('Create New Import Job'),
+            subtitle_list=T('Import Jobs'),
+            label_list_button=T('List Import Jobs'),
+            label_create_button=T('Create Import Job'),
+            msg_record_created=T('Import job created'),
+            msg_list_empty=T('No import jobs')
+    )
+
+    if len(request.args) == 0:
+        return _import_job_list(jr)
+    action = request.args[0]
+    if action == 'create':
+        return _import_job_create(jr)
+    if action == 'update':
+        return _import_job_update(jr)
+
+def _import_job_list(jr):
+    return shn_list(jr, listadd=False)
+
+def _import_job_create(jr):
+    if jr.http != 'POST':
+        redirect(jr.there())
+        
+    def process_new_file_and_redirect(form):
+        filename = form.vars.source_file_newfilename
+        filepath = os.path.join(request.folder, 'uploads', filename)
+        query = jr.table.id==form.vars.id
+        column_map = []
+        model_fields = dict(map(
+                lambda x:(x.lower(), x),
+                get_matchable_fields(form.vars.module, form.vars.resource)))
+        try:
+            reader = csv.reader(open(filepath, 'r'))
+            for line in reader:
+                for col in line:
+                    field = None
+                    col_match = col.lower()
+                    if col_match in model_fields:
+                        # Explicit name match.
+                        field = model_fields.pop(col_match)
+                    if not field:
+                        # Partial name patch.
+                        for field_name in model_fields:
+                            if col_match in field_name or field_name in col_match:
+                                field = model_fields.pop(field_name)
+                                break
+                    column_map.append((col, field))
+                break
+            pickled_map = pickle.dumps(column_map, pickle.HIGHEST_PROTOCOL)
+            db(query).update(column_map=pickled_map)
+        except:
+            db(query).update(status='failed')
+        redirect(URL(r=request, f='import_job', args=['update', form.vars.id]))
+
+    form = crud.create(jr.table, onaccept=process_new_file_and_redirect)
+    response.flash = 'Form errors!'
+    redirect(URL(r=request, f='import_data'))
+
+def _import_job_update(jr):
+    if len(request.args) < 2:
+        redirect(jr.there())
+    id = request.args[1]
+    query = jr.table.id==id
+    job = db(query).select()
+    if not job:
+        raise HTTP(404, body=json_message(False, 404, session.error))
+    job = job[0]
+
+    if jr.http == 'GET':
+        output = _import_job_update_GET(jr, job)
+    elif jr.http == 'POST':
+        output = _import_job_update_POST(jr, job)
+    else:
+        raise HTTP(400, body=INVALIDREQUEST)
+
+    title = '%s - %s' % (T('Input Job'), job.description)
+    output.update(dict(module_name=module_name, title=title, job=job))
+    response.view = 'admin/import_job_update.html'
+    return output
+
+def _import_job_update_GET(jr, job):
+    table = db.admin_import_line
+    query = table.import_job==job.id
+
+    if job.status == 'new':
+        try:
+            job.column_map = pickle.loads(job.column_map)
+        except pickle.UnpicklingError:
+            job.column_map = []
+        model_fields = get_matchable_fields(job.module, job.resource)
+        return dict(model_fields=model_fields)
+    
+    if job.status == 'processing':
+        num_lines = db(query).count()
+        return dict(num_lines=num_lines, update_speed=60)
+
+    if job.status in ['processed', 'failed', 'imported']:
+        def _include_field(f):
+            if f in ['import_job']:
+                return False
+            return table[f].readable
+
+        fields = [table[f] for f in table.fields if _include_field(f)]
+        headers = dict(map(lambda f: (str(f), f.label), fields))
+        items = crud.select(
+                db['admin_import_line'],
+                query=query,
+                fields=fields,
+                headers=headers,
+                truncate=48, _id='list', _class='display')
+        response.extra_styles = ['admin/import_job.css']
+        return dict(items=items)
+
+    if job.status == 'import':
+        query = (table.import_job==job.id) & (table.status=='imported')
+        num_lines = db(query).count()
+        return dict(num_lines=num_lines, update_speed=60)
+
+    return {}
+
+#      items = crud.select(table, query=query,
+#            fields=fields,
+#            orderby=orderby,
+#            limitby=limitby,
+#            headers=headers,
+#            linkto=linkto,
+#            truncate=48, _id='list', _class='display')
+
+def _import_job_update_POST(jr, job):
+    if job.status == 'new':
+        # Update column map.
+        try:
+            column_map = pickle.loads(job.column_map)
+        except pickle.UnpicklingError:
+            column_map = []
+        for key, value in request.vars.iteritems():
+            if not key.startswith('column_map_'):
+                continue
+            try:
+                idx = int(key.split('_')[-1])
+            except ValueError:
+                continue
+            if value != 'None (Ignore)':
+                column_map[idx] = (column_map[idx][0], value)
+            else:
+                column_map[idx] = (column_map[idx][0], None)
+        jr.table[job.id] = dict(
+                column_map=pickle.dumps(column_map, pickle.HIGHEST_PROTOCOL),
+                status='processing')
+        job.status = 'processing'
+
+    if job.status == 'processed':
+        query = db.admin_import_line.id
+        for var, status in request.vars.iteritems():
+            if not var.startswith('status_'):
+                continue
+            try:
+                import_line_id = int(var.split('_')[-1])
+            except ValueError:
+                continue
+            db(db.admin_import_line.id==import_line_id).update(status=status)
+        jr.table[job.id] = dict(status='import')
+        job.status = 'import'
+
+    return _import_job_update_GET(jr, job)
+
+def get_matchable_fields(module, resource):
+    model_fields = getattr(db, '%s_%s' % (module, resource)).fields
+    for name in ['created_on', 'modified_on', 'id', 'uuid', 'deleted']:
+        model_fields.remove(name)
+    model_fields.insert(0, 'None (Ignore)')
+    return model_fields
+
+
 # Functional Testing
 def handleResults():
     """Process the POST data returned from Selenium TestRunner.

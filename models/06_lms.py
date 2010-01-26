@@ -30,9 +30,9 @@ lms_unit_type_opts = {
 opt_lms_unit_type = SQLTable(None, 'opt_lms_unit_type',
                     db.Field('opt_lms_unit_type', 'integer',
                     requires = IS_IN_SET(lms_unit_type_opts),
-                    default = 1,
+                    # default = 1,
                     label = T('Unit Set'),
-                    represent = lambda opt: opt and lms_unit_type_opts[opt]))
+                    represent = lambda opt: lms_unit_type_opts.get(opt, T('Unknown'))))
 
 resource = 'unit'
 table = module + '_' + resource
@@ -105,9 +105,9 @@ site_category_opts = {
 opt_site_category = SQLTable(None, 'site_category_type',
                         Field('category', 'integer', notnull=True,
                             requires = IS_IN_SET(site_category_opts),
-                            default = 1,
+                            # default = 1,
                             label = T('Category'),
-                            represent = lambda opt: opt and site_category_opts[opt]))
+                            represent = lambda opt: site_category_opts.get(opt, T('Unknown'))))
 resource = 'site'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,

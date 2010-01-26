@@ -1,60 +1,65 @@
 /*
- * Thickbox 3.1 - One Box To Rule Them All.
+ * Thickbox 3.1 - One Box To Rule Them All. + patch
  * By Cody Lindley (http://www.codylindley.com)
  * Copyright (c) 2007 cody lindley
  * Licensed under the MIT License: http://www.opensource.org/licenses/mit-license.php
  * Modified to include Callbacks: http://codylindley.com/Javascript/257/thickbox-one-box-to-rule-them-all#c002066
 */
 		  
-var tb_pathToImage = "/sahana/static/img/thickbox/loadingAnimation.gif";
+var tb_pathToImage = "../../static/img/thickbox/loadingAnimation.gif";
+var tb_last = 0;
 
 /*!!!!!!!!!!!!!!!!! edit below this line at your own risk !!!!!!!!!!!!!!!!!!!!!!!*/
 
 //on page load call tb_init
-$(document).ready(function(){   
-	tb_init('a.thickbox, area.thickbox, input.thickbox');//pass where to apply thickbox
+$(document).ready(function(){
+	var level = 0;
+	if (String(window.location).indexOf('tb_level') != -1)
+		level = String(window.location).split('tb_level=')[1];
+	$('a.thickbox, area.thickbox, input.thickbox').click(tb_init_level(level));;
 	imgLoader = new Image();// preload image
 	imgLoader.src = tb_pathToImage;
 });
 
-//add thickbox to href & area elements that have a class of .thickbox
-function tb_init(domChunk){
-	$(domChunk).click(function(){
-	var t = this.title || this.name || null;
-	var a = this.href || this.alt;
-	var g = this.rel || false;
-	tb_show(t,a,g);
-	this.blur();
-	return false;
-	});
+function tb_init_level(level){
+	tb_init_f = function() {
+		var t = this.title || this.name || null;
+		var a = this.href || this.alt;
+		var g = this.rel || false;
+		tb_last = level;
+		tb_show(t,a,g,level);
+		this.blur();
+		return false;
+	}
+	return tb_init_f;
 }
 
-function tb_show(caption, url, imageGroup) {//function called when the user clicks on a thickbox link
-
-	try {
+function tb_show(caption, url, imageGroup, l) {//function called when the user clicks on a thickbox link
+//	try {
+		var parent = $("body");
 		if (typeof document.body.style.maxHeight === "undefined") {//if IE 6
 			$("body","html").css({height: "100%", width: "100%"});
-			$("html").css("overflow","hidden");
-			if (document.getElementById("TB_HideSelect") === null) {//iframe to hide select elements in ie6
-				$("body").append("<iframe id='TB_HideSelect'></iframe><div id='TB_overlay'></div><div id='TB_window'></div>");
-				$("#TB_overlay").click(tb_remove);
+			parent.css("overflow","hidden");
+			if (document.getElementById("TB_HideSelect"+l) === null) {//iframe to hide select elements in ie6
+				parent.append("<iframe class='TB_HideSelect' id='TB_HideSelect"+l+"'></iframe><div id='TB_overlay"+l+"' class='TB_overlay'></div><div id='TB_window"+l+"' class='TB_window'></div>");
+				$("#TB_overlay"+l).click(function(){tb_remove_l(l);});
 			}
 		}else{//all others
-			if(document.getElementById("TB_overlay") === null){
-				$("body").append("<div id='TB_overlay'></div><div id='TB_window'></div>");
-				$("#TB_overlay").click(tb_remove);
+			if(document.getElementById("TB_overlay"+l) === null){
+				parent.append("<div id='TB_overlay"+l+"' class='TB_overlay'></div><div id='TB_window"+l+"' class='TB_window'></div>");
+				$("#TB_overlay"+l).click(function(){tb_remove_l(l);});
 			}
 		}
 		
 		if(tb_detectMacXFF()){
-			$("#TB_overlay").addClass("TB_overlayMacFFBGHack");//use png overlay so hide flash
+			$("#TB_overlay"+l).addClass("TB_overlayMacFFBGHack");//use png overlay so hide flash
 		}else{
-			$("#TB_overlay").addClass("TB_overlayBG");//use background and opacity
+			$("#TB_overlay"+l).addClass("TB_overlayBG");//use background and opacity
 		}
 		
 		if(caption===null){caption="";}
-		$("body").append("<div id='TB_load'><img src='"+imgLoader.src+"' /></div>");//add loader to the page
-		$('#TB_load').show();//show loader
+		parent.append("<div class='TB_load' id='TB_load"+l+"'><img src='"+imgLoader.src+"' /></div>");//add loader to the page
+		$('#TB_load'+l).show();//show loader
 		
 		var baseURL;
 	   if(url.indexOf("?")!==-1){ //ff there is a query string involved
@@ -84,11 +89,11 @@ function tb_show(caption, url, imageGroup) {//function called when the user clic
 							if (TB_FoundURL) {
 								TB_NextCaption = TB_TempArray[TB_Counter].title;
 								TB_NextURL = TB_TempArray[TB_Counter].href;
-								TB_NextHTML = "<span id='TB_next'>&nbsp;&nbsp;<a href='#'>Next &gt;</a></span>";
+								TB_NextHTML = "<span id='TB_next"+l+"'>&nbsp;&nbsp;<a href='#'>Next &gt;</a></span>";
 							} else {
 								TB_PrevCaption = TB_TempArray[TB_Counter].title;
 								TB_PrevURL = TB_TempArray[TB_Counter].href;
-								TB_PrevHTML = "<span id='TB_prev'>&nbsp;&nbsp;<a href='#'>&lt; Prev</a></span>";
+								TB_PrevHTML = "<span id='TB_prev"+l+"'>&nbsp;&nbsp;<a href='#'>&lt; Prev</a></span>";
 							}
 						} else {
 							TB_FoundURL = true;
@@ -126,29 +131,29 @@ function tb_show(caption, url, imageGroup) {//function called when the user clic
 			
 			TB_WIDTH = imageWidth + 30;
 			TB_HEIGHT = imageHeight + 60;
-			$("#TB_window").append("<a href='' id='TB_ImageOff' title='Close'><img id='TB_Image' src='"+url+"' width='"+imageWidth+"' height='"+imageHeight+"' alt='"+caption+"'/></a>" + "<div id='TB_caption'>"+caption+"<div id='TB_secondLine'>" + TB_imageCount + TB_PrevHTML + TB_NextHTML + "</div></div><div id='TB_closeWindow'><a href='#' id='TB_closeWindowButton' title='Close'>close</a></div>"); 		
+			$("#TB_window"+l).append("<a href='' id='TB_ImageOff"+l+"' title='Close'><img id='TB_Image"+l+"' class='TB_Image' src='"+url+"' width='"+imageWidth+"' height='"+imageHeight+"' alt='"+caption+"'/></a>" + "<div class='TB_caption' id='TB_caption"+l+"'>"+caption+"<div class='TB_secondLine' id='TB_secondLine"+l+"'>" + TB_imageCount + TB_PrevHTML + TB_NextHTML + "</div></div><div class='TB_closeWindow' id='TB_closeWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a></div>");
 			
-			$("#TB_closeWindowButton").click(tb_remove);
+			$("#TB_closeWindowButton"+l).click(function(){tb_remove_l(l);});
 			
 			if (!(TB_PrevHTML === "")) {
 				function goPrev(){
 					if($(document).unbind("click",goPrev)){$(document).unbind("click",goPrev);}
-					$("#TB_window").remove();
-					$("body").append("<div id='TB_window'></div>");
-					tb_show(TB_PrevCaption, TB_PrevURL, imageGroup);
+					$("#TB_window"+l).remove();
+					parent.append("<div id='TB_window"+l+"'></div>");
+					tb_show(TB_PrevCaption, TB_PrevURL, imageGroup, l);
 					return false;	
 				}
-				$("#TB_prev").click(goPrev);
+				$("#TB_prev"+l).click(goPrev);
 			}
 			
 			if (!(TB_NextHTML === "")) {		
 				function goNext(){
-					$("#TB_window").remove();
-					$("body").append("<div id='TB_window'></div>");
-					tb_show(TB_NextCaption, TB_NextURL, imageGroup);				
+					$("#TB_window"+l).remove();
+					parent.append("<div id='TB_window"+l+"'></div>");
+					tb_show(TB_NextCaption, TB_NextURL, imageGroup, l);				
 					return false;	
 				}
-				$("#TB_next").click(goNext);
+				$("#TB_next"+l).click(goNext);
 				
 			}
 
@@ -159,7 +164,7 @@ function tb_show(caption, url, imageGroup) {//function called when the user clic
 					keycode = e.which;
 				}
 				if(keycode == 27){ // close
-					tb_remove();
+					tb_remove_l(l);
 				} else if(keycode == 190){ // display previous image
 					if(!(TB_NextHTML == "")){
 						document.onkeydown = "";
@@ -173,10 +178,10 @@ function tb_show(caption, url, imageGroup) {//function called when the user clic
 				}	
 			};
 			
-			tb_position();
-			$("#TB_load").remove();
-			$("#TB_ImageOff").click(tb_remove);
-			$("#TB_window").css({display:"block"}); //for safari using css instead of show
+			tb_position(l);
+			$("#TB_load"+l).remove();
+			$("#TB_ImageOff"+l).click(function(){tb_remove_l(l);});
+			$("#TB_window"+l).css({display:"block"}); //for safari using css instead of show
 			};
 			
 			imgPreloader.src = url;
@@ -192,51 +197,51 @@ function tb_show(caption, url, imageGroup) {//function called when the user clic
 			
 			if(url.indexOf('TB_iframe') != -1){// either iframe or ajax window		
 					urlNoQuery = url.split('TB_');
-					$("#TB_iframeContent").remove();
+					$("#TB_iframeContent"+l).remove();
 					if(params['modal'] != "true"){//iframe no modal
-						$("#TB_window").append("<div id='TB_title'><div id='TB_ajaxWindowTitle'>"+caption+"</div><div id='TB_closeAjaxWindow'><a href='#' id='TB_closeWindowButton' title='Close'>close</a></div></div><iframe frameborder='0' hspace='0' src='"+urlNoQuery[0]+"' id='TB_iframeContent' name='TB_iframeContent"+Math.round(Math.random()*1000)+"' onload='tb_showIframe()' style='width:"+(ajaxContentW + 29)+"px;height:"+(ajaxContentH + 17)+"px;' > </iframe>");
+						$("#TB_window"+l).append("<div class='TB_title' id='TB_title"+l+"'><div class='TB_ajaxWindowTitle' id='TB_ajaxWindowTitle"+l+"'>"+caption+"</div><div class='TB_closeAjaxWindow' id='TB_closeAjaxWindow'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a></div></div><iframe frameborder='0' hspace='0' src='"+urlNoQuery[0]+"tb_level="+(l+1)+"' class='TB_iframeContent' id='TB_iframeContent"+l+"' name='TB_iframeContent"+Math.round(Math.random()*1000)+"' onload='tb_showIframe(this, " + l + ")' style='width:"+(ajaxContentW + 29)+"px;height:"+(ajaxContentH + 17)+"px;' > </iframe>");
 					}else{//iframe modal
 					$("#TB_overlay").unbind();
-						$("#TB_window").append("<iframe frameborder='0' hspace='0' src='"+urlNoQuery[0]+"' id='TB_iframeContent' name='TB_iframeContent"+Math.round(Math.random()*1000)+"' onload='tb_showIframe()' style='width:"+(ajaxContentW + 29)+"px;height:"+(ajaxContentH + 17)+"px;'> </iframe>");
+						$("#TB_window"+l).append("<iframe frameborder='0' hspace='0' src='"+urlNoQuery[0]+"tb_level="+(l+1)+"' class='TB_iframeContent' id='TB_iframeContent"+l+"' name='TB_iframeContent"+Math.round(Math.random()*1000)+"' onload='tb_showIframe(this, " + l + ")' style='width:"+(ajaxContentW + 29)+"px;height:"+(ajaxContentH + 17)+"px;'> </iframe>");
 					}
 			}else{// not an iframe, ajax
-					if($("#TB_window").css("display") != "block"){
+					if($("#TB_window"+l).css("display") != "block"){
 						if(params['modal'] != "true"){//ajax no modal
-						$("#TB_window").append("<div id='TB_title'><div id='TB_ajaxWindowTitle'>"+caption+"</div><div id='TB_closeAjaxWindow'><a href='#' id='TB_closeWindowButton'>close</a></div></div><div id='TB_ajaxContent' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px'></div>");
+						$("#TB_window"+l).append("<div class='TB_title' id='TB_title"+l+"'><div class='TB_ajaxWindowTitle' id='TB_ajaxWindowTitle"+l+"'>"+caption+"</div><div class='TB_closeAjaxWindow' id='TB_closeAjaxWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"'>close</a></div></div><div class='TB_ajaxContent' id='TB_ajaxContent"+l+"' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px'></div>");
 						}else{//ajax modal
-						$("#TB_overlay").unbind();
-						$("#TB_window").append("<div id='TB_ajaxContent' class='TB_modal' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px;'></div>");	
+						$("#TB_overlay"+l).unbind();
+						$("#TB_window"+l).append("<div id='TB_ajaxContent"+l+"' class='TB_modal TB_ajaxContent' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px;'></div>");	
 						}
 					}else{//this means the window is already up, we are just loading new content via ajax
-						$("#TB_ajaxContent")[0].style.width = ajaxContentW +"px";
-						$("#TB_ajaxContent")[0].style.height = ajaxContentH +"px";
-						$("#TB_ajaxContent")[0].scrollTop = 0;
-						$("#TB_ajaxWindowTitle").html(caption);
+						$("#TB_ajaxContent"+l)[0].style.width = ajaxContentW +"px";
+						$("#TB_ajaxContent"+l)[0].style.height = ajaxContentH +"px";
+						$("#TB_ajaxContent"+l)[0].scrollTop = 0;
+						$("#TB_ajaxWindowTitle"+l).html(caption);
 					}
 			}
 					
-			$("#TB_closeWindowButton").click(tb_remove);
+			$("#TB_closeWindowButton"+l).click(function(){tb_remove_l(l);});
 			
 				if(url.indexOf('TB_inline') != -1){	
-					$("#TB_ajaxContent").append($('#' + params['inlineId']).children());
-					$("#TB_window").unload(function () {
-						$('#' + params['inlineId']).append( $("#TB_ajaxContent").children() ); // move elements back when you're finished
+					$("#TB_ajaxContent"+l).append($('#' + params['inlineId']).children());
+					$("#TB_window"+l).unload(function () {
+						$('#' + params['inlineId']).append( $("#TB_ajaxContent"+l).children() ); // move elements back when you're finished
 					});
-					tb_position();
-					$("#TB_load").remove();
-					$("#TB_window").css({display:"block"}); 
+					tb_position(l);
+					$("#TB_load"+l).remove();
+					$("#TB_window"+l).css({display:"block"}); 
 				}else if(url.indexOf('TB_iframe') != -1){
-					tb_position();
+					tb_position(l);
 					if($.browser.safari){//safari needs help because it will not fire iframe onload
-						$("#TB_load").remove();
-						$("#TB_window").css({display:"block"});
+						$("#TB_load"+l).remove();
+						$("#TB_window"+l).css({display:"block"});
 					}
 				}else{
-					$("#TB_ajaxContent").load(url += "&random=" + (new Date().getTime()),function(){//to do a post change this load method
-						tb_position();
-						$("#TB_load").remove();
-						tb_init("#TB_ajaxContent a.thickbox");
-						$("#TB_window").css({display:"block"});
+					$("#TB_ajaxContent"+l).load(url += "&random=" + (new Date().getTime()),function(){//to do a post change this load method
+						tb_position(l);
+						$("#TB_load"+l).remove();
+						$("#TB_ajaxContent"+l+" a.thickbox").click(tb_init_level(l+1));
+						$("#TB_window"+l).css({display:"block"});
 					});
 				}
 			
@@ -255,28 +260,36 @@ function tb_show(caption, url, imageGroup) {//function called when the user clic
 			};
 		}
 		
-	} catch(e) {
+//	} catch(e) {
 		//nothing here
-	}
+//	}
 }
 
 //helper functions below
-function tb_showIframe(){
-	$("#TB_load").remove();
-	$("#TB_window").css({display:"block"});
+function tb_showIframe(frame, level){
+	$("#TB_load"+level).remove();
+	$("#TB_window"+level).css({display:"block"});
+//	$(frame).contents().find("a.thickbox, area.thickbox, input.thickbox").click(tb_init_level(level+1));
 }
 
 function tb_remove() {
- 	$("#TB_imageOff").unbind("click");
-	$("#TB_closeWindowButton").unbind("click");
-	$("#TB_window").fadeOut("fast",function(){$('#TB_window,#TB_overlay,#TB_HideSelect').trigger("unload").unbind().remove();});
-	$("#TB_load").remove();
-    if (typeof document.body.style.maxHeight == "undefined") {//if IE 6
-		$("body","html").css({height: "auto", width: "auto"});
-		$("html").css("overflow","");
+	tb_remove_l(tb_last);
+	tb_last = tb_last - 1;
+}
+
+function tb_remove_l(l) {
+ 	$("#TB_imageOff"+l).unbind("click");
+	$("#TB_closeWindowButton"+l).unbind("click");
+	$("#TB_window"+l).fadeOut("fast",function(){$('#TB_window'+l+',#TB_overlay'+l+',#TB_HideSelect'+l).trigger("unload").unbind().remove();});
+	$("#TB_load"+l).remove();
+	if (l == 0) {
+	    if (typeof document.body.style.maxHeight == "undefined") {//if IE 6
+			$("body","html").css({height: "auto", width: "auto"});
+			$("html").css("overflow","");
+		}
+		document.onkeydown = "";
+		document.onkeyup = "";
 	}
-	document.onkeydown = "";
-	document.onkeyup = "";
 	// http://codylindley.com/Javascript/257/thickbox-one-box-to-rule-them-all#c002066
     TB_closeCallBack();
 	return false;
@@ -285,10 +298,10 @@ function tb_remove() {
 // Dummy so that it doesn't barf
 function TB_closeCallBack(){}
 
-function tb_position() {
-$("#TB_window").css({marginLeft: '-' + parseInt((TB_WIDTH / 2),10) + 'px', width: TB_WIDTH + 'px'});
+function tb_position(l) {
+$("#TB_window"+l).css({marginLeft: '-' + parseInt((TB_WIDTH / 2),10) + 'px', width: TB_WIDTH + 'px'});
 	if ( !(jQuery.browser.msie && jQuery.browser.version < 7)) { // take away IE6
-		$("#TB_window").css({marginTop: '-' + parseInt((TB_HEIGHT / 2),10) + 'px'});
+		$("#TB_window"+l).css({marginTop: '-' + parseInt((TB_HEIGHT / 2),10) + 'px'});
 	}
 }
 

@@ -45,7 +45,8 @@ def sector():
 @service.amfrpc
 def organisation():
     "RESTlike CRUD controller"
-    response.s3.pagination = True
+    # ServerSidePagination not ready yet
+    #response.s3.pagination = True
     return shn_rest_controller(module, 'organisation', listadd=False, onaccept=lambda form: organisation_onaccept(form))
 
 def organisation_onaccept(form):
@@ -62,6 +63,7 @@ def office():
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
         db[table].admin.readable = db[table].admin.writable = False
+    # ServerSidePagination not ready yet
     #response.s3.pagination = True
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
@@ -70,17 +72,22 @@ def office():
 @service.amfrpc
 def contact():
     "RESTlike CRUD controller"
-    response.s3.pagination = True
-    return shn_rest_controller(module, 'contact', listadd=False)
+    resource = 'contact'
+    table = '%s_%s' % (module, resource)
+    
+    # ServerSidePagination not ready yet
+    #response.s3.pagination = True
+    
+    # No point in downloading large dropdowns which we hide, so provide a smaller represent
+    if request.args(0) == 'create':
+        # person_id mandatory for a contact!
+        db[table].person_id.requires = IS_ONE_OF(db, 'pr_person.id', 'a')
+        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', 'a'))
+        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', 'a'))
+    
+    return shn_rest_controller(module, resource, listadd=False)
 	
     
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
-def activity():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, 'activity', listadd=False)	
-	
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc

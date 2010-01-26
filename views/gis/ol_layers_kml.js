@@ -19,13 +19,13 @@ function onKmlFeatureSelect(event) {
         var popup = new OpenLayers.Popup.FramedCloud("chicken", 
         feature.geometry.getBounds().getCenterLonLat(),
         new OpenLayers.Size(200,200),
-        "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description,
+        "<h2>" + feature.attributes.name + "</h2>",
         null, true, onPopupClose);
     } else {
         var popup = new OpenLayers.Popup.FramedCloud("chicken",
         feature.geometry.getBounds().getCenterLonLat(),
         new OpenLayers.Size(200,200),
-        "<h2>" + feature.attributes.name + "</h2>",
+        "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description,
         null, true, onPopupClose);
     };
     feature.popup = popup;

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'gis'
 # Current Module (for sidebar title)
@@ -19,7 +19,7 @@ db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)
 db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 db[table].parent.label = T('Parent')
 db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-db[table].gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown')))
+db[table].gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown'))
 db[table].gis_feature_type.label = T('Feature Type')
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lat.label = T('Latitude')
@@ -119,7 +119,7 @@ def config():
     db[table].cluster_distance.label = T('Cluster Distance')
     db[table].cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
     db[table].cluster_threshold.label = T('Cluster Threshold')
-    
+
     # CRUD Strings
     title_create = T('Add Config')
     title_display = T('Config Details')
@@ -220,7 +220,7 @@ def location_to_feature_group():
     # Model options
 
     # CRUD Strings
-    
+
     return shn_rest_controller(module, resource)
 
 def feature_class_to_feature_group():
@@ -233,7 +233,7 @@ def feature_class_to_feature_group():
     # CRUD Strings
 
     return shn_rest_controller(module, resource)
-    
+
 def location():
     "RESTlike CRUD controller"
     resource = 'location'
@@ -270,9 +270,9 @@ def location():
         #                      (db.gis_feature_class_to_feature_group.feature_class_id == db.gis_feature_class.id) &
         #                      (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
         #                      (db.gis_feature_group.name.like(fgroup)))
-    
+
     #response.s3.pagination = True
-    
+
     return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
 
 def marker():
@@ -421,7 +421,7 @@ def layer_mgrs():
     table = module + '_' + resource
 
     # Model options
-    
+
     # CRUD Strings
     label_list_button = T('List MGRS Layers')
     msg_list_empty = T('No MGRS Layers currently defined')
@@ -558,7 +558,7 @@ def layer_js():
     table = module + '_' + resource
 
     # Model options
-    
+
     # CRUD Strings
     title_list = T('JS Layers')
     subtitle_create = T('Add New JS Layer')
@@ -577,7 +577,7 @@ def layer_xyz():
     # Model options
     db[table].url.requires = IS_NOT_EMPTY()
     db[table].url.comment = SPAN("*", _class="req")
-    
+
     # CRUD Strings
     title_list = T('XYZ Layers')
     subtitle_create = T('Add New XYZ Layer')
@@ -592,7 +592,7 @@ def layer_xyz():
 def convert_gps():
     " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
     return dict()
-    
+
 def proxy():
     """Based on http://trac.openlayers.org/browser/trunk/openlayers/examples/proxy.cgi
 This is a blind proxy that we use to get around browser
@@ -606,7 +606,7 @@ content type. It supports GET and POST requests."""
     import urllib2
     import cgi
     import sys, os
-    
+
     # ToDo - need to link to map_service_catalogue
     # prevent Open Proxy abuse
     allowedHosts = []
@@ -616,13 +616,13 @@ content type. It supports GET and POST requests."""
     #                'sigma.openplans.org', 'demo.opengeo.org',
     #                'www.openstreetmap.org', 'sample.avencia.com',
     #                'v-swe.uni-muenster.de:8080']
-    
+
     method = request['wsgi'].environ['REQUEST_METHOD']
-    
+
     if method == "POST":
         # THis can probably use same call as GET in web2py
         qs = request['wsgi'].environ["QUERY_STRING"]
-        
+
         d = cgi.parse_qs(qs)
         if d.has_key("url"):
             url = d["url"][0]
@@ -637,17 +637,17 @@ content type. It supports GET and POST requests."""
         else:
             session.error = str(T("Need a 'url' argument!"))
             raise HTTP(400, body=json_message(False, 400, session.error))
-    
+
     try:
         host = url.split("/")[2]
         if allowedHosts and not host in allowedHosts:
             msg = "Status: 502 Bad Gateway\n"
             msg += "Content-Type: text/plain\n\n"
             msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
-           
+
             msg += os.environ
             return msg
-     
+
         elif url.startswith("http://") or url.startswith("https://"):
             if method == "POST":
                 length = int(request['wsgi'].environ["CONTENT_LENGTH"])
@@ -657,7 +657,7 @@ content type. It supports GET and POST requests."""
                 y = urllib2.urlopen(r)
             else:
                 y = urllib2.urlopen(url)
-           
+
             # print content type header
             # TODO: this doesn't work in web2py, need to figure out how that happens?
             #i = y.info()
@@ -665,50 +665,50 @@ content type. It supports GET and POST requests."""
             # msg = "Content-Type: %s" % (i["Content-Type"])
             #else:
             # msg = "Content-Type: text/plain"
-           
+
             #msg += "\n" + y.read()
-           
+
             msg = y.read()
             y.close()
             return msg
         else:
             msg = "Content-Type: text/plain\n\n"
-           
+
             msg += "Illegal request."
             return msg
-    
+
     except Exception, E:
         msg = "Status: 500 Unexpected Error\n"
         msg += "Content-Type: text/plain\n\n"
         msg += "Some unexpected error occurred. Error text was:", E
         return msg
-    
+
 def proxy2():
     " Provide a proxy for WFS/GeoRSS/MGRS layers. by Massimo diPierro"
-    import httplib 
-    PROXY_USER = None 
-    PROXY_PASSWORD = None 
-    PROXY_URL = 'web2py.com:80' 
-    path = '/'+'/'.join(request.args) 
-    query = request.env.query_string 
-    method = request.env.request_method 
-    if PROXY_USER and PROXY_PASSWORD: 
-        conn.add_credentials(PROXY_USER, PROXY_PASSWORD) 
-    conn =  httplib.HTTPConnection(PROXY_URL) 
-    if method == 'GET': 
-        conn.request(method, path, query) 
-    elif method == 'POST': 
-        data = request.body.read() 
-        conn.request(method, path, data) 
-    else: 
-        return 'oops' 
-    res = conn.getresponse() 
-    content = res.read() 
-    headers = dict(res.getheaders()) 
-    response.headers['Content-Type'] = headers['content-type'] 
-    response.status = int(res.status) 
-    return content 
-    
+    import httplib
+    PROXY_USER = None
+    PROXY_PASSWORD = None
+    PROXY_URL = 'web2py.com:80'
+    path = '/'+'/'.join(request.args)
+    query = request.env.query_string
+    method = request.env.request_method
+    if PROXY_USER and PROXY_PASSWORD:
+        conn.add_credentials(PROXY_USER, PROXY_PASSWORD)
+    conn =  httplib.HTTPConnection(PROXY_URL)
+    if method == 'GET':
+        conn.request(method, path, query)
+    elif method == 'POST':
+        data = request.body.read()
+        conn.request(method, path, data)
+    else:
+        return 'oops'
+    res = conn.getresponse()
+    content = res.read()
+    headers = dict(res.getheaders())
+    response.headers['Content-Type'] = headers['content-type']
+    response.status = int(res.status)
+    return content
+
 def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
     >>> shn_latlon_to_wkt(6, 80)
@@ -1231,7 +1231,7 @@ def layers():
         layers.mgrs = Storage()
         layers.mgrs.name = mgrs.name
         layers.mgrs.url = mgrs.url
-    
+
     # XYZ
     layers.xyz = Storage()
     layers_xyz = db(db.gis_layer_xyz.enabled==True).select()
@@ -1246,7 +1246,7 @@ def layers():
         layers.xyz[name].transparent = layer.transparent
         layers.xyz[name].visible = layer.visible
         layers.xyz[name].opacity = layer.opacity
-        
+
     # JS
     layers.js = Storage()
     layers_js = db(db.gis_layer_js.enabled==True).select()
@@ -1254,7 +1254,7 @@ def layers():
         name = layer.name
         layers.js[name] = Storage()
         layers.js[name].code = layer.code
-    
+
     return layers
 
 def layers_enable():

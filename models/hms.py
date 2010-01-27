@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    HMS Hospital Management System
+    HMS Hospital Status Assessment and Request Management System
 
     @author: nursix
 """
@@ -26,20 +26,20 @@ hms_facility_status_opts = {
     2: T('Compromised'),
     3: T('Evacuating'),
     4: T('Closed')
-}
+} #: Facility Status Options
 
 hms_clinical_status_opts = {
     1: T('Normal'),
     2: T('Full'),
     3: T('Closed')
-}
+} #: Clinical Status Options
 
 hms_morgue_status_opts = {
     1: T('Open'),
     2: T('Full'),
     3: T('Exceeded'),
     4: T('Closed')
-}
+} #: Morgue Status Options
 
 hms_security_status_opts = {
     1: T('Normal'),
@@ -48,25 +48,34 @@ hms_security_status_opts = {
     4: T('Lockdown'),
     5: T('Quarantine'),
     6: T('Closed')
-}
+} #: Security Status Options
 
 hms_resource_status_opts = {
     1: T('Adequate'),
     2: T('Insufficient')
-}
+} #: Resource Status Options
 
 hms_ems_traffic_opts = {
     1: T('Normal'),
     2: T('Advisory'),
     3: T('Closed'),
     4: T('Not Applicable')
-}
+} #: EMS Traffic Options
 
+def shn_hospital_id_represent(id):
+
+    """ Representation of hospital IDs in lists """
+
+    return  DIV(A(T('Request'), _href=URL(r=request, f='hospital', args=[id, 'req'])), " ",
+                A(T('Edit'), _href=URL(r=request, f='hospital', args=['update', id])))
 
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
+                Field('facility_id'),
                 Field('name', notnull=True),
+                Field('aka1'),
+                Field('aka2'),
                 organisation_id,
                 location_id,
                 Field('address'),
@@ -104,9 +113,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('nurses', 'integer'),             # Number of Nurses
                 Field('non_medical_staff', 'integer'),  # Number of Non-Medical Staff
                 Field('patients', 'integer'),           # Current Number of Patients
-                Field('admissions24', 'integer'),       # Admissions in the past 24 hours
-                Field('discharges24', 'integer'),       # Discharges in the past 24 hours
-                Field('deaths24', 'integer'),           # Deaths in the past 24 hours
                 Field('staffing', 'integer',
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Staffing'),
@@ -119,19 +125,28 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Clinical Operations'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
-                #Field('services', 'text'),              # Services Available, TODO: make component
-                #Field('needs', 'text'),                 # Needs, TODO: make component
-                #Field('damage', 'text'),                # Damage, TODO: make component
                 shn_comments_field,
                 migrate=migrate)
 
+db[table].id.represent = shn_hospital_id_represent
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 db[table].organisation_id.represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
+db[table].facility_id.requires = IS_NOT_IN_DB(db, '%s.facility_id' % table)
+#db[table].facility_id.label = T('Facility UUID')
+db[table].facility_id.label = T('MOH UUID')
+db[table].facility_id.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Facility UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the MOH."))
+#Not yet required
+#db[table].facility_id.comment = SPAN("*", _class="req")
+
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
+
+db[table].aka1.label = T('Other Name')
+db[table].aka2.label = T('Other Name')
 
 db[table].address.label = T('Address')
 db[table].postcode.label = T('Postcode')
@@ -180,16 +195,6 @@ db[table].non_medical_staff.label = T('Number of non-medical staff')
 
 db[table].patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].patients.label = T('Number of Patients')
-db[table].admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].admissions24.label = T('Admissions/24hrs')
-db[table].discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].discharges24.label = T('Discharges/24hrs')
-db[table].deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].deaths24.label = T('Deaths/24hrs')
-
-#db[table].services.label = T('Services available')
-#db[table].needs.label = T('Needs')
-#db[table].damage.label = T('Damage')
 
 s3.crud_strings[table] = Storage(
     title_create = T('Add Hospital'),
@@ -213,10 +218,10 @@ hospital_id = SQLTable(None, 'hospital_id',
                              requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hospital.id', '%(name)s')),
                              represent = lambda id: (id and [db(db.hms_hospital.id==id).select()[0].name] or ["None"])[0],
                              label = T('Hospital'),
-                             comment = DIV(A(s3.crud_strings[table].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[table].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Hospital|The hospital this record is associated with."))),
+                             comment = DIV(A(s3.crud_strings[table].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[table].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Hospital|The hospital this record is associated with."))),
                              ondelete = 'RESTRICT'))
 
-# RSS
+# RSS Feed
 def shn_hms_hospital_rss(record):
     if record:
         lat = lon = T("unknown")
@@ -236,8 +241,7 @@ def shn_hms_hospital_rss(record):
             db.hms_hospital.clinical_status.represent(record.clinical_status),
             db.hms_hospital.morgue_status.represent(record.morgue_status),
             db.hms_hospital.security_status.represent(record.security_status),
-            (record.available_beds is not None) and record.available_beds or T("unknown")
-            )
+            (record.available_beds is not None) and record.available_beds or T("unknown"))
     else:
         return None
 
@@ -250,8 +254,8 @@ db.define_table(table, timestamp, deletion_status,
                 hospital_id,
                 person_id,
                 Field('title'),
-                Field('phone1'),
-                Field('phone2'),
+                Field('phone'),
+                Field('mobile'),
                 Field('email'),
                 Field('fax'),
                 Field('skype'),
@@ -262,8 +266,8 @@ db[table].title.label = T('Job Title')
 db[table].title.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Title|The Role this person plays within this hospital."))
 
-db[table].phone1.label = T('Phone 1')
-db[table].phone2.label = T('Phone 2')
+db[table].phone.label = T('Phone')
+db[table].mobile.label = T('Mobile')
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].email.label = T('Email')
 db[table].fax.label = T('FAX')
@@ -275,7 +279,7 @@ s3xrc.model.add_component(module, resource,
     deletable=True,
     editable=True,
     main='person_id', extra='title',
-    list_fields = ['id', 'person_id', 'title', 'phone1', 'phone2', 'email', 'fax', 'skype'])
+    list_fields = ['id', 'person_id', 'title', 'phone', 'mobile', 'email', 'fax', 'skype'])
 
 # CRUD Strings
 s3.crud_strings[table] = Storage(
@@ -325,6 +329,9 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                       label = T('Bed Type'),
                       represent = lambda opt: hms_bed_type_opts.get(opt, T('Unknown'))),
                 Field('date', 'datetime'),
+                Field('admissions24', 'integer'),       # Admissions in the past 24 hours
+                Field('discharges24', 'integer'),       # Discharges in the past 24 hours
+                Field('deaths24', 'integer'),           # Deaths in the past 24 hours
                 Field('beds_baseline', 'integer'),
                 Field('beds_available', 'integer'),
                 Field('beds_add24', 'integer'),
@@ -334,8 +341,24 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 db[table].unit_name.label = T('Department/Unit Name')
 db[table].date.label = T('Date of Report')
 
+db[table].unit_name.readable = False
+db[table].unit_name.writable = False
+
+db[table].bed_type.readable = False
+db[table].bed_type.writable = False
+
+db[table].admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].admissions24.label = T('Admissions/24hrs')
+db[table].discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].discharges24.label = T('Discharges/24hrs')
+db[table].deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].deaths24.label = T('Deaths/24hrs')
+
+db[table].beds_baseline.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].beds_baseline.label = T('Baseline Number of Beds')
+db[table].beds_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].beds_available.label = T('Available Beds')
+db[table].beds_add24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].beds_add24.label = T('Additional Beds / 24hrs')
 
 db[table].beds_baseline.comment = A(SPAN("[Help]"), _class="tooltip",
@@ -358,12 +381,12 @@ def shn_hms_bedcount_update(form):
     if hospital:
         hospital=hospital[0]
 
-        a_beds = db.hms_bed_capacity.beds_available.sum()
-        t_beds = db.hms_bed_capacity.beds_baseline.sum()
-        count = db(db.hms_bed_capacity.hospital_id==hospital.id).select(a_beds, t_beds)
-        if count:
-            a_beds = count[0]._extra[a_beds]
-            t_beds = count[0]._extra[t_beds]
+        a_beds = form.vars.beds_available or 0
+        t_beds = form.vars.beds_baseline or 0
+        #count = db(db.hms_bed_capacity.hospital_id==hospital.id).select(a_beds, t_beds)
+        #if count:
+        #    a_beds = count[0]._extra[a_beds]
+        #    t_beds = count[0]._extra[t_beds]
 
         db(db.hms_hospital.id==hospital.id).update(
             total_beds=t_beds,
@@ -501,103 +524,6 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id'])
 
 # -----------------------------------------------------------------------------
-# Shortages
-#
-hms_shortage_type_opts = {
-    1: T('Water'),
-    2: T('Power'),
-    3: T('Food'),
-    4: T('Medical Supplies'),
-    5: T('Medical Staff'),
-    6: T('Non-medical Staff'),
-    7: T('Security'),
-    8: T('Transport'),
-    9: T('Fuel'),
-    99: T('Other')
-}
-
-hms_shortage_impact_opts = {
-    1: T('highly critical'),
-    2: T('critical'),
-    3: T('not critical'),
-}
-
-hms_shortage_priority_opts = {
-    1: T('immediately'),
-    2: T('urgent'),
-    3: T('high'),
-    4: T('normal'),
-    5: T('low')
-}
-
-hms_shortage_status_opts = {
-    1: T('open'),
-    2: T('compensated'),
-    3: T('feedback'),
-    4: T('remedied')
-}
-
-resource = 'shortage'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
-                hospital_id,
-                Field('date','datetime'),
-                Field('type', 'integer',
-                      requires = IS_IN_SET(hms_shortage_type_opts),
-                      default = 99,
-                      label = T('Type'),
-                      represent = lambda opt: hms_shortage_type_opts.get(opt, T('Unknown'))),
-                Field('impact', 'integer',
-                      requires = IS_IN_SET(hms_shortage_impact_opts),
-                      default = 3,
-                      label = T('Impact'),
-                      represent = lambda opt: hms_shortage_impact_opts.get(opt, T('Unknown'))),
-                Field('priority', 'integer',
-                      requires = IS_IN_SET(hms_shortage_priority_opts),
-                      default = 4,
-                      label = T('Priority'),
-                      represent = lambda opt: hms_shortage_priority_opts.get(opt, T('Unknown'))),
-                Field('subject'),
-                Field('description', 'text'),
-                Field('status', 'integer',
-                      requires = IS_IN_SET(hms_shortage_status_opts),
-                      default = 1,
-                      label = T('Status'),
-                      represent = lambda opt: hms_shortage_status_opts.get(opt, T('Unknown'))),
-                Field('feedback', 'text'),
-                migrate=migrate)
-
-db[table].date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
-db[table].date.represent = lambda value: shn_as_local_time(value)
-
-db[table].subject.requires = IS_NOT_EMPTY()
-
-s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(hms_hospital='hospital_id'),
-    deletable=True,
-    editable=True,
-    main='hospital_id', extra='subject',
-    list_fields = ['id', 'hospital_id', 'type', 'impact', 'priority', 'subject', 'status'])
-
-# CRUD Strings
-s3.crud_strings[table] = Storage(
-    title_create = T('Report Shortage'),
-    title_display = T('Shortage Details'),
-    title_list = T('Shortages'),
-    title_update = T('Edit Shortage'),
-    title_search = T('Search Shortages'),
-    subtitle_create = T('Add New Shortage'),
-    subtitle_list = T('Shortages'),
-    label_list_button = T('List Shortages'),
-    label_create_button = T('Add Shortage'),
-    label_delete_button = T('Delete Shortage'),
-    msg_record_created = T('Shortage added'),
-    msg_record_modified = T('Shortage updated'),
-    msg_record_deleted = T('Shortage deleted'),
-    msg_list_empty = T('No shortages currently reported'))
-
-# -----------------------------------------------------------------------------
 #
 def shn_hms_hospital_pheader(resource, record_id, representation, next=None, same=None):
 
@@ -657,6 +583,7 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
     return None
 
 # -----------------------------------------------------------------------------
+# Hospital Search By Location
 #
 def shn_hms_hospital_search_location(xrequest, onvalidation=None, onaccept=None):
 
@@ -750,6 +677,7 @@ def shn_hms_hospital_search_location(xrequest, onvalidation=None, onaccept=None)
 s3xrc.model.set_method(module, 'hospital', method='search_location', action=shn_hms_hospital_search_location )
 
 # -----------------------------------------------------------------------------
+# Hospital Search by Bed Type
 #
 def shn_hms_hospital_search_bedtype(xrequest, onvalidation=None, onaccept=None):
 
@@ -855,6 +783,7 @@ def shn_hms_hospital_search_bedtype(xrequest, onvalidation=None, onaccept=None):
 s3xrc.model.set_method(module, 'hospital', method='search_bedtype', action=shn_hms_hospital_search_bedtype )
 
 # -----------------------------------------------------------------------------
+# Hospital Search by Name
 #
 def shn_hms_get_hospital(label, fields=None, filterby=None):
 
@@ -868,7 +797,7 @@ def shn_hms_get_hospital(label, fields=None, filterby=None):
         if not len(search_fields):
             return None
     else:
-        search_fields = ['name'] #, 'address']
+        search_fields = ['name', 'aka1', 'aka2']
 
     if label and isinstance(label,str):
         labels = label.split()
@@ -905,8 +834,7 @@ def shn_hms_get_hospital(label, fields=None, filterby=None):
         # no label given or wrong parameter type
         return None
 
-# -----------------------------------------------------------------------------
-#
+
 def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
 
     """ Find hospitals by their name """
@@ -959,24 +887,30 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
                 for row in rows:
                     href = next.replace('%5bid%5d', '%s' % row.id)
                     records.append(TR(
+                        row.facility_id,
                         A(row.name, _href=href),
+                        row.aka1 or "",
+                        row.aka2 or "",
                         db.gis_location[row.location_id] and db.gis_location[row.location_id].name or "unknown",
                         row.phone_business,
-                        row.ems_status and hms_ems_traffic_opts[row.ems_status] or "unknown",
-                        row.facility_status and hms_facility_status_opts[row.facility_status] or "unknown",
-                        row.clinical_status and hms_clinical_status_opts[row.clinical_status] or "unknown",
-                        row.security_status and hms_security_status_opts[row.security_status] or "unknown",
+                        #row.ems_status and hms_ems_traffic_opts[row.ems_status] or "unknown",
+                        #row.facility_status and hms_facility_status_opts[row.facility_status] or "unknown",
+                        #row.clinical_status and hms_clinical_status_opts[row.clinical_status] or "unknown",
+                        #row.security_status and hms_security_status_opts[row.security_status] or "unknown",
                         row.total_beds,
                         row.available_beds
                         ))
                 items=DIV(TABLE(THEAD(TR(
+                    TH("Facility ID"),
                     TH("Name"),
+                    TH("Other Name"),
+                    TH("Other Name"),
                     TH("Location"),
                     TH("Phone"),
-                    TH("EMS Status"),
-                    TH("Facility Status"),
-                    TH("Clinical Status"),
-                    TH("Security Status"),
+                    #TH("EMS Status"),
+                    #TH("Facility Status"),
+                    #TH("Clinical Status"),
+                    #TH("Security Status"),
                     TH("Total Beds"),
                     TH("Available Beds"))),
                     TBODY(records), _id='list', _class="display"))
@@ -998,6 +932,350 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
         redirect(URL(r=request))
 
 # Plug into REST controller
-s3xrc.model.set_method(module, 'hospital', method='search_simple', action=shn_hms_hospital_search_simple )
+s3xrc.model.set_method(module, 'hospital',
+                       method='search_simple',
+                       action=shn_hms_hospital_search_simple )
+
+# -----------------------------------------------------------------------------
+# Hospital Requests for Assistance
 #
+hms_hrequest_priority_opts = {
+    5: T('immediately'),
+    4: T('urgent'),
+    3: T('high'),
+    2: T('normal'),
+    1: T('low')
+}
+
+hms_hrequest_type_opts = {
+    1: T('Water'),
+    2: T('Electricity'),
+    3: T('Food'),
+    4: T('Medical Supplies'),
+    5: T('Medical Staff'),
+    6: T('Non-medical Staff'),
+    7: T('Security'),
+    8: T('Transport'),
+    9: T('Fuel'),
+    10:T('Shelter'),
+    11:T('Find'),
+    12:T('Report'),
+    99: T('Other')
+}
+
+hms_hrequest_source_type = {
+    1 : 'Manual',
+    2 : 'Voice',
+    3 : 'E-Mail',
+    4 : 'SMS',
+    99: 'Other'
+}
+
+def shn_hms_hrequest_represent(id):
+    return  DIV(A(T('Update'), _href=URL(r=request, f='hrequest', args=['update', id])), " ",
+                A(T('Make Pledge'), _href=URL(r=request, f='hrequest', args=[id, 'pledge'])))
+
+resource = 'hrequest'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+            hospital_id,
+            Field("subject"),
+            Field("message", "text"),
+            Field("timestamp", "datetime"),
+            Field("type", "integer",
+                  requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_type_opts)),
+                  represent = lambda type: hms_hrequest_type_opts.get(type, "not specified"),
+                  label = T('Type')),
+            Field("priority", "integer",
+                  requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_priority_opts)),
+                  default = 2,
+                  represent = lambda id: (id and
+                    [DIV(IMG(_src='/%s/static/img/priority/hms_priority_%d.gif' % \
+                        (request.application, id), _height=12))] or
+                    [DIV(IMG(_src='/%s/static/img/priority/hms_priority_1.gif' % \
+                        request.application, _height=12))]),
+                  label = T('Priority')),
+            Field("city", "string"),
+            Field("verified", "boolean", default=False ),
+            Field("completed", "boolean", default=False),
+            Field("source_type", "integer",
+                  requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_source_type)),
+                  represent = lambda stype: stype and hms_hrequest_source_type[stype],
+                  label = T('Source Type')),
+            Field("actionable", "boolean", default=False),
+            migrate=migrate)
+
+db[table].id.represent = lambda id: shn_hms_hrequest_represent(id)
+
+#label the fields for the view
+db[table].timestamp.label = T('Date & Time')
+
+#Hide fields from user:
+db[table].verified.writable = False
+#db[table].source_id.writable = db[table].source_id.readable = False
+db[table].completed.writable  = False
+db[table].actionable.writable = db[table].actionable.readable = False
+db[table].source_type.writable = False
+
+#set default values
+db[table].actionable.default = 1
+db[table].source_type.default = 1
+
+db[table].message.requires = IS_NOT_EMPTY()
+db[table].message.comment = SPAN("*", _class="req")
+
+s3.crud_strings[table] = Storage(
+    title_create        = "Add Aid Request",
+    title_display       = "Aid Request Details",
+    title_list          = "List Aid Requests",
+    title_update        = "Edit Aid Request",
+    title_search        = "Search Aid Requests",
+    subtitle_create     = "Add New Aid Request",
+    subtitle_list       = "Aid Requests",
+    label_list_button   = "List Aid Requests",
+    label_create_button = "Add Aid Request",
+    msg_record_created  = "Aid request added",
+    msg_record_modified = "Aid request updated",
+    msg_record_deleted  = "Aid request deleted",
+    msg_list_empty      = "No aid requests currently available")
+
+# Reusable field for other tables to reference
+hms_hrequest_id = SQLTable(None, 'hms_hrequest_id',
+                       Field('hms_hrequest_id', db.hms_hrequest,
+                             requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hrequest.id', '%(id)s')),
+                             represent = lambda id: (id and [db(db.hms_hrequest.id==id).select()[0].id] or ["None"])[0],
+                             label = T('Request'),
+                             comment = DIV(A(s3.crud_strings[table].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hrequest', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[table].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Request|The request this record is associated with."))),
+                             ondelete = 'RESTRICT'))
+
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(hms_hospital = 'hospital_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'verified', 'completed'])
+
+# -----------------------------------------------------------------------------
+# Request Representation
+#
+def shn_hms_hrequest_onaccept(form):
+
+    hrequest = db.hms_hrequest[form.vars.id]
+    if hrequest:
+        hospital = db.hms_hospital[hrequest.hospital_id]
+        if hospital:
+            db(db.hms_hrequest.id==hrequest.id).update(city=hospital.city)
+
+# -----------------------------------------------------------------------------
+# Request Search by Message Text
+#
+def shn_hms_get_hrequest(label, fields=None, filterby=None):
+
+    """ Finds a request by Message string """
+
+    if fields and isinstance(fields, (list,tuple)):
+        search_fields = []
+        for f in fields:
+            if db.hms_hrequest.has_key(f):     # TODO: check for field type?
+                search_fields.append(f)
+        if not len(search_fields):
+            # Error: none of the specified search fields exists
+            return None
+    else:
+        # No search fields specified at all => fallback
+        search_fields = ['message']
+
+    if label and isinstance(label, str):
+        labels = label.split()
+        results = []
+        query = None
+        # TODO: make a more sophisticated search function (levenshtein?)
+        for l in labels:
+
+            # append wildcards
+            wc = "%"
+            _l = "%s%s%s" % (wc, l, wc)
+
+            # build query
+            for f in search_fields:
+                if query:
+                    query = (db.hms_hrequest[f].like(_l)) | query
+                else:
+                    query = (db.hms_hrequest[f].like(_l))
+
+            # undeleted records only
+            query = (db.hms_hrequest.deleted==False) & (query)
+            # restrict to prior results (AND)
+            if len(results):
+                query = (db.hms_hrequest.id.belongs(results)) & query
+            if filterby:
+                query = (filterby) & (query)
+            records = db(query).select(db.hms_hrequest.id)
+            # rebuild result list
+            results = [r.id for r in records]
+            # any results left?
+            if not len(results):
+                return None
+        return results
+    else:
+        # no label given or wrong parameter type
+        return None
+
+# -----------------------------------------------------------------------------
+# Request Search Form
+#
+def shn_hms_hrequest_search_simple(xrequest, onvalidation=None, onaccept=None):
+
+    """ Simple search form for requests """
+
+    if not shn_has_permission('read', db.hms_hrequest):
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
+
+    if xrequest.representation=="html":
+        # Check for redirection
+        if request.vars._next:
+            next = str.lower(request.vars._next)
+        else:
+            next = str.lower(URL(r=request, f='req', args='[id]'))
+
+        # Custom view
+        response.view = '%s/hrequest_search.html' % xrequest.prefix
+
+        # Title and subtitle
+        title = T('Search for a Request')
+        subtitle = T('Matching Records')
+
+        # Select form
+        form = FORM(TABLE(
+                TR(T('Text in Message: '),
+                   INPUT(_type="text", _name="label", _size="40"),
+                   A(SPAN("[Help]"), _class="tooltip", _title=T("Text in Message|To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
+                TR("", INPUT(_type="submit", _value="Search"))
+                ))
+
+        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            if form.vars.label == "":
+                form.vars.label = "%"
+
+            results = shn_hms_get_hrequest(form.vars.label)
+
+            if results and len(results):
+                rows = db(db.hms_hrequest.id.belongs(results)).select()
+            else:
+                rows = None
+
+            # Build table rows from matching records
+            if rows:
+                records = []
+                for row in rows:
+                    href = next.replace('%5bid%5d', '%s' % row.id)
+                    records.append(TR(
+                        row.completion_status,
+                        row.message,
+                        row.timestamp,
+                        row.hospital_id and hospital_id.hospital_id.represent(row.hospital_id) or 'unknown',
+                        ))
+                items=DIV(TABLE(THEAD(TR(
+                    TH("Completion Status"),
+                    TH("Message"),
+                    TH("Time"),
+                    TH("Hospital"),
+                    )),
+                    TBODY(records), _id='list', _class="display"))
+            else:
+                items = T('None')
+
+        try:
+            label_create_button = s3.crud_strings['hms_hrequest'].label_create_button
+        except:
+            label_create_button = s3.crud_strings.label_create_button
+
+        add_btn = A(label_create_button, _href=URL(r=request, f='req', args='create'), _id='add-btn')
+
+        output.update(dict(items=items, add_btn=add_btn))
+        return output
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Plug into REST controller
+s3xrc.model.set_method(module, resource,
+                       method='search_simple',
+                       action=shn_hms_hrequest_search_simple)
+
+# -----------------------------------------------------------------------------
+# Pledges
+#
+hms_pledge_status_opts = {
+    1:T('Pledged'),
+    2:T('In Transit'),
+    3:T('Delivered'),
+}
+
+def shn_hms_pledge_represent(id):
+    return  A(T('Edit Pledge'), _href=URL(r=request, f='pledge', args=[id]))
+
+resource = 'pledge'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+                Field('submitted_on', 'datetime'),
+                hms_hrequest_id,
+                Field("status", "integer"),
+                organisation_id,
+                person_id,
+                migrate=migrate)
+
+db[table].id.represent = lambda id: shn_hms_pledge_represent(id)
+
+# hide unnecessary fields
+db[table].hms_hrequest_id.writable = db[table].hms_hrequest_id.readable = False
+
+# set pledge default
+db[table].status.default = 1
+
+# auto fill posted_on field and make it readonly
+db[table].submitted_on.default = request.now
+db[table].submitted_on.writable = False
+
+db[table].status.requires = IS_IN_SET(hms_pledge_status_opts)
+db[table].status.represent = lambda status: status and hms_pledge_status_opts[status]
+db[table].status.label = T('Pledge Status')
+
+# Pledges as a component of requests
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(hms_hrequest = 'hrequest_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'organisation_id', 'person_id', 'submitted_on', 'status'])
+
+s3.crud_strings[table] = Storage(
+    title_create = "Add Pledge",
+    title_display = "Pledge Details",
+    title_list = "List Pledges",
+    title_update = "Edit Pledge",
+    title_search = "Search Pledges",
+    subtitle_create = "Add New Pledge",
+    subtitle_list = "Pledges",
+    label_list_button = "List Pledges",
+    label_create_button = "Add Pledge",
+    msg_record_created = "Pledge added",
+    msg_record_modified = "Pledge updated",
+    msg_record_deleted = "Pledge deleted",
+    msg_list_empty = "No Pledges currently available")
+
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(hms_hrequest = 'hms_hrequest_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'submitted_on', 'status'])
+
 # -----------------------------------------------------------------------------

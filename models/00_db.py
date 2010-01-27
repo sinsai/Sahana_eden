@@ -38,7 +38,5 @@ exec('from applications.%s.modules.validators import *' % request.application)
 #from applications.sahana.modules.validators import *
 
 # GIS Module
-exec('from applications.%s.modules.s3gis import *' % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.sahana.modules.s3gis import *
-gis = GIS(db)
+s3gis = local_import('s3gis')
+gis = s3gis.GIS(db)

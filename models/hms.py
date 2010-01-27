@@ -213,7 +213,7 @@ hospital_id = SQLTable(None, 'hospital_id',
                              requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hospital.id', '%(name)s')),
                              represent = lambda id: (id and [db(db.hms_hospital.id==id).select()[0].name] or ["None"])[0],
                              label = T('Hospital'),
-                             comment = DIV(A(title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Hospital|The hospital this record is associated with."))),
+                             comment = DIV(A(s3.crud_strings[table].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[table].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Hospital|The hospital this record is associated with."))),
                              ondelete = 'RESTRICT'))
 
 # RSS

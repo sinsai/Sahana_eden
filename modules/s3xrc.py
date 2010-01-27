@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.6
+    @version: 1.4.7
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -1363,12 +1363,16 @@ class XRequest(object):
 
 class S3XML(object):
 
+    S3XRC_NAMESPACE = "http://www.sahanapy.org/wiki/S3XRC"
+    S3XRC = "{%s}" % S3XRC_NAMESPACE
+    NSMAP = {None : S3XRC_NAMESPACE}
+
     UUID = "uuid"
     Lat = "lat"
     Lon = "lon"
     Marker = "marker_id"
     FeatureClass = "feature_class_id"
-    
+
     IGNORE_FIELDS = ["deleted", "id"]
 
     FIELDS_TO_ATTRIBUTES = [
@@ -1382,7 +1386,7 @@ class S3XML(object):
     ATTRIBUTES_TO_FIELDS = ["admin"]
 
     TAG = dict(
-        root="sahanapy",
+        root="s3xrc",
         resource="resource",
         reference="reference",
         data="data",
@@ -1439,7 +1443,7 @@ class S3XML(object):
 
         self.domain = domain
         self.base_url = base_url
-        
+
         self.gis = gis
 
 
@@ -1575,8 +1579,8 @@ class S3XML(object):
                                 marker = self.gis.get_marker(value)
                                 marker_url = "%s/%s" % (download_url, marker)
                                 reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
-                                    
-                                    
+
+
             elif isinstance(table[f].type, str) and \
                 table[f].type[:6] == "upload":
 
@@ -1601,7 +1605,7 @@ class S3XML(object):
 
         """ Builds a tree from a list of elements """
 
-        root = etree.Element(self.TAG["root"])
+        root = etree.Element(self.TAG["root"], nsmap=self.NSMAP)
 
         root.set(self.ATTRIBUTE["success"], str(False))
 

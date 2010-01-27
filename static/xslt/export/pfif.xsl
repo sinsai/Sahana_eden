@@ -11,10 +11,10 @@
     <!-- work in progress: this template is still incomplete -->
 
     <xsl:template match="/">
-        <xsl:apply-templates select="./sahanapy"/>
+        <xsl:apply-templates select="./s3xrc"/>
     </xsl:template>
 
-    <xsl:template match="/sahanapy">
+    <xsl:template match="/s3xrc">
         <pfif:pfif>
             <xsl:apply-templates select="./resource[@name='pr_person']"/>
         </pfif:pfif>
@@ -29,7 +29,7 @@
                         <xsl:value-of select="./@uuid" />
                     </xsl:when>
                     <xsl:otherwise>
-                        <xsl:value-of select="concat(/sahanapy/@domain, '/', ./@uuid)" />
+                        <xsl:value-of select="concat(/s3xrc/@domain, '/', ./@uuid)" />
                     </xsl:otherwise>
                 </xsl:choose>
             </pfif:person_record_id>
@@ -42,7 +42,7 @@
                 <xsl:value-of select="./@modified_by" />
             </pfif:author_name>
             <pfif:source_name>
-                <xsl:value-of select="/sahanapy/@domain"/>
+                <xsl:value-of select="/s3xrc/@domain"/>
             </pfif:source_name>
             <pfif:source_date>
                 <xsl:call-template name="datetime2pfif">
@@ -72,7 +72,7 @@
     <xsl:template match="resource[@name='pr_presence']">
         <pfif:note>
             <pfif:note_record_id>
-                <xsl:value-of select="concat(/sahanapy/@domain, '/', ./@uuid)" />
+                <xsl:value-of select="concat(/s3xrc/@domain, '/', ./@uuid)" />
             </pfif:note_record_id>
             <pfif:entry_date>
                 <xsl:call-template name="datetime2pfif">

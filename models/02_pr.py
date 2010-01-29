@@ -326,21 +326,23 @@ db[table].opt_pr_age_group.label = T('Age group')
 db[table].mobile_phone.label = T("Mobile Phone #")
 
 # CRUD Strings
-title_create = T('Add a Person')
-title_display = T('Person Details')
-title_list = T('List Persons')
-title_update = T('Edit Person Details')
-title_search = T('Search Persons')
-subtitle_create = T('Add Person')
-subtitle_list = T('Persons')
-label_list_button = T('List Persons')
-label_create_button = T('Add Person')
-label_delete_button = T('Delete Person')
-msg_record_created = T('Person added')
-msg_record_modified = T('Person details updated')
-msg_record_deleted = T('Person deleted')
-msg_list_empty = T('No Persons currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_PERSON = T('Add Person')
+LIST_PERSONS = T('List Persons')
+s3.crud_strings[table] = Storage(
+    title_create = T('Add a Person'),
+    title_display = T('Person Details'),
+    title_list = LIST_PERSONS,
+    title_update = T('Edit Person Details'),
+    title_search = T('Search Persons'),
+    subtitle_create = ADD_PERSON,
+    subtitle_list = T('Persons'),
+    label_list_button = LIST_PERSONS,
+    label_create_button = ADD_PERSON,
+    label_delete_button = T('Delete Person'),
+    msg_record_created = T('Person added'),
+    msg_record_modified = T('Person details updated'),
+    msg_record_deleted = T('Person deleted'),
+    msg_list_empty = T('No Persons currently registered'))
 
 #
 # person_id: reusable field for other tables to reference ---------------------
@@ -416,21 +418,23 @@ db[table].group_name.label = T("Group name")
 db[table].group_description.label = T("Group description")
 
 # CRUD Strings
-title_create = T('Add Group')
-title_display = T('Group Details')
-title_list = T('List Groups')
-title_update = T('Edit Group')
-title_search = T('Search Groups')
-subtitle_create = T('Add New Group')
-subtitle_list = T('Groups')
-label_list_button = T('List Groups')
-label_create_button = T('Add Group')
-label_delete_button = T('Delete Group')
-msg_record_created = T('Group added')
-msg_record_modified = T('Group updated')
-msg_record_deleted = T('Group deleted')
-msg_list_empty = T('No Groups currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_GROUP = T('Add Group')
+LIST_GROUPS = T('List Groups')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_GROUP,
+    title_display = T('Group Details'),
+    title_list = LIST_GROUPS,
+    title_update = T('Edit Group'),
+    title_search = T('Search Groups'),
+    subtitle_create = T('Add New Group'),
+    subtitle_list = T('Groups'),
+    label_list_button = LIST_GROUPS,
+    label_create_button = ADD_GROUP,
+    label_delete_button = T('Delete Group'),
+    msg_record_created = T('Group added'),
+    msg_record_modified = T('Group updated'),
+    msg_record_deleted = T('Group deleted'),
+    msg_list_empty = T('No Groups currently registered'))
 
 #
 # group_id: reusable field for other tables to reference ----------------------

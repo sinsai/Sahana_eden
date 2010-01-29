@@ -204,8 +204,7 @@ def parameter():
     db[table].indirect.label = "Indirect support cost HQ"
 
     # CRUD Strings
-    title_update = T('Edit Parameters')
-    s3.crud_strings[table] = Storage(title_update=title_update)
+    s3.crud_strings[table] = Storage(title_update = T('Edit Parameters'))
 
     return shn_rest_controller(module, resource, deletable=False)
     
@@ -217,21 +216,23 @@ def item():
     # Model options used in multiple controllers so defined at the top of the file
     
     # CRUD Strings
-    title_create = T('Add Item')
-    title_display = T('Item Details')
-    title_list = T('List Items')
-    title_update = T('Edit Item')
-    title_search = T('Search Items')
-    subtitle_create = T('Add New Item')
-    subtitle_list = T('Items')
-    label_list_button = T('List Items')
-    label_create_button = T('Add Item')
-    label_search_button = T('Search Items')
-    msg_record_created = T('Item added')
-    msg_record_modified = T('Item updated')
-    msg_record_deleted = T('Item deleted')
-    msg_list_empty = T('No Items currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_ITEM = T('Add Item')
+    LIST_ITEMS = T('List Items')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_ITEM,
+        title_display = T('Item Details'),
+        title_list = LIST_ITEMS,
+        title_update = T('Edit Item'),
+        title_search = T('Search Items'),
+        subtitle_create = T('Add New Item'),
+        subtitle_list = T('Items'),
+        label_list_button = LIST_ITEMS,
+        label_create_button = ADD_ITEM,
+        label_search_button = T('Search Items'),
+        msg_record_created = T('Item added'),
+        msg_record_modified = T('Item updated'),
+        msg_record_deleted = T('Item deleted'),
+        msg_list_empty = T('No Items currently registered'))
 
     response.s3.pdf = URL(r=request, f='item_export_pdf')
     
@@ -379,20 +380,22 @@ def kit():
     # Model options used in multiple controllers so defined at the top of the file
     
     # CRUD Strings
-    title_create = T('Add Kit')
-    title_display = T('Kit Details')
-    title_list = T('List Kits')
-    title_update = T('Edit Kit')
-    title_search = T('Search Kits')
-    subtitle_create = T('Add New Kit')
-    subtitle_list = T('Kits')
-    label_list_button = T('List Kits')
-    label_create_button = T('Add Kit')
-    msg_record_created = T('Kit added')
-    msg_record_modified = T('Kit updated')
-    msg_record_deleted = T('Kit deleted')
-    msg_list_empty = T('No Kits currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_KIT = T('Add Kit')
+    LIST_KITS = T('List Kits')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_KIT,
+        title_display = T('Kit Details'),
+        title_list = LIST_KITS,
+        title_update = T('Edit Kit'),
+        title_search = T('Search Kits'),
+        subtitle_create = T('Add New Kit'),
+        subtitle_list = T('Kits'),
+        label_list_button = LIST_KITS,
+        label_create_button = ADD_KIT,
+        msg_record_created = T('Kit added'),
+        msg_record_modified = T('Kit updated'),
+        msg_record_deleted = T('Kit deleted'),
+        msg_list_empty = T('No Kits currently registered'))
 
     response.s3.pdf = URL(r=request, f='kit_export_pdf')
     response.s3.xls = URL(r=request, f='kit_export_xls')
@@ -824,20 +827,22 @@ def bundle():
     # Model options used in multiple controllers so defined at the top of the file
     
     # CRUD Strings
-    title_create = T('Add Bundle')
-    title_display = T('Bundle Details')
-    title_list = T('List Bundles')
-    title_update = T('Edit Bundle')
-    title_search = T('Search Bundles')
-    subtitle_create = T('Add New Bundle')
-    subtitle_list = T('Bundles')
-    label_list_button = T('List Bundles')
-    label_create_button = T('Add Bundle')
-    msg_record_created = T('Bundle added')
-    msg_record_modified = T('Bundle updated')
-    msg_record_deleted = T('Bundle deleted')
-    msg_list_empty = T('No Bundles currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_BUNDLE = T('Add Bundle')
+    LIST_BUNDLES = T('List Bundles')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_BUNDLE,
+        title_display = T('Bundle Details'),
+        title_list = LIST_BUNDLES,
+        title_update = T('Edit Bundle'),
+        title_search = T('Search Bundles'),
+        subtitle_create = T('Add New Bundle'),
+        subtitle_list = T('Bundles'),
+        label_list_button = LIST_BUNDLES,
+        label_create_button = ADD_BUNDLE,
+        msg_record_created = T('Bundle added'),
+        msg_record_modified = T('Bundle updated'),
+        msg_record_deleted = T('Bundle deleted'),
+        msg_list_empty = T('No Bundles currently registered'))
 
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='bundle_kit_item', args=request.args[1])
@@ -1149,20 +1154,22 @@ def staff():
     # Model options used in multiple controllers so defined at the top of the file
     
     # CRUD Strings
-    title_create = T('Add Staff Type')
-    title_display = T('Staff Type Details')
-    title_list = T('List Staff Types')
-    title_update = T('Edit Staff Type')
-    title_search = T('Search Staff Types')
-    subtitle_create = T('Add New Staff Type')
-    subtitle_list = T('Staff Types')
-    label_list_button = T('List Staff Types')
-    label_create_button = T('Add Staff Type')
-    msg_record_created = T('Staff Type added')
-    msg_record_modified = T('Staff Type updated')
-    msg_record_deleted = T('Staff Type deleted')
-    msg_list_empty = T('No Staff Types currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_STAFF_TYPE = T('Add Staff Type')
+    LIST_STAFF_TYPE = T('List Staff Types')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_STAFF_TYPE,
+        title_display = T('Staff Type Details'),
+        title_list = LIST_STAFF_TYPE,
+        title_update = T('Edit Staff Type'),
+        title_search = T('Search Staff Types'),
+        subtitle_create = T('Add New Staff Type'),
+        subtitle_list = T('Staff Types'),
+        label_list_button = LIST_STAFF_TYPE,
+        label_create_button = ADD_STAFF_TYPE,
+        msg_record_created = T('Staff Type added'),
+        msg_record_modified = T('Staff Type updated'),
+        msg_record_deleted = T('Staff Type deleted'),
+        msg_list_empty = T('No Staff Types currently registered'))
 
     return shn_rest_controller(module, resource)
 
@@ -1174,20 +1181,22 @@ def location():
     # Model options used in multiple controllers so defined at the top of the file
     
     # CRUD Strings
-    title_create = T('Add Location')
-    title_display = T('Location Details')
-    title_list = T('List Locations')
-    title_update = T('Edit Location')
-    title_search = T('Search Locations')
-    subtitle_create = T('Add New Location')
-    subtitle_list = T('Locations')
-    label_list_button = T('List Locations')
-    label_create_button = T('Add Location')
-    msg_record_created = T('Location added')
-    msg_record_modified = T('Location updated')
-    msg_record_deleted = T('Location deleted')
-    msg_list_empty = T('No Locations currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_LOCATION = T('Add Location')
+    LIST_LOCATIONS = T('List Locations')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_LOCATION,
+        title_display = T('Location Details'),
+        title_list = LIST_LOCATIONS,
+        title_update = T('Edit Location'),
+        title_search = T('Search Locations'),
+        subtitle_create = T('Add New Location'),
+        subtitle_list = T('Locations'),
+        label_list_button = LIST_LOCATIONS,
+        label_create_button = ADD_LOCATION,
+        msg_record_created = T('Location added'),
+        msg_record_modified = T('Location updated'),
+        msg_record_deleted = T('Location deleted'),
+        msg_list_empty = T('No Locations currently registered'))
 
     return shn_rest_controller(module, resource, main='code')
 
@@ -1199,20 +1208,22 @@ def project():
     # Model options used in multiple controllers so defined at the top of the file
     
     # CRUD Strings
-    title_create = T('Add Project')
-    title_display = T('Project Details')
-    title_list = T('List Projects')
-    title_update = T('Edit Project')
-    title_search = T('Search Projects')
-    subtitle_create = T('Add New Project')
-    subtitle_list = T('Projects')
-    label_list_button = T('List Projects')
-    label_create_button = T('Add Project')
-    msg_record_created = T('Project added')
-    msg_record_modified = T('Project updated')
-    msg_record_deleted = T('Project deleted')
-    msg_list_empty = T('No Projects currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_PROJECT = T('Add Project')
+    LIST_PROJECTS = T('List Projects')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_PROJECT,
+        title_display = T('Project Details'),
+        title_list = LIST_PROJECTS,
+        title_update = T('Edit Project'),
+        title_search = T('Search Projects'),
+        subtitle_create = T('Add New Project'),
+        subtitle_list = T('Projects'),
+        label_list_button = LIST_PROJECTS,
+        label_create_button = ADD_PROJECT,
+        msg_record_created = T('Project added'),
+        msg_record_modified = T('Project updated'),
+        msg_record_deleted = T('Project deleted'),
+        msg_list_empty = T('No Projects currently registered'))
 
     return shn_rest_controller(module, resource, main='code')
 
@@ -1224,20 +1235,22 @@ def budget():
     # Model options used in multiple controllers so defined at the top of the file
     
     # CRUD Strings
-    title_create = T('Add Budget')
-    title_display = T('Budget Details')
-    title_list = T('List Budgets')
-    title_update = T('Edit Budget')
-    title_search = T('Search Budgets')
-    subtitle_create = T('Add New Budget')
-    subtitle_list = T('Budgets')
-    label_list_button = T('List Budgets')
-    label_create_button = T('Add Budget')
-    msg_record_created = T('Budget added')
-    msg_record_modified = T('Budget updated')
-    msg_record_deleted = T('Budget deleted')
-    msg_list_empty = T('No Budgets currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_BUDGET = T('Add Budget')
+    LIST_BUDGETS = T('List Budgets')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_BUDGET,
+        title_display = T('Budget Details'),
+        title_list = LIST_BUDGETS,
+        title_update = T('Edit Budget'),
+        title_search = T('Search Budgets'),
+        subtitle_create = T('Add New Budget'),
+        subtitle_list = T('Budgets'),
+        label_list_button = LIST_BUDGETS,
+        label_create_button = ADD_BUDGET,
+        msg_record_created = T('Budget added'),
+        msg_record_modified = T('Budget updated'),
+        msg_record_deleted = T('Budget deleted'),
+        msg_list_empty = T('No Budgets currently registered'))
 
     return shn_rest_controller(module, resource)
 

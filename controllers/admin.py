@@ -64,20 +64,22 @@ def theme():
     db[table].col_btn_hover.requires = IS_HTML_COLOUR()
 
     # CRUD Strings
-    title_create = T('Add Theme')
-    title_display = T('Theme Details')
-    title_list = T('List Themes')
-    title_update = T('Edit Theme')
-    title_search = T('Search Themes')
-    subtitle_create = T('Add New Theme')
-    subtitle_list = T('Themes')
-    label_list_button = T('List Themes')
-    label_create_button = T('Add Theme')
-    msg_record_created = T('Theme added')
-    msg_record_modified = T('Theme updated')
-    msg_record_deleted = T('Theme deleted')
-    msg_list_empty = T('No Themes currently defined')
-    s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    ADD_THEME = T('Add Theme')
+    LIST_THEMES = T('List Themes')
+    s3.crud_strings[resource] = Storage(
+        title_create = ADD_THEME,
+        title_display = T('Theme Details'),
+        title_list = LIST_THEMES,
+        title_update = T('Edit Theme'),
+        title_search = T('Search Themes'),
+        subtitle_create = T('Add New Theme'),
+        subtitle_list = T('Themes'),
+        label_list_button = LIST_THEMES,
+        label_create_button = ADD_THEMES,
+        msg_record_created = T('Theme added'),
+        msg_record_modified = T('Theme updated'),
+        msg_record_deleted = T('Theme deleted'),
+        msg_list_empty = T('No Themes currently defined'))
     
     return shn_rest_controller(module, resource, list_fields=['id', 'name', 'logo', 'footer', 'col_background'], onvalidation=lambda form: theme_check(form))
 
@@ -193,20 +195,22 @@ def user():
     # Model options
     
     # CRUD Strings
-    title_create = T('Add User')
-    title_display = T('User Details')
-    title_list = T('List Users')
-    title_update = T('Edit User')
-    title_search = T('Search Users')
-    subtitle_create = T('Add New User')
-    subtitle_list = T('Users')
-    label_list_button = T('List Users')
-    label_create_button = T('Add User')
-    msg_record_created = T('User added')
-    msg_record_modified = T('User updated')
-    msg_record_deleted = T('User deleted')
-    msg_list_empty = T('No Users currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_USER = T('Add User')
+    LIST_USERS = T('List Users')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_USERS,
+        title_display = T('User Details'),
+        title_list = LIST_USERS,
+        title_update = T('Edit User'),
+        title_search = T('Search Users'),
+        subtitle_create = T('Add New User'),
+        subtitle_list = T('Users'),
+        label_list_button = LIST_USERS,
+        label_create_button = ADD_USER,
+        msg_record_created = T('User added'),
+        msg_record_modified = T('User updated'),
+        msg_record_deleted = T('User deleted'),
+        msg_list_empty = T('No Users currently registered'))
     
     onvalidation = None
     # Add users to Person Registry & 'Authenticated' role
@@ -250,22 +254,24 @@ def group():
     table = module + '_' + resource
 
     # Model options
-    
+
     # CRUD Strings
-    title_create = T('Add Role')
-    title_display = T('Role Details')
-    title_list = T('List Roles')
-    title_update = T('Edit Role')
-    title_search = T('Search Roles')
-    subtitle_create = T('Add New Role')
-    subtitle_list = T('Roles')
-    label_list_button = T('List Roles')
-    label_create_button = T('Add Role')
-    msg_record_created = T('Role added')
-    msg_record_modified = T('Role updated')
-    msg_record_deleted = T('Role deleted')
-    msg_list_empty = T('No Roles currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_ROLE = T('Add Role')
+    LIST_ROLES = T('List Roles')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_ROLE,
+        title_display = T('Role Details'),
+        title_list = LIST_ROLES,
+        title_update = T('Edit Role'),
+        title_search = T('Search Roles'),
+        subtitle_create = T('Add New Role'),
+        subtitle_list = T('Roles'),
+        label_list_button = LIST_ROLES,
+        label_create_button = ADD_ROLE,
+        msg_record_created = T('Role added'),
+        msg_record_modified = T('Role updated'),
+        msg_record_deleted = T('Role deleted'),
+        msg_list_empty = T('No Roles currently defined'))
     
     return shn_rest_controller(module, resource, main='role')
     
@@ -281,20 +287,22 @@ def membership():
     
     # CRUD Strings
     table = 'auth_membership'
-    title_create = T('Add Membership')
-    title_display = T('Membership Details')
-    title_list = T('List Memberships')
-    title_update = T('Edit Membership')
-    title_search = T('Search Memberships')
-    subtitle_create = T('Add New Membership')
-    subtitle_list = T('Memberships')
-    label_list_button = T('List Memberships')
-    label_create_button = T('Add Membership')
-    msg_record_created = T('Membership added')
-    msg_record_modified = T('Membership updated')
-    msg_record_deleted = T('Membership deleted')
-    msg_list_empty = T('No Memberships currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_MEMBERSHIP = T('Add Membership')
+    LIST_MEMBERSHIPS = T('List Memberships')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_MEMBERSHIP,
+        title_display = T('Membership Details'),
+        title_list = LIST_MEMBERSHIPS,
+        title_update = T('Edit Membership'),
+        title_search = T('Search Memberships'),
+        subtitle_create = T('Add New Membership'),
+        subtitle_list = T('Memberships'),
+        label_list_button = LIST_MEMBERSHIPS,
+        label_create_button = ADD_MEMBERSHIP,
+        msg_record_created = T('Membership added'),
+        msg_record_modified = T('Membership updated'),
+        msg_record_deleted = T('Membership deleted'),
+        msg_list_empty = T('No Memberships currently defined'))
     
     return shn_rest_controller(module, resource, main='user_id')
     
@@ -492,14 +500,16 @@ def import_job():
     resource = 'import_job'
     table = '%s_%s' % (module, resource)
     jr = s3xrc.request(module, resource, request, session=session)
+    CREATE_NEW_IMPORT_JOB = T('Create New Import Job')
+    LIST_IMPORT_JOBS = ('List Import Jobs')
     s3.crud_strings[table] = Storage(
-            title_create=T('Create New Import Job'),
+            title_create=CREATE_NEW_IMPORT_JOB,
             title_display=T('Import Job'),
-            title_list=T('List Import Jobs'),
+            title_list=LIST_IMPORT_JOBS,
             title_update=T('Update Import Job'),
-            subtitle_create=T('Create New Import Job'),
+            subtitle_create=CREATE_NEW_IMPORT_JOB,
             subtitle_list=T('Import Jobs'),
-            label_list_button=T('List Import Jobs'),
+            label_list_button=LIST_IMPORT_JOBS,
             label_create_button=T('Create Import Job'),
             msg_record_created=T('Import job created'),
             msg_list_empty=T('No import jobs')

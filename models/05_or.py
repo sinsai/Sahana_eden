@@ -21,20 +21,21 @@ db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 ADD_SERVICE = T('Add Service')
-title_create = T('Add Service')
-title_display = T('Service Details')
-title_list = T('List Services')
-title_update = T('Edit Service')
-title_search = T('Search Services')
-subtitle_create = T('Add New Service')
-subtitle_list = T('Services')
-label_list_button = T('List Services')
-label_create_button = ADD_SERVICE
-msg_record_created = T('Service added')
-msg_record_modified = T('Service updated')
-msg_record_deleted = T('Service deleted')
-msg_list_empty = T('No Services currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+LIST_SERVICES = T('List Services')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_SERVICE,
+    title_display = T('Service Details'),
+    title_list = LIST_SERVICES,
+    title_update = T('Edit Service'),
+    title_search = T('Search Services'),
+    subtitle_create = T('Add New Service'),
+    subtitle_list = T('Services'),
+    label_list_button = LIST_SERVICES,
+    label_create_button = ADD_SERVICE,
+    msg_record_created = T('Service added'),
+    msg_record_modified = T('Service updated'),
+    msg_record_deleted = T('Service deleted'),
+    msg_list_empty = T('No Services currently registered'))
 # Reusable field for other tables to reference
 def service_represent(service_ids):
     if not service_ids:
@@ -66,20 +67,21 @@ db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
 db[table].name.comment = SPAN("*", _class="req")
 ADD_SECTOR = T('Add Sector')
-title_create = T('Add Sector')
-title_display = T('Sector Details')
-title_list = T('List Sectors')
-title_update = T('Edit Sector')
-title_search = T('Search Sectors')
-subtitle_create = T('Add New Sector')
-subtitle_list = T('Sectors')
-label_list_button = T('List Sectors')
-label_create_button = ADD_SECTOR
-msg_record_created = T('Sector added')
-msg_record_modified = T('Sector updated')
-msg_record_deleted = T('Sector deleted')
-msg_list_empty = T('No Sectors currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+LIST_SECTORS = T('List Sectors')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_SECTOR,
+    title_display = T('Sector Details'),
+    title_list = LIST_SECTORS,
+    title_update = T('Edit Sector'),
+    title_search = T('Search Sectors'),
+    subtitle_create = T('Add New Sector'),
+    subtitle_list = T('Sectors'),
+    label_list_button = LIST_SECTORS,
+    label_create_button = ADD_SECTOR,
+    msg_record_created = T('Sector added'),
+    msg_record_modified = T('Sector updated'),
+    msg_record_deleted = T('Sector deleted'),
+    msg_list_empty = T('No Sectors currently registered'))
 # Reusable field for other tables to reference
 def sector_represent(sector_ids):
     if not sector_ids:
@@ -149,20 +151,21 @@ db[table].website.label = T('Website')
 db[table].twitter.label = T('Twitter')
 db[table].twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
 ADD_ORGANISATION = T('Add Organization')
-title_create = T('Add Organization')
-title_display = T('Organization Details')
-title_list = T('List Organizations')
-title_update = T('Edit Organization')
-title_search = T('Search Organizations')
-subtitle_create = T('Add New Organization')
-subtitle_list = T('Organizations')
-label_list_button = T('List Organizations')
-label_create_button = ADD_ORGANISATION
-msg_record_created = T('Organization added')
-msg_record_modified = T('Organization updated')
-msg_record_deleted = T('Organization deleted')
-msg_list_empty = T('No Organizations currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+LIST_ORGANIZATIONS = T('List Organizations')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_ORGANISATION,
+    title_display = T('Organization Details'),
+    title_list = LIST_ORGANIZATIONS,
+    title_update = T('Edit Organization'),
+    title_search = T('Search Organizations'),
+    subtitle_create = T('Add New Organization'),
+    subtitle_list = T('Organizations'),
+    label_list_button = LIST_ORGANIZATIONS,
+    label_create_button = ADD_ORGANISATION,
+    msg_record_created = T('Organization added'),
+    msg_record_modified = T('Organization updated'),
+    msg_record_deleted = T('Organization deleted'),
+    msg_list_empty = T('No Organizations currently registered'))
 # Reusable field for other tables to reference
 organisation_id = SQLTable(None, 'organisation_id',
             Field('organisation_id', db.or_organisation,
@@ -238,20 +241,21 @@ db[table].number_of_vehicles.label = T('Number of Vehicles')
 db[table].vehicle_types.label = T('Vehicle Types')
 db[table].equipment.label = T('Equipment')
 ADD_OFFICE = T('Add Office')
-title_create = ADD_OFFICE
-title_display = T('Office Details')
-title_list = T('List Offices')
-title_update = T('Edit Office')
-title_search = T('Search Offices')
-subtitle_create = T('Add New Office')
-subtitle_list = T('Offices')
-label_list_button = T('List Offices')
-label_create_button = ADD_OFFICE
-msg_record_created = T('Office added')
-msg_record_modified = T('Office updated')
-msg_record_deleted = T('Office deleted')
-msg_list_empty = T('No Offices currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+LIST_OFFICES = T('List Offices')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_OFFICE,
+    title_display = T('Office Details'),
+    title_list = LIST_OFFICES,
+    title_update = T('Edit Office'),
+    title_search = T('Search Offices'),
+    subtitle_create = T('Add New Office'),
+    subtitle_list = T('Offices'),
+    label_list_button = LIST_OFFICES,
+    label_create_button = ADD_OFFICE,
+    msg_record_created = T('Office added'),
+    msg_record_modified = T('Office updated'),
+    msg_record_deleted = T('Office deleted'),
+    msg_list_empty = T('No Offices currently registered'))
 # Reusable field for other tables to reference
 office_id = SQLTable(None, 'office_id',
             Field('office_id', db.or_office,
@@ -313,20 +317,22 @@ def represent_focal_point(is_focal_point):
 db[table].focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
 #opt: opt and or_office_type_opts[opt]
 db[table].focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
-title_create = T('Add Contact')
-title_display = T('Contact Details')
-title_list = T('List Contacts')
-title_update = T('Edit Contact')
-title_search = T('Search Contacts')
-subtitle_create = T('Add New Contact')
-subtitle_list = T('Contacts')
-label_list_button = T('List Contacts')
-label_create_button = T('Add Contact')
-msg_record_created = T('Contact added')
-msg_record_modified = T('Contact updated')
-msg_record_deleted = T('Contact deleted')
-msg_list_empty = T('No Contacts currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_CONTACT = T('Add Contact')
+LIST_CONTACTS = T('List Contacts')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_CONTACT,
+    title_display = T('Contact Details'),
+    title_list = LIST_CONTACTS,
+    title_update = T('Edit Contact'),
+    title_search = T('Search Contacts'),
+    subtitle_create = T('Add New Contact'),
+    subtitle_list = T('Contacts'),
+    label_list_button = LIST_CONTACTS,
+    label_create_button = ADD_CONTACT,
+    msg_record_created = T('Contact added'),
+    msg_record_modified = T('Contact updated'),
+    msg_record_deleted = T('Contact deleted'),
+    msg_list_empty = T('No Contacts currently registered'))
 
 # Contacts as component of Orgs
 s3xrc.model.add_component(module, resource,
@@ -353,20 +359,21 @@ db.define_table(table, timestamp, deletion_status,
                 Field('budgeted_cost', 'double'),
                 migrate=migrate)
 db[table].budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
-title_create = T('Add Project')
-title_display = T('Project Details')
-title_list = T('Projects Report')
-title_update = T('Edit Project')
-title_search = T('Search Projects')
-subtitle_create = T('Add New Project')
-subtitle_list = T('Projects')
-label_list_button = T('List Projects')
-label_create_button = T('Add Project')
-msg_record_created = T('Project added')
-msg_record_modified = T('Project updated')
-msg_record_deleted = T('Project deleted')
-msg_list_empty = T('No Projects currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_PROJECT = T('Add Project')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_PROJECT,
+    title_display = T('Project Details'),
+    title_list = T('Projects Report'),
+    title_update = T('Edit Project'),
+    title_search = T('Search Projects'),
+    subtitle_create = T('Add New Project'),
+    subtitle_list = T('Projects'),
+    label_list_button = T('List Projects'),
+    label_create_button = ADD_PROJECT,
+    msg_record_created = T('Project added'),
+    msg_record_modified = T('Project updated'),
+    msg_record_deleted = T('Project deleted'),
+    msg_list_empty = T('No Projects currently registered'))
 
 #"Organization Name", "Sector\Cluster Name" , "Sub Sector Name", "Country Name", "Admin 1 Name", "Admin 2 Name", "Admin 3 Name", "Admin 4 Name", "Place Name", "Project Title", "Project Objective", "Project Description", "Primary Beneficiary", "Number of Primary Beneficiaries", "Secondary Beneficiary (separated by , )", "Number of Secondary Beneficiaries", "Implementing Partners (separated by , )", "Project Type", "Project Status", "Project Theme", "CAP #", "Estimated Start Date (dd/mm/yyyy)", "Estimated End Date (dd/mm/yyyy)", "Funding Amount", "Funding Currency", "Funding Type", "Funding Status", "Funding Reported to FTS (Yes or No)", "Organization Funding Details For each organization funding the project, the details include: Organization Name,Amount Funded,Funding Currency;(separate the data by comma ,) (For multiple organizations separate each Organization's Dataset by a semi-colon ;) Example: "Org1,100000,US$ ; Org2,20000,Pound"" (end of line) 
 				

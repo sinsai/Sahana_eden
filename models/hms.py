@@ -21,6 +21,13 @@ db.define_table(table,
 # -----------------------------------------------------------------------------
 # Hospitals
 #
+hms_facility_type_opts = {
+    1: T('Hospital'),
+    2: T('Field Hospital'),
+    3: T('Dispensary'),
+    4: T('Other')
+} #: Facility Type Options
+
 hms_facility_status_opts = {
     1: T('Normal'),
     2: T('Compromised'),
@@ -62,6 +69,13 @@ hms_ems_traffic_opts = {
     4: T('Not Applicable')
 } #: EMS Traffic Options
 
+hms_or_status_opts = {
+    1: T('Normal'),
+    #2: T('Advisory'),
+    3: T('Closed'),
+    4: T('Not Applicable')
+} #: OR Status Options
+
 def shn_hospital_id_represent(id):
 
     """ Representation of hospital IDs in lists """
@@ -72,74 +86,95 @@ def shn_hospital_id_represent(id):
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('facility_id'),
-                Field('name', notnull=True),
-                Field('aka1'),
-                Field('aka2'),
+                Field('ho_uuid'),                       # UUID assigned by Health Organisation (WHO, PAHO)
+                Field('gov_uuid'),                      # UUID assigned by Local Government
+                Field('name', notnull=True),            # Name of the facility
+                Field('aka1'),                          # Alternate name, or name in local language
+                Field('aka2'),                          # Alternate name, or name in local language
+                Field('facility_type', 'integer',       # Type of facility
+                      requires = IS_NULL_OR(IS_IN_SET(hms_facility_type_opts)),
+                      label = T('Facility Type'),
+                      represent = lambda opt: hms_facility_type_opts.get(opt, T('not specified'))),
                 organisation_id,
                 location_id,
                 Field('address'),
                 Field('postcode'),
                 Field('city'),
+                Field('phone_exchange'),
                 Field('phone_business'),
                 Field('phone_emergency'),
                 Field('email'),
                 Field('fax'),
                 Field('total_beds', 'integer'),         # Total Beds
                 Field('available_beds', 'integer'),     # Available Beds
-                Field('ems_status', 'integer',
+                Field('ems_status', 'integer',          # Emergency Room Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_ems_traffic_opts)),
                       label = T('EMS Traffic Status'),
                       represent = lambda opt: hms_ems_traffic_opts.get(opt, T('Unknown'))),
-                Field('ems_reason', length=128),
-                Field('facility_status', 'integer',
+                Field('ems_reason', length=128,         # Reason for EMS Status
+                      label = T('EMS Status Reason')),
+                Field('or_status', 'integer',           # Operating Room Status
+                      requires = IS_NULL_OR(IS_IN_SET(hms_or_status_opts)),
+                      label = T('OR Status'),
+                      represent = lambda opt: hms_or_status_opts.get(opt, T('Unknown'))),
+                Field('or_reason', length=128,          # Reason for OR Status
+                      label = T('OR Status Reason')),
+                Field('facility_status', 'integer',     # Facility Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_facility_status_opts)),
                       label = T('Facility Status'),
                       represent = lambda opt: hms_facility_status_opts.get(opt, T('Unknown'))),
-                Field('clinical_status', 'integer',
+                Field('clinical_status', 'integer',     # Clinical Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_clinical_status_opts)),
                       label = T('Clinical Status'),
                       represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
-                Field('morgue_status', 'integer',
+                Field('morgue_status', 'integer',       # Morgue Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_morgue_status_opts)),
                       label = T('Morgue Status'),
                       represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
-                Field('morgue_units', 'integer'),
-                Field('security_status', 'integer',
+                Field('morgue_units', 'integer'),       # Number of available/vacant morgue units
+                Field('security_status', 'integer',     # Security status
                       requires = IS_NULL_OR(IS_IN_SET(hms_security_status_opts)),
                       label = T('Security Status'),
                       represent = lambda opt: hms_security_status_opts.get(opt, T('Unknown'))),
                 Field('doctors', 'integer'),            # Number of Doctors
                 Field('nurses', 'integer'),             # Number of Nurses
                 Field('non_medical_staff', 'integer'),  # Number of Non-Medical Staff
-                Field('patients', 'integer'),           # Current Number of Patients
-                Field('staffing', 'integer',
+                Field('staffing', 'integer',            # Staffing status
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Staffing'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
-                Field('facility_operations', 'integer',
+                Field('facility_operations', 'integer', # Facility Operations Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Facility Operations'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
-                Field('clinical_operations', 'integer',
+                Field('clinical_operations', 'integer', # Clinical Operations Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Clinical Operations'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
-                shn_comments_field,
+                Field('access_status'),                 # Access Status
+                shn_comments_field,                     # Comments field
                 migrate=migrate)
+
 
 db[table].id.represent = shn_hospital_id_represent
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].organisation_id.represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
+db[table].organisation_id.represent = lambda id: \
+    (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
-db[table].facility_id.requires = IS_NOT_IN_DB(db, '%s.facility_id' % table)
-#db[table].facility_id.label = T('Facility UUID')
-db[table].facility_id.label = T('MOH UUID')
-db[table].facility_id.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T("Facility UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the MOH."))
-#Not yet required
-#db[table].facility_id.comment = SPAN("*", _class="req")
+db[table].ho_uuid.requires = IS_NOT_IN_DB(db, '%s.ho_uuid' % table)
+#db[table].ho_uuid.label = T('Health Org UUID')
+db[table].ho_uuid.label = T('PAHO UUID')
+db[table].ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
+#    _title=T("Health Organisation UUID|The Universal Unique Identifier (UUID) as assigned to this facility by Health Organisations (e.g. WHO))."))
+    _title=T("PAHO UUID|The Universal Unique Identifier (UUID) as assigned to this facility by PAHO)."))
+
+db[table].gov_uuid.requires = IS_NOT_IN_DB(db, '%s.gov_uuid' % table)
+#db[table].gov_uuid.label = T('Government UUID')
+db[table].gov_uuid.label = T('MOH UUID')
+db[table].gov_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
+#    _title=T("Government UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the government."))
+    _title=T("Government UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the MOH."))
 
 db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
 db[table].name.label = T('Name')
@@ -150,6 +185,8 @@ db[table].aka2.label = T('Other Name')
 
 db[table].address.label = T('Address')
 db[table].postcode.label = T('Postcode')
+
+db[table].phone_exchange.label = T('Phone/Exchange')
 db[table].phone_business.label = T('Phone/Business')
 db[table].phone_emergency.label = T('Phone/Emergency')
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
@@ -160,17 +197,23 @@ db[table].total_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].total_beds.label = T('Total Beds')
 db[table].total_beds.writable = False
 db[table].total_beds.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T("Total Beds|Total number of beds in this hospital. Automatically updated from unit reports."))
+    _title=T("Total Beds|Total number of beds in this hospital. Automatically updated from daily reports."))
+
 db[table].available_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].available_beds.label = T('Available Beds')
 db[table].available_beds.writable = False
 db[table].available_beds.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T("Available Beds|Number of vacant/available beds in this hospital. Automatically updated from unit reports."))
+    _title=T("Available Beds|Number of vacant/available beds in this hospital. Automatically updated from daily reports."))
 
 db[table].ems_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("EMS Status|Status of operations of the emergency department of this hospital."))
 db[table].ems_reason.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("EMS Reason|Report the contributing factors for the current EMS status."))
+
+db[table].or_status.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("OR Status|Status of the operating rooms of this hospital."))
+db[table].or_reason.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("OR Reason|Report the contributing factors for the current OR status."))
 
 db[table].facility_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Facility Status|Status of general operation of the facility."))
@@ -180,11 +223,11 @@ db[table].morgue_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Morgue Status|Status of morgue capacity."))
 db[table].security_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Security Status|Status of security procedures/access restrictions in the hospital."))
+
+db[table].morgue_units.label = T('Morgue Units Available')
 db[table].morgue_units.comment =  A(SPAN("[Help]"), _class="tooltip",
     _title=T("Morgue Units Available|Number of vacant/available units to which victims can be transported immediately."))
-
 db[table].morgue_units.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-db[table].morgue_units.label = T('Morgue Units Available')
 
 db[table].doctors.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 db[table].doctors.label = T('Number of doctors')
@@ -193,8 +236,8 @@ db[table].nurses.label = T('Number of nurses')
 db[table].non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 db[table].non_medical_staff.label = T('Number of non-medical staff')
 
-db[table].patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].patients.label = T('Number of Patients')
+#db[table].access_status.label = "Access Status"
+db[table].access_status.label = "Road Status"
 
 s3.crud_strings[table] = Storage(
     title_create = T('Add Hospital'),
@@ -248,7 +291,7 @@ def shn_hms_hospital_rss(record):
 # -----------------------------------------------------------------------------
 # Contacts
 #
-resource = 'contact'
+resource = 'hcontact'
 table = module + '_' + resource
 db.define_table(table, timestamp, deletion_status,
                 hospital_id,
@@ -298,6 +341,69 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No contacts currently registered'))
 
 # -----------------------------------------------------------------------------
+# Activity
+#
+resource = 'hactivity'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+                hospital_id,
+                Field('date', 'datetime'),              # Date&Time the entry applies to
+                Field('patients', 'integer'),           # Current Number of Patients
+                Field('admissions24', 'integer'),       # Admissions in the past 24 hours
+                Field('discharges24', 'integer'),       # Discharges in the past 24 hours
+                Field('deaths24', 'integer'),           # Deaths in the past 24 hours
+                Field('comment', length=128),
+                migrate=migrate)
+
+db[table].date.label = T('Date & Time')
+db[table].date.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Date & Time|Date and time this report relates to."))
+
+db[table].patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].patients.label = T('Number of Patients')
+db[table].patients.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Patients|Number of in-patients at the time of reporting."))
+
+db[table].admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].admissions24.label = T('Admissions/24hrs')
+db[table].admissions24.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Admissions/24hrs|Number of newly admitted patients during the past 24 hours."))
+
+db[table].discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].discharges24.label = T('Discharges/24hrs')
+db[table].discharges24.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Discharges/24hrs|Number of discharged patients during the past 24 hours."))
+
+db[table].deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+db[table].deaths24.label = T('Deaths/24hrs')
+db[table].deaths24.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Deaths/24hrs|Number of deaths during the past 24 hours."))
+
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(hms_hospital='hospital_id'),
+    deletable=True,
+    editable=True,
+    main='hospital_id', extra='id',
+    list_fields = ['id', 'date', 'patients', 'admissions24', 'discharges24', 'deaths24', 'comment'])
+
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Activity Report'),
+    title_display = T('Activity Report'),
+    title_list = T('Activity Reports'),
+    title_update = T('Update Activity Report'),
+    title_search = T('Search Activity Report'),
+    subtitle_create = T('Add Activity Report'),
+    subtitle_list = T('Activity Reports'),
+    label_list_button = T('List Reports'),
+    label_create_button = T('Add Report'),
+    label_delete_button = T('Delete Report'),
+    msg_record_created = T('Report added'),
+    msg_record_modified = T('Report updated'),
+    msg_record_deleted = T('Report deleted'),
+    msg_list_empty = T('No reports currently available')),
+
+# -----------------------------------------------------------------------------
 # Bed Capacity (multiple)
 #
 hms_bed_type_opts = {
@@ -329,9 +435,6 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                       label = T('Bed Type'),
                       represent = lambda opt: hms_bed_type_opts.get(opt, T('Unknown'))),
                 Field('date', 'datetime'),
-                Field('admissions24', 'integer'),       # Admissions in the past 24 hours
-                Field('discharges24', 'integer'),       # Discharges in the past 24 hours
-                Field('deaths24', 'integer'),           # Deaths in the past 24 hours
                 Field('beds_baseline', 'integer'),
                 Field('beds_available', 'integer'),
                 Field('beds_add24', 'integer'),
@@ -346,13 +449,6 @@ db[table].unit_name.writable = False
 
 db[table].bed_type.readable = False
 db[table].bed_type.writable = False
-
-db[table].admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].admissions24.label = T('Admissions/24hrs')
-db[table].discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].discharges24.label = T('Discharges/24hrs')
-db[table].deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].deaths24.label = T('Deaths/24hrs')
 
 db[table].beds_baseline.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 db[table].beds_baseline.label = T('Baseline Number of Beds')
@@ -483,6 +579,71 @@ s3xrc.model.add_component(module, resource,
     editable=True,
     main='hospital_id', extra='id',
     list_fields = ['id'])
+
+# -----------------------------------------------------------------------------
+# Images
+#
+hms_image_type_opts = {
+    1:T('Photograph'),
+    2:T('Map'),
+    3:T('Document Scan'),
+    99:T('other')
+}
+
+resource = 'himage'
+table = module + '_' + resource
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+                hospital_id,
+                #Field('title'),
+                Field('type', 'integer',
+                      requires = IS_IN_SET(hms_image_type_opts),
+                      default = 1,
+                      label = T('Image Type'),
+                      represent = lambda opt: hms_image_type_opts.get(opt, T('not specified'))),
+                Field('image', 'upload', autodelete=True),
+                Field('url'),
+                Field('description'),
+                Field('tags'),
+                migrate=migrate)
+
+# Field validation
+db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+
+# Field representation
+db[table].image.represent = lambda image: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60), _href=URL(r=request, c='default', f='download', args=image)))
+
+# Field labels
+db[table].url.label = T("URL")
+db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url))
+
+db[table].tags.label = T("Tags")
+db[table].tags.comment = A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Image Tags|Enter tags separated by commas."))
+
+# CRUD Strings
+s3.crud_strings[table] = Storage(
+    title_create = T('Image'),
+    title_display = T('Image Details'),
+    title_list = T('List Images'),
+    title_update = T('Edit Image Details'),
+    title_search = T('Search Images'),
+    subtitle_create = T('Add New Image'),
+    subtitle_list = T('Images'),
+    label_list_button = T('List Images'),
+    label_create_button = T('Add Image'),
+    label_delete_button = T('Delete Image'),
+    msg_record_created = T('Image added'),
+    msg_record_modified = T('Image updated'),
+    msg_record_deleted = T('Image deleted'),
+    msg_list_empty = T('No Images currently registered')
+)
+
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(hms_hospital='hospital_id'),
+    deletable=True,
+    editable=True,
+    list_fields = ['id', 'type', 'image', 'url', 'description', 'tags'])
 
 # -----------------------------------------------------------------------------
 # Resources (multiple) - TODO: to be completed!
@@ -797,7 +958,7 @@ def shn_hms_get_hospital(label, fields=None, filterby=None):
         if not len(search_fields):
             return None
     else:
-        search_fields = ['name', 'aka1', 'aka2']
+        search_fields = ['ho_uuid', 'gov_uuid', 'name', 'aka1', 'aka2']
 
     if label and isinstance(label,str):
         labels = label.split()
@@ -859,9 +1020,9 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
 
         # Select form
         form = FORM(TABLE(
-                TR(T('Name: '),
+                TR(T('Name or ID: '),
                    INPUT(_type="text", _name="label", _size="40"),
-                   A(SPAN("[Help]"), _class="tooltip", _title=T("Name|To search for a hospital, enter any part of the name. You may use % as wildcard. Press 'Search' without input to list all hospitals."))),
+                   A(SPAN("[Help]"), _class="tooltip", _title=T("Name|To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals."))),
                 TR("", INPUT(_type="submit", _value="Search"))
                 ))
 
@@ -887,32 +1048,26 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
                 for row in rows:
                     href = next.replace('%5bid%5d', '%s' % row.id)
                     records.append(TR(
-                        row.facility_id,
+                        row.ho_uuid,
+                        row.gov_uuid,
                         A(row.name, _href=href),
                         row.aka1 or "",
                         row.aka2 or "",
                         db.gis_location[row.location_id] and db.gis_location[row.location_id].name or "unknown",
-                        row.phone_business,
-                        #row.ems_status and hms_ems_traffic_opts[row.ems_status] or "unknown",
-                        #row.facility_status and hms_facility_status_opts[row.facility_status] or "unknown",
-                        #row.clinical_status and hms_clinical_status_opts[row.clinical_status] or "unknown",
-                        #row.security_status and hms_security_status_opts[row.security_status] or "unknown",
-                        row.total_beds,
-                        row.available_beds
+                        row.phone_business is None and T("unknown") or row.phone_business,
+                        row.total_beds is None and T("unknown") or row.total_beds,
+                        row.available_beds is None and T("unknown") or row.available_beds,
                         ))
                 items=DIV(TABLE(THEAD(TR(
-                    TH("Facility ID"),
-                    TH("Name"),
-                    TH("Other Name"),
-                    TH("Other Name"),
-                    TH("Location"),
-                    TH("Phone"),
-                    #TH("EMS Status"),
-                    #TH("Facility Status"),
-                    #TH("Clinical Status"),
-                    #TH("Security Status"),
-                    TH("Total Beds"),
-                    TH("Available Beds"))),
+                    TH(db.hms_hospital.ho_uuid.label),
+                    TH(db.hms_hospital.gov_uuid.label),
+                    TH(db.hms_hospital.name.label),
+                    TH(db.hms_hospital.aka1.label),
+                    TH(db.hms_hospital.aka2.label),
+                    TH(db.hms_hospital.location_id.label),
+                    TH(db.hms_hospital.phone_business.label),
+                    TH(db.hms_hospital.total_beds.label),
+                    TH(db.hms_hospital.available_beds.label))),
                     TBODY(records), _id='list', _class="display"))
             else:
                 items = T('None')
@@ -947,6 +1102,22 @@ hms_hrequest_priority_opts = {
     1: T('low')
 }
 
+hms_hrequest_impact_opts = {
+    5: T('highly critical'),
+    4: T('critical'),
+    3: T('non-critical'),
+    2: T('improvement'),
+    1: T('wish')
+}
+
+hms_hrequest_review_opts = {
+    5: T('invalid'),                # Invalid request
+    4: T('accepted'),               # Accepted request
+    3: T('deferred'),               # Deferred
+    2: T('review'),                 # For further review
+    1: T('new')                     # New
+}
+
 hms_hrequest_type_opts = {
     1: T('Water'),
     2: T('Electricity'),
@@ -973,7 +1144,7 @@ hms_hrequest_source_type = {
 
 def shn_hms_hrequest_represent(id):
     return  DIV(A(T('Update'), _href=URL(r=request, f='hrequest', args=['update', id])), " ",
-                A(T('Make Pledge'), _href=URL(r=request, f='hrequest', args=[id, 'pledge'])))
+                A(T('Make Pledge'), _href=URL(r=request, f='hrequest', args=[id, 'hpledge'])))
 
 resource = 'hrequest'
 table = module + '_' + resource
@@ -996,7 +1167,11 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                         request.application, _height=12))]),
                   label = T('Priority')),
             Field("city", "string"),
-            Field("verified", "boolean", default=False ),
+            Field("status", "integer",
+                  requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_review_opts)),
+                  represent = lambda type: hms_hrequest_review_opts.get(type, "not specified"),
+                  label = T('Status')),
+            #Field("verified", "boolean", default=False ),
             Field("completed", "boolean", default=False),
             Field("source_type", "integer",
                   requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_source_type)),
@@ -1011,7 +1186,7 @@ db[table].id.represent = lambda id: shn_hms_hrequest_represent(id)
 db[table].timestamp.label = T('Date & Time')
 
 #Hide fields from user:
-db[table].verified.writable = False
+#db[table].verified.writable = False
 #db[table].source_id.writable = db[table].source_id.readable = False
 db[table].completed.writable  = False
 db[table].actionable.writable = db[table].actionable.readable = False
@@ -1053,7 +1228,7 @@ s3xrc.model.add_component(module, resource,
     joinby=dict(hms_hospital = 'hospital_id'),
     deletable=True,
     editable=True,
-    list_fields = ['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'verified', 'completed'])
+    list_fields = ['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'status', 'completed'])
 
 # -----------------------------------------------------------------------------
 # Request Representation
@@ -1222,7 +1397,7 @@ hms_pledge_status_opts = {
 def shn_hms_pledge_represent(id):
     return  A(T('Edit Pledge'), _href=URL(r=request, f='pledge', args=[id]))
 
-resource = 'pledge'
+resource = 'hpledge'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('submitted_on', 'datetime'),

@@ -215,7 +215,7 @@ if empty:
         db[table].insert( name = 'Health' )
         db[table].insert( name = 'Protection and Human Rights and Rule of Law' )
         db[table].insert( name = 'Urban Search and Rescue' )
-        
+
     # Person Registry
     table = 'pr_setting'
     if not db(db[table].id).count():
@@ -624,6 +624,11 @@ if empty:
         auth.add_group('Restricted', description = 'Restricted - is given a simplified full-screen view so as to minimise the possibility of errors')
         auth.add_group('DVI', description = 'DVI - allowed access to the DVI module')
         auth.add_group('AdvancedJS', description = 'AdvancedJS - allowed access to edit the Advanced JS layers')
+        auth.add_group('HMSAdmin', description = 'HMSAdmin - full access to HMS')
+        auth.add_group('HMSOfficer', description = 'HMSOfficer - permission to edit requests and pledges')
+        auth.add_group('HMSFacility', description = 'HMSFacility - permission to submit status and requests')
+        auth.add_group('HMSOrg', description = 'HMSOrg - permission to submit pledges')
+        auth.add_group('HMSViewer', description = 'HMSViewer - permission to access HMS')
     # Security Defaults for all tables
     # For performance we only populate this once (at system startup)
     # => need to populate manually when adding new tables to the database! (less RAD)

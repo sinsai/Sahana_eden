@@ -20,12 +20,12 @@ response.menu_options = [
         [T('List All'), False, URL(r=request, f='hospital')],
         #[T('List by Location'), False, URL(r=request, f='hospital', args='search_location')],
         [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-        [T('Find by Bed Type'), False, URL(r=request, f='hospital', args='search_bedtype')],
+        #[T('Find by Bed Type'), False, URL(r=request, f='hospital', args='search_bedtype')],
         [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')],
     ]],
     [T('Add Request'), False, URL(r=request, f='hrequest', args='create')],
     [T('Requests'), False, URL(r=request, f='hrequest')],
-    [T('Pledges'), False, URL(r=request, f='pledge')],
+    [T('Pledges'), False, URL(r=request, f='hpledge')],
 ]
 
 
@@ -36,9 +36,8 @@ def shn_hms_menu_ext():
                 [T('List All'), False, URL(r=request, f='hospital')],
                 #[T('List by Location'), False, URL(r=request, f='hospital', args='search_location')],
                 [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-                [T('Find by Bed Type'), False, URL(r=request, f='hospital', args='search_bedtype')],
-                [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')],
-                [T('Shortages'), False, URL(r=request, f='shortage')],
+                #[T('Find by Bed Type'), False, URL(r=request, f='hospital', args='search_bedtype')],
+                [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')]
             ]],
     ]
     if session.rcvars and 'hms_hospital' in session.rcvars:
@@ -48,17 +47,19 @@ def shn_hms_menu_ext():
                     [selection.name, False, URL(r=request, f='hospital', args=[selection.id]), [
                         [T('Status Report'), False, URL(r=request, f='hospital', args=[selection.id])],
                         [T('Bed Capacity'), False, URL(r=request, f='hospital', args=[selection.id, 'bed_capacity'])],
-                        [T('Services'), False, URL(r=request, f='hospital', args=[selection.id, 'services'])],
+                        [T('Activity Report'), False, URL(r=request, f='hospital', args=[selection.id, 'hactivity'])],
+                        [T('Support Requests'), False, URL(r=request, f='hospital', args=[selection.id, 'hrequest'])],
                         #[T('Resources'), False, URL(r=request, f='hospital', args=[selection.id, 'resources'])],
-                        [T('Request'), False, URL(r=request, f='hospital', args=[selection.id, 'hrequest'])],
-                        [T('Contacts'), False, URL(r=request, f='hospital', args=[selection.id, 'contact'])],
+                        [T('Images'), False, URL(r=request, f='hospital', args=[selection.id, 'himage'])],
+                        [T('Services'), False, URL(r=request, f='hospital', args=[selection.id, 'services'])],
+                        [T('Contacts'), False, URL(r=request, f='hospital', args=[selection.id, 'hcontact'])],
                     ]]
             ]
             menu.extend(menu_hospital)
     menu2 = [
         [T('Add Request'), False, URL(r=request, f='hrequest', args='create')],
         [T('Requests'), False, URL(r=request, f='hrequest')],
-        [T('Pledges'), False, URL(r=request, f='pledge')],
+        [T('Pledges'), False, URL(r=request, f='hpledge')],
     ]
     menu.extend(menu2)
     response.menu_options = menu
@@ -101,10 +102,9 @@ def hrequest():
         pass
 
     if auth.user is not None:
-        print "Person UUID: %s" % auth.user.person_uuid
         person = db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id)
         if person:
-            db.hms_pledge.person_id.default = person[0].id
+            db.hms_hpledge.person_id.default = person[0].id
 
     output = shn_rest_controller(module , resource, listadd=False, deletable=False,
         pheader=shn_hms_hrequest_pheader,
@@ -112,33 +112,32 @@ def hrequest():
             title="%(subject)s",
             description="%(message)s"
         ),
-        list_fields=['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'verified', 'completed'],
+        list_fields=['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'status', 'completed'],
         onaccept = shn_hms_hrequest_onaccept)
 
     shn_hms_menu_ext()
     return output
 
 
-def pledge():
+def hpledge():
 
     """ Pledges Controller """
 
-    resource = 'pledge'
+    resource = 'hpledge'
 
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True
 
-    pledges = db(db.hms_pledge.status == 3).select()
+    pledges = db(db.hms_hpledge.status == 3).select()
     for pledge in pledges:
         req = db(db.hms_hrequest.id == pledge.hrequest_id).update(completed = True)
 
     db.commit()
 
     if auth.user is not None:
-        print "Person UUID: %s" % auth.user.person_uuid
         person = db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id)
         if person:
-            db.hms_pledge.person_id.default = person[0].id
+            db.hms_hpledge.person_id.default = person[0].id
 
     output = shn_rest_controller(module, resource, editable = True, listadd=False)
 
@@ -171,26 +170,26 @@ def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, sam
                         TD(aid_request.message, _colspan=3),
                         ),
                     TR(
-                        TH(T('Priority: ')),
-                        hms_hrequest_priority_opts.get(aid_request.priority, "unknown"),
+                        TH(T('Hospital: ')),
+                        db.hms_hospital[aid_request.hospital_id] and db.hms_hospital[aid_request.hospital_id].name or "unknown",
                         TH(T('Source Type: ')),
-                        hms_hrequest_source_type[aid_request.source_type],
+                        hms_hrequest_source_type.get(aid_request.source_type, "unknown"),
+                        TH(T('Completed: ')),
+                        aid_request.completed and T("yes") or T("no"),
                         ),
                     TR(
                         TH(T('Time of Request: ')),
                         aid_request.timestamp,
-                        TH(T('Verified: ')),
-                        aid_request.verified and T("yes") or T("no"),
+                        TH(T('Status: ')),
+                        hms_hrequest_review_opts.get(aid_request.status, "unknown"),
                         TH(""),
                         ""
                         ),
                     TR(
-                        TH(T('Hospital: ')),
-                        db.hms_hospital[aid_request.hospital_id] and db.hms_hospital[aid_request.hospital_id].name or "unknown",
-                        TH(T('Actionable: ')),
-                        aid_request.actionable and T("yes") or T("no"),
-                        TH(T('Completion status: ')),
-                        aid_request.completed,
+                        TH(T('Priority: ')),
+                        hms_hrequest_priority_opts.get(aid_request.priority, "unknown"),
+                        TH(""),
+                        "",
                         ),
                 )
         return pheader

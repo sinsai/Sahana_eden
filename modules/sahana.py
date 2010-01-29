@@ -216,15 +216,18 @@ class SQLTABLE2(TABLE):
         (components, row) = (self.components, [])
         if not orderby:
             for c in sqlrows.colnames:
-                row.append(TH(headers.get(c, c)))
+                colname = c.split('.')[-1]
+                row.append(TH(headers.get(c, c), _class='column_%s' % colname))
         else:
             for c in sqlrows.colnames:
+                colname = c.split('.')[-1]
                 row.append(TH(A(headers.get(c, c), _href='?orderby='
-                            + c)))
+                            + c), _class='column_%s' % colname))
         components.append(THEAD(TR(*row)))
         tbody = []
         for (rc, record) in enumerate(sqlrows):
             row = []
+            row_id = None
             if rc % 2 == 0:
                 _class = 'even'
             else:
@@ -232,7 +235,7 @@ class SQLTABLE2(TABLE):
             for colname in sqlrows.colnames:
                 if not table_field.match(colname):
                     r = record._extra[colname]
-                    row.append(TD(r))
+                    row.append(TD(r), _class='column_%s' % colname)
                     continue
                 (tablename, fieldname) = colname.split('.')
                 field = sqlrows.db[tablename][fieldname]
@@ -244,21 +247,24 @@ class SQLTABLE2(TABLE):
                     r = record[fieldname]
                 else:
                     raise SyntaxError, 'something wrong in SQLRows object'
+                if fieldname == 'id':
+                    row_id = r
                 if field.represent:
                     r = field.represent(r)
-                    row.append(TD(r))
+                    row.append(TD(r, _class='column_%s' % fieldname))
                     continue
                 if field.type == 'blob' and r:
-                    row.append(TD('DATA'))
+                    row.append(TD('DATA', _class='column_%s' % fieldname))
                     continue
                 r = str(field.formatter(r))
                 if field.type == 'upload':
                     if upload and r:
-                        row.append(TD(A('file', _href='%s/%s' % (upload, r))))
+                        row.append(TD(A('file', _href='%s/%s' % (upload, r)),
+                                      _class='column_%s' % fieldname))
                     elif r:
-                        row.append(TD('file'))
+                        row.append(TD('file', _class='column_%s' % fieldname))
                     else:
-                        row.append(TD())
+                        row.append(TD(_class='column_%s' % fieldname))
                     continue
                 ur = unicode(r, 'utf8')
                 if len(ur) > truncate:
@@ -270,7 +276,7 @@ class SQLTABLE2(TABLE):
                     except TypeError:
                         #href = '%s/%s/%s' % (linkto, tablename, r)
                         href = '%s/%s' % (linkto, r)
-                    row.append(TD(A(r, _href=href)))
+                    row.append(TD(A(r, _href=href), _class='column_%s' % fieldname))
                 elif linkto and field.type[:9] == 'reference':
                     ref = field.type[10:]
                     try:
@@ -282,7 +288,7 @@ class SQLTABLE2(TABLE):
                             if hasattr(sqlrows.db[tref],'_primarykey'):
                                 href = '%s/%s?%s' % (linkto, tref, urllib.urlencode({fref:ur}))
 
-                    row.append(TD(A(r, _href=href)))
+                    row.append(TD(A(r, _href=href, _class='column_%s' % fieldname)))
                 elif linkto and hasattr(field._table,'_primarykey') and fieldname in field._table._primarykey:
                     # have to test this with multi-key tables
                     key = urllib.urlencode(dict( [ \
@@ -291,10 +297,14 @@ class SQLTABLE2(TABLE):
                                       and isinstance(record[tablename], Row)) and
                                  (k, record[tablename][k])) or (k, record[k]) \
                                     for k in field._table._primarykey ] ))
-                    row.append(TD(A(r, _href='%s/%s?%s' % (linkto, tablename, key))))
+                    row.append(TD(A(r, _href='%s/%s?%s' % (linkto, tablename, key)),
+                                  _class='column_%s' % fieldname))
                 else:
-                    row.append(TD(r))
-            tbody.append(TR(_class=_class, *row))
+                    row.append(TD(r, _class='column_%s' % fieldname))
+            rowattrs = {}
+            if row_id:
+                rowattrs['_id'] = 'row_%s_%d' % (tablename, row_id)
+            tbody.append(TR(_class=_class, *row, **rowattrs))
         components.append(TBODY(*tbody))
 
 import uuid, datetime

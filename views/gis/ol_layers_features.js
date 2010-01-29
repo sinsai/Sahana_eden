@@ -1,7 +1,11 @@
 ﻿var proj_current = map.getProjectionObject();
 
 // Layer to hold the Features
-featuresLayer = new OpenLayers.Layer.Vector("Locations", {displayInLayerSwitcher: false});
+// ToDo: Replace with Internal KML feeds
+featuresLayer = new OpenLayers.Layer.Vector("Locations", {
+    strategies: [ strategy ],
+    displayInLayerSwitcher: false
+});
 map.addLayer(featuresLayer);
 
 var parser = new OpenLayers.Format.WKT();
@@ -20,8 +24,8 @@ select = new OpenLayers.Control.SelectFeature(featuresLayer, {
         clickout: true,
         toggle: true,
         multiple: false,
-        onSelect: onFeatureSelect,
-        onUnselect: onFeatureUnselect
+        onSelect: onFeatureControlSelect,
+        onUnselect: onFeatureControlUnselect
     }
 );
 map.addControl(select);

@@ -577,7 +577,8 @@
 	 * Notes:    The functions provided in this object are basically standard javascript sort
 	 *   functions - they expect two inputs which they then compare and then return a priority
 	 *   result. For each sort method added, two functions need to be defined, an ascending sort and
-	 *   a descending sort.
+	 *   a descending sort. In all cases, html tags (anything in angle brackets) are stripped
+   *   and ignored, so that we properly sort hyperlinked content.
 	 */
 	_oExt.oSort = {
 		/*
@@ -585,30 +586,12 @@
 		 */
 		"string-asc": function ( a, b )
 		{
-			var x = a.toLowerCase();
-			var y = b.toLowerCase();
-			return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-		},
-		
-		"string-desc": function ( a, b )
-		{
-			var x = a.toLowerCase();
-			var y = b.toLowerCase();
-			return ((x < y) ? 1 : ((x > y) ? -1 : 0));
-		},
-		
-		
-		/*
-		 * html sorting (ignore html tags)
-		 */
-		"html-asc": function ( a, b )
-		{
 			var x = a.replace( /<.*?>/g, "" ).toLowerCase();
 			var y = b.replace( /<.*?>/g, "" ).toLowerCase();
 			return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 		},
 		
-		"html-desc": function ( a, b )
+		"string-desc": function ( a, b )
 		{
 			var x = a.replace( /<.*?>/g, "" ).toLowerCase();
 			var y = b.replace( /<.*?>/g, "" ).toLowerCase();
@@ -621,8 +604,8 @@
 		 */
 		"date-asc": function ( a, b )
 		{
-			var x = Date.parse( a );
-			var y = Date.parse( b );
+			var x = Date.parse( a.replace( /<.*?>/g, "" ) );
+			var y = Date.parse( b.replace( /<.*?>/g, "" ) );
 			
 			if ( isNaN( x ) )
 			{
@@ -638,8 +621,8 @@
 		
 		"date-desc": function ( a, b )
 		{
-			var x = Date.parse( a );
-			var y = Date.parse( b );
+			var x = Date.parse( a.replace( /<.*?>/g, "" ) );
+			var y = Date.parse( b.replace( /<.*?>/g, "" ) );
 			
 			if ( isNaN( x ) )
 			{
@@ -659,6 +642,8 @@
 		 */
 		"numeric-asc": function ( a, b )
 		{
+			a = a.replace( /<.*?>/g, "" );
+			b = b.replace( /<.*?>/g, "" );
 			var x = a == "-" ? 0 : a;
 			var y = b == "-" ? 0 : b;
 			return x - y;
@@ -666,6 +651,8 @@
 		
 		"numeric-desc": function ( a, b )
 		{
+			a = a.replace( /<.*?>/g, "" );
+			b = b.replace( /<.*?>/g, "" );
 			var x = a == "-" ? 0 : a;
 			var y = b == "-" ? 0 : b;
 			return y - x;
@@ -687,12 +674,13 @@
 	_oExt.aTypes = [
 		/*
 		 * Function: -
-		 * Purpose:  Check to see if a string is numeric
+		 * Purpose:  Check to see if a string is numeric, after stripping html tags (anything in angle brackets)
 		 * Returns:  string:'numeric' or null
 		 * Inputs:   string:sText - string to check
 		 */
 		function ( sData )
 		{
+			sData = typeof sData.replace == 'function' ? sData.replace( /<.*?>/g, "" ) : sData;
 			if ( sData !== null && sData !== '' ) {
                 /* Sanity check that we are dealing with a string or quick return for a number */
                 if ( typeof sData == 'number' )
@@ -742,12 +730,13 @@
 		
 		/*
 		 * Function: -
-		 * Purpose:  Check to see if a string is actually a formatted date
+		 * Purpose:  Check to see if a string is actually a formatted date, after stripping html tags (anything in angle brackets)
 		 * Returns:  string:'date' or null
 		 * Inputs:   string:sText - string to check
 		 */
 		function ( sData )
 		{
+			sData = typeof sData.replace == 'function' ? sData.replace( /<.*?>/g, "" ) : sData;
 			var iParse = Date.parse(sData);
 			if ( iParse !== null && !isNaN(iParse) )
 			{
@@ -3081,10 +3070,11 @@
 			var sName = (oSettings.sTableId === "") ? "" : 'name="'+oSettings.sTableId+'_length"';
 			var sStdMenu = 
 				'<select size="1" '+sName+'>'+
-					'<option value="10">10</option>'+
-					'<option value="25">25</option>'+
+					'<option value="20">20</option>'+
 					'<option value="50">50</option>'+
 					'<option value="100">100</option>'+
+                    '<option value="500">500</option>'+
+                    '<option value="1000">1000</option>'+
 				'</select>';
 			
 			var nLength = document.createElement( 'div' );

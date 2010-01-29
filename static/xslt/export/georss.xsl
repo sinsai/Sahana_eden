@@ -5,7 +5,7 @@
 
     <xsl:output method="xml" indent="yes"/>
 
-    <xsl:template match="/sahanapy">
+    <xsl:template match="/s3xrc">
         <feed xmlns="http://www.w3.org/2005/Atom" xmlns:georss="http://www.georss.org/georss">
             <title>SahanaPy GIS Features</title>
             <link href="{@url}"/>

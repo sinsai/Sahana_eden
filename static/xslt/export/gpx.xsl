@@ -4,7 +4,7 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 >
 <xsl:output method="xml" indent="yes"/>
-<xsl:template match="/sahanapy">
+<xsl:template match="/s3xrc">
   <gpx creator="" xsi:schemaLocation="http://www.topografix.com/GPX/1/1
 	http://www.topografix.com/GPX/1/1/gpx.xsd"
 	version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

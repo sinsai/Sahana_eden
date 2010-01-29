@@ -20,13 +20,14 @@ var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
 });
 
 // Controls for Draft Features
-var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
-    onSelect: onFeatureSelect,
-    onUnselect: onFeatureUnselect,
-    multiple: false,
-    clickout: true,
-    isDefault: true
-});
+// - interferes with Feature Layers!
+//var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
+//    onSelect: onFeatureSelect,
+//    onUnselect: onFeatureUnselect,
+//    multiple: false,
+//    clickout: true,
+//    isDefault: true
+//});
 
 var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer, 
     {onDone: function(feature) {console.log(feature)}
@@ -84,8 +85,21 @@ var areaButton = new GeoExt.Action({
     toggleGroup: toggleGroup
 });
 
+{{if mgrs:}}
+// MGRS Control
+var mgrsButton = new GeoExt.Action({
+    text: "Select {{=mgrs.name}}",
+    control: selectPdfControl,
+    map: map,
+    toggleGroup: toggleGroup,
+    allowDepress: false,
+    tooltip: "Select {{=mgrs.name}}",
+    // check item options group: "draw"
+});
+{{pass}}
+
 var selectButton = new GeoExt.Action({
-    control: selectControl,
+    //control: selectControl,
     map: map,
     iconCls: 'searchclick',
     tooltip: '{{=T("Query Feature")}}',
@@ -195,8 +209,12 @@ toolbar.addSeparator();
 toolbar.add(lengthButton);
 toolbar.add(areaButton);
 toolbar.addSeparator();
+{{if mgrs:}}
+toolbar.add(mgrsButton);
+toolbar.addSeparator();
+{{pass}}
 // Draw Controls
-toolbar.add(selectButton);
+//toolbar.add(selectButton);
 toolbar.add(pointButton);
 toolbar.add(lineButton);
 toolbar.add(polygonButton);

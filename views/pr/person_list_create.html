@@ -1,4 +1,14 @@
+
 {{extend 'layout.html'}}
+<!-- Uncomment if not using MPR/DVI
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // Hide the ID Label Field (not relevant to an OR deployment)
+    $("#pr_person_pr_pe_label__row").hide();
+
+});
+//]]></script>
+-->
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -6,7 +16,8 @@
 <div id='pheader'>
 {{try:}}
  {{=pheader}}
- <p>&nbsp;</p>
+<a onclick="viewMapMulti('{{=request.controller}}','{{=request.function}}',{{=request.args[0]}},'{{=request.args[1]}}');return false" href="#">View All on Map</a>
+<p>&nbsp;</p>
 {{except:}}
  {{pass}}
 </div>
@@ -29,11 +40,13 @@
 <div class='form-container'>
 {{try:}}
  {{=form}}
- {{include 'key.html'}}
 {{except:}}
 {{pass}}
 </div>
+{{include 'key.html'}}
 {{include 'pagenav.html'}}
 {{include 'searchbox.html'}}
+<p>&nbsp;</p>
+<div id='map'></div>
 {{include 'thickbox.html'}}
 {{include 'dataTables.html'}}

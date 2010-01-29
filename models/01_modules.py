@@ -13,8 +13,8 @@ s3_module_type_opts = {
 opt_s3_module_type = db.Table(None, 'opt_s3_module_type',
                     Field('module_type', 'integer', notnull=True,
                     requires = IS_IN_SET(s3_module_type_opts),
-                    default = 1,
-                    represent = lambda opt: opt and s3_module_type_opts[opt]))
+                    # default = 1,
+                    represent = lambda opt: s3_module_type_opts.get(opt, T('Unknown'))))
 
 resource = 'module'
 table = module + '_' + resource
@@ -201,6 +201,15 @@ if empty:
             module_type=3,
             access='',
             description="Module to assist disaster nurses.",
+            enabled='True'
+        )
+        db[table].insert(
+            name="hms",
+            name_nice="Hospital Management",
+            priority=18,
+            module_type=4,
+            access='',
+            description="Helps to monitor status of hospitals",
             enabled='True'
         )
 

@@ -40,9 +40,9 @@ msg_group_type_opts = {
 opt_msg_group_type = db.Table(None, 'opt_msg_group_type',
                     Field('group_type', 'integer', notnull=True,
                     requires = IS_IN_SET(msg_group_type_opts),
-                    default = 1,
+                    # default = 1,
                     label = T('Type'),
-                    represent = lambda opt: opt and msg_group_type_opts[opt]))
+                    represent = lambda opt: msg_group_type_opts.get(opt, T('Unknown'))))
 
 resource = 'group'
 table = module + '_' + resource

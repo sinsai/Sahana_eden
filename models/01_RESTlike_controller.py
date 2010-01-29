@@ -26,6 +26,7 @@ shn_xml_export_formats = dict(
     gpx = "application/xml",
     lmx = "application/xml",
     pfif = "application/xml",
+    have = "application/xml",
     georss = "application/rss+xml",
     kml = "application/vnd.google-earth.kml+xml"
 ) #: Supported XML output formats and corresponding response headers
@@ -59,7 +60,8 @@ exec('from applications.%s.modules.s3xrc import json_message' % request.applicat
 s3xrc = ResourceController(db,
                            domain=request.env.server_name,
                            base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
-                           rpp=ROWSPERPAGE)
+                           rpp=ROWSPERPAGE,
+                           gis=gis)
 
 def shn_field_represent(field, row, col):
     """
@@ -74,7 +76,7 @@ def shn_field_represent(field, row, col):
     except:
         represent = row[col]
     return represent
-    
+
 # *****************************************************************************
 # Exports
 
@@ -225,7 +227,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
                 title = str(title).decode('utf-8'),
                 link = server + link + '/%d' % row.id,
                 description = str(description).decode('utf-8'),
-                created_on = row.created_on))
+                modified_on = row.modified_on))
 
     import gluon.contrib.rss2 as rss2
 
@@ -233,7 +235,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
         title = entry['title'],
         link = entry['link'],
         description = entry['description'],
-        pubDate = entry['created_on']) for entry in entries]
+        pubDate = entry['modified_on']) for entry in entries]
 
     rss = rss2.RSS2(
         title = str(title_list).decode('utf-8'),
@@ -291,7 +293,7 @@ def export_xls(table, query):
 
             # Check for a custom.represent (e.g. for ref fields)
             represent = shn_field_represent(field, item, col)
-            
+
             rowx.write(cell1, str(represent), style)
             cell1 += 1
     book.save(output)
@@ -545,7 +547,7 @@ def import_json(jr, onvalidation=None, onaccept=None):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain)
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
             if not tree:
                 session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -597,7 +599,7 @@ def import_xml(jr, onvalidation=None, onaccept=None):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain)
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
             if not tree:
                 session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -1108,7 +1110,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limitby = (0, limit)
     else:
         limitby = None
-    
+
     if jr.component:
 
         listadd = jr.component.attr.listadd
@@ -1176,10 +1178,10 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
-               #aaData = [[row[f].represent for f in table.fields if table[f].readable] for row in rows])
+               #ToDo: check for component list_fields & use them where available
                aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
         return json(r)
-    
+
     if jr.representation=="html":
         output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
 
@@ -1644,14 +1646,13 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             session.error = BADRECORD
             redirect(jr.there())
 
-        onvalidation = s3xrc.model.get_attr(resource, 'update_onvalidation')
-        onaccept = s3xrc.model.get_attr(resource, 'update_onaccept')
+        onvalidation = s3xrc.model.get_attr(resource, 'onvalidation')
+        onaccept = s3xrc.model.get_attr(resource, 'onaccept')
         deletable = s3xrc.model.get_attr(resource, 'deletable')
 
     else:
         record_id = jr.id
-
-    deletable = shn_has_permission('delete', table, record_id)
+        deletable = deletable and shn_has_permission('delete', table, record_id)
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised:
@@ -1695,6 +1696,17 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             except:
                 label_list_button = s3.crud_strings.label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
+
+            if deletable:
+                del_href = jr.other(method='delete', representation=jr.representation)
+                if tablename in s3.crud_strings and "label_delete_button" in s3.crud_strings[tablename]:
+                    label_del_button = s3.crud_strings[tablename].label_delete_button
+                else:
+                    label_del_button = None
+                if label_del_button is None:
+                    label_del_button = s3.crud_strings.label_delete_button
+                del_btn = A(label_del_button, _href=del_href, _id='delete-btn')
+                output.update(del_btn=del_btn)
 
             output.update(title=title, list_btn=list_btn)
 
@@ -1952,7 +1964,7 @@ def shn_rest_controller(module, resource,
                 - create/update/delete done via simple GET vars (no form displayed)
             - B{popup}: designed to be used inside popups
             - B{aaData}: used by dataTables for server-side pagination
-            
+
         Request options:
         ================
 

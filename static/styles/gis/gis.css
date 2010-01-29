@@ -1,5 +1,5 @@
 /* GIS module */
-.olControlMousePosition { font-size: 10px; }
+.olControlMousePosition { font-size: 10px; background-color: white; }
 
 /* Toolbar */
 .zoomfull {

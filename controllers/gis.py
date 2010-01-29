@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'gis'
 # Current Module (for sidebar title)
@@ -19,7 +19,7 @@ db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)
 db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 db[table].parent.label = T('Parent')
 db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-db[table].gis_feature_type.represent = lambda opt: opt and gis_feature_type_opts[opt]
+db[table].gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown'))
 db[table].gis_feature_type.label = T('Feature Type')
 db[table].lat.requires = IS_NULL_OR(IS_LAT())
 db[table].lat.label = T('Latitude')
@@ -34,6 +34,8 @@ db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="t
 #db[table].wkt.requires=IS_NULL_OR(IS_WKT())
 db[table].wkt.label = T('Well-Known Text')
 db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+db[table].osm_id.label = 'OpenStreetMap'
+db[table].osm_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 # Joined Resource
 #s3xrc.model.add_component('media', 'metadata',
 #    multiple=True,
@@ -105,15 +107,19 @@ def config():
     db[table].zoom.label = T('Zoom')
     db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
     db[table].marker_id.label = T('Default Marker')
-    db[table].map_height.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+    db[table].map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
     db[table].map_height.label = T('Map Height')
     db[table].map_height.comment = SPAN("*", _class="req")
-    db[table].map_width.requires = [IS_NOT_EMPTY(), IS_ALPHANUMERIC()]
+    db[table].map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1280)]
     db[table].map_width.label = T('Map Width')
     db[table].map_width.comment = SPAN("*", _class="req")
     db[table].zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
     db[table].zoom_levels.label = T('Zoom Levels')
-    
+    db[table].cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
+    db[table].cluster_distance.label = T('Cluster Distance')
+    db[table].cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+    db[table].cluster_threshold.label = T('Cluster Threshold')
+
     # CRUD Strings
     title_create = T('Add Config')
     title_display = T('Config Details')
@@ -214,7 +220,7 @@ def location_to_feature_group():
     # Model options
 
     # CRUD Strings
-    
+
     return shn_rest_controller(module, resource)
 
 def feature_class_to_feature_group():
@@ -227,7 +233,7 @@ def feature_class_to_feature_group():
     # CRUD Strings
 
     return shn_rest_controller(module, resource)
-    
+
 def location():
     "RESTlike CRUD controller"
     resource = 'location'
@@ -253,12 +259,20 @@ def location():
     s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
     if "feature_class" in request.vars:
-        fgroup = request.vars["feature_class"]
-        response.s3.filter = ((db.gis_location.feature_class_id==db.gis_feature_class.id) &
-                              (db.gis_feature_class.name.like(fgroup)))
+        fclass = request.vars["feature_class"]
+        response.s3.filter = ((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+                              (db.gis_feature_class.name.like(fclass)))
 
-    response.s3.pagination = True
-    
+    if "feature_group" in request.vars:
+        fgroup = request.vars["feature_group"]
+        # ToDo support direct Features in Feature Groups
+        #response.s3.filter = ((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+        #                      (db.gis_feature_class_to_feature_group.feature_class_id == db.gis_feature_class.id) &
+        #                      (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
+        #                      (db.gis_feature_group.name.like(fgroup)))
+
+    #response.s3.pagination = True
+
     return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
 
 def marker():
@@ -369,7 +383,7 @@ def layer_openstreetmap():
     msg_list_empty = T('No OpenStreetMap Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_google():
     "RESTlike CRUD controller"
@@ -384,7 +398,7 @@ def layer_google():
     msg_list_empty = T('No Google Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_yahoo():
     "RESTlike CRUD controller"
@@ -399,7 +413,21 @@ def layer_yahoo():
     msg_list_empty = T('No Yahoo Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+
+def layer_mgrs():
+    "RESTlike CRUD controller"
+    resource = 'layer_mgrs'
+    table = module + '_' + resource
+
+    # Model options
+
+    # CRUD Strings
+    label_list_button = T('List MGRS Layers')
+    msg_list_empty = T('No MGRS Layers currently defined')
+    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_bing():
     "RESTlike CRUD controller"
@@ -414,7 +442,7 @@ def layer_bing():
     msg_list_empty = T('No Bing Layers currently defined')
     s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
 
-    return shn_rest_controller(module, resource, deletable=False)
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def layer_georss():
     "RESTlike CRUD controller"
@@ -530,7 +558,7 @@ def layer_js():
     table = module + '_' + resource
 
     # Model options
-    
+
     # CRUD Strings
     title_list = T('JS Layers')
     subtitle_create = T('Add New JS Layer')
@@ -549,7 +577,7 @@ def layer_xyz():
     # Model options
     db[table].url.requires = IS_NOT_EMPTY()
     db[table].url.comment = SPAN("*", _class="req")
-    
+
     # CRUD Strings
     title_list = T('XYZ Layers')
     subtitle_create = T('Add New XYZ Layer')
@@ -565,12 +593,128 @@ def convert_gps():
     " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
     return dict()
 
+def proxy():
+    """Based on http://trac.openlayers.org/browser/trunk/openlayers/examples/proxy.cgi
+This is a blind proxy that we use to get around browser
+restrictions that prevent the Javascript from loading pages not on the
+same server as the Javascript. This has several problems: it's less
+efficient, it might break some sites, and it's a security risk because
+people can use this proxy to browse the web and possibly do bad stuff
+with it. It only loads pages via http and https, but it can load any
+content type. It supports GET and POST requests."""
+
+    import urllib2
+    import cgi
+    import sys, os
+
+    # ToDo - need to link to map_service_catalogue
+    # prevent Open Proxy abuse
+    allowedHosts = []
+    #allowedHosts = ['www.openlayers.org', 'openlayers.org',
+    #                'labs.metacarta.com', 'world.freemap.in',
+    #                'prototype.openmnnd.org', 'geo.openplans.org',
+    #                'sigma.openplans.org', 'demo.opengeo.org',
+    #                'www.openstreetmap.org', 'sample.avencia.com',
+    #                'v-swe.uni-muenster.de:8080']
+
+    method = request['wsgi'].environ['REQUEST_METHOD']
+
+    if method == "POST":
+        # THis can probably use same call as GET in web2py
+        qs = request['wsgi'].environ["QUERY_STRING"]
+
+        d = cgi.parse_qs(qs)
+        if d.has_key("url"):
+            url = d["url"][0]
+        else:
+            url = "http://www.openlayers.org"
+    else:
+        # GET
+        #fs = cgi.FieldStorage()
+        #url = fs.getvalue('url', "http://www.openlayers.org")
+        if 'url' in request.vars:
+            url = request.vars.url
+        else:
+            session.error = str(T("Need a 'url' argument!"))
+            raise HTTP(400, body=json_message(False, 400, session.error))
+
+    try:
+        host = url.split("/")[2]
+        if allowedHosts and not host in allowedHosts:
+            msg = "Status: 502 Bad Gateway\n"
+            msg += "Content-Type: text/plain\n\n"
+            msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
+
+            msg += os.environ
+            return msg
+
+        elif url.startswith("http://") or url.startswith("https://"):
+            if method == "POST":
+                length = int(request['wsgi'].environ["CONTENT_LENGTH"])
+                headers = {"Content-Type": request['wsgi'].environ["CONTENT_TYPE"]}
+                body = request.body.read(length)
+                r = urllib2.Request(url, body, headers)
+                y = urllib2.urlopen(r)
+            else:
+                y = urllib2.urlopen(url)
+
+            # print content type header
+            # TODO: this doesn't work in web2py, need to figure out how that happens?
+            #i = y.info()
+            #if i.has_key("Content-Type"):
+            # msg = "Content-Type: %s" % (i["Content-Type"])
+            #else:
+            # msg = "Content-Type: text/plain"
+
+            #msg += "\n" + y.read()
+
+            msg = y.read()
+            y.close()
+            return msg
+        else:
+            msg = "Content-Type: text/plain\n\n"
+
+            msg += "Illegal request."
+            return msg
+
+    except Exception, E:
+        msg = "Status: 500 Unexpected Error\n"
+        msg += "Content-Type: text/plain\n\n"
+        msg += "Some unexpected error occurred. Error text was:", E
+        return msg
+
+def proxy2():
+    " Provide a proxy for WFS/GeoRSS/MGRS layers. by Massimo diPierro"
+    import httplib
+    PROXY_USER = None
+    PROXY_PASSWORD = None
+    PROXY_URL = 'web2py.com:80'
+    path = '/'+'/'.join(request.args)
+    query = request.env.query_string
+    method = request.env.request_method
+    if PROXY_USER and PROXY_PASSWORD:
+        conn.add_credentials(PROXY_USER, PROXY_PASSWORD)
+    conn =  httplib.HTTPConnection(PROXY_URL)
+    if method == 'GET':
+        conn.request(method, path, query)
+    elif method == 'POST':
+        data = request.body.read()
+        conn.request(method, path, data)
+    else:
+        return 'oops'
+    res = conn.getresponse()
+    content = res.read()
+    headers = dict(res.getheaders())
+    response.headers['Content-Type'] = headers['content-type']
+    response.status = int(res.status)
+    return content
+
 def shn_latlon_to_wkt(lat, lon):
     """Convert a LatLon to a WKT string
     >>> shn_latlon_to_wkt(6, 80)
     'POINT(80 6)'
     """
-    WKT = 'POINT(%d %d)' % (lon, lat)
+    WKT = 'POINT(%f %f)' % (lon, lat)
     return WKT
 
 # Onvalidation callback
@@ -1081,6 +1225,13 @@ def layers():
         if layer.format:
             layers.tms[name].format = layer.format
 
+    # MGRS - only a single one of these should be defined & it actually appears as a Control not a Layer
+    mgrs = db(db.gis_layer_mgrs.enabled==True).select().first()
+    if mgrs:
+        layers.mgrs = Storage()
+        layers.mgrs.name = mgrs.name
+        layers.mgrs.url = mgrs.url
+
     # XYZ
     layers.xyz = Storage()
     layers_xyz = db(db.gis_layer_xyz.enabled==True).select()
@@ -1095,7 +1246,7 @@ def layers():
         layers.xyz[name].transparent = layer.transparent
         layers.xyz[name].visible = layer.visible
         layers.xyz[name].opacity = layer.opacity
-        
+
     # JS
     layers.js = Storage()
     layers_js = db(db.gis_layer_js.enabled==True).select()
@@ -1103,7 +1254,7 @@ def layers():
         name = layer.name
         layers.js[name] = Storage()
         layers.js[name].code = layer.code
-    
+
     return layers
 
 def layers_enable():
@@ -1161,7 +1312,8 @@ def map_viewing_client():
     output = dict(title=title, module_name=module_name)
 
     # Config
-    config = db(db.gis_config.id==1).select().first()
+    # ToDo return all of these to the view via a single 'config' var
+    config = gis.read_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1185,24 +1337,26 @@ def map_viewing_client():
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
-    symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
 
     # Layers
     baselayers = layers()
     # Add the Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, kml_layers=baselayers.kml, js_layers=baselayers.js))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, js_layers=baselayers.js, kml_layers=baselayers.kml))
+    # MGRS isn't a Layer, but added here anyway
+    output.update(dict(mgrs=baselayers.mgrs))
 
     # Internal Features
+    # ToDo: Replace with self-referring KML feed (easier to maintain 1 source of good popups for both internal & external purposes)
     features = Storage()
     # Features are displayed in a layer per FeatureGroup
     feature_groups = db(db.gis_feature_group.enabled == True).select()
     for feature_group in feature_groups:
-        # FIXME: Use OL's Cluster Strategy to ensure no more than 200 features displayed to prevent overloading the browser!
-        # - better than doing a server-side spatial query to show ones visible within viewport on every Pan/Zoom!
         groups = db.gis_feature_group
         locations = db.gis_location
         classes = db.gis_feature_class
@@ -1218,56 +1372,46 @@ def map_viewing_client():
         # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
         features[feature_group.id] = features1 | features2
         for feature in features[feature_group.id]:
-
-            feature.module = feature.gis_feature_class.module
-            feature.resource = feature.gis_feature_class.resource
-            if feature.module and feature.resource:
-                try:
-                    feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select().first().id
-                except:
+            try:
+                # Deprecated since we'll be using KML to populate Popups with Edit URLs, etc
+                feature.module = feature.gis_feature_class.module
+                feature.resource = feature.gis_feature_class.resource
+                if feature.module and feature.resource:
+                    try:
+                        feature.resource_id = db(db['%s_%s' % (feature.module, feature.resource)].location_id == feature.gis_location.id).select().first().id
+                    except:
+                        feature.resource_id = None
+                else:
                     feature.resource_id = None
-            else:
-                feature.resource_id = None
 
-            # 1st choice for a Marker is the Feature's
-            marker = feature.gis_location.marker_id
-            if not marker:
-                # 2nd choice for a Marker is the Symbology for the Feature Class
-                query = (db.gis_symbology_to_feature_class.feature_class_id == feature.gis_feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+                # Look up the marker to display
+                feature.marker = gis.get_marker(feature.gis_location.id)
+
                 try:
-                    marker = db(query).select().first().marker_id
+                    # Metadata is M->1 to Features
+                    # We use the most recent one
+                    query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
+                    metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+
+                    # Person .represent is too complex to put into JOIN
+                    contact = shn_pr_person_represent(metadata.person_id)
+
                 except:
-                    if not marker:
-                        # 3rd choice for a Marker is the Feature Class's
-                        marker = feature.gis_feature_class.marker_id
-                    if not marker:
-                        # 4th choice for a Marker is the default
-                        marker = marker_default
-            feature.marker = db(db.gis_marker.id == marker).select().first().image
+                    metadata = None
+                    contact = None
+                feature.metadata = metadata
+                feature.contact = contact
 
-            try:
-                # Metadata is M->1 to Features
-                # We use the most recent one
-                query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
-                metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
-
-                # Person .represent is too complex to put into JOIN
-                contact = shn_pr_person_represent(metadata.person_id)
-
+                try:
+                    # Images are M->1 to Features
+                    # We use the most recently uploaded one
+                    query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
+                    image = db(query).select(orderby=~db.media_image.created_on)[0].image
+                except:
+                    image = None
+                feature.image = image
             except:
-                metadata = None
-                contact = None
-            feature.metadata = metadata
-            feature.contact = contact
-
-            try:
-                # Images are M->1 to Features
-                # We use the most recently uploaded one
-                query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
-                image = db(query).select(orderby=~db.media_image.created_on)[0].image
-            except:
-                image = None
-            feature.image = image
+                pass
 
     # Add the Features to the Return
     #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
@@ -1291,7 +1435,7 @@ def display_feature():
         raise HTTP(401, body=json_message(False, 401, session.error))
 
     # Config
-    config = db(db.gis_config.id==1).select().first()
+    config = gis.read_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1315,10 +1459,11 @@ def display_feature():
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
-    symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the config to the Return
-    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent)
+    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold)
 
     # Feature details
     try:
@@ -1338,23 +1483,8 @@ def display_feature():
     feature.gis_location = feature
     feature.gis_feature_class = feature_class
 
-    # 1st choice for a Marker is the Feature's
-    marker = feature.marker_id
-    if not marker:
-        # 2nd choice for a Marker is the Symbology for the Feature Class
-        if feature_class:
-            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-            try:
-                marker = db(query).select().first().marker_id
-            except:
-                pass
-            if not marker:
-                # 3rd choice for a Marker is the Feature Class's
-                marker = feature_class.marker_id
-        if not marker:
-            # 4th choice for a Marker is the default
-            marker = marker_default
-    feature.marker = db(db.gis_marker.id == marker).select().first().image
+    # Look up the marker to display
+    feature.marker = gis.get_marker(feature_id)
 
     try:
         # Metadata is M->1 to Features
@@ -1441,6 +1571,7 @@ def display_features():
     #retrieve the location_id's from xml_tree using XPath
 
     # Calculate an appropriate BBox
+    # ToDo: Move to modules/s3gis
     lon_max = -180
     lon_min = 180
     lat_max = -90
@@ -1460,7 +1591,7 @@ def display_features():
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
 
     # Config
-    config = db(db.gis_config.id==1).select().first()
+    config = gis.read_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1484,10 +1615,11 @@ def display_features():
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
     marker_default = config.marker_id
-    symbology = config.symbology_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
 
     # Add the config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
 
     # Feature details
     for feature in features:
@@ -1509,21 +1641,8 @@ def display_features():
         feature.gis_location = feature
         feature.gis_feature_class = feature_class
 
-        # 1st choice for a Marker is the Feature's
-        marker = feature.marker_id
-        if not marker:
-            # 2nd choice for a Marker is the Symbology for the Feature Class
-            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class.id) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-            try:
-                marker = db(query).select().first().marker_id
-            except:
-                if not marker:
-                    # 3rd choice for a Marker is the Feature Class's
-                    marker = feature_class.marker_id
-                if not marker:
-                    # 4th choice for a Marker is the default
-                    marker = marker_default
-        feature.marker = db(db.gis_marker.id == marker).select().first().image
+        # Look up the marker to display
+        feature.marker = gis.get_marker(feature.id)
 
         try:
             # Metadata is M->1 to Features

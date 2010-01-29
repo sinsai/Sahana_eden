@@ -85,6 +85,8 @@ db.define_table(table, timestamp, uuidstamp,
 				Field('map_height', 'integer', notnull=True),
 				Field('map_width', 'integer', notnull=True),
                 Field('zoom_levels', 'integer', default=16, notnull=True),
+                Field('cluster_distance', 'integer', default=5, notnull=True),
+                Field('cluster_threshold', 'integer', default=2, notnull=True),
                 migrate=migrate)
 
 # GIS Feature Classes
@@ -136,7 +138,13 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('gis_feature_type', 'integer', default=1, notnull=True),
                 Field('lat', 'double'), # Only needed for Points
                 Field('lon', 'double'), # Only needed for Points
-                Field('wkt'),           # WKT is auto-calculated from lat/lon for Points
+                Field('wkt', 'text'),   # WKT is auto-calculated from lat/lon for Points
+                Field('osm_id'),
+                Field('lon_min', 'double', writable=False, readable=False), # bounding-box
+                Field('lat_min', 'double', writable=False, readable=False), # bounding-box
+                Field('lon_max', 'double', writable=False, readable=False), # bounding-box
+                Field('lat_max', 'double', writable=False, readable=False), # bounding-box
+                Field('elevation', 'integer', writable=False, readable=False),   # m in height above sea-level. not displayed currently
                 admin_id,
                 migrate=migrate)
 # Reusable field for other tables to reference
@@ -152,19 +160,36 @@ location_id = SQLTable(None, 'location_id',
 
 def shn_gis_location_represent(id):
     try:
-        location  = db(db.gis_location.id==id).select().first()
+        location = db(db.gis_location.id==id).select().first()
         # Simple
         #represent = location.name
         # Fancy Map
         #represent = A(location.name, _href='#', _onclick='viewMap(' + str(id) +');return false')
+        # Lat/Lon
+        lat = location.lat
+        lon = location.lon
+        if lat and lon:
+            if lat > 0:
+                lat_prefix = 'N'
+            else:
+                lat_prefix = 'S'
+            if lon > 0:
+                lon_prefix = 'E'
+            else:
+                lon_prefix = 'W'
+            text = lat_prefix + ' ' + str(lat) + ' ' + lon_prefix + ' ' + str(lon)
+        else:
+            text = location.name
+        represent = text
         # Hyperlink
-        represent = A(location.name, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
+        represent = A(text, _href = S3_PUBLIC_URL + URL(r=request, c='gis', f='location', args=[location.id]))
         # ToDo: Convert to popup? (HTML again!)
-        # Export Lat/Lon if available, otherwise name
-        # tbc
     except:
-        # Could also be 'Invalid' if data consistency wrong
-        represent = None
+        try:
+            # 'Invalid' => data consistency wrong
+            represent = location.id
+        except:
+            represent = None
     return represent
                 
 # Feature Groups
@@ -256,7 +281,7 @@ track_id = SQLTable(None, 'track_id',
     
 # GIS Layers
 #gis_layer_types = ['shapefile', 'scan', 'wfs']
-gis_layer_types = ['openstreetmap', 'google', 'yahoo', 'gpx', 'georss', 'kml', 'wms', 'tms', 'xyz', 'js']
+gis_layer_types = ['openstreetmap', 'georss', 'google', 'gpx', 'js', 'kml', 'mgrs', 'tms', 'wms', 'xyz', 'yahoo']
 #gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender', 'Aerial']
 gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender']
 gis_layer_google_subtypes = ['Satellite', 'Maps', 'Hybrid', 'Terrain']
@@ -278,22 +303,48 @@ for layertype in gis_layer_types:
             gis_layer,
             Field('subtype', label=T('Sub-type'))            )
         db.define_table(table, t, migrate=migrate)
-    if layertype == "google":
+    elif layertype == "georss":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('url', label=T('Location')),
+            projection_id,
+            marker_id)
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "google":
         t = SQLTable(db, table,
             gis_layer,
             Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "yahoo":
+    elif layertype == "gpx":
         t = SQLTable(db, table,
             gis_layer,
-            Field('subtype', label=T('Sub-type')))
+            #Field('url', label=T('Location')),
+            track_id,
+            marker_id)
         db.define_table(table, t, migrate=migrate)
-    if layertype == "bing":
+    elif layertype == "kml":
         t = SQLTable(db, table,
             gis_layer,
-            Field('subtype', label=T('Sub-type')))
+            Field('url', label=T('Location')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "wms":
+    elif layertype == "js":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('code', 'text', label=T('Code'), default="var myNewLayer = new OpenLayers.Layer.XYZ();\nmap.addLayer(myNewLayer);"))
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "mgrs":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('url', label=T('Location')))
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "tms":
+        t = SQLTable(db, table,
+            gis_layer,
+            Field('url', label=T('Location')),
+            Field('layers', label=T('Layers')),
+            Field('format', label=T('Format')))
+        db.define_table(table, t, migrate=migrate)
+    elif layertype == "wms":
         t = SQLTable(db, table,
             gis_layer,
             Field('url', label=T('Location')),
@@ -304,14 +355,7 @@ for layertype in gis_layer_types:
             Field('transparent', 'boolean', default=False, label=T('Transparent?')),
             projection_id)
         db.define_table(table, t, migrate=migrate)
-    if layertype == "tms":
-        t = SQLTable(db, table,
-            gis_layer,
-            Field('url', label=T('Location')),
-            Field('layers', label=T('Layers')),
-            Field('format', label=T('Format')))
-        db.define_table(table, t, migrate=migrate)
-    if layertype == "xyz":
+    elif layertype == "xyz":
         t = SQLTable(db, table,
             gis_layer,
             Field('url', label=T('Location')),
@@ -324,31 +368,17 @@ for layertype in gis_layer_types:
             Field('opacity', 'double', default=0.0, label=T('Transparent?'))
             )
         db.define_table(table, t, migrate=migrate)
-    if layertype == "georss":
+    elif layertype == "yahoo":
         t = SQLTable(db, table,
             gis_layer,
-            Field('url', label=T('Location')),
-            projection_id,
-            marker_id)
+            Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "kml":
+    elif layertype == "bing":
         t = SQLTable(db, table,
             gis_layer,
-            Field('url', label=T('Location')))
+            Field('subtype', label=T('Sub-type')))
         db.define_table(table, t, migrate=migrate)
-    if layertype == "gpx":
-        t = SQLTable(db, table,
-            gis_layer,
-            #Field('url', label=T('Location')),
-            track_id,
-            marker_id)
-        db.define_table(table, t, migrate=migrate)
-    if layertype == "js":
-        t = SQLTable(db, table,
-            gis_layer,
-            Field('code', 'text', label=T('Code'), default="var myNewLayer = new OpenLayers.Layer.XYZ();\nmap.addLayer(myNewLayer);"))
-        db.define_table(table, t, migrate=migrate)
-
+    
 # GIS Cache
 # (Store downloaded KML & GeoRSS feeds)
 resource = 'cache'

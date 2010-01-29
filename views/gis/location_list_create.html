@@ -1,4 +1,5 @@
 {{extend 'layout.html'}}
+{{include 'gis/catalogue_toolbar.html'}}
 {{include '_list_create.html'}}
 {{if session.s3.security_policy==1:}}
     <script type="text/javascript">//<![CDATA[
@@ -9,4 +10,5 @@
     //]]></script>
 {{else:}}
 {{pass}}
+{{include 'gis/feature_crud.js'}}
 {{include 'gis/convert_gps.html'}}

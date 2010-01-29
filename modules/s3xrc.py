@@ -3,7 +3,7 @@
 """
     SahanaPy XML+JSON Interface
 
-    @version: 1.4.6
+    @version: 1.4.7
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -346,7 +346,7 @@ class ResourceController(object):
 
     ROWSPERPAGE = 10
 
-    def __init__(self, db, domain=None, base_url=None, rpp=None):
+    def __init__(self, db, domain=None, base_url=None, rpp=None, gis=None):
 
         assert db is not None, "Database must not be None."
         self.db = db
@@ -362,7 +362,7 @@ class ResourceController(object):
             self.ROWSPERPAGE = rpp
 
         self.model = ObjectModel(self.db)
-        self.xml = S3XML(self.db, domain=domain, base_url=base_url)
+        self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis)
 
     def get_session(self, session, prefix, name):
 
@@ -1222,7 +1222,7 @@ class XRequest(object):
                                   limit=limit)
 
         if template is not None:
-            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain)
+            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain, base_url=self.rc.base_url)
             if not tree:
                 self.error = self.rc.error
                 return None
@@ -1266,7 +1266,7 @@ class XRequest(object):
                                show_urls=False)
 
         if template is not None:
-            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain)
+            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain, base_url=self.rc.base_url)
             if not tree:
                 self.error = self.rc.error
                 return None
@@ -1363,9 +1363,15 @@ class XRequest(object):
 
 class S3XML(object):
 
+    S3XRC_NAMESPACE = "http://www.sahanapy.org/wiki/S3XRC"
+    S3XRC = "{%s}" % S3XRC_NAMESPACE
+    NSMAP = {None : S3XRC_NAMESPACE}
+
     UUID = "uuid"
     Lat = "lat"
     Lon = "lon"
+    Marker = "marker_id"
+    FeatureClass = "feature_class_id"
 
     IGNORE_FIELDS = ["deleted", "id"]
 
@@ -1380,7 +1386,7 @@ class S3XML(object):
     ATTRIBUTES_TO_FIELDS = ["admin"]
 
     TAG = dict(
-        root="sahanapy",
+        root="s3xrc",
         resource="resource",
         reference="reference",
         data="data",
@@ -1407,7 +1413,8 @@ class S3XML(object):
         success="success",
         results="results",
         lat="lat",
-        lon="lon"
+        lon="lon",
+        marker="marker"
         )
 
     ACTION = dict(
@@ -1429,13 +1436,15 @@ class S3XML(object):
     XML2PY = [('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;'), ('&', '&amp;')]
 
 
-    def __init__(self, db, domain=None, base_url=None):
+    def __init__(self, db, domain=None, base_url=None, gis=None):
 
         self.db = db
         self.error = None
 
         self.domain = domain
         self.base_url = base_url
+
+        self.gis = gis
 
 
     def parse(self, source):
@@ -1451,18 +1460,24 @@ class S3XML(object):
             return None
 
 
-    def transform(self, tree, template_path, domain=None):
+    def transform(self, tree, template_path, domain=None, base_url=None):
 
         self.error = None
+
+        ac = etree.XSLTAccessControl(read_file=True, read_network=True)
 
         if not NO_LXML:
             template = self.parse(template_path)
             if template:
                 try:
-                    transformer = etree.XSLT(template)
+                    transformer = etree.XSLT(template, access_control=ac)
                     if domain is not None:
                         domain = "'%s'" % domain
-                        result = transformer(tree, domain=domain)
+                        if base_url is not None:
+                            base_url = "'%s'" % base_url
+                            result = transformer(tree, domain=domain, base_url=base_url)
+                        else:
+                            result = transformer(tree, domain=domain)
                     else:
                         result = transformer(tree)
                     return result
@@ -1539,13 +1554,13 @@ class S3XML(object):
                 resource.set(f, text)
 
             elif isinstance(table[f].type, str) and \
-                table[f].type[:9]=="reference":
+                table[f].type[:9] == "reference":
 
                 _ktable = table[f].type[10:]
                 ktable = self.db[_ktable]
 
                 if self.UUID in ktable.fields:
-                    uuid = self.db(ktable.id==value).select(ktable[self.UUID], limitby=(0,1))
+                    uuid = self.db(ktable.id==value).select(ktable[self.UUID], limitby=(0, 1))
                     if uuid:
                         uuid = uuid[0].uuid
                         reference = etree.SubElement(resource, self.TAG["reference"])
@@ -1555,14 +1570,19 @@ class S3XML(object):
                         reference.text = text
 
                         if self.Lat in ktable.fields and self.Lon in ktable.fields:
-                            LatLon = self.db(ktable.id==value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0,1))
+                            LatLon = self.db(ktable.id == value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
                             if LatLon:
                                 LatLon = LatLon[0]
                                 reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
                                 reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
+                                # Look up the marker to display
+                                marker = self.gis.get_marker(value)
+                                marker_url = "%s/%s" % (download_url, marker)
+                                reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
+
 
             elif isinstance(table[f].type, str) and \
-                table[f].type[:6]=="upload":
+                table[f].type[:6] == "upload":
 
                 data = etree.SubElement(resource, self.TAG["data"])
                 data.set(self.ATTRIBUTE["field"], f)
@@ -1585,7 +1605,7 @@ class S3XML(object):
 
         """ Builds a tree from a list of elements """
 
-        root = etree.Element(self.TAG["root"])
+        root = etree.Element(self.TAG["root"], nsmap=self.NSMAP)
 
         root.set(self.ATTRIBUTE["success"], str(False))
 

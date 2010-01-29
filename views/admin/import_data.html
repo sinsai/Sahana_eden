@@ -48,6 +48,13 @@ Selective import:
     </table>
 </form>
 </div>
+<p>&nbsp;</p>
+<div class='form-container'>
+Create an Import Job to process uncategorised third-party CSV data:
+{{=import_job_form.custom.begin}}
+{{=import_job_form.components[0]}}
+{{=import_job_form.custom.end}}
+</div>
 <div id='results'></div>
 {{include 'admin/resources.js'}}
 <script type="text/javascript">//<![CDATA[

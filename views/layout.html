@@ -11,6 +11,10 @@
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
+{{if response.extra_styles:}}{{for sheet in response.extra_styles:}}
+  <link href="/{{=request.application}}/static/styles/{{=sheet}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+{{pass}}
+{{pass}}
 </head>
 <body>
 

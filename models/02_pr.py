@@ -40,7 +40,7 @@ opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
                         requires = IS_IN_SET(vita.trackable_types),
                         default = vita.DEFAULT_TRACKABLE,
                         label = T('Entity Type'),
-                        represent = lambda opt: opt and vita.trackable_types[opt]))
+                        represent = lambda opt: vita.trackable_types.get(opt, T('Unknown'))))
 
 # -----------------------------------------------------------------------------
 # shn_pentity_represent
@@ -61,7 +61,7 @@ def shn_pentity_represent(id):
         return default
     entity_type = pentity.opt_pr_entity_type
     label = pentity.label or "no label"
-    
+
     etype = lambda entity_type: vita.trackable_types[entity_type]
 
     if entity_type == 1:
@@ -106,13 +106,13 @@ resource = 'pentity'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 #                    Field('parent'),                # Parent Entity
-                    opt_pr_entity_type,             # Entity class
-                    Field('label', length=128, unique=True),    # Recognition Label
+                    opt_pr_entity_type,              # Entity class
+                    Field('label', length=128),      # Recognition Label
                     migrate=migrate)
 
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
+#db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
 #db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
 
 # Field representation
@@ -153,10 +153,10 @@ pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
 #                        readable = False,   # should be invisible in (most) forms
 #                        writable = False    # should be invisible in (most) forms
 #                    ),
-                    Field('pr_pe_label',
+                    Field('pr_pe_label', length=128,
                         label = T('ID Label'),
                         requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-                    ))
+                    )) # Can't be unique if we allow Null!
 
 # *****************************************************************************
 # Person (person)
@@ -176,7 +176,7 @@ opt_pr_gender = SQLTable(None, 'opt_pr_gender',
                         requires = IS_IN_SET(pr_person_gender_opts),
                         default = 1,
                         label = T('Gender'),
-                        represent = lambda opt: opt and pr_person_gender_opts[opt]))
+                        represent = lambda opt: pr_person_gender_opts.get(opt, T('Unknown'))))
 
 #
 # Age Group -------------------------------------------------------------------
@@ -195,7 +195,7 @@ opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                         requires = IS_IN_SET(pr_person_age_group_opts),
                         default = 1,
                         label = T('Age Group'),
-                        represent = lambda opt: opt and pr_person_age_group_opts[opt]))
+                        represent = lambda opt: pr_person_age_group_opts.get(opt, T('Unknown'))))
 
 #
 # Marital Status --------------------------------------------------------------
@@ -212,10 +212,10 @@ pr_marital_status_opts = {
 
 opt_pr_marital_status = SQLTable(None, 'opt_pr_marital_status',
                         Field('opt_pr_marital_status', 'integer',
-                            requires = IS_IN_SET(pr_marital_status_opts),
+                            requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
                             default = 1,
                             label = T('Marital Status'),
-                            represent = lambda opt: opt and pr_marital_status_opts[opt]))
+                            represent = lambda opt: opt and pr_marital_status_opts.get(opt, T('Unknown'))))
 
 #
 # Religion --------------------------------------------------------------------
@@ -232,10 +232,10 @@ pr_religion_opts = {
 
 opt_pr_religion = SQLTable(None, 'opt_pr_religion',
                     Field('opt_pr_religion', 'integer',
-                        requires = IS_IN_SET(pr_religion_opts),
-                        default = 1,
+                        requires = IS_NULL_OR(IS_IN_SET(pr_religion_opts)),
+                        # default = 1,
                         label = T('Religion'),
-                        represent = lambda opt: opt and pr_religion_opts[opt]))
+                        represent = lambda opt: pr_religion_opts.get(opt, T('Unknown'))))
 
 #
 # Nationality and Country of Residence ----------------------------------------
@@ -244,17 +244,17 @@ pr_nationality_opts = shn_list_of_nations
 
 opt_pr_nationality = SQLTable(None, 'opt_pr_nationality',
                         Field('opt_pr_nationality', 'integer',
-                            requires = IS_IN_SET(pr_nationality_opts),
-                            default = 999, # unknown
+                            requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
+                            # default = 999, # unknown
                             label = T('Nationality'),
-                            represent = lambda opt: opt and pr_nationality_opts[opt]))
+                            represent = lambda opt: pr_nationality_opts.get(opt, T('Unknown'))))
 
 opt_pr_country = SQLTable(None, 'opt_pr_country',
                         Field('opt_pr_country', 'integer',
-                            requires = IS_IN_SET(pr_nationality_opts),
-                            default = 999, # unknown
+                            requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
+                            # default = 999, # unknown
                             label = T('Country of Residence'),
-                            represent = lambda opt: opt and pr_nationality_opts[opt]))
+                            represent = lambda opt: pr_nationality_opts.get(opt, T('Unknown'))))
 
 #
 # shn_pr_person_represent -----------------------------------------------------
@@ -286,7 +286,8 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('local_name'),                    # name in local language and script, Sahana legacy
                 opt_pr_gender,
                 opt_pr_age_group,
-                Field('email', length=128, unique=True), # Needed for AAA (change this!)
+                #Field('email', length=128, unique=True), # Needed for AAA (change this!)
+                Field('email', length=128), # Needed for AAA (change this!)
                 Field('mobile_phone'),                   # Needed for SMS (change this!)
                 # Person Details
                 Field('date_of_birth', 'date'),         # Sahana legacy
@@ -299,11 +300,13 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # Field validation
-db[table].date_of_birth.requires = IS_NULL_OR(IS_DATE())
+db[table].date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
+                                        error_message="%s " % T("Enter a date before") + "%(max)s!"))
 db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
 db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
 db[table].email.requires = IS_NULL_OR(IS_EMAIL())
 db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
+db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_person.pr_pe_label'))
 
 # Field representation
 db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
@@ -332,11 +335,12 @@ subtitle_create = T('Add Person')
 subtitle_list = T('Persons')
 label_list_button = T('List Persons')
 label_create_button = T('Add Person')
+label_delete_button = T('Delete Person')
 msg_record_created = T('Person added')
 msg_record_modified = T('Person details updated')
 msg_record_deleted = T('Person deleted')
 msg_list_empty = T('No Persons currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
 # person_id: reusable field for other tables to reference ---------------------
@@ -367,9 +371,9 @@ pr_group_type_opts = {
 opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
                     Field('opt_pr_group_type', 'integer',
                         requires = IS_IN_SET(pr_group_type_opts),
-                        default = 4,
+                        # default = 4,
                         label = T('Group Type'),
-                        represent = lambda opt: opt and pr_group_type_opts[opt]))
+                        represent = lambda opt: pr_group_type_opts.get(opt, T('Unknown'))))
 
 #
 # group table -----------------------------------------------------------------
@@ -404,6 +408,7 @@ db[table].pr_pe_label.readable = False
 db[table].pr_pe_label.writable = False
 db[table].system.readable = False
 db[table].system.writable = False
+db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_group.pr_pe_label'))
 
 # Field labels
 db[table].opt_pr_group_type.label = T("Group type")
@@ -420,11 +425,12 @@ subtitle_create = T('Add New Group')
 subtitle_list = T('Groups')
 label_list_button = T('List Groups')
 label_create_button = T('Add Group')
+label_delete_button = T('Delete Group')
 msg_record_created = T('Group added')
 msg_record_modified = T('Group updated')
 msg_record_deleted = T('Group deleted')
 msg_list_empty = T('No Groups currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 #
 # group_id: reusable field for other tables to reference ----------------------

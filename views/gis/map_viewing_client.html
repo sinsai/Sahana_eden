@@ -53,7 +53,8 @@ Ext.onReady(function() {
     });
 
     var layerTreeFeaturesInternal = new GeoExt.tree.OverlayLayerContainer({
-        text: "{{=T('Internal Features')}}",
+        //text: "{{=T('Internal Features')}}",
+        text: "{{=T('Overlays')}}",
         layerStore: mapPanel.layers,
         leaf: false,
         expanded: true

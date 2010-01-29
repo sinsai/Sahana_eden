@@ -18,12 +18,12 @@
     <xsl:template match="/pfif:pfif">
             <xsl:apply-templates select="./person"/>
     <xsl:template match="pfif:pfif">
-        <sahanapy>
+        <s3xrc>
             <xsl:attribute name="domain">
                 <xsl:value-of select="$domain"/>
             </xsl:attribute>
             <xsl:apply-templates select="./pfif:person"/>
-        </sahanapy>
+        </s3xrc>
     </xsl:template>
 
     <xsl:template match="pfif:person">

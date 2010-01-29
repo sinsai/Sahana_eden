@@ -17,11 +17,11 @@
 
 
     <xsl:template match="/">
-        <xsl:apply-templates select="./sahanapy"/>
+        <xsl:apply-templates select="./s3xrc"/>
     </xsl:template>
 
 
-    <xsl:template match="sahanapy">
+    <xsl:template match="s3xrc">
         <xsl:if test="./resource[@name='hms_hospital']">
             <have:HospitalStatus>
                 <xsl:apply-templates select="./resource[@name='hms_hospital']"/>
@@ -40,7 +40,7 @@
                         <xsl:value-of select="./@uuid" />
                     </xsl:when>
                     <xsl:otherwise>
-                        <xsl:value-of select="concat(/sahanapy/@domain, '/', ./@uuid)" />
+                        <xsl:value-of select="concat(/s3xrc/@domain, '/', ./@uuid)" />
                     </xsl:otherwise>
                 </xsl:choose>
             </xsl:attribute>

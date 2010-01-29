@@ -1,19 +1,75 @@
 {{extend 'layout.html'}}
 <div id="home">
-{{=H2(T(module_name))}}
-<p>
-{{=T("The")}} {{=T(module_name)}} {{=T("module helps monitoring the status of hospitals.")}}
-</p>
-<h3>{{=T("Features Include")}}:</h3>
-<ul>
-<li>{{=A(T('List Hospitals'), _href=URL(r=request, f='hospital'))}}</li>
-<!--<li>{{=A(T('List Hospitals by Location'), _href=URL(r=request, f='hospital', args='search_location'))}}</li>-->
-<li>{{=A(T('Search for a Hospital by Name'), _href=URL(r=request, f='hospital', args='search_simple'))}}</li>
-<li>{{=A(T('Search for a Hospital by Bed Type'), _href=URL(r=request, f='hospital', args='search_bedtype'))}}</li>
-<li>{{=A(T('Add Hospitals'), _href=URL(r=request, f='hospital', args='create'))}}</li>
-<li>View hospitals on the <a href="{{=URL(r=request, c='gis', f='map_viewing_client')}}">map</a></li>
-<li>View hospitals in <a href="{{=URL(r=request, f='hospital.kml')}}">Google Earth</a></li>
-<li>Export hospital information as <a href="{{=URL(r=request, f='hospital.have')}}">EDXL-HAVE</a></li>
-<!--<li>Import hospital information from EDXL-HAVE (coming soon...)</li>-->
-</ul>
+<div style="margin:20px auto; width:96%; max-width:1000px;" >
+    <div style="float:left; font-size:x-large; line-height:110%; width:50%; margin-right:50px;">
+
+    {{=OL(
+      LI(
+        SPAN(A(T('Hospital Status Report'),
+          _href=URL(r=request, c='hms', f='hospital', args='search_simple')),_style="font-weight:bold;"),
+        P(T('View or update the status of a hospital.')),
+          _style="margin-top:1em;"),
+
+      LI(
+        SPAN(A(T('Support Request'),
+          _href=URL(r=request, c='hms', f='hrequest', args='create')),_style="font-weight:bold;"),
+        P(T('Enter a new support request.')),
+          _style="margin-top:1em;"),
+
+      LI(
+        SPAN(A(T('Pledge Support'),
+          _href=URL(r=request, c='hms', f='hrequest')),_style="font-weight:bold;"),
+       P(T('View pending requests and pledge support.')),
+          _style="margin-top:1em;"),
+
+      LI(
+        SPAN(A(T('Situation Map'),
+          _href=URL(r=request, c='gis', f='map_viewing_client')),_style="font-weight:bold;"),
+        P(T('Review the situation on maps.')),
+          _style="margin-top:1em;"),
+
+           _style="list-style-type: none;"
+     )}}
+
+    </div>
+
+    <div style="width:200px; padding:0 10px; float:right; margin:0 auto;">
+      {{=H4(T('ACCESS DATA'))}}
+      {{=DIV(T('Use these links to download data that is currently in the database.'))}}
+      {{=UL(
+        LI(A('CSV',
+          _href=URL(r=request, c='hms', f='hospital', vars={'format':'csv'})),
+          _style='padding:3px; margin-left: 18px;'),
+       LI(A('JSON',
+          _href=URL(r=request, c='hms', f='hospital', vars={'format':'json'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('KML',
+          _href=URL(r=request, c='hms', f='hospital', vars={'format':'kml'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('RSS',
+          _href=URL(r=request, c='hms', f='hospital', vars={'format':'rss'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('XML',
+          _href=URL(r=request, c='hms', f='hospital', vars={'format':'xml'})),
+          _style='padding:3px; margin-left: 18px;'),
+        LI(A('EDXL-HAVE',
+          _href=URL(r=request, c='hms', f='hospital', vars={'format':'have'})),
+          _style='padding:3px; margin-left: 18px;'))
+      }}
+
+      {{=H4(T('LICENCE'))}}
+      {{=DIV(T('All data provided by the Sahana Software Foundation from this site is licenced under a Creative Commons Attribution licence. However, not all data originates here. Please consult the source field of each entry.'))}}
+    </div>
+
+  <div style="width:200px; float:right; padding:0 10px; margin: 0 auto;">
+    {{=H4(T('ABOUT THIS MODULE'))}}
+    {{=T("The")}} {{=T(module_name)}} {{=T("module helps monitoring the status of hospitals.")}}
+    {{=H3(T("Features Include"), _style='margin-top:15px;')}}
+    {{=UL(
+      LI(T("Hospital status assessment.")),
+      LI(T("Manage requests of hospitals for assistance.")),
+      _style="margin-left:20px;")
+    }}
+  </div>
 </div>
+</div><!-- home -->

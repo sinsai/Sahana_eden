@@ -7,12 +7,12 @@
     <xsl:template match="/">
         <kml xmlns="http://www.opengis.net/kml/2.2">
             <Document>
-                <xsl:apply-templates select="sahanapy"/>
+                <xsl:apply-templates select="s3xrc"/>
             </Document>
         </kml>
     </xsl:template>
 
-    <xsl:template match="sahanapy">
+    <xsl:template match="s3xrc">
         <Folder>
             <name>SahanaPy GIS Features</name>
             <xsl:apply-templates select="resource"/>

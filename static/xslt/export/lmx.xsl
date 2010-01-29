@@ -16,12 +16,12 @@
     <xsl:template match="/">
         <lm:lmx>
             <lm:landmarkCollection>
-                <xsl:apply-templates select="./sahanapy"/>
+                <xsl:apply-templates select="./s3xrc"/>
             </lm:landmarkCollection>
         </lm:lmx>
     </xsl:template>
 
-    <xsl:template match="sahanapy">
+    <xsl:template match="s3xrc">
         <lm:name>
             <xsl:choose>
                 <xsl:when test="./@domain">

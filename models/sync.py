@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'sync'
 
@@ -11,7 +11,7 @@ sync_policy_opts = {
 opt_sync_policy = db.Table(None, 'sync_policy',
                         Field('policy', 'integer', notnull=True,
                             requires = IS_IN_SET(sync_policy_opts),
-                            # default = 1,
+                            default = 1,
                             represent = lambda opt: sync_policy_opts.get(opt, T('Unknown'))))
 # Settings
 resource = 'setting'

@@ -16,7 +16,7 @@ response.menu_options = [
         [T('Images'), False, URL(r=request, f='person', args='image')],
         [T('Identity'), False, URL(r=request, f='person', args='identity')],
         [T('Address'), False, URL(r=request, f='person', args='address')],
-        [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+        [T('Contact Data'), False, URL(r=request, f='person', args='pe_contact')],
         [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
     ]],
     [T('Physical Description'), False, URL(r=request, f='person', args=['pd_general']),[

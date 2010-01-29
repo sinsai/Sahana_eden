@@ -80,14 +80,14 @@ def shn_hospital_id_represent(id):
 
     """ Representation of hospital IDs in lists """
 
-    return  DIV(A(T('Request'), _href=URL(r=request, f='hospital', args=[id, 'req'])), " ",
+    return  DIV(A(T('Request'), _href=URL(r=request, f='hospital', args=[id, 'hrequest'])), " ",
                 A(T('Edit'), _href=URL(r=request, f='hospital', args=['update', id])))
 
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('ho_uuid'),                       # UUID assigned by Health Organisation (WHO, PAHO)
-                Field('gov_uuid'),                      # UUID assigned by Local Government
+                Field('ho_uuid', unique=True),          # UUID assigned by Health Organisation (WHO, PAHO)
+                Field('gov_uuid', unique=True),         # UUID assigned by Local Government
                 Field('name', notnull=True),            # Name of the facility
                 Field('aka1'),                          # Alternate name, or name in local language
                 Field('aka2'),                          # Alternate name, or name in local language
@@ -103,6 +103,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('phone_exchange'),
                 Field('phone_business'),
                 Field('phone_emergency'),
+                Field('website'),
                 Field('email'),
                 Field('fax'),
                 Field('total_beds', 'integer'),         # Total Beds
@@ -152,6 +153,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                       label = T('Clinical Operations'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
                 Field('access_status'),                 # Access Status
+                Field('info_source'),                   # Source of Information
                 shn_comments_field,                     # Comments field
                 migrate=migrate)
 
@@ -162,14 +164,14 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].organisation_id.represent = lambda id: \
     (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
-db[table].ho_uuid.requires = IS_NOT_IN_DB(db, '%s.ho_uuid' % table)
+db[table].ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
 #db[table].ho_uuid.label = T('Health Org UUID')
 db[table].ho_uuid.label = T('PAHO UUID')
 db[table].ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
 #    _title=T("Health Organisation UUID|The Universal Unique Identifier (UUID) as assigned to this facility by Health Organisations (e.g. WHO))."))
     _title=T("PAHO UUID|The Universal Unique Identifier (UUID) as assigned to this facility by PAHO)."))
 
-db[table].gov_uuid.requires = IS_NOT_IN_DB(db, '%s.gov_uuid' % table)
+db[table].gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.gov_uuid' % table))
 #db[table].gov_uuid.label = T('Government UUID')
 db[table].gov_uuid.label = T('MOH UUID')
 db[table].gov_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
@@ -237,7 +239,13 @@ db[table].non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 db[table].non_medical_staff.label = T('Number of non-medical staff')
 
 #db[table].access_status.label = "Access Status"
-db[table].access_status.label = "Road Status"
+db[table].access_status.label = "Road Conditions"
+db[table].access_status.comment =  A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Road Conditions|Describe the condition of the roads to your hospital."))
+
+db[table].info_source.label = "Source of Information"
+db[table].info_source.comment =  A(SPAN("[Help]"), _class="tooltip",
+    _title=T("Source of Information|Specify the source of the information in this report."))
 
 s3.crud_strings[table] = Storage(
     title_create = T('Add Hospital'),
@@ -302,6 +310,7 @@ db.define_table(table, timestamp, deletion_status,
                 Field('email'),
                 Field('fax'),
                 Field('skype'),
+                Field('website'),
                 migrate=migrate)
 
 db[table].person_id.label = T('Contact')
@@ -1395,7 +1404,7 @@ hms_pledge_status_opts = {
 }
 
 def shn_hms_pledge_represent(id):
-    return  A(T('Edit Pledge'), _href=URL(r=request, f='pledge', args=[id]))
+    return  A(T('Edit Pledge'), _href=URL(r=request, f='hpledge', args=[id]))
 
 resource = 'hpledge'
 table = module + '_' + resource

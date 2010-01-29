@@ -144,6 +144,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('lat_min', 'double', writable=False, readable=False), # bounding-box
                 Field('lon_max', 'double', writable=False, readable=False), # bounding-box
                 Field('lat_max', 'double', writable=False, readable=False), # bounding-box
+                Field('elevation', 'integer', writable=False, readable=False),   # m in height above sea-level. not displayed currently
                 admin_id,
                 migrate=migrate)
 # Reusable field for other tables to reference

@@ -1,6 +1,7 @@
 ﻿var proj_current = map.getProjectionObject();
 
 // Layer to hold the Features
+// ToDo: Replace with Internal KML feeds
 featuresLayer = new OpenLayers.Layer.Vector("Locations", {
     strategies: [ strategy ],
     displayInLayerSwitcher: false

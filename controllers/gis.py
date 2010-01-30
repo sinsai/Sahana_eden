@@ -71,6 +71,7 @@ def apikey():
     #db[table].apikey.requires = THIS_NOT_IN_DB(db(db[table].name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
     db[table].apikey.requires = IS_NOT_EMPTY()
     db[table].apikey.label = T("Key")
+    db[table].lat.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     ADD_KEY = T('Add Key')

@@ -21,6 +21,8 @@ db.define_table(table,
 # -----------------------------------------------------------------------------
 # Hospitals
 #
+HMS_HOSPITAL_USE_GOVUUID = True #: whether to use governmental UUIDs instead of internal UUIDs
+
 hms_facility_type_opts = {
     1: T('Hospital'),
     2: T('Field Hospital'),
@@ -293,6 +295,14 @@ def shn_hms_hospital_rss(record):
             (record.available_beds is not None) and record.available_beds or T("unknown"))
     else:
         return None
+
+def shn_hms_hospital_onvalidation(form):
+
+    if "gov_uuid" in db.hms_hospital.fields and HMS_HOSPITAL_USE_GOVUUID:
+        if form.vars.gov_uuid is not None and not str(form.vars.gov_uuid).isspace():
+            form.vars.uuid = form.vars.gov_uuid
+        else:
+            del form.vars["gov_uuid"]
 
 # -----------------------------------------------------------------------------
 # Contacts

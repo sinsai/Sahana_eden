@@ -83,6 +83,7 @@ def hospital():
             title="%(name)s",
             description=shn_hms_hospital_rss
         ),
+        onvalidation = shn_hms_hospital_onvalidation,
         list_fields=['id', 'name', 'organisation_id', 'location_id', 'phone_business', 'ems_status', 'facility_status', 'clinical_status', 'security_status', 'total_beds', 'available_beds'])
     shn_hms_menu_ext()
     return output

@@ -326,7 +326,6 @@ def shn_last_update(table, record_id):
 
             modified_by = ""
             if "modified_by" in table.fields:
-                print record.modified_by
                 user = auth.settings.table_user[record.modified_by]
                 if user:
                     person = db(db.pr_person.uuid==user.person_uuid).select().first()

@@ -751,6 +751,16 @@ class AuthS3(Auth):
                     .select()
                 user = users[0]
                 user = Storage(table_user._filter_fields(user, id=True))
+
+                # Add the first user to admin group
+                # Installers should create a default user with random password to make this safe
+                if user.id==1 and self.db(table_user.id).count()==1:
+                    table_group = self.settings.table_group
+                    admin_group = self.db(table_group.role=="Administrator").select(table_group.id).first()
+                    if admin_group:
+                        print "Adding user %s to group %s" % (user.id, admin_group.id)
+                        self.add_membership(admin_group.id, user.id)
+
                 session.auth = Storage(user=user, last_visit=request.now,
                                    expiration=self.settings.expiration)
                 self.user = user

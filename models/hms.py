@@ -78,13 +78,6 @@ hms_or_status_opts = {
     4: T('Not Applicable')
 } #: OR Status Options
 
-def shn_hospital_id_represent(id):
-
-    """ Representation of hospital IDs in lists """
-
-    return  DIV(A(T('Request'), _href=URL(r=request, f='hospital', args=[id, 'hrequest'])), " ",
-                A(T('Edit'), _href=URL(r=request, f='hospital', args=['update', id])))
-
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
@@ -160,7 +153,6 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 
-db[table].id.represent = shn_hospital_id_represent
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 db[table].organisation_id.represent = lambda id: \
@@ -296,6 +288,7 @@ def shn_hms_hospital_rss(record):
     else:
         return None
 
+# -----------------------------------------------------------------------------
 def shn_hms_hospital_onvalidation(form):
 
     if "gov_uuid" in db.hms_hospital.fields and HMS_HOSPITAL_USE_GOVUUID:
@@ -303,6 +296,14 @@ def shn_hms_hospital_onvalidation(form):
             form.vars.uuid = form.vars.gov_uuid
         else:
             form.vars.gov_uuid = None
+
+# -----------------------------------------------------------------------------
+def shn_hms_hospital_onaccept(form):
+
+    # Update requests
+    hospital = db.hms_hospital[form.vars.id]
+    if hospital:
+        db(db.hms_hrequest.hospital_id==hospital.id).update(city=hospital.city)
 
 # -----------------------------------------------------------------------------
 # Contacts
@@ -763,206 +764,6 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
     return None
 
 # -----------------------------------------------------------------------------
-# Hospital Search By Location
-#
-def shn_hms_hospital_search_location(xrequest, onvalidation=None, onaccept=None):
-
-    """ List hospitals by location """
-
-    if not shn_has_permission('read', db.hms_hospital):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
-
-    if xrequest.representation=="html":
-        # Check for redirection
-        if request.vars._next:
-            next = str.lower(request.vars._next)
-        else:
-            next = str.lower(URL(r=request, f='hospital', args='[id]'))
-
-        # Custom view
-        response.view = '%s/hospital_search.html' % xrequest.prefix
-
-        # Title and subtitle
-        title = T('Search for a Hospital')
-        subtitle = T('Matching Records')
-
-        # Select form:
-        l_opts = [OPTION(_value='')]
-        l_opts += [OPTION(location.name, _value=location.id)
-                  for location in db(db.gis_location.deleted==False).select(db.gis_location.ALL)]
-        form = FORM(TABLE(
-                TR(T('Location: '),
-                SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id'))))),
-                TR("", INPUT(_type="submit", _value="Search"))
-                ))
-
-        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-        # Accept action
-        items = None
-        if form.accepts(request.vars, session):
-
-            table = db.hms_hospital
-            query = (table.deleted==False)
-
-            if form.vars.location is None:
-                results = db(query).select(table.ALL)
-            else:
-                #TODO: Make this query include all child locations of this location!
-                query = query & (table.location_id==form.vars.location)
-                results = db(query).select(table.ALL)
-
-            if results and len(results):
-                records = []
-                for result in results:
-                    href = next.replace('%5bid%5d', '%s' % result.id)
-                    records.append(TR(
-                        A(result.name, _href=href),
-                        result.ems_status and hms_ems_traffic_opts[result.ems_status] or "unknown",
-                        result.facility_status and hms_facility_status_opts[result.facility_status] or "unknown",
-                        result.clinical_status and hms_clinical_status_opts[result.clinical_status] or "unknown",
-                        result.security_status and hms_security_status_opts[result.security_status] or "unknown",
-                        result.total_beds,
-                        result.available_beds
-                        ))
-                items=DIV(TABLE(THEAD(TR(
-                    TH("Name"),
-                    TH("EMS Status"),
-                    TH("Facility Status"),
-                    TH("Clinical Status"),
-                    TH("Security Status"),
-                    TH("Total Beds"),
-                    TH("Available Beds"))),
-                    TBODY(records), _id='list', _class="display"))
-            else:
-                    items = T('None')
-
-        try:
-            label_create_button = s3.crud_strings['hms_hospital'].label_create_button
-        except:
-            label_create_button = s3.crud_strings.label_create_button
-
-        add_btn = A(label_create_button, _href=URL(r=request, f='hospital', args='create'), _id='add-btn')
-
-        output.update(dict(items=items, add_btn=add_btn))
-
-        return output
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request))
-
-# Plug into REST controller
-s3xrc.model.set_method(module, 'hospital', method='search_location', action=shn_hms_hospital_search_location )
-
-# -----------------------------------------------------------------------------
-# Hospital Search by Bed Type
-#
-def shn_hms_hospital_search_bedtype(xrequest, onvalidation=None, onaccept=None):
-
-    """ Find hospitals by bed type """
-
-    if not shn_has_permission('read', db.hms_hospital):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
-
-    if xrequest.representation=="html":
-        # Check for redirection
-        if request.vars._next:
-            next = str.lower(request.vars._next)
-        else:
-            next = str.lower(URL(r=request, f='hospital', args='[id]'))
-
-        # Custom view
-        response.view = '%s/hospital_search.html' % xrequest.prefix
-
-        # Title and subtitle
-        title = T('Search for a Hospital')
-        subtitle = T('Matching Records')
-
-        # Select form:
-        t_opts = [OPTION(_value='')]
-        t_opts += [OPTION(hms_bed_type_opts[t], _value=t) for t in hms_bed_type_opts.keys()]
-        form = FORM(TABLE(
-                    TR(T('Bed Type: '),
-                    SELECT(_name="bed_type", *t_opts, **dict(name="bed_type",
-                        requires=IS_NULL_OR(IS_IN_SET(hms_bed_type_opts))))),
-                    TR("", INPUT(_type="submit", _value="Search"))
-                ))
-
-        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-        # Accept action
-        items = None
-        if form.accepts(request.vars, session):
-
-            table = db.hms_hospital
-            query = (table.deleted==False)
-
-            if form.vars.bed_type is not None:
-                bed_type = int(form.vars.bed_type)
-                subtitle = "Hospitals providing: %s" % \
-                    hms_bed_type_opts.get(bed_type, T('Unknown'))
-
-                output.update(subtitle=subtitle)
-                query = query & ((table.id==db.hms_bed_capacity.hospital_id)&
-                                 (db.hms_bed_capacity.bed_type==bed_type))
-            else:
-                query = query & (table.id==db.hms_bed_capacity.hospital_id)
-
-            results = db(query).select(
-                db.hms_hospital.id,
-                db.hms_hospital.name,
-                db.hms_bed_capacity.unit_name,
-                db.hms_bed_capacity.beds_available,
-                db.hms_bed_capacity.beds_add24,
-                db.hms_hospital.facility_status,
-                db.hms_hospital.clinical_status
-            )
-
-            if results and len(results):
-                records = []
-                for result in results:
-                    href = next.replace('%5bid%5d', '%s' % result.hms_hospital.id)
-                    records.append(TR(
-                        A(result.hms_hospital.name, _href=href),
-                        result.hms_bed_capacity.unit_name,
-                        result.hms_bed_capacity.beds_available,
-                        result.hms_bed_capacity.beds_add24,
-                        db.hms_hospital.facility_status.represent(result.hms_hospital.facility_status),
-                        db.hms_hospital.clinical_status.represent(result.hms_hospital.clinical_status),
-                        ))
-                items=DIV(TABLE(THEAD(TR(
-                    TH("Name"),
-                    TH("Unit"),
-                    TH("Beds available"),
-                    TH("Additional Beds /24hrs"),
-                    TH("Facility Status"),
-                    TH("Clinical Status"))),
-                    TBODY(records), _id='list', _class="display"))
-            else:
-                    items = T('None')
-
-        try:
-            label_create_button = s3.crud_strings['hms_hospital'].label_create_button
-        except:
-            label_create_button = s3.crud_strings.label_create_button
-
-        add_btn = A(label_create_button, _href=URL(r=request, f='hospital', args='create'), _id='add-btn')
-
-        output.update(dict(items=items, add_btn=add_btn))
-
-        return output
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request))
-
-# Plug into REST controller
-s3xrc.model.set_method(module, 'hospital', method='search_bedtype', action=shn_hms_hospital_search_bedtype )
-
-# -----------------------------------------------------------------------------
 # Hospital Search by Name
 #
 def shn_hms_get_hospital(label, fields=None, filterby=None):
@@ -1109,7 +910,7 @@ s3xrc.model.set_method(module, 'hospital',
                        action=shn_hms_hospital_search_simple )
 
 # -----------------------------------------------------------------------------
-# Hospital Requests for Assistance
+# Hospital Requests for Support
 #
 hms_hrequest_priority_opts = {
     5: T('immediately'),
@@ -1127,7 +928,8 @@ hms_hrequest_impact_opts = {
     1: T('wish')
 }
 
-hms_hrequest_review_opts = {
+hms_hrequest_status_opts = {
+    6: T('completed'),              # Completed
     5: T('invalid'),                # Invalid request
     4: T('accepted'),               # Accepted request
     3: T('deferred'),               # Deferred
@@ -1159,10 +961,6 @@ hms_hrequest_source_type = {
     99: 'Other'
 }
 
-def shn_hms_hrequest_represent(id):
-    return  DIV(A(T('Update'), _href=URL(r=request, f='hrequest', args=['update', id])), " ",
-                A(T('Make Pledge'), _href=URL(r=request, f='hrequest', args=[id, 'hpledge'])))
-
 resource = 'hrequest'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
@@ -1185,11 +983,9 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                   label = T('Priority')),
             Field("city", "string"),
             Field("status", "integer",
-                  requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_review_opts)),
-                  represent = lambda type: hms_hrequest_review_opts.get(type, "not specified"),
+                  requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_status_opts)),
+                  represent = lambda type: hms_hrequest_status_opts.get(type, "not specified"),
                   label = T('Status')),
-            #Field("verified", "boolean", default=False ),
-            Field("completed", "boolean", default=False),
             Field("source_type", "integer",
                   requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_source_type)),
                   represent = lambda stype: stype and hms_hrequest_source_type[stype],
@@ -1197,17 +993,12 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
             Field("actionable", "boolean", default=False),
             migrate=migrate)
 
-db[table].id.represent = lambda id: shn_hms_hrequest_represent(id)
-
 #label the fields for the view
 db[table].timestamp.label = T('Date & Time')
 
 #Hide fields from user:
-#db[table].verified.writable = False
-#db[table].source_id.writable = db[table].source_id.readable = False
-db[table].completed.writable  = False
 db[table].actionable.writable = db[table].actionable.readable = False
-db[table].source_type.writable = False
+db[table].source_type.writable = db[table].source_type.readable = False
 
 #set default values
 db[table].actionable.default = 1
@@ -1252,10 +1043,13 @@ s3xrc.model.add_component(module, resource,
 #
 def shn_hms_hrequest_onaccept(form):
 
+    print "hms_request_onaccept"
     hrequest = db.hms_hrequest[form.vars.id]
     if hrequest:
+        print "Found request"
         hospital = db.hms_hospital[hrequest.hospital_id]
         if hospital:
+            print "Found hospital %s in %s" % (hospital.name, hospital.city)
             db(db.hms_hrequest.id==hrequest.id).update(city=hospital.city)
 
 # -----------------------------------------------------------------------------
@@ -1411,9 +1205,6 @@ hms_pledge_status_opts = {
     3:T('Delivered'),
 }
 
-def shn_hms_pledge_represent(id):
-    return  A(T('Edit Pledge'), _href=URL(r=request, f='hpledge', args=[id]))
-
 resource = 'hpledge'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
@@ -1424,10 +1215,8 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 person_id,
                 migrate=migrate)
 
-db[table].id.represent = lambda id: shn_hms_pledge_represent(id)
-
 # hide unnecessary fields
-db[table].hms_hrequest_id.writable = db[table].hms_hrequest_id.readable = False
+db[table].hms_hrequest_id.writable = False
 
 # set pledge default
 db[table].status.default = 1
@@ -1438,7 +1227,7 @@ db[table].submitted_on.writable = False
 
 db[table].status.requires = IS_IN_SET(hms_pledge_status_opts)
 db[table].status.represent = lambda status: status and hms_pledge_status_opts[status]
-db[table].status.label = T('Pledge Status')
+db[table].status.label = T('Status')
 
 # Pledges as a component of requests
 s3xrc.model.add_component(module, resource,

@@ -83,7 +83,7 @@ msg_list_empty = T('No Addresses currently registered')
 s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
 # *****************************************************************************
-# Contact (contact)
+# Contact (pe_contact)
 #
 
 #
@@ -100,7 +100,7 @@ pr_contact_method_opts = {
 #
 # contact table ---------------------------------------------------------------
 #
-resource = 'contact'
+resource = 'pe_contact'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                               # Person Entity ID
@@ -366,7 +366,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('opt_pr_id_type',
                       'integer',
                       requires = IS_IN_SET(pr_id_type_opts),
-                      # default = 1,
+                      default = 1,
                       label = T('ID type'),
                       represent = lambda opt: pr_id_type_opts.get(opt, T('Unknown'))),
                 Field('type'),                      # Description for type 'Other'
@@ -426,7 +426,7 @@ db.define_table(table, uuidstamp, deletion_status,
                 pr_pe_id,
                 Field('role', 'integer',
                       requires = IS_IN_SET(pr_role_opts),
-                      # default = 1,
+                      default = 1,
                       label = T('Role'),
                       represent = lambda opt: pr_role_opts.get(opt, T('Unknown'))),
                 migrate=migrate)

@@ -20,7 +20,7 @@ response.menu_options = [
     [T('Person Details'), False, URL(r=request, f='person', args='read'),[
         [T('Basic Details'), False, URL(r=request, f='person', args='read')],
         [T('Address'), False, URL(r=request, f='person', args='address')],
-        [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+        [T('Contact Data'), False, URL(r=request, f='person', args='pe_contact')],
         [T('Whereabouts'), False, URL(r=request, f='person', args='presence')],
     ]],
     [T('Anamnesis'), False, URL(r=request, f='person', args=['anamnesis']),[

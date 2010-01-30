@@ -371,7 +371,7 @@ pr_group_type_opts = {
 opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
                     Field('opt_pr_group_type', 'integer',
                         requires = IS_IN_SET(pr_group_type_opts),
-                        # default = 4,
+                        default = 4,
                         label = T('Group Type'),
                         represent = lambda opt: pr_group_type_opts.get(opt, T('Unknown'))))
 

@@ -47,7 +47,7 @@ def shn_pr_module_menu_ext():
                     [T('Images'), False, URL(r=request, f='person', args='image')],
                     [T('Identity'), False, URL(r=request, f='person', args='identity')],
                     [T('Address'), False, URL(r=request, f='person', args='address')],
-                    [T('Contact Data'), False, URL(r=request, f='person', args='contact')],
+                    [T('Contact Data'), False, URL(r=request, f='person', args='pe_contact')],
                     [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
             #        [T('Roles'), False, URL(r=request, f='person', args='role')],
             #        [T('Status'), False, URL(r=request, f='person', args='status')],
@@ -99,7 +99,7 @@ def image():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'image')
 
-def contact():
+def pe_contact():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, 'contact')
 

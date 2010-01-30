@@ -80,7 +80,7 @@ hms_or_status_opts = {
 
 resource = 'hospital'
 table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 #Field('ho_uuid', unique=True, length=128),  # UUID assigned by Health Organisation (WHO, PAHO)
                 Field('gov_uuid', unique=True, length=128), # UUID assigned by Local Government
                 Field('name', notnull=True),                # Name of the facility

@@ -86,7 +86,7 @@ def shn_hospital_id_represent(id):
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('ho_uuid', unique=True, length=128),  # UUID assigned by Health Organisation (WHO, PAHO)
+                #Field('ho_uuid', unique=True, length=128),  # UUID assigned by Health Organisation (WHO, PAHO)
                 Field('gov_uuid', unique=True, length=128), # UUID assigned by Local Government
                 Field('name', notnull=True),                # Name of the facility
                 Field('aka1'),                              # Alternate name, or name in local language
@@ -164,12 +164,10 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].organisation_id.represent = lambda id: \
     (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
-db[table].ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
+#db[table].ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
 #db[table].ho_uuid.label = T('Health Org UUID')
-db[table].ho_uuid.label = T('PAHO UUID')
-db[table].ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
+#db[table].ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
 #    _title=T("Health Organisation UUID|The Universal Unique Identifier (UUID) as assigned to this facility by Health Organisations (e.g. WHO))."))
-    _title=T("PAHO UUID|The Universal Unique Identifier (UUID) as assigned to this facility by PAHO)."))
 
 db[table].gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.gov_uuid' % table))
 #db[table].gov_uuid.label = T('Government UUID')

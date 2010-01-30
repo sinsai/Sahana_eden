@@ -304,7 +304,7 @@ def shn_hms_hospital_onvalidation(form):
         if form.vars.gov_uuid is not None and not str(form.vars.gov_uuid).isspace():
             form.vars.uuid = form.vars.gov_uuid
         else:
-            del form.vars["gov_uuid"]
+            form.vars.gov_uuid = None
 
 # -----------------------------------------------------------------------------
 # Contacts

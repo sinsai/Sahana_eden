@@ -977,7 +977,7 @@ def shn_hms_get_hospital(label, fields=None, filterby=None):
         if not len(search_fields):
             return None
     else:
-        search_fields = ['ho_uuid', 'gov_uuid', 'name', 'aka1', 'aka2']
+        search_fields = ['gov_uuid', 'name', 'aka1', 'aka2']
 
     if label and isinstance(label,str):
         labels = label.split()
@@ -1067,7 +1067,6 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
                 for row in rows:
                     href = next.replace('%5bid%5d', '%s' % row.id)
                     records.append(TR(
-                        row.ho_uuid,
                         row.gov_uuid,
                         A(row.name, _href=href),
                         row.aka1 or "",
@@ -1078,7 +1077,6 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
                         row.available_beds is None and T("unknown") or row.available_beds,
                         ))
                 items=DIV(TABLE(THEAD(TR(
-                    TH(db.hms_hospital.ho_uuid.label),
                     TH(db.hms_hospital.gov_uuid.label),
                     TH(db.hms_hospital.name.label),
                     TH(db.hms_hospital.aka1.label),

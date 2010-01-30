@@ -1413,7 +1413,11 @@ class S3XML(object):
         success="success",
         results="results",
         lat="lat",
+        latmin="latmin",
+        latmax="latmax",
         lon="lon",
+        lonmin="lonmin",
+        lonmax="lonmax",
         marker="marker"
         )
 
@@ -1631,7 +1635,12 @@ class S3XML(object):
 
         if url is not None:
             root.set(self.ATTRIBUTE["url"], self.base_url)
-
+        
+        root.set(self.ATTRIBUTE["latmin"], str(self.gis.get_bounds()['min_lat']))
+        root.set(self.ATTRIBUTE["latmax"], str(self.gis.get_bounds()['max_lat']))
+        root.set(self.ATTRIBUTE["lonmin"], str(self.gis.get_bounds()['min_lon']))
+        root.set(self.ATTRIBUTE["lonmax"], str(self.gis.get_bounds()['max_lon']))
+        
         return etree.ElementTree(root)
 
 

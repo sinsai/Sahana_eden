@@ -121,3 +121,17 @@ class GIS(object):
         marker = db(db.gis_marker.id == marker).select().first().image
         
         return marker
+    
+    def get_bounds(self):
+        """
+        Calculate the bounds of a set of features
+        e.g. to use in KML export for correct zooming
+        """
+        # Quick fix is to read from config
+        config = self.read_config()
+        min_lon = config.min_lon
+        min_lat = config.min_lat
+        max_lon = config.max_lon
+        max_lat = config.max_lat
+        
+        return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)

@@ -10,8 +10,14 @@
 	version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns="http://www.topografix.com/GPX/1/1"
   >
+    <bounds>
+        <xsl:attribute name="minlat"><xsl:value-of select="@latmin"/></xsl:attribute>
+        <xsl:attribute name="minlon"><xsl:value-of select="@lonmin"/></xsl:attribute>
+        <xsl:attribute name="maxlat"><xsl:value-of select="@latmax"/></xsl:attribute>
+        <xsl:attribute name="maxlon"><xsl:value-of select="@lonmax"/></xsl:attribute>
+    </bounds>
 	<xsl:apply-templates select="resource"/>
-  </gpx>
+</gpx>
 </xsl:template>
 <xsl:template match="resource">
   <xsl:apply-templates select="resource"/>

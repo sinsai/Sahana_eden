@@ -21,6 +21,8 @@ db.define_table(table,
 # -----------------------------------------------------------------------------
 # Hospitals
 #
+HMS_HOSPITAL_USE_GOVUUID = True #: whether to use governmental UUIDs instead of internal UUIDs
+
 hms_facility_type_opts = {
     1: T('Hospital'),
     2: T('Field Hospital'),
@@ -86,7 +88,7 @@ def shn_hospital_id_represent(id):
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('ho_uuid', unique=True, length=128),  # UUID assigned by Health Organisation (WHO, PAHO)
+                #Field('ho_uuid', unique=True, length=128),  # UUID assigned by Health Organisation (WHO, PAHO)
                 Field('gov_uuid', unique=True, length=128), # UUID assigned by Local Government
                 Field('name', notnull=True),                # Name of the facility
                 Field('aka1'),                              # Alternate name, or name in local language
@@ -164,12 +166,10 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].organisation_id.represent = lambda id: \
     (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
-db[table].ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
+#db[table].ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
 #db[table].ho_uuid.label = T('Health Org UUID')
-db[table].ho_uuid.label = T('PAHO UUID')
-db[table].ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
+#db[table].ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
 #    _title=T("Health Organisation UUID|The Universal Unique Identifier (UUID) as assigned to this facility by Health Organisations (e.g. WHO))."))
-    _title=T("PAHO UUID|The Universal Unique Identifier (UUID) as assigned to this facility by PAHO)."))
 
 db[table].gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.gov_uuid' % table))
 #db[table].gov_uuid.label = T('Government UUID')
@@ -295,6 +295,14 @@ def shn_hms_hospital_rss(record):
             (record.available_beds is not None) and record.available_beds or T("unknown"))
     else:
         return None
+
+def shn_hms_hospital_onvalidation(form):
+
+    if "gov_uuid" in db.hms_hospital.fields and HMS_HOSPITAL_USE_GOVUUID:
+        if form.vars.gov_uuid is not None and not str(form.vars.gov_uuid).isspace():
+            form.vars.uuid = form.vars.gov_uuid
+        else:
+            del form.vars["gov_uuid"]
 
 # -----------------------------------------------------------------------------
 # Contacts
@@ -969,7 +977,7 @@ def shn_hms_get_hospital(label, fields=None, filterby=None):
         if not len(search_fields):
             return None
     else:
-        search_fields = ['ho_uuid', 'gov_uuid', 'name', 'aka1', 'aka2']
+        search_fields = ['gov_uuid', 'name', 'aka1', 'aka2']
 
     if label and isinstance(label,str):
         labels = label.split()
@@ -1059,7 +1067,6 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
                 for row in rows:
                     href = next.replace('%5bid%5d', '%s' % row.id)
                     records.append(TR(
-                        row.ho_uuid,
                         row.gov_uuid,
                         A(row.name, _href=href),
                         row.aka1 or "",
@@ -1070,7 +1077,6 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
                         row.available_beds is None and T("unknown") or row.available_beds,
                         ))
                 items=DIV(TABLE(THEAD(TR(
-                    TH(db.hms_hospital.ho_uuid.label),
                     TH(db.hms_hospital.gov_uuid.label),
                     TH(db.hms_hospital.name.label),
                     TH(db.hms_hospital.aka1.label),

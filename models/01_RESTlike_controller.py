@@ -941,7 +941,7 @@ def shn_custom_view(jr, default_name, format=None):
 #
 # shn_read --------------------------------------------------------------------
 #
-def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
+def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalidation=None, onaccept=None):
 
     """ Read a single record. """
 
@@ -981,7 +981,11 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised and jr.representation=="html":
-        redirect(href_edit)
+        return shn_update(jr,
+                          pheader=pheader,
+                          deletable=deletable,
+                          onvalidation=onvalidation,
+                          onaccept=onaccept)
 
     authorised = shn_has_permission('read', table, record_id)
     if authorised:
@@ -2115,7 +2119,12 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET':
                 authorised = shn_has_permission('read', jr.component.table)
                 if authorised:
-                    return shn_read(jr, pheader=pheader, rss=rss)
+                    return shn_read(jr, pheader=pheader,
+                                    editable=editable,
+                                    deletable=deletable,
+                                    rss=rss,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2131,7 +2140,12 @@ def shn_rest_controller(module, resource,
                 elif jr.http == "POST":
                     authorised = shn_has_permission('read', jr.component.table)
                     if authorised:
-                        return shn_read(jr, pheader=pheader, rss=rss)
+                        return shn_read(jr, pheader=pheader,
+                                        editable=editable,
+                                        deletable=deletable,
+                                        rss=rss,
+                                        onvalidation=onvalidation,
+                                        onaccept=onaccept)
                     else:
                         session.error = UNAUTHORISED
                         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2168,7 +2182,12 @@ def shn_rest_controller(module, resource,
                     return shn_list(jr, pheader, rss=rss)
                 else:
                     # This is a read action
-                    return shn_read(jr, pheader, rss=rss)
+                    return shn_read(jr, pheader=pheader,
+                                    editable=editable,
+                                    deletable=deletable,
+                                    rss=rss,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2281,7 +2300,12 @@ def shn_rest_controller(module, resource,
 
             # HTTP Read (single record) ---------------------------------------
             if jr.http == 'GET':
-                return shn_read(jr, pheader=pheader, editable=editable, deletable=deletable, rss=rss)
+                return shn_read(jr, pheader=pheader,
+                                editable=editable,
+                                deletable=deletable,
+                                rss=rss,
+                                onvalidation=onvalidation,
+                                onaccept=onaccept)
 
             # HTTP Create/Update (single record) ------------------------------
             elif jr.http == 'PUT' or jr.http == "POST":
@@ -2293,7 +2317,12 @@ def shn_rest_controller(module, resource,
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.http == "POST":
-                    return shn_read(jr, pheader=pheader, editable=editable, deletable=deletable, rss=rss)
+                    return shn_read(jr, pheader=pheader,
+                                    editable=editable,
+                                    deletable=deletable,
+                                    rss=rss,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept)
                 else:
                     raise HTTP(501, body=BADFORMAT)
 

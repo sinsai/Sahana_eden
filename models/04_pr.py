@@ -199,11 +199,14 @@ s3xrc.model.add_component(module, resource,
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 # Field representation
-db[table].image.represent = lambda image: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60), _href=URL(r=request, c='default', f='download', args=image)))
+db[table].image.represent = lambda image: image and \
+        DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60, _alt=T("View Image")),
+              _href=URL(r=request, c='default', f='download', args=image))) or \
+        T("No Image")
 
 # Field labels
 db[table].url.label = T("URL")
-db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url))
+db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
 # CRUD Strings
 title_create = T('Image')

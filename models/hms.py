@@ -86,12 +86,12 @@ def shn_hospital_id_represent(id):
 resource = 'hospital'
 table = module + '_' + resource
 db.define_table(table, timestamp, uuidstamp, deletion_status,
-                Field('ho_uuid', unique=True),          # UUID assigned by Health Organisation (WHO, PAHO)
-                Field('gov_uuid', unique=True),         # UUID assigned by Local Government
-                Field('name', notnull=True),            # Name of the facility
-                Field('aka1'),                          # Alternate name, or name in local language
-                Field('aka2'),                          # Alternate name, or name in local language
-                Field('facility_type', 'integer',       # Type of facility
+                Field('ho_uuid', unique=True, length=128),  # UUID assigned by Health Organisation (WHO, PAHO)
+                Field('gov_uuid', unique=True, length=128), # UUID assigned by Local Government
+                Field('name', notnull=True),                # Name of the facility
+                Field('aka1'),                              # Alternate name, or name in local language
+                Field('aka2'),                              # Alternate name, or name in local language
+                Field('facility_type', 'integer',           # Type of facility
                       requires = IS_NULL_OR(IS_IN_SET(hms_facility_type_opts)),
                       label = T('Facility Type'),
                       represent = lambda opt: hms_facility_type_opts.get(opt, T('not specified'))),
@@ -106,55 +106,55 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('website'),
                 Field('email'),
                 Field('fax'),
-                Field('total_beds', 'integer'),         # Total Beds
-                Field('available_beds', 'integer'),     # Available Beds
-                Field('ems_status', 'integer',          # Emergency Room Status
+                Field('total_beds', 'integer'),             # Total Beds
+                Field('available_beds', 'integer'),         # Available Beds
+                Field('ems_status', 'integer',              # Emergency Room Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_ems_traffic_opts)),
                       label = T('EMS Traffic Status'),
                       represent = lambda opt: hms_ems_traffic_opts.get(opt, T('Unknown'))),
-                Field('ems_reason', length=128,         # Reason for EMS Status
+                Field('ems_reason', length=128,             # Reason for EMS Status
                       label = T('EMS Status Reason')),
-                Field('or_status', 'integer',           # Operating Room Status
+                Field('or_status', 'integer',               # Operating Room Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_or_status_opts)),
                       label = T('OR Status'),
                       represent = lambda opt: hms_or_status_opts.get(opt, T('Unknown'))),
-                Field('or_reason', length=128,          # Reason for OR Status
+                Field('or_reason', length=128,              # Reason for OR Status
                       label = T('OR Status Reason')),
-                Field('facility_status', 'integer',     # Facility Status
+                Field('facility_status', 'integer',         # Facility Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_facility_status_opts)),
                       label = T('Facility Status'),
                       represent = lambda opt: hms_facility_status_opts.get(opt, T('Unknown'))),
-                Field('clinical_status', 'integer',     # Clinical Status
+                Field('clinical_status', 'integer',         # Clinical Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_clinical_status_opts)),
                       label = T('Clinical Status'),
                       represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
-                Field('morgue_status', 'integer',       # Morgue Status
+                Field('morgue_status', 'integer',           # Morgue Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_morgue_status_opts)),
                       label = T('Morgue Status'),
                       represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
-                Field('morgue_units', 'integer'),       # Number of available/vacant morgue units
-                Field('security_status', 'integer',     # Security status
+                Field('morgue_units', 'integer'),           # Number of available/vacant morgue units
+                Field('security_status', 'integer',         # Security status
                       requires = IS_NULL_OR(IS_IN_SET(hms_security_status_opts)),
                       label = T('Security Status'),
                       represent = lambda opt: hms_security_status_opts.get(opt, T('Unknown'))),
-                Field('doctors', 'integer'),            # Number of Doctors
-                Field('nurses', 'integer'),             # Number of Nurses
-                Field('non_medical_staff', 'integer'),  # Number of Non-Medical Staff
-                Field('staffing', 'integer',            # Staffing status
+                Field('doctors', 'integer'),                # Number of Doctors
+                Field('nurses', 'integer'),                 # Number of Nurses
+                Field('non_medical_staff', 'integer'),      # Number of Non-Medical Staff
+                Field('staffing', 'integer',                # Staffing status
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Staffing'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
-                Field('facility_operations', 'integer', # Facility Operations Status
+                Field('facility_operations', 'integer',     # Facility Operations Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Facility Operations'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
-                Field('clinical_operations', 'integer', # Clinical Operations Status
+                Field('clinical_operations', 'integer',     # Clinical Operations Status
                       requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                       label = T('Clinical Operations'),
                       represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
-                Field('access_status'),                 # Access Status
-                Field('info_source'),                   # Source of Information
-                shn_comments_field,                     # Comments field
+                Field('access_status'),                     # Access Status
+                Field('info_source'),                       # Source of Information
+                shn_comments_field,                         # Comments field
                 migrate=migrate)
 
 
@@ -618,16 +618,18 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 # Field validation
 db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-# Field representation
-db[table].image.represent = lambda image: DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60), _href=URL(r=request, c='default', f='download', args=image)))
+db[table].image.label = T("Image Upload")
+db[table].image.represent = lambda image: image and \
+        DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60, _alt=T("View Image")),
+              _href=URL(r=request, c='default', f='download', args=image))) or \
+        T("No Image")
 
-# Field labels
 db[table].url.label = T("URL")
-db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url))
+db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
 db[table].tags.label = T("Tags")
 db[table].tags.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T("Image Tags|Enter tags separated by commas."))
+                           _title=T("Image Tags|Enter tags separated by commas."))
 
 # CRUD Strings
 s3.crud_strings[table] = Storage(

@@ -67,20 +67,22 @@ db[table].postcode.label = T('ZIP/Postcode')
 db[table].opt_pr_country.label = T('Country')
 
 # CRUD Strings
-title_create = T('Add Address')
-title_display = T('Address Details')
-title_list = T('List Addresses')
-title_update = T('Edit Address')
-title_search = T('Search Addresses')
-subtitle_create = T('Add New Address')
-subtitle_list = T('Addresses')
-label_list_button = T('List Addresses')
-label_create_button = T('Add Address')
-msg_record_created = T('Address added')
-msg_record_modified = T('Address updated')
-msg_record_deleted = T('Address deleted')
-msg_list_empty = T('No Addresses currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_ADDRESS = T('Add Address')
+LIST_ADDRESS = T('List Addresses')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_ADDRESS,
+    title_display = T('Address Details'),
+    title_list = LIST_ADDRESS,
+    title_update = T('Edit Address'),
+    title_search = T('Search Addresses'),
+    subtitle_create = T('Add New Address'),
+    subtitle_list = T('Addresses'),
+    label_list_button = LIST_ADDRESS,
+    label_create_button = ADD_ADDRESS,
+    msg_record_created = T('Address added'),
+    msg_record_modified = T('Address updated'),
+    msg_record_deleted = T('Address deleted'),
+    msg_list_empty = T('No Addresses currently registered'))
 
 # *****************************************************************************
 # Contact (pe_contact)
@@ -136,20 +138,22 @@ db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
 # Field labels
 
 # CRUD Strings
-title_create = T('Add Contact')
-title_display = T('Contact Details')
-title_list = T('List Contacts')
-title_update = T('Edit Contact')
-title_search = T('Search Contacts')
-subtitle_create = T('Add New Contact')
-subtitle_list = T('Contacts')
-label_list_button = T('List Contacts')
-label_create_button = T('Add Contact')
-msg_record_created = T('Contact added')
-msg_record_modified = T('Contact updated')
-msg_record_deleted = T('Contact deleted')
-msg_list_empty = T('No Contacts currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_CONTACT = T('Add Contact')
+LIST_CONTACTS = T('List Contacts')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_CONTACT,
+    title_display = T('Contact Details'),
+    title_list = LIST_CONTACTS,
+    title_update = T('Edit Contact'),
+    title_search = T('Search Contacts'),
+    subtitle_create = T('Add New Contact'),
+    subtitle_list = T('Contacts'),
+    label_list_button = LIST_CONTACTS,
+    label_create_button = ADD_CONTACT,
+    msg_record_created = T('Contact added'),
+    msg_record_modified = T('Contact updated'),
+    msg_record_deleted = T('Contact deleted'),
+    msg_list_empty = T('No Contacts currently registered'))
 
 # *****************************************************************************
 # Image (image)
@@ -209,20 +213,21 @@ db[table].url.label = T("URL")
 db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
 # CRUD Strings
-title_create = T('Image')
-title_display = T('Image Details')
-title_list = T('List Images')
-title_update = T('Edit Image Details')
-title_search = T('Search Images')
-subtitle_create = T('Add New Image')
-subtitle_list = T('Images')
-label_list_button = T('List Images')
-label_create_button = T('Add Image')
-msg_record_created = T('Image added')
-msg_record_modified = T('Image updated')
-msg_record_deleted = T('Image deleted')
-msg_list_empty = T('No Images currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+LIST_IMAGES = T('List Images')
+s3.crud_strings[table] = Storage(
+    title_create = T('Image'),
+    title_display = T('Image Details'),
+    title_list = LIST_IMAGES,
+    title_update = T('Edit Image Details'),
+    title_search = T('Search Images'),
+    subtitle_create = T('Add New Image'),
+    subtitle_list = T('Images'),
+    label_list_button = LIST_IMAGES,
+    label_create_button = T('Add Image'),
+    msg_record_created = T('Image added'),
+    msg_record_modified = T('Image updated'),
+    msg_record_deleted = T('Image deleted'),
+    msg_list_empty = T('No Images currently registered'))
 
 # *****************************************************************************
 # Presence Log (presence)
@@ -330,20 +335,21 @@ db[table].time.represent = lambda value: shn_as_local_time(value)
 db[table].time.label = T('Date/Time')
 
 # CRUD Strings
-title_create = T('Add Log Entry')
-title_display = T('Log Entry Details')
-title_list = T('Presence Log')
-title_update = T('Edit Log Entry')
-title_search = T('Search Log Entry')
-subtitle_create = T('Add New Log Entry')
-subtitle_list = T('Current Log Entries')
-label_list_button = T('List Log Entries')
-label_create_button = T('Add Log Entry')
-msg_record_created = T('Log entry added')
-msg_record_modified = T('Log entry updated')
-msg_record_deleted = T('Log entry deleted')
-msg_list_empty = T('No Presence Log Entries currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_LOG_ENTRY = T('Add Log Entry')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_LOG_ENTRY,
+    title_display = T('Log Entry Details'),
+    title_list = T('Presence Log'),
+    title_update = T('Edit Log Entry'),
+    title_search = T('Search Log Entry'),
+    subtitle_create = T('Add New Log Entry'),
+    subtitle_list = T('Current Log Entries'),
+    label_list_button = T('List Log Entries'),
+    label_create_button = ADD_LOG_ENTRY,
+    msg_record_created = T('Log entry added'),
+    msg_record_modified = T('Log entry updated'),
+    msg_record_deleted = T('Log entry deleted'),
+    msg_list_empty = T('No Presence Log Entries currently registered'))
 
 # *****************************************************************************
 # Identity (identity)
@@ -398,20 +404,21 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].ia_name.label = T("Issuing Authority")
 
 # CRUD Strings
-title_create = T('Add Identity')
-title_display = T('Identity Details')
-title_list = T('Known Identities')
-title_update = T('Edit Identity')
-title_search = T('Search Identity')
-subtitle_create = T('Add New Identity')
-subtitle_list = T('Current Identities')
-label_list_button = T('List Identities')
-label_create_button = T('Add Identity')
-msg_record_created = T('Identity added')
-msg_record_modified = T('Identity updated')
-msg_record_deleted = T('Identity deleted')
-msg_list_empty = T('No Identities currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_IDENTITY = T('Add Identity')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_IDENTITY,
+    title_display = T('Identity Details'),
+    title_list = T('Known Identities'),
+    title_update = T('Edit Identity'),
+    title_search = T('Search Identity'),
+    subtitle_create = T('Add New Identity'),
+    subtitle_list = T('Current Identities'),
+    label_list_button = T('List Identities'),
+    label_create_button = ADD_IDENTITY,
+    msg_record_created = T('Identity added'),
+    msg_record_modified = T('Identity updated'),
+    msg_record_deleted = T('Identity deleted'),
+    msg_list_empty = T('No Identities currently registered'))
 
 # *****************************************************************************
 # Role, Status and Transition, TODO: currently unused, implement VITA2 here
@@ -1480,20 +1487,20 @@ db[table].group_head.represent = lambda group_head: (group_head and [T('yes')] o
 # Field labels
 
 # CRUD Strings
-title_create = T('Add Group Membership')
-title_display = T('Group Membership Details')
-title_list = T('Group Memberships')
-title_update = T('Edit Membership')
-title_search = T('Search Membership')
-subtitle_create = T('Add New Group Membership')
-subtitle_list = T('Current Group Memberships')
-label_list_button = T('List All Group Memberships')
-label_create_button = T('Add Group Membership')
-msg_record_created = T('Group Membership added')
-msg_record_modified = T('Group Membership updated')
-msg_record_deleted = T('Group Membership deleted')
-msg_list_empty = T('No Group Memberships currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Group Membership'),
+    title_display = T('Group Membership Details'),
+    title_list = T('Group Memberships'),
+    title_update = T('Edit Membership'),
+    title_search = T('Search Membership'),
+    subtitle_create = T('Add New Group Membership'),
+    subtitle_list = T('Current Group Memberships'),
+    label_list_button = T('List All Group Memberships'),
+    label_create_button = T('Add Group Membership'),
+    msg_record_created = T('Group Membership added'),
+    msg_record_modified = T('Group Membership updated'),
+    msg_record_deleted = T('Group Membership deleted'),
+    msg_list_empty = T('No Group Memberships currently registered'))
 
 # *****************************************************************************
 # Functions:

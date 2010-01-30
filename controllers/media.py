@@ -29,20 +29,21 @@ def metadata():
     # used in multiple controllers, so in the model
     
     # CRUD Strings
-    title_create = T('Add Metadata')
-    title_display = T('Metadata Details')
-    title_list = T('List Metadata')
-    title_update = T('Edit Metadata')
-    title_search = T('Search Metadata')
-    subtitle_create = T('Add New Metadata')
-    subtitle_list = T('Metadata')
-    label_list_button = T('List Metadata')
-    label_create_button = ADD_METADATA
-    msg_record_created = T('Metadata added')
-    msg_record_modified = T('Metadata updated')
-    msg_record_deleted = T('Metadata deleted')
-    msg_list_empty = T('No Metadata currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    LIST_METADATA = T('List Metadata')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_METADATA,
+        title_display = T('Metadata Details'),
+        title_list = LIST_METADATA,
+        title_update = T('Edit Metadata'),
+        title_search = T('Search Metadata'),
+        subtitle_create = T('Add New Metadata'),
+        subtitle_list = T('Metadata'),
+        label_list_button = LIST_METADATA,
+        label_create_button = ADD_METADATA,
+        msg_record_created = T('Metadata added'),
+        msg_record_modified = T('Metadata updated'),
+        msg_record_deleted = T('Metadata deleted'),
+        msg_list_empty = T('No Metadata currently defined'))
     
     return shn_rest_controller(module, resource)
 
@@ -55,21 +56,22 @@ def image():
     # used in multiple controllers, so in the model
 
     # CRUD Strings
-    title_create = T('Add Image')
-    title_display = T('Image Details')
-    title_list = T('List Image')
-    title_update = T('Edit Image')
-    title_search = T('Search Image')
-    subtitle_create = T('Add New Image')
-    subtitle_list = T('Image')
-    label_list_button = T('List Image')
-    label_create_button = ADD_IMAGE
-    msg_record_created = T('Image added')
-    msg_record_modified = T('Image updated')
-    msg_record_deleted = T('Image deleted')
-    msg_list_empty = T('No Image currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+    LIST_IMAGES = T('List Images')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_IMAGE,
+        title_display = T('Image Details'),
+        title_list = LIST_IMAGES,
+        title_update = T('Edit Image'),
+        title_search = T('Search Images'),
+        subtitle_create = T('Add New Image'),
+        subtitle_list = T('Image'),
+        label_list_button = LIST_IMAGES,
+        label_create_button = ADD_IMAGE,
+        msg_record_created = T('Image added'),
+        msg_record_modified = T('Image updated'),
+        msg_record_deleted = T('Image deleted'),
+        msg_list_empty = T('No Image currently defined'))
+
     return shn_rest_controller(module, resource)
 
 def bulk_upload():

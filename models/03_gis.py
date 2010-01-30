@@ -202,13 +202,13 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('enabled', 'boolean', default=True, label=T('Enabled?')),
                 migrate=migrate)
 # Reusable field for other tables to reference
-ADD_FG = T('Add Feature Group')
+ADD_FEATURE_GROUP = T('Add Feature Group')
 feature_group_id = SQLTable(None, 'feature_group_id',
             Field('feature_group_id', db.gis_feature_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Feature Group'),
-                comment = DIV(A(ADD_FG, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FG), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
+                comment = DIV(A(ADD_FEATURE_GROUP, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_GROUP), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -255,20 +255,21 @@ db[table].track.description = T('Description')
 db[table].track.label = T('GPS Track File')
 db[table].track.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
 ADD_TRACK = T('Upload Track')
-title_create = ADD_TRACK
-title_display = T('Track Details')
-title_list = T('List Tracks')
-title_update = T('Edit Track')
-title_search = T('Search Tracks')
-subtitle_create = T('Add New Track')
-subtitle_list = T('Tracks')
-label_list_button = T('List Tracks')
-label_create_button = ADD_TRACK
-msg_record_created = T('Track uploaded')
-msg_record_modified = T('Track updated')
-msg_record_deleted = T('Track deleted')
-msg_list_empty = T('No Tracks currently available')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+LIST_TRACKS = T('List Tracks')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_TRACK,
+    title_display = T('Track Details'),
+    title_list = LIST_TRACKS,
+    title_update = T('Edit Track'),
+    title_search = T('Search Tracks'),
+    subtitle_create = T('Add New Track'),
+    subtitle_list = T('Tracks'),
+    label_list_button = LIST_TRACKS,
+    label_create_button = ADD_TRACK,
+    msg_record_created = T('Track uploaded'),
+    msg_record_modified = T('Track updated'),
+    msg_record_deleted = T('Track deleted'),
+    msg_list_empty = T('No Tracks currently available'))
 # Reusable field for other tables to reference
 track_id = SQLTable(None, 'track_id',
             Field('track_id', db.gis_track,

@@ -38,19 +38,21 @@ def setting():
             _title=T("Baud|The Baud rate of your modem - Usually listed in your modem manual."))
     
     # CRUD Strings
-    title_create = T('Add Setting')
-    title_display = T('Setting Details')
-    title_list = T('View Settings')
-    title_update = T('Edit Mobile Settings')
-    title_search = T('Search Settings')
-    subtitle_list = T('Settings')
-    label_list_button = T('View Settings')
-    label_create_button = T('Add Setting')
-    msg_record_created = T('Setting added')
-    msg_record_modified = T('Mobile settings updated')
-    msg_record_deleted = T('Setting deleted')
-    msg_list_empty = T('No Settings currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_SETTING = T('Add Setting')
+    VIEW_SETTINGS = T('View Settings')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_SETTING,
+        title_display = T('Setting Details'),
+        title_list = VIEW_SETTINGS,
+        title_update = T('Edit Mobile Settings'),
+        title_search = T('Search Settings'),
+        subtitle_list = T('Settings'),
+        label_list_button = VIEW_SETTINGS,
+        label_create_button = ADD_SETTING,
+        msg_record_created = T('Setting added'),
+        msg_record_modified = T('Mobile settings updated'),
+        msg_record_deleted = T('Setting deleted'),
+        msg_list_empty = T('No Settings currently defined'))
 
     crud.settings.update_next = URL(r=request, args=['update', 1])
     

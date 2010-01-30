@@ -247,16 +247,18 @@ db[table].info_source.label = "Source of Information"
 db[table].info_source.comment =  A(SPAN("[Help]"), _class="tooltip",
     _title=T("Source of Information|Specify the source of the information in this report."))
 
+ADD_HOSPITAL = T('Add Hospital')
+LIST_HOSPITALS = T('List Hospitals')
 s3.crud_strings[table] = Storage(
-    title_create = T('Add Hospital'),
+    title_create = ADD_HOSPITAL,
     title_display = T('Hospital Details'),
-    title_list = T('List Hospitals'),
+    title_list = LIST_HOSPITALS,
     title_update = T('Edit Hospital'),
     title_search = T('Search Hospitals'),
     subtitle_create = T('Add New Hospital'),
     subtitle_list = T('Hospitals'),
-    label_list_button = T('List Hospitals'),
-    label_create_button = T('Add Hospital'),
+    label_list_button = LIST_HOSPITALS,
+    label_create_button = ADD_HOSPITAL,
     label_delete_button = T('Delete Hospital'),
     msg_record_created = T('Hospital information added'),
     msg_record_modified = T('Hospital information updated'),

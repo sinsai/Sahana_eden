@@ -79,21 +79,23 @@ document = db.Table(None, 'document',
                 #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
                 ))
 
-s3.crud_strings = Storage()
-s3.crud_strings.title_create = T('Add Record')
-s3.crud_strings.title_display = T('Record Details')
-s3.crud_strings.title_list = T('List Records')
-s3.crud_strings.title_update = T('Edit Record')
-s3.crud_strings.title_search = T('Search Records')
-s3.crud_strings.subtitle_create = T('Add New Record')
-s3.crud_strings.subtitle_list = T('Available Records')
-s3.crud_strings.label_list_button = T('List Records')
-s3.crud_strings.label_create_button = T('Add Record')
-s3.crud_strings.label_delete_button = T('Delete Record')
-s3.crud_strings.msg_record_created = T('Record added')
-s3.crud_strings.msg_record_modified = T('Record updated')
-s3.crud_strings.msg_record_deleted = T('Record deleted')
-s3.crud_strings.msg_list_empty = T('No Records currently available')
+ADD_RECORD = T('Add Record')
+LIST_RECORDS = T('List Records')
+s3.crud_strings = Storage(
+    title_create = ADD_RECORD,
+    title_display = T('Record Details'),
+    title_list = LIST_RECORDS,
+    title_update = T('Edit Record'),
+    title_search = T('Search Records'),
+    subtitle_create = T('Add New Record'),
+    subtitle_list = T('Available Records'),
+    label_list_button = LIST_RECORDS,
+    label_create_button = ADD_RECORD,
+    label_delete_button = T('Delete Record'),
+    msg_record_created = T('Record added'),
+    msg_record_modified = T('Record updated'),
+    msg_record_deleted = T('Record deleted'),
+    msg_list_empty = T('No Records currently available'))
 
 s3.display = Storage()
 
@@ -174,20 +176,22 @@ db[table].audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Aud
 db[table].audit_write.label = T('Audit Write')
 db[table].audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Write|If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
-title_create = T('Add Setting')
-title_display = T('Setting Details')
-title_list = T('List Settings')
-title_update = T('Edit Setting')
-title_search = T('Search Settings')
-subtitle_create = T('Add New Setting')
-subtitle_list = T('Settings')
-label_list_button = T('List Settings')
-label_create_button = T('Add Setting')
-msg_record_created = T('Setting added')
-msg_record_modified = T('Setting updated')
-msg_record_deleted = T('Setting deleted')
-msg_list_empty = T('No Settings currently defined')
-s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+ADD_SETTING = T('Add Setting')
+LIST_SETTINGS = T('List Settings')
+s3.crud_strings[resource] = Storage(
+    title_create = ADD_SETTING,
+    title_display = T('Setting Details'),
+    title_list = LIST_SETTINGS,
+    title_update = T('Edit Setting'),
+    title_search = T('Search Settings'),
+    subtitle_create = T('Add New Setting'),
+    subtitle_list = T('Settings'),
+    label_list_button = LIST_SETTINGS,
+    label_create_button = ADD_SETTING,
+    msg_record_created = T('Setting added'),
+    msg_record_modified = T('Setting updated'),
+    msg_record_deleted = T('Setting deleted'),
+    msg_list_empty = T('No Settings currently defined'))
 
 # Common Source table
 resource = 'source'
@@ -203,20 +207,21 @@ db[table].name.comment = SPAN("*", _class="req")
 db[table].url.requires = IS_NULL_OR(IS_URL())
 db[table].url.label = T('URL')
 ADD_SOURCE = T('Add Source')
-title_create = T('Add Source')
-title_display = T('Source Details')
-title_list = T('List Sources')
-title_update = T('Edit Source')
-title_search = T('Search Sources')
-subtitle_create = T('Add New Source')
-subtitle_list = T('Sources')
-label_list_button = T('List Sources')
-label_create_button = ADD_SOURCE
-msg_record_created = T('Source added')
-msg_record_modified = T('Source updated')
-msg_record_deleted = T('Source deleted')
-msg_list_empty = T('No Sources currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+LIST_SOURCES = T('List Sources')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_SOURCE,
+    title_display = T('Source Details'),
+    title_list = LIST_SOURCES,
+    title_update = T('Edit Source'),
+    title_search = T('Search Sources'),
+    subtitle_create = T('Add New Source'),
+    subtitle_list = T('Sources'),
+    label_list_button = LIST_SOURCES,
+    label_create_button = ADD_SOURCE,
+    msg_record_created = T('Source added'),
+    msg_record_modified = T('Source updated'),
+    msg_record_deleted = T('Source deleted'),
+    msg_list_empty = T('No Sources currently registered'))
 # Reusable field for other tables to reference
 source_id = SQLTable(None, 'source_id',
             Field('source_id', db.s3_source,

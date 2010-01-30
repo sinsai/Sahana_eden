@@ -40,20 +40,22 @@ db[table].dwellings.label = T('Dwellings')
 db[table].persons_per_dwelling.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999))
 db[table].persons_per_dwelling.label = T('Persons per Dwelling')
 db[table].area.label = T('Area')
-title_create = T('Add Shelter')
-title_display = T('Shelter Details')
-title_list = T('List Shelters')
-title_update = T('Edit Shelter')
-title_search = T('Search Shelters')
-subtitle_create = T('Add New Shelter')
-subtitle_list = T('Shelters')
-label_list_button = T('List Shelters')
-label_create_button = T('Add Shelter')
-msg_record_created = T('Shelter added')
-msg_record_modified = T('Shelter updated')
-msg_record_deleted = T('Shelter deleted')
-msg_list_empty = T('No Shelters currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_SHELTER = T('Add Shelter')
+LIST_SHELTERS = T('List Shelters')
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Shelter'),
+    title_display = ADD_SHELTER,
+    title_list = LIST_SHELTERS,
+    title_update = T('Edit Shelter'),
+    title_search = T('Search Shelters'),
+    subtitle_create = T('Add New Shelter'),
+    subtitle_list = T('Shelters'),
+    label_list_button = LIST_SHELTERS,
+    label_create_button = ADD_SHELTER,
+    msg_record_created = T('Shelter added'),
+    msg_record_modified = T('Shelter updated'),
+    msg_record_deleted = T('Shelter deleted'),
+    msg_list_empty = T('No Shelters currently registered'))
 
 shelter_id = SQLTable(None, 'shelter_id',
                       Field('shelter_id', db.pr_pentity,

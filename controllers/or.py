@@ -181,7 +181,7 @@ def dashboard():
     org_list = []	
     for row in db(db.or_organisation.id > 0).select(orderby = db.or_organisation.name):	
         org_list.append(row.name)
-    organisation_select = SELECT(org_list, id = 'organisation_select', value = org_name)
+    organisation_select = SELECT(org_list, id = 'organisation_select', value = org_name, _id = 'organisation_select')
     
     org_details = crud.read("or_organisation", org_id)
 

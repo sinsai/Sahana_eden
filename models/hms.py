@@ -26,8 +26,13 @@ HMS_HOSPITAL_USE_GOVUUID = True #: whether to use governmental UUIDs instead of 
 hms_facility_type_opts = {
     1: T('Hospital'),
     2: T('Field Hospital'),
-    3: T('Dispensary'),
-    4: T('Other')
+    3: T('Specialized Hospital'),
+    11: T('Health center'),
+    12: T('Health center with beds'),
+    13: T('Health center without beds'),
+    21: T('Dispensary'),
+    98: T('Other'),
+    99: T('Unknown type of facility'),
 } #: Facility Type Options
 
 hms_facility_status_opts = {
@@ -970,21 +975,22 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
             Field("timestamp", "datetime"),
             Field("type", "integer",
                   requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_type_opts)),
-                  represent = lambda type: hms_hrequest_type_opts.get(type, "not specified"),
+                  represent = lambda type: hms_hrequest_type_opts.get(type, T("not specified")),
                   label = T('Type')),
             Field("priority", "integer",
                   requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_priority_opts)),
                   default = 2,
-                  represent = lambda id: (id and
-                    [DIV(IMG(_src='/%s/static/img/priority/hms_priority_%d.gif' % \
-                        (request.application, id), _height=12))] or
-                    [DIV(IMG(_src='/%s/static/img/priority/hms_priority_1.gif' % \
-                        request.application, _height=12))]),
+                  represent = lambda opt: hms_hrequest_priority_opts.get(opt, T("not specified")),
+                  #represent = lambda id: (id and
+                  #  [DIV(IMG(_src='/%s/static/img/priority/hms_priority_%d.gif' % \
+                  #      (request.application, id), _height=12))] or
+                  #  [DIV(IMG(_src='/%s/static/img/priority/hms_priority_1.gif' % \
+                  #      request.application, _height=12))]),
                   label = T('Priority')),
             Field("city", "string"),
             Field("status", "integer",
                   requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_status_opts)),
-                  represent = lambda type: hms_hrequest_status_opts.get(type, "not specified"),
+                  represent = lambda type: hms_hrequest_status_opts.get(type, T("not specified")),
                   label = T('Status')),
             Field("source_type", "integer",
                   requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_source_type)),

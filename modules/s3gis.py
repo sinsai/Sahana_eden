@@ -38,7 +38,7 @@ __name__ = "S3GIS"
 __all__ = ['GIS']
 
 
-#import sys, uuid
+import sys, uuid
 #import gluon.contrib.simplejson as json
 
 #from gluon.storage import Storage
@@ -155,7 +155,7 @@ class GIS(object):
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
         return db((db.gis_location.lat_min < lat_max) & 
             (db.gis_location.lat_max > lat_min) &
-            (db.gis_location.lon_min < lon_max) & 
+            (db.gis_location.lon_min < lon_max) &
             (db.gis_location.lon_max > lon_min))
 
     def _intersects(self, shape):

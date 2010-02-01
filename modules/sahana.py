@@ -758,7 +758,6 @@ class AuthS3(Auth):
                     table_group = self.settings.table_group
                     admin_group = self.db(table_group.role=="Administrator").select(table_group.id).first()
                     if admin_group:
-                        print "Adding user %s to group %s" % (user.id, admin_group.id)
                         self.add_membership(admin_group.id, user.id)
 
                 session.auth = Storage(user=user, last_visit=request.now,

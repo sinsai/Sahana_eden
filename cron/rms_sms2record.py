@@ -22,8 +22,8 @@ def rss2record(entry):
     myd['updated'] = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
     myd['title'] = entry['title']
     myd['sms'] = entry['sms']
-    myd['smsrec'] = entry['smsrec']
-    myd['phone']=entry['phone']
+    #myd['smsrec'] = entry['smsrec']
+    #myd['phone']=entry['phone']
     myd['categorization'] = entry['categorization'] 
     myd['firstname'] = entry['firstname'] 
     myd['lastname'] = entry['lastname']
@@ -33,7 +33,7 @@ def rss2record(entry):
     myd['department'] = entry['department']
     myd['summary'] = entry['summary']
     myd['notes'] = entry['notes']
-    myd['actionable'] = True if entry['actionable'] != '0' else False
+    #myd['actionable'] = True if entry['actionable'] != '0' else False
 
     # Fix escape characters: 
     myd["sms"] = " ".join(myd["sms"].split())
@@ -50,26 +50,33 @@ def rss2record(entry):
     for key in entry.keys():
         if key[-5:] == "point":
             # Found the location info
+
             gpoint = entry[key].split()
-            lat = float(gpoint[0])
-            lon = float(gpoint[1])
 
-            # Ushahidi uses a 0,0 lat/lon to indicate no lat lon.
-            if abs(lat) > 1.0e-8 and abs(lon) > 1.0e-8:
-                locd['lat' ] = lat
-                locd['lon' ] = lon
-                name = "SMS: "
-                if myd['categorization'] != "":
-                    name += myd['categorization']
-                else: 
-                    name += "No category"
+            if len(gpoint) == 2:
 
-                locd['name'] = name
+                try:
+                    lat = float(gpoint[0])
+                    lon = float(gpoint[1])
+                except ValueError:
+                    continue
 
-                if marker_id is not None:
-                    locd['marker_id'] = marker_id
-                if feature_class_id is not None:
-                    locd['feature_class_id'] = feature_id
+                # Ushahidi uses a 0,0 lat/lon to indicate no lat lon.
+                if abs(lat) > 1.0e-8 and abs(lon) > 1.0e-8:
+                    locd['lat' ] = lat
+                    locd['lon' ] = lon
+                    name = "SMS: "
+                    if myd['categorization'] != "":
+                        name += myd['categorization']
+                    else: 
+                        name += "No category"
+
+                    locd['name'] = name
+
+                    if marker_id is not None:
+                        locd['marker_id'] = marker_id
+                    if feature_class_id is not None:
+                        locd['feature_class_id'] = feature_id
 
 
     return myd, locd
@@ -148,14 +155,14 @@ def sms_to_request(sms_dict, sms_id):
     request_dict["message"    ] = sms_to_description(sms_dict)
     request_dict["source_id"  ] = sms_id
     request_dict["source_type"] = d.keys()[d.values().index("SMS")]
-    request_dict["actionable" ] = sms_dict["actionable" ]
+    #request_dict["actionable" ] = sms_dict["actionable" ]
     if sms_dict["categorization"] in usha_cats :
       request_dict["type"] = usha_cats[sms_dict["categorization"]]
     return request_dict
 
 import datetime
 import gluon.contrib.feedparser as feedparser
-url_base = "http://server.domain/rss.php"
+url_base = "http://server.domain/rss.php?key=keyrequired"
 
 N = 100
 start = 0

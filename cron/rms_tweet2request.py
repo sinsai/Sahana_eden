@@ -32,7 +32,7 @@ def tweet_to_request(tweet_dict, tweet_id):
 
 import datetime
 import gluon.contrib.feedparser as feedparser
-url_base = "http://epic.cs.colorado.edu:9090/tweets/atom"
+url_base = "http://epic.cs.colorado.edu:9090/tweets.atom"
 
 N = 100
 start = 0

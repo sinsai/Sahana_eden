@@ -95,7 +95,7 @@ def load_gis_locations(data, make_feature_group=False):
         location_id = db.gis_location.insert(**d)
         if make_feature_group:
             db.gis_feature_group.insert(name=d['name'], enabled=False)
-        print i, d['name']
+        print i
     db.commit()
 
 # HAITI-SPECIFIC
@@ -135,7 +135,6 @@ def make_unique_sections(data):
                 old = d['NOM_SECTIO']
                 new = "%s [%s]" % (old, d['COMMUNE'].title())
                 d['NOM_SECTIO'] = new
-                print old, "=>", new
 
 def load_level(admin_type, parent_type=None, single_parent=None):
     """Load an administrative level.  Transforms dictionaries from csv, resolves naming conflicts for sections, and calls load_gis_locations to load into database."""
@@ -168,6 +167,11 @@ def create_haiti_admin_areas():
     load_level("Departments")
     load_level("Communes", parent_type="Departments")
     load_level("Sections", parent_type="Communes")
+    db.commit()
+
+def create_haiti_sections():
+    load_level("Sections", parent_type="Communes")
+    db.commit()
    
 
 def wipe_admin_areas():

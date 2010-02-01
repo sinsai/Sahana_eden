@@ -198,7 +198,7 @@ def user():
     ADD_USER = T('Add User')
     LIST_USERS = T('List Users')
     s3.crud_strings[table] = Storage(
-        title_create = ADD_USERS,
+        title_create = ADD_USER,
         title_display = T('User Details'),
         title_list = LIST_USERS,
         title_update = T('Edit User'),

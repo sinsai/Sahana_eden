@@ -1,6 +1,6 @@
 ﻿var georssLayers = new Array();
 {{for layer in georss_layers:}}
-  {{name = layer.replace(' ', '_')}}
+  {{name = layer.replace(' ', '_').replace(':', '_')}}
     iconURL = "{{=URL(r=request, c='default', f='download', args=georss_layers[layer].marker)}}";
     icon_img.src = iconURL;
     width = icon_img.width;

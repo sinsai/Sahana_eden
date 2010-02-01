@@ -1,5 +1,5 @@
 ﻿{{for layer in xyz_layers:}}
-  {{name = layer.replace(' ', '_')}}
+  {{name = layer.replace(' ', '_').replace(':', '_')}}
     var xyzLayer{{=name}} = new OpenLayers.Layer.XYZ( "{{=layer}}", "{{=xyz_layers[layer].url}}", {
       {{if xyz_layers[layer].sphericalMercator:}}
         sphericalMercator: 'true',

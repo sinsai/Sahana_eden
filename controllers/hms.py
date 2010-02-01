@@ -18,9 +18,7 @@ response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
     [T('Hospitals'), False, URL(r=request, f='hospital'), [
         [T('List All'), False, URL(r=request, f='hospital')],
-        #[T('List by Location'), False, URL(r=request, f='hospital', args='search_location')],
         [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-        #[T('Find by Bed Type'), False, URL(r=request, f='hospital', args='search_bedtype')],
         [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')],
     ]],
     [T('Add Request'), False, URL(r=request, f='hrequest', args='create')],
@@ -34,9 +32,7 @@ def shn_hms_menu_ext():
         [T('Home'), False, URL(r=request, f='index')],
             [T('Hospitals'), False, URL(r=request, f='hospital'), [
                 [T('List All'), False, URL(r=request, f='hospital')],
-                #[T('List by Location'), False, URL(r=request, f='hospital', args='search_location')],
                 [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-                #[T('Find by Bed Type'), False, URL(r=request, f='hospital', args='search_bedtype')],
                 [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')]
             ]],
     ]
@@ -48,7 +44,7 @@ def shn_hms_menu_ext():
                         [T('Status Report'), False, URL(r=request, f='hospital', args=[selection.id])],
                         [T('Bed Capacity'), False, URL(r=request, f='hospital', args=[selection.id, 'bed_capacity'])],
                         [T('Activity Report'), False, URL(r=request, f='hospital', args=[selection.id, 'hactivity'])],
-                        [T('Support Requests'), False, URL(r=request, f='hospital', args=[selection.id, 'hrequest'])],
+                        [T('Requests'), False, URL(r=request, f='hospital', args=[selection.id, 'hrequest'])],
                         #[T('Resources'), False, URL(r=request, f='hospital', args=[selection.id, 'resources'])],
                         [T('Images'), False, URL(r=request, f='hospital', args=[selection.id, 'himage'])],
                         [T('Services'), False, URL(r=request, f='hospital', args=[selection.id, 'services'])],
@@ -113,7 +109,7 @@ def hrequest():
             title="%(subject)s",
             description="%(message)s"
         ),
-        list_fields=['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'status', 'completed'],
+        list_fields=['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'status'],
         onaccept = shn_hms_hrequest_onaccept)
 
     shn_hms_menu_ext()
@@ -131,7 +127,7 @@ def hpledge():
 
     pledges = db(db.hms_hpledge.status == 3).select()
     for pledge in pledges:
-        req = db(db.hms_hrequest.id == pledge.hrequest_id).update(completed = True)
+        db(db.hms_hrequest.id == pledge.hrequest_id).update(status = 6)
 
     db.commit()
 

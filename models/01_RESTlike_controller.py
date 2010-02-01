@@ -1027,7 +1027,13 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalida
                 label_list_button = s3.crud_strings.label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
 
-            output.update(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
+            output.update(module_name=module_name,
+                          item=item,
+                          record_id=record_id,
+                          title=title,
+                          edit=edit,
+                          delete=delete,
+                          list_btn=list_btn)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -1766,7 +1772,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = update_onaccept
                 crud.settings.update_next = update_next
 
-            output.update(form=form)
+            output.update(form=form, record_id=record_id)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]

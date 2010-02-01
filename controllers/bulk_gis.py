@@ -136,7 +136,7 @@ def make_unique_sections(data):
                 new = "%s [%s]" % (old, d['COMMUNE'].title())
                 d['NOM_SECTIO'] = new
 
-def load_level(admin_type, parent_type=None, single_parent=None):
+def load_level(admin_type, parent_type=None):
     """Load an administrative level.  Transforms dictionaries from csv, resolves naming conflicts for sections, and calls load_gis_locations to load into database."""
     filename = '/'.join([BASEDIR, FILES[admin_type]])
     
@@ -147,20 +147,18 @@ def load_level(admin_type, parent_type=None, single_parent=None):
     if admin_type == 'Sections':
         make_unique_sections(data)
 
-    def transformed_dict_gen(parent=None):
+    def transformed_dict_gen():
         for d in data:
             transformed = {
                 'name': get_name(d, admin_type),
                 'wkt': d['WKT'],
                 'feature_class_id': admin_area_class_id
             }
-            if parent_type and not parent:
-                parent = get_parent_id(d, parent_type)
-            if parent:
-                transformed['parent'] = parent
+            if parent_type:
+                transformed['parent'] = get_parent_id(d, parent_type)
             yield transformed
             
-    load_gis_locations(transformed_dict_gen(parent=single_parent), make_feature_group=True)
+    load_gis_locations(transformed_dict_gen(), make_feature_group=True)
 
 def create_haiti_admin_areas():
     ensure_admin_feature_class()
@@ -169,10 +167,6 @@ def create_haiti_admin_areas():
     load_level("Sections", parent_type="Communes")
     db.commit()
 
-def create_haiti_sections():
-    load_level("Sections", parent_type="Communes")
-    db.commit()
-   
 
 def wipe_admin_areas():
     """Delete all objects created by this script.  Not for use in production.

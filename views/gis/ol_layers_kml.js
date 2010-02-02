@@ -15,7 +15,14 @@ allLayers = allLayers.concat(kmlLayers);
 function onKmlFeatureSelect(event) {
     var feature = event.feature;
     var selectedFeature = feature;
-    if ("undefined" === feature.attributes.description) {
+    var type = typeof feature.attributes.name
+    if ('object' == type) {
+        var popup = new OpenLayers.Popup.FramedCloud("chicken",
+        feature.geometry.getBounds().getCenterLonLat(),
+        new OpenLayers.Size(200,200),
+        "<h2>" + "</h2>",
+        null, true, onPopupClose);
+    } else if (undefined == feature.attributes.description) {
         var popup = new OpenLayers.Popup.FramedCloud("chicken",
         feature.geometry.getBounds().getCenterLonLat(),
         new OpenLayers.Size(200,200),

@@ -46,7 +46,7 @@ allLayers = allLayers.concat(georssLayers);
 function onGeorssFeatureSelect(event) {
     var feature = event.feature;
     var selectedFeature = feature;
-    if ("undefined" === feature.attributes.description) {
+    if (undefined == feature.attributes.description) {
         var popup = new OpenLayers.Popup.FramedCloud("chicken", 
         feature.geometry.getBounds().getCenterLonLat(),
         new OpenLayers.Size(200,200),

@@ -182,7 +182,7 @@ def index():
 def parameters():
     "Select which page to go to depending on login status"
     table = db.budget_parameter
-    authorised = has_permission('update', table)
+    authorised = shn_has_permission('update', table)
     if authorised:
         redirect (URL(r=request, f='parameter', args=['update', 1]))
     else:
@@ -204,7 +204,9 @@ def parameter():
     db[table].indirect.label = "Indirect support cost HQ"
 
     # CRUD Strings
-    s3.crud_strings[table] = Storage(title_update = T('Edit Parameters'))
+    s3.crud_strings[table] = Storage(
+        title_update = T('Edit Parameters'),
+        title_display = T('Parameters'))
 
     return shn_rest_controller(module, resource, deletable=False)
     

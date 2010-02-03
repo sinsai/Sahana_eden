@@ -114,7 +114,9 @@ class GIS(object):
             except:
                 if not marker:
                     # 3rd choice for a Marker is the Feature Class's
-                    marker = db(db.gis_feature_class.id == feature_class).select().first().marker_id
+                    marker = db(db.gis_feature_class.id == feature_class).select().first()
+                    if marker:
+                        marker = marker.marker_id
                 if not marker:
                     # 4th choice for a Marker is the default
                     marker = config.marker_id

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'or'
 # Current Module (for sidebar title)
@@ -66,8 +66,10 @@ def office():
     # ServerSidePagination not ready yet
     #response.s3.pagination = True
 
+    # the update forms are not ready. when they will - uncomment this and comment the next one
+    #if request.args(0) in ('create','update'):
     if request.args(0) == 'create':
-        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_SERVER(db, 'or_organisation.id'))
+        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_organisation.id'))
 
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
@@ -83,11 +85,14 @@ def contact():
     #response.s3.pagination = True
     
     # No point in downloading large dropdowns which we hide, so provide a smaller represent
+
+    # the update forms are not ready. when they will - uncomment this and comment the next one
+    #if request.args(0) in ('create','update'):
     if request.args(0) == 'create':
         # person_id mandatory for a contact!
-        db[table].person_id.requires = IS_ONE_OF_SERVER(db, 'pr_person.id')
-        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_SERVER(db, 'or_organisation.id'))
-        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF_SERVER(db, 'or_office.id'))
+        db[table].person_id.requires = IS_ONE_OF_EMPTY(db, 'pr_person.id')
+        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_organisation.id'))
+        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_office.id'))
     
     return shn_rest_controller(module, resource, listadd=False)
 	

@@ -166,7 +166,7 @@ def dashboard():
     
     # Get Organization to display from Var or Arg or Default
     if len(request.args) > 0:
-        org_id = request.args[0]
+        org_id = int(request.args[0])
         try:
             org_name = db(db.or_organisation.id == org_id).select(db.or_organisation.name)[0]["name"]
         except:
@@ -183,14 +183,25 @@ def dashboard():
         org_id = 1
         try:
             org_name = db(db.or_organisation.id == org_id).select(db.or_organisation.name)[0].name
+            org_id = 0
         except:
             session.warning = T('No Organisations registered!')
             redirect(URL(r=request, c='or', f='index'))
 
-    org_list = []	
-    for row in db(db.or_organisation.id > 0).select(orderby = db.or_organisation.name):	
-        org_list.append(row.name)
-    organisation_select = SELECT(org_list, id = 'organisation_select', value = org_name, _id = 'organisation_select')
+    o_opts = []
+    first_option = True;
+    # if we keep the dropdown - it will better be in alphabetic order
+    # that way the user will find things easier
+    for organisation in db(db.or_organisation.deleted==False).select(db.or_organisation.ALL,orderby = db.or_organisation.name):
+        if (org_id == 0 and first_option) or organisation.id == org_id:
+            first_option = False
+            if org_id == 0:
+                org_id = organisation.id
+            o_opts += [OPTION(organisation.name, _value=organisation.id, _selected='')]
+        else:
+            o_opts += [OPTION(organisation.name, _value=organisation.id)]
+
+    organisation_select = SELECT(_name="org", *o_opts, **dict(name="org", requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.id')), _id = 'organisation_select'))
     
     org_details = crud.read("or_organisation", org_id)
 

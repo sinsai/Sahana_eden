@@ -101,9 +101,9 @@ class THIS_NOT_IN_DB(object):
             return (self.value, self.error_message)
         return (value, None)
 
-# IS_ONE_OF -------------------------------------------------------------------
+# IS_ONE_OF_EMPTY -------------------------------------------------------------------
 # by sunneach 2010-02-03
-#
+# copy of nursix's IS_ONE_OF with removed 'options' method
 class IS_ONE_OF_EMPTY(Validator):
     """
         Filtered version of IS_IN_DB():
@@ -196,9 +196,10 @@ class IS_ONE_OF_EMPTY(Validator):
             pass
 
         return (value, self.error_message)
+
 # IS_ONE_OF -------------------------------------------------------------------
 # added 2009-08-23 by nursix
-#
+# converted to subclass 2010-02-03 by sunneach: NO CHANGES in the method bodies
 class IS_ONE_OF(IS_ONE_OF_EMPTY):
     """
         Filtered version of IS_IN_DB():

@@ -46,35 +46,12 @@ import sys, uuid
 #from gluon.http import HTTP
 #from gluon.validators import IS_NULL_OR
 
-#from xml.etree.cElementTree import ElementTree
-
 SHAPELY = False
 try:
     import shapely
     SHAPELY = True
 except ImportError:
-    print >> sys.stderr, "WARNING: %s: shapely gis library not instsalled" % __name__
-
-#try:
-#    from lxml import etree
-#    NO_LXML = False
-#except ImportError:
-#    try:
-#        import xml.etree.cElementTree as etree
-#        print >> sys.stderr, "WARNING: %s: lxml not installed - using cElementTree" % __name__
-#    except ImportError:
-#        try:
-#            import xml.etree.ElementTree as etree
-#            print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
-#        except ImportError:
-#            try:
-#                import cElementTree as etree
-#                print >> sys.stderr, "WARNING: %s: lxml not installed - using cElementTree" % __name__
-#            except ImportError:
-#                # normal ElementTree install
-#                import elementtree.ElementTree as etree
-#                print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
-
+    print >> sys.stderr, "WARNING: %s: Shapely GIS library not installed" % __name__
 
 # Error messages
 S3GIS_BAD_RESOURCE = "Invalid Resource"
@@ -82,7 +59,7 @@ S3GIS_DATA_IMPORT_ERROR = "Data Import Error"
 S3GIS_NOT_PERMITTED = "Operation Not Permitted"
 S3GIS_NOT_IMPLEMENTED = "Not Implemented"
 
-# Map WKT types to db types (multi- geometry types are mapped to single types)
+# Map WKT types to db types (multi-geometry types are mapped to single types)
 GEOM_TYPES = {
     "point": 1,
     "multipoint": 1,
@@ -175,7 +152,8 @@ class GIS(object):
         intersects_latlon = _intersects_latlon 
     
     def parse_location(self, wkt, lon=None, lat=None):
-        """Parses a location from wkt, returning wkt, lat, lon, bounding box and type.
+        """
+            Parses a location from wkt, returning wkt, lat, lon, bounding box and type.
             For points, wkt may be None if lat and lon are provided; wkt will be generated.
             For lines and polygons, the lat, lon returned represent the shape's centroid.
             Centroid and bounding box will be None if shapely is not available.
@@ -204,3 +182,61 @@ class GIS(object):
             res['lon_min'], res['lat_min'], res['lon_max'], res['lat_max'] = bbox
         return res
 
+    def latlon_to_wkt(self, lat, lon):
+        """Convert a LatLon to a WKT string
+        >>> s3gis.latlon_to_wkt(6, 80)
+        'POINT(80 6)'
+        """
+        WKT = 'POINT(%f %f)' % (lon, lat)
+        return WKT
+
+    def wkt_centroid(self, form):
+        """
+        OnValidation callback:
+        If a Point has LonLat defined: calculate the WKT.
+        If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
+        Centroid calculation is done using Shapely, which wraps Geos.
+        A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+        """
+        #shapely_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + str(T(" library not found, so can't find centroid!"))
+        shapely_error = T("Shapely library not functional, so can't find centroid! Install Geos & Shapely for Line/Polygon support")
+        if form.vars.gis_feature_type == '1':
+            # Point
+            if form.vars.lon == None:
+                form.errors['lon'] = T("Invalid: Longitude can't be empty!")
+                return
+            if form.vars.lat == None:
+                form.errors['lat'] = T("Invalid: Latitude can't be empty!")
+                return
+            form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
+        elif form.vars.gis_feature_type == '2':
+            # Line
+            try:
+                from shapely.wkt import loads
+                try:
+                    line = loads(form.vars.wkt)
+                except:
+                    form.errors['wkt'] = T("Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!")
+                    return
+                centroid_point = line.centroid
+                form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+                form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+            except:
+                form.errors.gis_feature_type = shapely_error
+        elif form.vars.gis_feature_type == '3':
+            # Polygon
+            try:
+                from shapely.wkt import loads
+                try:
+                    polygon = loads(form.vars.wkt)
+                except:
+                    form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
+                    return
+                centroid_point = polygon.centroid
+                form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
+                form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+            except:
+                form.errors.gis_feature_type = shapely_error
+        else:
+            form.errors.gis_feature_type = T('Unknown type!')
+        return

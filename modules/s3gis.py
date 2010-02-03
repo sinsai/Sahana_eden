@@ -83,6 +83,15 @@ class GIS(object):
         
         return config
         
+    def get_feature_class_id_from_name(self, name):
+        """ Returns the Feature Class ID from it's name"""
+
+        db = self.db
+        
+        id = db(db.gis_feature_class.name == name).select().first().id
+        
+        return id
+    
     def get_marker(self, feature_id):
         """ Returns the Marker URL for a Feature"""
 
@@ -92,7 +101,8 @@ class GIS(object):
         symbology = config.symbology_id
         
         feature = db(db.gis_location.id == feature_id).select().first()
-        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select().first().id
+        #feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select().first().id
+        feature_class = feature.feature_class_id
         
         # 1st choice for a Marker is the Feature's
         marker = feature.marker_id

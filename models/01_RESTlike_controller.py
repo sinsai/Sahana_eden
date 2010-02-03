@@ -1524,8 +1524,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
-                                        jr.there()
+            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or jr.there()
         else:
             if not crud.settings.create_next:
                 crud.settings.create_next = jr.there()
@@ -1533,13 +1532,13 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if onaccept:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, 0) and \
+                        s3xrc.store_session(session, module, resource, form.vars.id) and \
                         onaccept(form)
 
         else:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, 0)
+                        s3xrc.store_session(session, module, resource, form.vars.id)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created
@@ -2071,10 +2070,7 @@ def shn_rest_controller(module, resource,
 
     if jr.component:
         if jr.method and jr.custom_action:
-            try:
-                return(jr.custom_action(jr, onvalidation=None, onaccept=None))
-            except:
-                raise HTTP(500)
+            return(jr.custom_action(jr, onvalidation=None, onaccept=None))
 
         # HTTP Multi-Record Operation *****************************************
         if jr.method==None and jr.multiple and not jr.component_id:
@@ -2234,10 +2230,7 @@ def shn_rest_controller(module, resource,
 
         # Custom Method *******************************************************
         if jr.method and jr.custom_action:
-            try:
-                return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
-            except:
-                raise HTTP(500)
+            return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
 
         # Clear Session *******************************************************
         elif jr.method=="clear":

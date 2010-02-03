@@ -281,7 +281,7 @@ def location():
 
     #response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
+    return shn_rest_controller(module, resource, onvalidation=lambda form: gis.wkt_centroid(form))
 
 def marker():
     "RESTlike CRUD controller"
@@ -859,97 +859,12 @@ content type. It supports GET and POST requests."""
         msg += "Some unexpected error occurred. Error text was:", E
         return msg
 
-def proxy2():
-    " Provide a proxy for WFS/GeoRSS/MGRS layers. by Massimo diPierro"
-    import httplib
-    PROXY_USER = None
-    PROXY_PASSWORD = None
-    PROXY_URL = 'web2py.com:80'
-    path = '/'+'/'.join(request.args)
-    query = request.env.query_string
-    method = request.env.request_method
-    if PROXY_USER and PROXY_PASSWORD:
-        conn.add_credentials(PROXY_USER, PROXY_PASSWORD)
-    conn =  httplib.HTTPConnection(PROXY_URL)
-    if method == 'GET':
-        conn.request(method, path, query)
-    elif method == 'POST':
-        data = request.body.read()
-        conn.request(method, path, data)
-    else:
-        return 'oops'
-    res = conn.getresponse()
-    content = res.read()
-    headers = dict(res.getheaders())
-    response.headers['Content-Type'] = headers['content-type']
-    response.status = int(res.status)
-    return content
-
-def shn_latlon_to_wkt(lat, lon):
-    """Convert a LatLon to a WKT string
-    >>> shn_latlon_to_wkt(6, 80)
-    'POINT(80 6)'
-    """
-    WKT = 'POINT(%f %f)' % (lon, lat)
-    return WKT
-
-# Onvalidation callback
-def wkt_centroid(form):
-    """GIS
-    If a Point has LonLat defined: calculate the WKT.
-    If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
-    Centroid calculation is done using Shapely, which wraps Geos.
-    A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
-    """
-    #shapely_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + str(T(" library not found, so can't find centroid!"))
-    shapely_error = T("Shapely library not found, so can't find centroid!")
-    if form.vars.gis_feature_type == '1':
-        # Point
-        if form.vars.lon == None:
-            form.errors['lon'] = T("Invalid: Longitude can't be empty!")
-            return
-        if form.vars.lat == None:
-            form.errors['lat'] = T("Invalid: Latitude can't be empty!")
-            return
-        form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
-    elif form.vars.gis_feature_type == '2':
-        # Line
-        try:
-            from shapely.wkt import loads
-            try:
-                line = loads(form.vars.wkt)
-            except:
-                form.errors['wkt'] = T("Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!")
-                return
-            centroid_point = line.centroid
-            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
-        except:
-            form.errors.gis_feature_type = shapely_error
-    elif form.vars.gis_feature_type == '3':
-        # Polygon
-        try:
-            from shapely.wkt import loads
-            try:
-                polygon = loads(form.vars.wkt)
-            except:
-                form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
-                return
-            centroid_point = polygon.centroid
-            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
-        except:
-            form.errors.gis_feature_type = shapely_error
-    else:
-        form.errors.gis_feature_type = T('Unknown type!')
-    return
-
 # Features
 # - experimental!
 def feature_create_map():
     "Show a map to draw the feature"
     title = T("Add GIS Feature")
-    form = crud.create('gis_location', onvalidation=lambda form: wkt_centroid(form))
+    form = crud.create('gis_location', onvalidation=lambda form: gis.wkt_centroid(form))
     _projection = db(db.gis_config.id==1).select().first().projection_id
     projection = db(db.gis_projection.id==_projection).select().first().epsg
 

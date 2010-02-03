@@ -37,14 +37,9 @@ __name__ = "S3GIS"
 
 __all__ = ['GIS']
 
-
 import sys, uuid
-#import gluon.contrib.simplejson as json
 
-#from gluon.storage import Storage
-#from gluon.html import URL
-#from gluon.http import HTTP
-#from gluon.validators import IS_NULL_OR
+from gluon.storage import Messages
 
 SHAPELY = False
 try:
@@ -52,12 +47,6 @@ try:
     SHAPELY = True
 except ImportError:
     print >> sys.stderr, "WARNING: %s: Shapely GIS library not installed" % __name__
-
-# Error messages
-S3GIS_BAD_RESOURCE = "Invalid Resource"
-S3GIS_DATA_IMPORT_ERROR = "Data Import Error"
-S3GIS_NOT_PERMITTED = "Operation Not Permitted"
-S3GIS_NOT_IMPLEMENTED = "Not Implemented"
 
 # Map WKT types to db types (multi-geometry types are mapped to single types)
 GEOM_TYPES = {
@@ -75,6 +64,15 @@ class GIS(object):
     def __init__(self, db):
         assert db is not None, "Database must not be None."
         self.db = db
+        self.messages = Messages(None)
+        #self.messages.centroid_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + " library not found, so can't find centroid!"
+        self.messages.centroid_error = "Shapely library not functional, so can't find centroid! Install Geos & Shapely for Line/Polygon support"
+        self.messages.unknown_type = "Unknown Type!"
+        self.messages.invalid_wkt_linestring = "Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!"
+        self.messages.invalid_wkt_polygon = "Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!"
+        self.messages.lon_empty = "Invalid: Longitude can't be empty!"
+        self.messages.lat_empty = "Invalid: Latitude can't be empty!"
+        
         
     def read_config(self):
         """ Reads the current GIS Config from the DB """
@@ -198,15 +196,13 @@ class GIS(object):
         Centroid calculation is done using Shapely, which wraps Geos.
         A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
         """
-        #shapely_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + str(T(" library not found, so can't find centroid!"))
-        shapely_error = T("Shapely library not functional, so can't find centroid! Install Geos & Shapely for Line/Polygon support")
         if form.vars.gis_feature_type == '1':
             # Point
             if form.vars.lon == None:
-                form.errors['lon'] = T("Invalid: Longitude can't be empty!")
+                form.errors['lon'] = self.messages.lon_empty
                 return
             if form.vars.lat == None:
-                form.errors['lat'] = T("Invalid: Latitude can't be empty!")
+                form.errors['lat'] = self.messages.lat_empty
                 return
             form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
         elif form.vars.gis_feature_type == '2':
@@ -216,13 +212,13 @@ class GIS(object):
                 try:
                     line = loads(form.vars.wkt)
                 except:
-                    form.errors['wkt'] = T("Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!")
+                    form.errors['wkt'] = self.messages.invalid_wkt_linestring
                     return
                 centroid_point = line.centroid
                 form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
                 form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
             except:
-                form.errors.gis_feature_type = shapely_error
+                form.errors.gis_feature_type = self.messages.centroid_error
         elif form.vars.gis_feature_type == '3':
             # Polygon
             try:
@@ -230,13 +226,13 @@ class GIS(object):
                 try:
                     polygon = loads(form.vars.wkt)
                 except:
-                    form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
+                    form.errors['wkt'] = self.messages.invalid_wkt_polygon
                     return
                 centroid_point = polygon.centroid
                 form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
                 form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
             except:
-                form.errors.gis_feature_type = shapely_error
+                form.errors.gis_feature_type = self.messages.centroid_error
         else:
-            form.errors.gis_feature_type = T('Unknown type!')
+            form.errors.gis_feature_type = self.messages.unknown_type
         return

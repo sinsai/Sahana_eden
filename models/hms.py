@@ -773,56 +773,6 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
 # -----------------------------------------------------------------------------
 # Hospital Search by Name
 #
-def shn_hms_get_hospital(label, fields=None, filterby=None):
-
-    """ Helper function to find hospital records matching a label """
-
-    if fields and isinstance(fields, (list,tuple)):
-        search_fields = []
-        for f in fields:
-            if db.hms_hospital.has_key(f):
-                search_fields.append(f)
-        if not len(search_fields):
-            return None
-    else:
-        search_fields = ['gov_uuid', 'name', 'aka1', 'aka2']
-
-    if label and isinstance(label,str):
-        labels = label.split()
-        results = []
-        query = None
-        for l in labels:
-
-            # append wildcards
-            wc = "%"
-            _l = "%s%s%s" % (wc, l, wc)
-
-            # build query
-            for f in search_fields:
-                if query:
-                    query = (db.hms_hospital[f].like(_l)) | query
-                else:
-                    query = (db.hms_hospital[f].like(_l))
-
-            # undeleted records only
-            query = (db.hms_hospital.deleted==False) & (query)
-            # restrict to prior results (AND)
-            if len(results):
-                query = (db.hms_hospital.id.belongs(results)) & query
-            if filterby:
-                query = (filterby) & (query)
-            records = db(query).select(db.hms_hospital.id)
-            # rebuild result list
-            results = [r.id for r in records]
-            # any results left?
-            if not len(results):
-                return None
-        return results
-    else:
-        # no label given or wrong parameter type
-        return None
-
-
 def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
 
     """ Find hospitals by their name """
@@ -862,7 +812,9 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
             if form.vars.label == "":
                 form.vars.label = "%"
 
-            results = shn_hms_get_hospital(form.vars.label)
+            results = s3xrc.search_simple(db.hms_hospital,
+                fields=['gov_uuid', 'name', 'aka1', 'aka2'],
+                label=form.vars.label)
 
             if results and len(results):
                 rows = db(db.hms_hospital.id.belongs(results)).select()

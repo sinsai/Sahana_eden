@@ -65,6 +65,10 @@ def office():
         db[table].admin.readable = db[table].admin.writable = False
     # ServerSidePagination not ready yet
     #response.s3.pagination = True
+
+    if request.args(0) == 'create':
+        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_SERVER(db, 'or_organisation.id'))
+
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
 @service.jsonrpc
@@ -81,9 +85,9 @@ def contact():
     # No point in downloading large dropdowns which we hide, so provide a smaller represent
     if request.args(0) == 'create':
         # person_id mandatory for a contact!
-        db[table].person_id.requires = IS_ONE_OF(db, 'pr_person.id', 'a')
-        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', 'a'))
-        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', 'a'))
+        db[table].person_id.requires = IS_ONE_OF_SERVER(db, 'pr_person.id')
+        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_SERVER(db, 'or_organisation.id'))
+        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF_SERVER(db, 'or_office.id'))
     
     return shn_rest_controller(module, resource, listadd=False)
 	

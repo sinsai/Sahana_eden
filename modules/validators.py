@@ -19,7 +19,7 @@ import re
 from datetime import datetime, timedelta
 from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB
 
-__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF', 'IS_NOT_ONE_OF']
+__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF', 'IS_NOT_ONE_OF', 'IS_ONE_OF_SERVER']
 
 class IS_LAT(object):
     """
@@ -101,6 +101,38 @@ class THIS_NOT_IN_DB(object):
             return (self.value, self.error_message)
         return (value, None)
 
+#   this is __init__, extracted from IS_ONE_OF to share
+#   2010.01.31 by sunneach
+#
+def is_one_of_init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort):
+
+    self.error_message = error_message
+
+    self.field = field
+    (ktable, kfield) = str(self.field).split('.')
+
+    self.ktable = ktable
+
+    if not kfield or not len(kfield):
+        self.kfield = 'id'
+    else:
+        self.kfield = kfield
+
+    self.represent = represent or ('%%(%s)s' % self.kfield)
+
+    self.filterby = filterby
+    self.filter_opts = filter_opts
+
+    self.error_message = error_message
+
+    self.multiple = multiple
+    self.alphasort = alphasort
+
+    if hasattr(dbset, 'define_table'):
+        self.dbset = dbset()
+    else:
+        self.dbset = dbset
+
 # IS_ONE_OF -------------------------------------------------------------------
 # added 2009-08-23 by nursix
 #
@@ -131,32 +163,7 @@ class IS_ONE_OF(Validator):
         alphasort=True
         ):
 
-        self.error_message = error_message
-
-        self.field = field
-        (ktable, kfield) = str(self.field).split('.')
-
-        self.ktable = ktable
-
-        if not kfield or not len(kfield):
-            self.kfield = 'id'
-        else:
-            self.kfield = kfield
-
-        self.represent = represent or ('%%(%s)s' % self.kfield)
-
-        self.filterby = filterby
-        self.filter_opts = filter_opts
-
-        self.error_message = error_message
-
-        self.multiple = multiple
-        self.alphasort = alphasort
-
-        if hasattr(dbset, 'define_table'):
-            self.dbset = dbset()
-        else:
-            self.dbset = dbset
+        is_one_of_init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort)
 
     def options(self):
 
@@ -241,6 +248,33 @@ class IS_ONE_OF(Validator):
             pass
 
         return (value, self.error_message)
+
+# IS_ONE_OF_SERVER -------------------------------------------------------------------
+# added 2010-01-31 by sunneach
+#
+class IS_ONE_OF_SERVER(Validator):
+    """
+    The same as IS_ONE_OF.
+    The (potentially many) records do not get downloaded to the browser to create unused hidden <select...
+    It is useful for auto-completion-equipped forms.
+    """
+
+    def __init__(
+        self,
+        dbset,
+        field,
+        represent=None,
+        filterby=None,
+        filter_opts=None,
+        error_message='invalid value!',
+        multiple=False,
+        alphasort=True
+        ):
+
+        is_one_of_init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort)
+
+    def __call__(self,value):
+        return IS_ONE_IF.__call__(self,value)
 
 class IS_NOT_ONE_OF(IS_NOT_IN_DB):
     """

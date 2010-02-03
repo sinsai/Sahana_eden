@@ -3,7 +3,7 @@
 """
     SahanaPy GIS Module
 
-    @version: 0.0.1
+    @version: 0.0.2
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: flavour
@@ -47,6 +47,8 @@ try:
     SHAPELY = True
 except ImportError:
     print >> sys.stderr, "WARNING: %s: Shapely GIS library not installed" % __name__
+
+HAS_BBOX = False   # Are bounding boxes populated in the database?
 
 # Map WKT types to db types (multi-geometry types are mapped to single types)
 GEOM_TYPES = {
@@ -139,12 +141,29 @@ class GIS(object):
         
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
-    def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
-        return db((db.gis_location.lat_min < lat_max) & 
-            (db.gis_location.lat_max > lat_min) &
-            (db.gis_location.lon_min < lon_max) &
-            (db.gis_location.lon_max > lon_min))
+    def _true_bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
+        db = self.db
+        return db((db.gis_location.lat_min <= lat_max) & 
+            (db.gis_location.lat_max >= lat_min) &
+            (db.gis_location.lon_min <= lon_max) & 
+            (db.gis_location.lon_max >= lon_min))
 
+    def _bbox_intersects_centroid(self, lon_min, lat_min, lon_max, lat_max):
+        """Tests if a location's lat,lon are within the bounding box.
+            This gives an accurate result for point locations.  
+            Since lat,lon represents the centroid of a polygon or line location, it may
+            give inaccurate results for those locations.
+            Use _true_bbox_intersects if location bboxes is available."""
+        db = self.db
+        return db((db.gis_location.lat <= lat_max) & 
+            (db.gis_location.lat >= lat_min) &
+            (db.gis_location.lon <= lon_max) & 
+            (db.gis_location.lon >= lon_min))
+
+    if HAS_BBOX:
+        bbox_intersects = _true_bbox_intersects
+    else:
+        bbox_intersects = _bbox_intersects_centroid
     def _intersects(self, shape):
         "Returns a generator of locations whose shape intersects the given shape"
         for loc in self.bbox_intersects(*shape.bounds).select():

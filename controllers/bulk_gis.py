@@ -94,7 +94,8 @@ def load_gis_locations(data, make_feature_group=False):
         d.update(gis.parse_location(d.get('wkt'), d.get('lon'), d.get('lat')))
         location_id = db.gis_location.insert(**d)
         if make_feature_group:
-            db.gis_feature_group.insert(name=d['name'], enabled=False)
+            feature_group_id = db.gis_feature_group.insert(name=d['name'], enabled=False)
+            db.gis_location_to_feature_group.insert(feature_group_id=feature_group_id, location_id=location_id)
         print i
     db.commit()
 

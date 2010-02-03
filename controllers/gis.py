@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from operator import __and__
 
 module = 'gis'
 # Current Module (for sidebar title)
@@ -266,9 +267,10 @@ def location():
         msg_record_deleted = T('Location deleted'),
         msg_list_empty = T('No Locations currently available'))
 
+    filters = []
     if "feature_class" in request.vars:
         fclass = request.vars["feature_class"]
-        response.s3.filter = ((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+        filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
                               (db.gis_feature_class.name.like(fclass)))
 
     if "feature_group" in request.vars:
@@ -281,6 +283,13 @@ def location():
 
     #response.s3.pagination = True
 
+    if "parent" in request.vars:
+        parent = request.vars["parent"]
+        filters.append(db.gis_location.parent==parent)
+
+    if filters:
+        response.s3.filter = reduce(__and__, filters)
+    
     return shn_rest_controller(module, resource, onvalidation=lambda form: gis.wkt_centroid(form))
 
 def marker():

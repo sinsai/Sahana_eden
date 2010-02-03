@@ -101,10 +101,11 @@ class THIS_NOT_IN_DB(object):
             return (self.value, self.error_message)
         return (value, None)
 
-#   this is __init__, extracted from IS_ONE_OF to share
-#   2010.01.31 by sunneach
+
+# IS_ONE_OF_SERVER-------------------------------------------------------------
+# added 2010-01-31 by sunneach: __init__ extracted from IS_ONE_OF to share
 #
-def is_one_of_init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort):
+def is_one_of__init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort):
 
     self.error_message = error_message
 
@@ -133,6 +134,72 @@ def is_one_of_init__( self, dbset, field, represent, filterby, filter_opts, erro
     else:
         self.dbset = dbset
 
+# IS_ONE_OF_SERVER-------------------------------------------------------------
+# added 2010-01-31 by sunneach: __call__ extracted from IS_ONE_OF to share
+#
+def is_one_of__call__(self,value):
+
+    try:
+        _table = self.dbset._db[self.ktable]
+
+        if self.multiple:
+            values = re.compile("[\w\-:]+").findall(str(value))
+        else:
+            values = [value]
+
+        deleted_q = ('deleted' in _table) and (_table['deleted']==False) or False
+
+        filter_opts_q = False
+
+        if self.filterby and self.filterby in _table:
+            if self.filter_opts:
+                filter_opts_q = _table[self.filterby].belongs(self.filter_opts)
+
+        for v in values:
+
+            query = (_table[self.kfield]==v)
+            if deleted_q != False:
+                query = deleted_q & query
+            if filter_opts_q != False:
+                query = filter_opts_q & query
+
+            if self.dbset(query).count() < 1:
+                return (value, self.error_message)
+
+        if self.multiple:
+            return ('|%s|' % '|'.join(values), None)
+        else:
+            return (value, None)
+
+    except:
+        pass
+
+    return (value, self.error_message)
+
+# IS_ONE_OF_SERVER-------------------------------------------------------------
+# added 2010-01-31 by sunneach
+#
+class IS_ONE_OF_SERVER(Validator):
+    """
+       See the description to the IS_ONE_OF above
+       This one won't download all records to the client dropdown, but the server_side validation stays
+    """
+    def __init__(
+        self,
+        dbset,
+        field,
+        represent=None,
+        filterby=None,
+        filter_opts=None,
+        error_message='invalid value!',
+        multiple=False,
+        alphasort=True
+        ):
+        is_one_of__init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort)
+
+    def __call__(self,value):
+        is_one_of__call__(self,value)
+
 # IS_ONE_OF -------------------------------------------------------------------
 # added 2009-08-23 by nursix
 #
@@ -150,7 +217,6 @@ class IS_ONE_OF(Validator):
         to create an option label from the respective record (which has to return
         a string, of course)
     """
-
     def __init__(
         self,
         dbset,
@@ -162,8 +228,9 @@ class IS_ONE_OF(Validator):
         multiple=False,
         alphasort=True
         ):
+        is_one_of__init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort)
 
-        is_one_of_init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort)
+
 
     def options(self):
 
@@ -211,70 +278,7 @@ class IS_ONE_OF(Validator):
             return None
 
     def __call__(self,value):
-
-        try:
-            _table = self.dbset._db[self.ktable]
-
-            if self.multiple:
-                values = re.compile("[\w\-:]+").findall(str(value))
-            else:
-                values = [value]
-
-            deleted_q = ('deleted' in _table) and (_table['deleted']==False) or False
-
-            filter_opts_q = False
-
-            if self.filterby and self.filterby in _table:
-                if self.filter_opts:
-                    filter_opts_q = _table[self.filterby].belongs(self.filter_opts)
-
-            for v in values:
-
-                query = (_table[self.kfield]==v)
-                if deleted_q != False:
-                    query = deleted_q & query
-                if filter_opts_q != False:
-                    query = filter_opts_q & query
-
-                if self.dbset(query).count() < 1:
-                    return (value, self.error_message)
-
-            if self.multiple:
-                return ('|%s|' % '|'.join(values), None)
-            else:
-                return (value, None)
-
-        except:
-            pass
-
-        return (value, self.error_message)
-
-# IS_ONE_OF_SERVER -------------------------------------------------------------------
-# added 2010-01-31 by sunneach
-#
-class IS_ONE_OF_SERVER(Validator):
-    """
-    The same as IS_ONE_OF.
-    The (potentially many) records do not get downloaded to the browser to create unused hidden <select...
-    It is useful for auto-completion-equipped forms.
-    """
-
-    def __init__(
-        self,
-        dbset,
-        field,
-        represent=None,
-        filterby=None,
-        filter_opts=None,
-        error_message='invalid value!',
-        multiple=False,
-        alphasort=True
-        ):
-
-        is_one_of_init__( self, dbset, field, represent, filterby, filter_opts, error_message, multiple, alphasort)
-
-    def __call__(self,value):
-        return IS_ONE_IF.__call__(self,value)
+        is_one_of__call__(self,value)
 
 class IS_NOT_ONE_OF(IS_NOT_IN_DB):
     """

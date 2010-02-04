@@ -74,7 +74,10 @@ def shn_field_represent(field, row, col):
     try:
         represent = str(field.represent(row[col]))
     except:
-        represent = row[col]
+        if row[col] is None:
+            represent = "None"
+        else:
+            represent = row[col]
     return represent
 
 # *****************************************************************************
@@ -1260,6 +1263,10 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             else:
                 linkto = shn_list_linkto
 
+        if response.s3.pagination and not limitby:
+            # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
+            limitby = (0, 1)
+        
         items = crud.select(table, query=query,
             fields=fields,
             orderby=orderby,

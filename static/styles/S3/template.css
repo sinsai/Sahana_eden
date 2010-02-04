@@ -217,7 +217,7 @@ div.item-container { margin: 5px 0 5px 0; }
 .red { color: red; }
 
 /* Help Popup */
-.tooltip, .ajaxtip { position:absolute; text-transform:uppercase; height:20px; width:50px; background-image: url(../../img/help_off.gif) ; }
+.tooltip, .ajaxtip { position:absolute; text-transform:uppercase; height:20px; width:50px; background-image: url(../../img/help_off.gif); }
 .tooltip span, .ajaxtip span { display:none; }
 .tooltip:hover, .ajaxtip:hover { background-color:transparent; background-image: url(../../img/help_on.gif); }
 
@@ -236,6 +236,7 @@ div.confirmation { color:#070; font-weight: bold; text-align: center; border: #0
 
 /* GIS module */
 .btn-panel { padding: 2px; }
+.toolbar-link { padding: 2px 2px 2px 2px; font-size:106%; background-color: #e6ddd5; text-decoration: none; color: #000000 }
 
 /* Joined Resources */
 div#pheader table { width: 100%; }

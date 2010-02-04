@@ -11,20 +11,20 @@ http://www.gnu.org/copyleft/lesser.html
 
 author     Timothy Caro-Bruce <tcarobruce@gmail.com> 
 package    Sahana - http://sahana.lk/
-module     haiti/bulk_gis 
+module     bulk_gis 
 copyright  Lanka Software Foundation - http://www.opensource.lk 
 license    http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License (LGPL) 
 
 """
 
+import sys
 import csv
 from shapely.wkt import loads as wkt_loads
 
 # CONSTANTS
 ADMIN_FEATURE_CLASS_NAME = "Administrative Area"
 
-#BASEDIR = '/path/to/data'   # CHANGE ME!
-BASEDIR = '/Users/tim/Documents/work/haiti/data'
+BASEDIR = os.path.join(request.folder, 'private')
 FILES = {
     'Departments': 'Haiti_departementes_edited_01132010.csv',
     'Communes': 'Haiti_communes_edited_01132010.csv',
@@ -42,15 +42,6 @@ PREFIXES = {
     'Departments': 'L1',
     'Communes': 'L2',
     'Sections': 'L3'
-}
-
-GEOM_TYPES = {
-    "point": 1,
-    "multipoint": 1,
-    "linestring": 2,
-    "multilinestring": 2,
-    "polygon": 3,
-    "multipolygon": 3,
 }
 
 # CSV READER
@@ -97,25 +88,15 @@ def load_gis_locations(data, make_feature_group=False):
             'feature_class_id'
         If make_feature_group is True, 
         a feature_group with the same name will be created.
-        This function changes the dictionaries passed to it.
+        This procedure changes the dictionaries passed to it.
     """
     for i, d in enumerate(data):
-        wkt = d.get('wkt')
-        if not wkt and ('lon' in d and 'lat' in d):
-            shape = shapely.geometry.point.Point(d['lon'], d['lat'])
-            d['wkt']= 'POINT(%f %f)' % (d['lon'], d['lat'])
-        else:
-            shape = wkt_loads(wkt)
-            if d.get('lat') is None or d.get('lon') is None:
-                centroid = shape.centroid
-                d['lon'] = centroid.x
-                d['lat'] = centroid.y
-        d['lon_min'], d['lat_min'], d['lon_max'], d['lat_max'] = shape.bounds
-        d['gis_feature_type'] = GEOM_TYPES[shape.type.lower()]
+        d.update(gis.parse_location(d.get('wkt'), d.get('lon'), d.get('lat')))
         location_id = db.gis_location.insert(**d)
         if make_feature_group:
-            db.gis_feature_group.insert(name=d['name'], enabled=False)
-        print i, d['name']
+            feature_group_id = db.gis_feature_group.insert(name=d['name'], enabled=False)
+            db.gis_location_to_feature_group.insert(feature_group_id=feature_group_id, location_id=location_id)
+        print i
     db.commit()
 
 # HAITI-SPECIFIC
@@ -155,7 +136,6 @@ def make_unique_sections(data):
                 old = d['NOM_SECTIO']
                 new = "%s [%s]" % (old, d['COMMUNE'].title())
                 d['NOM_SECTIO'] = new
-                print old, "=>", new
 
 def load_level(admin_type, parent_type=None):
     """Load an administrative level.  Transforms dictionaries from csv, resolves naming conflicts for sections, and calls load_gis_locations to load into database."""
@@ -186,5 +166,17 @@ def create_haiti_admin_areas():
     load_level("Departments")
     load_level("Communes", parent_type="Departments")
     load_level("Sections", parent_type="Communes")
-   
+    db.commit()
 
+
+def wipe_admin_areas():
+    """Delete all objects created by this script.  Not for use in production.
+    Note: admin feature class is left
+    Note: naive deletion of feature groups -- all those starting with "L[0123]:"
+    """
+    db(db.gis_location.feature_class_id==ensure_admin_feature_class()).delete()
+    for i in range(4):
+        db(db.gis_feature_group.name.like("L%d:%%"%i)).delete()
+    db.commit()
+    
+    

@@ -1,5 +1,5 @@
 ﻿{{for layer in gpx_layers:}}
-  {{name = layer.replace(' ', '_')}}
+  {{name = layer.replace(' ', '_').replace(':', '_')}}
     iconURL = "{{=URL(r=request, c='default', f='download', args=gpx_layers[layer].marker)}}";
     icon_img.src = iconURL;
     width = icon_img.width;

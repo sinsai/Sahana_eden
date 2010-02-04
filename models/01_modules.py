@@ -156,7 +156,7 @@ if empty:
             module_type=4,
             access='',
             description="Tracks requests for aid and matches them against donors who have pledged aid",
-            enabled='False'
+            enabled='True'
         )
         db[table].insert(
             name="budget",

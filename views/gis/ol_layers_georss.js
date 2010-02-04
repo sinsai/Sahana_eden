@@ -1,6 +1,6 @@
 ﻿var georssLayers = new Array();
 {{for layer in georss_layers:}}
-  {{name = layer.replace(' ', '_')}}
+  {{name = layer.replace(' ', '_').replace(':', '_')}}
     iconURL = "{{=URL(r=request, c='default', f='download', args=georss_layers[layer].marker)}}";
     icon_img.src = iconURL;
     width = icon_img.width;
@@ -46,7 +46,7 @@ allLayers = allLayers.concat(georssLayers);
 function onGeorssFeatureSelect(event) {
     var feature = event.feature;
     var selectedFeature = feature;
-    if ("undefined" === feature.attributes.description) {
+    if (undefined == feature.attributes.description) {
         var popup = new OpenLayers.Popup.FramedCloud("chicken", 
         feature.geometry.getBounds().getCenterLonLat(),
         new OpenLayers.Size(200,200),

@@ -326,21 +326,23 @@ db[table].opt_pr_age_group.label = T('Age group')
 db[table].mobile_phone.label = T("Mobile Phone #")
 
 # CRUD Strings
-title_create = T('Add a Person')
-title_display = T('Person Details')
-title_list = T('List Persons')
-title_update = T('Edit Person Details')
-title_search = T('Search Persons')
-subtitle_create = T('Add Person')
-subtitle_list = T('Persons')
-label_list_button = T('List Persons')
-label_create_button = T('Add Person')
-label_delete_button = T('Delete Person')
-msg_record_created = T('Person added')
-msg_record_modified = T('Person details updated')
-msg_record_deleted = T('Person deleted')
-msg_list_empty = T('No Persons currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_PERSON = T('Add Person')
+LIST_PERSONS = T('List Persons')
+s3.crud_strings[table] = Storage(
+    title_create = T('Add a Person'),
+    title_display = T('Person Details'),
+    title_list = LIST_PERSONS,
+    title_update = T('Edit Person Details'),
+    title_search = T('Search Persons'),
+    subtitle_create = ADD_PERSON,
+    subtitle_list = T('Persons'),
+    label_list_button = LIST_PERSONS,
+    label_create_button = ADD_PERSON,
+    label_delete_button = T('Delete Person'),
+    msg_record_created = T('Person added'),
+    msg_record_modified = T('Person details updated'),
+    msg_record_deleted = T('Person deleted'),
+    msg_list_empty = T('No Persons currently registered'))
 
 #
 # person_id: reusable field for other tables to reference ---------------------
@@ -371,7 +373,7 @@ pr_group_type_opts = {
 opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
                     Field('opt_pr_group_type', 'integer',
                         requires = IS_IN_SET(pr_group_type_opts),
-                        # default = 4,
+                        default = 4,
                         label = T('Group Type'),
                         represent = lambda opt: pr_group_type_opts.get(opt, T('Unknown'))))
 
@@ -416,21 +418,23 @@ db[table].group_name.label = T("Group name")
 db[table].group_description.label = T("Group description")
 
 # CRUD Strings
-title_create = T('Add Group')
-title_display = T('Group Details')
-title_list = T('List Groups')
-title_update = T('Edit Group')
-title_search = T('Search Groups')
-subtitle_create = T('Add New Group')
-subtitle_list = T('Groups')
-label_list_button = T('List Groups')
-label_create_button = T('Add Group')
-label_delete_button = T('Delete Group')
-msg_record_created = T('Group added')
-msg_record_modified = T('Group updated')
-msg_record_deleted = T('Group deleted')
-msg_list_empty = T('No Groups currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_GROUP = T('Add Group')
+LIST_GROUPS = T('List Groups')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_GROUP,
+    title_display = T('Group Details'),
+    title_list = LIST_GROUPS,
+    title_update = T('Edit Group'),
+    title_search = T('Search Groups'),
+    subtitle_create = T('Add New Group'),
+    subtitle_list = T('Groups'),
+    label_list_button = LIST_GROUPS,
+    label_create_button = ADD_GROUP,
+    label_delete_button = T('Delete Group'),
+    msg_record_created = T('Group added'),
+    msg_record_modified = T('Group updated'),
+    msg_record_deleted = T('Group deleted'),
+    msg_list_empty = T('No Groups currently registered'))
 
 #
 # group_id: reusable field for other tables to reference ----------------------
@@ -507,62 +511,6 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
     return True
 
 #
-# shn_pr_get_person_id --------------------------------------------------------
-#
-def shn_pr_get_person_id(label, fields=None, filterby=None):
-    """
-        Finds a person by any name and/or tag label
-    """
-
-    if fields and isinstance(fields, (list,tuple)):
-        search_fields = []
-        for f in fields:
-            if db.pr_person.has_key(f):     # TODO: check for field type?
-                search_fields.append(f)
-        if not len(search_fields):
-            # Error: none of the specified search fields exists
-            return None
-    else:
-        # No search fields specified at all => fallback
-        search_fields = ['pr_pe_label', 'first_name', 'middle_name', 'last_name']
-
-    if label and isinstance(label,str):
-        labels = label.split()
-        results = []
-        query = None
-        # TODO: make a more sophisticated search function (levenshtein?)
-        for l in labels:
-
-            # append wildcards
-            wc = "%"
-            _l = "%s%s%s" % (wc, l, wc)
-
-            # build query
-            for f in search_fields:
-                if query:
-                    query = (db.pr_person[f].like(_l)) | query
-                else:
-                    query = (db.pr_person[f].like(_l))
-
-            # undeleted records only
-            query = (db.pr_person.deleted==False) & (query)
-            # restrict to prior results (AND)
-            if len(results):
-                query = (db.pr_person.id.belongs(results)) & query
-            if filterby:
-                query = (filterby) & (query)
-            records = db(query).select(db.pr_person.id)
-            # rebuild result list
-            results = [r.id for r in records]
-            # any results left?
-            if not len(results):
-                return None
-        return results
-    else:
-        # no label given or wrong parameter type
-        return None
-
-#
 # shn_pr_person_search_simple -------------------------------------------------
 #
 def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
@@ -605,7 +553,9 @@ def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
             if form.vars.label == "":
                 form.vars.label = "%"
 
-            results = shn_pr_get_person_id(form.vars.label)
+            results = s3xrc.search_simple(db.pr_person,
+                fields=['pr_pe_label', 'first_name', 'middle_name', 'last_name'],
+                label=form.vars.label)
 
             if results and len(results):
                 rows = db(db.pr_person.id.belongs(results)).select()

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from operator import __and__
 
 module = 'gis'
 # Current Module (for sidebar title)
@@ -71,22 +72,25 @@ def apikey():
     #db[table].apikey.requires = THIS_NOT_IN_DB(db(db[table].name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
     db[table].apikey.requires = IS_NOT_EMPTY()
     db[table].apikey.label = T("Key")
+    db[table].apikey.comment = SPAN("*", _class="req")
 
     # CRUD Strings
-    title_create = T('Add Key')
-    title_display = T('Key Details')
-    title_list = T('List Keys')
-    title_update = T('Edit Key')
-    title_search = T('Search Keys')
-    subtitle_create = T('Add New Key')
-    subtitle_list = T('Keys')
-    label_list_button = T('List Keys')
-    label_create_button = T('Add Key')
-    msg_record_created = T('Key added')
-    msg_record_modified = T('Key updated')
-    msg_record_deleted = T('Key deleted')
-    msg_list_empty = T('No Keys currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_KEY = T('Add Key')
+    LIST_KEYS = T('List Keys')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_KEY,
+        title_display = T('Key Details'),
+        title_list = LIST_KEYS,
+        title_update = T('Edit Key'),
+        title_search = T('Search Keys'),
+        subtitle_create = T('Add New Key'),
+        subtitle_list = T('Keys'),
+        label_list_button = LIST_KEYS,
+        label_create_button = ADD_KEY,
+        msg_record_created = T('Key added'),
+        msg_record_modified = T('Key updated'),
+        msg_record_deleted = T('Key deleted'),
+        msg_list_empty = T('No Keys currently defined'))
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -121,20 +125,22 @@ def config():
     db[table].cluster_threshold.label = T('Cluster Threshold')
 
     # CRUD Strings
-    title_create = T('Add Config')
-    title_display = T('Config Details')
-    title_list = T('List Configs')
-    title_update = T('Edit Config')
-    title_search = T('Search Configs')
-    subtitle_create = T('Add New Config')
-    subtitle_list = T('Configs')
-    label_list_button = T('List Configs')
-    label_create_button = T('Add Config')
-    msg_record_created = T('Config added')
-    msg_record_modified = T('Config updated')
-    msg_record_deleted = T('Config deleted')
-    msg_list_empty = T('No Configs currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    ADD_CONFIG = T('Add Config')
+    LIST_CONFIGS = T('List Configs')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_CONFIG,
+        title_display = T('Config Details'),
+        title_list = LIST_CONFIGS,
+        title_update = T('Edit Config'),
+        title_search = T('Search Configs'),
+        subtitle_create = T('Add New Config'),
+        subtitle_list = T('Configs'),
+        label_list_button = LIST_CONFIGS,
+        label_create_button = ADD_CONFIG,
+        msg_record_created = T('Config added'),
+        msg_record_modified = T('Config updated'),
+        msg_record_deleted = T('Config deleted'),
+        msg_list_empty = T('No Configs currently defined'))
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -161,20 +167,21 @@ def feature_class():
     db[table].resource.label = T('Resource')
 
     # CRUD Strings
-    title_create = T('Add Feature Class')
-    title_display = T('Feature Class Details')
-    title_list = T('List Feature Classes')
-    title_update = T('Edit Feature Class')
-    title_search = T('Search Feature Class')
-    subtitle_create = T('Add New Feature Class')
-    subtitle_list = T('Feature Classes')
-    label_list_button = T('List Feature Classes')
-    label_create_button = ADD_FEATURE_CLASS
-    msg_record_created = T('Feature Class added')
-    msg_record_modified = T('Feature Class updated')
-    msg_record_deleted = T('Feature Class deleted')
-    msg_list_empty = T('No Feature Classes currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    LIST_FEATURE_CLASS = T('List Feature Classes')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_FEATURE_CLASS,
+        title_display = T('Feature Class Details'),
+        title_list = LIST_FEATURE_CLASS,
+        title_update = T('Edit Feature Class'),
+        title_search = T('Search Feature Class'),
+        subtitle_create = T('Add New Feature Class'),
+        subtitle_list = T('Feature Classes'),
+        label_list_button = LIST_FEATURE_CLASS,
+        label_create_button = ADD_FEATURE_CLASS,
+        msg_record_created = T('Feature Class added'),
+        msg_record_modified = T('Feature Class updated'),
+        msg_record_deleted = T('Feature Class deleted'),
+        msg_list_empty = T('No Feature Classes currently defined'))
 
     return shn_rest_controller(module, resource)
 
@@ -194,20 +201,21 @@ def feature_group():
     #db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 
     # CRUD Strings
-    title_create = ADD_FG
-    title_display = T('Feature Group Details')
-    title_list = T('List Feature Groups')
-    title_update = T('Edit Feature Group')
-    title_search = T('Search Feature Groups')
-    subtitle_create = T('Add New Feature Group')
-    subtitle_list = T('Feature Groups')
-    label_list_button = T('List Feature Groups')
-    label_create_button = ADD_FG
-    msg_record_created = T('Feature Group added')
-    msg_record_modified = T('Feature Group updated')
-    msg_record_deleted = T('Feature Group deleted')
-    msg_list_empty = T('No Feature Groups currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    LIST_FEATURE_GROUPS = T('List Feature Groups')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_FEATURE_GROUP,
+        title_display = T('Feature Group Details'),
+        title_list = LIST_FEATURE_GROUPS,
+        title_update = T('Edit Feature Group'),
+        title_search = T('Search Feature Groups'),
+        subtitle_create = T('Add New Feature Group'),
+        subtitle_list = T('Feature Groups'),
+        label_list_button = LIST_FEATURE_GROUPS,
+        label_create_button = ADD_FEATURE_GROUP,
+        msg_record_created = T('Feature Group added'),
+        msg_record_modified = T('Feature Group updated'),
+        msg_record_deleted = T('Feature Group deleted'),
+        msg_list_empty = T('No Feature Groups currently defined'))
 
     return shn_rest_controller(module, resource)
 
@@ -243,24 +251,26 @@ def location():
     # used in multiple controllers, so at the top of the file
 
     # CRUD Strings
-    title_create = T('Add Location')
-    title_display = T('Location Details')
-    title_list = T('List Locations')
-    title_update = T('Edit Location')
-    title_search = T('Search Locations')
-    subtitle_create = T('Add New Location')
-    subtitle_list = T('Locations')
-    label_list_button = T('List Locations')
-    label_create_button = ADD_LOCATION
-    msg_record_created = T('Location added')
-    msg_record_modified = T('Location updated')
-    msg_record_deleted = T('Location deleted')
-    msg_list_empty = T('No Locations currently available')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    LIST_LOCATIONS = T('List Locations')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_LOCATION,
+        title_display = T('Location Details'),
+        title_list = LIST_LOCATIONS,
+        title_update = T('Edit Location'),
+        title_search = T('Search Locations'),
+        subtitle_create = T('Add New Location'),
+        subtitle_list = T('Locations'),
+        label_list_button = LIST_LOCATIONS,
+        label_create_button = ADD_LOCATION,
+        msg_record_created = T('Location added'),
+        msg_record_modified = T('Location updated'),
+        msg_record_deleted = T('Location deleted'),
+        msg_list_empty = T('No Locations currently available'))
 
+    filters = []
     if "feature_class" in request.vars:
         fclass = request.vars["feature_class"]
-        response.s3.filter = ((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+        filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
                               (db.gis_feature_class.name.like(fclass)))
 
     if "feature_group" in request.vars:
@@ -271,9 +281,16 @@ def location():
         #                      (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
         #                      (db.gis_feature_group.name.like(fgroup)))
 
-    #response.s3.pagination = True
+    response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, onvalidation=lambda form: wkt_centroid(form))
+    if "parent" in request.vars:
+        parent = request.vars["parent"]
+        filters.append(db.gis_location.parent==parent)
+
+    if filters:
+        response.s3.filter = reduce(__and__, filters)
+    
+    return shn_rest_controller(module, resource, onvalidation=lambda form: gis.wkt_centroid(form), onaccept=gis.update_location_tree())
 
 def marker():
     "RESTlike CRUD controller"
@@ -287,20 +304,21 @@ def marker():
     db[table].image.label = T('Image')
 
     # CRUD Strings
-    title_create = T('Add Marker')
-    title_display = T('Marker Details')
-    title_list = T('List Markers')
-    title_update = T('Edit Marker')
-    title_search = T('Search Markers')
-    subtitle_create = T('Add New Marker')
-    subtitle_list = T('Markers')
-    label_list_button = T('List Markers')
-    label_create_button = ADD_MARKER
-    msg_record_created = T('Marker added')
-    msg_record_modified = T('Marker updated')
-    msg_record_deleted = T('Marker deleted')
-    msg_list_empty = T('No Markers currently available')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    LIST_MARKERS = T('List Markers')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_MARKER,
+        title_display = T('Marker Details'),
+        title_list = LIST_MARKERS,
+        title_update = T('Edit Marker'),
+        title_search = T('Search Markers'),
+        subtitle_create = T('Add New Marker'),
+        subtitle_list = T('Markers'),
+        label_list_button = LIST_MARKERS,
+        label_create_button = ADD_MARKER,
+        msg_record_created = T('Marker added'),
+        msg_record_modified = T('Marker updated'),
+        msg_record_deleted = T('Marker deleted'),
+        msg_list_empty = T('No Markers currently available'))
 
     return shn_rest_controller(module, resource)
 
@@ -327,20 +345,22 @@ def projection():
     db[table].units.label = T('Units')
 
     # CRUD Strings
-    title_create = T('Add Projection')
-    title_display = T('Projection Details')
-    title_list = T('List Projections')
-    title_update = T('Edit Projection')
-    title_search = T('Search Projections')
-    subtitle_create = T('Add New Projection')
-    subtitle_list = T('Projections')
-    label_list_button = T('List Projections')
-    label_create_button = T('Add Projection')
-    msg_record_created = T('Projection added')
-    msg_record_modified = T('Projection updated')
-    msg_record_deleted = T('Projection deleted')
-    msg_list_empty = T('No Projections currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    ADD_PROJECTION = T('Add Projections')
+    LIST_PROJECTIONS = T('List Projections')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_PROJECTION,
+        title_display = T('Projection Details'),
+        title_list = LIST_PROJECTIONS,
+        title_update = T('Edit Projection'),
+        title_search = T('Search Projections'),
+        subtitle_create = T('Add New Projection'),
+        subtitle_list = T('Projections'),
+        label_list_button = LIST_PROJECTIONS,
+        label_create_button = ADD_PROJECTION,
+        msg_record_created = T('Projection added'),
+        msg_record_modified = T('Projection updated'),
+        msg_record_deleted = T('Projection deleted'),
+        msg_list_empty = T('No Projections currently defined'))
 
     return shn_rest_controller(module, resource, deletable=False)
 
@@ -358,17 +378,21 @@ def track():
     return shn_rest_controller(module, resource)
 
 # Common CRUD strings for all layers
-title_create = T('Add Layer')
-title_display = T('Layer Details')
-title_list = T('Layers')
-title_update = T('Edit Layer')
-title_search = T('Search Layers')
-subtitle_create = T('Add New Layer')
-subtitle_list = T('List Layers')
-label_create_button = T('Add Layer')
-msg_record_created = T('Layer added')
-msg_record_modified = T('Layer updated')
-msg_record_deleted = T('Layer deleted')
+ADD_LAYER = T('Add Layer')
+LAYER_DETAILS = T('Layer Details')
+LAYERS = T('Layers')
+EDIT_LAYER = T('Edit Layer')
+SEARCH_LAYERS = T('Search Layers')
+ADD_NEW_LAYER = T('Add New Layer')
+LIST_LAYERS = T('List Layers')
+LAYER_ADDED = T('Layer added')
+LAYER_UPDATED = T('Layer updated')
+LAYER_DELETED = T('Layer deleted')
+# These may be differentiated per type of layer.
+TYPE_LAYERS_FMT = '%s Layers'
+ADD_NEW_TYPE_LAYER_FMT = 'Add New %s Layer'
+LIST_TYPE_LAYERS_FMT = 'List %s Layers'
+NO_TYPE_LAYERS_FMT = 'No %s Layers currently defined'
 
 def layer_openstreetmap():
     "RESTlike CRUD controller"
@@ -379,9 +403,23 @@ def layer_openstreetmap():
     db[table].subtype.requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)
 
     # CRUD Strings
-    label_list_button = T('List OpenStreetMap Layers')
-    msg_list_empty = T('No OpenStreetMap Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'OpenStreetMap'
+    LIST_OSM_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_OSM_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_OSM_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_OSM_LAYERS)
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -394,9 +432,23 @@ def layer_google():
     db[table].subtype.requires = IS_IN_SET(gis_layer_google_subtypes)
 
     # CRUD Strings
-    label_list_button = T('List Google Layers')
-    msg_list_empty = T('No Google Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'Google'
+    LIST_GOOGLE_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_GOOGLE_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_GOOGLE_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_GOOGLE_LAYERS)
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -409,9 +461,23 @@ def layer_yahoo():
     db[table].subtype.requires = IS_IN_SET(gis_layer_yahoo_subtypes)
 
     # CRUD Strings
-    label_list_button = T('List Yahoo Layers')
-    msg_list_empty = T('No Yahoo Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'Yahoo'
+    LIST_YAHOO_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_YAHOO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_YAHOO_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_YAHOO_LAYERS)
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -423,9 +489,23 @@ def layer_mgrs():
     # Model options
 
     # CRUD Strings
-    label_list_button = T('List MGRS Layers')
-    msg_list_empty = T('No MGRS Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'MGRS'
+    LIST_MGRS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_MGRS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_MGRS_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_MGRS_LAYERS)
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -438,9 +518,23 @@ def layer_bing():
     db[table].subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
 
     # CRUD Strings
-    label_list_button = T('List Bing Layers')
-    msg_list_empty = T('No Bing Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'Bing'
+    LIST_BING_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_BING_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_BING_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_BING_LAYERS)
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -457,12 +551,25 @@ def layer_georss():
     db[table].projection_id.default = 2
 
     # CRUD Strings
-    title_list = T('GeoRSS Layers')
-    subtitle_create = T('Add New GeoRSS Layer')
-    subtitle_list = T('List GeoRSS Layers')
-    label_list_button = T('List GeoRSS Layers')
-    msg_list_empty = T('No GeoRSS Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'GeoRSS'
+    GEORSS_LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_GEORSS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    LIST_GEORSS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_GEORSS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=GEORSS_LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_GEORSS_LAYER,
+        subtitle_list=LIST_GEORSS_LAYERS,
+        label_list_button=LIST_GEORSS_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_GEORSS_LAYERS)
 
     return shn_rest_controller(module, resource)
 
@@ -475,12 +582,25 @@ def layer_gpx():
     # Needed in multiple controllers, so defined in Model
 
     # CRUD Strings
-    title_list = T('GPX Layers')
-    subtitle_create = T('Add New GPX Layer')
-    subtitle_list = T('List GPX Layers')
-    label_list_button = T('List GPX Layers')
-    msg_list_empty = T('No GPX Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'GPX'
+    GPX_LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_GPX_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    LIST_GPX_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_GPX_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=GPX_LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_GPX_LAYER,
+        subtitle_list=LIST_GPX_LAYERS,
+        label_list_button=LIST_GPX_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_GPX_LAYERS)
 
     return shn_rest_controller(module, resource)
 
@@ -495,12 +615,25 @@ def layer_kml():
     db[table].url.comment = SPAN("*", _class="req")
 
     # CRUD Strings
-    title_list = T('KML Layers')
-    subtitle_create = T('Add New KML Layer')
-    subtitle_list = T('List KML Layers')
-    label_list_button = T('List KML Layers')
-    msg_list_empty = T('No KML Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'KML'
+    KML_LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_KML_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    LIST_KML_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_KML_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=KML_LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_KML_LAYER,
+        subtitle_list=LIST_KML_LAYERS,
+        label_list_button=LIST_KML_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_KML_LAYERS)
 
     return shn_rest_controller(module, resource)
 
@@ -517,12 +650,25 @@ def layer_tms():
     db[table].layers.comment = SPAN("*", _class="req")
 
     # CRUD Strings
-    title_list = T('TMS Layers')
-    subtitle_create = T('Add New TMS Layer')
-    subtitle_list = T('List TMS Layers')
-    label_list_button = T('List TMS Layers')
-    msg_list_empty = T('No TMS Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'TMS'
+    TMS_LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_TMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    LIST_TMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_TMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=TMS_LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_TMS_LAYER,
+        subtitle_list=LIST_TMS_LAYERS,
+        label_list_button=LIST_TMS_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_TMS_LAYERS)
 
     return shn_rest_controller(module, resource)
 
@@ -542,12 +688,25 @@ def layer_wms():
     db[table].projection_id.default = 2
 
     # CRUD Strings
-    title_list = T('WMS Layers')
-    subtitle_create = T('Add New WMS Layer')
-    subtitle_list = T('List WMS Layers')
-    label_list_button = T('List WMS Layers')
-    msg_list_empty = T('No WMS Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'WMS'
+    WMS_LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_WMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    LIST_WMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_WMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=WMS_LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_WMS_LAYER,
+        subtitle_list=LIST_WMS_LAYERS,
+        label_list_button=LIST_WMS_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_WMS_LAYERS)
 
     return shn_rest_controller(module, resource)
 
@@ -560,12 +719,25 @@ def layer_js():
     # Model options
 
     # CRUD Strings
-    title_list = T('JS Layers')
-    subtitle_create = T('Add New JS Layer')
-    subtitle_list = T('List JS Layers')
-    label_list_button = T('List JS Layers')
-    msg_list_empty = T('No JS Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'JS'
+    JS_LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_JS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    LIST_JS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_JS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=JS_LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_JS_LAYER,
+        subtitle_list=LIST_JS_LAYERS,
+        label_list_button=LIST_JS_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_JS_LAYERS)
 
     return shn_rest_controller(module, resource)
 
@@ -579,12 +751,25 @@ def layer_xyz():
     db[table].url.comment = SPAN("*", _class="req")
 
     # CRUD Strings
-    title_list = T('XYZ Layers')
-    subtitle_create = T('Add New XYZ Layer')
-    subtitle_list = T('List XYZ Layers')
-    label_list_button = T('List XYZ Layers')
-    msg_list_empty = T('No XYZ Layers currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, title_search=title_search, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
+    type = 'XYZ'
+    XYZ_LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_XYZ_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    LIST_XYZ_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_XYZ_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[table] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=XYZ_LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,	
+        subtitle_create=ADD_NEW_XYZ_LAYER,
+        subtitle_list=LIST_XYZ_LAYERS,
+        label_list_button=LIST_XYZ_LAYERS,
+        label_create_button=ADD_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_XYZ_LAYERS)
 
     return shn_rest_controller(module, resource)
 
@@ -683,97 +868,12 @@ content type. It supports GET and POST requests."""
         msg += "Some unexpected error occurred. Error text was:", E
         return msg
 
-def proxy2():
-    " Provide a proxy for WFS/GeoRSS/MGRS layers. by Massimo diPierro"
-    import httplib
-    PROXY_USER = None
-    PROXY_PASSWORD = None
-    PROXY_URL = 'web2py.com:80'
-    path = '/'+'/'.join(request.args)
-    query = request.env.query_string
-    method = request.env.request_method
-    if PROXY_USER and PROXY_PASSWORD:
-        conn.add_credentials(PROXY_USER, PROXY_PASSWORD)
-    conn =  httplib.HTTPConnection(PROXY_URL)
-    if method == 'GET':
-        conn.request(method, path, query)
-    elif method == 'POST':
-        data = request.body.read()
-        conn.request(method, path, data)
-    else:
-        return 'oops'
-    res = conn.getresponse()
-    content = res.read()
-    headers = dict(res.getheaders())
-    response.headers['Content-Type'] = headers['content-type']
-    response.status = int(res.status)
-    return content
-
-def shn_latlon_to_wkt(lat, lon):
-    """Convert a LatLon to a WKT string
-    >>> shn_latlon_to_wkt(6, 80)
-    'POINT(80 6)'
-    """
-    WKT = 'POINT(%f %f)' % (lon, lat)
-    return WKT
-
-# Onvalidation callback
-def wkt_centroid(form):
-    """GIS
-    If a Point has LonLat defined: calculate the WKT.
-    If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
-    Centroid calculation is done using Shapely, which wraps Geos.
-    A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
-    """
-    #shapely_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + str(T(" library not found, so can't find centroid!"))
-    shapely_error = T("Shapely library not found, so can't find centroid!")
-    if form.vars.gis_feature_type == '1':
-        # Point
-        if form.vars.lon == None:
-            form.errors['lon'] = T("Invalid: Longitude can't be empty!")
-            return
-        if form.vars.lat == None:
-            form.errors['lat'] = T("Invalid: Latitude can't be empty!")
-            return
-        form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
-    elif form.vars.gis_feature_type == '2':
-        # Line
-        try:
-            from shapely.wkt import loads
-            try:
-                line = loads(form.vars.wkt)
-            except:
-                form.errors['wkt'] = T("Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!")
-                return
-            centroid_point = line.centroid
-            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
-        except:
-            form.errors.gis_feature_type = shapely_error
-    elif form.vars.gis_feature_type == '3':
-        # Polygon
-        try:
-            from shapely.wkt import loads
-            try:
-                polygon = loads(form.vars.wkt)
-            except:
-                form.errors['wkt'] = T("Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!")
-                return
-            centroid_point = polygon.centroid
-            form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-            form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
-        except:
-            form.errors.gis_feature_type = shapely_error
-    else:
-        form.errors.gis_feature_type = T('Unknown type!')
-    return
-
 # Features
 # - experimental!
 def feature_create_map():
     "Show a map to draw the feature"
     title = T("Add GIS Feature")
-    form = crud.create('gis_location', onvalidation=lambda form: wkt_centroid(form))
+    form = crud.create('gis_location', onvalidation=lambda form: gis.wkt_centroid(form))
     _projection = db(db.gis_config.id==1).select().first().projection_id
     projection = db(db.gis_projection.id==_projection).select().first().epsg
 

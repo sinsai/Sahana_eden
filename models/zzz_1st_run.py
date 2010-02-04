@@ -101,6 +101,11 @@ if empty:
             audit_write = False
         )
 
+    table = 'budget_parameter'
+    if not db(db[table].id).count():
+        db[table].insert(
+        )
+
     # Shelter Registry
     table = 'cr_setting'
     if not db(db[table].id).count():
@@ -359,8 +364,8 @@ if empty:
        # We want to start at ID 1
        db[table].truncate()
        db[table].insert(
-            lat = "6",
-            lon = "79.4",
+            lat = "51.8",
+            lon = "-1.3",
             zoom = 7,
             # Doesn't work on Postgres!
             projection_id = 1,
@@ -616,8 +621,6 @@ if empty:
     table = auth.settings.table_group_name
     if not db(db[table].id).count():
         auth.add_group('Administrator', description = 'System Administrator - can access & make changes to any data')
-        # Doesn't work on Databases with referential integrity like Postgres & MYSQL/INNODB unless default username/password created (sqlite & MyISAM ok)!
-        auth.add_membership(1, 1) # 1st person created will be System Administrator (can be changed later)
         auth.add_group('Anonymous', description = 'Anonymous - dummy group to grant permissions')
         auth.add_group('Authenticated', description = 'Authenticated - all logged-in users')
         auth.add_group('Editor', description = 'Editor - can access & make changes to any unprotected data')

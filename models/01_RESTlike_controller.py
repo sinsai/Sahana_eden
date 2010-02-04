@@ -941,7 +941,7 @@ def shn_custom_view(jr, default_name, format=None):
 #
 # shn_read --------------------------------------------------------------------
 #
-def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
+def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalidation=None, onaccept=None):
 
     """ Read a single record. """
 
@@ -981,7 +981,11 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
 
     authorised = shn_has_permission('update', table, record_id)
     if authorised and jr.representation=="html":
-        redirect(href_edit)
+        return shn_update(jr,
+                          pheader=pheader,
+                          deletable=deletable,
+                          onvalidation=onvalidation,
+                          onaccept=onaccept)
 
     authorised = shn_has_permission('read', table, record_id)
     if authorised:
@@ -1023,7 +1027,13 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None):
                 label_list_button = s3.crud_strings.label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _id='list-btn')
 
-            output.update(module_name=module_name, item=item, title=title, edit=edit, delete=delete, list_btn=list_btn)
+            output.update(module_name=module_name,
+                          item=item,
+                          record_id=record_id,
+                          title=title,
+                          edit=edit,
+                          delete=delete,
+                          list_btn=list_btn)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -1514,8 +1524,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
-                                        jr.there()
+            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or jr.there()
         else:
             if not crud.settings.create_next:
                 crud.settings.create_next = jr.there()
@@ -1523,13 +1532,13 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if onaccept:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, 0) and \
+                        s3xrc.store_session(session, module, resource, form.vars.id) and \
                         onaccept(form)
 
         else:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, 0)
+                        s3xrc.store_session(session, module, resource, form.vars.id)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created
@@ -1540,6 +1549,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
                            message=message,
                            onvalidation=onvalidation,
                            onaccept=_onaccept)
+
 
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
         if response.s3.cancel:
@@ -1762,7 +1772,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = update_onaccept
                 crud.settings.update_next = update_next
 
-            output.update(form=form)
+            output.update(form=form, record_id=record_id)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -2061,10 +2071,7 @@ def shn_rest_controller(module, resource,
 
     if jr.component:
         if jr.method and jr.custom_action:
-            try:
-                return(jr.custom_action(jr, onvalidation=None, onaccept=None))
-            except:
-                raise HTTP(500)
+            return(jr.custom_action(jr, onvalidation=None, onaccept=None))
 
         # HTTP Multi-Record Operation *****************************************
         if jr.method==None and jr.multiple and not jr.component_id:
@@ -2115,7 +2122,12 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET':
                 authorised = shn_has_permission('read', jr.component.table)
                 if authorised:
-                    return shn_read(jr, pheader=pheader, rss=rss)
+                    return shn_read(jr, pheader=pheader,
+                                    editable=editable,
+                                    deletable=deletable,
+                                    rss=rss,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2131,7 +2143,12 @@ def shn_rest_controller(module, resource,
                 elif jr.http == "POST":
                     authorised = shn_has_permission('read', jr.component.table)
                     if authorised:
-                        return shn_read(jr, pheader=pheader, rss=rss)
+                        return shn_read(jr, pheader=pheader,
+                                        editable=editable,
+                                        deletable=deletable,
+                                        rss=rss,
+                                        onvalidation=onvalidation,
+                                        onaccept=onaccept)
                     else:
                         session.error = UNAUTHORISED
                         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2168,7 +2185,12 @@ def shn_rest_controller(module, resource,
                     return shn_list(jr, pheader, rss=rss)
                 else:
                     # This is a read action
-                    return shn_read(jr, pheader, rss=rss)
+                    return shn_read(jr, pheader=pheader,
+                                    editable=editable,
+                                    deletable=deletable,
+                                    rss=rss,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2209,10 +2231,7 @@ def shn_rest_controller(module, resource,
 
         # Custom Method *******************************************************
         if jr.method and jr.custom_action:
-            try:
-                return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
-            except:
-                raise HTTP(500)
+            return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
 
         # Clear Session *******************************************************
         elif jr.method=="clear":
@@ -2281,7 +2300,12 @@ def shn_rest_controller(module, resource,
 
             # HTTP Read (single record) ---------------------------------------
             if jr.http == 'GET':
-                return shn_read(jr, pheader=pheader, editable=editable, deletable=deletable, rss=rss)
+                return shn_read(jr, pheader=pheader,
+                                editable=editable,
+                                deletable=deletable,
+                                rss=rss,
+                                onvalidation=onvalidation,
+                                onaccept=onaccept)
 
             # HTTP Create/Update (single record) ------------------------------
             elif jr.http == 'PUT' or jr.http == "POST":
@@ -2293,7 +2317,12 @@ def shn_rest_controller(module, resource,
                     response.view = 'plain.html'
                     return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.http == "POST":
-                    return shn_read(jr, pheader=pheader, editable=editable, deletable=deletable, rss=rss)
+                    return shn_read(jr, pheader=pheader,
+                                    editable=editable,
+                                    deletable=deletable,
+                                    rss=rss,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept)
                 else:
                     raise HTTP(501, body=BADFORMAT)
 

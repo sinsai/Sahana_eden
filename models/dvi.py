@@ -205,20 +205,21 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 # Setting and restrictions
 
 # CRUD Strings
-title_create = T('Create Checklist')
-title_display = T('Checklist of Operations')
-title_list = T('List Checklists')
-title_update = T('Update Task Status')
-title_search = T('Search Checklists')
-subtitle_create = T('New Checklist')
-subtitle_list = T('Checklist of Operations')
-label_list_button = T('Show Checklist')
-label_create_button = T('Create Checklist')
-msg_record_created = T('Checklist created')
-msg_record_modified = T('Checklist updated')
-msg_record_deleted = T('Checklist deleted')
-msg_list_empty = T('No Checklist available')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+CREATE_CHECKLIST = T('Create Checklist')
+s3.crud_strings[table] = Storage(
+    title_create = CREATE_CHECKLIST,
+    title_display = T('Checklist of Operations'),
+    title_list = T('List Checklists'),
+    title_update = T('Update Task Status'),
+    title_search = T('Search Checklists'),
+    subtitle_create = T('New Checklist'),
+    subtitle_list = T('Checklist of Operations'),
+    label_list_button = T('Show Checklist'),
+    label_create_button = CREATE_CHECKLIST,
+    msg_record_created = T('Checklist created'),
+    msg_record_modified = T('Checklist updated'),
+    msg_record_deleted = T('Checklist deleted'),
+    msg_list_empty = T('No Checklist available'))
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,
@@ -249,20 +250,21 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 #db[table].person_id.label = T('Reporter')
 
 # CRUD Strings
-title_create = T('Add Personal Effects')
-title_display = T('Personal Effects Details')
-title_list = T('List Personal Effects')
-title_update = T('Edit Personal Effects Details')
-title_search = T('Search Personal Effects')
-subtitle_create = T('Add New Entry')
-subtitle_list = T('Personal Effects')
-label_list_button = T('List Records')
-label_create_button = T('Add Personal Effects')
-msg_record_created = T('Record added')
-msg_record_modified = T('Record updated')
-msg_record_deleted = T('Record deleted')
-msg_list_empty = T('No Details currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_PERSONAL_EFFECTS = T('Add Personal Effects')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_PERSONAL_EFFECTS,
+    title_display = T('Personal Effects Details'),
+    title_list = T('List Personal Effects'),
+    title_update = T('Edit Personal Effects Details'),
+    title_search = T('Search Personal Effects'),
+    subtitle_create = T('Add New Entry'),
+    subtitle_list = T('Personal Effects'),
+    label_list_button = T('List Records'),
+    label_create_button = ADD_PERSONAL_EFFECTS,
+    msg_record_created = T('Record added'),
+    msg_record_modified = T('Record updated'),
+    msg_record_deleted = T('Record deleted'),
+    msg_list_empty = T('No Details currently registered'))
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,
@@ -336,20 +338,20 @@ db[table].identity.ondelete = 'RESTRICT'
 # Labels
 
 # CRUD Strings
-title_create = T('Add Identification Report')
-title_display = T('Identification Report')
-title_list = T('List Reports')
-title_update = T('Edit Identification Report')
-title_search = T('Search Report')
-subtitle_create = T('Add New Report')
-subtitle_list = T('Identification Reports')
-label_list_button = T('List Reports')
-label_create_button = T('Add Identification Report')
-msg_record_created = T('Report added')
-msg_record_modified = T('Report updated')
-msg_record_deleted = T('Report deleted')
-msg_list_empty = T('No Identification Report Available')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Add Identification Report'),
+    title_display = T('Identification Report'),
+    title_list = T('List Reports'),
+    title_update = T('Edit Identification Report'),
+    title_search = T('Search Report'),
+    subtitle_create = T('Add New Report'),
+    subtitle_list = T('Identification Reports'),
+    label_list_button = T('List Reports'),
+    label_create_button = T('Add Identification Report'),
+    msg_record_created = T('Report added'),
+    msg_record_modified = T('Report updated'),
+    msg_record_deleted = T('Report deleted'),
+    msg_list_empty = T('No Identification Report Available'))
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,

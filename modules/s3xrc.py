@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """
-    SahanaPy XML+JSON Interface
+    S3XCR SahanaPy XML+JSON Resource Controller
 
-    @version: 1.4.7
+    @version: 1.5.0
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
-    @copyright: (c) 2009 Dominic König (nursix.org)
+    @copyright: 2010 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -38,6 +38,7 @@ __name__ = "S3XRC"
 __all__ = ['ResourceController', 'json_message']
 
 
+# *****************************************************************************
 import sys, uuid
 import gluon.contrib.simplejson as json
 
@@ -47,34 +48,13 @@ from gluon.http import HTTP
 from gluon.validators import IS_NULL_OR
 
 from xml.etree.cElementTree import ElementTree
+from lxml import etree
 
-NO_LXML = True
-try:
-    from lxml import etree
-    NO_LXML = False
-except ImportError:
-    try:
-        import xml.etree.cElementTree as etree
-        print >> sys.stderr, "WARNING: %s: lxml not installed - using cElementTree" % __name__
-    except ImportError:
-        try:
-            import xml.etree.ElementTree as etree
-            print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
-        except ImportError:
-            try:
-                import cElementTree as etree
-                print >> sys.stderr, "WARNING: %s: lxml not installed - using cElementTree" % __name__
-            except ImportError:
-                # normal ElementTree install
-                import elementtree.ElementTree as etree
-                print >> sys.stderr, "WARNING: %s: lxml not installed - using ElementTree" % __name__
-
-
+# *****************************************************************************
 # Error messages
 S3XRC_BAD_RESOURCE = "Invalid Resource"
 S3XRC_PARSE_ERROR = "XML Parse Error"
 S3XRC_TRANSFORMATION_ERROR = "XSLT Transformation Error"
-S3XRC_NO_LXML = "lxml not installed"
 S3XRC_BAD_SOURCE = "Invalid XML Source"
 S3XRC_BAD_RECORD = "Invalid Record ID"
 S3XRC_NO_MATCH = "No Matching Element"
@@ -83,13 +63,25 @@ S3XRC_DATA_IMPORT_ERROR = "Data Import Error"
 S3XRC_NOT_PERMITTED = "Operation Not Permitted"
 S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 
-
+# *****************************************************************************
 #exec('from applications.%s.modules.s3xrc import json_message' % request.application)
 #from applications.sahana.modules.s3xrc import json_message
-
+#
 def json_message(success=True, status_code="200", message=None, tree=None):
 
-    """ Provide a nicely-formatted JSON Message. """
+    """
+        Provide a nicely-formatted JSON Message.
+
+        @param success: whether the request was successful
+        @type success: boolean
+        @param status_code: the HTTP status code
+        @type status_code: string
+        @param message: the message to send
+        @type message: string
+        @param tree: the element tree of the request in JSON containing error annotations
+        @type tree: string
+
+    """
 
     if success:
         status="success"
@@ -111,9 +103,24 @@ def json_message(success=True, status_code="200", message=None, tree=None):
             return '{"status": "%s", "statuscode": "%s"}' % \
                    (status, status_code)
 
-
+# *****************************************************************************
 class ObjectComponent(object):
 
+    """
+        Class to represent component relations between resources.
+
+        @param db: the database abstraction layer
+        @type db: DAL
+        @param prefix: the module prefix of the component resource
+        @type prefix: string
+        @param name: the name of the component resource (without prefix)
+        @type name: string
+        @param attr: dictionary of attributes of the component relation
+        @type attr: **dict
+
+    """
+
+    #--------------------------------------------------------------------------
     def __init__(self, db, prefix, name, **attr):
 
         self.db = db
@@ -137,6 +144,7 @@ class ObjectComponent(object):
             self.attr.editable = True
 
 
+    #--------------------------------------------------------------------------
     def get_join_keys(self, prefix, name):
 
         if "joinby" in self.attr:
@@ -159,11 +167,13 @@ class ObjectComponent(object):
         return (None, None)
 
 
+    #--------------------------------------------------------------------------
     def set_attr(self, name, value):
 
         self.attr[name] = value
 
 
+    #--------------------------------------------------------------------------
     def get_attr(self, name):
 
         if name in self.attr:
@@ -172,10 +182,19 @@ class ObjectComponent(object):
             return None
 
 
+# *****************************************************************************
 class ObjectModel(object):
 
-    """ Class to handle the joined resources model """
 
+    """
+        Class to handle the joined resources model
+
+        @param db: the database abstraction layer
+        @type db: DAL
+
+    """
+
+    #--------------------------------------------------------------------------
     def __init__(self, db):
 
         self.db = db
@@ -186,6 +205,7 @@ class ObjectModel(object):
         self.cmethods = {}
 
 
+    #--------------------------------------------------------------------------
     def add_component(self, prefix, name, **attr):
 
         """ Adds a component to the model """
@@ -197,6 +217,7 @@ class ObjectModel(object):
         return component
 
 
+    #--------------------------------------------------------------------------
     def get_component(self, prefix, name, component_name):
 
         """ Retrieves a component of a resource """
@@ -212,6 +233,7 @@ class ObjectModel(object):
         return (None, None, None)
 
 
+    #--------------------------------------------------------------------------
     def get_components(self, prefix, name):
 
         """ Retrieves all components related to a resource """
@@ -227,6 +249,7 @@ class ObjectModel(object):
         return component_list
 
 
+    #--------------------------------------------------------------------------
     def set_method(self, prefix, name, component_name=None, method=None, action=None):
 
         """ Adds a custom method for a resource or component """
@@ -257,6 +280,7 @@ class ObjectModel(object):
         return True
 
 
+    #--------------------------------------------------------------------------
     def get_method(self, prefix, name, component_name=None, method=None):
 
         """ Retrieves a custom method for a resource or component """
@@ -285,6 +309,7 @@ class ObjectModel(object):
                 return None
 
 
+    #--------------------------------------------------------------------------
     def set_attr(self, component_name, name, value):
 
         """ Sets an attribute for a component """
@@ -292,6 +317,7 @@ class ObjectModel(object):
         return self.components[component_name].set_attr(name, value)
 
 
+    #--------------------------------------------------------------------------
     def get_attr(self, component_name, name):
 
         """ Retrieves an attribute value of a component """
@@ -299,6 +325,7 @@ class ObjectModel(object):
         return self.components[component_name].get_attr(name)
 
 
+    #--------------------------------------------------------------------------
     def uuid2id(table, uuid):
 
         """ Maps UUID's to record ID's for a table """
@@ -315,6 +342,7 @@ class ObjectModel(object):
             return []
 
 
+    #--------------------------------------------------------------------------
     def id2uuid(table, id):
 
         """ Maps record ID's to UUID's for a table """
@@ -331,9 +359,26 @@ class ObjectModel(object):
             return []
 
 
+# *****************************************************************************
 class ResourceController(object):
 
-    """ Controller class for joined resources """
+    """
+        Controller class for joined resources
+
+        @param db: the database abstraction layer
+        @param domain:
+            the domain name of the instance, used to identify the origin of data
+        @param base_url: the base URL of the instance
+        @param rpp: default number of rows per page in server-side pagination
+        @param gis: the geospatial information handler
+
+        @type db: DAL
+        @type domain: string
+        @type base_url: string
+        @type rpp: int
+        @type gis: GIS
+
+    """
 
     RCVARS = "rcvars"
 
@@ -346,6 +391,7 @@ class ResourceController(object):
 
     ROWSPERPAGE = 10
 
+    #--------------------------------------------------------------------------
     def __init__(self, db, domain=None, base_url=None, rpp=None, gis=None):
 
         assert db is not None, "Database must not be None."
@@ -364,9 +410,22 @@ class ResourceController(object):
         self.model = ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis)
 
+
+    #--------------------------------------------------------------------------
     def get_session(self, session, prefix, name):
 
-        """ Reads the last record ID for a resource from a session """
+        """
+            Reads the last record ID for a resource from a session
+
+            @param session: the session
+            @param prefix: module prefix of the resource name
+            @param name: the resource name
+
+            @type session: Storage
+            @type prefix: string
+            @type name: string
+
+        """
 
         tablename = "%s_%s" % (prefix, name)
 
@@ -374,9 +433,22 @@ class ResourceController(object):
             return session[self.RCVARS][tablename]
 
 
+    #--------------------------------------------------------------------------
     def store_session(self, session, prefix, name, id):
 
-        """ Stores a record ID for a resource in a session """
+        """
+            Stores a record ID for a resource in a session
+
+            @param session: the session
+            @param prefix: module prefix of the resource name
+            @param name: the resource name
+            @param id: the record ID to store
+
+            @type session: Storage
+            @type prefix: string
+            @type name: string
+
+        """
 
         if self.RCVARS not in session:
             session[self.RCVARS] = Storage()
@@ -388,6 +460,7 @@ class ResourceController(object):
         return True # always return True to make this chainable
 
 
+    #--------------------------------------------------------------------------
     def clear_session(self, session, prefix=None, name=None):
 
         """ Clears record ID's stored in a session """
@@ -403,14 +476,76 @@ class ResourceController(object):
         return True # always return True to make this chainable
 
 
+    #--------------------------------------------------------------------------
     def request(self, prefix, name, request, session=None):
 
-        """ Wrapper function to generate an XRequest """
+        """
+            Wrapper function to generate an XRequest
+
+            @param prefix: the module prefix of the requested resource
+            @param name: the name of the requested resource
+            @param request: the original request
+            @param session: the session storage
+
+            @type prefix: string
+            @type name: string
+            @type request: Storage
+            @type session: Storage
+
+        """
 
         self.error = None
         return XRequest(self, prefix, name, request, session=session)
 
 
+    #--------------------------------------------------------------------------
+    def search_simple(self, table, fields=None, label=None, filterby=None):
+
+        search_fields = []
+        if fields and isinstance(fields, (list,tuple)):
+            for f in fields:
+                if table.has_key(f):
+                    search_fields.append(f)
+
+        if not len(search_fields):
+            return None
+
+        if label is not None and isinstance(label,str):
+            labels = label.split()
+            results = []
+            query = None
+            for l in labels:
+
+                # add wildcards
+                wc = "%"
+                _l = "%s%s%s" % (wc, l, wc)
+                for f in search_fields:
+                    if query:
+                        query = (table[f].like(_l)) | query
+                    else:
+                        query = (table[f].like(_l))
+
+                # undeleted records only
+                query = (table.deleted==False) & (query)
+
+                # restrict to prior results (AND)
+                if len(results):
+                    query = (table.id.belongs(results)) & query
+                if filterby:
+                    query = (filterby) & (query)
+                records = self.db(query).select(table.id)
+                # rebuild result list
+                results = [r.id for r in records]
+                # any results left?
+                if not len(results):
+                    return None
+            return results
+        else:
+            # no label given or wrong parameter type
+            return None
+
+
+    #--------------------------------------------------------------------------
     def export_xml(self, prefix, name, id,
                    joins=[],
                    filterby=None,
@@ -548,6 +683,7 @@ class ResourceController(object):
                              limit=limit)
 
 
+    #--------------------------------------------------------------------------
     def import_xml(self, prefix, name, id, tree,
                    joins=[],
                    skip_resource=False,
@@ -560,10 +696,6 @@ class ResourceController(object):
         """ Imports data from an XML tree """
 
         self.error = None
-
-        if NO_LXML:
-            self.error = S3XRC_NO_LXML
-            return False
 
         tablename = "%s_%s" % (prefix, name)
         if tablename in self.db:
@@ -704,6 +836,7 @@ class ResourceController(object):
         return (self.error is None) or ignore_errors
 
 
+    #--------------------------------------------------------------------------
     def options_xml(self, prefix, name, joins=[]):
 
         """ Exports options for select fields """
@@ -714,6 +847,7 @@ class ResourceController(object):
         return self.xml.tree([options], domain=self.domain, url=self.base_url)
 
 
+# *****************************************************************************
 class XVector(object):
 
     """ Helper class for database commits """
@@ -722,6 +856,7 @@ class XVector(object):
 
     UUID = "uuid"
 
+    #--------------------------------------------------------------------------
     def __init__(self, db, prefix, name, id,
                  record=None,
                  permit=None,
@@ -778,6 +913,7 @@ class XVector(object):
             self.permitted=False
 
 
+    #--------------------------------------------------------------------------
     def commit(self):
 
         if not self.committed:
@@ -833,10 +969,12 @@ class XVector(object):
         return True
 
 
+# *****************************************************************************
 class XRequest(object):
 
     DEFAULT_REPRESENTATION = "html"
 
+    #--------------------------------------------------------------------------
     def __init__(self, rc, prefix, name, request, session=None):
 
         assert rc is not None, "Resource controller must not be None."
@@ -917,6 +1055,7 @@ class XRequest(object):
                         self.request.args.append('%s.%s' % (self.id, self.representation))
 
 
+    #--------------------------------------------------------------------------
     def __parse(self):
 
         """ Parses a web2py request for the REST interface """
@@ -976,6 +1115,7 @@ class XRequest(object):
         return True
 
 
+    #--------------------------------------------------------------------------
     def __record(self):
 
         """ Tries to find the primary resource record in a request """
@@ -1034,10 +1174,10 @@ class XRequest(object):
         return True
 
 
+    #--------------------------------------------------------------------------
     def here(self, representation=None):
-        """
-            Backlink producing the same request
-        """
+
+        """ Backlink producing the same request """
 
         args = []
         vars = {}
@@ -1070,10 +1210,10 @@ class XRequest(object):
         return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
 
 
+    #--------------------------------------------------------------------------
     def other(self, method=None, record_id=None, representation=None):
-        """
-            Backlink to another method+record_id of the same resource
-        """
+
+        """ Backlink to another method+record_id of the same resource """
 
         args = []
         vars = {}
@@ -1112,10 +1252,11 @@ class XRequest(object):
         return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
 
 
+    #--------------------------------------------------------------------------
     def there(self, representation=None):
-        """
-            Backlink producing a HTTP/list request to the same resource
-        """
+
+        """ Backlink producing a HTTP/list request to the same resource """
+
         args = []
         vars = {}
 
@@ -1135,10 +1276,10 @@ class XRequest(object):
         return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
 
 
+    #--------------------------------------------------------------------------
     def same(self, representation=None):
-        """
-            Backlink producing the same request with neutralized primary record ID
-        """
+
+        """ Backlink producing the same request with neutralized primary record ID """
 
         args = []
         vars = {}
@@ -1169,6 +1310,7 @@ class XRequest(object):
         return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
 
 
+    #--------------------------------------------------------------------------
     def target(self):
 
         if self.component is not None:
@@ -1187,7 +1329,10 @@ class XRequest(object):
             )
 
 
+    #--------------------------------------------------------------------------
     def export_xml(self, permit=None, audit=None, template=None, filterby=None, pretty_print=False):
+
+        """ Export the requested resources as XML """
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1230,7 +1375,10 @@ class XRequest(object):
         return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
+    #--------------------------------------------------------------------------
     def export_json(self, permit=None, audit=None, template=None, filterby=None, pretty_print=False):
+
+        """ Export the requested resources as JSON """
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1274,7 +1422,10 @@ class XRequest(object):
         return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
+    #--------------------------------------------------------------------------
     def import_xml(self, tree, permit=None, audit=None, onvalidation=None, onaccept=None):
+
+        """ import the requested resources from XML """
 
         if self.component:
             skip_resource = True
@@ -1309,7 +1460,10 @@ class XRequest(object):
                                   ignore_errors=ignore_errors)
 
 
+    #--------------------------------------------------------------------------
     def options_xml(self, pretty_print=False):
+
+        """ Export the options of a field in the resource as XML """
 
         if "field" in self.request.vars:
             field = self.request.vars["field"]
@@ -1336,7 +1490,10 @@ class XRequest(object):
             return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
+    #--------------------------------------------------------------------------
     def options_json(self, pretty_print=False):
+
+        """ Export the options of a field in the resource as JSON """
 
         if "field" in self.request.vars:
             field = self.request.vars["field"]
@@ -1361,11 +1518,28 @@ class XRequest(object):
 
             return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
+
+# *****************************************************************************
 class S3XML(object):
 
-    S3XRC_NAMESPACE = "http://www.sahanapy.org/wiki/S3XRC"
-    S3XRC = "{%s}" % S3XRC_NAMESPACE
-    NSMAP = {None : S3XRC_NAMESPACE}
+    """
+        XML interface for S3XRC
+
+        @param db: the database abstraction layer
+        @type db: DAL
+        @param domain:
+            the domain name of the application instance, used to identify the origin of data
+        @type domain: string
+        @param base_url: the base URL of the instance
+        @type base_url: string
+        @param gis: the geospatial information handler of the application
+        @type gis: GIS
+
+    """
+
+    S3XRC_NAMESPACE = "http://www.sahanapy.org/wiki/S3XRC" #: The S3XRC namespace URI
+    S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
+    NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
 
     UUID = "uuid"
     Lat = "lat"
@@ -1413,7 +1587,11 @@ class S3XML(object):
         success="success",
         results="results",
         lat="lat",
+        latmin="latmin",
+        latmax="latmax",
         lon="lon",
+        lonmin="lonmin",
+        lonmax="lonmax",
         marker="marker"
         )
 
@@ -1436,6 +1614,7 @@ class S3XML(object):
     XML2PY = [('<', '&lt;'), ('>', '&gt;'), ('"', '&quot;'), ("'", '&apos;'), ('&', '&amp;')]
 
 
+    #--------------------------------------------------------------------------
     def __init__(self, db, domain=None, base_url=None, gis=None):
 
         self.db = db
@@ -1447,6 +1626,7 @@ class S3XML(object):
         self.gis = gis
 
 
+    #--------------------------------------------------------------------------
     def parse(self, source):
 
         self.error = None
@@ -1460,49 +1640,45 @@ class S3XML(object):
             return None
 
 
+    #--------------------------------------------------------------------------
     def transform(self, tree, template_path, domain=None, base_url=None):
 
         self.error = None
 
         ac = etree.XSLTAccessControl(read_file=True, read_network=True)
 
-        if not NO_LXML:
-            template = self.parse(template_path)
-            if template:
-                try:
-                    transformer = etree.XSLT(template, access_control=ac)
-                    if domain is not None:
-                        domain = "'%s'" % domain
-                        if base_url is not None:
-                            base_url = "'%s'" % base_url
-                            result = transformer(tree, domain=domain, base_url=base_url)
-                        else:
-                            result = transformer(tree, domain=domain)
+        template = self.parse(template_path)
+        if template:
+            try:
+                transformer = etree.XSLT(template, access_control=ac)
+                if domain is not None:
+                    domain = "'%s'" % domain
+                    if base_url is not None:
+                        base_url = "'%s'" % base_url
+                        result = transformer(tree, domain=domain, base_url=base_url)
                     else:
-                        result = transformer(tree)
-                    return result
-                except:
-                    self.error = S3XRC_TRANSFORMATION_ERROR
-                    return None
-            else:
-                # Error parsing the XSL template
+                        result = transformer(tree, domain=domain)
+                else:
+                    result = transformer(tree)
+                return result
+            except:
+                self.error = S3XRC_TRANSFORMATION_ERROR
                 return None
         else:
-            self.error = S3XRC_NO_LXML
+            # Error parsing the XSL template
             return None
 
 
+    #--------------------------------------------------------------------------
     def tostring(self, tree, pretty_print=False):
 
-        if NO_LXML:
-            return etree.tostring(tree.getroot(), encoding="utf-8")
-        else:
-            return etree.tostring(tree,
-                                  xml_declaration=True,
-                                  encoding="utf-8",
-                                  pretty_print=pretty_print)
+        return etree.tostring(tree,
+                                xml_declaration=True,
+                                encoding="utf-8",
+                                pretty_print=pretty_print)
 
 
+    #--------------------------------------------------------------------------
     def xml_encode(self, obj):
 
         if obj:
@@ -1511,6 +1687,7 @@ class S3XML(object):
         return obj
 
 
+    #--------------------------------------------------------------------------
     def xml_decode(self, obj):
 
         if obj:
@@ -1519,6 +1696,7 @@ class S3XML(object):
         return obj
 
 
+    #--------------------------------------------------------------------------
     def element(self, table, record, skip=[], url=None, download_url=None):
 
         """ Creates an element from a Storage() record """
@@ -1548,7 +1726,16 @@ class S3XML(object):
 
             text = value = self.xml_encode(str(table[f].formatter(v)).decode('utf-8'))
             if table[f].represent:
-                text = self.xml_encode(str(table[f].represent(v)).decode('utf-8'))
+                text = str(table[f].represent(v)).decode('utf-8')
+                # Filter out markup from text
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                except etree.XMLSyntaxError:
+                    pass
+                text = self.xml_encode(text)
 
             if f in self.FIELDS_TO_ATTRIBUTES:
                 resource.set(f, text)
@@ -1576,9 +1763,10 @@ class S3XML(object):
                                 reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
                                 reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
                                 # Look up the marker to display
-                                marker = self.gis.get_marker(value)
-                                marker_url = "%s/%s" % (download_url, marker)
-                                reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
+                                if self.gis is not None:
+                                    marker = self.gis.get_marker(value)
+                                    marker_url = "%s/%s" % (download_url, marker)
+                                    reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
 
 
             elif isinstance(table[f].type, str) and \
@@ -1601,11 +1789,15 @@ class S3XML(object):
         return resource
 
 
+    #--------------------------------------------------------------------------
     def tree(self, resources, domain=None, url=None, start=None, limit=None, results=None):
 
         """ Builds a tree from a list of elements """
 
-        root = etree.Element(self.TAG["root"], nsmap=self.NSMAP)
+        # For now we do not nsmap, because the default namespace cannot be
+        # matched in XSLT templates (need explicit prefix) and thus this
+        # would require a rework of all existing templates (which is however useful)
+        root = etree.Element(self.TAG["root"]) #, nsmap=self.NSMAP)
 
         root.set(self.ATTRIBUTE["success"], str(False))
 
@@ -1621,10 +1813,7 @@ class S3XML(object):
             if results is not None:
                 root.set(self.ATTRIBUTE["results"], str(results))
 
-            if NO_LXML:
-                map(lambda r: root.append(r), resources)
-            else:
-                root.extend(resources)
+            root.extend(resources)
 
         if domain is not None:
             root.set(self.ATTRIBUTE["domain"], self.domain)
@@ -1632,9 +1821,15 @@ class S3XML(object):
         if url is not None:
             root.set(self.ATTRIBUTE["url"], self.base_url)
 
+        root.set(self.ATTRIBUTE["latmin"], str(self.gis.get_bounds()['min_lat']))
+        root.set(self.ATTRIBUTE["latmax"], str(self.gis.get_bounds()['max_lat']))
+        root.set(self.ATTRIBUTE["lonmin"], str(self.gis.get_bounds()['min_lon']))
+        root.set(self.ATTRIBUTE["lonmax"], str(self.gis.get_bounds()['max_lon']))
+
         return etree.ElementTree(root)
 
 
+    #--------------------------------------------------------------------------
     def get_field_options(self, table, fieldname):
 
         select = etree.Element(self.TAG["select"])
@@ -1673,6 +1868,7 @@ class S3XML(object):
         return select
 
 
+    #--------------------------------------------------------------------------
     def get_options(self, prefix, name, joins=[]):
 
         resource = "%s_%s" % (prefix, name)
@@ -1701,6 +1897,7 @@ class S3XML(object):
         return options
 
 
+    #--------------------------------------------------------------------------
     def validate(self, table, record, fieldname, value):
 
         """ Validates a single value """
@@ -1726,6 +1923,7 @@ class S3XML(object):
             return(value, None)
 
 
+    #--------------------------------------------------------------------------
     def record(self, table, element, skip=[]):
 
         """ Creates a Storage() record from an element and validates it """
@@ -1817,6 +2015,7 @@ class S3XML(object):
             return None
 
 
+    #--------------------------------------------------------------------------
     def select_resources(self, tree, tablename):
 
         resources = []
@@ -1838,6 +2037,7 @@ class S3XML(object):
         return resources
 
 
+    #--------------------------------------------------------------------------
     def __json2element(self, key, value, native=False):
 
         if isinstance(value, dict):
@@ -1865,6 +2065,7 @@ class S3XML(object):
             return element
 
 
+    #--------------------------------------------------------------------------
     def __obj2element(self, tag, obj, native=False):
 
         prefix = name = resource = field = None
@@ -1924,6 +2125,7 @@ class S3XML(object):
         return element
 
 
+    #--------------------------------------------------------------------------
     def json2tree(self, source, format=None):
 
         try:
@@ -1945,6 +2147,7 @@ class S3XML(object):
         return None
 
 
+    #--------------------------------------------------------------------------
     def __element2json(self, element, native=False):
 
         if element.tag == self.TAG["list"]:
@@ -2031,6 +2234,7 @@ class S3XML(object):
             return obj
 
 
+    #--------------------------------------------------------------------------
     def tree2json(self, tree, pretty_print=False):
 
         root = tree.getroot()
@@ -2047,3 +2251,5 @@ class S3XML(object):
             return '\n'.join([l.rstrip() for l in js.splitlines()])
         else:
             return json.dumps(root_dict)
+
+# *****************************************************************************

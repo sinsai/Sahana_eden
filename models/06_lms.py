@@ -78,20 +78,22 @@ db[table].label.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="too
 db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Unit Name| Complete Unit Label for e.g. meter for m."))
 db[table].base_unit.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Base Unit| The entered unit links to this unit. For e.g. if you are entering m for meter then choose kilometer(if it exists) and enter the value 0.001 as multiplicator."))
 db[table].multiplicator.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Multiplicator| If Unit = m, Base Unit = Km, then multiplicator is 0.0001 since 1m = 0.001 km."))
-title_create = T('Add Unit ')
-title_display = T('Unit Details')
-title_list = T('List Units')
-title_update = T('Edit Unit')
-title_search = T('Search Unit(s)')
-subtitle_create = T('Add New Unit')
-subtitle_list = T('Units of Measure')
-label_list_button = T('List Units')
-label_create_button = T('Add Unit')
-msg_record_created = T('Unit added')
-msg_record_modified = T('Unit updated')
-msg_record_deleted = T('Unit deleted')
-msg_list_empty = T('No Units currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_UNIT = T('Add Unit ')
+LIST_UNITS = T('List Units')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_UNIT,
+    title_display = T('Unit Details'),
+    title_list = LIST_UNITS,
+    title_update = T('Edit Unit'),
+    title_search = T('Search Units'),
+    subtitle_create = T('Add New Unit'),
+    subtitle_list = T('Units of Measure'),
+    label_list_button = LIST_UNITS,
+    label_create_button = ADD_UNIT,
+    msg_record_created = T('Unit added'),
+    msg_record_modified = T('Unit updated'),
+    msg_record_deleted = T('Unit deleted'),
+    msg_list_empty = T('No Units currently registered'))
 
 # Sites
 site_category_opts = {
@@ -135,20 +137,22 @@ db[table].address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site A
 db[table].attachment.label = T("Image/Other Attachment")
 db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
 db[table].comments.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Additional Comments|Use this space to add additional comments and notes about the Site/Warehouse."))
-title_create = T('Add Site ')
-title_display = T('Site Details')
-title_list = T('List Sites')
-title_update = T('Edit Site')
-title_search = T('Search Site(s)')
-subtitle_create = T('Add New Site')
-subtitle_list = T('Sites')
-label_list_button = T('List Sites')
-label_create_button = T('Add Site')
-msg_record_created = T('Site added')
-msg_record_modified = T('Site updated')
-msg_record_deleted = T('Site deleted')
-msg_list_empty = T('No Sites currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_SITE = T('Add Site ')
+LIST_SITES = T('List Sites')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_SITE,
+    title_display = T('Site Details'),
+    title_list = LIST_SITES,
+    title_update = T('Edit Site'),
+    title_search = T('Search Site(s)'),
+    subtitle_create = T('Add New Site'),
+    subtitle_list = T('Sites'),
+    label_list_button = LIST_SITES,
+    label_create_button = ADD_SITE,
+    msg_record_created = T('Site added'),
+    msg_record_modified = T('Site updated'),
+    msg_record_deleted = T('Site deleted'),
+    msg_list_empty = T('No Sites currently registered'))
 
 # Storage Locations
 resource = 'storage_loc'
@@ -181,20 +185,22 @@ db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volum
 db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the Storage Location followed by choosing the unit from the drop down list."))
 db[table].attachment.label = T("Image/Other Attachment")
 db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site Location can be uploaded here."))
-title_create = T('Add Storage Location ')
-title_display = T('Storage Location Details')
-title_list = T('List Storage Location')
-title_update = T('Edit Storage Location')
-title_search = T('Search Storage Location(s)')
-subtitle_create = T('Add New Site')
-subtitle_list = T('Storage Locations')
-label_list_button = T('List Storage Locations')
-label_create_button = T('Add Storage Location')
-msg_record_created = T('Storage Location added')
-msg_record_modified = T('Storage Location updated')
-msg_record_deleted = T('Storage Location deleted')
-msg_list_empty = T('No Storage Locations currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_STORAGE_LOCATION = T('Add Storage Location ')
+LIST_STORAGE_LOCATIONS = T('List Storage Location')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_STORAGE_LOCATION,
+    title_display = T('Storage Location Details'),
+    title_list = LIST_STORAGE_LOCATIONS,
+    title_update = T('Edit Storage Location'),
+    title_search = T('Search Storage Location(s)'),
+    subtitle_create = T('Add New Storage Location'),
+    subtitle_list = T('Storage Locations'),
+    label_list_button = LIST_STORAGE_LOCATIONS,
+    label_create_button = ADD_STORAGE_LOCATION,
+    msg_record_created = T('Storage Location added'),
+    msg_record_modified = T('Storage Location updated'),
+    msg_record_deleted = T('Storage Location deleted'),
+    msg_list_empty = T('No Storage Locations currently registered'))
 
 # Storage Bin Type
 resource = 'storage_bin_type'
@@ -207,20 +213,22 @@ db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Type|Name of Storage Bin Type."))
 db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Description of Bin Type|Use this space to add a description about the Bin Type."))
-title_create = T('Add Storage Bin Type')
-title_display = T('Storage Bin Type Details')
-title_list = T('List Storage Bin Type(s)')
-title_update = T('Edit Storage Bin Type(s)')
-title_search = T('Search Storage Bin Type(s)')
-subtitle_create = T('Add New Bin Type')
-subtitle_list = T('Storage Bin Types')
-label_list_button = T('List Storage Bin Type(s)')
-label_create_button = T('Add Storage Bin Type(s)')
-msg_record_created = T('Storage Bin Type added')
-msg_record_modified = T('Storage Bin Type updated')
-msg_record_deleted = T('Storage Bin Type deleted')
-msg_list_empty = T('No Storage Bin Type currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_STORAGE_BIN_TYPE = T('Add Storage Bin Type')
+LIST_STORAGE_BIN_TYPES = T('List Storage Bin Type(s)')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_STORAGE_BIN_TYPE,
+    title_display = T('Storage Bin Type Details'),
+    title_list = LIST_STORAGE_BIN_TYPES,
+    title_update = T('Edit Storage Bin Type(s)'),
+    title_search = T('Search Storage Bin Type(s)'),
+    subtitle_create = T('Add New Bin Type'),
+    subtitle_list = T('Storage Bin Types'),
+    label_list_button = LIST_STORAGE_BIN_TYPES,
+    label_create_button = ADD_STORAGE_BIN_TYPE,
+    msg_record_created = T('Storage Bin Type added'),
+    msg_record_modified = T('Storage Bin Type updated'),
+    msg_record_deleted = T('Storage Bin Type deleted'),
+    msg_list_empty = T('No Storage Bin Type currently registered'))
 
 # Storage Bins
 resource = 'storage_bin'
@@ -261,21 +269,22 @@ db[table].capacity.label = T("Capacity (W x D X H)")
 db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage bin. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
 db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the items the storage bin can contain. followed by choosing the unit from the drop down list."))
 db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the bin or additional documents that contain supplementary information about it can be uploaded here."))
-title_create = T('Add Storage Bin ')
-title_display = T('Storage Bin Details')
-title_list = T('List Storage Bins')
-title_update = T('Edit Storage Bins')
-title_search = T('Search Storage Bin(s)')
-subtitle_create = T('Add New Bin')
-subtitle_list = T('Storage Bins')
-label_list_button = T('List Storage Bins')
-label_create_button = T('Add Storage Bins')
-msg_record_created = T('Storage Bin added')
-msg_record_modified = T('Storage Bin updated')
-msg_record_modified = T('Storage Bin updated')
-msg_record_deleted = T('Storage Bin deleted')
-msg_list_empty = T('No Storage Bins currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_STORAGE_BIN = T('Add Storage Bin ')
+LIST_STORAGE_BINS = T('List Storage Bins')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_STORAGE_BIN,
+    title_display = T('Storage Bin Details'),
+    title_list = LIST_STORAGE_BINS,
+    title_update = T('Edit Storage Bins'),
+    title_search = T('Search Storage Bin(s)'),
+    subtitle_create = T('Add New Bin'),
+    subtitle_list = T('Storage Bins'),
+    label_list_button = LIST_STORAGE_BINS,
+    label_create_button = ADD_STORAGE_BIN,
+    msg_record_created = T('Storage Bin added'),
+    msg_record_modified = T('Storage Bin updated'),
+    msg_record_deleted = T('Storage Bin deleted'),
+    msg_list_empty = T('No Storage Bins currently registered'))
 
 # Item Catalog Master
 resource = 'catalog'
@@ -290,20 +299,22 @@ db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T("Catalog Name")
 db[table].name.comment = SPAN("*", _class="req")
-title_create = T('Add Item Catalog ')
-title_display = T('Item Catalog Details')
-title_list = T('List Item Catalogs')
-title_update = T('Edit Item Catalog')
-title_search = T('Search Item Catalog(s)')
-subtitle_create = T('Add New Item Catalog')
-subtitle_list = T('Item Catalogs')
-label_list_button = T('List Item Catalogs')
-label_create_button = T('Add Item Catalog')
-msg_record_created = T('Item Catalog added')
-msg_record_modified = T('Item Catalog updated')
-msg_record_deleted = T('Item Catalog deleted')
-msg_list_empty = T('No Item Catalog currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_ITEM_CATALOG = T('Add Item Catalog ')
+LIST_ITEM_CATALOGS = T('List Item Catalogs')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_ITEM_CATALOG,
+    title_display = T('Item Catalog Details'),
+    title_list = LIST_ITEM_CATALOGS,
+    title_update = T('Edit Item Catalog'),
+    title_search = T('Search Item Catalog(s)'),
+    subtitle_create = T('Add New Item Catalog'),
+    subtitle_list = T('Item Catalogs'),
+    label_list_button = LIST_ITEM_CATALOGS,
+    label_create_button = ADD_ITEM_CATALOG,
+    msg_record_created = T('Item Catalog added'),
+    msg_record_modified = T('Item Catalog updated'),
+    msg_record_deleted = T('Item Catalog deleted'),
+    msg_list_empty = T('No Item Catalog currently registered'))
 
 # Item Catalog Category
 resource = 'catalog_cat'
@@ -317,20 +328,22 @@ db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].name.requires = IS_NOT_EMPTY()
 db[table].name.label = T("Item Catalog Category")
 db[table].name.comment = SPAN("*", _class="req")
-title_create = T('Add Item Catalog Category ')
-title_display = T('Item Catalog Category Details')
-title_list = T('List Item Catalog Categories')
-title_update = T('Edit Item Catalog Categories')
-title_search = T('Search Item Catalog Category(s)')
-subtitle_create = T('Add New Item Catalog Category')
-subtitle_list = T('Item Catalog Categories')
-label_list_button = T('List Item Catalog Categories')
-label_create_button = T('Add Item Catalog Categories')
-msg_record_created = T('Item Catalog Category added')
-msg_record_modified = T('Item Catalog Category updated')
-msg_record_deleted = T('Item Catalog Category deleted')
-msg_list_empty = T('No Item Catalog Category currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_ITEM_CATALOG_CATEGORY = T('Add Item Catalog Category ')
+LIST_ITEM_CATALOG_CATEGORIES = T('List Item Catalog Categories')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_ITEM_CATALOG_CATEGORY,
+    title_display = T('Item Catalog Category Details'),
+    title_list = LIST_ITEM_CATALOG_CATEGORIES,
+    title_update = T('Edit Item Catalog Categories'),
+    title_search = T('Search Item Catalog Category(s)'),
+    subtitle_create = T('Add New Item Catalog Category'),
+    subtitle_list = T('Item Catalog Categories'),
+    label_list_button = LIST_ITEM_CATALOG_CATEGORIES,
+    label_create_button = ADD_ITEM_CATALOG_CATEGORY,
+    msg_record_created = T('Item Catalog Category added'),
+    msg_record_modified = T('Item Catalog Category updated'),
+    msg_record_deleted = T('Item Catalog Category deleted'),
+    msg_list_empty = T('No Item Catalog Category currently registered'))
 
 # Item Catalog Sub-Category
 resource = 'catalog_subcat'
@@ -347,20 +360,22 @@ db[table].name.label = T("Item Sub-Category")
 db[table].name.comment = SPAN("*", _class="req")
 db[table].parent_category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
 db[table].parent_category.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
-title_create = T('Add Item Sub-Category ')
-title_display = T('Item Sub-Category Details')
-title_list = T('List Item Sub-Categories')
-title_update = T('Edit Item Sub-Categories')
-title_search = T('Search Item Sub-Category(s)')
-subtitle_create = T('Add New Item Sub-Category')
-subtitle_list = T('Item Sub-Categories')
-label_list_button = T('List Item Sub-Categories')
-label_create_button = T('Add Item Sub-Categories')
-msg_record_created = T('Item Sub-Category added')
-msg_record_modified = T('Item Sub-Category updated')
-msg_record_deleted = T('Item Sub-Category deleted')
-msg_list_empty = T('No Item Sub-Category currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_ITEM_SUB_CATEGORY = T('Add Item Sub-Category ')
+LIST_ITEM_SUB_CATEGORIES = T('List Item Sub-Categories')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_ITEM_SUB_CATEGORY,
+    title_display = T('Item Sub-Category Details'),
+    title_list = LIST_ITEM_SUB_CATEGORIES,
+    title_update = T('Edit Item Sub-Categories'),
+    title_search = T('Search Item Sub-Category(s)'),
+    subtitle_create = T('Add New Item Sub-Category'),
+    subtitle_list = T('Item Sub-Categories'),
+    label_list_button = LIST_ITEM_SUB_CATEGORIES,
+    label_create_button = ADD_ITEM_SUB_CATEGORY,
+    msg_record_created = T('Item Sub-Category added'),
+    msg_record_modified = T('Item Sub-Category updated'),
+    msg_record_deleted = T('Item Sub-Category deleted'),
+    msg_list_empty = T('No Item Sub-Category currently registered'))
 
 # Category<>Sub-Category<>Catalog Relation between all three.
 
@@ -383,20 +398,22 @@ db[table].catalog_id.requires = IS_IN_DB(db, 'lms_catalog.id', 'lms_catalog.name
 db[table].catalog_id.label = T('Catalog')
 db[table].catalog_id.represent = lambda catalog_id: db(db.lms_catalog.id==catalog_id).select()[0].name
 db[table].catalog_id.comment = DIV(A(T('Add Item Catalog'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Catalog.")))
-title_create = T('Add Category<>Sub-Category<>Catalog Relation ')
-title_display = T('Category<>Sub-Category<>Catalog Relation')
-title_list = T('List Category<>Sub-Category<>Catalog Relation')
-title_update = T('Edit Category<>Sub-Category<>Catalog Relation')
-title_search = T('Search Category<>Sub-Category<>Catalog Relation')
-subtitle_create = T('Add Category<>Sub-Category<>Catalog Relation')
-subtitle_list = T('Category<>Sub-Category<>Catalog Relation')
-label_list_button = T('List Category<>Sub-Category<>Catalog Relation')
-label_create_button = T('Add Category<>Sub-Category<>Catalog Relation')
-msg_record_created = T('Category<>Sub-Category<>Catalog Relation added')
-msg_record_modified = T('Category<>Sub-Category<>Catalog Relation updated')
-msg_record_deleted = T('Category<>Sub-Category<>Catalog Relation deleted')
-msg_list_empty = T('No Category<>Sub-Category<>Catalog Relation currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_CATEGORY_RELATION = T('Add Category<>Sub-Category<>Catalog Relation ')
+LIST_CATEGORY_RELATIONS = T('List Category<>Sub-Category<>Catalog Relation')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_CATEGORY_RELATION,
+    title_display = T('Category<>Sub-Category<>Catalog Relation'),
+    title_list = LIST_CATEGORY_RELATIONS,
+    title_update = T('Edit Category<>Sub-Category<>Catalog Relation'),
+    title_search = T('Search Category<>Sub-Category<>Catalog Relation'),
+    subtitle_create = ADD_CATEGORY_RELATION,
+    subtitle_list = T('Category<>Sub-Category<>Catalog Relation'),
+    label_list_button = LIST_CATEGORY_RELATIONS,
+    label_create_button = ADD_CATEGORY_RELATION,
+    msg_record_created = T('Category<>Sub-Category<>Catalog Relation added'),
+    msg_record_modified = T('Category<>Sub-Category<>Catalog Relation updated'),
+    msg_record_deleted = T('Category<>Sub-Category<>Catalog Relation deleted'),
+    msg_list_empty = T('No Category<>Sub-Category<>Catalog Relation currently registered'))
 
 # Shipment
 resource = 'shipment'
@@ -421,20 +438,22 @@ db[table].sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
 db[table].sender_site.comment = DIV(A(T('Add Sender Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
 db[table].recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
 db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient|Add a new Site where the Item is being sent to.")))
-title_create = T('Add Shipment/Way Bills')
-title_display = T('Shipment/Way Bills Details')
-title_list = T('List Shipment/Way Bills')
-title_update = T('Edit Shipment/Way Bills')
-title_search = T('Search Shipment/Way Bills')
-subtitle_create = T('Add Shipment/Way Bills')
-subtitle_list = T('Shipment/Way Bills')
-label_list_button = T('List Shipment/Way Bills')
-label_create_button = T('Add Shipment/Way Bills')
-msg_record_created = T('Shipment/Way Bill added')
-msg_record_modified = T('Shipment/Way Bills updated')
-msg_record_deleted = T('Shipment/Way Bills deleted')
-msg_list_empty = T('No Shipment/Way Bills currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_SHIPMENT = T('Add Shipment/Way Bills')
+LIST_SHIPMENTS = T('List Shipment/Way Bills')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_SHIPMENT,
+    title_display = T('Shipment/Way Bills Details'),
+    title_list = LIST_SHIPMENTS,
+    title_update = T('Edit Shipment/Way Bills'),
+    title_search = T('Search Shipment/Way Bills'),
+    subtitle_create = ADD_SHIPMENT,
+    subtitle_list = T('Shipment/Way Bills'),
+    label_list_button = LIST_SHIPMENTS,
+    label_create_button = ADD_SHIPMENT,
+    msg_record_created = T('Shipment/Way Bill added'),
+    msg_record_modified = T('Shipment/Way Bills updated'),
+    msg_record_deleted = T('Shipment/Way Bills deleted'),
+    msg_list_empty = T('No Shipment/Way Bills currently registered'))
 
 # Items
 resource = 'item'
@@ -498,20 +517,22 @@ db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Des
 db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume/Dimensions|Additional quantity quantifier – i.e. “4x5”."))
 db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
 db[table].unit_cost.label = T('Unit Cost')
-title_create = T('Add Item')
-title_display = T('Item Details')
-title_list = T('List Item(s)')
-title_update = T('Edit Item(s)')
-title_search = T('Search Item(s)')
-subtitle_create = T('Add New Item')
-subtitle_list = T('Items')
-label_list_button = T('List Item')
-label_create_button = T('Add Item')
-msg_record_created = T('Item added')
-msg_record_modified = T('Item updated')
-msg_record_deleted = T('Item deleted')
-msg_list_empty = T('No Item currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_ITEM = T('Add Item')
+LIST_ITEMS = T('List Items')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_ITEM,
+    title_display = T('Item Details'),
+    title_list = LIST_ITEMS,
+    title_update = T('Edit Item'),
+    title_search = T('Search Items'),
+    subtitle_create = T('Add New Item'),
+    subtitle_list = T('Items'),
+    label_list_button = LIST_ITEMS,
+    label_create_button = ADD_ITEM,
+    msg_record_created = T('Item added'),
+    msg_record_modified = T('Item updated'),
+    msg_record_deleted = T('Item deleted'),
+    msg_list_empty = T('No Item currently registered'))
 
 # Shipment<>Item - A shipment can have many items under it.
 # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
@@ -525,20 +546,20 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
 db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
-title_create = T('Link Item & Shipment')
-title_display = T('Shipment<>Item Relations Details')
-title_list = T('List Shipment<>Item Relation')
-title_update = T('Edit Shipment<>Item Relation')
-title_search = T('Search Shipment<>Item Relation')
-subtitle_create = T('Link Item & Shipment')
-subtitle_list = T('Shipment/Way Bills')
-label_list_button = T('Shipment<>Item Relations')
-label_create_button = T('Link an Item & Shipment')
-msg_record_created = T('Shipment<>Item Relation added')
-msg_record_modified = T('Shipment<>Item Relation updated')
-msg_record_deleted = T('Shipment<>Item Relation deleted')
-msg_list_empty = T('No Shipment<>Item Relation currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+s3.crud_strings[table] = Storage(
+    title_create = T('Link Item & Shipment'),
+    title_display = T('Shipment<>Item Relations Details'),
+    title_list = T('List Shipment<>Item Relation'),
+    title_update = T('Edit Shipment<>Item Relation'),
+    title_search = T('Search Shipment<>Item Relation'),
+    subtitle_create = T('Link Item & Shipment'),
+    subtitle_list = T('Shipment<>Item Relations'),
+    label_list_button = T('Shipment<>Item Relations'),
+    label_create_button = T('Link an Item & Shipment'),
+    msg_record_created = T('Shipment<>Item Relation added'),
+    msg_record_modified = T('Shipment<>Item Relation updated'),
+    msg_record_deleted = T('Shipment<>Item Relation deleted'),
+    msg_list_empty = T('No Shipment<>Item Relation currently registered'))
 
 # Shipment<>Item - A shipment can have many items under it.
 # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
@@ -552,20 +573,22 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
 db[table].shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
 db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
-title_create = T('Link Item & Shipment')
-title_display = T('Shipment<>Item Relations Details')
-title_list = T('List Shipment<>Item Relation')
-title_update = T('Edit Shipment<>Item Relation')
-title_search = T('Search Shipment<>Item Relation')
-subtitle_create = T('Link Item & Shipment')
-subtitle_list = T('Shipment/Way Bills')
-label_list_button = T('Shipment<>Item Relations')
-label_create_button = T('Link an Item & Shipment')
-msg_record_created = T('Shipment<>Item Relation added')
-msg_record_modified = T('Shipment<>Item Relation updated')
-msg_record_deleted = T('Shipment<>Item Relation deleted')
-msg_list_empty = T('No Shipment<>Item Relation currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_SHIPMENT_TRANSIT_LOG = T('Add Shipment Transit Log')
+LIST_SHIPMENT_TRANSIT_LOGS = T('List Shipment Transit Logs')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_SHIPMENT_TRANSIT_LOG,
+    title_display = T('Shipment Transit Log Details'),
+    title_list = LIST_SHIPMENT_TRANSIT_LOGS,
+    title_update = T('Edit Shipment Transit Log'),
+    title_search = T('Search Shipment Transit Logs'),
+    subtitle_create = ADD_SHIPMENT_TRANSIT_LOG,
+    subtitle_list = T('Shipment Transit Logs'),
+    label_list_button = LIST_SHIPMENT_TRANSIT_LOGS,
+    label_create_button = ADD_SHIPMENT_TRANSIT_LOG,
+    msg_record_created = T('Shipment Transit Log added'),
+    msg_record_modified = T('Shipment Transit Log updated'),
+    msg_record_deleted = T('Shipment Transit Log deleted'),
+    msg_list_empty = T('No Shipment Transit Logs currently registered'))
 
 # Kits
 resource = 'kit'
@@ -588,20 +611,22 @@ db[table].total_monthly_cost.label = T('Total Monthly Cost')
 db[table].total_minute_cost.label = T('Total Cost per Minute')
 db[table].total_megabyte_cost.label = T('Total Cost per Megabyte')
 db[table].comments.label = T('Comments')
-title_create = T('Add Kit')
-title_display = T('Kit Details')
-title_list = T('List Kits')
-title_update = T('Edit Kit')
-title_search = T('Search Kits')
-subtitle_create = T('Add New Kit')
-subtitle_list = T('Kits')
-label_list_button = T('List Kits')
-label_create_button = T('Add Kit')
-msg_record_created = T('Kit added')
-msg_record_modified = T('Kit updated')
-msg_record_deleted = T('Kit deleted')
-msg_list_empty = T('No Kits currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_KIT = T('Add Kit')
+LIST_KITS = T('List Kits')
+s3.crud_strings[table] = Storage(
+    title_create = ADD_KIT,
+    title_display = T('Kit Details'),
+    title_list = LIST_KITS,
+    title_update = T('Edit Kit'),
+    title_search = T('Search Kits'),
+    subtitle_create = T('Add New Kit'),
+    subtitle_list = T('Kits'),
+    label_list_button = LIST_KITS,
+    label_create_button = ADD_KIT,
+    msg_record_created = T('Kit added'),
+    msg_record_modified = T('Kit updated'),
+    msg_record_deleted = T('Kit deleted'),
+    msg_list_empty = T('No Kits currently registered'))
 
 # Kit<>Item Many2Many
 resource = 'kit_item'

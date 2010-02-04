@@ -39,4 +39,4 @@ exec('from applications.%s.modules.validators import *' % request.application)
 
 # GIS Module
 s3gis = local_import('s3gis')
-gis = s3gis.GIS(db)
+gis = s3gis.GIS(globals(), db)

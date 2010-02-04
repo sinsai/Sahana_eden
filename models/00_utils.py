@@ -36,7 +36,7 @@ def shn_sessions():
         session.s3.theme = Storage()
     admin_theme = db().select(db.admin_theme.footer).first()
     session.s3.theme.footer = admin_theme and admin_theme.footer or 'footer.html'
-    # We Audit if either the Global or Module asks us to 
+    # We Audit if either the Global or Module asks us to
     # (ignore gracefully if module author hasn't implemented this)
     session.s3.audit_read = (settings and settings.audit_read) \
         or (controller_settings and controller_settings.audit_read)
@@ -98,7 +98,7 @@ shn_list_of_nations = {
     39:T('Congo, Democratic Republic of the (Congo-Kinshasa)'),
     40:T('Congo, Republic of the (Congo-Brazzaville)'),
     41:T('Costa Rica'),
-    42:T('Côte d\'Ivoire'),
+    42:T('Cï¿½te d\'Ivoire'),
     43:T('Croatia'),
     44:T('Cuba'),
     45:T('Cyprus'),
@@ -206,7 +206,7 @@ shn_list_of_nations = {
     147:T('Saint Vincent and the Grenadines'),
     148:T('Samoa'),
     149:T('San Marino'),
-    150:T('São Tomé and Príncipe'),
+    150:T('Sï¿½o Tomï¿½ and Prï¿½ncipe'),
     151:T('Saudi Arabia'),
     152:T('Senegal'),
     153:T('Serbia'),
@@ -260,7 +260,7 @@ shn_list_of_nations = {
     201:T('Transnistria'),
     999:T('unknown')
     }
-    
+
 # User Time Zone Operations:
 # TODO: don't know if that fits here, should perhaps be moved into sahana.py
 
@@ -281,6 +281,7 @@ def shn_user_utc_offset():
             offset = None
         return offset
 
+
 def shn_as_local_time(value):
     """
         represents a given UTC datetime.datetime object as string:
@@ -300,11 +301,38 @@ def shn_as_local_time(value):
         dt = value
         return dt.strftime(str(format))+' +0000'
 
+
 def Tstr(text):
     """Convenience function for non web2py modules"""
     return str(T(text))
+
 
 def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else 'None'
 
+
+def shn_last_update(table, record_id):
+
+    if table and record_id:
+        record = table[record_id]
+        if record:
+            mod_on_str  = T(" on ")
+            mod_by_str  = T(" by ")
+
+            modified_on = ""
+            if "modified_on" in table.fields:
+                modified_on = "%s%s" % (mod_on_str, shn_as_local_time(record.modified_on))
+
+            modified_by = ""
+            if "modified_by" in table.fields:
+                user = auth.settings.table_user[record.modified_by]
+                if user:
+                    person = db(db.pr_person.uuid==user.person_uuid).select().first()
+                    if person:
+                        modified_by = "%s%s" % (mod_by_str, vita.fullname(person))
+
+            if len(modified_on) or len(modified_by):
+                last_update = "%s%s%s" % (T("Record last updated"), modified_on, modified_by)
+                return last_update
+    return None

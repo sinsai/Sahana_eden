@@ -38,22 +38,22 @@
       {{=DIV(T('Use these links to download data that is currently in the database.'))}}
       {{=UL(
         LI(A('CSV',
-          _href=URL(r=request, c='hms', f='hospital', vars={'format':'csv'})),
+          _href=URL(r=request, c='hms', f='hospital.csv')),
           _style='padding:3px; margin-left: 18px;'),
        LI(A('JSON',
-          _href=URL(r=request, c='hms', f='hospital', vars={'format':'json'})),
+          _href=URL(r=request, c='hms', f='hospital.json')),
           _style='padding:3px; margin-left: 18px;'),
         LI(A('KML',
-          _href=URL(r=request, c='hms', f='hospital', vars={'format':'kml'})),
+          _href=URL(r=request, c='hms', f='hospital.kml')),
           _style='padding:3px; margin-left: 18px;'),
         LI(A('RSS',
-          _href=URL(r=request, c='hms', f='hospital', vars={'format':'rss'})),
+          _href=URL(r=request, c='hms', f='hospital.rss')),
           _style='padding:3px; margin-left: 18px;'),
         LI(A('XML',
-          _href=URL(r=request, c='hms', f='hospital', vars={'format':'xml'})),
+          _href=URL(r=request, c='hms', f='hospital.xml')),
           _style='padding:3px; margin-left: 18px;'),
         LI(A('EDXL-HAVE',
-          _href=URL(r=request, c='hms', f='hospital', vars={'format':'have'})),
+          _href=URL(r=request, c='hms', f='hospital.have')),
           _style='padding:3px; margin-left: 18px;'))
       }}
 

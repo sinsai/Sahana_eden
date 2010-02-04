@@ -101,6 +101,11 @@ if empty:
             audit_write = False
         )
 
+    table = 'budget_parameter'
+    if not db(db[table].id).count():
+        db[table].insert(
+        )
+
     # Shelter Registry
     table = 'cr_setting'
     if not db(db[table].id).count():

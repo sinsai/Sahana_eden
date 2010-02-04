@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'or'
 # Current Module (for sidebar title)
@@ -18,13 +18,13 @@ response.menu_options = [
     ]],
     [T('Contacts'), False, URL(r=request, f='contact'),[
         [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
-        #[T('List Offices'), False, URL(r=request, f='office')],
-        #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
+        #[T('List Contacts'), False, URL(r=request, f='contact')],
+        #[T('Search Contacts'), False, URL(r=request, f='contact', args='search')]
     ]],	
     [T('Projects'), False, URL(r=request, f='project'),[
         [T('Add Project'), False, URL(r=request, f='project', args='create')],
-        #[T('List Offices'), False, URL(r=request, f='office')],
-        #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
+        #[T('List Projects'), False, URL(r=request, f='project')],
+        #[T('Search Projects'), False, URL(r=request, f='project', args='search')]
     ]]	
 ]
 
@@ -46,7 +46,7 @@ def sector():
 def organisation():
     "RESTlike CRUD controller"
     # ServerSidePagination not ready yet
-    #response.s3.pagination = True
+    response.s3.pagination = True
     return shn_rest_controller(module, 'organisation', listadd=False, onaccept=lambda form: organisation_onaccept(form))
 
 def organisation_onaccept(form):
@@ -64,7 +64,13 @@ def office():
         # Hide the Admin row for simple security_policy
         db[table].admin.readable = db[table].admin.writable = False
     # ServerSidePagination not ready yet
-    #response.s3.pagination = True
+    response.s3.pagination = True
+
+    # the update forms are not ready. when they will - uncomment this and comment the next one
+    #if request.args(0) in ('create','update'):
+    if request.args(0) == 'create':
+        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_organisation.id'))
+
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
 @service.jsonrpc
@@ -76,14 +82,17 @@ def contact():
     table = '%s_%s' % (module, resource)
     
     # ServerSidePagination not ready yet
-    #response.s3.pagination = True
+    response.s3.pagination = True
     
     # No point in downloading large dropdowns which we hide, so provide a smaller represent
+
+    # the update forms are not ready. when they will - uncomment this and comment the next one
+    #if request.args(0) in ('create','update'):
     if request.args(0) == 'create':
         # person_id mandatory for a contact!
-        db[table].person_id.requires = IS_ONE_OF(db, 'pr_person.id', 'a')
-        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', 'a'))
-        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', 'a'))
+        db[table].person_id.requires = IS_ONE_OF_EMPTY(db, 'pr_person.id')
+        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_organisation.id'))
+        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_office.id'))
     
     return shn_rest_controller(module, resource, listadd=False)
 	
@@ -157,7 +166,7 @@ def dashboard():
     
     # Get Organization to display from Var or Arg or Default
     if len(request.args) > 0:
-        org_id = request.args[0]
+        org_id = int(request.args[0])
         try:
             org_name = db(db.or_organisation.id == org_id).select(db.or_organisation.name)[0]["name"]
         except:
@@ -174,14 +183,25 @@ def dashboard():
         org_id = 1
         try:
             org_name = db(db.or_organisation.id == org_id).select(db.or_organisation.name)[0].name
+            org_id = 0
         except:
             session.warning = T('No Organisations registered!')
             redirect(URL(r=request, c='or', f='index'))
 
-    org_list = []	
-    for row in db(db.or_organisation.id > 0).select(orderby = db.or_organisation.name):	
-        org_list.append(row.name)
-    organisation_select = SELECT(org_list, id = 'organisation_select', value = org_name, _id = 'organisation_select')
+    o_opts = []
+    first_option = True;
+    # if we keep the dropdown - it will better be in alphabetic order
+    # that way the user will find things easier
+    for organisation in db(db.or_organisation.deleted==False).select(db.or_organisation.ALL,orderby = db.or_organisation.name):
+        if (org_id == 0 and first_option) or organisation.id == org_id:
+            first_option = False
+            if org_id == 0:
+                org_id = organisation.id
+            o_opts += [OPTION(organisation.name, _value=organisation.id, _selected='')]
+        else:
+            o_opts += [OPTION(organisation.name, _value=organisation.id)]
+
+    organisation_select = SELECT(_name="org", *o_opts, **dict(name="org", requires=IS_NULL_OR(IS_IN_DB(db,'or_organisation.id')), _id = 'organisation_select'))
     
     org_details = crud.read("or_organisation", org_id)
 

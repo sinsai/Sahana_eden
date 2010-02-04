@@ -7,7 +7,7 @@
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
-    @copyright: (c) 2009 Dominic König (nursix.org)
+    @copyright: 2010 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -69,7 +69,19 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 #
 def json_message(success=True, status_code="200", message=None, tree=None):
 
-    """ Provide a nicely-formatted JSON Message. """
+    """
+        Provide a nicely-formatted JSON Message.
+
+        @param success: whether the request was successful
+        @type success: boolean
+        @param status_code: the HTTP status code
+        @type status_code: string
+        @param message: the message to send
+        @type message: string
+        @param tree: the element tree of the request in JSON containing error annotations
+        @type tree: string
+
+    """
 
     if success:
         status="success"
@@ -94,6 +106,19 @@ def json_message(success=True, status_code="200", message=None, tree=None):
 # *****************************************************************************
 class ObjectComponent(object):
 
+    """
+        Class to represent component relations between resources.
+
+        @param db: the database abstraction layer
+        @type db: DAL
+        @param prefix: the module prefix of the component resource
+        @type prefix: string
+        @param name: the name of the component resource (without prefix)
+        @type name: string
+        @param attr: dictionary of attributes of the component relation
+        @type attr: **dict
+
+    """
 
     #--------------------------------------------------------------------------
     def __init__(self, db, prefix, name, **attr):
@@ -160,7 +185,14 @@ class ObjectComponent(object):
 # *****************************************************************************
 class ObjectModel(object):
 
-    """ Class to handle the joined resources model """
+
+    """
+        Class to handle the joined resources model
+
+        @param db: the database abstraction layer
+        @type db: DAL
+
+    """
 
     #--------------------------------------------------------------------------
     def __init__(self, db):
@@ -330,7 +362,23 @@ class ObjectModel(object):
 # *****************************************************************************
 class ResourceController(object):
 
-    """ Controller class for joined resources """
+    """
+        Controller class for joined resources
+
+        @param db: the database abstraction layer
+        @param domain:
+            the domain name of the instance, used to identify the origin of data
+        @param base_url: the base URL of the instance
+        @param rpp: default number of rows per page in server-side pagination
+        @param gis: the geospatial information handler
+
+        @type db: DAL
+        @type domain: string
+        @type base_url: string
+        @type rpp: int
+        @type gis: GIS
+
+    """
 
     RCVARS = "rcvars"
 
@@ -366,7 +414,18 @@ class ResourceController(object):
     #--------------------------------------------------------------------------
     def get_session(self, session, prefix, name):
 
-        """ Reads the last record ID for a resource from a session """
+        """
+            Reads the last record ID for a resource from a session
+
+            @param session: the session
+            @param prefix: module prefix of the resource name
+            @param name: the resource name
+
+            @type session: Storage
+            @type prefix: string
+            @type name: string
+
+        """
 
         tablename = "%s_%s" % (prefix, name)
 
@@ -377,7 +436,19 @@ class ResourceController(object):
     #--------------------------------------------------------------------------
     def store_session(self, session, prefix, name, id):
 
-        """ Stores a record ID for a resource in a session """
+        """
+            Stores a record ID for a resource in a session
+
+            @param session: the session
+            @param prefix: module prefix of the resource name
+            @param name: the resource name
+            @param id: the record ID to store
+
+            @type session: Storage
+            @type prefix: string
+            @type name: string
+
+        """
 
         if self.RCVARS not in session:
             session[self.RCVARS] = Storage()
@@ -408,10 +479,70 @@ class ResourceController(object):
     #--------------------------------------------------------------------------
     def request(self, prefix, name, request, session=None):
 
-        """ Wrapper function to generate an XRequest """
+        """
+            Wrapper function to generate an XRequest
+
+            @param prefix: the module prefix of the requested resource
+            @param name: the name of the requested resource
+            @param request: the original request
+            @param session: the session storage
+
+            @type prefix: string
+            @type name: string
+            @type request: Storage
+            @type session: Storage
+
+        """
 
         self.error = None
         return XRequest(self, prefix, name, request, session=session)
+
+
+    #--------------------------------------------------------------------------
+    def search_simple(self, table, fields=None, label=None, filterby=None):
+
+        search_fields = []
+        if fields and isinstance(fields, (list,tuple)):
+            for f in fields:
+                if table.has_key(f):
+                    search_fields.append(f)
+
+        if not len(search_fields):
+            return None
+
+        if label is not None and isinstance(label,str):
+            labels = label.split()
+            results = []
+            query = None
+            for l in labels:
+
+                # add wildcards
+                wc = "%"
+                _l = "%s%s%s" % (wc, l, wc)
+                for f in search_fields:
+                    if query:
+                        query = (table[f].like(_l)) | query
+                    else:
+                        query = (table[f].like(_l))
+
+                # undeleted records only
+                query = (table.deleted==False) & (query)
+
+                # restrict to prior results (AND)
+                if len(results):
+                    query = (table.id.belongs(results)) & query
+                if filterby:
+                    query = (filterby) & (query)
+                records = self.db(query).select(table.id)
+                # rebuild result list
+                results = [r.id for r in records]
+                # any results left?
+                if not len(results):
+                    return None
+            return results
+        else:
+            # no label given or wrong parameter type
+            return None
 
 
     #--------------------------------------------------------------------------
@@ -1391,6 +1522,21 @@ class XRequest(object):
 # *****************************************************************************
 class S3XML(object):
 
+    """
+        XML interface for S3XRC
+
+        @param db: the database abstraction layer
+        @type db: DAL
+        @param domain:
+            the domain name of the application instance, used to identify the origin of data
+        @type domain: string
+        @param base_url: the base URL of the instance
+        @type base_url: string
+        @param gis: the geospatial information handler of the application
+        @type gis: GIS
+
+    """
+
     S3XRC_NAMESPACE = "http://www.sahanapy.org/wiki/S3XRC" #: The S3XRC namespace URI
     S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
     NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
@@ -1648,7 +1794,10 @@ class S3XML(object):
 
         """ Builds a tree from a list of elements """
 
-        root = etree.Element(self.TAG["root"], nsmap=self.NSMAP)
+        # For now we do not nsmap, because the default namespace cannot be
+        # matched in XSLT templates (need explicit prefix) and thus this
+        # would require a rework of all existing templates (which is however useful)
+        root = etree.Element(self.TAG["root"]) #, nsmap=self.NSMAP)
 
         root.set(self.ATTRIBUTE["success"], str(False))
 
@@ -1671,12 +1820,12 @@ class S3XML(object):
 
         if url is not None:
             root.set(self.ATTRIBUTE["url"], self.base_url)
-        
+
         root.set(self.ATTRIBUTE["latmin"], str(self.gis.get_bounds()['min_lat']))
         root.set(self.ATTRIBUTE["latmax"], str(self.gis.get_bounds()['max_lat']))
         root.set(self.ATTRIBUTE["lonmin"], str(self.gis.get_bounds()['min_lon']))
         root.set(self.ATTRIBUTE["lonmax"], str(self.gis.get_bounds()['max_lon']))
-        
+
         return etree.ElementTree(root)
 
 

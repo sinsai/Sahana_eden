@@ -21,7 +21,7 @@ var geom, popupContentHTML, iconURL;
 var featuresLayers = new Array();
 
 {{for feature_group in feature_groups:}}
-{{fgname = feature_group.name.replace(' ', '_')}}
+{{fgname = feature_group.name.replace(' ', '_').replace(':', '_')}}
 var featuresLayer{{=fgname}} = new OpenLayers.Layer.Vector("{{=fgname}}", {displayInLayerSwitcher: true});
 map.addLayer(featuresLayer{{=fgname}});
 featuresLayers.push(featuresLayer{{=fgname}});

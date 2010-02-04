@@ -17,14 +17,14 @@ license    http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public Lic
 
 """
 
+import sys
 import csv
 from shapely.wkt import loads as wkt_loads
 
 # CONSTANTS
 ADMIN_FEATURE_CLASS_NAME = "Administrative Area"
 
-#BASEDIR = '/path/to/data'   # CHANGE ME!
-BASEDIR = '/Users/tim/Documents/work/haiti/data'
+BASEDIR = os.path.join(request.folder, 'private')
 FILES = {
     'Departments': 'Haiti_departementes_edited_01132010.csv',
     'Communes': 'Haiti_communes_edited_01132010.csv',

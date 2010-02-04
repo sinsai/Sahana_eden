@@ -236,6 +236,7 @@ div.confirmation { color:#070; font-weight: bold; text-align: center; border: #0
 
 /* GIS module */
 .btn-panel { padding: 2px; }
+.toolbar-link { padding: 2px 2px 2px 2px; font-size:106%; background-color: #e6ddd5; text-decoration: none; color: #000000 }
 
 /* Joined Resources */
 div#pheader table { width: 100%; }

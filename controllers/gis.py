@@ -290,7 +290,7 @@ def location():
     if filters:
         response.s3.filter = reduce(__and__, filters)
     
-    return shn_rest_controller(module, resource, onvalidation=lambda form: gis.wkt_centroid(form))
+    return shn_rest_controller(module, resource, onvalidation=lambda form: gis.wkt_centroid(form), onaccept=gis.update_location_tree())
 
 def marker():
     "RESTlike CRUD controller"

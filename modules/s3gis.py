@@ -144,25 +144,30 @@ class GIS(object):
         
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
+    def update_location_tree(self):
+        """
+            Update the Modified Preorder Tree for GIS Locations
+            http://www.sitepoint.com/print/hierarchical-data-database/
+        """
+
+        db = self.db
+        
+        # tbc
+        
+        return
+
     def get_children(self, parent_id):
         "Return a list of all GIS Features which are children of the requested parent"
         
         db = self.db
         
-        # Check that parent is a valid location
-        #parent = db(db.gis_location.id == parent_id).select().first()
-        #if not parent:
-        #    session.error = self.messages.unknown_parent
-        #    redirect(URL(r=request))
-        
-        # Consider switching to modified preorder tree traversal:
+        # Switch to modified preorder tree traversal:
         # http://articles.sitepoint.com/print/hierarchical-data-database
+        # or Materialized Path (since Reads or more frequent than Writes):
+        # http://docs.tabo.pe/django-treebeard/tip/
         children = db(db.gis_location.parent == parent_id).select()
         for child in children:
-            _children = self.get_children(child.id)
-            if _children:
-                # tbc
-                pass
+            children = children & self.get_children(child.id)
 
         return children
     

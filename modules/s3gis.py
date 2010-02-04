@@ -3,7 +3,7 @@
 """
     SahanaPy GIS Module
 
-    @version: 0.0.1
+    @version: 0.0.2
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: flavour
@@ -39,7 +39,7 @@ __all__ = ['GIS']
 
 import sys, uuid
 
-from gluon.storage import Messages
+from gluon.storage import Storage, Messages
 
 SHAPELY = False
 try:
@@ -47,6 +47,8 @@ try:
     SHAPELY = True
 except ImportError:
     print >> sys.stderr, "WARNING: %s: Shapely GIS library not installed" % __name__
+
+HAS_BBOX = False   # Are bounding boxes populated in the database?
 
 # Map WKT types to db types (multi-geometry types are mapped to single types)
 GEOM_TYPES = {
@@ -61,7 +63,8 @@ GEOM_TYPES = {
 class GIS(object):
     """ GIS functions """
 
-    def __init__(self, db):
+    def __init__(self, environment, db):
+        self.environment = Storage(environment)
         assert db is not None, "Database must not be None."
         self.db = db
         self.messages = Messages(None)
@@ -72,7 +75,9 @@ class GIS(object):
         self.messages.invalid_wkt_polygon = "Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!"
         self.messages.lon_empty = "Invalid: Longitude can't be empty!"
         self.messages.lat_empty = "Invalid: Latitude can't be empty!"
-        
+        self.messages.unknown_parent = "Invalid: %(parent_id)s is not a known Location"
+        self.messages['T'] = self.environment.T
+        self.messages.lock_keys = True
         
     def read_config(self):
         """ Reads the current GIS Config from the DB """
@@ -114,7 +119,9 @@ class GIS(object):
             except:
                 if not marker:
                     # 3rd choice for a Marker is the Feature Class's
-                    marker = db(db.gis_feature_class.id == feature_class).select().first().marker_id
+                    marker = db(db.gis_feature_class.id == feature_class).select().first()
+                    if marker:
+                        marker = marker.marker_id
                 if not marker:
                     # 4th choice for a Marker is the default
                     marker = config.marker_id
@@ -126,7 +133,7 @@ class GIS(object):
     def get_bounds(self):
         """
         Calculate the bounds of a set of features
-        e.g. to use in KML export for correct zooming
+        e.g. to use in GPX export for correct zooming
         """
         # Quick fix is to read from config
         config = self.read_config()
@@ -137,12 +144,57 @@ class GIS(object):
         
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
-    def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
-        return db((db.gis_location.lat_min < lat_max) & 
-            (db.gis_location.lat_max > lat_min) &
-            (db.gis_location.lon_min < lon_max) &
-            (db.gis_location.lon_max > lon_min))
+    def update_location_tree(self):
+        """
+            Update the Tree for GIS Locations:
+            http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
 
+        db = self.db
+        
+        # tbc
+        
+        return
+
+    def get_children(self, parent_id):
+        "Return a list of all GIS Features which are children of the requested parent"
+        
+        db = self.db
+        
+        # Switch to modified preorder tree traversal:
+        # http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
+        children = db(db.gis_location.parent == parent_id).select()
+        for child in children:
+            children = children & self.get_children(child.id)
+
+        return children
+    
+    def _true_bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
+        db = self.db
+        return db((db.gis_location.lat_min <= lat_max) & 
+            (db.gis_location.lat_max >= lat_min) &
+            (db.gis_location.lon_min <= lon_max) & 
+            (db.gis_location.lon_max >= lon_min))
+
+    def _bbox_intersects_centroid(self, lon_min, lat_min, lon_max, lat_max):
+        """
+            Tests if a location's lat,lon are within the bounding box.
+            This gives an accurate result for point locations.  
+            Since lat,lon represents the centroid of a polygon or line location, it may
+            give inaccurate results for those locations.
+            Use _true_bbox_intersects if location bboxes is available.
+        """
+        db = self.db
+        return db((db.gis_location.lat <= lat_max) & 
+            (db.gis_location.lat >= lat_min) &
+            (db.gis_location.lon <= lon_max) & 
+            (db.gis_location.lon >= lon_min))
+
+    if HAS_BBOX:
+        bbox_intersects = _true_bbox_intersects
+    else:
+        bbox_intersects = _bbox_intersects_centroid
+    
     def _intersects(self, shape):
         "Returns a generator of locations whose shape intersects the given shape"
         for loc in self.bbox_intersects(*shape.bounds).select():
@@ -243,6 +295,8 @@ class GIS(object):
                 form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
             except:
                 form.errors.gis_feature_type = self.messages.centroid_error
+
         else:
             form.errors.gis_feature_type = self.messages.unknown_type
+        
         return

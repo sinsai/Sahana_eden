@@ -3070,7 +3070,7 @@
 			var sName = (oSettings.sTableId === "") ? "" : 'name="'+oSettings.sTableId+'_length"';
 			var sStdMenu = 
 				'<select size="1" '+sName+'>'+
-					'<option value="20">20</option>'+
+					'<option value="10">10</option>'+
 					'<option value="50">50</option>'+
 					'<option value="100">100</option>'+
                     '<option value="500">500</option>'+

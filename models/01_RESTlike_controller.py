@@ -1550,6 +1550,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
                            onvalidation=onvalidation,
                            onaccept=_onaccept)
 
+
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
         if response.s3.cancel:
             form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))

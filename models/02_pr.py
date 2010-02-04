@@ -511,62 +511,6 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
     return True
 
 #
-# shn_pr_get_person_id --------------------------------------------------------
-#
-def shn_pr_get_person_id(label, fields=None, filterby=None):
-    """
-        Finds a person by any name and/or tag label
-    """
-
-    if fields and isinstance(fields, (list,tuple)):
-        search_fields = []
-        for f in fields:
-            if db.pr_person.has_key(f):     # TODO: check for field type?
-                search_fields.append(f)
-        if not len(search_fields):
-            # Error: none of the specified search fields exists
-            return None
-    else:
-        # No search fields specified at all => fallback
-        search_fields = ['pr_pe_label', 'first_name', 'middle_name', 'last_name']
-
-    if label and isinstance(label,str):
-        labels = label.split()
-        results = []
-        query = None
-        # TODO: make a more sophisticated search function (levenshtein?)
-        for l in labels:
-
-            # append wildcards
-            wc = "%"
-            _l = "%s%s%s" % (wc, l, wc)
-
-            # build query
-            for f in search_fields:
-                if query:
-                    query = (db.pr_person[f].like(_l)) | query
-                else:
-                    query = (db.pr_person[f].like(_l))
-
-            # undeleted records only
-            query = (db.pr_person.deleted==False) & (query)
-            # restrict to prior results (AND)
-            if len(results):
-                query = (db.pr_person.id.belongs(results)) & query
-            if filterby:
-                query = (filterby) & (query)
-            records = db(query).select(db.pr_person.id)
-            # rebuild result list
-            results = [r.id for r in records]
-            # any results left?
-            if not len(results):
-                return None
-        return results
-    else:
-        # no label given or wrong parameter type
-        return None
-
-#
 # shn_pr_person_search_simple -------------------------------------------------
 #
 def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
@@ -609,7 +553,9 @@ def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
             if form.vars.label == "":
                 form.vars.label = "%"
 
-            results = shn_pr_get_person_id(form.vars.label)
+            results = s3xrc.search_simple(db.pr_person,
+                fields=['pr_pe_label', 'first_name', 'middle_name', 'last_name'],
+                label=form.vars.label)
 
             if results and len(results):
                 rows = db(db.pr_person.id.belongs(results)).select()

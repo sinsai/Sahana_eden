@@ -281,7 +281,7 @@ def location():
         #                      (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
         #                      (db.gis_feature_group.name.like(fgroup)))
 
-    #response.s3.pagination = True
+    response.s3.pagination = True
 
     if "parent" in request.vars:
         parent = request.vars["parent"]

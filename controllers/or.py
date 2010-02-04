@@ -18,13 +18,13 @@ response.menu_options = [
     ]],
     [T('Contacts'), False, URL(r=request, f='contact'),[
         [T('Add Contact'), False, URL(r=request, f='contact', args='create')],
-        #[T('List Offices'), False, URL(r=request, f='office')],
-        #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
+        #[T('List Contacts'), False, URL(r=request, f='contact')],
+        #[T('Search Contacts'), False, URL(r=request, f='contact', args='search')]
     ]],	
     [T('Projects'), False, URL(r=request, f='project'),[
         [T('Add Project'), False, URL(r=request, f='project', args='create')],
-        #[T('List Offices'), False, URL(r=request, f='office')],
-        #[T('Search Offices'), False, URL(r=request, f='office', args='search')]
+        #[T('List Projects'), False, URL(r=request, f='project')],
+        #[T('Search Projects'), False, URL(r=request, f='project', args='search')]
     ]]	
 ]
 
@@ -46,7 +46,7 @@ def sector():
 def organisation():
     "RESTlike CRUD controller"
     # ServerSidePagination not ready yet
-    #response.s3.pagination = True
+    response.s3.pagination = True
     return shn_rest_controller(module, 'organisation', listadd=False, onaccept=lambda form: organisation_onaccept(form))
 
 def organisation_onaccept(form):
@@ -64,7 +64,7 @@ def office():
         # Hide the Admin row for simple security_policy
         db[table].admin.readable = db[table].admin.writable = False
     # ServerSidePagination not ready yet
-    #response.s3.pagination = True
+    response.s3.pagination = True
 
     # the update forms are not ready. when they will - uncomment this and comment the next one
     #if request.args(0) in ('create','update'):
@@ -82,7 +82,7 @@ def contact():
     table = '%s_%s' % (module, resource)
     
     # ServerSidePagination not ready yet
-    #response.s3.pagination = True
+    response.s3.pagination = True
     
     # No point in downloading large dropdowns which we hide, so provide a smaller represent
 

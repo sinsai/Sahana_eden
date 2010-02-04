@@ -15,8 +15,10 @@ $(document).ready(function() {
     {{pass}}
     {{if response.s3.pagination:}}
         {
-            //"bFilter": false,
-            //"bSort": false,
+            // Disable Dynamic Search (until support for this added)
+            "bFilter": false,
+            // Disable Dynamic Sorting (until support for this added)
+            "bSort": false,
             "sPaginationType": "full_numbers",
             "iDisplayLength": 25,
             "bProcessing": true,

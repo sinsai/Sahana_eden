@@ -146,8 +146,8 @@ class GIS(object):
 
     def update_location_tree(self):
         """
-            Update the Modified Preorder Tree for GIS Locations
-            http://www.sitepoint.com/print/hierarchical-data-database/
+            Update the Tree for GIS Locations:
+            http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
         db = self.db
@@ -162,9 +162,7 @@ class GIS(object):
         db = self.db
         
         # Switch to modified preorder tree traversal:
-        # http://articles.sitepoint.com/print/hierarchical-data-database
-        # or Materialized Path (since Reads or more frequent than Writes):
-        # http://docs.tabo.pe/django-treebeard/tip/
+        # http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
         children = db(db.gis_location.parent == parent_id).select()
         for child in children:
             children = children & self.get_children(child.id)

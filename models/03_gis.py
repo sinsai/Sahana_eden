@@ -138,8 +138,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 feature_class_id,
                 #Field('resource_id', 'integer'), # ID in associated resource table. FIXME: Remove as link should be reversed?
                 Field('parent', 'reference gis_location', ondelete = 'RESTRICT'),   # This form of hierarchy may not work on all Databases
-                Field('lft', 'integer', readable=False, writable=False), # Left http://www.sitepoint.com/print/hierarchical-data-database/
-                Field('rght', 'integer', readable=False, writable=False),# Right
+                Field('lft', 'integer', readable=False, writable=False), # Left will be for MPTT: http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
+                Field('rght', 'integer', readable=False, writable=False),# Right currently unused
                 marker_id,
                 Field('gis_feature_type', 'integer', default=1, notnull=True),
                 Field('lat', 'double'), # Points or Centroid for Polygons

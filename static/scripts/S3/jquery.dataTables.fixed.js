@@ -561,7 +561,17 @@
 		/*
 		 * text sorting
 		 */
-		"string-asc": function ( a, b )
+		"undefined-asc": function ( a, b )
+        {
+                return 0;
+        },
+        
+        "undefined-desc": function ( a, b )
+        {
+                return 0;
+        },
+        
+        "string-asc": function ( a, b )
 		{
 			var x = a.toLowerCase();
 			var y = b.toLowerCase();

@@ -74,7 +74,10 @@ def shn_field_represent(field, row, col):
     try:
         represent = str(field.represent(row[col]))
     except:
-        represent = row[col]
+        if row[col] is None:
+            represent = "None"
+        else:
+            represent = row[col]
     return represent
 
 # *****************************************************************************
@@ -1251,15 +1254,31 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         authorised = shn_has_permission('update', table)
         if jr.component:
             if authorised:
-                linkto = shn_list_jlinkto_update
+                if jr.component.attr.linkto_update:
+                    linkto = jr.component.attr.linkto_update
+                else:
+                    linkto = shn_list_jlinkto_update
             else:
-                linkto = shn_list_jlinkto
+                if jr.component.attr.linkto:
+                    linkto = jr.component.attr.linkto
+                else:
+                    linkto = shn_list_jlinkto
         else:
             if authorised:
-                linkto = shn_list_linkto_update
+                if response.s3.linkto_update:
+                    linkto = response.s3.linkto_update
+                else:
+                    linkto = shn_list_linkto_update
             else:
-                linkto = shn_list_linkto
+                if response.s3.linkto:
+                    linkto = response.s3.linkto
+                else:
+                    linkto = shn_list_linkto
 
+        if response.s3.pagination and not limitby:
+            # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
+            limitby = (0, 1)
+        
         items = crud.select(table, query=query,
             fields=fields,
             orderby=orderby,

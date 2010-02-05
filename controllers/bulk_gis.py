@@ -169,6 +169,31 @@ def create_haiti_admin_areas():
     db.commit()
 
 
+def assign_parents():
+    admin_area_class_id = db(db.gis_feature_class.name==ADMIN_FEATURE_CLASS_NAME).select().first().id
+    unassigned = db((db.gis_location.parent==None) & 
+                    (db.gis_location.feature_class_id != admin_area_class_id)
+                 ).select()
+    for location in unassigned:
+        shape = wkt_loads(location.wkt)
+        candidates = gis.intersects(shape)
+        if candidates:
+            parent = None
+            for candidate in candidates:
+                # only set admin areas as parents
+                if candidate.feature_class_id == admin_area_class_id:
+                    # prefer parents whose names sort later -- ensures L3 is preferred over L2, L1
+                    # ...this is a bit hacky -- depends on names being prefixed with L1,L2,L3                    
+                    if not parent or parent.name < candidate.name:
+                        parent = candidate
+        if parent:
+            print "setting %d parent to %d" % (location.id, parent.id)
+            db.gis_location[location.id] = {'parent': parent.id}
+        else:
+            print "Unable to find a parent for location id %d" % location.id
+
+    db.commit()
+
 def wipe_admin_areas():
     """Delete all objects created by this script.  Not for use in production.
     Note: admin feature class is left
@@ -178,5 +203,4 @@ def wipe_admin_areas():
     for i in range(4):
         db(db.gis_feature_group.name.like("L%d:%%"%i)).delete()
     db.commit()
-    
     

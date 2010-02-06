@@ -647,16 +647,18 @@
 		 */
 		"numeric-asc": function ( a, b )
 		{
-			var x = a == "-" ? 0 : a;
-			var y = b == "-" ? 0 : b;
-			return x - y;
+			//var x = a == "-" ? 0 : a;
+			//var y = b == "-" ? 0 : b;
+			//return x - y;
+            return a - b;
 		},
 		
 		"numeric-desc": function ( a, b )
 		{
-			var x = a == "-" ? 0 : a;
-			var y = b == "-" ? 0 : b;
-			return y - x;
+			//var x = a == "-" ? 0 : a;
+			//var y = b == "-" ? 0 : b;
+			//return y - x;
+            return b - a;
 		}
 	};
 	

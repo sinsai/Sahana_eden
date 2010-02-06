@@ -938,16 +938,34 @@ def shn_custom_view(jr, default_name, format=None):
         else:
             response.view = default_name
 #
-# shn_convert_sortby ----------------------------------------------------------
+# shn_convert_orderby ----------------------------------------------------------
 #
-def shn_convert_orderby(jr, table):
-    cols = [f for f in table.fields if table[f].readable]
+def shn_get_columns(table):
+    return [f for f in table.fields if table[f].readable]
+ 
+def shn_convert_orderby(table,request):
+    cols =  shn_get_columns(table)
     try:
         return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['iSortDir_' + str(i)] 
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
     except:
         return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] 
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
+
+#
+# shn_build_ssp_filter --------------------------------------------------------
+#
+def shn_build_ssp_filter(table, request):
+    cols =  shn_get_columns(table)
+    context = '%' + request.vars.sSearch + '%'
+    searchq = None
+    for i in xrange(0, int(request.vars.iColumns) - 1):
+        if table[cols[i]].type == 'string':
+            if searchq is None:
+                searchq = table[cols[i]].like(context)
+            else:
+                searchq = searchq | table[cols[i]].like(context)
+    return searchq
 
 # *****************************************************************************
 # CRUD Functions
@@ -1192,13 +1210,16 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limit = None
         
         if "iSortingCols" in request.vars and orderby is None:
-            orderby = shn_convert_orderby(jr, table)
+             orderby = shn_convert_orderby(table, request)
         
+        if not response.s3.filter and request.vars.sSearch and request.vars.sSearch <> "":
+            response.s3.filter = shn_build_ssp_filter(table, request)
+ 
         sEcho = int(request.vars.sEcho)
         from gluon.serializers import json
         _table = '%s_%s' % (request.controller, request.function)
         table = db[_table]
-        query = (table.id > 0)
+        query = query & (table.id > 0)
         totalrows = db(query).count()
         if limit:
             rows = db(query).select(limitby = (start, start + limit), orderby = orderby)

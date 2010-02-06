@@ -1043,7 +1043,6 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalida
 
             output.update(module_name=module_name,
                           item=item,
-                          record_id=record_id,
                           title=title,
                           edit=edit,
                           delete=delete,
@@ -1052,12 +1051,13 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalida
             if jr.component and not jr.multiple:
                 del output["list_btn"]
 
+            output.update(jr=jr)
             return(output)
 
         elif jr.representation == "plain":
             item = crud.read(table, record_id)
             response.view = 'plain.html'
-            return dict(item=item)
+            return dict(item=item, jr=jr)
 
         elif jr.representation == "csv":
             query = db[table].id == record_id
@@ -1379,6 +1379,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             # Check for presence of Custom View
             shn_custom_view(jr, 'list.html')
 
+        output.update(jr=jr)
         return output
 
     elif jr.representation=="ext":
@@ -1464,8 +1465,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     elif jr.representation == "plain":
         items = crud.select(table, query, truncate=24)
         response.view = 'plain.html'
-        return dict(item=items)
-
+        return dict(item=items, jr=jr)
+        
     elif jr.representation == "csv":
         return export_csv(resource, query)
 
@@ -1603,6 +1604,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if jr.component and not jr.multiple:
             del output["list_btn"]
 
+        output.update(jr=jr)
         return output
 
     elif jr.representation == "plain":
@@ -1616,7 +1618,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         response.view = 'plain.html'
-        return dict(item=form)
+        return dict(item=form, jr=jr)
 
     elif jr.representation == "ext":
         shn_custom_view(jr, 'create.html', format='ext')
@@ -1807,7 +1809,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = update_onaccept
                 crud.settings.update_next = update_next
 
-            output.update(form=form, record_id=record_id)
+            output.update(form=form, jr=jr)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -1829,7 +1831,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                                deletable=False)
 
             response.view = 'plain.html'
-            return dict(item=form)
+            return dict(item=form, jr=jr)
 
         elif jr.representation == "ext":
             shn_custom_view(jr, 'update.html', format='ext')

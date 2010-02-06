@@ -80,6 +80,13 @@ def shn_field_represent(field, row, col):
             represent = row[col]
     return represent
 
+def shn_field_represent_sspage(field, row, col):
+    if col == 'id':
+        id = str(row[col])
+        return '<a href="' + request.function + '/' + id + '">' + id + '</a>' 
+    else:
+        return shn_field_represent(field, row, col)
+    
 # *****************************************************************************
 # Exports
 
@@ -946,7 +953,7 @@ def shn_get_columns(table):
 def shn_convert_orderby(table,request):
     cols =  shn_get_columns(table)
     try:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['iSortDir_' + str(i)] 
+        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)] 
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
     except:
         return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] 
@@ -960,7 +967,7 @@ def shn_build_ssp_filter(table, request):
     context = '%' + request.vars.sSearch + '%'
     searchq = None
     for i in xrange(0, int(request.vars.iColumns) - 1):
-        if table[cols[i]].type == 'string':
+        if table[cols[i]].type in ['string','text']:
             if searchq is None:
                 searchq = table[cols[i]].like(context)
             else:
@@ -1210,10 +1217,10 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limit = None
         
         if "iSortingCols" in request.vars and orderby is None:
-             orderby = shn_convert_orderby(table, request)
+            orderby = shn_convert_orderby(table, request)
         
-        if not response.s3.filter and request.vars.sSearch and request.vars.sSearch <> "":
-            response.s3.filter = shn_build_ssp_filter(table, request)
+        if request.vars.sSearch and request.vars.sSearch <> "":
+            query = shn_build_ssp_filter(table, request) & query
  
         sEcho = int(request.vars.sEcho)
         from gluon.serializers import json
@@ -1229,7 +1236,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
                # ToDo: check for component list_fields & use them where available
-               aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
+               aaData = [[shn_field_represent_sspage(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
         return json(r)
 
     if jr.representation=="html":

@@ -39,6 +39,8 @@ auth.settings.registration_requires_verification = False # CHANGEME for Deployme
 auth.settings.mailer = mail
 auth.messages.verify_email = 'Click on the link ' + S3_PUBLIC_URL + '/' + request.application + '/default/user/verify_email/%(key)s to verify your email'
 auth.settings.on_failed_authorization = URL(r=request, c='default', f='user', args='not_authorized')
+auth.settings.reset_password_requires_verification = True
+auth.messages.reset_password = 'Click on the link '+S3_PUBLIC_URL + '/' + request.application + '/default/user/reset_password/%(key)s to reset your password'
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = False # CHANGEME for Deployment!
 auth.messages.registration_pending = 'Email address verified, however registration is still pending approval - please wait until confirmation received.'

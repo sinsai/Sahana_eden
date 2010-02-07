@@ -381,6 +381,9 @@ class AuthS3(Auth):
                     Field('registration_key', length=512,
                             writable=False, readable=False, default='',
                             label=self.messages.label_registration_key),
+                    Field('reset_password_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
             else:
@@ -405,6 +408,9 @@ class AuthS3(Auth):
                     Field(passfield, 'password', length=512,
                              readable=False, label=self.messages.label_password),
                     Field('registration_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
+                    Field('reset_password_key', length=512,
                             writable=False, readable=False, default='',
                             label=self.messages.label_registration_key),
                     migrate=\

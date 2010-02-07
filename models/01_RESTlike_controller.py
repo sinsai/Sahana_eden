@@ -80,6 +80,13 @@ def shn_field_represent(field, row, col):
             represent = row[col]
     return represent
 
+def shn_field_represent_sspage(field, row, col):
+    if col == 'id':
+        id = str(row[col])
+        return '<a href="' + request.function + '/' + id + '">' + id + '</a>' 
+    else:
+        return shn_field_represent(field, row, col)
+    
 # *****************************************************************************
 # Exports
 
@@ -937,6 +944,35 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace('.html', '_%s.html' % format)
         else:
             response.view = default_name
+#
+# shn_convert_orderby ----------------------------------------------------------
+#
+def shn_get_columns(table):
+    return [f for f in table.fields if table[f].readable]
+ 
+def shn_convert_orderby(table,request):
+    cols =  shn_get_columns(table)
+    try:
+        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)] 
+            for i in xrange(0, int(request.vars['iSortingCols'])) ])
+    except:
+        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] 
+            for i in xrange(0, int(request.vars['iSortingCols'])) ])
+
+#
+# shn_build_ssp_filter --------------------------------------------------------
+#
+def shn_build_ssp_filter(table, request):
+    cols =  shn_get_columns(table)
+    context = '%' + request.vars.sSearch + '%'
+    searchq = None
+    for i in xrange(0, int(request.vars.iColumns) - 1):
+        if table[cols[i]].type in ['string','text']:
+            if searchq is None:
+                searchq = table[cols[i]].like(context)
+            else:
+                searchq = searchq | table[cols[i]].like(context)
+    return searchq
 
 # *****************************************************************************
 # CRUD Functions
@@ -1032,7 +1068,6 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalida
 
             output.update(module_name=module_name,
                           item=item,
-                          record_id=record_id,
                           title=title,
                           edit=edit,
                           delete=delete,
@@ -1041,12 +1076,13 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalida
             if jr.component and not jr.multiple:
                 del output["list_btn"]
 
+            output.update(jr=jr)
             return(output)
 
         elif jr.representation == "plain":
             item = crud.read(table, record_id)
             response.view = 'plain.html'
-            return dict(item=item)
+            return dict(item=item, jr=jr)
 
         elif jr.representation == "csv":
             query = db[table].id == record_id
@@ -1170,6 +1206,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     # dataTables representation
     # Migrate to an XSLT in future?
     if jr.representation=="aaData":
+
         if "iDisplayStart" in request.vars:
             start = int(request.vars.iDisplayStart)
         else:
@@ -1178,21 +1215,28 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limit = int(request.vars.iDisplayLength)
         else:
             limit = None
+        
+        if "iSortingCols" in request.vars and orderby is None:
+            orderby = shn_convert_orderby(table, request)
+        
+        if request.vars.sSearch and request.vars.sSearch <> "":
+            query = shn_build_ssp_filter(table, request) & query
+ 
         sEcho = int(request.vars.sEcho)
         from gluon.serializers import json
         _table = '%s_%s' % (request.controller, request.function)
         table = db[_table]
-        query = (table.id > 0)
+        query = query & (table.id > 0)
         totalrows = db(query).count()
         if limit:
-            rows = db(query).select(limitby = (start, start + limit))
+            rows = db(query).select(limitby = (start, start + limit), orderby = orderby)
         else:
-            rows = db(query).select()
+            rows = db(query).select(orderby = orderby)
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
-               #ToDo: check for component list_fields & use them where available
-               aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
+               # ToDo: check for component list_fields & use them where available
+               aaData = [[shn_field_represent_sspage(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
         return json(r)
 
     if jr.representation=="html":
@@ -1363,6 +1407,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             # Check for presence of Custom View
             shn_custom_view(jr, 'list.html')
 
+        output.update(jr=jr)
         return output
 
     elif jr.representation=="ext":
@@ -1448,8 +1493,8 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     elif jr.representation == "plain":
         items = crud.select(table, query, truncate=24)
         response.view = 'plain.html'
-        return dict(item=items)
-
+        return dict(item=items, jr=jr)
+        
     elif jr.representation == "csv":
         return export_csv(resource, query)
 
@@ -1587,6 +1632,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if jr.component and not jr.multiple:
             del output["list_btn"]
 
+        output.update(jr=jr)
         return output
 
     elif jr.representation == "plain":
@@ -1600,7 +1646,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         response.view = 'plain.html'
-        return dict(item=form)
+        return dict(item=form, jr=jr)
 
     elif jr.representation == "ext":
         shn_custom_view(jr, 'create.html', format='ext')
@@ -1791,7 +1837,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = update_onaccept
                 crud.settings.update_next = update_next
 
-            output.update(form=form, record_id=record_id)
+            output.update(form=form, jr=jr)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -1813,7 +1859,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                                deletable=False)
 
             response.view = 'plain.html'
-            return dict(item=form)
+            return dict(item=form, jr=jr)
 
         elif jr.representation == "ext":
             shn_custom_view(jr, 'update.html', format='ext')

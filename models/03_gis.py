@@ -24,6 +24,7 @@ db.define_table(table, timestamp,
 db[table].image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 # Reusable field for other tables to reference
 ADD_MARKER = T('Add Marker')
+SSPage_Foreign_Columns.update(marker_id = 'name')
 marker_id = SQLTable(None, 'marker_id',
             Field('marker_id', db.gis_marker,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
@@ -44,6 +45,7 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('units', notnull=True),
                 migrate=migrate)
 # Reusable field for other tables to reference
+SSPage_Foreign_Columns.update(projection_id = 'name')
 projection_id = SQLTable(None, 'projection_id',
             Field('projection_id', db.gis_projection,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_projection.id', '%(name)s')),
@@ -60,6 +62,7 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('name', length=128, notnull=True, unique=True),
                 migrate=migrate)
 # Reusable field for other tables to reference
+SSPage_Foreign_Columns.update(symbology_id = 'name')
 symbology_id = SQLTable(None, 'symbology_id',
             Field('symbology_id', db.gis_symbology,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_symbology.id', '%(name)s')),
@@ -106,6 +109,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 # Reusable field for other tables to reference
 ADD_FEATURE_CLASS = T('Add Feature Class')
+SSPage_Foreign_Columns.update(feature_class_id = 'name')
 feature_class_id = SQLTable(None, 'feature_class_id',
             Field('feature_class_id', db.gis_feature_class,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
@@ -155,6 +159,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 # Reusable field for other tables to reference
 ADD_LOCATION = T('Add Location')
+SSPage_Foreign_Columns.update(location_id = 'name')
 location_id = SQLTable(None, 'location_id',
             Field('location_id', db.gis_location,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
@@ -209,6 +214,7 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 # Reusable field for other tables to reference
 ADD_FEATURE_GROUP = T('Add Feature Group')
+SSPage_Foreign_Columns.update(feature_group_id = 'name')
 feature_group_id = SQLTable(None, 'feature_group_id',
             Field('feature_group_id', db.gis_feature_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
@@ -277,6 +283,7 @@ s3.crud_strings[table] = Storage(
     msg_record_deleted = T('Track deleted'),
     msg_list_empty = T('No Tracks currently available'))
 # Reusable field for other tables to reference
+SSPage_Foreign_Columns.update(track_id = 'name')
 track_id = SQLTable(None, 'track_id',
             Field('track_id', db.gis_track,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_track.id', '%(name)s')),

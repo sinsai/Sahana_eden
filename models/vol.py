@@ -72,6 +72,7 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No projects currently registered'))
 
 # Reusable field
+SSPage_Foreign_Columns.update(vol_project_id = 'name')
 vol_project_id = db.Table(None, 'vol_project_id',
                           Field('vol_project_id', db.vol_project,
                           requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_project.id', '%(name)s')),
@@ -127,6 +128,7 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No positions currently registered'))
 
 # Reusable field
+SSPage_Foreign_Columns.update(vol_position_id = 'title')
 vol_position_id = db.Table(None, 'vol_position_id',
                            Field('vol_position_id', db.vol_position,
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_position.id', '%(title)s')),
@@ -209,6 +211,7 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No volunteer information registered'))
 
 # Reusable field
+# TODO SSPage_Foreign_Columns.update(vol_volunteer_id = <ref to person table ???>)
 vol_volunteer_id = db.Table(None, 'vol_volunteer_id',
                             Field('vol_volunteer_id', db.vol_volunteer,
                             requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status==1), 'vol_volunteer.id', shn_vol_volunteer_represent)),

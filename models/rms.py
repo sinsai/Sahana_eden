@@ -113,6 +113,7 @@ s3.crud_strings[table] = Storage(title_create        = ADD_AID_REQUEST,
                                  msg_list_empty      = "No aid requests currently available")
 
 #Reusable field for other tables
+SSPage_Foreign_Columns.update(service_id = 'message')
 request_id = SQLTable(None, 'req_id',
             Field('req_id', db.rms_req,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req.id', '%(message)s')),
@@ -370,6 +371,7 @@ s3.crud_strings[table] = Storage( title_create        = ADD_REQUEST_DETAIL,
 
 
 #Reusable field for other tables
+SSPage_Foreign_Columns.update(req_detail_id = 'request_key')
 req_detail_id = SQLTable(None, 'req_detail_id',
             Field('req_detail_id', db.rms_req_detail,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req_detail.id', '%( request_key)s')),

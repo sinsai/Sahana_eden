@@ -49,7 +49,7 @@ s3.crud_strings[table] = Storage(
     msg_record_deleted = T('Service deleted'),
     msg_list_empty = T('No Services currently registered'))
 
-# Functions
+# Functionsa
 def service_represent(service_ids):
 
     if not service_ids:
@@ -61,6 +61,8 @@ def service_represent(service_ids):
         return db(db.or_service.id==service_ids).select()[0].name
 
 # Reusable field
+# 
+SSPage_Foreign_Columns.update(service_id = 'name')
 service_id = SQLTable(None, 'service_id',
                       Field('service_id',
                             requires = IS_NULL_OR(IS_ONE_OF(db, 'or_service.id', '%(name)s', multiple=True)),
@@ -116,6 +118,7 @@ def sector_represent(sector_ids):
         return db(db.or_sector.id==sector_ids).select()[0].name
 
 # Reusable field
+SSPage_Foreign_Columns.update(sector_id = 'name')
 sector_id = SQLTable(None, 'sector_id',
                      Field('sector_id',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_sector.id', '%(name)s', multiple=True)),
@@ -206,6 +209,8 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No Organizations currently registered'))
 
 # Reusable field
+
+SSPage_Foreign_Columns.update(organisation_id = 'name')
 organisation_id = SQLTable(None, 'organisation_id',
                            Field('organisation_id', db.or_organisation,
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
@@ -311,6 +316,7 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No Offices currently registered'))
 
 # Reusable field for other tables to reference
+SSPage_Foreign_Columns.update(office_id = 'name')
 office_id = SQLTable(None, 'office_id',
             Field('office_id', db.or_office,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),

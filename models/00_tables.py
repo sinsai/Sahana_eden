@@ -3,6 +3,10 @@
 from gluon.tools import Service
 service = Service(globals())
 
+# initialize foreign representatives list
+
+SSPage_Foreign_Columns = dict()
+
 # Reusable timestamp fields
 timestamp = db.Table(None, 'timestamp',
             Field('created_on', 'datetime',
@@ -64,6 +68,7 @@ deletion_status = db.Table(None, 'deletion_status',
                           default=False))
 
 # Reusable Admin field
+SSPage_Foreign_Columns.update(admin_id = 'role')
 admin_id = db.Table(None, 'admin_id',
             Field('admin', db.auth_group,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
@@ -223,6 +228,7 @@ s3.crud_strings[table] = Storage(
     msg_record_deleted = T('Source deleted'),
     msg_list_empty = T('No Sources currently registered'))
 # Reusable field for other tables to reference
+SSPage_Foreign_Columns.update(service_id = 'name')
 source_id = SQLTable(None, 'source_id',
             Field('source_id', db.s3_source,
                 requires = IS_NULL_OR(IS_ONE_OF(db, 's3_source.id', '%(name)s')),

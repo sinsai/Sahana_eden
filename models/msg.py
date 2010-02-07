@@ -73,6 +73,7 @@ s3.crud_strings[table] = Storage(
     msg_record_deleted = T('Group deleted'),
     msg_list_empty = T('No Groups currently registered'))
 # Reusable field for other tables to reference
+SSPage_Foreign_Columns.update(msg_group_id = 'name')
 msg_group_id = db.Table(None, 'msg_group_id',
             Field('msg_group_id', db.msg_group,
                 requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s'),

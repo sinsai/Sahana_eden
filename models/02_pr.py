@@ -348,6 +348,7 @@ s3.crud_strings[table] = Storage(
 # person_id: reusable field for other tables to reference ---------------------
 #
 shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button, _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.pr_person.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry.")))
+SSPage_Foreign_Columns.update(person_id = ['first_name','middle_name','last_name'])
 person_id = SQLTable(None, 'person_id',
                 Field('person_id', db.pr_person,
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
@@ -439,6 +440,7 @@ s3.crud_strings[table] = Storage(
 #
 # group_id: reusable field for other tables to reference ----------------------
 #
+SSPage_Foreign_Columns.update(group_id = 'group_name')
 group_id = SQLTable(None, 'group_id',
                 Field('group_id', db.pr_group,
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_group.id', '%(id)s: %(group_name)s', filterby='system', filter_opts=(False,))),

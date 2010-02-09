@@ -400,7 +400,7 @@ def export_xml(jr):
 #
 # import_csv ------------------------------------------------------------------
 #
-def import_csv(file, table=None):
+def shn_import_csv(file, table=None):
 
     """ Import CSV file into Database """
 
@@ -1682,7 +1682,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         # Read in POST
         file = request.vars.filename.file
         try:
-            import_csv(file, table)
+            shn_import_csv(file, table)
             session.flash = T('Data uploaded')
         except:
             session.error = T('Unable to parse CSV file!')

@@ -464,11 +464,11 @@ def import_csv():
     "Import CSV data via POST upload to Database."
     file = request.vars.multifile.file
     try:
-        import_csv(file)
+        db.import_from_csv_file(file)
         session.flash = T('Data uploaded')
-    except: 
+    except Exception, e:
         session.error = T('Unable to parse CSV file!')
-    redirect(URL(r=request))
+    redirect(URL(r=request, f='import_data'))
 
 # Export Data
 @auth.requires_login()

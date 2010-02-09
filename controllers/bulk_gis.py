@@ -19,6 +19,7 @@ license    http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public Lic
 
 import sys
 import csv
+from cStringIO import StringIO
 from shapely.wkt import loads as wkt_loads
 
 # CONSTANTS
@@ -203,4 +204,31 @@ def wipe_admin_areas():
     for i in range(4):
         db(db.gis_feature_group.name.like("L%d:%%"%i)).delete()
     db.commit()
+    
+def export_admin_areas_csv():
+    """
+    Exports (in db format) locations, feature_class and feature_groups relevant to admin areas only.
+    Suitable for database import.
+    """
+    admin_area_class_id = ensure_admin_feature_class()
+    admin_area_locations = db(db.gis_location.feature_class_id==admin_area_class_id)
+    location_to_fgs = db(db.gis_location_to_feature_group.location_id.belongs(admin_area_locations._select(db.gis_location.id)))
+    feature_groups = db(db.gis_feature_group.id.belongs(location_to_fgs._select(db.gis_location_to_feature_group.feature_group_id)))
+    admin_area_data = {
+        'gis_location': admin_area_locations,
+        'gis_feature_class': db(db.gis_feature_class.id==admin_area_class_id),
+        'gis_location_to_feature_group': location_to_fgs,
+        'gis_feature_group': feature_groups,
+    }
+    
+    s = StringIO()
+    for table, query in admin_area_data.iteritems():
+        s.write('TABLE %s\r\n' % table)
+        query.select().export_to_csv_file(s)
+        s.write('\r\n\r\n')
+    s.write('END')
+    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    return s.getvalue()
+    
+    
     

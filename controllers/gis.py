@@ -806,7 +806,7 @@ content type. It supports GET and POST requests."""
     method = request['wsgi'].environ['REQUEST_METHOD']
 
     if method == "POST":
-        # THis can probably use same call as GET in web2py
+        # This can probably use same call as GET in web2py
         qs = request['wsgi'].environ["QUERY_STRING"]
 
         d = cgi.parse_qs(qs)
@@ -866,7 +866,7 @@ content type. It supports GET and POST requests."""
     except Exception, E:
         msg = "Status: 500 Unexpected Error\n"
         msg += "Content-Type: text/plain\n\n"
-        msg += "Some unexpected error occurred. Error text was:", E
+        msg += "Some unexpected error occurred. Error text was: %s" % str(E)
         return msg
 
 # Features

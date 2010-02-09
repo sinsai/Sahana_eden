@@ -93,9 +93,11 @@ class GIS(object):
 
         db = self.db
         
-        id = db(db.gis_feature_class.name == name).select().first().id
-        
-        return id
+        feature = db(db.gis_feature_class.name == name).select()
+        if feature:
+            return feature[0].id
+        else:
+            return None
     
     def get_marker(self, feature_id):
         """ Returns the Marker URL for a Feature"""

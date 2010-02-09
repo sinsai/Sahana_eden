@@ -1,6 +1,8 @@
 ﻿# -*- coding: utf-8 -*-
 import cPickle as pickle
 import csv
+from gluon.admin import *
+from gluon.fileutils import listdir
 
 module = 'admin'
 # Current Module (for sidebar title)
@@ -757,3 +759,102 @@ def handleResults():
     response.view = 'display.html'
     title = T('Test Results')
     return dict(module_name=module_name, title=title, item=message)
+
+#Ticket Viewer functions Borrowed from admin application of web2py
+@auth.requires_membership('Administrator')
+def errors():
+    """ Error handler """
+
+    app = request.application
+
+    for item in request.vars:
+        if item[:7] == 'delete_':
+            os.unlink(apath('%s/errors/%s' % (app, item[7:]), r=request))
+
+    func = lambda p: os.stat(apath('%s/errors/%s' % (app, p), r=request)).st_mtime
+    tickets = sorted(listdir(apath('%s/errors/' % app, r=request), '^\w.*'),
+                     key=func,
+                     reverse=True)
+
+    return dict(app=app, tickets=tickets)
+
+def make_link(path):
+    """ Create a link from a path """
+    tryFile = path.replace('\\', '/')
+
+    if os.path.isabs(tryFile) and os.path.isfile(tryFile):
+        (folder, filename) = os.path.split(tryFile)
+        (base, ext) = os.path.splitext(filename)
+        app = request.args[0]
+        
+        editable = {'controllers': '.py', 'models': '.py', 'views': '.html'}
+        for key in editable.keys():
+            check_extension = folder.endswith("%s/%s" % (app,key))
+            if ext.lower() == editable[key] and check_extension:
+                return A('"' + tryFile + '"',
+                         _href=URL(r=request,
+                         f='edit/%s/%s/%s' % (app, key, filename))).xml()
+    return ''
+
+
+def make_links(traceback):
+    """ Make links using the given traceback """
+
+    lwords = traceback.split('"')
+
+    # Making the short circuit compatible with <= python2.4
+    result = (len(lwords) != 0) and lwords[0] or ''
+
+    i = 1
+
+    while i < len(lwords):
+        link = make_link(lwords[i])
+
+        if link == '':
+            result += '"' + lwords[i]
+        else:
+            result += link
+
+            if i + 1 < len(lwords):
+                result += lwords[i + 1]
+                i = i + 1
+
+        i = i + 1
+
+    return result
+
+
+class TRACEBACK(object):
+    """ Generate the traceback """
+
+    def __init__(self, text):
+        """ TRACEBACK constructor """
+
+        self.s = make_links(CODE(text).xml())
+
+    def xml(self):
+        """ Returns the xml """
+
+        return self.s
+
+
+##ticket viewing 
+@auth.requires_membership('Administrator')
+def ticket():
+    """ Ticket handler """
+
+    if len(request.args) != 2:
+        session.flash = T('invalid ticket')
+        redirect(URL(r=request))
+
+    app = request.args[0]
+    ticket = request.args[1]
+    e = RestrictedError()
+    e.load(request, app, ticket)
+
+    return dict(app=app,
+                ticket=ticket,
+                traceback=TRACEBACK(e.traceback),
+                code=e.code,
+                layer=e.layer)
+

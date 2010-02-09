@@ -74,7 +74,10 @@ def shn_field_represent(field, row, col):
     try:
         represent = str(field.represent(row[col]))
     except:
-        represent = row[col]
+        if row[col] is None:
+            represent = "None"
+        else:
+            represent = row[col]
     return represent
 
 # *****************************************************************************
@@ -934,6 +937,17 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace('.html', '_%s.html' % format)
         else:
             response.view = default_name
+#
+# shn_convert_sortby ----------------------------------------------------------
+#
+def shn_convert_orderby(jr, table):
+    cols = [f for f in table.fields if table[f].readable]
+    try:
+        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['iSortDir_' + str(i)] 
+            for i in xrange(0, int(request.vars['iSortingCols'])) ])
+    except:
+        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] 
+            for i in xrange(0, int(request.vars['iSortingCols'])) ])
 
 # *****************************************************************************
 # CRUD Functions
@@ -1167,6 +1181,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     # dataTables representation
     # Migrate to an XSLT in future?
     if jr.representation=="aaData":
+
         if "iDisplayStart" in request.vars:
             start = int(request.vars.iDisplayStart)
         else:
@@ -1175,6 +1190,10 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limit = int(request.vars.iDisplayLength)
         else:
             limit = None
+        
+        if "iSortingCols" in request.vars and orderby is None:
+            orderby = shn_convert_orderby(jr, table)
+        
         sEcho = int(request.vars.sEcho)
         from gluon.serializers import json
         _table = '%s_%s' % (request.controller, request.function)
@@ -1182,13 +1201,13 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         query = (table.id > 0)
         totalrows = db(query).count()
         if limit:
-            rows = db(query).select(limitby = (start, start + limit))
+            rows = db(query).select(limitby = (start, start + limit), orderby = orderby)
         else:
-            rows = db(query).select()
+            rows = db(query).select(orderby = orderby)
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
-               #ToDo: check for component list_fields & use them where available
+               # ToDo: check for component list_fields & use them where available
                aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
         return json(r)
 
@@ -1251,15 +1270,31 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         authorised = shn_has_permission('update', table)
         if jr.component:
             if authorised:
-                linkto = shn_list_jlinkto_update
+                if jr.component.attr.linkto_update:
+                    linkto = jr.component.attr.linkto_update
+                else:
+                    linkto = shn_list_jlinkto_update
             else:
-                linkto = shn_list_jlinkto
+                if jr.component.attr.linkto:
+                    linkto = jr.component.attr.linkto
+                else:
+                    linkto = shn_list_jlinkto
         else:
             if authorised:
-                linkto = shn_list_linkto_update
+                if response.s3.linkto_update:
+                    linkto = response.s3.linkto_update
+                else:
+                    linkto = shn_list_linkto_update
             else:
-                linkto = shn_list_linkto
+                if response.s3.linkto:
+                    linkto = response.s3.linkto
+                else:
+                    linkto = shn_list_linkto
 
+        if response.s3.pagination and not limitby:
+            # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
+            limitby = (0, 1)
+        
         items = crud.select(table, query=query,
             fields=fields,
             orderby=orderby,

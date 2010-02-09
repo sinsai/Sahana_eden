@@ -866,7 +866,7 @@ content type. It supports GET and POST requests."""
     except Exception, E:
         msg = "Status: 500 Unexpected Error\n"
         msg += "Content-Type: text/plain\n\n"
-        msg += "Some unexpected error occurred. Error text was:", E
+        msg += "Some unexpected error occurred. Error text was: %s" % str(E)
         return msg
 
 # Features

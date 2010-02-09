@@ -214,7 +214,8 @@ def export_rss(module, resource, query, rss=None, linkto=None):
         link = linkto
 
     entries = []
-    rows = db(query).select()
+    table = db[tablename]
+    rows = db(query).select(table.ALL)
     if rows:
         for row in rows:
             if rss and 'title' in rss:
@@ -260,7 +261,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
 #
 # export_xls ------------------------------------------------------------------
 #
-def export_xls(table, query):
+def export_xls(table, query, list_fields=None):
 
     """ Export record(s) as XLS """
 
@@ -280,7 +281,14 @@ def export_xls(table, query):
     # Header row
     row0 = sheet1.row(0)
     cell = 0
-    fields = [table[f] for f in table.fields if table[f].readable]
+
+    if list_fields:
+        fields = [table[f] for f in list_fields if table[f].readable]
+    if fields and len(fields)==0:
+        fields.append(table.id)
+    if not fields:
+        fields = [table[f] for f in table.fields if table[f].readable]
+
     for field in fields:
         row0.write(cell, str(field.label), xlwt.easyxf('font: bold True;'))
         cell += 1

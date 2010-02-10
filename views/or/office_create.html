@@ -8,7 +8,11 @@ $(function() {
     // Add a dummy field
     $("#or_office_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
 
-    {{include 'or/organisation_autocomplete.js'}}
+    {{dummy_input = "dummy_organisation"}}
+    {{urlpath_c = "or"}}
+    {{urlpath_f = "organisation"}}
+    {{urlvar_field = "name"}}
+    {{include 'autocomplete.js'}}
 
     // Populate the real Input when the Dummy is selected
     $("#dummy_organisation").result(function(event, data, formatted) {

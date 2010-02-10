@@ -142,8 +142,8 @@ or_organisation_type_opts = {
 }
 
 resource = 'organisation'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 #Field('privacy', 'integer', default=0),
                 #Field('archived', 'boolean', default=False),
                 Field('name', length=128, notnull=True, unique=True),
@@ -161,36 +161,36 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
 
-db[table].acronym.label = T('Acronym')
+table.acronym.label = T('Acronym')
 
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
-db[table].type.represent = lambda opt: or_organisation_type_opts.get(opt, UNKNOWN_OPT)
-db[table].type.label = T('Type')
+table.type.requires = IS_NULL_OR(IS_IN_SET(or_organisation_type_opts))
+table.type.represent = lambda opt: or_organisation_type_opts.get(opt, UNKNOWN_OPT)
+table.type.label = T('Type')
 
-db[table].donation_phone.label = T('Donation Phone #')
-db[table].donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
+table.donation_phone.label = T('Donation Phone #')
+table.donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
 
-db[table].country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
-db[table].country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
-db[table].country.label = T('Home Country')
+table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
+table.country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
+table.country.label = T('Home Country')
 
-db[table].website.requires = IS_NULL_OR(IS_URL())
-db[table].website.label = T('Website')
+table.website.requires = IS_NULL_OR(IS_URL())
+table.website.label = T('Website')
 
-db[table].twitter.label = T('Twitter')
-db[table].twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
+table.twitter.label = T('Twitter')
+table.twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
 
 # CRUD strings
 ADD_ORGANISATION = T('Add Organization')
 LIST_ORGANIZATIONS = T('List Organizations')
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_ORGANISATION,
     title_display = T('Organization Details'),
     title_list = LIST_ORGANIZATIONS,
@@ -234,8 +234,8 @@ or_office_type_opts = {
 }
 
 resource = 'office'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
                 organisation_id,
                 Field('type', 'integer'),
@@ -258,44 +258,44 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
 
-db[table].parent.label = T('Parent')
-db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
-db[table].parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
+table.parent.label = T('Parent')
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s'))
+table.parent.represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0]
 
-db[table].type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))
-db[table].type.represent = lambda opt: or_office_type_opts.get(opt, UNKNOWN_OPT)
-db[table].type.label = T('Type')
+table.type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))
+table.type.represent = lambda opt: or_office_type_opts.get(opt, UNKNOWN_OPT)
+table.type.label = T('Type')
 
-db[table].address.label = T('Address')
-db[table].postcode.label = T('Postcode')
-db[table].phone1.label = T('Phone 1')
-db[table].phone2.label = T('Phone 2')
-db[table].email.requires = IS_NULL_OR(IS_EMAIL())
-db[table].email.label = T('Email')
-db[table].fax.label = T('FAX')
+table.address.label = T('Address')
+table.postcode.label = T('Postcode')
+table.phone1.label = T('Phone 1')
+table.phone2.label = T('Phone 2')
+table.email.requires = IS_NULL_OR(IS_EMAIL())
+table.email.label = T('Email')
+table.fax.label = T('FAX')
 
-db[table].national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-db[table].national_staff.label = T('National Staff')
-db[table].international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].international_staff.label = T('International Staff')
-db[table].number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].number_of_vehicles.label = T('Number of Vehicles')
+table.national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+table.national_staff.label = T('National Staff')
+table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.international_staff.label = T('International Staff')
+table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.number_of_vehicles.label = T('Number of Vehicles')
 
-db[table].vehicle_types.label = T('Vehicle Types')
-db[table].equipment.label = T('Equipment')
+table.vehicle_types.label = T('Vehicle Types')
+table.equipment.label = T('Equipment')
 
 # CRUD strings
 ADD_OFFICE = T('Add Office')
 LIST_OFFICES = T('List Offices')
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_OFFICE,
     title_display = T('Office Details'),
     title_list = LIST_OFFICES,
@@ -342,8 +342,8 @@ s3xrc.model.add_component(module, resource,
 # ToDo: Build an Organigram out of this data?
 #
 resource = 'contact'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, deletion_status,
                 person_id,
                 organisation_id,
                 office_id,
@@ -355,15 +355,15 @@ db.define_table(table, timestamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-db[table].person_id.label = T('Contact')
+table.person_id.label = T('Contact')
 
-db[table].title.label = T('Job Title')
-db[table].title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
+table.title.label = T('Job Title')
+table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
 
-db[table].manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
-db[table].manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-db[table].manager_id.label = T('Manager')
-db[table].manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
+table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
+table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
+table.manager_id.label = T('Manager')
+table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
 
 # Functions
 def represent_focal_point(is_focal_point):
@@ -380,8 +380,8 @@ def shn_or_contact_represent(contact_id):
     else:
         return None
  
-db[table].focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
-db[table].focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
+table.focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
+table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
 
 def shn_orgs_to_person(person_id):
 
@@ -398,7 +398,7 @@ def shn_orgs_to_person(person_id):
 ADD_CONTACT = T('Add Contact')
 LIST_CONTACTS = T('List Contacts')
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_CONTACT,
     title_display = T('Contact Details'),
     title_list = LIST_CONTACTS,
@@ -426,8 +426,8 @@ s3xrc.model.add_component(module, resource,
 #   the projects which each organization is engaged in
 #
 resource = 'project'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, deletion_status,
                 organisation_id,
                 location_id,
                 sector_id,
@@ -441,12 +441,12 @@ db.define_table(table, timestamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-db[table].budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
+table.budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
 
 # CRUD strings
 ADD_PROJECT = T('Add Project')
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_PROJECT,
     title_display = T('Project Details'),
     title_list = T('Projects Report'),

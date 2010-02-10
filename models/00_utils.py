@@ -358,3 +358,41 @@ def shn_compose_message(data, template):
             return message
         else:
             return s3xrc.xml.tostring(tree, pretty_print=True)
+
+def shn_fetch(url, keep_session=False):
+    """
+    Modified version of fetch() from gluon/tools.py
+    Add support for passing cookies to local instance when keep_session=True
+    (won't work on GAE yet)
+    """
+    try:
+        from google.appengine.api.urlfetch import fetch
+        return fetch(url).content
+    except:
+        #if keep_session:
+        if keep_session and "127.0.0.1" in url:
+            import urllib2
+            cookie = response.session_id_name + "=" + response.session_id
+            #txheaders = {'Cookie' : cookie}
+            #req = urllib2.Request(url, None, txheaders)
+            req = urllib2.Request(url)
+            #req.add_header('Cookie', cookie)
+            
+            import cookielib
+            jar = cookielib.CookieJar()
+            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(jar))
+            data = opener.open(req).read()
+
+            #cookie = request.cookies[response.session_id_name]
+            
+            #import Cookie
+            #cookie = Cookie.SimpleCookie()
+            #cookie[response.session_id_name] = response.session_id
+            #cookie['path'] = "/"
+            #cookie['domain'] = ""
+            
+        else:
+            import urllib
+            data = urllib.urlopen(url).read()
+        
+        return data

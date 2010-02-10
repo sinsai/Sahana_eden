@@ -217,7 +217,7 @@ div.item-container { margin: 5px 0 5px 0; }
 .red { color: red; }
 
 /* Help Popup */
-.tooltip, .ajaxtip { position:absolute; text-transform:uppercase; height:20px; width:50px; background-image: url(../../img/help_off.gif); }
+.tooltip, .ajaxtip { position:static; text-transform:uppercase; height:20px; width:50px; background-image: url(../../img/help_off.gif); }
 .tooltip span, .ajaxtip span { display:none; }
 .tooltip:hover, .ajaxtip:hover { background-color:transparent; background-image: url(../../img/help_on.gif); }
 

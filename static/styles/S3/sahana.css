@@ -154,7 +154,7 @@ table { border-collapse: collapse }
     -moz-border-radius: 10px 10px 10px 10px; -webkit-border-radius: 10px 10px 10px 10px;
 }
 #content h1, #content h2 { color: #006699; font-size: 16px; font-weight: bolder;
-    background: #f3f6ff;
+    background: #006699_background;
     border: 1px #c6d1f5 solid;
     padding: 6px 10px 7px 10px; margin: 0px -30px 10px -30px;
     border-bottom: 1px solid #bbb; text-shadow: 1px 2px 1px #fff;
@@ -162,7 +162,7 @@ table { border-collapse: collapse }
 }
 
 #content h3 { color:#006699; font-size:14px; font-weight:bolder; border-bottom:1px #006699 solid; margin-bottom:10px; }
-#content h4 { color:#006699; margin-top:10px; font-size:13px; font-weight:bolder; border-bottom:1px #006699_underline dotted; margin-bottom:10px; }
+#content h4 { color:#006699; margin-top:10px; font-size:13px; font-weight:bolder; border-bottom:1px #003366 dotted; margin-bottom:10px; }
 
 /* other styles */
 /*#home { border: 10px #fff solid; }*/
@@ -217,7 +217,7 @@ div.item-container { margin: 5px 0 5px 0; }
 .red { color: red; }
 
 /* Help Popup */
-.tooltip, .ajaxtip { position:absolute; text-transform:uppercase; height:20px; width:50px; background-image: url(../../img/help_off.gif); }
+.tooltip, .ajaxtip { position:static; text-transform:uppercase; height:20px; width:50px; background-image: url(../../img/help_off.gif); }
 .tooltip span, .ajaxtip span { display:none; }
 .tooltip:hover, .ajaxtip:hover { background-color:transparent; background-image: url(../../img/help_on.gif); }
 
@@ -272,7 +272,7 @@ div#pheader td { text-align: left; padding: 1px 6px 1px 1px; width: 20%; }
 #edit-btn,
 #delete-btn,
 #register-btn,
-#retrieve-btn { text-decoration: none; color: #006699; background-color: #f3f6ff; border-right: 1px solid #6699cc; border-bottom: 1px solid #6699cc; border-left: 1px solid #c6d1f5; border-top: 1px solid #c6d1f5; padding: 2px 4px 2px 4px; }
+#retrieve-btn { text-decoration: none; color: #006699; background-color: #006699_background; border-right: 1px solid #6699cc; border-bottom: 1px solid #6699cc; border-left: 1px solid #c6d1f5; border-top: 1px solid #c6d1f5; padding: 2px 4px 2px 4px; }
 
 #add-btn:hover,
 #contents-btn:hover,

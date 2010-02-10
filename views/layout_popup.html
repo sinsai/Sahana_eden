@@ -26,11 +26,12 @@ function TB_refresh() {
     url += "/options.json?field=" + child_resource;
     if (self.parent.$('#' + caller + ' >option').length ) {
         // We have been called next to a drop-down
-        // Get the previously selected value
         var selector = self.parent.$('#' + caller);
+        // Get the previously selected value
         //var selectedvalue = selector.attr("selectedIndex")+1;
         // Clean up the caller
         self.parent.$('#' + caller + ' >option').remove();
+        var value_high = 1;
         $.getJSON(url, function (data) {
             var value, represent;
             var append = '';
@@ -41,12 +42,15 @@ function TB_refresh() {
                     represent = "";
                 } 
                 append += "<option value='" + value + "'>" + represent + "</option>";
+                if (value > value_high) {
+                    value_high = value;
+                }
             });
             selector.append(append);
-            // Set the newly-created value (last in list)
-            //selector.val(value);
+            // Set the newly-created value (one with highest value)
+            //selector.val(value_high);
             // IE6 needs time for DOM to settle: http://csharperimage.jeremylikness.com/2009/05/jquery-ie6-and-could-not-set-selected.html
-            setTimeout(function() { selector.val(value); }, 1);
+            setTimeout(function() { selector.val(value_high); }, 1);
             // Also populate dummy, if present
             // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
             //self.parent.$('#dummy').val(represent);

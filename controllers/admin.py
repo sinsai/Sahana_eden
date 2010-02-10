@@ -37,8 +37,8 @@ def theme():
     db[table].name.comment = SPAN("*", _class="req")
     db[table].logo.label = T('Logo')
     db[table].logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
-    db[table].header_background.label = T('Header Background')
-    db[table].header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
+    #db[table].header_background.label = T('Header Background')
+    #db[table].header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
     db[table].footer.label = T('Footer')
     db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
     db[table].text_direction.label = T('Text Direction')
@@ -120,10 +120,10 @@ def theme_apply(form):
             logo = theme.logo
         else:
             logo = default_theme.logo
-        if theme.header_background:
-            header_background = theme.header_background
-        else:
-            header_background = default_theme.header_background
+        #if theme.header_background:
+        #    header_background = theme.header_background
+        #else:
+        #    header_background = default_theme.header_background
         if theme.text_direction:
             text_direction = theme.text_direction
         else:
@@ -132,7 +132,7 @@ def theme_apply(form):
         ofile = open(out_file, 'w')
         for line in lines:
             line = line.replace("YOURLOGOHERE", logo)
-            line = line.replace("HEADERBACKGROUND", header_background )
+            #line = line.replace("HEADERBACKGROUND", header_background )
             line = line.replace("TEXT_DIRECTION", text_direction)
             # Iterate through Colours
             for key in theme.keys():
@@ -175,25 +175,25 @@ def theme_check(form):
         # Called from Settings
         theme = db(db.admin_theme.id == form.vars.theme).select().first()
         logo = theme.logo
-        header_background = theme.header_background
+        #header_background = theme.header_background
         footer = theme.footer
     elif form.vars.logo and form.vars.footer:
         # Called from Theme
         logo = form.vars.logo
-        header_background = form.vars.header_background
+        #header_background = form.vars.header_background
         footer = form.vars.footer
     else:
         session.error = INVALIDREQUEST
         redirect(URL(r=request))
     _logo = os.path.join(request.folder, 'static', logo)
-    _header_background = os.path.join(request.folder, 'static', header_background)
+    #_header_background = os.path.join(request.folder, 'static', header_background)
     _footer = os.path.join(request.folder, 'views', footer)
     if not os.access(_logo, os.R_OK):
         form.errors['logo'] = T('Logo file %s missing!' % logo)
         return
-    if not os.access(_header_background, os.R_OK):
-        form.errors['header_background'] = T('Header background file %s missing!' % logo)
-        return
+    #if not os.access(_header_background, os.R_OK):
+    #    form.errors['header_background'] = T('Header background file %s missing!' % logo)
+    #    return
     if not os.access(_footer, os.R_OK):
         form.errors['footer'] = T('Footer file %s missing!' % footer)
         return

@@ -1132,8 +1132,6 @@ def map_service_catalogue():
 def layers():
     "Provide the Enabled Layers"
 
-    from gluon.tools import fetch
-
     response.warning = ''
 
     layers = Storage()
@@ -1220,7 +1218,7 @@ def layers():
             filepath = os.path.join(cachepath, filename)
             try:
                 # Download file to cache
-                file = fetch(url)
+                file = shn_fetch(url)
                 f = open(filepath, 'w')
                 f.write(file)
                 f.close()
@@ -1268,8 +1266,8 @@ def layers():
             filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
             filepath = os.path.join(cachepath, filename)
             try:
-                # Download file to cache
-                file = fetch(url)
+                # Download file to cache (maintain sessions for KML feeds which require Auth)
+                file = shn_fetch(url, keep_session=True)
                 f = open(filepath, 'w')
                 f.write(file)
                 f.close()

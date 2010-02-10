@@ -27,7 +27,11 @@ $(function() {
     // Add a dummy field
     $("#or_contact_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
 
-    {{include 'or/organisation_autocomplete.js'}}
+    {{dummy_input = "dummy_organisation"}}
+    {{urlpath_c = "or"}}
+    {{urlpath_f = "organisation"}}
+    {{urlvar_field = "name"}}
+    {{include 'single_field_autocomplete.js'}}
 
     // Populate the real Input when the Dummy is selected
     $("#dummy_organisation").result(function(event, data, formatted) {
@@ -43,6 +47,12 @@ $(function() {
     
     // Add a dummy field
     $("#or_contact_office_id").after("<select id='dummy_office' class='reference'><option value=''>{{=T('Select an Organization to see a list of offices')}}</option></select>");
+
+    {{dummy_input = "dummy_office"}}
+    {{urlpath_c = "or"}}
+    {{urlpath_f = "office"}}
+    {{urlvar_field = "name"}}
+    {{include 'single_field_autocomplete.js'}}
 
     // Populate the real Input when the Dummy is selected
     copy_office_id = function(event){

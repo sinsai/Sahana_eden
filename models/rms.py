@@ -114,7 +114,7 @@ s3.crud_strings[table] = Storage(title_create        = ADD_AID_REQUEST,
 
 #Reusable field for other tables
 request_id = SQLTable(None, 'req_id',
-            Field('req_id', db.rms_req,
+            FieldS3('req_id', db.rms_req, sortby='message',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req.id', '%(message)s')),
                 represent = lambda id: (id and [db(db.rms_req.id==id).select().first().updated] or ["None"])[0],
                 label = T('Aid Request'),
@@ -371,7 +371,7 @@ s3.crud_strings[table] = Storage( title_create        = ADD_REQUEST_DETAIL,
 
 #Reusable field for other tables
 req_detail_id = SQLTable(None, 'req_detail_id',
-            Field('req_detail_id', db.rms_req_detail,
+            FieldS3('req_detail_id', db.rms_req_detail, sortby='request_key',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req_detail.id', '%( request_key)s')),
                 represent = lambda id: (id and [db(db.rms_req_detail.id==id).select().first().updated] or ["None"])[0],
                 label = T('Request Detail'),

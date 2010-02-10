@@ -25,7 +25,7 @@ table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 # Reusable field for other tables to reference
 ADD_MARKER = T('Add Marker')
 marker_id = SQLTable(None, 'marker_id',
-            Field('marker_id', db.gis_marker,
+            FieldS3('marker_id', db.gis_marker, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select().first().image), _height=40))] or [''])[0],
                 label = T('Marker'),
@@ -45,7 +45,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 migrate=migrate)
 # Reusable field for other tables to reference
 projection_id = SQLTable(None, 'projection_id',
-            Field('projection_id', db.gis_projection,
+            FieldS3('projection_id', db.gis_projection, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_projection.id', '%(name)s')),
                 represent = lambda id: db(db.gis_projection.id==id).select().first().name,
                 label = T('Projection'),
@@ -61,7 +61,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 migrate=migrate)
 # Reusable field for other tables to reference
 symbology_id = SQLTable(None, 'symbology_id',
-            Field('symbology_id', db.gis_symbology,
+            FieldS3('symbology_id', db.gis_symbology, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_symbology.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_symbology.id==id).select().first().name] or ["None"])[0],
                 label = T('Symbology'),
@@ -107,7 +107,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 # Reusable field for other tables to reference
 ADD_FEATURE_CLASS = T('Add Feature Class')
 feature_class_id = SQLTable(None, 'feature_class_id',
-            Field('feature_class_id', db.gis_feature_class,
+            FieldS3('feature_class_id', db.gis_feature_class, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Class'),
@@ -169,7 +169,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 # Reusable field for other tables to reference
 ADD_LOCATION = T('Add Location')
 location_id = SQLTable(None, 'location_id',
-            Field('location_id', db.gis_location,
+            FieldS3('location_id', db.gis_location, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                 represent = lambda id: shn_gis_location_represent(id),
                 label = T('Location'),
@@ -223,7 +223,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 # Reusable field for other tables to reference
 ADD_FEATURE_GROUP = T('Add Feature Group')
 feature_group_id = SQLTable(None, 'feature_group_id',
-            Field('feature_group_id', db.gis_feature_group,
+            FieldS3('feature_group_id', db.gis_feature_group, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Group'),
@@ -291,7 +291,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T('No Tracks currently available'))
 # Reusable field for other tables to reference
 track_id = SQLTable(None, 'track_id',
-            Field('track_id', db.gis_track,
+            FieldS3('track_id', db.gis_track, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_track.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_track.id==id).select().first().name] or ["None"])[0],
                 label = T('Track'),

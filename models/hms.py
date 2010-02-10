@@ -264,7 +264,7 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field for other tables to reference
 hospital_id = SQLTable(None, 'hospital_id',
-                       Field('hospital_id', db.hms_hospital,
+                       FieldS3('hospital_id', db.hms_hospital, sortby='name',
                              requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hospital.id', '%(name)s')),
                              represent = lambda id: (id and [db(db.hms_hospital.id==id).select()[0].name] or ["None"])[0],
                              label = T('Hospital'),

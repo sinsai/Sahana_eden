@@ -73,7 +73,7 @@ s3.crud_strings[table] = Storage(
 
 # Reusable field
 vol_project_id = db.Table(None, 'vol_project_id',
-                          Field('vol_project_id', db.vol_project,
+                          FieldS3('vol_project_id', db.vol_project, sortby='name',
                           requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_project.id', '%(name)s')),
                           represent = lambda id: (id and [db.vol_project[id].name] or ["None"])[0],
                           comment = DIV(A(s3.crud_strings.vol_project.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_project.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Project|Add new project)."))),
@@ -128,7 +128,7 @@ s3.crud_strings[table] = Storage(
 
 # Reusable field
 vol_position_id = db.Table(None, 'vol_position_id',
-                           Field('vol_position_id', db.vol_position,
+                           FieldS3('vol_position_id', db.vol_position, sortby='title',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_position.id', '%(title)s')),
                            represent = lambda id: lambda id: (id and [db.vol_position[id].title] or ["None"])[0],
                            comment = DIV(A(s3.crud_strings.vol_project.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_project.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Position|Add new position)."))),
@@ -210,7 +210,7 @@ s3.crud_strings[table] = Storage(
 
 # Reusable field
 vol_volunteer_id = db.Table(None, 'vol_volunteer_id',
-                            Field('vol_volunteer_id', db.vol_volunteer,
+                            FieldS3('vol_volunteer_id', db.vol_volunteer, sortby=['first_name','middle_name','last_name'],
                             requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status==1), 'vol_volunteer.id', shn_vol_volunteer_represent)),
                             represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
                             comment = DIV(A(s3.crud_strings.vol_volunteer.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='volunteer', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_volunteer.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Volunteer|Add new volunteer)."))),

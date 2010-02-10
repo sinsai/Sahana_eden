@@ -49,7 +49,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T('Service deleted'),
     msg_list_empty = T('No Services currently registered'))
 
-# Functions
+# Functionsa
 def service_represent(service_ids):
 
     if not service_ids:
@@ -61,8 +61,9 @@ def service_represent(service_ids):
         return db(db.or_service.id==service_ids).select()[0].name
 
 # Reusable field
+# 
 service_id = SQLTable(None, 'service_id',
-                      Field('service_id',
+                      FieldS3('service_id', sortby='name',
                             requires = IS_NULL_OR(IS_ONE_OF(db, 'or_service.id', '%(name)s', multiple=True)),
                             represent = service_represent,
                             label = T('Service'),
@@ -117,7 +118,7 @@ def sector_represent(sector_ids):
 
 # Reusable field
 sector_id = SQLTable(None, 'sector_id',
-                     Field('sector_id',
+                     FieldS3('sector_id', sortby='name',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_sector.id', '%(name)s', multiple=True)),
                            represent = sector_represent,
                            label = T('Sector'),
@@ -206,8 +207,9 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T('No Organizations currently registered'))
 
 # Reusable field
+
 organisation_id = SQLTable(None, 'organisation_id',
-                           Field('organisation_id', db.or_organisation,
+                           FieldS3('organisation_id', db.or_organisation, sortby='name',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
                            represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
                            label = T('Organization'),
@@ -312,7 +314,7 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field for other tables to reference
 office_id = SQLTable(None, 'office_id',
-            Field('office_id', db.or_office,
+            FieldS3('office_id', db.or_office, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0],
                 label = T('Office'),

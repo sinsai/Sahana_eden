@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'default'
 # Current Module (for sidebar title)
@@ -101,4 +101,9 @@ def about():
 def help():
     "Custom View"
     response.title = T('Help')
+    return dict()
+
+def contact():
+    "Custom View"
+    response.title = T('Contact us')
     return dict()

@@ -14,8 +14,8 @@ module = 'pr'
 # Settings
 #
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
@@ -103,23 +103,23 @@ def shn_pentity_represent(id):
 # pentity table ---------------------------------------------------------------
 #
 resource = 'pentity'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
 #                    Field('parent'),                # Parent Entity
                     opt_pr_entity_type,              # Entity class
                     Field('label', length=128),      # Recognition Label
                     migrate=migrate)
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-#db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-#db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+#table.label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
+#table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
 
 # Field representation
-#db[table].deleted.readable = True
+#table.deleted.readable = True
 
 # Field labels
-#db[table].parent.label = T('belongs to')
+#table.parent.label = T('belongs to')
 
 # CRUD Strings
 
@@ -275,8 +275,8 @@ def shn_pr_person_represent(id):
 # person table ----------------------------------------------------------------
 #
 resource = 'person'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                         # Person Entity Field Set
                 Field('missing', 'boolean', default=False), # Missing?
                 Field('first_name', notnull=True),      # first or only name
@@ -300,35 +300,35 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # Field validation
-db[table].date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
+table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
                                         error_message="%s " % T("Enter a date before") + "%(max)s!"))
-db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
-db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
-db[table].email.requires = IS_NULL_OR(IS_EMAIL())
-db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
-db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_person.pr_pe_label'))
+table.first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
+table.email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
+table.email.requires = IS_NULL_OR(IS_EMAIL())
+table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
+table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_person.pr_pe_label'))
 
 # Field representation
-db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
-db[table].first_name.comment = SPAN(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
-db[table].preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
-db[table].local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
-db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
-db[table].mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
-db[table].opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
-db[table].opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
+table.pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
+table.first_name.comment = SPAN(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
+table.preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
+table.local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
+table.email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
+table.mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
+table.opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
+table.opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
 
-db[table].missing.represent = lambda missing: (missing and ['missing'] or [''])[0]
+table.missing.represent = lambda missing: (missing and ['missing'] or [''])[0]
 
 # Field labels
-db[table].opt_pr_gender.label = T('Gender')
-db[table].opt_pr_age_group.label = T('Age group')
-db[table].mobile_phone.label = T("Mobile Phone #")
+table.opt_pr_gender.label = T('Gender')
+table.opt_pr_age_group.label = T('Age group')
+table.mobile_phone.label = T("Mobile Phone #")
 
 # CRUD Strings
 ADD_PERSON = T('Add Person')
 LIST_PERSONS = T('List Persons')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Add a Person'),
     title_display = T('Person Details'),
     title_list = LIST_PERSONS,
@@ -381,8 +381,8 @@ opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
 # group table -----------------------------------------------------------------
 #
 resource = 'group'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                                 # Person Entity Field Set
                 opt_pr_group_type,                              # group type
                 Field('system','boolean',default=False),        # System internal? (e.g. users?)
@@ -406,21 +406,21 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 # Field validation
 
 # Field representation
-db[table].pr_pe_label.readable = False
-db[table].pr_pe_label.writable = False
-db[table].system.readable = False
-db[table].system.writable = False
-db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_group.pr_pe_label'))
+table.pr_pe_label.readable = False
+table.pr_pe_label.writable = False
+table.system.readable = False
+table.system.writable = False
+table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_group.pr_pe_label'))
 
 # Field labels
-db[table].opt_pr_group_type.label = T("Group type")
-db[table].group_name.label = T("Group name")
-db[table].group_description.label = T("Group description")
+table.opt_pr_group_type.label = T("Group type")
+table.group_name.label = T("Group name")
+table.group_description.label = T("Group description")
 
 # CRUD Strings
 ADD_GROUP = T('Add Group')
 LIST_GROUPS = T('List Groups')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_GROUP,
     title_display = T('Group Details'),
     title_list = LIST_GROUPS,

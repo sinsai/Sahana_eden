@@ -63,5 +63,5 @@ OpenLayers.Util.extend( selectPdfControl, {
             });
         this.w.show();
     }
-}); 
+});
 {{pass}}

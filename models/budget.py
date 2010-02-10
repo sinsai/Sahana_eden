@@ -4,8 +4,8 @@ module = 'budget'
 
 # Settings
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
@@ -13,8 +13,8 @@ db.define_table(table,
 # Parameters
 # Only record 1 is used
 resource = 'parameter'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp,
                 Field('shipping', 'double', default=15.00, notnull=True),
                 Field('logistics', 'double', default=0.00, notnull=True),
                 Field('admin', 'double', default=0.00, notnull=True),
@@ -60,8 +60,8 @@ opt_budget_category_type = db.Table(None, 'budget_category_type',
                                 label = T('Category'),
                                 represent = lambda opt: budget_category_type_opts.get(opt, T('Unknown'))))
 resource = 'item'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 opt_budget_category_type,
                 Field('code', length=128, notnull=True, unique=True),
                 Field('description', notnull=True),
@@ -75,8 +75,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Kits
 resource = 'kit'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('code', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
@@ -88,8 +88,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Kit<>Item Many2Many
 resource = 'kit_item'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('kit_id', db.budget_kit),
                 Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
@@ -97,8 +97,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Bundles
 resource = 'bundle'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
@@ -108,8 +108,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Bundle<>Kit Many2Many
 resource = 'bundle_kit'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
                 Field('bundle_id', db.budget_bundle),
                 Field('kit_id', db.budget_kit, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
@@ -119,8 +119,8 @@ db.define_table(table, timestamp, deletion_status,
 
 # Bundle<>Item Many2Many
 resource = 'bundle_item'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
                 Field('bundle_id', db.budget_bundle),
                 Field('item_id', db.budget_item, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
@@ -142,8 +142,8 @@ opt_budget_currency_type = db.Table(None, 'budget_currency_type',
                     represent = lambda opt: budget_currency_type_opts.get(opt, T('Unknown'))))
 
 resource = 'staff'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
                 Field('grade', notnull=True),
                 Field('salary', 'integer', notnull=True),
@@ -158,8 +158,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Locations
 resource = 'location'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('code', length=3, notnull=True, unique=True),
                 Field('description'),
                 Field('subsistence', 'double', default=0.00),
@@ -169,8 +169,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Projects
 resource = 'project'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('code', length=128, notnull=True, unique=True),
                 Field('title'),
                 Field('comments'),
@@ -178,8 +178,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Budgets
 resource = 'budget'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_onetime_costs', 'double', writable=False),
@@ -189,8 +189,8 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 
 # Budget<>Bundle Many2Many
 resource = 'budget_bundle'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
                 Field('budget_id', db.budget_budget),
                 Field('project_id', db.budget_project),
                 Field('location_id', db.budget_location),
@@ -201,8 +201,8 @@ db.define_table(table, timestamp, deletion_status,
 
 # Budget<>Staff Many2Many
 resource = 'budget_staff'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
                 Field('budget_id', db.budget_budget),
                 Field('project_id', db.budget_project),
                 Field('location_id', db.budget_location),

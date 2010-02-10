@@ -10,8 +10,8 @@ module = 'or'
 # Settings
 #
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
@@ -19,22 +19,22 @@ db.define_table(table,
 # -----------------------------------------------------------------------------
 # Services
 resource = 'service'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
                 migrate=migrate)
 
 # Field settings
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
 
 # CRUD strings
 ADD_SERVICE = T('Add Service')
 LIST_SERVICES = T('List Services')
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_SERVICE,
     title_display = T('Service Details'),
     title_list = LIST_SERVICES,
@@ -74,23 +74,23 @@ service_id = SQLTable(None, 'service_id',
 # Sectors (to be renamed as Clusters)
 #
 resource = 'sector'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
                 service_id,
                 migrate=migrate)
 
 # Field settings
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
 
 # CRUD strings
 ADD_SECTOR = T('Add Sector')
 LIST_SECTORS = T('List Sectors')
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_SECTOR,
     title_display = T('Sector Details'),
     title_list = LIST_SECTORS,

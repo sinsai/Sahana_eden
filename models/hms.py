@@ -12,8 +12,8 @@ module = 'hms'
 # Settings
 #
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
@@ -84,8 +84,8 @@ hms_or_status_opts = {
 } #: OR Status Options
 
 resource = 'hospital'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 #Field('ho_uuid', unique=True, length=128),  # UUID assigned by Health Organisation (WHO, PAHO)
                 Field('gov_uuid', unique=True, length=128), # UUID assigned by Local Government
                 Field('name', notnull=True),                # Name of the facility
@@ -158,95 +158,95 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].organisation_id.represent = lambda id: \
+table.organisation_id.represent = lambda id: \
     (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
-#db[table].ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
-#db[table].ho_uuid.label = T('Health Org UUID')
-#db[table].ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
+#table.ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
+#table.ho_uuid.label = T('Health Org UUID')
+#table.ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
 #    _title=T("Health Organisation UUID|The Universal Unique Identifier (UUID) as assigned to this facility by Health Organisations (e.g. WHO))."))
 
-db[table].gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.gov_uuid' % table))
-#db[table].gov_uuid.label = T('Government UUID')
-db[table].gov_uuid.label = T('MOH UUID')
-db[table].gov_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
+table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.gov_uuid' % table))
+#table.gov_uuid.label = T('Government UUID')
+table.gov_uuid.label = T('MOH UUID')
+table.gov_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
 #    _title=T("Government UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the government."))
     _title=T("Government UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the MOH."))
 
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
 
-db[table].aka1.label = T('Other Name')
-db[table].aka2.label = T('Other Name')
+table.aka1.label = T('Other Name')
+table.aka2.label = T('Other Name')
 
-db[table].address.label = T('Address')
-db[table].postcode.label = T('Postcode')
+table.address.label = T('Address')
+table.postcode.label = T('Postcode')
 
-db[table].phone_exchange.label = T('Phone/Exchange')
-db[table].phone_business.label = T('Phone/Business')
-db[table].phone_emergency.label = T('Phone/Emergency')
-db[table].email.requires = IS_NULL_OR(IS_EMAIL())
-db[table].email.label = T('Email')
-db[table].fax.label = T('FAX')
+table.phone_exchange.label = T('Phone/Exchange')
+table.phone_business.label = T('Phone/Business')
+table.phone_emergency.label = T('Phone/Emergency')
+table.email.requires = IS_NULL_OR(IS_EMAIL())
+table.email.label = T('Email')
+table.fax.label = T('FAX')
 
-db[table].total_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].total_beds.label = T('Total Beds')
-db[table].total_beds.writable = False
-db[table].total_beds.comment = A(SPAN("[Help]"), _class="tooltip",
+table.total_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.total_beds.label = T('Total Beds')
+table.total_beds.writable = False
+table.total_beds.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Total Beds|Total number of beds in this hospital. Automatically updated from daily reports."))
 
-db[table].available_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].available_beds.label = T('Available Beds')
-db[table].available_beds.writable = False
-db[table].available_beds.comment = A(SPAN("[Help]"), _class="tooltip",
+table.available_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.available_beds.label = T('Available Beds')
+table.available_beds.writable = False
+table.available_beds.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Available Beds|Number of vacant/available beds in this hospital. Automatically updated from daily reports."))
 
-db[table].ems_status.comment = A(SPAN("[Help]"), _class="tooltip",
+table.ems_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("EMS Status|Status of operations of the emergency department of this hospital."))
-db[table].ems_reason.comment = A(SPAN("[Help]"), _class="tooltip",
+table.ems_reason.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("EMS Reason|Report the contributing factors for the current EMS status."))
 
-db[table].or_status.comment = A(SPAN("[Help]"), _class="tooltip",
+table.or_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("OR Status|Status of the operating rooms of this hospital."))
-db[table].or_reason.comment = A(SPAN("[Help]"), _class="tooltip",
+table.or_reason.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("OR Reason|Report the contributing factors for the current OR status."))
 
-db[table].facility_status.comment = A(SPAN("[Help]"), _class="tooltip",
+table.facility_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Facility Status|Status of general operation of the facility."))
-db[table].clinical_status.comment = A(SPAN("[Help]"), _class="tooltip",
+table.clinical_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Clinical Status|Status of clinical operation of the facility."))
-db[table].morgue_status.comment = A(SPAN("[Help]"), _class="tooltip",
+table.morgue_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Morgue Status|Status of morgue capacity."))
-db[table].security_status.comment = A(SPAN("[Help]"), _class="tooltip",
+table.security_status.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Security Status|Status of security procedures/access restrictions in the hospital."))
 
-db[table].morgue_units.label = T('Morgue Units Available')
-db[table].morgue_units.comment =  A(SPAN("[Help]"), _class="tooltip",
+table.morgue_units.label = T('Morgue Units Available')
+table.morgue_units.comment =  A(SPAN("[Help]"), _class="tooltip",
     _title=T("Morgue Units Available|Number of vacant/available units to which victims can be transported immediately."))
-db[table].morgue_units.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+table.morgue_units.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 
-db[table].doctors.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-db[table].doctors.label = T('Number of doctors')
-db[table].nurses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-db[table].nurses.label = T('Number of nurses')
-db[table].non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-db[table].non_medical_staff.label = T('Number of non-medical staff')
+table.doctors.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+table.doctors.label = T('Number of doctors')
+table.nurses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+table.nurses.label = T('Number of nurses')
+table.non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+table.non_medical_staff.label = T('Number of non-medical staff')
 
-#db[table].access_status.label = "Access Status"
-db[table].access_status.label = "Road Conditions"
-db[table].access_status.comment =  A(SPAN("[Help]"), _class="tooltip",
+#table.access_status.label = "Access Status"
+table.access_status.label = "Road Conditions"
+table.access_status.comment =  A(SPAN("[Help]"), _class="tooltip",
     _title=T("Road Conditions|Describe the condition of the roads to your hospital."))
 
-db[table].info_source.label = "Source of Information"
-db[table].info_source.comment =  A(SPAN("[Help]"), _class="tooltip",
+table.info_source.label = "Source of Information"
+table.info_source.comment =  A(SPAN("[Help]"), _class="tooltip",
     _title=T("Source of Information|Specify the source of the information in this report."))
 
 ADD_HOSPITAL = T('Add Hospital')
 LIST_HOSPITALS = T('List Hospitals')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_HOSPITAL,
     title_display = T('Hospital Details'),
     title_list = LIST_HOSPITALS,
@@ -268,7 +268,7 @@ hospital_id = SQLTable(None, 'hospital_id',
                              requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hospital.id', '%(name)s')),
                              represent = lambda id: (id and [db(db.hms_hospital.id==id).select()[0].name] or ["None"])[0],
                              label = T('Hospital'),
-                             comment = DIV(A(s3.crud_strings[table].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[table].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Hospital|The hospital this record is associated with."))),
+                             comment = DIV(A(s3.crud_strings[tablename].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[tablename].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Hospital|The hospital this record is associated with."))),
                              ondelete = 'RESTRICT'))
 
 # RSS Feed
@@ -316,8 +316,8 @@ def shn_hms_hospital_onaccept(form):
 # Contacts
 #
 resource = 'hcontact'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
                 hospital_id,
                 person_id,
                 Field('title'),
@@ -329,17 +329,17 @@ db.define_table(table, timestamp, deletion_status,
                 Field('website'),
                 migrate=migrate)
 
-db[table].person_id.label = T('Contact')
-db[table].title.label = T('Job Title')
-db[table].title.comment = A(SPAN("[Help]"), _class="tooltip",
+table.person_id.label = T('Contact')
+table.title.label = T('Job Title')
+table.title.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Title|The Role this person plays within this hospital."))
 
-db[table].phone.label = T('Phone')
-db[table].mobile.label = T('Mobile')
-db[table].email.requires = IS_NULL_OR(IS_EMAIL())
-db[table].email.label = T('Email')
-db[table].fax.label = T('FAX')
-db[table].skype.label = T('Skype ID')
+table.phone.label = T('Phone')
+table.mobile.label = T('Mobile')
+table.email.requires = IS_NULL_OR(IS_EMAIL())
+table.email.label = T('Email')
+table.fax.label = T('FAX')
+table.skype.label = T('Skype ID')
 
 s3xrc.model.add_component(module, resource,
     multiple=True,
@@ -350,7 +350,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'person_id', 'title', 'phone', 'mobile', 'email', 'fax', 'skype'])
 
 # CRUD Strings
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Add Contact'),
     title_display = T('Contact Details'),
     title_list = T('Contacts'),
@@ -369,8 +369,8 @@ s3.crud_strings[table] = Storage(
 # Activity
 #
 resource = 'hactivity'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 hospital_id,
                 Field('date', 'datetime'),              # Date&Time the entry applies to
                 Field('patients', 'integer'),           # Current Number of Patients
@@ -380,28 +380,28 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('comment', length=128),
                 migrate=migrate)
 
-db[table].date.label = T('Date & Time')
-db[table].date.comment = A(SPAN("[Help]"), _class="tooltip",
+table.date.label = T('Date & Time')
+table.date.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Date & Time|Date and time this report relates to."))
 
-db[table].patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].patients.label = T('Number of Patients')
-db[table].patients.comment = A(SPAN("[Help]"), _class="tooltip",
+table.patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.patients.label = T('Number of Patients')
+table.patients.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Patients|Number of in-patients at the time of reporting."))
 
-db[table].admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].admissions24.label = T('Admissions/24hrs')
-db[table].admissions24.comment = A(SPAN("[Help]"), _class="tooltip",
+table.admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.admissions24.label = T('Admissions/24hrs')
+table.admissions24.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Admissions/24hrs|Number of newly admitted patients during the past 24 hours."))
 
-db[table].discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].discharges24.label = T('Discharges/24hrs')
-db[table].discharges24.comment = A(SPAN("[Help]"), _class="tooltip",
+table.discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.discharges24.label = T('Discharges/24hrs')
+table.discharges24.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Discharges/24hrs|Number of discharged patients during the past 24 hours."))
 
-db[table].deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].deaths24.label = T('Deaths/24hrs')
-db[table].deaths24.comment = A(SPAN("[Help]"), _class="tooltip",
+table.deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.deaths24.label = T('Deaths/24hrs')
+table.deaths24.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Deaths/24hrs|Number of deaths during the past 24 hours."))
 
 s3xrc.model.add_component(module, resource,
@@ -412,7 +412,7 @@ s3xrc.model.add_component(module, resource,
     main='hospital_id', extra='id',
     list_fields = ['id', 'date', 'patients', 'admissions24', 'discharges24', 'deaths24', 'comment'])
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Add Activity Report'),
     title_display = T('Activity Report'),
     title_list = T('Activity Reports'),
@@ -450,8 +450,8 @@ hms_bed_type_opts = {
 }
 
 resource = 'bed_capacity'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 hospital_id,
                 Field('unit_name', length=64),
                 Field('bed_type', 'integer',
@@ -466,27 +466,27 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('comment', length=128),
                 migrate=migrate)
 
-db[table].unit_name.label = T('Department/Unit Name')
-db[table].date.label = T('Date of Report')
+table.unit_name.label = T('Department/Unit Name')
+table.date.label = T('Date of Report')
 
-db[table].unit_name.readable = False
-db[table].unit_name.writable = False
+table.unit_name.readable = False
+table.unit_name.writable = False
 
-db[table].bed_type.readable = False
-db[table].bed_type.writable = False
+table.bed_type.readable = False
+table.bed_type.writable = False
 
-db[table].beds_baseline.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].beds_baseline.label = T('Baseline Number of Beds')
-db[table].beds_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].beds_available.label = T('Available Beds')
-db[table].beds_add24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-db[table].beds_add24.label = T('Additional Beds / 24hrs')
+table.beds_baseline.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.beds_baseline.label = T('Baseline Number of Beds')
+table.beds_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.beds_available.label = T('Available Beds')
+table.beds_add24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
+table.beds_add24.label = T('Additional Beds / 24hrs')
 
-db[table].beds_baseline.comment = A(SPAN("[Help]"), _class="tooltip",
+table.beds_baseline.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Baseline Number of Beds|Baseline number of beds of that type in this unit."))
-db[table].beds_available.comment = A(SPAN("[Help]"), _class="tooltip",
+table.beds_available.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Available Beds|Number of available/vacant beds of that type in this unit at the time of reporting."))
-db[table].beds_add24.comment = A(SPAN("[Help]"), _class="tooltip",
+table.beds_add24.comment = A(SPAN("[Help]"), _class="tooltip",
     _title=T("Additional Beds / 24hrs|Number of additional beds of that type expected to become available in this unit within the next 24 hours."))
 
 # -----------------------------------------------------------------------------
@@ -523,7 +523,7 @@ s3xrc.model.add_component(module, resource,
     main='hospital_id', extra='id',
     list_fields = ['id', 'unit_name', 'bed_type', 'date', 'beds_baseline', 'beds_available', 'beds_add24'])
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Add Unit'),
     title_display = T('Unit Bed Capacity'),
     title_list = T('List Units'),
@@ -543,8 +543,8 @@ s3.crud_strings[table] = Storage(
 # Services
 #
 resource = 'services'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 hospital_id,
                 Field('burn', 'boolean', default=False),
                 Field('card', 'boolean', default=False),
@@ -564,24 +564,24 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('obgy', 'boolean', default=False),
                 migrate=migrate)
 
-db[table].burn.label = T('Burn')
-db[table].card.label = T('Cardiology')
-db[table].dial.label = T('Dialysis')
-db[table].emsd.label = T('Emergency Department')
-db[table].infd.label = T('Infectious Diseases')
-db[table].neon.label = T('Neonatology')
-db[table].neur.label = T('Neurology')
-db[table].pedi.label = T('Pediatrics')
-db[table].surg.label = T('Surgery')
-db[table].labs.label = T('Clinical Laboratory')
-db[table].tran.label = T('Ambulance Service')
-db[table].tair.label = T('Air Transport Service')
-db[table].trac.label = T('Trauma Center')
-db[table].psya.label = T('Psychiatrics/Adult')
-db[table].psyp.label = T('Psychiatrics/Pediatric')
-db[table].obgy.label = T('Obstetrics/Gynecology')
+table.burn.label = T('Burn')
+table.card.label = T('Cardiology')
+table.dial.label = T('Dialysis')
+table.emsd.label = T('Emergency Department')
+table.infd.label = T('Infectious Diseases')
+table.neon.label = T('Neonatology')
+table.neur.label = T('Neurology')
+table.pedi.label = T('Pediatrics')
+table.surg.label = T('Surgery')
+table.labs.label = T('Clinical Laboratory')
+table.tran.label = T('Ambulance Service')
+table.tair.label = T('Air Transport Service')
+table.trac.label = T('Trauma Center')
+table.psya.label = T('Psychiatrics/Adult')
+table.psyp.label = T('Psychiatrics/Pediatric')
+table.obgy.label = T('Obstetrics/Gynecology')
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Add Service Profile'),
     title_display = T('Services Available'),
     title_list = T('Services Available'),
@@ -616,8 +616,8 @@ hms_image_type_opts = {
 }
 
 resource = 'himage'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 hospital_id,
                 #Field('title'),
                 Field('type', 'integer',
@@ -632,23 +632,23 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
-db[table].image.label = T("Image Upload")
-db[table].image.represent = lambda image: image and \
+table.image.label = T("Image Upload")
+table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c='default', f='download', args=image))) or \
         T("No Image")
 
-db[table].url.label = T("URL")
-db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
+table.url.label = T("URL")
+table.url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
-db[table].tags.label = T("Tags")
-db[table].tags.comment = A(SPAN("[Help]"), _class="tooltip",
+table.tags.label = T("Tags")
+table.tags.comment = A(SPAN("[Help]"), _class="tooltip",
                            _title=T("Image Tags|Enter tags separated by commas."))
 
 # CRUD Strings
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Image'),
     title_display = T('Image Details'),
     title_list = T('List Images'),
@@ -676,8 +676,8 @@ s3xrc.model.add_component(module, resource,
 # Resources (multiple) - TODO: to be completed!
 #
 resource = 'resources'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 hospital_id,
                 Field('type'),
                 Field('description'),
@@ -686,7 +686,7 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # CRUD Strings
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Report Resource'),
     title_display = T('Resource Details'),
     title_list = T('Resources'),
@@ -921,8 +921,8 @@ hms_hrequest_source_type = {
 }
 
 resource = 'hrequest'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
             hospital_id,
             Field("subject"),
             Field("message", "text"),
@@ -954,20 +954,20 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
             migrate=migrate)
 
 #label the fields for the view
-db[table].timestamp.label = T('Date & Time')
+table.timestamp.label = T('Date & Time')
 
 #Hide fields from user:
-db[table].actionable.writable = db[table].actionable.readable = False
-db[table].source_type.writable = db[table].source_type.readable = False
+table.actionable.writable = table.actionable.readable = False
+table.source_type.writable = table.source_type.readable = False
 
 #set default values
-db[table].actionable.default = 1
-db[table].source_type.default = 1
+table.actionable.default = 1
+table.source_type.default = 1
 
-db[table].message.requires = IS_NOT_EMPTY()
-db[table].message.comment = SPAN("*", _class="req")
+table.message.requires = IS_NOT_EMPTY()
+table.message.comment = SPAN("*", _class="req")
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create        = "Add Aid Request",
     title_display       = "Aid Request Details",
     title_list          = "List Aid Requests",
@@ -988,7 +988,7 @@ hms_hrequest_id = SQLTable(None, 'hms_hrequest_id',
                              requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hrequest.id', '%(id)s')),
                              represent = lambda id: (id and [db(db.hms_hrequest.id==id).select()[0].id] or ["None"])[0],
                              label = T('Request'),
-                             comment = DIV(A(s3.crud_strings[table].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hrequest', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[table].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Request|The request this record is associated with."))),
+                             comment = DIV(A(s3.crud_strings[tablename].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hrequest', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[tablename].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Request|The request this record is associated with."))),
                              ondelete = 'RESTRICT'))
 
 s3xrc.model.add_component(module, resource,
@@ -1166,8 +1166,8 @@ hms_pledge_status_opts = {
 }
 
 resource = 'hpledge'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('submitted_on', 'datetime'),
                 hms_hrequest_id,
                 Field("status", "integer"),
@@ -1176,18 +1176,18 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # hide unnecessary fields
-db[table].hms_hrequest_id.writable = False
+table.hms_hrequest_id.writable = False
 
 # set pledge default
-db[table].status.default = 1
+table.status.default = 1
 
 # auto fill posted_on field and make it readonly
-db[table].submitted_on.default = request.now
-db[table].submitted_on.writable = False
+table.submitted_on.default = request.now
+table.submitted_on.writable = False
 
-db[table].status.requires = IS_IN_SET(hms_pledge_status_opts)
-db[table].status.represent = lambda status: status and hms_pledge_status_opts[status]
-db[table].status.label = T('Status')
+table.status.requires = IS_IN_SET(hms_pledge_status_opts)
+table.status.represent = lambda status: status and hms_pledge_status_opts[status]
+table.status.label = T('Status')
 
 # Pledges as a component of requests
 s3xrc.model.add_component(module, resource,
@@ -1197,7 +1197,7 @@ s3xrc.model.add_component(module, resource,
     editable=True,
     list_fields = ['id', 'organisation_id', 'person_id', 'submitted_on', 'status'])
 
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = "Add Pledge",
     title_display = "Pledge Details",
     title_list = "List Pledges",

@@ -336,3 +336,25 @@ def shn_last_update(table, record_id):
                 last_update = "%s%s%s" % (T("Record last updated"), modified_on, modified_by)
                 return last_update
     return None
+
+def shn_compose_message(data, template):
+
+    from lxml import etree
+    if data:
+        root = etree.Element("message")
+        for k in data.keys():
+            entry = etree.SubElement(root, k)
+            entry.text = s3xrc.xml.xml_encode(str(data[k]))
+
+        message = None
+        tree = etree.ElementTree(root)
+
+        if template:
+            template = os.path.join(request.folder, 'static', template)
+            if os.path.exists(template):
+                message = s3xrc.xml.transform(tree, template)
+
+        if message:
+            return message
+        else:
+            return s3xrc.xml.tostring(tree, pretty_print=True)

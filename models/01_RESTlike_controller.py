@@ -83,10 +83,10 @@ def shn_field_represent(field, row, col):
 def shn_field_represent_sspage(field, row, col):
     if col == 'id':
         id = str(row[col])
-        return '<a href="' + request.function + '/' + id + '">' + id + '</a>' 
+        return '<a href="' + request.function + '/' + id + '">' + id + '</a>'
     else:
         return shn_field_represent(field, row, col)
-    
+
 # *****************************************************************************
 # Exports
 
@@ -957,14 +957,14 @@ def shn_custom_view(jr, default_name, format=None):
 #
 def shn_get_columns(table):
     return [f for f in table.fields if table[f].readable]
- 
+
 def shn_convert_orderby(table,request):
     cols =  shn_get_columns(table)
     try:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)] 
+        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)]
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
     except:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] 
+        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])]
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
 
 #
@@ -1223,13 +1223,13 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limit = int(request.vars.iDisplayLength)
         else:
             limit = None
-        
+
         if "iSortingCols" in request.vars and orderby is None:
             orderby = shn_convert_orderby(table, request)
-        
+
         if request.vars.sSearch and request.vars.sSearch <> "":
             query = shn_build_ssp_filter(table, request) & query
- 
+
         sEcho = int(request.vars.sEcho)
         from gluon.serializers import json
         _table = '%s_%s' % (request.controller, request.function)
@@ -1330,7 +1330,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if response.s3.pagination and not limitby:
             # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
             limitby = (0, 1)
-        
+
         items = crud.select(table, query=query,
             fields=fields,
             orderby=orderby,
@@ -1502,7 +1502,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         items = crud.select(table, query, truncate=24)
         response.view = 'plain.html'
         return dict(item=items, jr=jr)
-        
+
     elif jr.representation == "csv":
         return export_csv(resource, query)
 
@@ -1600,6 +1600,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         else:
             if not crud.settings.create_next:
                 crud.settings.create_next = jr.there()
+            if not onvalidation:
+                onvalidation = crud.settings.create_onvalidation
+            if not onaccept:
+                onaccept = crud.settings.create_onaccept
 
         if onaccept:
             _onaccept = lambda form: \
@@ -1811,6 +1815,10 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             else:
                 if not crud.settings.update_next:
                     crud.settings.update_next = jr.here()
+                if not onvalidation:
+                    onvalidation = crud.settings.update_onvalidation
+                if not onaccept:
+                    onaccept = crud.settings.update_onaccept
 
             try:
                 message = s3.crud_strings[tablename].msg_record_modified
@@ -2138,6 +2146,28 @@ def shn_rest_controller(module, resource,
             raise HTTP(404, body=BADRECORD)
             #session.error = BADRECORD
             #redirect(URL(r=request, f='index'))
+
+    # Run prep, if set
+    if response.s3.prep is not None:
+        prep = response.s3.prep(jr)
+        if prep and isinstance(prep, dict):
+            bypass = prep.get('bypass', False)
+            output = prep.get('output', None)
+            if bypass and output:
+                return output
+            success = prep.get('success', True)
+            if not success:
+                if jr.representation=='html' and output:
+                    return output
+                status = prep.get('status', 400)
+                message = prep.get('message', INVALIDREQUEST)
+                raise HTTP(status, message)
+            else:
+                pass
+        elif not prep:
+            raise HTTP(400, body=INVALIDREQUEST)
+        else:
+            pass
 
     # *************************************************************************
     # Joined Table Operation

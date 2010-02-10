@@ -372,6 +372,14 @@ def represent_focal_point(is_focal_point):
     else:
         return "-"
 
+def shn_or_contact_represent(contact_id):
+    person = db((db.or_contact.id==contact_id) &
+                (db.pr_person.id==db.or_contact.person_id)).select(db.pr_person.ALL)
+    if person:
+        return vita.fullname(person[0])
+    else:
+        return None
+ 
 db[table].focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
 db[table].focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
 

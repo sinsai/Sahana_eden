@@ -464,7 +464,8 @@ def import_csv():
     "Import CSV data via POST upload to Database."
     file = request.vars.multifile.file
     try:
-        db.import_from_csv_file(file)
+        # Assumes that it is a concatenation of tables
+        shn_import_csv(file)
         session.flash = T('Data uploaded')
     except Exception, e:
         session.error = T('Unable to parse CSV file!')

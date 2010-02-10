@@ -815,7 +815,7 @@ def kit_import_csv():
     file = request.vars.filename.file
     try:
         # Assumes that it is a concatenation of tables
-        import_csv(file)
+        shn_import_csv(file)
         session.flash = T('Data uploaded')
     except: 
         session.error = T('Unable to parse CSV file!')

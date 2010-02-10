@@ -63,6 +63,7 @@ s3xrc = ResourceController(db,
                            rpp=ROWSPERPAGE,
                            gis=gis)
 
+
 def shn_field_represent(field, row, col):
     """
         Representation of a field
@@ -952,27 +953,42 @@ def shn_custom_view(jr, default_name, format=None):
 def check_foreign(table,f):
     """
     returns list of four elements:
-    list[0] => string -- input column name for f,
-    list[1] => string -- the lookup table column for representation
-    list[2] => object -- lookup table if any or original table
-    list[3] => object -- column in the lookup table if any or the original column f
+    col[0] => string -- input column name for f,
+    col[1] => string -- the lookup table column for representation
+    col[2] => object -- lookup table if any or original table
+    col[3] => [object] -- list of columns in the lookup table if any or the original column f
 
     Example 1. - f is a foreign key:
     
     for  or_organisation and sector_id
-    returns      ['sector_id', 'or_sector.name', or_sector, name]
+    returns      ['sector_id', 'or_sector.name', or_sector, [name]]  # last name is a or_sector column
 
     Example 2. - f is an ordinary column:    
 
     for  or_organisation and twitter
-    returns      ['twitter', 'twitter', or_organisation, twitter]
+    returns      ['twitter', 'twitter', or_organisation, [twitter]]
     
     """
-    foreign_col = SSPage_Foreign_Columns.get(f)
+    def combine_column_names(foreign_table_name, foreign_col):
+        return ' + " " + '.join([foreign_table_name + '.' + f for f in foreign_col])
+
+    def combine_columns(foreign_table, foreign_col):
+        return [foreign_table[f] for f in foreign_col]
+    
+    if isinstance(table[f],ForeignField):
+        foreign_col = table[f].foreigncolumn
+        if not isinstance(foreign_col,list):
+            foreign_col = [foreign_col]
+    else:
+        foreign_col = None
     if foreign_col: 
-        return [f, table[f].requires.other.ktable+'.'+foreign_col, db[table[f].requires.other.ktable], db[table[f].requires.other.ktable][foreign_col]]
+        return [f, 
+                combine_column_names(table[f].requires.other.ktable, foreign_col), 
+                db[table[f].requires.other.ktable], 
+                combine_columns(db[table[f].requires.other.ktable], foreign_col)
+                ]
     else: 
-        return [f, table._tablename+'.'+f, table, table[f]]
+        return [f, table._tablename+'.'+f, table, [table[f]]]
     
 def shn_get_columns(table):
     return [check_foreign(table, f) for f in table.fields if table[f].readable]
@@ -991,16 +1007,19 @@ def shn_convert_orderby(table,request):
 # shn_build_ssp_filter --------------------------------------------------------
 #
 def shn_build_ssp_filter(table, request):
+    def add_columns_to_search(searchq, cols, context):
+        for col in cols:
+            if searchq is None:
+                searchq = col.like(context)
+            else:
+                searchq = searchq | col.like(context)
+        return searchq
     cols =  shn_get_columns(table)
     context = '%' + request.vars.sSearch + '%'
     searchq = None
     for i in xrange(0, int(request.vars.iColumns) - 1):
         if table[cols[i][0]].type in ['string','text']:
-            tbl = cols[i][2]
-            if searchq is None:
-                searchq = cols[i][3].like(context)
-            else:
-                searchq = searchq | cols[i][3].like(context)
+            searchq = add_columns_to_search(searchq,cols[i][3],context)
     return searchq
 #
 # shn_prepare_join --------------------------------------------------------
@@ -1014,7 +1033,7 @@ def shn_prepare_join(table, request):
     """
     cols =  shn_get_columns(table)
     fields_to_pull = ', '.join([col[1] for col in cols])
-    joins_to_pull = [col[2].on(table[col[0]] == col[2].id) for col in cols if (table._tablename+'.'+col[0]) <> col[1]]
+    joins_to_pull = [col[2].on(table[col[0]].join_via(col[2].id)) for col in cols if (table._tablename+'.'+col[0]) <> col[1]]
     represent_list = [col[1] for col in cols]
     return (fields_to_pull, joins_to_pull, represent_list)
 

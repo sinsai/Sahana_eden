@@ -62,9 +62,8 @@ def service_represent(service_ids):
 
 # Reusable field
 # 
-SSPage_Foreign_Columns.update(service_id = 'name')
 service_id = SQLTable(None, 'service_id',
-                      Field('service_id',
+                      ForeignField('service_id', foreigncolumn='name',
                             requires = IS_NULL_OR(IS_ONE_OF(db, 'or_service.id', '%(name)s', multiple=True)),
                             represent = service_represent,
                             label = T('Service'),
@@ -118,10 +117,9 @@ def sector_represent(sector_ids):
         return db(db.or_sector.id==sector_ids).select()[0].name
 
 # Reusable field
-SSPage_Foreign_Columns.update(sector_id = 'name')
 sector_id = SQLTable(None, 'sector_id',
-                     Field('sector_id',
-                           requires = IS_NULL_OR(IS_ONE_OF(db, 'or_sector.id', '%(name)s', multiple=True)),
+                     ForeignField('sector_id', foreigncolumn='name',
+                           requires = IS_NULL_OR(IS_ONE_OF(db, 'or_sector.name', '%(name)s', multiple=True)),
                            represent = sector_represent,
                            label = T('Sector'),
                            comment = DIV(A(ADD_SECTOR, _class='thickbox', _href=URL(r=request, c='or', f='sector', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SECTOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
@@ -210,9 +208,8 @@ s3.crud_strings[table] = Storage(
 
 # Reusable field
 
-SSPage_Foreign_Columns.update(organisation_id = 'name')
 organisation_id = SQLTable(None, 'organisation_id',
-                           Field('organisation_id', db.or_organisation,
+                           ForeignField('organisation_id', db.or_organisation, foreigncolumn='name',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
                            represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
                            label = T('Organization'),
@@ -316,9 +313,8 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No Offices currently registered'))
 
 # Reusable field for other tables to reference
-SSPage_Foreign_Columns.update(office_id = 'name')
 office_id = SQLTable(None, 'office_id',
-            Field('office_id', db.or_office,
+            ForeignField('office_id', db.or_office, foreigncolumn='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0],
                 label = T('Office'),

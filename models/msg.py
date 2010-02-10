@@ -74,7 +74,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T('No Groups currently registered'))
 # Reusable field for other tables to reference
 msg_group_id = db.Table(None, 'msg_group_id',
-            Field('msg_group_id', db.msg_group,
+            FieldS3('msg_group_id', db.msg_group, sortby='name',
                 requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s'),
                 represent = lambda id: (id and [db(db.msg_group.id==id).select()[0].name] or ["None"])[0],
                 label = T('Group'),

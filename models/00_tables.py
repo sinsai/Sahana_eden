@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from gluon.tools import Service
+
 service = Service(globals())
 
 # Reusable timestamp fields
@@ -65,7 +66,7 @@ deletion_status = db.Table(None, 'deletion_status',
 
 # Reusable Admin field
 admin_id = db.Table(None, 'admin_id',
-            Field('admin', db.auth_group,
+            FieldS3('admin', db.auth_group, sortby='role',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
                 comment = DIV(A(T('Add Role'), _class='thickbox', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
@@ -225,7 +226,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T('No Sources currently registered'))
 # Reusable field for other tables to reference
 source_id = SQLTable(None, 'source_id',
-            Field('source_id', db.s3_source,
+            FieldS3('source_id', db.s3_source, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 's3_source.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.s3_source.id==id).select()[0].name] or ["None"])[0],
                 label = T('Source of Information'),

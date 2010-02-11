@@ -2614,7 +2614,11 @@ def shn_rest_controller(module, resource,
                         if filter == '~':
                             if field2 and field3:
                                 # pr_person name search
-                                query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                                if ' ' in value:
+                                    value1, value2 = value.split(' ', 1)
+                                    query = query & ((jr.table[field].like('%' + value1 + '%')) & (jr.table[field2].like('%' + value2 + '%')) | (jr.table[field3].like('%' + value2 + '%')))
+                                else:
+                                    query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
                             else:
                                 query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None

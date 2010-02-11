@@ -406,6 +406,8 @@ def export_xml(jr):
 def shn_import_csv(file, table=None):
 
     """ Import CSV file into Database """
+    import csv
+    csv.field_size_limit(1000000000)  # raise limit to load long fields 
 
     if table:
         table.import_from_csv_file(file)

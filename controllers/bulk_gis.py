@@ -214,15 +214,15 @@ def export_admin_areas_csv():
     admin_area_locations = db(db.gis_location.feature_class_id==admin_area_class_id)
     location_to_fgs = db(db.gis_location_to_feature_group.location_id.belongs(admin_area_locations._select(db.gis_location.id)))
     feature_groups = db(db.gis_feature_group.id.belongs(location_to_fgs._select(db.gis_location_to_feature_group.feature_group_id)))
-    admin_area_data = {
-        'gis_location': admin_area_locations,
-        'gis_feature_class': db(db.gis_feature_class.id==admin_area_class_id),
-        'gis_location_to_feature_group': location_to_fgs,
-        'gis_feature_group': feature_groups,
-    }
+    admin_area_data = [
+        ('gis_feature_class', db(db.gis_feature_class.id==admin_area_class_id)),
+        ('gis_location', admin_area_locations),
+        ('gis_feature_group', feature_groups),
+        ('gis_location_to_feature_group', location_to_fgs),
+    ]
     
     s = StringIO()
-    for table, query in admin_area_data.iteritems():
+    for table, query in admin_area_data:
         s.write('TABLE %s\r\n' % table)
         query.select().export_to_csv_file(s)
         s.write('\r\n\r\n')

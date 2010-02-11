@@ -17,8 +17,8 @@ opt_s3_module_type = db.Table(None, 'opt_s3_module_type',
                     represent = lambda opt: s3_module_type_opts.get(opt, T('Unknown'))))
 
 resource = 'module'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('name', length=32, notnull=True, unique=True),
                 Field('name_nice', length=128, notnull=True, unique=True),
                 opt_s3_module_type,
@@ -27,10 +27,10 @@ db.define_table(table,
                 Field('description'),
                 Field('enabled', 'boolean', default=True),
                 migrate=migrate)
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
-db[table].access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True)) # IS_ONE_OF ignores multiple!
-db[table].priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
+table.access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True)) # IS_ONE_OF ignores multiple!
+table.priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
 
 # Set to False in Production
 if db(db["s3_setting"].id).count():
@@ -40,8 +40,8 @@ else:
 
 if empty:
     # Pre-populate database
-    if not db(db[table].id).count():
-        db[table].insert(
+    if not db(table.id).count():
+        table.insert(
             name="default",
             name_nice="Sahana Home",
             priority=0,
@@ -50,7 +50,7 @@ if empty:
             description="",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="admin",
             name_nice="Administration",
             priority=1,
@@ -59,7 +59,7 @@ if empty:
             description="Site Administration",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="gis",
             name_nice="Mapping",
             priority=2,
@@ -68,7 +68,7 @@ if empty:
             description="Situation Awareness & Geospatial Analysis",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="pr",
             name_nice="Person Registry",
             priority=3,
@@ -77,7 +77,7 @@ if empty:
             description="Central point to record details on People",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="mpr",
             name_nice="Missing Persons Registry",
             priority=4,
@@ -86,7 +86,7 @@ if empty:
             description="Helps to report and search for Missing Persons",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="dvr",
             name_nice="Disaster Victim Registry",
             priority=5,
@@ -95,7 +95,7 @@ if empty:
             description="Traces internally displaced people (IDPs) and their needs",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="hrm",
             name_nice="Human Resources",
             priority=6,
@@ -104,7 +104,7 @@ if empty:
             description="Helps to manage human resources",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="dvi",
             name_nice="Disaster Victim Identification",
             priority=7,
@@ -113,7 +113,7 @@ if empty:
             description="Disaster Victim Identification",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="or",
             name_nice="Organization Registry",
             priority=8,
@@ -122,7 +122,7 @@ if empty:
             description="Lists 'who is doing what & where'. Allows relief agencies to coordinate their activities",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="cr",
             name_nice="Shelter Registry",
             priority=9,
@@ -131,7 +131,7 @@ if empty:
             description="Tracks the location, distibution, capacity and breakdown of victims in Shelters",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="vol",
             name_nice="Volunteer Registry",
             priority=10,
@@ -140,7 +140,7 @@ if empty:
             description="Manage volunteers by capturing their skills, availability and allocation",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="lms",
             name_nice="Logistics Management System",
             priority=11,
@@ -149,7 +149,7 @@ if empty:
             description="Several sub-modules that work together to provide for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="rms",
             name_nice="Request Management",
             priority=12,
@@ -158,7 +158,7 @@ if empty:
             description="Tracks requests for aid and matches them against donors who have pledged aid",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="budget",
             name_nice="Budgeting Module",
             priority=13,
@@ -167,7 +167,7 @@ if empty:
             description="Allows a Budget to be drawn up",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="msg",
             name_nice="Messaging Module",
             priority=14,
@@ -176,7 +176,7 @@ if empty:
             description="Sends & Receives Alerts via Email & SMS",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="delphi",
             name_nice="Delphi Decision Maker",
             priority=15,
@@ -185,7 +185,7 @@ if empty:
             description="Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="media",
             name_nice="Media Manager",
             priority=16,
@@ -194,7 +194,7 @@ if empty:
             description="A library of digital resources, such as Photos.",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="nim",
             name_nice="Nursing Information Manager",
             priority=17,
@@ -203,7 +203,7 @@ if empty:
             description="Module to assist disaster nurses.",
             enabled='True'
         )
-        db[table].insert(
+        table.insert(
             name="hms",
             name_nice="Hospital Management",
             priority=18,

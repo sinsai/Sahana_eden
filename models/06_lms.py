@@ -8,8 +8,8 @@ module = 'lms'
 
 # Settings
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 db.Field('audit_read', 'boolean'),
                 db.Field('audit_write', 'boolean'),
                 migrate=migrate)
@@ -35,8 +35,8 @@ opt_lms_unit_type = SQLTable(None, 'opt_lms_unit_type',
                     represent = lambda opt: lms_unit_type_opts.get(opt, T('Unknown'))))
 
 resource = 'unit'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
                 opt_lms_unit_type, #lms_unit_type_opts --> Type of Unit
                 Field('label'), #short code of Unit for e.g. "m" for "meter"
                 Field('name'),  #complete Unit - "meter" for "m"
@@ -44,43 +44,43 @@ db.define_table(table, timestamp, deletion_status,
                 Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links
                 migrate=migrate)
 
-if not db(db[table].id).count():
-    db[table].insert(
+if not db(table.id).count():
+    table.insert(
         opt_lms_unit_type=1,
         label="m",
         name="Meters"
     )
-    db[table].insert(
+    table.insert(
         opt_lms_unit_type=2,
         label="kg",
         name="Kilograms"
     )
-    db[table].insert(
+    table.insert(
         opt_lms_unit_type=3,
         label="l",
         name="Litres"
     )
-    db[table].insert(
+    table.insert(
         opt_lms_unit_type=4,
         label="cbm",
         name="Cubic Meters"
     )
-    db[table].insert(
+    table.insert(
         opt_lms_unit_type=5,
         label="ton",
         name="Tonne"
     )
 
-db[table].base_unit.requires = IS_NULL_OR(IS_ONE_OF(db, "lms_unit.label", "lms_unit.name"))
-db[table].label.requires=IS_NOT_IN_DB(db, '%s.label' % table)
-db[table].label.label = T('Unit')
-db[table].label.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Label| Unit Short Code for e.g. m for meter."))
-db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Unit Name| Complete Unit Label for e.g. meter for m."))
-db[table].base_unit.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Base Unit| The entered unit links to this unit. For e.g. if you are entering m for meter then choose kilometer(if it exists) and enter the value 0.001 as multiplicator."))
-db[table].multiplicator.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Multiplicator| If Unit = m, Base Unit = Km, then multiplicator is 0.0001 since 1m = 0.001 km."))
+table.base_unit.requires = IS_NULL_OR(IS_ONE_OF(db, "lms_unit.label", "lms_unit.name"))
+table.label.requires=IS_NOT_IN_DB(db, '%s.label' % table)
+table.label.label = T('Unit')
+table.label.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Label| Unit Short Code for e.g. m for meter."))
+table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Unit Name| Complete Unit Label for e.g. meter for m."))
+table.base_unit.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Base Unit| The entered unit links to this unit. For e.g. if you are entering m for meter then choose kilometer(if it exists) and enter the value 0.001 as multiplicator."))
+table.multiplicator.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Multiplicator| If Unit = m, Base Unit = Km, then multiplicator is 0.0001 since 1m = 0.001 km."))
 ADD_UNIT = T('Add Unit ')
 LIST_UNITS = T('List Units')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_UNIT,
     title_display = T('Unit Details'),
     title_list = LIST_UNITS,
@@ -111,8 +111,8 @@ opt_site_category = SQLTable(None, 'site_category_type',
                             label = T('Category'),
                             represent = lambda opt: site_category_opts.get(opt, T('Unknown'))))
 resource = 'site'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('name', notnull=True),
                 db.Field('description'),
 				opt_site_category,
@@ -126,20 +126,20 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('attachment', 'upload', autodelete=True),
                 db.Field('comments'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
-db[table].name.label = T("Site Name")
-db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Name|A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar."))
-db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Description|Use this space to add a description about the warehouse/site."))
-db[table].admin.label = T("Site Manager")
-db[table].person_id.label = T("Contact Person")
-db[table].address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Address|Detailed address of the site for informational/logistics purpose. Please note that you can add GIS/Mapping data about this site in the 'Location' field mentioned below."))
-db[table].attachment.label = T("Image/Other Attachment")
-db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
-db[table].comments.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Additional Comments|Use this space to add additional comments and notes about the Site/Warehouse."))
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
+table.name.label = T("Site Name")
+table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Name|A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar."))
+table.description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Description|Use this space to add a description about the warehouse/site."))
+table.admin.label = T("Site Manager")
+table.person_id.label = T("Contact Person")
+table.address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Address|Detailed address of the site for informational/logistics purpose. Please note that you can add GIS/Mapping data about this site in the 'Location' field mentioned below."))
+table.attachment.label = T("Image/Other Attachment")
+table.attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
+table.comments.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Additional Comments|Use this space to add additional comments and notes about the Site/Warehouse."))
 ADD_SITE = T('Add Site ')
 LIST_SITES = T('List Sites')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_SITE,
     title_display = T('Site Details'),
     title_list = LIST_SITES,
@@ -156,8 +156,8 @@ s3.crud_strings[table] = Storage(
 
 # Storage Locations
 resource = 'storage_loc'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
                 db.Field('name', notnull=True),
                 db.Field('description'),
@@ -168,26 +168,26 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('weight_unit'),
 				db.Field('attachment', 'upload', autodelete=True),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
-db[table].site_id.label = T("Site")
-db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
-db[table].capacity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
-db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
-db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
-db[table].name.label = T("Storage Location Name")
-db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Name|A place within a Site like a Shelf, room, bin number etc."))
-db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Description|Use this space to add a description about the site location."))
-db[table].capacity.label = T("Capacity (W x D X H)")
-db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage location. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
-db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the Storage Location followed by choosing the unit from the drop down list."))
-db[table].attachment.label = T("Image/Other Attachment")
-db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site Location can be uploaded here."))
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
+table.site_id.label = T("Site")
+table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+table.capacity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
+table.capacity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+table.weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
+table.weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+table.site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Storage location is.")))
+table.name.label = T("Storage Location Name")
+table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Name|A place within a Site like a Shelf, room, bin number etc."))
+table.description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Location Description|Use this space to add a description about the site location."))
+table.capacity.label = T("Capacity (W x D X H)")
+table.capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage location. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
+table.max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the Storage Location followed by choosing the unit from the drop down list."))
+table.attachment.label = T("Image/Other Attachment")
+table.attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the location or additional documents that contain supplementary information about the Site Location can be uploaded here."))
 ADD_STORAGE_LOCATION = T('Add Storage Location ')
 LIST_STORAGE_LOCATIONS = T('List Storage Location')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_STORAGE_LOCATION,
     title_display = T('Storage Location Details'),
     title_list = LIST_STORAGE_LOCATIONS,
@@ -204,18 +204,18 @@ s3.crud_strings[table] = Storage(
 
 # Storage Bin Type
 resource = 'storage_bin_type'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('name', notnull=True),
                 db.Field('description'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Type|Name of Storage Bin Type."))
-db[table].description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Description of Bin Type|Use this space to add a description about the Bin Type."))
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.name.requires = IS_NOT_EMPTY()
+table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Type|Name of Storage Bin Type."))
+table.description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Description of Bin Type|Use this space to add a description about the Bin Type."))
 ADD_STORAGE_BIN_TYPE = T('Add Storage Bin Type')
 LIST_STORAGE_BIN_TYPES = T('List Storage Bin Type(s)')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_STORAGE_BIN_TYPE,
     title_display = T('Storage Bin Type Details'),
     title_list = LIST_STORAGE_BIN_TYPES,
@@ -232,8 +232,8 @@ s3.crud_strings[table] = Storage(
 
 # Storage Bins
 resource = 'storage_bin'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
 				db.Field('storage_id', db.lms_storage_loc),
 				db.Field('number', notnull=True),
@@ -245,33 +245,33 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('attachment', 'upload', autodelete=True),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
-db[table].site_id.label = T("Site/Warehouse")
-db[table].site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Bin belongs to.")))
-db[table].storage_id.label = T("Storage Location")
-db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
-db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this this Bin belongs to.")))
-db[table].number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names
-db[table].capacity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
-db[table].capacity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
-db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].bin_type.requires = IS_IN_DB(db, 'lms_storage_bin_type.id', 'lms_storage_bin_type.name')
-db[table].bin_type.comment = DIV(A(T('Add Storage Bin Type'), _class='thickbox', _href=URL(r=request, c='lms', f='storage_bin_type', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin Type.")))
-db[table].storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
-db[table].storage_id.comment = DIV(A(T('Add Storage Location'), _class='thickbox', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this bin is located.")))
-db[table].number.label = T("Storage Bin Number")
-db[table].number.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Number|Identification label of the Storage bin."))
-db[table].storage_id.label = T("Storage Location ID")
-db[table].attachment.label = T("Image/Other Attachment")
-db[table].capacity.label = T("Capacity (W x D X H)")
-db[table].capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage bin. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
-db[table].max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the items the storage bin can contain. followed by choosing the unit from the drop down list."))
-db[table].attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the bin or additional documents that contain supplementary information about it can be uploaded here."))
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
+table.site_id.label = T("Site/Warehouse")
+table.site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Bin belongs to.")))
+table.storage_id.label = T("Storage Location")
+table.storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
+table.storage_id.comment = DIV(A(T('Add Storage Location'), _class='popup', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='plain')), _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this this Bin belongs to.")))
+table.number.requires = IS_NOT_EMPTY()   # Storage Bin Numbers don't have to have unique names
+table.capacity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
+table.capacity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+table.weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
+table.weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+table.bin_type.requires = IS_IN_DB(db, 'lms_storage_bin_type.id', 'lms_storage_bin_type.name')
+table.bin_type.comment = DIV(A(T('Add Storage Bin Type'), _class='thickbox', _href=URL(r=request, c='lms', f='storage_bin_type', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin|Add the Storage Bin Type.")))
+table.storage_id.requires = IS_IN_DB(db, 'lms_storage_loc.id', 'lms_storage_loc.name')
+table.storage_id.comment = DIV(A(T('Add Storage Location'), _class='thickbox', _href=URL(r=request, c='lms', f='storage_loc', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Location|Add the Storage Location where this bin is located.")))
+table.number.label = T("Storage Bin Number")
+table.number.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Number|Identification label of the Storage bin."))
+table.storage_id.label = T("Storage Location ID")
+table.attachment.label = T("Image/Other Attachment")
+table.capacity.label = T("Capacity (W x D X H)")
+table.capacity.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume Capacity|Dimensions of the storage bin. Input in the following format 1 x 2 x 3 for width x depth x height followed by choosing the unit from the drop down list."))
+table.max_weight.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Maximum Weight| Maximum weight capacity of the items the storage bin can contain. followed by choosing the unit from the drop down list."))
+table.attachment.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Image/Attachment|A snapshot of the bin or additional documents that contain supplementary information about it can be uploaded here."))
 ADD_STORAGE_BIN = T('Add Storage Bin ')
 LIST_STORAGE_BINS = T('List Storage Bins')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_STORAGE_BIN,
     title_display = T('Storage Bin Details'),
     title_list = LIST_STORAGE_BINS,
@@ -288,20 +288,20 @@ s3.crud_strings[table] = Storage(
 
 # Item Catalog Master
 resource = 'catalog'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 organisation_id,
 				db.Field('name'),
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.label = T("Catalog Name")
-db[table].name.comment = SPAN("*", _class="req")
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.name.requires = IS_NOT_EMPTY()
+table.name.label = T("Catalog Name")
+table.name.comment = SPAN("*", _class="req")
 ADD_ITEM_CATALOG = T('Add Item Catalog ')
 LIST_ITEM_CATALOGS = T('List Item Catalogs')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_ITEM_CATALOG,
     title_display = T('Item Catalog Details'),
     title_list = LIST_ITEM_CATALOGS,
@@ -318,19 +318,19 @@ s3.crud_strings[table] = Storage(
 
 # Item Catalog Category
 resource = 'catalog_cat'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('name'),
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.label = T("Item Catalog Category")
-db[table].name.comment = SPAN("*", _class="req")
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.name.requires = IS_NOT_EMPTY()
+table.name.label = T("Item Catalog Category")
+table.name.comment = SPAN("*", _class="req")
 ADD_ITEM_CATALOG_CATEGORY = T('Add Item Catalog Category ')
 LIST_ITEM_CATALOG_CATEGORIES = T('List Item Catalog Categories')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_ITEM_CATALOG_CATEGORY,
     title_display = T('Item Catalog Category Details'),
     title_list = LIST_ITEM_CATALOG_CATEGORIES,
@@ -347,22 +347,22 @@ s3.crud_strings[table] = Storage(
 
 # Item Catalog Sub-Category
 resource = 'catalog_subcat'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('parent_category', db.lms_catalog_cat),
 				db.Field('name'),
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()
-db[table].name.label = T("Item Sub-Category")
-db[table].name.comment = SPAN("*", _class="req")
-db[table].parent_category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
-db[table].parent_category.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.name.requires = IS_NOT_EMPTY()
+table.name.label = T("Item Sub-Category")
+table.name.comment = SPAN("*", _class="req")
+table.parent_category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
+table.parent_category.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
 ADD_ITEM_SUB_CATEGORY = T('Add Item Sub-Category ')
 LIST_ITEM_SUB_CATEGORIES = T('List Item Sub-Categories')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_ITEM_SUB_CATEGORY,
     title_display = T('Item Sub-Category Details'),
     title_list = LIST_ITEM_SUB_CATEGORIES,
@@ -380,27 +380,27 @@ s3.crud_strings[table] = Storage(
 # Category<>Sub-Category<>Catalog Relation between all three.
 
 resource = 'category_master'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('category_id', db.lms_catalog_cat),
                 Field('subcategory_id', db.lms_catalog_subcat),
                 Field('catalog_id', db.lms_catalog),
                 migrate=migrate)
-db[table].category_id.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
-db[table].category_id.label = T('Category')
-db[table].category_id.represent = lambda category_id: db(db.lms_catalog_cat.id==category_id).select()[0].name
-db[table].category_id.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
-db[table].subcategory_id.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
-db[table].subcategory_id.label = T('Sub Category')
-db[table].subcategory_id.represent = lambda subcategory_id: db(db.lms_catalog_subcat.id==subcategory_id).select()[0].name
-db[table].subcategory_id.comment = DIV(A(T('Add Item Sub-Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
-db[table].catalog_id.requires = IS_IN_DB(db, 'lms_catalog.id', 'lms_catalog.name')
-db[table].catalog_id.label = T('Catalog')
-db[table].catalog_id.represent = lambda catalog_id: db(db.lms_catalog.id==catalog_id).select()[0].name
-db[table].catalog_id.comment = DIV(A(T('Add Item Catalog'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Catalog.")))
+table.category_id.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
+table.category_id.label = T('Category')
+table.category_id.represent = lambda category_id: db(db.lms_catalog_cat.id==category_id).select()[0].name
+table.category_id.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+table.subcategory_id.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
+table.subcategory_id.label = T('Sub Category')
+table.subcategory_id.represent = lambda subcategory_id: db(db.lms_catalog_subcat.id==subcategory_id).select()[0].name
+table.subcategory_id.comment = DIV(A(T('Add Item Sub-Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
+table.catalog_id.requires = IS_IN_DB(db, 'lms_catalog.id', 'lms_catalog.name')
+table.catalog_id.label = T('Catalog')
+table.catalog_id.represent = lambda catalog_id: db(db.lms_catalog.id==catalog_id).select()[0].name
+table.catalog_id.comment = DIV(A(T('Add Item Catalog'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Catalog.")))
 ADD_CATEGORY_RELATION = T('Add Category<>Sub-Category<>Catalog Relation ')
 LIST_CATEGORY_RELATIONS = T('List Category<>Sub-Category<>Catalog Relation')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_CATEGORY_RELATION,
     title_display = T('Category<>Sub-Category<>Catalog Relation'),
     title_list = LIST_CATEGORY_RELATIONS,
@@ -417,8 +417,8 @@ s3.crud_strings[table] = Storage(
 
 # Shipment
 resource = 'shipment'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('way_bill', notnull=True),
 				db.Field('sender_site', db.lms_site),
 				db.Field('sender_person'),
@@ -430,17 +430,17 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('currency'),
 				db.Field('track_status', readable='False'), #Linked to Shipment Transit Log table
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].way_bill.requires = IS_NOT_EMPTY()
-db[table].way_bill.label = T("Shipment/Way Bills")
-db[table].way_bill.comment = SPAN("*", _class="req")
-db[table].sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].sender_site.comment = DIV(A(T('Add Sender Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
-db[table].recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient|Add a new Site where the Item is being sent to.")))
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.way_bill.requires = IS_NOT_EMPTY()
+table.way_bill.label = T("Shipment/Way Bills")
+table.way_bill.comment = SPAN("*", _class="req")
+table.sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+table.sender_site.comment = DIV(A(T('Add Sender Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
+table.recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+table.recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient|Add a new Site where the Item is being sent to.")))
 ADD_SHIPMENT = T('Add Shipment/Way Bills')
 LIST_SHIPMENTS = T('List Shipment/Way Bills')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_SHIPMENT,
     title_display = T('Shipment/Way Bills Details'),
     title_list = LIST_SHIPMENTS,
@@ -457,8 +457,8 @@ s3.crud_strings[table] = Storage(
 
 # Items
 resource = 'item'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('site_id', db.lms_site),
 				db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #No storage location assigned
 				db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #No Storage Bin assigned
@@ -488,38 +488,38 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 				db.Field('attachment', 'upload', autodelete=True),
                 db.Field('unit_cost', 'double', default=0.00),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name') #this should be automatically done. Using LMS User Preferences
-db[table].site_id.label = T("Site/Warehouse")
-db[table].site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
-db[table].quantity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[5])
-db[table].quantity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].specifications_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
-db[table].specifications_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
-db[table].weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
-db[table].name.requires = IS_NOT_EMPTY()
-db[table].way_bill.comment = SPAN("*", _class="req")
-db[table].name.label = T("Product Name")
-db[table].name.comment = SPAN("*", _class="req")
-db[table].description.label = T("Product Description")
-db[table].category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
-db[table].category.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
-db[table].sub_category.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
-db[table].sub_category.comment = DIV(A(T('Add Item Sub-Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
-db[table].sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].sender_site.comment = DIV(A(T('Add Sender Organisation'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender Site.")))
-db[table].recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-db[table].recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient Site.")))
-db[table].designated.label = T("Designated for")
-db[table].specifications.label = T("Volume/Dimensions")
-db[table].designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
-db[table].specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume/Dimensions|Additional quantity quantifier – i.e. “4x5”."))
-db[table].date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
-db[table].unit_cost.label = T('Unit Cost')
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name') #this should be automatically done. Using LMS User Preferences
+table.site_id.label = T("Site/Warehouse")
+table.site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
+table.quantity_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[5])
+table.quantity_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+table.specifications_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[1])
+table.specifications_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+table.weight_unit.requires = IS_ONE_OF(db, "lms_unit.id", "%(name)s", filterby='opt_lms_unit_type', filter_opts=[2])
+table.weight_unit.comment = DIV(A(T('Add Unit'), _class='thickbox', _href=URL(r=request, c='lms', f='unit', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Unit|Add the unit of measure if it doesnt exists already.")))
+table.name.requires = IS_NOT_EMPTY()
+table.way_bill.comment = SPAN("*", _class="req")
+table.name.label = T("Product Name")
+table.name.comment = SPAN("*", _class="req")
+table.description.label = T("Product Description")
+table.category.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
+table.category.comment = DIV(A(T('Add Item Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_cat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Category.")))
+table.sub_category.requires = IS_IN_DB(db, 'lms_catalog_subcat.id', 'lms_catalog_subcat.name')
+table.sub_category.comment = DIV(A(T('Add Item Sub-Category'), _class='thickbox', _href=URL(r=request, c='lms', f='catalog_subcat', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add main Item Sub-Category.")))
+table.sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+table.sender_site.comment = DIV(A(T('Add Sender Organisation'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sender Site.")))
+table.recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
+table.recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Recipient Site.")))
+table.designated.label = T("Designated for")
+table.specifications.label = T("Volume/Dimensions")
+table.designated.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Designated for|The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
+table.specifications.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Volume/Dimensions|Additional quantity quantifier – i.e. “4x5”."))
+table.date_time.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Date/Time|Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
+table.unit_cost.label = T('Unit Cost')
 ADD_ITEM = T('Add Item')
 LIST_ITEMS = T('List Items')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_ITEM,
     title_display = T('Item Details'),
     title_list = LIST_ITEMS,
@@ -538,15 +538,15 @@ s3.crud_strings[table] = Storage(
 # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
 
 resource = 'shipment_item'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('shipment_id', db.lms_shipment),
 				db.Field('item_id', db.lms_item),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
-db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
-s3.crud_strings[table] = Storage(
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
+table.item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
+s3.crud_strings[tablename] = Storage(
     title_create = T('Link Item & Shipment'),
     title_display = T('Shipment<>Item Relations Details'),
     title_list = T('List Shipment<>Item Relation'),
@@ -565,17 +565,17 @@ s3.crud_strings[table] = Storage(
 # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
 
 resource = 'shipment_transit_logs'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('shipment_id', db.lms_shipment),
 				db.Field('item_id', db.lms_item),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
-db[table].shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
-db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
+table.item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
 ADD_SHIPMENT_TRANSIT_LOG = T('Add Shipment Transit Log')
 LIST_SHIPMENT_TRANSIT_LOGS = T('List Shipment Transit Logs')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_SHIPMENT_TRANSIT_LOG,
     title_display = T('Shipment Transit Log Details'),
     title_list = LIST_SHIPMENT_TRANSIT_LOGS,
@@ -592,8 +592,8 @@ s3.crud_strings[table] = Storage(
 
 # Kits
 resource = 'kit'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('code', length=128, notnull=True, unique=True),
                 Field('description'),
                 Field('total_unit_cost', 'double', writable=False),
@@ -602,18 +602,18 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 Field('total_megabyte_cost', 'double', writable=False),
                 Field('comments'),
                 migrate=migrate)
-db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
-db[table].code.label = T('Code')
-db[table].code.comment = SPAN("*", _class="req")
-db[table].description.label = T('Description')
-db[table].total_unit_cost.label = T('Total Unit Cost')
-db[table].total_monthly_cost.label = T('Total Monthly Cost')
-db[table].total_minute_cost.label = T('Total Cost per Minute')
-db[table].total_megabyte_cost.label = T('Total Cost per Megabyte')
-db[table].comments.label = T('Comments')
+table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+table.code.label = T('Code')
+table.code.comment = SPAN("*", _class="req")
+table.description.label = T('Description')
+table.total_unit_cost.label = T('Total Unit Cost')
+table.total_monthly_cost.label = T('Total Monthly Cost')
+table.total_minute_cost.label = T('Total Cost per Minute')
+table.total_megabyte_cost.label = T('Total Cost per Megabyte')
+table.comments.label = T('Comments')
 ADD_KIT = T('Add Kit')
 LIST_KITS = T('List Kits')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_KIT,
     title_display = T('Kit Details'),
     title_list = LIST_KITS,
@@ -630,18 +630,18 @@ s3.crud_strings[table] = Storage(
 
 # Kit<>Item Many2Many
 resource = 'kit_item'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('kit_id', db.lms_kit),
                 Field('item_id', db.lms_item, ondelete='RESTRICT'),
                 Field('quantity', 'integer', default=1, notnull=True),
                 migrate=migrate)
-db[table].kit_id.requires = IS_IN_DB(db, 'lms_kit.id', 'lms_kit.code')
-db[table].kit_id.label = T('Kit')
-db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
-db[table].item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.description')
-db[table].item_id.label = T('Item')
-db[table].item_id.represent = lambda item_id: db(db.lms_item.id==item_id).select()[0].description
-db[table].quantity.requires = IS_NOT_EMPTY()
-db[table].quantity.label = T('Quantity')
-db[table].quantity.comment = SPAN("*", _class="req")
+table.kit_id.requires = IS_IN_DB(db, 'lms_kit.id', 'lms_kit.code')
+table.kit_id.label = T('Kit')
+table.kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select()[0].code
+table.item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.description')
+table.item_id.label = T('Item')
+table.item_id.represent = lambda item_id: db(db.lms_item.id==item_id).select()[0].description
+table.quantity.requires = IS_NOT_EMPTY()
+table.quantity.label = T('Quantity')
+table.quantity.comment = SPAN("*", _class="req")

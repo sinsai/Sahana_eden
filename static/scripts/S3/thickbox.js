@@ -50,29 +50,29 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 				$("#TB_overlay"+l).click(function(){tb_remove_l(l);});
 			}
 		}
-		
+
 		if(tb_detectMacXFF()){
 			$("#TB_overlay"+l).addClass("TB_overlayMacFFBGHack");//use png overlay so hide flash
 		}else{
 			$("#TB_overlay"+l).addClass("TB_overlayBG");//use background and opacity
 		}
-		
+
 		if(caption===null){caption="";}
 		parent.append("<div class='TB_load' id='TB_load"+l+"'><img src='"+imgLoader.src+"' /></div>");//add loader to the page
 		$('#TB_load'+l).show();//show loader
-		
+
 		var baseURL;
 	   if(url.indexOf("?")!==-1){ //ff there is a query string involved
 			baseURL = url.substr(0, url.indexOf("?"));
-	   }else{ 
+	   }else{
 	   		baseURL = url;
 	   }
-	   
+
 	   var urlString = /\.jpg$|\.jpeg$|\.png$|\.gif$|\.bmp$/;
 	   var urlType = baseURL.toLowerCase().match(urlString);
 
 		if(urlType == '.jpg' || urlType == '.jpeg' || urlType == '.png' || urlType == '.gif' || urlType == '.bmp'){//code to show images
-				
+
 			TB_PrevCaption = "";
 			TB_PrevURL = "";
 			TB_PrevHTML = "";
@@ -85,7 +85,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 				TB_TempArray = $("a[@rel="+imageGroup+"]").get();
 				for (TB_Counter = 0; ((TB_Counter < TB_TempArray.length) && (TB_NextHTML === "")); TB_Counter++) {
 					var urlTypeTemp = TB_TempArray[TB_Counter].href.toLowerCase().match(urlString);
-						if (!(TB_TempArray[TB_Counter].href == url)) {						
+						if (!(TB_TempArray[TB_Counter].href == url)) {
 							if (TB_FoundURL) {
 								TB_NextCaption = TB_TempArray[TB_Counter].title;
 								TB_NextURL = TB_TempArray[TB_Counter].href;
@@ -97,15 +97,15 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 							}
 						} else {
 							TB_FoundURL = true;
-							TB_imageCount = "Image " + (TB_Counter + 1) +" of "+ (TB_TempArray.length);											
+							TB_imageCount = "Image " + (TB_Counter + 1) +" of "+ (TB_TempArray.length);
 						}
 				}
 			}
 
 			imgPreloader = new Image();
-			imgPreloader.onload = function(){		
+			imgPreloader.onload = function(){
 			imgPreloader.onload = null;
-				
+
 			// Resizing large images - orginal by Christian Montoya edited by me.
 			var pagesize = tb_getPageSize();
 			var x = pagesize[0] - 150;
@@ -113,51 +113,51 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 			var imageWidth = imgPreloader.width;
 			var imageHeight = imgPreloader.height;
 			if (imageWidth > x) {
-				imageHeight = imageHeight * (x / imageWidth); 
-				imageWidth = x; 
-				if (imageHeight > y) { 
-					imageWidth = imageWidth * (y / imageHeight); 
-					imageHeight = y; 
+				imageHeight = imageHeight * (x / imageWidth);
+				imageWidth = x;
+				if (imageHeight > y) {
+					imageWidth = imageWidth * (y / imageHeight);
+					imageHeight = y;
 				}
-			} else if (imageHeight > y) { 
-				imageWidth = imageWidth * (y / imageHeight); 
-				imageHeight = y; 
-				if (imageWidth > x) { 
-					imageHeight = imageHeight * (x / imageWidth); 
+			} else if (imageHeight > y) {
+				imageWidth = imageWidth * (y / imageHeight);
+				imageHeight = y;
+				if (imageWidth > x) {
+					imageHeight = imageHeight * (x / imageWidth);
 					imageWidth = x;
 				}
 			}
 			// End Resizing
-			
+
 			TB_WIDTH = imageWidth + 30;
 			TB_HEIGHT = imageHeight + 60;
 			$("#TB_window"+l).append("<a href='' id='TB_ImageOff"+l+"' title='Close'><img id='TB_Image"+l+"' class='TB_Image' src='"+url+"' width='"+imageWidth+"' height='"+imageHeight+"' alt='"+caption+"'/></a>" + "<div class='TB_caption' id='TB_caption"+l+"'>"+caption+"<div class='TB_secondLine' id='TB_secondLine"+l+"'>" + TB_imageCount + TB_PrevHTML + TB_NextHTML + "</div></div><div class='TB_closeWindow' id='TB_closeWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"' title='Close'>close</a></div>");
-			
+
 			$("#TB_closeWindowButton"+l).click(function(){tb_remove_l(l);});
-			
+
 			if (!(TB_PrevHTML === "")) {
 				function goPrev(){
 					if($(document).unbind("click",goPrev)){$(document).unbind("click",goPrev);}
 					$("#TB_window"+l).remove();
 					parent.append("<div id='TB_window"+l+"'></div>");
 					tb_show(TB_PrevCaption, TB_PrevURL, imageGroup, l);
-					return false;	
+					return false;
 				}
 				$("#TB_prev"+l).click(goPrev);
 			}
-			
-			if (!(TB_NextHTML === "")) {		
+
+			if (!(TB_NextHTML === "")) {
 				function goNext(){
 					$("#TB_window"+l).remove();
 					parent.append("<div id='TB_window"+l+"'></div>");
-					tb_show(TB_NextCaption, TB_NextURL, imageGroup, l);				
-					return false;	
+					tb_show(TB_NextCaption, TB_NextURL, imageGroup, l);
+					return false;
 				}
 				$("#TB_next"+l).click(goNext);
-				
+
 			}
 
-			document.onkeydown = function(e){ 	
+			document.onkeydown = function(e){
 				if (e == null) { // ie
 					keycode = event.keyCode;
 				} else { // mozilla
@@ -175,18 +175,18 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 						document.onkeydown = "";
 						goPrev();
 					}
-				}	
+				}
 			};
-			
+
 			tb_position(l);
 			$("#TB_load"+l).remove();
 			$("#TB_ImageOff"+l).click(function(){tb_remove_l(l);});
 			$("#TB_window"+l).css({display:"block"}); //for safari using css instead of show
 			};
-			
+
 			imgPreloader.src = url;
 		}else{//code to show html
-			
+
 			var queryString = url.replace(/^[^\?]+\??/,'');
 			var params = tb_parseQuery( queryString );
 
@@ -194,8 +194,8 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 			TB_HEIGHT = (params['height']*1) + 40 || 440; //defaults to 440 if no paramaters were added to URL
 			ajaxContentW = TB_WIDTH - 30;
 			ajaxContentH = TB_HEIGHT - 45;
-			
-			if(url.indexOf('TB_iframe') != -1){// either iframe or ajax window		
+
+			if(url.indexOf('TB_iframe') != -1){// either iframe or ajax window
 					urlNoQuery = url.split('TB_');
 					$("#TB_iframeContent"+l).remove();
 					if(params['modal'] != "true"){//iframe no modal
@@ -210,7 +210,7 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 						$("#TB_window"+l).append("<div class='TB_title' id='TB_title"+l+"'><div class='TB_ajaxWindowTitle' id='TB_ajaxWindowTitle"+l+"'>"+caption+"</div><div class='TB_closeAjaxWindow' id='TB_closeAjaxWindow"+l+"'><a href='#' id='TB_closeWindowButton"+l+"'>close</a></div></div><div class='TB_ajaxContent' id='TB_ajaxContent"+l+"' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px'></div>");
 						}else{//ajax modal
 						$("#TB_overlay"+l).unbind();
-						$("#TB_window"+l).append("<div id='TB_ajaxContent"+l+"' class='TB_modal TB_ajaxContent' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px;'></div>");	
+						$("#TB_window"+l).append("<div id='TB_ajaxContent"+l+"' class='TB_modal TB_ajaxContent' style='width:"+ajaxContentW+"px;height:"+ajaxContentH+"px;'></div>");
 						}
 					}else{//this means the window is already up, we are just loading new content via ajax
 						$("#TB_ajaxContent"+l)[0].style.width = ajaxContentW +"px";
@@ -219,17 +219,17 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 						$("#TB_ajaxWindowTitle"+l).html(caption);
 					}
 			}
-					
+
 			$("#TB_closeWindowButton"+l).click(function(){tb_remove_l(l);});
-			
-				if(url.indexOf('TB_inline') != -1){	
+
+				if(url.indexOf('TB_inline') != -1){
 					$("#TB_ajaxContent"+l).append($('#' + params['inlineId']).children());
 					$("#TB_window"+l).unload(function () {
 						$('#' + params['inlineId']).append( $("#TB_ajaxContent"+l).children() ); // move elements back when you're finished
 					});
 					tb_position(l);
 					$("#TB_load"+l).remove();
-					$("#TB_window"+l).css({display:"block"}); 
+					$("#TB_window"+l).css({display:"block"});
 				}else if(url.indexOf('TB_iframe') != -1){
 					tb_position(l);
 					if($.browser.safari){//safari needs help because it will not fire iframe onload
@@ -244,11 +244,11 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 						$("#TB_window"+l).css({display:"block"});
 					});
 				}
-			
+
 		}
 
 		if(!params['modal']){
-			document.onkeyup = function(e){ 	
+			document.onkeyup = function(e){
 				if (e == null) { // ie
 					keycode = event.keyCode;
 				} else { // mozilla
@@ -256,10 +256,10 @@ function tb_show(caption, url, imageGroup, l) {//function called when the user c
 				}
 				if(keycode == 27){ // close
 					tb_remove();
-				}	
+				}
 			};
 		}
-		
+
 //	} catch(e) {
 		//nothing here
 //	}

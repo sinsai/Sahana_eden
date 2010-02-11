@@ -21,8 +21,8 @@ pr_address_type_opts = {
     }
 
 resource = 'address'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     pr_pe_id,                           # Person Entity ID
                     Field('opt_pr_address_type',
                           'integer',
@@ -52,24 +52,24 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'opt_pr_address_type', 'co_name', 'street1', 'postcode', 'city', 'opt_pr_country'])
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
-db[table].lat.requires = IS_NULL_OR(IS_LAT())
-db[table].lon.requires = IS_NULL_OR(IS_LON())
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
+table.lat.requires = IS_NULL_OR(IS_LAT())
+table.lon.requires = IS_NULL_OR(IS_LON())
 
 # Field representation
 
 # Field labels
-db[table].co_name.label = T('c/o Name')
-db[table].street1.label = T('Street')
-db[table].street2.label = T('Street (add.)')
-db[table].postcode.label = T('ZIP/Postcode')
-db[table].opt_pr_country.label = T('Country')
+table.co_name.label = T('c/o Name')
+table.street1.label = T('Street')
+table.street2.label = T('Street (add.)')
+table.postcode.label = T('ZIP/Postcode')
+table.opt_pr_country.label = T('Country')
 
 # CRUD Strings
 ADD_ADDRESS = T('Add Address')
 LIST_ADDRESS = T('List Addresses')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_ADDRESS,
     title_display = T('Address Details'),
     title_list = LIST_ADDRESS,
@@ -103,8 +103,8 @@ pr_contact_method_opts = {
 # contact table ---------------------------------------------------------------
 #
 resource = 'pe_contact'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                               # Person Entity ID
                 Field('name'),                          # Contact name (optional)
                 Field('opt_pr_contact_method',
@@ -128,10 +128,10 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'name', 'person_name', 'opt_pr_contact_method', 'value', 'priority'])
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
-db[table].value.requires = IS_NOT_EMPTY()
-db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
+table.value.requires = IS_NOT_EMPTY()
+table.priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
 
 # Field representation
 
@@ -140,7 +140,7 @@ db[table].priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
 # CRUD Strings
 ADD_CONTACT = T('Add Contact')
 LIST_CONTACTS = T('List Contacts')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_CONTACT,
     title_display = T('Contact Details'),
     title_list = LIST_CONTACTS,
@@ -175,8 +175,8 @@ pr_image_type_opts = {
 # image table -----------------------------------------------------------------
 #
 resource = 'image'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,
                 Field('opt_pr_image_type',
                       'integer',
@@ -200,21 +200,21 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'opt_pr_image_type', 'image', 'url', 'title','description'])
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 # Field representation
-db[table].image.represent = lambda image: image and \
+table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c='default', f='download', args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c='default', f='download', args=image))) or \
         T("No Image")
 
 # Field labels
-db[table].url.label = T("URL")
-db[table].url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
+table.url.label = T("URL")
+table.url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
 # CRUD Strings
 LIST_IMAGES = T('List Images')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Image'),
     title_display = T('Image Details'),
     title_list = LIST_IMAGES,
@@ -262,8 +262,8 @@ dest_id = SQLTable(None, 'dest_id',
                   )
 
 resource = 'presence'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,                           # Personal Entity Reference
                 Field('observer', db.pr_person),    # Person observing
                 Field('reporter', db.pr_person),    # Person reporting
@@ -313,30 +313,30 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id','time','location_id','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-#db[table].lat.requires = IS_NULL_OR(IS_LAT())
-#db[table].lon.requires = IS_NULL_OR(IS_LON())
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+#table.lat.requires = IS_NULL_OR(IS_LAT())
+#table.lon.requires = IS_NULL_OR(IS_LON())
 
 # Field representation
-db[table].observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
-db[table].observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-db[table].observer.comment = shn_person_comment
-db[table].observer.ondelete = 'RESTRICT'
+table.observer.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
+table.observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
+table.observer.comment = shn_person_comment
+table.observer.ondelete = 'RESTRICT'
 
-db[table].reporter.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
-db[table].reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-db[table].reporter.comment = shn_person_comment
-db[table].reporter.ondelete = 'RESTRICT'
+table.reporter.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent))
+table.reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
+table.reporter.comment = shn_person_comment
+table.reporter.ondelete = 'RESTRICT'
 
-db[table].time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
-db[table].time.represent = lambda value: shn_as_local_time(value)
+table.time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
+table.time.represent = lambda value: shn_as_local_time(value)
 
 # Field labels
-db[table].time.label = T('Date/Time')
+table.time.label = T('Date/Time')
 
 # CRUD Strings
 ADD_LOG_ENTRY = T('Add Log Entry')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_LOG_ENTRY,
     title_display = T('Log Entry Details'),
     title_list = T('Presence Log'),
@@ -369,8 +369,8 @@ pr_id_type_opts = {
 # identitiy table -------------------------------------------------------------
 #
 resource = 'identity'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 person_id,                          # Reference to person
                 Field('opt_pr_id_type',
                       'integer',
@@ -396,16 +396,16 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 
 # Field representation
 
 # Field labels
-db[table].ia_name.label = T("Issuing Authority")
+table.ia_name.label = T("Issuing Authority")
 
 # CRUD Strings
 ADD_IDENTITY = T('Add Identity')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_IDENTITY,
     title_display = T('Identity Details'),
     title_list = T('Known Identities'),
@@ -431,8 +431,8 @@ pr_role_opts = {
 }
 
 resource = 'role'
-table = module + '_' + resource
-db.define_table(table, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, uuidstamp, deletion_status,
                 pr_pe_id,
                 Field('role', 'integer',
                       requires = IS_IN_SET(pr_role_opts),
@@ -966,8 +966,8 @@ pr_pd_smoking_habits_opts = {
 # pd_general table ------------------------------------------------------------
 #
 resource = 'pd_general'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
                 Field('est_age'),                       # D1-31A   Estimated Age
                 Field('height'),                        # D1-32    Height
@@ -1010,8 +1010,8 @@ s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', d
 # pd_head table ---------------------------------------------------------------
 #
 resource = 'pd_head'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
                 Field('opt_pr_pd_head_form_front',
                       'integer',
@@ -1088,7 +1088,7 @@ s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', d
 # Field validation
 
 # Field representation
-db[table].opt_pr_pd_head_form_front.comment = A(SPAN("[Help]"), _class="ajaxtip", _rel="/%s/pr/tooltip?formfield=head_form_front" % request.application )
+table.opt_pr_pd_head_form_front.comment = A(SPAN("[Help]"), _class="ajaxtip", _rel="/%s/pr/tooltip?formfield=head_form_front" % request.application )
 # Field labels
 
 # CRUD Strings
@@ -1097,8 +1097,8 @@ db[table].opt_pr_pd_head_form_front.comment = A(SPAN("[Help]"), _class="ajaxtip"
 # pd_face table ---------------------------------------------------------------
 #
 resource = 'pd_face'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
                 Field('opt_pr_pd_forehead_height',
                       'integer',
@@ -1264,8 +1264,8 @@ s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', d
 # pd_teeth table --------------------------------------------------------------
 #
 resource = 'pd_teeth'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
                 Field('teeth_natural', 'boolean', default=True),        # D2-45/01 Teeth, Conditions
                 Field('teeth_treated', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
@@ -1320,8 +1320,8 @@ s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', d
 # pd_body table ---------------------------------------------------------------
 #
 resource = 'pd_body'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id2,
                 Field('opt_pr_pd_neck_length',
                       'integer',
@@ -1462,8 +1462,8 @@ s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', d
 # group_membership table ------------------------------------------------------
 #
 resource = 'group_membership'
-table = module + '_' + resource
-db.define_table(table, timestamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
                 group_id,
                 person_id,
                 Field('group_head', 'boolean', default=False),
@@ -1482,12 +1482,12 @@ s3xrc.model.add_component(module, resource,
 # Field validation
 
 # Field representation
-db[table].group_head.represent = lambda group_head: (group_head and [T('yes')] or [''])[0]
+table.group_head.represent = lambda group_head: (group_head and [T('yes')] or [''])[0]
 
 # Field labels
 
 # CRUD Strings
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = T('Add Group Membership'),
     title_display = T('Group Membership Details'),
     title_list = T('Group Memberships'),

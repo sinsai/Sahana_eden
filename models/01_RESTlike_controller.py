@@ -63,6 +63,7 @@ s3xrc = ResourceController(db,
                            rpp=ROWSPERPAGE,
                            gis=gis)
 
+
 def shn_field_represent(field, row, col):
     """
         Representation of a field
@@ -80,12 +81,14 @@ def shn_field_represent(field, row, col):
             represent = row[col]
     return represent
 
-def shn_field_represent_sspage(field, row, col):
-    if col == 'id':
-        id = str(row[col])
+def shn_field_represent_sspage(tablename, row, col):
+    colname = col.split('.')[1]
+    tabname = col.split('.')[0]
+    if colname == 'id' and tabname == tablename:
+        id = str(row[tablename][colname])
         return '<a href="' + request.function + '/' + id + '">' + id + '</a>' 
     else:
-        return shn_field_represent(field, row, col)
+        return shn_field_represent(db[tabname][colname], row[tabname], colname)
     
 # *****************************************************************************
 # Exports
@@ -955,32 +958,101 @@ def shn_custom_view(jr, default_name, format=None):
 #
 # shn_convert_orderby ----------------------------------------------------------
 #
+def check_foreign(table,f):
+    """
+    returns list of four elements:
+    col[0] => string -- input column name for f,
+    col[1] => string -- the lookup table column for representation
+    col[2] => object -- lookup table if any or original table
+    col[3] => [object] -- list of columns in the lookup table if any or the original column f
+
+    Example 1. - f is a foreign key:
+    
+    for  or_organisation and sector_id
+    returns      ['sector_id', 'or_sector.name', or_sector, [or_sector.name]]
+
+    but for or_contact and person_id
+    returns      [
+                    'person_id', 
+                    'first.name + " " + middle.name + " " + last.name', 
+                     pr_person, 
+                    [pr_person.first_name, pr_person.middle_name, pr_person.last_name]
+                 ]
+    
+    Example 2. - f is an ordinary column:    
+
+    for  or_organisation and twitter
+    returns      ['twitter', 'twitter', or_organisation, [twitter]]
+    
+    """
+    def combine_column_names(lookup_table_name, sortables):
+        return ' + " " + '.join([lookup_table_name + '.' + f for f in sortables])
+
+    def combine_columns(lookup_table, sortables):
+        return [lookup_table[f] for f in sortables]
+    
+    if isinstance(table[f],FieldS3):
+        sortables = table[f].sortby
+        if not isinstance(sortables,list):
+            sortables = [sortables]
+    else:
+        sortables = None
+    if sortables: 
+        return [f, 
+                combine_column_names(table[f].requires.other.ktable, sortables), 
+                db[table[f].requires.other.ktable], 
+                combine_columns(db[table[f].requires.other.ktable], sortables)
+                ]
+    else: 
+        return [f, table._tablename+'.'+f, table, [table[f]]]
+    
 def shn_get_columns(table):
-    return [f for f in table.fields if table[f].readable]
+    return [check_foreign(table, f) for f in table.fields if table[f].readable]
  
 def shn_convert_orderby(table,request):
-    cols =  shn_get_columns(table)
-    try:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)] 
-            for i in xrange(0, int(request.vars['iSortingCols'])) ])
-    except:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] 
-            for i in xrange(0, int(request.vars['iSortingCols'])) ])
+    def direction(i):
+        try:
+            return ' ' + request.vars['sSortDir_' + str(i)]
+        except:
+            return ''
 
+    cols =  shn_get_columns(table)
+    return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])][1] + direction(i)
+        for i in xrange(0, int(request.vars['iSortingCols'])) ])
 #
 # shn_build_ssp_filter --------------------------------------------------------
 #
 def shn_build_ssp_filter(table, request):
+    def add_columns_to_search(searchq, cols, context):
+        for col in cols:
+            if searchq is None:
+                searchq = col.like(context)
+            else:
+                searchq = searchq | col.like(context)
+        return searchq
     cols =  shn_get_columns(table)
     context = '%' + request.vars.sSearch + '%'
     searchq = None
     for i in xrange(0, int(request.vars.iColumns) - 1):
-        if table[cols[i]].type in ['string','text']:
-            if searchq is None:
-                searchq = table[cols[i]].like(context)
-            else:
-                searchq = searchq | table[cols[i]].like(context)
+        column_type = table[cols[i][0]].type
+        if column_type in ['string','text'] or column_type.find('reference') == 0:
+            searchq = add_columns_to_search(searchq,cols[i][3],context)
     return searchq
+#
+# shn_prepare_join --------------------------------------------------------
+#
+def shn_prepare_join(table, request):
+    """
+    A JOIN
+    >>> len(db(db.dog.owner==db.person.id).select())
+    >>> len(db().select(db.person.ALL, db.dog.name,left=[db.dog.on(db.dog.owner==db.person.id)]))
+    cols[i] has  [sector_id, or_sector.name, or_sector, name]
+    """
+    cols =  shn_get_columns(table)
+    fields_to_pull = ', '.join([col[1] for col in cols])
+    joins_to_pull = [col[2].on(table[col[0]].join_via(col[2].id)) for col in cols if (table._tablename+'.'+col[0]) <> col[1]]
+    represent_list = [col[1] for col in cols]
+    return (fields_to_pull, joins_to_pull, represent_list)
 
 # *****************************************************************************
 # CRUD Functions
@@ -1223,10 +1295,14 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limit = int(request.vars.iDisplayLength)
         else:
             limit = None
-        
+
         if "iSortingCols" in request.vars and orderby is None:
             orderby = shn_convert_orderby(table, request)
-        
+            fields_to_pull,joins_to_pull,represent_list = shn_prepare_join(table, request)
+        else:
+            fields_to_pull,joins_to_pull = None, None
+            represent_list = [f for f in table.fields if table[f].readable]
+            
         if request.vars.sSearch and request.vars.sSearch <> "":
             query = shn_build_ssp_filter(table, request) & query
  
@@ -1235,16 +1311,24 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         _table = '%s_%s' % (request.controller, request.function)
         table = db[_table]
         query = query & (table.id > 0)
-        totalrows = db(query).count()
-        if limit:
-            rows = db(query).select(limitby = (start, start + limit), orderby = orderby)
+        if fields_to_pull:
+            totalrows = db(query).select('count(*)',left=joins_to_pull)[0]['count(*)']
+            if limit:
+                rows = db(query).select(fields_to_pull, left=joins_to_pull, limitby = (start, start + limit), orderby = orderby)
+            else:
+                rows = db(query).select(fields_to_pull, left=joins_to_pull, orderby = orderby)
         else:
-            rows = db(query).select(orderby = orderby)
+            totalrows = db(query).count()
+            if limit:
+                rows = db(query).select(limitby = (start, start + limit), orderby = orderby)
+            else:
+                rows = db(query).select(orderby = orderby) 
+        
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
                # ToDo: check for component list_fields & use them where available
-               aaData = [[shn_field_represent_sspage(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
+               aaData = [[shn_field_represent_sspage(table._tablename, row, f) for f in represent_list] for row in rows])
         return json(r)
 
     if jr.representation=="html":
@@ -1330,7 +1414,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         if response.s3.pagination and not limitby:
             # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
             limitby = (0, 1)
-        
+
         items = crud.select(table, query=query,
             fields=fields,
             orderby=orderby,
@@ -1502,7 +1586,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         items = crud.select(table, query, truncate=24)
         response.view = 'plain.html'
         return dict(item=items, jr=jr)
-        
+
     elif jr.representation == "csv":
         return export_csv(resource, query)
 
@@ -1600,6 +1684,10 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         else:
             if not crud.settings.create_next:
                 crud.settings.create_next = jr.there()
+            if not onvalidation:
+                onvalidation = crud.settings.create_onvalidation
+            if not onaccept:
+                onaccept = crud.settings.create_onaccept
 
         if onaccept:
             _onaccept = lambda form: \
@@ -1811,6 +1899,10 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             else:
                 if not crud.settings.update_next:
                     crud.settings.update_next = jr.here()
+                if not onvalidation:
+                    onvalidation = crud.settings.update_onvalidation
+                if not onaccept:
+                    onaccept = crud.settings.update_onaccept
 
             try:
                 message = s3.crud_strings[tablename].msg_record_modified
@@ -2138,6 +2230,28 @@ def shn_rest_controller(module, resource,
             raise HTTP(404, body=BADRECORD)
             #session.error = BADRECORD
             #redirect(URL(r=request, f='index'))
+
+    # Run prep, if set
+    if response.s3.prep is not None:
+        prep = response.s3.prep(jr)
+        if prep and isinstance(prep, dict):
+            bypass = prep.get('bypass', False)
+            output = prep.get('output', None)
+            if bypass and output:
+                return output
+            success = prep.get('success', True)
+            if not success:
+                if jr.representation=='html' and output:
+                    return output
+                status = prep.get('status', 400)
+                message = prep.get('message', INVALIDREQUEST)
+                raise HTTP(status, message)
+            else:
+                pass
+        elif not prep:
+            raise HTTP(400, body=INVALIDREQUEST)
+        else:
+            pass
 
     # *************************************************************************
     # Joined Table Operation
@@ -2500,7 +2614,11 @@ def shn_rest_controller(module, resource,
                         if filter == '~':
                             if field2 and field3:
                                 # pr_person name search
-                                query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                                if ' ' in value:
+                                    value1, value2 = value.split(' ', 1)
+                                    query = query & ((jr.table[field].like('%' + value1 + '%')) & (jr.table[field2].like('%' + value2 + '%')) | (jr.table[field3].like('%' + value2 + '%')))
+                                else:
+                                    query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
                             else:
                                 query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None

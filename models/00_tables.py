@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from gluon.tools import Service
+
 service = Service(globals())
 
 # Reusable timestamp fields
@@ -65,7 +66,7 @@ deletion_status = db.Table(None, 'deletion_status',
 
 # Reusable Admin field
 admin_id = db.Table(None, 'admin_id',
-            Field('admin', db.auth_group,
+            FieldS3('admin', db.auth_group, sortby='role',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
                 comment = DIV(A(T('Add Role'), _class='thickbox', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
@@ -101,10 +102,11 @@ s3.display = Storage()
 
 module = 'admin'
 resource = 'theme'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('name'),
                 Field('logo'),
+                Field('header_background'),
                 Field('footer'),
                 Field('text_direction'),
                 Field('col_background'),
@@ -124,8 +126,8 @@ module = 's3'
 # Auditing
 # ToDo: consider using native Web2Py log to auth_events
 resource = 'audit'
-table = module + '_' + resource
-db.define_table(table,timestamp,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,timestamp,
                 Field('person', db.auth_user, ondelete='RESTRICT'),
                 Field('operation'),
                 Field('representation'),
@@ -135,7 +137,7 @@ db.define_table(table,timestamp,
                 Field('old_value'),
                 Field('new_value'),
                 migrate=migrate)
-db[table].operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list', 'search'])
+table.operation.requires = IS_IN_SET(['create', 'read', 'update', 'delete', 'list', 'search'])
 
 # Settings - systemwide
 s3_setting_security_policy_opts = {
@@ -143,8 +145,8 @@ s3_setting_security_policy_opts = {
     2:T('full')
     }
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp,
                 Field('admin_name'),
                 Field('admin_email'),
                 Field('admin_tel'),
@@ -157,24 +159,24 @@ db.define_table(table, timestamp, uuidstamp,
                 Field('audit_read', 'boolean', default=False),
                 Field('audit_write', 'boolean', default=False),
                 migrate=migrate)
-db[table].security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
-db[table].security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, T('Unknown'))
-db[table].security_policy.label = T('Security Policy')
-db[table].security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
-db[table].theme.label = T('Theme')
-db[table].theme.requires = IS_IN_DB(db, 'admin_theme.id', 'admin_theme.name')
-db[table].theme.represent = lambda name: db(db.admin_theme.id==name).select()[0].name
-db[table].theme.comment = DIV(A(T('Add Theme'), _class='thickbox', _href=URL(r=request, c='admin', f='theme', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Theme'))),
-db[table].debug.label = T('Debug')
-db[table].debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
-db[table].self_registration.label = T('Self Registration')
-db[table].self_registration.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Self-registration|Can users register themselves for authenticated login access?"))
-db[table].archive_not_delete.label = T('Archive not Delete')
-db[table].archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Archive not Delete|If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
-db[table].audit_read.label = T('Audit Read')
-db[table].audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Read|If enabled then a log is maintained of all records a user accesses. If disabled then it can still be enabled on a per-module basis."))
-db[table].audit_write.label = T('Audit Write')
-db[table].audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Write|If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
+table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
+table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, T('Unknown'))
+table.security_policy.label = T('Security Policy')
+table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
+table.theme.label = T('Theme')
+table.theme.requires = IS_IN_DB(db, 'admin_theme.id', 'admin_theme.name')
+table.theme.represent = lambda name: db(db.admin_theme.id==name).select()[0].name
+table.theme.comment = DIV(A(T('Add Theme'), _class='thickbox', _href=URL(r=request, c='admin', f='theme', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Theme'))),
+table.debug.label = T('Debug')
+table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
+table.self_registration.label = T('Self Registration')
+table.self_registration.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Self-registration|Can users register themselves for authenticated login access?"))
+table.archive_not_delete.label = T('Archive not Delete')
+table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Archive not Delete|If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
+table.audit_read.label = T('Audit Read')
+table.audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Read|If enabled then a log is maintained of all records a user accesses. If disabled then it can still be enabled on a per-module basis."))
+table.audit_write.label = T('Audit Write')
+table.audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Write|If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
 # Define CRUD strings (NB These apply to all Modules' 'settings' too)
 ADD_SETTING = T('Add Setting')
 LIST_SETTINGS = T('List Settings')
@@ -195,20 +197,20 @@ s3.crud_strings[resource] = Storage(
 
 # Common Source table
 resource = 'source'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp,
             Field('name'),
             Field('description'),
             Field('url'))
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Source of Information')
-db[table].name.comment = SPAN("*", _class="req")
-db[table].url.requires = IS_NULL_OR(IS_URL())
-db[table].url.label = T('URL')
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Source of Information')
+table.name.comment = SPAN("*", _class="req")
+table.url.requires = IS_NULL_OR(IS_URL())
+table.url.label = T('URL')
 ADD_SOURCE = T('Add Source')
 LIST_SOURCES = T('List Sources')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_SOURCE,
     title_display = T('Source Details'),
     title_list = LIST_SOURCES,
@@ -224,7 +226,7 @@ s3.crud_strings[table] = Storage(
     msg_list_empty = T('No Sources currently registered'))
 # Reusable field for other tables to reference
 source_id = SQLTable(None, 'source_id',
-            Field('source_id', db.s3_source,
+            FieldS3('source_id', db.s3_source, sortby='name',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 's3_source.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.s3_source.id==id).select()[0].name] or ["None"])[0],
                 label = T('Source of Information'),
@@ -235,8 +237,8 @@ source_id = SQLTable(None, 'source_id',
 # Settings - appadmin
 module = 'appadmin'
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)

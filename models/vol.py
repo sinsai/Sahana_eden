@@ -11,8 +11,8 @@ module = 'vol'
 
 # Settings
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = module + '_' + resource
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
@@ -28,8 +28,8 @@ vol_project_status_opts = {
 }
 
 resource = 'project'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', 'string', length=50),
                 location_id,
                 Field('start_date', 'date'),
@@ -43,20 +43,20 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Settings and Restrictions
-db[table].name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')), IS_NOT_IN_DB(db,'vol_project.name')]
+table.name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')), IS_NOT_IN_DB(db,'vol_project.name')]
 
-db[table].description.requires = IS_NOT_EMPTY()
+table.description.requires = IS_NOT_EMPTY()
 
 # Labels
-db[table].name.label = T('Name')
-db[table].start_date.label = T('Start date')
-db[table].end_date.label = T('End date')
-db[table].description.label = T('Description')
+table.name.label = T('Name')
+table.start_date.label = T('Start date')
+table.end_date.label = T('End date')
+table.description.label = T('Description')
 
 # CRUD Strings
 ADD_PROJECT = T('Add Project')
 PROJECTS = T('Projects')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_PROJECT,
     title_display = T('Project Details'),
     title_list = PROJECTS,
@@ -73,7 +73,7 @@ s3.crud_strings[table] = Storage(
 
 # Reusable field
 vol_project_id = db.Table(None, 'vol_project_id',
-                          Field('vol_project_id', db.vol_project,
+                          FieldS3('vol_project_id', db.vol_project, sortby='name',
                           requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_project.id', '%(name)s')),
                           represent = lambda id: (id and [db.vol_project[id].name] or ["None"])[0],
                           comment = DIV(A(s3.crud_strings.vol_project.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_project.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Project|Add new project)."))),
@@ -93,8 +93,8 @@ vol_position_type_opts = {
 }
 
 resource = 'position'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 vol_project_id,
                 Field('type', 'integer',
                       requires = IS_IN_SET(vol_position_type_opts),
@@ -111,7 +111,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
 # CRUD Strings
 ADD_POSITION = T('Add Position')
 POSITIONS = T('Positions')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_POSITION,
     title_display = T('Position Details'),
     title_list = POSITIONS,
@@ -128,7 +128,7 @@ s3.crud_strings[table] = Storage(
 
 # Reusable field
 vol_position_id = db.Table(None, 'vol_position_id',
-                           Field('vol_position_id', db.vol_position,
+                           FieldS3('vol_position_id', db.vol_position, sortby='title',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'vol_position.id', '%(title)s')),
                            represent = lambda id: lambda id: (id and [db.vol_position[id].title] or ["None"])[0],
                            comment = DIV(A(s3.crud_strings.vol_project.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_project.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Position|Add new position)."))),
@@ -153,8 +153,8 @@ vol_volunteer_status_opts = {
 }
 
 resource = 'volunteer'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, uuidstamp,
                 person_id,
                 organisation_id,
                 Field('date_avail_start', 'date'),
@@ -172,11 +172,11 @@ db.define_table(table, timestamp, uuidstamp,
 # Settings and Restrictions
 
 # Field labels
-db[table].date_avail_start.label = T('Available from')
-db[table].date_avail_end.label = T('Available until')
-db[table].hrs_avail_start.label = T('Working hours start')
-db[table].hrs_avail_end.label = T('Working hours end')
-db[table].special_needs.label = T('Special needs')
+table.date_avail_start.label = T('Available from')
+table.date_avail_end.label = T('Available until')
+table.hrs_avail_start.label = T('Working hours start')
+table.hrs_avail_end.label = T('Working hours end')
+table.special_needs.label = T('Special needs')
 
 # Representation function
 def shn_vol_volunteer_represent(id):
@@ -193,7 +193,7 @@ def shn_vol_volunteer_represent(id):
 # CRUD Strings
 ADD_VOLUNTEER = T('Add Volunteer Registration')
 VOLUNTEERS = T('Volunteer Registrations')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_VOLUNTEER,
     title_display = T('Volunteer Registration'),
     title_list = VOLUNTEERS,
@@ -210,7 +210,7 @@ s3.crud_strings[table] = Storage(
 
 # Reusable field
 vol_volunteer_id = db.Table(None, 'vol_volunteer_id',
-                            Field('vol_volunteer_id', db.vol_volunteer,
+                            FieldS3('vol_volunteer_id', db.vol_volunteer, sortby=['first_name','middle_name','last_name'],
                             requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status==1), 'vol_volunteer.id', shn_vol_volunteer_represent)),
                             represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
                             comment = DIV(A(s3.crud_strings.vol_volunteer.label_create_button, _class='thickbox', _href=URL(r=request, c='vol', f='volunteer', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.vol_volunteer.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Volunteer|Add new volunteer)."))),
@@ -261,8 +261,8 @@ vol_resource_status_opts = {
 }
 
 resource = 'resource'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, uuidstamp,
                 person_id,
                 Field('type', 'integer',
                       requires = IS_IN_SET(vol_resource_type_opts),
@@ -297,7 +297,7 @@ s3xrc.model.add_component(module, resource,
 # CRUD Strings
 ADD_RESOURCE = T('Add Resource')
 RESOURCES = T('Resources')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_RESOURCE,
     title_display = T('Resource Details'),
     title_list = RESOURCES,
@@ -393,8 +393,8 @@ vol_task_priority_opts = {
 }
 
 resource = 'task'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, deletion_status,
+tablename = module + '_' + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 vol_project_id,
                 Field('priority', 'integer',
                       requires = IS_IN_SET(vol_task_priority_opts),
@@ -412,7 +412,7 @@ db.define_table(table, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field labels
-db[table].person_id.label = T('Assigned to')
+table.person_id.label = T('Assigned to')
 
 # Component
 s3xrc.model.add_component(module, resource,
@@ -426,7 +426,7 @@ s3xrc.model.add_component(module, resource,
 # CRUD Strings
 ADD_TASK = T('Add Task')
 LIST_TASKS = T('List Tasks')
-s3.crud_strings[table] = Storage(
+s3.crud_strings[tablename] = Storage(
     title_create = ADD_TASK,
     title_display = T('Task Details'),
     title_list = LIST_TASKS,

@@ -15,8 +15,8 @@ opt_sync_policy = db.Table(None, 'sync_policy',
                             represent = lambda opt: sync_policy_opts.get(opt, T('Unknown'))))
 # Settings
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('uuid', length=36),   # Our UUID for sync purposes
                 opt_sync_policy,            # Default sync_policy for new partners
                 Field('username'),          # Default login username for new partners
@@ -29,8 +29,8 @@ db.define_table(table,
 
 # Custom settings for sync partners
 resource = 'partner'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('uuid', length=36), # uuid of this partner
                 opt_sync_policy,    # sync_policy for this partner
                 Field('username'),  # login username for this partner
@@ -42,8 +42,8 @@ db.define_table(table,
 
 # Sync Log / Keeps log of all webservices calls. Used to view sync history
 resource = 'log'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('uuid', length=36), # different from reusable uuidstamp: uuid of remote system we synced with
                 Field('function', 'string'),
                 Field('timestamp', 'datetime'), # different from reusable timestamp

@@ -1,20 +1,20 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import cPickle as pickle
 
 module = 'admin'
 
 # Settings
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
 
 # Import Jobs
 resource = 'import_job'
-table = '%s_%s' % (module, resource)
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('module', 'string',
                       default='or', notnull=True),
                 Field('resource', 'string',
@@ -28,10 +28,10 @@ db.define_table(table,
                 timestamp,
                 authorstamp,
                 )
-db[table].status.requires = IS_IN_SET(['new', 'failed', 'processing', 'completed'])
-db[table].module.requires = IS_IN_DB(db, 's3_module.name', '%(name_nice)s')
+table.status.requires = IS_IN_SET(['new', 'failed', 'processing', 'completed'])
+table.module.requires = IS_IN_DB(db, 's3_module.name', '%(name_nice)s')
 # TODO(mattb): These need to be pulled dynamically!!
-db[table].resource.requires = IS_IN_SET(['organisation', 'office', 'contact'])
+table.resource.requires = IS_IN_SET(['organisation', 'office', 'contact'])
 
 
 # Import lines
@@ -49,8 +49,8 @@ def display_status_select(data):
     return SELECT('ignore', 'import', value=data, _class='import_line_status')
 
 resource = 'import_line'
-table = '%s_%s' % (module, resource)
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('import_job', db.admin_import_job, writable=False),
                 Field('line_no', 'integer'),
                 Field('valid', 'boolean', writable=False),
@@ -60,6 +60,6 @@ db.define_table(table,
                 Field('data', 'blob', writable=False,
                       represent=display_dict_pickle_as_str)
                 )
-db[table].import_job.requires = IS_IN_DB(db, 'admin_import_job.id', '%(description)')
-db[table].status.requires = IS_IN_SET(['ignore', 'import', 'imported'])
+table.import_job.requires = IS_IN_DB(db, 'admin_import_job.id', '%(description)')
+table.status.requires = IS_IN_SET(['ignore', 'import', 'imported'])
 

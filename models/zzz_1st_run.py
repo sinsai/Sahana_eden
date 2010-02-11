@@ -14,6 +14,7 @@ if empty:
         db[table].insert(
             name = T('Sahana Blue'),
             logo = 'img/sahanapy_logo.png',
+            #header_background = 'img/header_bg.png',
             footer = 'footer.html',
             text_direction = 'ltr',
             col_background = '336699',
@@ -31,6 +32,7 @@ if empty:
         db[table].insert(
             name = T('Sahana Green'),
             logo = 'img/sahanapy_logo_green.png',
+            #header_background = 'img/header_bg.png',
             footer = 'footer.html',
             text_direction = 'ltr',
             col_background = '337733',
@@ -51,6 +53,7 @@ if empty:
             # - logo size needs storing
             name = T('Sahana Steel'),
             logo = 'img/sahanapy_logo_ideamonk.png',
+            #header_background = 'img/header_bg.png',
             footer = 'footer.html',
             text_direction = 'ltr',
             col_background = 'dbdbdb',

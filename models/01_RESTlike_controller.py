@@ -81,14 +81,19 @@ def shn_field_represent(field, row, col):
             represent = row[col]
     return represent
 
-def shn_field_represent_sspage(tablename, row, col):
+def shn_field_represent_sspage(tablename, row, col, joins_to_pull):
     colname = col.split('.')[1]
     tabname = col.split('.')[0]
+    if joins_to_pull and len(joins_to_pull) > 0:
+        therow = row[tablename]
+    else:
+        therow = row
+    
     if colname == 'id' and tabname == tablename:
-        id = str(row[tablename][colname])
+        id = str(therow[colname])
         return '<a href="' + request.function + '/' + id + '">' + id + '</a>' 
     else:
-        return shn_field_represent(db[tabname][colname], row[tabname], colname)
+        return shn_field_represent(db[tabname][colname], therow, colname)
     
 # *****************************************************************************
 # Exports
@@ -1033,7 +1038,7 @@ def shn_build_ssp_filter(table, request):
     cols =  shn_get_columns(table)
     context = '%' + request.vars.sSearch + '%'
     searchq = None
-    for i in xrange(0, int(request.vars.iColumns) - 1):
+    for i in xrange(0, int(request.vars.iColumns)):
         column_type = table[cols[i][0]].type
         if column_type in ['string','text'] or column_type.find('reference') == 0:
             searchq = add_columns_to_search(searchq,cols[i][3],context)
@@ -1328,7 +1333,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
                # ToDo: check for component list_fields & use them where available
-               aaData = [[shn_field_represent_sspage(table._tablename, row, f) for f in represent_list] for row in rows])
+               aaData = [[shn_field_represent_sspage(table._tablename, row, f, joins_to_pull) for f in represent_list] for row in rows])
         return json(r)
 
     if jr.representation=="html":

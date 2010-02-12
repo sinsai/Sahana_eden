@@ -180,9 +180,10 @@ def dashboard():
             session.error = T('Invalid Organisation ID!')
             redirect(URL(r=request, c='or', f='index'))
     else:
-        org_id = 1
+        table = db.or_organisation
+        query  = (table.id > 0) & ((table.deleted==False) | (table.deleted==None))
         try:
-            org_name = db(db.or_organisation.id == org_id).select(db.or_organisation.name)[0].name
+            org_name = db(query).select(limitby=(0,1))[0]['name']
             org_id = 0
         except:
             session.warning = T('No Organisations registered!')

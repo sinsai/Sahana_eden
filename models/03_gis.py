@@ -129,7 +129,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 gis_feature_type_opts = {
     1:T('Point'),
     2:T('Line'),
-    3:T('Polygon')'),
+    3:T('Polygon'),
     #4:T('MultiPolygon')
     }
 resource = 'location'

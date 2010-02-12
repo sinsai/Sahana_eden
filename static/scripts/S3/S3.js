@@ -21,8 +21,14 @@ $(document).ready(function() {
             var url_in = $(this).attr('href');
             var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
             // This has to be the last var: &TB_iframe=true
-            var url_out = url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
-            return url_out;
+	    /* Why we accumulating caller= over and over? */
+            if(url_in.match(/caller=/)){
+	        return url_in.replace(/caller=.*&/, 'caller=' + caller + '&');
+		//return url_in.split('caller=')[0] + 'caller=' + caller + url_in.match(/&TB_.*$/i);
+	    } 
+	    else{
+		return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
+	    }
         });
         return false;
     });

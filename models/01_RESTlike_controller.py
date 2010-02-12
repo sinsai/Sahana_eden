@@ -2583,6 +2583,9 @@ def shn_rest_controller(module, resource,
                 # Filter search to items which aren't deleted
                 if 'deleted' in jr.table:
                     query = (jr.table.deleted==False) & query
+                # Respect response.s3.filter
+                if response.s3.filter:
+                    query = response.s3.filter & query
 
                 # Audit
                 shn_audit_read(operation='search', module=jr.prefix,
@@ -2606,12 +2609,31 @@ def shn_rest_controller(module, resource,
                     value = request.vars.value or request.vars.q or None
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
-                        if request.vars.field2 and request.vars.field3:
+
+                        # Optional fields
+                        if 'field2' in request.vars:
                             field2 = str.lower(request.vars.field2)
-                            field3 = str.lower(request.vars.field3)
+
                         else:
                             field2 = None
+                        if 'field3' in request.vars:
+                            field3 = str.lower(request.vars.field3)
+                        else:
                             field3 = None
+                        if 'extra_string' in request.vars:
+                            extra_string = str.lower(request.vars.extra_string)
+                        else:
+                            extra_string = None
+                        if 'parent' in request.vars:
+                            parent = int(request.vars.parent)
+                        else:
+                            parent = None
+                        if 'exclude' in request.vars:
+                            import urllib
+                            exclude = urllib.unquote(request.vars.exclude)
+                        else:
+                            exclude = None
+                        
                         filter = request.vars.filter
                         if filter == '~':
                             if field2 and field3:
@@ -2621,7 +2643,17 @@ def shn_rest_controller(module, resource,
                                     query = query & ((jr.table[field].like('%' + value1 + '%')) & (jr.table[field2].like('%' + value2 + '%')) | (jr.table[field3].like('%' + value2 + '%')))
                                 else:
                                     query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                            elif extra_string:
+                                # gis_location hierarchical search
+                                if parent:
+                                    query = query & (jr.table.parent == parent) & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
+                                else:
+                                    query = query & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
+                            elif exclude:
+                                # gis_location without Admin Areas
+                                query = query & ~(jr.table[field].like(exclude)) & (jr.table[field].like('%' + value + '%'))
                             else:
+                                # Normal single-field
                                 query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:

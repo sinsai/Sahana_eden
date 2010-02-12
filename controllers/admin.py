@@ -1,6 +1,8 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import cPickle as pickle
 import csv
+from gluon.admin import *
+from gluon.fileutils import listdir
 
 module = 'admin'
 # Current Module (for sidebar title)
@@ -35,6 +37,8 @@ def theme():
     db[table].name.comment = SPAN("*", _class="req")
     db[table].logo.label = T('Logo')
     db[table].logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
+    #db[table].header_background.label = T('Header Background')
+    #db[table].header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
     db[table].footer.label = T('Footer')
     db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
     db[table].text_direction.label = T('Text Direction')
@@ -64,21 +68,23 @@ def theme():
     db[table].col_btn_hover.requires = IS_HTML_COLOUR()
 
     # CRUD Strings
-    title_create = T('Add Theme')
-    title_display = T('Theme Details')
-    title_list = T('List Themes')
-    title_update = T('Edit Theme')
-    title_search = T('Search Themes')
-    subtitle_create = T('Add New Theme')
-    subtitle_list = T('Themes')
-    label_list_button = T('List Themes')
-    label_create_button = T('Add Theme')
-    msg_record_created = T('Theme added')
-    msg_record_modified = T('Theme updated')
-    msg_record_deleted = T('Theme deleted')
-    msg_list_empty = T('No Themes currently defined')
-    s3.crud_strings[resource] = Storage(title_create=title_create, title_display=title_display, title_list=title_list, title_update=title_update, subtitle_create=subtitle_create, subtitle_list=subtitle_list, label_list_button=label_list_button, label_create_button=label_create_button, msg_record_created=msg_record_created, msg_record_modified=msg_record_modified, msg_record_deleted=msg_record_deleted, msg_list_empty=msg_list_empty)
-    
+    ADD_THEME = T('Add Theme')
+    LIST_THEMES = T('List Themes')
+    s3.crud_strings[resource] = Storage(
+        title_create = ADD_THEME,
+        title_display = T('Theme Details'),
+        title_list = LIST_THEMES,
+        title_update = T('Edit Theme'),
+        title_search = T('Search Themes'),
+        subtitle_create = T('Add New Theme'),
+        subtitle_list = T('Themes'),
+        label_list_button = LIST_THEMES,
+        label_create_button = ADD_THEME,
+        msg_record_created = T('Theme added'),
+        msg_record_modified = T('Theme updated'),
+        msg_record_deleted = T('Theme deleted'),
+        msg_list_empty = T('No Themes currently defined'))
+
     return shn_rest_controller(module, resource, list_fields=['id', 'name', 'logo', 'footer', 'col_background'], onvalidation=lambda form: theme_check(form))
 
 def theme_apply(form):
@@ -114,6 +120,10 @@ def theme_apply(form):
             logo = theme.logo
         else:
             logo = default_theme.logo
+        #if theme.header_background:
+        #    header_background = theme.header_background
+        #else:
+        #    header_background = default_theme.header_background
         if theme.text_direction:
             text_direction = theme.text_direction
         else:
@@ -122,6 +132,7 @@ def theme_apply(form):
         ofile = open(out_file, 'w')
         for line in lines:
             line = line.replace("YOURLOGOHERE", logo)
+            #line = line.replace("HEADERBACKGROUND", header_background )
             line = line.replace("TEXT_DIRECTION", text_direction)
             # Iterate through Colours
             for key in theme.keys():
@@ -164,25 +175,31 @@ def theme_check(form):
         # Called from Settings
         theme = db(db.admin_theme.id == form.vars.theme).select().first()
         logo = theme.logo
+        #header_background = theme.header_background
         footer = theme.footer
     elif form.vars.logo and form.vars.footer:
         # Called from Theme
         logo = form.vars.logo
+        #header_background = form.vars.header_background
         footer = form.vars.footer
     else:
         session.error = INVALIDREQUEST
         redirect(URL(r=request))
     _logo = os.path.join(request.folder, 'static', logo)
+    #_header_background = os.path.join(request.folder, 'static', header_background)
     _footer = os.path.join(request.folder, 'views', footer)
     if not os.access(_logo, os.R_OK):
         form.errors['logo'] = T('Logo file %s missing!' % logo)
         return
+    #if not os.access(_header_background, os.R_OK):
+    #    form.errors['header_background'] = T('Header background file %s missing!' % logo)
+    #    return
     if not os.access(_footer, os.R_OK):
         form.errors['footer'] = T('Footer file %s missing!' % footer)
         return
     # Validation passed
     return
-    
+
 @auth.requires_membership('Administrator')
 def user():
     "RESTlike CRUD controller"
@@ -191,24 +208,26 @@ def user():
     table = module + '_' + resource
 
     # Model options
-    
+
     # CRUD Strings
-    title_create = T('Add User')
-    title_display = T('User Details')
-    title_list = T('List Users')
-    title_update = T('Edit User')
-    title_search = T('Search Users')
-    subtitle_create = T('Add New User')
-    subtitle_list = T('Users')
-    label_list_button = T('List Users')
-    label_create_button = T('Add User')
-    msg_record_created = T('User added')
-    msg_record_modified = T('User updated')
-    msg_record_deleted = T('User deleted')
-    msg_list_empty = T('No Users currently registered')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
-    onvalidation = None
+    ADD_USER = T('Add User')
+    LIST_USERS = T('List Users')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_USER,
+        title_display = T('User Details'),
+        title_list = LIST_USERS,
+        title_update = T('Edit User'),
+        title_search = T('Search Users'),
+        subtitle_create = T('Add New User'),
+        subtitle_list = T('Users'),
+        label_list_button = LIST_USERS,
+        label_create_button = ADD_USER,
+        msg_record_created = T('User added'),
+        msg_record_modified = T('User updated'),
+        msg_record_deleted = T('User deleted'),
+        msg_list_empty = T('No Users currently registered'))
+
+    onvalidation = onaccept = None
     # Add users to Person Registry & 'Authenticated' role
     crud.settings.create_onaccept = lambda form: auth.shn_register(form)
     # Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))
@@ -220,7 +239,7 @@ def user():
     db.auth_user.registration_key.label = T('Disabled?')
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
 
-    return shn_rest_controller(module, resource, main='first_name', onvalidation=onvalidation)
+    return shn_rest_controller(module, resource, main='first_name', onvalidation=onvalidation, onaccept=onaccept)
 
 def user_approve(form):
     "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"
@@ -240,7 +259,6 @@ def user_approve(form):
                     return
         else:
             return
-    
 
 @auth.requires_membership('Administrator')
 def group():
@@ -250,25 +268,27 @@ def group():
     table = module + '_' + resource
 
     # Model options
-    
+
     # CRUD Strings
-    title_create = T('Add Role')
-    title_display = T('Role Details')
-    title_list = T('List Roles')
-    title_update = T('Edit Role')
-    title_search = T('Search Roles')
-    subtitle_create = T('Add New Role')
-    subtitle_list = T('Roles')
-    label_list_button = T('List Roles')
-    label_create_button = T('Add Role')
-    msg_record_created = T('Role added')
-    msg_record_modified = T('Role updated')
-    msg_record_deleted = T('Role deleted')
-    msg_list_empty = T('No Roles currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+    ADD_ROLE = T('Add Role')
+    LIST_ROLES = T('List Roles')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_ROLE,
+        title_display = T('Role Details'),
+        title_list = LIST_ROLES,
+        title_update = T('Edit Role'),
+        title_search = T('Search Roles'),
+        subtitle_create = T('Add New Role'),
+        subtitle_list = T('Roles'),
+        label_list_button = LIST_ROLES,
+        label_create_button = ADD_ROLE,
+        msg_record_created = T('Role added'),
+        msg_record_modified = T('Role updated'),
+        msg_record_deleted = T('Role deleted'),
+        msg_list_empty = T('No Roles currently defined'))
+
     return shn_rest_controller(module, resource, main='role')
-    
+
 # Unused as poor UI
 @auth.requires_membership('Administrator')
 def membership():
@@ -278,26 +298,28 @@ def membership():
     table = module + '_' + resource
 
     # Model options
-    
+
     # CRUD Strings
     table = 'auth_membership'
-    title_create = T('Add Membership')
-    title_display = T('Membership Details')
-    title_list = T('List Memberships')
-    title_update = T('Edit Membership')
-    title_search = T('Search Memberships')
-    subtitle_create = T('Add New Membership')
-    subtitle_list = T('Memberships')
-    label_list_button = T('List Memberships')
-    label_create_button = T('Add Membership')
-    msg_record_created = T('Membership added')
-    msg_record_modified = T('Membership updated')
-    msg_record_deleted = T('Membership deleted')
-    msg_list_empty = T('No Memberships currently defined')
-    s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
-    
+    ADD_MEMBERSHIP = T('Add Membership')
+    LIST_MEMBERSHIPS = T('List Memberships')
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_MEMBERSHIP,
+        title_display = T('Membership Details'),
+        title_list = LIST_MEMBERSHIPS,
+        title_update = T('Edit Membership'),
+        title_search = T('Search Memberships'),
+        subtitle_create = T('Add New Membership'),
+        subtitle_list = T('Memberships'),
+        label_list_button = LIST_MEMBERSHIPS,
+        label_create_button = ADD_MEMBERSHIP,
+        msg_record_created = T('Membership added'),
+        msg_record_modified = T('Membership updated'),
+        msg_record_deleted = T('Membership deleted'),
+        msg_list_empty = T('No Memberships currently defined'))
+
     return shn_rest_controller(module, resource, main='user_id')
-    
+
 @auth.requires_membership('Administrator')
 def users():
     "List/amend which users are in a Group"
@@ -337,7 +359,7 @@ def users():
         id_link = A(id, _href=URL(r=request, f='user', args=['read', id]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_second), TD(item_description), TD(checkbox), _class=theclass))
-        
+
     if auth.settings.username:
         username_label = T('Username')
     else:
@@ -345,7 +367,7 @@ def users():
     table_header = THEAD(TR(TH('ID'), TH(T('First Name')), TH(T('Last Name')), TH(username_label), TH(T('Remove'))))
     table_footer = TFOOT(TR(TD(_colspan=4), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Remove')))))
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='group_remove_users', args=[group])))
-        
+
     subtitle = T("Users")
     crud.messages.submit_button = T('Add')
     crud.messages.record_created = T('Role Updated')
@@ -404,11 +426,11 @@ def groups():
         id_link = A(id, _href=URL(r=request, f='group', args=['read', id]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_description), TD(checkbox), _class=theclass))
-        
+
     table_header = THEAD(TR(TH('ID'), TH(T('Role')), TH(T('Description')), TH(T('Remove'))))
     table_footer = TFOOT(TR(TD(_colspan=3), TD(INPUT(_id='submit_delete_button', _type='submit', _value=T('Remove')))))
     items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='user_remove_groups', args=[user])))
-        
+
     subtitle = T("Roles")
     crud.messages.submit_button = T('Add')
     crud.messages.record_created = T('User Updated')
@@ -442,9 +464,9 @@ def import_data():
     crud.messages.submit_button = 'Upload'
     import_job_form = crud.create(db.admin_import_job)
     # Doesn't seem to be any proper way to tell the CRUD create form to post to
-    # a different location!!! 
+    # a different location!!!
     import_job_form.custom.begin.text = str(import_job_form.custom.begin).replace(
-            'action=""', 
+            'action=""',
             'action="%s"' % URL(r=request, f='import_job', args=['create']))
     return dict(module_name=module_name, title=title,
                 import_job_form=import_job_form)
@@ -454,11 +476,12 @@ def import_csv():
     "Import CSV data via POST upload to Database."
     file = request.vars.multifile.file
     try:
-        import_csv(file)
+        # Assumes that it is a concatenation of tables
+        shn_import_csv(file)
         session.flash = T('Data uploaded')
-    except: 
+    except Exception, e:
         session.error = T('Unable to parse CSV file!')
-    redirect(URL(r=request))
+    redirect(URL(r=request, f='import_data'))
 
 # Export Data
 @auth.requires_login()
@@ -472,16 +495,16 @@ def export_csv():
     "Export entire database as CSV"
     import StringIO
     output = StringIO.StringIO()
-    
+
     db.export_to_csv_file(output)
-    
+
     output.seek(0)
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
     filename = "%s_database.csv" % (request.env.server_name)
     response.headers['Content-disposition'] = "attachment; filename=%s" % filename
     return output.read()
-    
+
 
 # Unstructured Data Import
 @auth.requires_membership('Administrator')
@@ -492,14 +515,16 @@ def import_job():
     resource = 'import_job'
     table = '%s_%s' % (module, resource)
     jr = s3xrc.request(module, resource, request, session=session)
+    CREATE_NEW_IMPORT_JOB = T('Create New Import Job')
+    LIST_IMPORT_JOBS = ('List Import Jobs')
     s3.crud_strings[table] = Storage(
-            title_create=T('Create New Import Job'),
+            title_create=CREATE_NEW_IMPORT_JOB,
             title_display=T('Import Job'),
-            title_list=T('List Import Jobs'),
+            title_list=LIST_IMPORT_JOBS,
             title_update=T('Update Import Job'),
-            subtitle_create=T('Create New Import Job'),
+            subtitle_create=CREATE_NEW_IMPORT_JOB,
             subtitle_list=T('Import Jobs'),
-            label_list_button=T('List Import Jobs'),
+            label_list_button=LIST_IMPORT_JOBS,
             label_create_button=T('Create Import Job'),
             msg_record_created=T('Import job created'),
             msg_list_empty=T('No import jobs')
@@ -519,7 +544,7 @@ def _import_job_list(jr):
 def _import_job_create(jr):
     if jr.http != 'POST':
         redirect(jr.there())
-        
+
     def process_new_file_and_redirect(form):
         filename = form.vars.source_file_newfilename
         filepath = os.path.join(request.folder, 'uploads', filename)
@@ -588,7 +613,7 @@ def _import_job_update_GET(jr, job):
             job.column_map = []
         model_fields = get_matchable_fields(job.module, job.resource)
         return dict(model_fields=model_fields)
-    
+
     if job.status == 'processing':
         num_lines = db(query).count()
         return dict(num_lines=num_lines, update_speed=60)
@@ -674,15 +699,15 @@ def get_matchable_fields(module, resource):
 # Functional Testing
 def handleResults():
     """Process the POST data returned from Selenium TestRunner.
-    The data is written out to 2 files.  The overall results are written to 
-    date-time-browserName-metadata.txt as a list of key: value, one per line.  The 
+    The data is written out to 2 files.  The overall results are written to
+    date-time-browserName-metadata.txt as a list of key: value, one per line.  The
     suiteTable and testTables are written to date-time-browserName-results.html.
     """
-    
+
     if not request.vars.result:
         # No results
         return
-    
+
     # Read in results
     result = request.vars.result
     totalTime = request.vars.totalTime
@@ -695,7 +720,7 @@ def handleResults():
     suiteTable = ''
     if request.vars.suite:
         suiteTable = request.vars.suite
-    
+
     testTables = []
     testTableNum = 1
     while request.vars['testTable.%s' % testTableNum]:
@@ -707,7 +732,7 @@ def handleResults():
             pass
         except:
             break
-    
+
     # Unescape the HTML tables
     import urllib
     suiteTable = urllib.unquote(suiteTable)
@@ -723,7 +748,7 @@ def handleResults():
     outputDir = os.path.join(request.folder, 'static', 'selenium', 'results')
     metadataFile = '%s-%s-%s-metadata.txt' % (date, time, browserName)
     dataFile = '%s-%s-%s-results.html' % (date, time, browserName)
-    
+
     #xmlText = '<selenium result="' + result + '" totalTime="' + totalTime + '" successes="' + numberOfCommandSuccesses + '" failures="' + numberOfCommandFailures + '" errors="' + numberOfCommandErrors + '" />'
     f = open(os.path.join(outputDir, metadataFile), 'w')
     for key in request.vars.keys():
@@ -739,11 +764,110 @@ def handleResults():
         print >> f, '<br/><br/>'
         print >> f, testTable
     f.close()
-    
+
     message = DIV(P('Results have been successfully posted to the server here:'),
         P(A(metadataFile, _href=URL(r=request, c='static', f='selenium', args=['results', metadataFile]))),
         P(A(dataFile, _href=URL(r=request, c='static', f='selenium', args=['results', dataFile]))))
-    
+
     response.view = 'display.html'
     title = T('Test Results')
     return dict(module_name=module_name, title=title, item=message)
+
+#Ticket Viewer functions Borrowed from admin application of web2py
+@auth.requires_membership('Administrator')
+def errors():
+    """ Error handler """
+
+    app = request.application
+
+    for item in request.vars:
+        if item[:7] == 'delete_':
+            os.unlink(apath('%s/errors/%s' % (app, item[7:]), r=request))
+
+    func = lambda p: os.stat(apath('%s/errors/%s' % (app, p), r=request)).st_mtime
+    tickets = sorted(listdir(apath('%s/errors/' % app, r=request), '^\w.*'),
+                     key=func,
+                     reverse=True)
+
+    return dict(app=app, tickets=tickets)
+
+def make_link(path):
+    """ Create a link from a path """
+    tryFile = path.replace('\\', '/')
+
+    if os.path.isabs(tryFile) and os.path.isfile(tryFile):
+        (folder, filename) = os.path.split(tryFile)
+        (base, ext) = os.path.splitext(filename)
+        app = request.args[0]
+
+        editable = {'controllers': '.py', 'models': '.py', 'views': '.html'}
+        for key in editable.keys():
+            check_extension = folder.endswith("%s/%s" % (app,key))
+            if ext.lower() == editable[key] and check_extension:
+                return A('"' + tryFile + '"',
+                         _href=URL(r=request,
+                         f='edit/%s/%s/%s' % (app, key, filename))).xml()
+    return ''
+
+
+def make_links(traceback):
+    """ Make links using the given traceback """
+
+    lwords = traceback.split('"')
+
+    # Making the short circuit compatible with <= python2.4
+    result = (len(lwords) != 0) and lwords[0] or ''
+
+    i = 1
+
+    while i < len(lwords):
+        link = make_link(lwords[i])
+
+        if link == '':
+            result += '"' + lwords[i]
+        else:
+            result += link
+
+            if i + 1 < len(lwords):
+                result += lwords[i + 1]
+                i = i + 1
+
+        i = i + 1
+
+    return result
+
+
+class TRACEBACK(object):
+    """ Generate the traceback """
+
+    def __init__(self, text):
+        """ TRACEBACK constructor """
+
+        self.s = make_links(CODE(text).xml())
+
+    def xml(self):
+        """ Returns the xml """
+
+        return self.s
+
+
+##ticket viewing
+@auth.requires_membership('Administrator')
+def ticket():
+    """ Ticket handler """
+
+    if len(request.args) != 2:
+        session.flash = T('invalid ticket')
+        redirect(URL(r=request))
+
+    app = request.args[0]
+    ticket = request.args[1]
+    e = RestrictedError()
+    e.load(request, app, ticket)
+
+    return dict(app=app,
+                ticket=ticket,
+                traceback=TRACEBACK(e.traceback),
+                code=e.code,
+                layer=e.layer)
+

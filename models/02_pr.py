@@ -14,8 +14,8 @@ module = 'pr'
 # Settings
 #
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
@@ -103,23 +103,23 @@ def shn_pentity_represent(id):
 # pentity table ---------------------------------------------------------------
 #
 resource = 'pentity'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
 #                    Field('parent'),                # Parent Entity
                     opt_pr_entity_type,              # Entity class
                     Field('label', length=128),      # Recognition Label
                     migrate=migrate)
 
 # Field validation
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-#db[table].label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
-#db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+#table.label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
+#table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
 
 # Field representation
-#db[table].deleted.readable = True
+#table.deleted.readable = True
 
 # Field labels
-#db[table].parent.label = T('belongs to')
+#table.parent.label = T('belongs to')
 
 # CRUD Strings
 
@@ -275,8 +275,8 @@ def shn_pr_person_represent(id):
 # person table ----------------------------------------------------------------
 #
 resource = 'person'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                         # Person Entity Field Set
                 Field('missing', 'boolean', default=False), # Missing?
                 Field('first_name', notnull=True),      # first or only name
@@ -300,54 +300,56 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 migrate=migrate)
 
 # Field validation
-db[table].date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
+table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
                                         error_message="%s " % T("Enter a date before") + "%(max)s!"))
-db[table].first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
-db[table].email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
-db[table].email.requires = IS_NULL_OR(IS_EMAIL())
-db[table].mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
-db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_person.pr_pe_label'))
+table.first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
+table.email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
+table.email.requires = IS_NULL_OR(IS_EMAIL())
+table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
+table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_person.pr_pe_label'))
 
 # Field representation
-db[table].pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
-db[table].first_name.comment = SPAN(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
-db[table].preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
-db[table].local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
-db[table].email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
-db[table].mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
-db[table].opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
-db[table].opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
+table.pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
+table.first_name.comment = SPAN(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
+table.preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
+table.local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
+table.email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
+table.mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
+table.opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
+table.opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
 
-db[table].missing.represent = lambda missing: (missing and ['missing'] or [''])[0]
+table.missing.represent = lambda missing: (missing and ['missing'] or [''])[0]
 
 # Field labels
-db[table].opt_pr_gender.label = T('Gender')
-db[table].opt_pr_age_group.label = T('Age group')
-db[table].mobile_phone.label = T("Mobile Phone #")
+table.opt_pr_gender.label = T('Gender')
+table.opt_pr_age_group.label = T('Age group')
+table.mobile_phone.label = T("Mobile Phone #")
 
 # CRUD Strings
-title_create = T('Add a Person')
-title_display = T('Person Details')
-title_list = T('List Persons')
-title_update = T('Edit Person Details')
-title_search = T('Search Persons')
-subtitle_create = T('Add Person')
-subtitle_list = T('Persons')
-label_list_button = T('List Persons')
-label_create_button = T('Add Person')
-label_delete_button = T('Delete Person')
-msg_record_created = T('Person added')
-msg_record_modified = T('Person details updated')
-msg_record_deleted = T('Person deleted')
-msg_list_empty = T('No Persons currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_PERSON = T('Add Person')
+LIST_PERSONS = T('List Persons')
+s3.crud_strings[tablename] = Storage(
+    title_create = T('Add a Person'),
+    title_display = T('Person Details'),
+    title_list = LIST_PERSONS,
+    title_update = T('Edit Person Details'),
+    title_search = T('Search Persons'),
+    subtitle_create = ADD_PERSON,
+    subtitle_list = T('Persons'),
+    label_list_button = LIST_PERSONS,
+    label_create_button = ADD_PERSON,
+    label_delete_button = T('Delete Person'),
+    msg_record_created = T('Person added'),
+    msg_record_modified = T('Person details updated'),
+    msg_record_deleted = T('Person deleted'),
+    msg_list_empty = T('No Persons currently registered'))
 
 #
 # person_id: reusable field for other tables to reference ---------------------
 #
 shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button, _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.pr_person.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry.")))
 person_id = SQLTable(None, 'person_id',
-                Field('person_id', db.pr_person,
+                FieldS3('person_id', db.pr_person, sortby=['first_name','middle_name','last_name'],
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
                     represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
                     comment = shn_person_comment,
@@ -379,8 +381,8 @@ opt_pr_group_type = SQLTable(None, 'opt_pr_group_type',
 # group table -----------------------------------------------------------------
 #
 resource = 'group'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 pr_pe_fieldset,                                 # Person Entity Field Set
                 opt_pr_group_type,                              # group type
                 Field('system','boolean',default=False),        # System internal? (e.g. users?)
@@ -404,39 +406,41 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
 # Field validation
 
 # Field representation
-db[table].pr_pe_label.readable = False
-db[table].pr_pe_label.writable = False
-db[table].system.readable = False
-db[table].system.writable = False
-db[table].pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_group.pr_pe_label'))
+table.pr_pe_label.readable = False
+table.pr_pe_label.writable = False
+table.system.readable = False
+table.system.writable = False
+table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_group.pr_pe_label'))
 
 # Field labels
-db[table].opt_pr_group_type.label = T("Group type")
-db[table].group_name.label = T("Group name")
-db[table].group_description.label = T("Group description")
+table.opt_pr_group_type.label = T("Group type")
+table.group_name.label = T("Group name")
+table.group_description.label = T("Group description")
 
 # CRUD Strings
-title_create = T('Add Group')
-title_display = T('Group Details')
-title_list = T('List Groups')
-title_update = T('Edit Group')
-title_search = T('Search Groups')
-subtitle_create = T('Add New Group')
-subtitle_list = T('Groups')
-label_list_button = T('List Groups')
-label_create_button = T('Add Group')
-label_delete_button = T('Delete Group')
-msg_record_created = T('Group added')
-msg_record_modified = T('Group updated')
-msg_record_deleted = T('Group deleted')
-msg_list_empty = T('No Groups currently registered')
-s3.crud_strings[table] = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,label_delete_button=label_delete_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+ADD_GROUP = T('Add Group')
+LIST_GROUPS = T('List Groups')
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_GROUP,
+    title_display = T('Group Details'),
+    title_list = LIST_GROUPS,
+    title_update = T('Edit Group'),
+    title_search = T('Search Groups'),
+    subtitle_create = T('Add New Group'),
+    subtitle_list = T('Groups'),
+    label_list_button = LIST_GROUPS,
+    label_create_button = ADD_GROUP,
+    label_delete_button = T('Delete Group'),
+    msg_record_created = T('Group added'),
+    msg_record_modified = T('Group updated'),
+    msg_record_deleted = T('Group deleted'),
+    msg_list_empty = T('No Groups currently registered'))
 
 #
 # group_id: reusable field for other tables to reference ----------------------
 #
 group_id = SQLTable(None, 'group_id',
-                Field('group_id', db.pr_group,
+                FieldS3('group_id', db.pr_group, sortby='group_name',
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_group.id', '%(id)s: %(group_name)s', filterby='system', filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
                     comment = DIV(A(s3.crud_strings.pr_group.label_create_button, _class='thickbox', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.pr_group.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
@@ -507,62 +511,6 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
     return True
 
 #
-# shn_pr_get_person_id --------------------------------------------------------
-#
-def shn_pr_get_person_id(label, fields=None, filterby=None):
-    """
-        Finds a person by any name and/or tag label
-    """
-
-    if fields and isinstance(fields, (list,tuple)):
-        search_fields = []
-        for f in fields:
-            if db.pr_person.has_key(f):     # TODO: check for field type?
-                search_fields.append(f)
-        if not len(search_fields):
-            # Error: none of the specified search fields exists
-            return None
-    else:
-        # No search fields specified at all => fallback
-        search_fields = ['pr_pe_label', 'first_name', 'middle_name', 'last_name']
-
-    if label and isinstance(label,str):
-        labels = label.split()
-        results = []
-        query = None
-        # TODO: make a more sophisticated search function (levenshtein?)
-        for l in labels:
-
-            # append wildcards
-            wc = "%"
-            _l = "%s%s%s" % (wc, l, wc)
-
-            # build query
-            for f in search_fields:
-                if query:
-                    query = (db.pr_person[f].like(_l)) | query
-                else:
-                    query = (db.pr_person[f].like(_l))
-
-            # undeleted records only
-            query = (db.pr_person.deleted==False) & (query)
-            # restrict to prior results (AND)
-            if len(results):
-                query = (db.pr_person.id.belongs(results)) & query
-            if filterby:
-                query = (filterby) & (query)
-            records = db(query).select(db.pr_person.id)
-            # rebuild result list
-            results = [r.id for r in records]
-            # any results left?
-            if not len(results):
-                return None
-        return results
-    else:
-        # no label given or wrong parameter type
-        return None
-
-#
 # shn_pr_person_search_simple -------------------------------------------------
 #
 def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
@@ -605,7 +553,9 @@ def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
             if form.vars.label == "":
                 form.vars.label = "%"
 
-            results = shn_pr_get_person_id(form.vars.label)
+            results = s3xrc.search_simple(db.pr_person,
+                fields=['pr_pe_label', 'first_name', 'middle_name', 'last_name'],
+                label=form.vars.label)
 
             if results and len(results):
                 rows = db(db.pr_person.id.belongs(results)).select()

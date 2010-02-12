@@ -4,15 +4,15 @@ module = 'media'
 
 # Settings
 resource = 'setting'
-table = module + '_' + resource
-db.define_table(table,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
 
 resource = 'metadata'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 location_id,
                 Field('description'),
                 person_id,
@@ -24,18 +24,18 @@ db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('expiry_time', 'datetime'),
                 Field('url'),
                 migrate=migrate)
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].description.label = T('Description')
-db[table].person_id.label = T("Contact")
-db[table].source.label = T('Source')
-db[table].accuracy.label = T('Accuracy')
-db[table].sensitivity.label = T('Sensitivity')
-db[table].event_time.requires = IS_NULL_OR(IS_DATETIME())
-db[table].event_time.label = T('Event Time')
-db[table].expiry_time.requires = IS_NULL_OR(IS_DATETIME())
-db[table].expiry_time.label = T('Expiry Time')
-db[table].url.requires = IS_NULL_OR(IS_URL())
-db[table].url.label = 'URL'
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.description.label = T('Description')
+table.person_id.label = T("Contact")
+table.source.label = T('Source')
+table.accuracy.label = T('Accuracy')
+table.sensitivity.label = T('Sensitivity')
+table.event_time.requires = IS_NULL_OR(IS_DATETIME())
+table.event_time.label = T('Event Time')
+table.expiry_time.requires = IS_NULL_OR(IS_DATETIME())
+table.expiry_time.label = T('Expiry Time')
+table.url.requires = IS_NULL_OR(IS_URL())
+table.url.label = 'URL'
 ADD_METADATA = T('Add Metadata')
 metadata_id = SQLTable(None, 'metadata_id',
             Field('metadata_id', db.media_metadata,
@@ -47,20 +47,20 @@ metadata_id = SQLTable(None, 'metadata_id',
                 ))
 
 resource = 'image'
-table = module + '_' + resource
-db.define_table(table, timestamp, uuidstamp, authorstamp, deletion_status,
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
                 location_id,
                 metadata_id,
                 Field('image', 'upload'),
                 migrate=migrate)
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
 # upload folder needs to be visible to the download() function as well as the upload
-db[table].image.uploadfolder = os.path.join(request.folder, "uploads/images")
+table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG', 'gif', 'GIF', 'tif', 'TIF', 'bmp', 'BMP']
-db[table].image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
+table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
 ADD_IMAGE = T('Add Image')
 image_id = SQLTable(None, 'image_id',
             Field('image_id', db.media_image,

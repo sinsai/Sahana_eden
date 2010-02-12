@@ -1,0 +1,579 @@
+************* Module sahana
+C:  1: Missing docstring
+************* Module sahana.modules.jsonrpclib
+W:295: FIXME: mostly untested
+C:  1: Missing docstring
+F: 36: Unable to import 'gluon.contrib.simplejson' (No module named gluon.contrib.simplejson)
+C: 42:_gen_id: Missing docstring
+W: 43:_gen_id: Using the global statement
+C: 49:getparser: Missing docstring
+C: 50:getparser: Invalid name "un" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 54:dumps: Missing docstring
+E: 61:dumps: Undefined variable 'simplejson'
+W: 54:dumps: Unused argument 'methodresponse'
+W: 55:dumps: Unused argument 'allow_none'
+W: 54:dumps: Unused argument 'encoding'
+C: 63:Unmarshaller: Missing docstring
+C: 67:Unmarshaller.feed: Missing docstring
+C: 73:Unmarshaller.close: Missing docstring
+E: 75:Unmarshaller.close: Undefined variable 'simplejson'
+C: 77:Parser: Missing docstring
+C: 82:Parser.feed: Missing docstring
+C: 88:Parser.close: Missing docstring
+C: 91:_Method: Missing docstring
+R: 91:_Method: Too few public methods (0/2)
+W:108:Transport: Class has no __init__ method
+C:123:Transport.request: Missing docstring
+C:126:Transport.request: Invalid name "h" (should match [a-z_][a-z0-9_]{2,30}$)
+E:138:Transport.request: Undefined variable 'ProtocolError'
+W:147:Transport.request: Access to a protected member _conn of a client class
+C:158:Transport.getparser: Missing docstring
+R:158:Transport.getparser: Method could be a function
+C:172:Transport.get_host_info: Missing docstring
+E:182:Transport.get_host_info: Undefined variable 'string'
+E:182:Transport.get_host_info: Undefined variable 'string'
+R:172:Transport.get_host_info: Method could be a function
+C:197:Transport.make_connection: Missing docstring
+W:199:Transport.make_connection: Unused variable 'x509'
+W:199:Transport.make_connection: Unused variable 'extra_headers'
+C:209:Transport.send_request: Missing docstring
+R:209:Transport.send_request: Method could be a function
+W:209:Transport.send_request: Unused argument 'request_body'
+C:218:Transport.send_host: Missing docstring
+E:222:Transport.send_host: Undefined variable 'DictType'
+E:223:Transport.send_host: Instance of 'list' has no 'items' member
+W:219:Transport.send_host: Unused variable 'x509'
+C:232:Transport.send_user_agent: Missing docstring
+C:241:Transport.send_content: Missing docstring
+R:241:Transport.send_content: Method could be a function
+W:254:Transport.parse_response: Redefining built-in 'file'
+C:254:Transport.parse_response: Missing docstring
+W:268:Transport._parse_response: Redefining built-in 'file'
+C:268:Transport._parse_response: Missing docstring
+C:271:Transport._parse_response: Invalid name "p" (should match [a-z_][a-z0-9_]{2,30}$)
+C:271:Transport._parse_response: Invalid name "u" (should match [a-z_][a-z0-9_]{2,30}$)
+W:144:Transport.request: Attribute 'verbose' defined outside __init__
+W:292:SafeTransport: Class has no __init__ method
+C:297:SafeTransport.make_connection: Missing docstring
+C:302:SafeTransport.make_connection: Invalid name "HTTPS" (should match [a-z_][a-z0-9_]{2,30}$)
+W:300:SafeTransport.make_connection: Unused variable 'extra_headers'
+C:311:ServerProxy: Missing docstring
+R:313:ServerProxy.__init__: Too many arguments (6/5)
+R:311:ServerProxy: Too few public methods (0/2)
+C:368: Invalid name "s" (should match (([A-Z_][A-Z0-9_]*)|(__.*__))$)
+C:369: Invalid name "c" (should match (([A-Z_][A-Z0-9_]*)|(__.*__))$)
+C:371: Invalid name "d" (should match (([A-Z_][A-Z0-9_]*)|(__.*__))$)
+C:373: Invalid name "e" (should match (([A-Z_][A-Z0-9_]*)|(__.*__))$)
+C:375: Invalid name "f" (should match (([A-Z_][A-Z0-9_]*)|(__.*__))$)
+W: 36: Unused import gluon
+************* Module sahana.modules.ldapconnect
+C: 13: Line too long (84/80)
+C: 17: Line too long (95/80)
+C: 28: Line too long (102/80)
+C: 30: Line too long (81/80)
+C: 31: Line too long (91/80)
+C: 36: Line too long (88/80)
+C: 45: Line too long (93/80)
+C: 51: Line too long (96/80)
+C: 58: Line too long (110/80)
+C: 68: Line too long (84/80)
+C:  1: Missing docstring
+F:  2: Unable to import 'ldap' (No module named ldap)
+F:  4: Unable to import 'gluon.html' (No module named gluon.html)
+F:  5: Unable to import 'gluon.tools' (No module named gluon.tools)
+C:  7:AuthLDAP: Missing docstring
+C:  8:AuthLDAP.__init__: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+C:  8:AuthLDAP.__init__: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+E: 11:AuthLDAP.__init__: Instance of 'AuthLDAP' has no 'settings' member
+E: 12:AuthLDAP.__init__: Instance of 'AuthLDAP' has no 'settings' member
+E: 13:AuthLDAP.__init__: Instance of 'AuthLDAP' has no 'settings' member
+E: 15:AuthLDAP.__init__: Instance of 'AuthLDAP' has no 'settings' member
+E: 17:AuthLDAP.__init__: Instance of 'AuthLDAP' has no 'settings' member
+E: 18:AuthLDAP.__init__: Instance of 'AuthLDAP' has no 'settings' member
+W: 66:AuthLDAP.login: Redefining built-in 'next'
+W: 34:AuthLDAP.login: Redefining built-in 'filter'
+C: 20:AuthLDAP.login: Missing docstring
+R: 20:AuthLDAP.login: Too many local variables (19/15)
+E: 21:AuthLDAP.login: Instance of 'AuthLDAP' has no 'environment' member
+E: 22:AuthLDAP.login: Instance of 'AuthLDAP' has no 'environment' member
+E: 23:AuthLDAP.login: Undefined variable 'FORM'
+E: 23:AuthLDAP.login: Undefined variable 'INPUT'
+E: 24:AuthLDAP.login: Undefined variable 'INPUT'
+E: 25:AuthLDAP.login: Undefined variable 'INPUT'
+E: 28:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 28:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 29:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 31:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 31:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 33:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 37:AuthLDAP.login: Undefined variable 'ldaphelper'
+C: 38:AuthLDAP.login: Invalid name "cn" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 40:AuthLDAP.login: Invalid name "dn" (should match [a-z_][a-z0-9_]{2,30}$)
+E: 40:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+C: 43:AuthLDAP.login: Invalid name "dn" (should match [a-z_][a-z0-9_]{2,30}$)
+E: 43:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 48:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 49:AuthLDAP.login: Instance of 'AuthLDAP' has no 'db' member
+E: 52:AuthLDAP.login: Instance of 'AuthLDAP' has no 'add_group' member
+E: 53:AuthLDAP.login: Instance of 'AuthLDAP' has no 'add_membership' member
+E: 58:AuthLDAP.login: Undefined variable 'Storage'
+E: 58:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 59:AuthLDAP.login: Instance of 'AuthLDAP' has no 'messages' member
+E: 60:AuthLDAP.login: Instance of 'AuthLDAP' has no 'settings' member
+E: 62:AuthLDAP.login: Instance of 'AuthLDAP' has no 'log_event' member
+E: 63:AuthLDAP.login: Undefined variable 'onaccept'
+E: 64:AuthLDAP.login: Undefined variable 'onaccept'
+E: 66:AuthLDAP.login: Undefined variable 'URL'
+E: 68:AuthLDAP.login: Undefined variable 'URL'
+E: 68:AuthLDAP.login: Class 'next' has no 'replace' member
+E: 69:AuthLDAP.login: Undefined variable 'redirect'
+C: 70:AuthLDAP.login: Invalid name "e" (should match [a-z_][a-z0-9_]{2,30}$)
+R:  7:AuthLDAP: Too few public methods (1/2)
+W: 57:AuthLDAP.login: Attribute 'user' defined outside __init__
+F: 78: Unable to import 'ldif' (No module named ldif)
+F: 80: Unable to import 'ldap.cidict' (No module named ldap.cidict)
+W: 90:get_search_results: Unused variable 'code'
+C:112:LDAPSearchResult.__init__: Invalid name "dn" (should match [a-z_][a-z0-9_]{2,30}$)
+C:110:LDAPSearchResult.__init__: Invalid name "dn" (should match [a-z_][a-z0-9_]{2,30}$)
+W:168:LDAPSearchResult.pretty_print: Redefining built-in 'str'
+C:169:LDAPSearchResult.pretty_print: Invalid name "a" (should match [a-z_][a-z0-9_]{2,30}$)
+C:171:LDAPSearchResult.pretty_print: Invalid name "v" (should match [a-z_][a-z0-9_]{2,30}$)
+************* Module sahana.modules.s3_crud
+C: 22: Line too long (104/80)
+C: 25: Line too long (97/80)
+C: 30: Line too long (99/80)
+C: 44: Line too long (139/80)
+C:126: Line too long (82/80)
+C:133: Line too long (87/80)
+C:157: Line too long (93/80)
+C:169: Line too long (165/80)
+C:174: Line too long (85/80)
+C:177: Line too long (120/80)
+C:182: Line too long (93/80)
+C:190: Line too long (152/80)
+C:193: Line too long (83/80)
+C:220: Line too long (88/80)
+C:222: Line too long (133/80)
+C:228: Line too long (96/80)
+C:233: Line too long (151/80)
+C:235: Line too long (173/80)
+C:236: Line too long (172/80)
+C:261: Line too long (93/80)
+C:270: Line too long (113/80)
+C:272: Line too long (123/80)
+C:279: Line too long (101/80)
+C:280: Line too long (161/80)
+C:295: Line too long (92/80)
+C:297: Line too long (142/80)
+C:300: Line too long (84/80)
+C:301: Line too long (100/80)
+C:315: Line too long (89/80)
+C:319: Line too long (179/80)
+C:324: Line too long (81/80)
+C:347: Line too long (100/80)
+C:350: Line too long (101/80)
+C:360: Line too long (85/80)
+C:363: Line too long (109/80)
+C:364: Line too long (141/80)
+C:372: Line too long (148/80)
+C:384: Line too long (169/80)
+C:390: Line too long (165/80)
+C:392: Line too long (120/80)
+C:405: Line too long (89/80)
+C:408: Line too long (153/80)
+C:417: Line too long (82/80)
+C:429: Line too long (87/80)
+C:432: Line too long (101/80)
+C:439: Line too long (129/80)
+C:440: Line too long (145/80)
+C:442: Line too long (126/80)
+C:444: Line too long (87/80)
+C:462: Line too long (165/80)
+C:467: Line too long (106/80)
+C:469: Line too long (128/80)
+C:471: Line too long (156/80)
+C:473: Line too long (124/80)
+C:475: Line too long (114/80)
+C:479: Line too long (89/80)
+C:482: Line too long (162/80)
+C:489: Line too long (82/80)
+C:501: Line too long (88/80)
+C:506: Line too long (162/80)
+C:518: Line too long (91/80)
+C:522: Line too long (97/80)
+C:528: Line too long (122/80)
+C:530: Line too long (93/80)
+C:534: Line too long (81/80)
+C:537: Line too long (140/80)
+C:539: Line too long (145/80)
+C:543: Line too long (85/80)
+C:546: Line too long (81/80)
+C:549: Line too long (94/80)
+C:550: Line too long (86/80)
+C:551: Line too long (177/80)
+C:554: Line too long (87/80)
+C:564: Line too long (115/80)
+C:566: Line too long (125/80)
+C:571: Line too long (99/80)
+C:  1: Missing docstring
+C: 14:CrudController.__init__: Invalid name "s3" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 13:CrudController.__init__: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 12:CrudController.__init__: Invalid name "T" (should match [a-z_][a-z0-9_]{2,30}$)
+R:  1:CrudController: Too many instance attributes (8/7)
+C:  8:CrudController.__init__: Invalid name "T" (should match [a-z_][a-z0-9_]{2,30}$)
+C:  8:CrudController.__init__: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+C:  8:CrudController.__init__: Invalid name "s3" (should match [a-z_][a-z0-9_]{2,30}$)
+R:  8:CrudController.__init__: Too many arguments (9/5)
+C:  8:CrudController.__init__: Invalid name "T" (should match [a-z_][a-z0-9_]{2,30}$)
+C:  8:CrudController.__init__: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+C:  8:CrudController.__init__: Invalid name "s3" (should match [a-z_][a-z0-9_]{2,30}$)
+W: 29:CrudController.import_csv: Redefining built-in 'file'
+W: 34:CrudController.import_json: Redefining built-in 'file'
+F: 36:CrudController.import_json: Unable to import 'gluon.contrib.simplejson' (No module named gluon.contrib.simplejson)
+W: 34:CrudController.import_json: Unused argument 'table'
+W: 37:CrudController.import_json: Unused variable 'reader'
+W:397:CrudController.shn_rest_controller: Redefining built-in 'file'
+W:389:CrudController.shn_rest_controller: Redefining built-in 'id'
+W:532:CrudController.shn_rest_controller: Redefining built-in 'filter'
+W: 44:CrudController.shn_rest_controller: Redefining built-in 'format'
+R: 44:CrudController.shn_rest_controller: Too many arguments (9/5)
+R: 44:CrudController.shn_rest_controller: Too many local variables (63/15)
+C: 83:CrudController.shn_rest_controller: Invalid name "T" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 83:CrudController.shn_rest_controller: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 83:CrudController.shn_rest_controller: Invalid name "s3" (should match [a-z_][a-z0-9_]{2,30}$)
+E: 88:CrudController.shn_rest_controller: Undefined variable 'shn_crud_strings_lookup'
+E: 90:CrudController.shn_rest_controller: Undefined variable 'shn_crud_strings_lookup'
+W: 97:CrudController.shn_rest_controller: No exception type(s) specified
+E:134:CrudController.shn_rest_controller: Undefined variable 't2'
+W:139:CrudController.shn_rest_controller: No exception type(s) specified
+W:143:CrudController.shn_rest_controller: No exception type(s) specified
+W:147:CrudController.shn_rest_controller: No exception type(s) specified
+E:152:CrudController.shn_rest_controller: Undefined variable 'TABLE'
+E:153:CrudController.shn_rest_controller: Undefined variable 'TR'
+E:153:CrudController.shn_rest_controller: Undefined variable 'B'
+E:157:CrudController.shn_rest_controller: Undefined variable 'os'
+E:158:CrudController.shn_rest_controller: Undefined variable 'os'
+W:168:CrudController.shn_rest_controller: No exception type(s) specified
+E:169:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:169:CrudController.shn_rest_controller: Undefined variable 'modules'
+E:169:CrudController.shn_rest_controller: Undefined variable 'options'
+W:176:CrudController.shn_rest_controller: No exception type(s) specified
+E:177:CrudController.shn_rest_controller: Undefined variable 'A'
+E:177:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:182:CrudController.shn_rest_controller: Undefined variable 'os'
+E:183:CrudController.shn_rest_controller: Undefined variable 'os'
+E:190:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:190:CrudController.shn_rest_controller: Undefined variable 'modules'
+E:190:CrudController.shn_rest_controller: Undefined variable 'options'
+E:194:CrudController.shn_rest_controller: Undefined variable 't2'
+W:199:CrudController.shn_rest_controller: No exception type(s) specified
+E:202:CrudController.shn_rest_controller: Undefined variable 'TABLE'
+E:203:CrudController.shn_rest_controller: Undefined variable 'TR'
+E:203:CrudController.shn_rest_controller: Undefined variable 'B'
+E:217:CrudController.shn_rest_controller: Undefined variable 'service'
+F:219:CrudController.shn_rest_controller: Unable to import 'gluon.contenttype' (No module named gluon.contenttype)
+F:234:CrudController.shn_rest_controller: Unable to import 'gluon.contrib.rss2' (No module named gluon.contrib.rss2)
+W:236:CrudController.shn_rest_controller: Using possibly undefined loop variable 'row'
+E:240:CrudController.shn_rest_controller: Undefined variable 'DIV'
+E:241:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:241:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:261:CrudController.shn_rest_controller: Undefined variable 'os'
+E:262:CrudController.shn_rest_controller: Undefined variable 'os'
+W:269:CrudController.shn_rest_controller: No exception type(s) specified
+E:270:CrudController.shn_rest_controller: Undefined variable 'A'
+E:270:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:272:CrudController.shn_rest_controller: Undefined variable 'A'
+E:272:CrudController.shn_rest_controller: Undefined variable 'URL'
+W:278:CrudController.shn_rest_controller: No exception type(s) specified
+E:279:CrudController.shn_rest_controller: Undefined variable 'A'
+E:279:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:280:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:280:CrudController.shn_rest_controller: Undefined variable 'modules'
+E:280:CrudController.shn_rest_controller: Undefined variable 'options'
+E:292:CrudController.shn_rest_controller: Undefined variable 'service'
+F:294:CrudController.shn_rest_controller: Unable to import 'gluon.contenttype' (No module named gluon.contenttype)
+E:319:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:320:CrudController.shn_rest_controller: Undefined variable 'service'
+E:324:CrudController.shn_rest_controller: Undefined variable 'DIV'
+E:325:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:325:CrudController.shn_rest_controller: Undefined variable 'URL'
+W:331:CrudController.shn_rest_controller: No exception type(s) specified
+E:350:CrudController.shn_rest_controller: Undefined variable 'os'
+E:351:CrudController.shn_rest_controller: Undefined variable 'os'
+W:358:CrudController.shn_rest_controller: No exception type(s) specified
+W:362:CrudController.shn_rest_controller: No exception type(s) specified
+E:363:CrudController.shn_rest_controller: Undefined variable 'A'
+E:363:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:364:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:364:CrudController.shn_rest_controller: Undefined variable 'modules'
+E:364:CrudController.shn_rest_controller: Undefined variable 'options'
+E:372:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:374:CrudController.shn_rest_controller: Undefined variable 'Storage'
+W:392:CrudController.shn_rest_controller: No exception type(s) specified
+C:389:CrudController.shn_rest_controller: Invalid name "id" (should match [a-z_][a-z0-9_]{2,30}$)
+E:390:CrudController.shn_rest_controller: Undefined variable 'URL'
+W:402:CrudController.shn_rest_controller: No exception type(s) specified
+E:399:CrudController.shn_rest_controller: Undefined variable 'import_csv'
+E:405:CrudController.shn_rest_controller: Undefined variable 'DIV'
+E:406:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:406:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:408:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:408:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:408:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:410:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:410:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:432:CrudController.shn_rest_controller: Undefined variable 'os'
+E:433:CrudController.shn_rest_controller: Undefined variable 'os'
+E:439:CrudController.shn_rest_controller: Undefined variable 'A'
+E:439:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:440:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:440:CrudController.shn_rest_controller: Undefined variable 'modules'
+E:440:CrudController.shn_rest_controller: Undefined variable 'options'
+E:442:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:442:CrudController.shn_rest_controller: Undefined variable 'modules'
+E:442:CrudController.shn_rest_controller: Undefined variable 'options'
+E:448:CrudController.shn_rest_controller: Undefined variable 'Storage'
+W:473:CrudController.shn_rest_controller: No exception type(s) specified
+E:479:CrudController.shn_rest_controller: Undefined variable 'DIV'
+E:480:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:480:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:482:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:482:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:482:CrudController.shn_rest_controller: Undefined variable 'URL'
+C:483:CrudController.shn_rest_controller: Operator not preceded by a space
+                elif method=="delete":
+                           ^^
+E:502:CrudController.shn_rest_controller: Undefined variable 't2'
+E:506:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:506:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:506:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:519:CrudController.shn_rest_controller: Undefined variable 't2'
+E:522:CrudController.shn_rest_controller: Undefined variable 'os'
+E:523:CrudController.shn_rest_controller: Undefined variable 'os'
+E:528:CrudController.shn_rest_controller: Undefined variable 'module_name'
+E:528:CrudController.shn_rest_controller: Undefined variable 'modules'
+E:528:CrudController.shn_rest_controller: Undefined variable 'options'
+E:543:CrudController.shn_rest_controller: Undefined variable 'DIV'
+E:544:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:544:CrudController.shn_rest_controller: Undefined variable 'URL'
+E:546:CrudController.shn_rest_controller: Undefined variable 'DIV'
+E:547:CrudController.shn_rest_controller: Undefined variable 'redirect'
+E:547:CrudController.shn_rest_controller: Undefined variable 'URL'
+R: 44:CrudController.shn_rest_controller: Too many return statements (25/6)
+R: 44:CrudController.shn_rest_controller: Too many branches (129/12)
+R: 44:CrudController.shn_rest_controller: Too many statements (332/50)
+W:335:CrudController.shn_rest_controller: Unused variable 'audit_id'
+R:549:CrudController.shn_represent: Too many arguments (7/5)
+E:551:CrudController.shn_represent: Undefined variable 'db'
+E:551:CrudController.shn_represent.<lambda>: Undefined variable 'shn_list_item'
+R:554:CrudController.shn_represent_extra: Too many arguments (6/5)
+E:558:CrudController.shn_represent_extra: Undefined variable 'auth'
+R:554:CrudController.shn_represent_extra: Method could be a function
+R:569:CrudController.shn_list_item: Too many arguments (6/5)
+E:571:CrudController.shn_list_item: Undefined variable 'TD'
+E:571:CrudController.shn_list_item: Undefined variable 'A'
+E:571:CrudController.shn_list_item: Undefined variable 'URL'
+E:571:CrudController.shn_list_item: Undefined variable 'request'
+E:574:CrudController.shn_list_item: Undefined variable 'DIV'
+E:574:CrudController.shn_list_item: Undefined variable 'TABLE'
+E:574:CrudController.shn_list_item: Undefined variable 'TR'
+W:575:CrudController.shn_list_item: Used * or ** magic
+E:575:CrudController.shn_list_item: Undefined variable 'DIV'
+R:569:CrudController.shn_list_item: Method could be a function
+************* Module sahana.modules.s3_test
+C:  1: Missing docstring
+C:  3:WSGI_Test: Invalid name "WSGI_Test" (should match [A-Z_][a-zA-Z0-9]+$)
+C: 12:WSGI_Test.__init__: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 12:WSGI_Test.__init__: Invalid name "db" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 18:WSGI_Test.setUp: Invalid name "setUp" (should match [a-z_][a-z0-9_]{2,30}$)
+E: 20:WSGI_Test.setUp: Undefined variable 'create_fn'
+C: 23:WSGI_Test.runTest: Invalid name "runTest" (should match [a-z_][a-z0-9_]{2,30}$)
+R: 23:WSGI_Test.runTest: Method could be a function
+R:  3:WSGI_Test: Too many public methods (26/20)
+************* Module sahana.modules.sahana
+E:624: invalid syntax
+************* Module sahana.modules.validators
+C: 16:IS_LAT: Invalid name "IS_LAT" (should match [A-Z_][a-zA-Z0-9]+$)
+R: 16:IS_LAT: Too few public methods (0/2)
+C: 38:IS_LON: Invalid name "IS_LON" (should match [A-Z_][a-zA-Z0-9]+$)
+R: 38:IS_LON: Too few public methods (0/2)
+C: 60:THIS_NOT_IN_DB: Invalid name "THIS_NOT_IN_DB" (should match [A-Z_][a-zA-Z0-9]+$)
+W: 75:THIS_NOT_IN_DB.set_self_id: Redefining built-in 'id'
+C: 75:THIS_NOT_IN_DB.set_self_id: Missing docstring
+C: 75:THIS_NOT_IN_DB.set_self_id: Invalid name "id" (should match [a-z_][a-z0-9_]{2,30}$)
+C: 75:THIS_NOT_IN_DB.set_self_id: Invalid name "id" (should match [a-z_][a-z0-9_]{2,30}$)
+W: 79:THIS_NOT_IN_DB.__call__: Access to a protected member _db of a client class
+R: 60:THIS_NOT_IN_DB: Too few public methods (1/2)
+************* Module sahana.modules
+C:  1: Missing docstring
+
+
+Report
+======
+697 statements analysed.
+
+Raw metrics
+-----------
+
++----------+-------+------+---------+-----------+
+|type      |number |%     |previous |difference |
++==========+=======+======+=========+===========+
+|code      |818    |69.26 |818      |=          |
++----------+-------+------+---------+-----------+
+|docstring |124    |10.50 |124      |=          |
++----------+-------+------+---------+-----------+
+|comment   |142    |12.02 |142      |=          |
++----------+-------+------+---------+-----------+
+|empty     |97     |8.21  |97       |=          |
++----------+-------+------+---------+-----------+
+
+
+
+Duplication
+-----------
+
++-------------------------+------+---------+-----------+
+|                         |now   |previous |difference |
++=========================+======+=========+===========+
+|nb duplicated lines      |0     |0        |=          |
++-------------------------+------+---------+-----------+
+|percent duplicated lines |0.000 |0.000    |=          |
++-------------------------+------+---------+-----------+
+
+
+
+External dependencies
+---------------------
+::
+
+    wsgi_intercept 
+      \-webtest_intercept (sahana.modules.s3_test)
+
+
+
+Statistics by type
+------------------
+
++---------+-------+-----------+-----------+------------+---------+
+|type     |number |old number |difference |%documented |%badname |
++=========+=======+===========+===========+============+=========+
+|module   |7      |7          |=          |14.29       |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+|class    |13     |13         |=          |61.54       |30.77    |
++---------+-------+-----------+-----------+------------+---------+
+|method   |54     |54         |=          |68.52       |3.70     |
++---------+-------+-----------+-----------+------------+---------+
+|function |4      |4          |=          |25.00       |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+
+
+
+Messages by category
+--------------------
+
++-----------+-------+---------+-----------+
+|type       |number |previous |difference |
++===========+=======+=========+===========+
+|convention |161    |154      |+7.00      |
++-----------+-------+---------+-----------+
+|refactor   |26     |26       |=          |
++-----------+-------+---------+-----------+
+|warning    |50     |57       |-7.00      |
++-----------+-------+---------+-----------+
+|error      |151    |150      |+1.00      |
++-----------+-------+---------+-----------+
+
+
+
+% errors / warnings by module
+-----------------------------
+
++---------------------------+------+--------+---------+-----------+
+|module                     |error |warning |refactor |convention |
++===========================+======+========+=========+===========+
+|sahana.modules.s3_crud     |70.20 |52.00   |46.15    |56.52      |
++---------------------------+------+--------+---------+-----------+
+|sahana.modules.ldapconnect |23.84 |10.00   |7.69     |14.29      |
++---------------------------+------+--------+---------+-----------+
+|sahana.modules.jsonrpclib  |4.64  |34.00   |26.92    |20.50      |
++---------------------------+------+--------+---------+-----------+
+|sahana.modules.s3_test     |0.66  |0.00    |7.69     |3.73       |
++---------------------------+------+--------+---------+-----------+
+|sahana.modules.sahana      |0.66  |0.00    |0.00     |0.00       |
++---------------------------+------+--------+---------+-----------+
+|sahana.modules.validators  |0.00  |4.00    |11.54    |3.73       |
++---------------------------+------+--------+---------+-----------+
+
+
+
+Messages
+--------
+
++-----------+-----------+
+|message id |occurences |
++===========+===========+
+|E0602      |124        |
++-----------+-----------+
+|C0301      |86         |
++-----------+-----------+
+|C0103      |43         |
++-----------+-----------+
+|C0111      |31         |
++-----------+-----------+
+|E1101      |26         |
++-----------+-----------+
+|W0702      |15         |
++-----------+-----------+
+|W0622      |12         |
++-----------+-----------+
+|F0401      |10         |
++-----------+-----------+
+|W0612      |7          |
++-----------+-----------+
+|R0201      |7          |
++-----------+-----------+
+|R0913      |6          |
++-----------+-----------+
+|R0903      |6          |
++-----------+-----------+
+|W0613      |5          |
++-----------+-----------+
+|W0232      |2          |
++-----------+-----------+
+|W0212      |2          |
++-----------+-----------+
+|W0201      |2          |
++-----------+-----------+
+|R0914      |2          |
++-----------+-----------+
+|W0631      |1          |
++-----------+-----------+
+|W0611      |1          |
++-----------+-----------+
+|W0603      |1          |
++-----------+-----------+
+|W0511      |1          |
++-----------+-----------+
+|W0142      |1          |
++-----------+-----------+
+|R0915      |1          |
++-----------+-----------+
+|R0912      |1          |
++-----------+-----------+
+|R0911      |1          |
++-----------+-----------+
+|R0904      |1          |
++-----------+-----------+
+|R0902      |1          |
++-----------+-----------+
+|E0001      |1          |
++-----------+-----------+
+|C0322      |1          |
++-----------+-----------+
+
+
+
+Global evaluation
+-----------------
+Your code has been rated at -4.23/10 (previous run: -5.11/10)
+

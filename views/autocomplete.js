@@ -1,5 +1,7 @@
-﻿    // Autocomplete-enable the Dummy Input
-    $("#dummy_office").autocomplete('{{=URL(r=request, c='or', f='office', args='search.json', vars={'filter':'~', 'field':'name'})}}', {
+﻿    // The file is to be included for Single-Field autocompletes
+    // (not suitable for pr_person which requires 3: first, middle & last)
+    // Autocomplete-enable the Dummy Input
+    $("#{{=dummy_input}}").autocomplete('{{=URL(r=request, c=urlpath_c, f=urlpath_f, args='search.json', vars={'filter':'~', 'field':urlvar_field})}}', {
         minChars: 2,
 		//mustMatch: true,
 		matchContains: true,

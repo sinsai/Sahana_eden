@@ -336,3 +336,63 @@ def shn_last_update(table, record_id):
                 last_update = "%s%s%s" % (T("Record last updated"), modified_on, modified_by)
                 return last_update
     return None
+
+def shn_compose_message(data, template):
+
+    from lxml import etree
+    if data:
+        root = etree.Element("message")
+        for k in data.keys():
+            entry = etree.SubElement(root, k)
+            entry.text = s3xrc.xml.xml_encode(str(data[k]))
+
+        message = None
+        tree = etree.ElementTree(root)
+
+        if template:
+            template = os.path.join(request.folder, 'static', template)
+            if os.path.exists(template):
+                message = s3xrc.xml.transform(tree, template)
+
+        if message:
+            return message
+        else:
+            return s3xrc.xml.tostring(tree, pretty_print=True)
+
+def shn_fetch(url, keep_session=False):
+    """
+    Modified version of fetch() from gluon/tools.py
+    Add support for passing cookies to local instance when keep_session=True
+    (won't work on GAE yet)
+    """
+    try:
+        from google.appengine.api.urlfetch import fetch
+        return fetch(url).content
+    except:
+        #if keep_session:
+        if keep_session and "127.0.0.1" in url:
+            import urllib2
+            cookie = response.session_id_name + "=" + response.session_id
+            #txheaders = {'Cookie' : cookie}
+            #req = urllib2.Request(url, None, txheaders)
+            req = urllib2.Request(url)
+            #req.add_header('Cookie', cookie)
+            
+            import cookielib
+            jar = cookielib.CookieJar()
+            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(jar))
+            data = opener.open(req).read()
+
+            #cookie = request.cookies[response.session_id_name]
+            
+            #import Cookie
+            #cookie = Cookie.SimpleCookie()
+            #cookie[response.session_id_name] = response.session_id
+            #cookie['path'] = "/"
+            #cookie['domain'] = ""
+            
+        else:
+            import urllib
+            data = urllib.urlopen(url).read()
+        
+        return data

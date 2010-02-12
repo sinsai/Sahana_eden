@@ -19,7 +19,7 @@ import re
 from datetime import datetime, timedelta
 from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB
 
-__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF', 'IS_NOT_ONE_OF']
+__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF', 'IS_ONE_OF_EMPTY', 'IS_NOT_ONE_OF']
 
 class IS_LAT(object):
     """
@@ -101,10 +101,10 @@ class THIS_NOT_IN_DB(object):
             return (self.value, self.error_message)
         return (value, None)
 
-# IS_ONE_OF -------------------------------------------------------------------
-# added 2009-08-23 by nursix
-#
-class IS_ONE_OF(Validator):
+# IS_ONE_OF_EMPTY -------------------------------------------------------------------
+# by sunneach 2010-02-03
+# copy of nursix's IS_ONE_OF with removed 'options' method
+class IS_ONE_OF_EMPTY(Validator):
     """
         Filtered version of IS_IN_DB():
 
@@ -158,6 +158,63 @@ class IS_ONE_OF(Validator):
         else:
             self.dbset = dbset
 
+    def __call__(self,value):
+
+        try:
+            _table = self.dbset._db[self.ktable]
+
+            if self.multiple:
+                values = re.compile("[\w\-:]+").findall(str(value))
+            else:
+                values = [value]
+
+            deleted_q = ('deleted' in _table) and (_table['deleted']==False) or False
+
+            filter_opts_q = False
+
+            if self.filterby and self.filterby in _table:
+                if self.filter_opts:
+                    filter_opts_q = _table[self.filterby].belongs(self.filter_opts)
+
+            for v in values:
+
+                query = (_table[self.kfield]==v)
+                if deleted_q != False:
+                    query = deleted_q & query
+                if filter_opts_q != False:
+                    query = filter_opts_q & query
+
+                if self.dbset(query).count() < 1:
+                    return (value, self.error_message)
+
+            if self.multiple:
+                return ('|%s|' % '|'.join(values), None)
+            else:
+                return (value, None)
+
+        except:
+            pass
+
+        return (value, self.error_message)
+
+# IS_ONE_OF -------------------------------------------------------------------
+# added 2009-08-23 by nursix
+# converted to subclass 2010-02-03 by sunneach: NO CHANGES in the method bodies
+class IS_ONE_OF(IS_ONE_OF_EMPTY):
+    """
+        Filtered version of IS_IN_DB():
+
+        validates a given value as key of another table, filtered by the 'filterby'
+        field for one of the 'filter_opts' options (=a selective IS_IN_DB())
+
+        For the dropdown representation:
+
+        'represent' can be a string template for the record, or a set of field
+        names of the fields to be used as option labels, or a function or lambda
+        to create an option label from the respective record (which has to return
+        a string, of course)
+    """
+
     def options(self):
 
         if self.ktable in self.dbset._db:
@@ -202,45 +259,6 @@ class IS_ONE_OF(Validator):
 
         else:
             return None
-
-    def __call__(self,value):
-
-        try:
-            _table = self.dbset._db[self.ktable]
-
-            if self.multiple:
-                values = re.compile("[\w\-:]+").findall(str(value))
-            else:
-                values = [value]
-
-            deleted_q = ('deleted' in _table) and (_table['deleted']==False) or False
-
-            filter_opts_q = False
-
-            if self.filterby and self.filterby in _table:
-                if self.filter_opts:
-                    filter_opts_q = _table[self.filterby].belongs(self.filter_opts)
-
-            for v in values:
-
-                query = (_table[self.kfield]==v)
-                if deleted_q != False:
-                    query = deleted_q & query
-                if filter_opts_q != False:
-                    query = filter_opts_q & query
-
-                if self.dbset(query).count() < 1:
-                    return (value, self.error_message)
-
-            if self.multiple:
-                return ('|%s|' % '|'.join(values), None)
-            else:
-                return (value, None)
-
-        except:
-            pass
-
-        return (value, self.error_message)
 
 class IS_NOT_ONE_OF(IS_NOT_IN_DB):
     """

@@ -499,6 +499,53 @@ class ResourceController(object):
 
 
     #--------------------------------------------------------------------------
+    def search_simple(self, table, fields=None, label=None, filterby=None):
+
+        search_fields = []
+        if fields and isinstance(fields, (list,tuple)):
+            for f in fields:
+                if table.has_key(f):
+                    search_fields.append(f)
+
+        if not len(search_fields):
+            return None
+
+        if label is not None and isinstance(label,str):
+            labels = label.split()
+            results = []
+            query = None
+            for l in labels:
+
+                # add wildcards
+                wc = "%"
+                _l = "%s%s%s" % (wc, l, wc)
+                for f in search_fields:
+                    if query:
+                        query = (table[f].like(_l)) | query
+                    else:
+                        query = (table[f].like(_l))
+
+                # undeleted records only
+                query = (table.deleted==False) & (query)
+
+                # restrict to prior results (AND)
+                if len(results):
+                    query = (table.id.belongs(results)) & query
+                if filterby:
+                    query = (filterby) & (query)
+                records = self.db(query).select(table.id)
+                # rebuild result list
+                results = [r.id for r in records]
+                # any results left?
+                if not len(results):
+                    return None
+            return results
+        else:
+            # no label given or wrong parameter type
+            return None
+
+
+    #--------------------------------------------------------------------------
     def export_xml(self, prefix, name, id,
                    joins=[],
                    filterby=None,
@@ -1540,7 +1587,11 @@ class S3XML(object):
         success="success",
         results="results",
         lat="lat",
+        latmin="latmin",
+        latmax="latmax",
         lon="lon",
+        lonmin="lonmin",
+        lonmax="lonmax",
         marker="marker"
         )
 
@@ -1769,6 +1820,11 @@ class S3XML(object):
 
         if url is not None:
             root.set(self.ATTRIBUTE["url"], self.base_url)
+
+        root.set(self.ATTRIBUTE["latmin"], str(self.gis.get_bounds()['min_lat']))
+        root.set(self.ATTRIBUTE["latmax"], str(self.gis.get_bounds()['max_lat']))
+        root.set(self.ATTRIBUTE["lonmin"], str(self.gis.get_bounds()['min_lon']))
+        root.set(self.ATTRIBUTE["lonmax"], str(self.gis.get_bounds()['max_lon']))
 
         return etree.ElementTree(root)
 

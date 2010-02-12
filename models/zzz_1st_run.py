@@ -14,6 +14,7 @@ if empty:
         db[table].insert(
             name = T('Sahana Blue'),
             logo = 'img/sahanapy_logo.png',
+            #header_background = 'img/header_bg.png',
             footer = 'footer.html',
             text_direction = 'ltr',
             col_background = '336699',
@@ -31,6 +32,7 @@ if empty:
         db[table].insert(
             name = T('Sahana Green'),
             logo = 'img/sahanapy_logo_green.png',
+            #header_background = 'img/header_bg.png',
             footer = 'footer.html',
             text_direction = 'ltr',
             col_background = '337733',
@@ -51,6 +53,7 @@ if empty:
             # - logo size needs storing
             name = T('Sahana Steel'),
             logo = 'img/sahanapy_logo_ideamonk.png',
+            #header_background = 'img/header_bg.png',
             footer = 'footer.html',
             text_direction = 'ltr',
             col_background = 'dbdbdb',
@@ -99,6 +102,11 @@ if empty:
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
+        )
+
+    table = 'budget_parameter'
+    if not db(db[table].id).count():
+        db[table].insert(
         )
 
     # Shelter Registry

@@ -381,6 +381,9 @@ class AuthS3(Auth):
                     Field('registration_key', length=512,
                             writable=False, readable=False, default='',
                             label=self.messages.label_registration_key),
+                    Field('reset_password_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
             else:
@@ -405,6 +408,9 @@ class AuthS3(Auth):
                     Field(passfield, 'password', length=512,
                              readable=False, label=self.messages.label_password),
                     Field('registration_key', length=512,
+                            writable=False, readable=False, default='',
+                            label=self.messages.label_registration_key),
+                    Field('reset_password_key', length=512,
                             writable=False, readable=False, default='',
                             label=self.messages.label_registration_key),
                     migrate=\
@@ -758,7 +764,6 @@ class AuthS3(Auth):
                     table_group = self.settings.table_group
                     admin_group = self.db(table_group.role=="Administrator").select(table_group.id).first()
                     if admin_group:
-                        print "Adding user %s to group %s" % (user.id, admin_group.id)
                         self.add_membership(admin_group.id, user.id)
 
                 session.auth = Storage(user=user, last_visit=request.now,
@@ -1210,3 +1215,65 @@ class S3:
             session.t2.query = []
         return DIV(TABLE(TR(form)), _class='t2-search')
 
+#
+# class ForeignQuery -----------------------------------------------------------------------
+# added by sunneach on Feb 9, 2010
+from gluon.sql import Query
+#
+class QueryS3(Query):
+    """
+    If Server Side Pagination is on, the proper CAST is needed to match the string-typed id to lookup table id
+    """
+    def __init__(
+        self,
+        left,
+        op=None,
+        right=None,
+        ):    
+        if op <> 'join_via':
+            Query.__init__(self, left, op, right)
+        else:
+            self.sql = 'CAST(TRIM(%s,"|") AS INTEGER)=%s' % (left, right)
+
+#
+# class FieldS3 -----------------------------------------------------------------------
+# added by sunneach on Feb 9, 2010
+#
+class FieldS3(Field):
+    """
+    If Server Side Pagination is on, the proper CAST is needed to match the lookup table id
+    """
+    def __init__(
+        self,
+        fieldname,
+        type='string',
+        length=None,
+        default=None,
+        required=False,
+        requires='<default>',
+        ondelete='CASCADE',
+        notnull=False,
+        unique=False,
+        uploadfield=True,
+        widget=None,
+        label=None,
+        comment=None,
+        writable=True,
+        readable=True,
+        update=None,
+        authorize=None,
+        autodelete=False,
+        represent=None,
+        uploadfolder=None,
+        compute=None,
+        sortby=None,
+        ):
+        self.sortby=sortby
+        Field.__init__(self,fieldname,type,length,default,required,requires,
+            ondelete,notnull,unique,uploadfield,widget,label,comment,writable,
+            readable,update,authorize,autodelete,represent,uploadfolder,compute)
+    def join_via(self,value):
+        if self.type.find('reference') == 0:
+            return Query(self, '=', value)
+        else:
+            return QueryS3(self, 'join_via', value)

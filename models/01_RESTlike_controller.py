@@ -63,6 +63,7 @@ s3xrc = ResourceController(db,
                            rpp=ROWSPERPAGE,
                            gis=gis)
 
+
 def shn_field_represent(field, row, col):
     """
         Representation of a field
@@ -74,9 +75,21 @@ def shn_field_represent(field, row, col):
     try:
         represent = str(field.represent(row[col]))
     except:
-        represent = row[col]
+        if row[col] is None:
+            represent = "None"
+        else:
+            represent = row[col]
     return represent
 
+def shn_field_represent_sspage(tablename, row, col):
+    colname = col.split('.')[1]
+    tabname = col.split('.')[0]
+    if colname == 'id' and tabname == tablename:
+        id = str(row[tablename][colname])
+        return '<a href="' + request.function + '/' + id + '">' + id + '</a>' 
+    else:
+        return shn_field_represent(db[tabname][colname], row[tabname], colname)
+    
 # *****************************************************************************
 # Exports
 
@@ -204,7 +217,8 @@ def export_rss(module, resource, query, rss=None, linkto=None):
         link = linkto
 
     entries = []
-    rows = db(query).select()
+    table = db[tablename]
+    rows = db(query).select(table.ALL)
     if rows:
         for row in rows:
             if rss and 'title' in rss:
@@ -250,7 +264,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
 #
 # export_xls ------------------------------------------------------------------
 #
-def export_xls(table, query):
+def export_xls(table, query, list_fields=None):
 
     """ Export record(s) as XLS """
 
@@ -270,7 +284,14 @@ def export_xls(table, query):
     # Header row
     row0 = sheet1.row(0)
     cell = 0
-    fields = [table[f] for f in table.fields if table[f].readable]
+
+    if list_fields:
+        fields = [table[f] for f in list_fields if table[f].readable]
+    if fields and len(fields)==0:
+        fields.append(table.id)
+    if not fields:
+        fields = [table[f] for f in table.fields if table[f].readable]
+
     for field in fields:
         row0.write(cell, str(field.label), xlwt.easyxf('font: bold True;'))
         cell += 1
@@ -382,9 +403,11 @@ def export_xml(jr):
 #
 # import_csv ------------------------------------------------------------------
 #
-def import_csv(file, table=None):
+def shn_import_csv(file, table=None):
 
     """ Import CSV file into Database """
+    import csv
+    csv.field_size_limit(1000000000)  # raise limit to load long fields 
 
     if table:
         table.import_from_csv_file(file)
@@ -934,6 +957,104 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace('.html', '_%s.html' % format)
         else:
             response.view = default_name
+#
+# shn_convert_orderby ----------------------------------------------------------
+#
+def check_foreign(table,f):
+    """
+    returns list of four elements:
+    col[0] => string -- input column name for f,
+    col[1] => string -- the lookup table column for representation
+    col[2] => object -- lookup table if any or original table
+    col[3] => [object] -- list of columns in the lookup table if any or the original column f
+
+    Example 1. - f is a foreign key:
+    
+    for  or_organisation and sector_id
+    returns      ['sector_id', 'or_sector.name', or_sector, [or_sector.name]]
+
+    but for or_contact and person_id
+    returns      [
+                    'person_id', 
+                    'first.name + " " + middle.name + " " + last.name', 
+                     pr_person, 
+                    [pr_person.first_name, pr_person.middle_name, pr_person.last_name]
+                 ]
+    
+    Example 2. - f is an ordinary column:    
+
+    for  or_organisation and twitter
+    returns      ['twitter', 'twitter', or_organisation, [twitter]]
+    
+    """
+    def combine_column_names(lookup_table_name, sortables):
+        return ' + " " + '.join([lookup_table_name + '.' + f for f in sortables])
+
+    def combine_columns(lookup_table, sortables):
+        return [lookup_table[f] for f in sortables]
+    
+    if isinstance(table[f],FieldS3):
+        sortables = table[f].sortby
+        if not isinstance(sortables,list):
+            sortables = [sortables]
+    else:
+        sortables = None
+    if sortables: 
+        return [f, 
+                combine_column_names(table[f].requires.other.ktable, sortables), 
+                db[table[f].requires.other.ktable], 
+                combine_columns(db[table[f].requires.other.ktable], sortables)
+                ]
+    else: 
+        return [f, table._tablename+'.'+f, table, [table[f]]]
+    
+def shn_get_columns(table):
+    return [check_foreign(table, f) for f in table.fields if table[f].readable]
+ 
+def shn_convert_orderby(table,request):
+    def direction(i):
+        try:
+            return ' ' + request.vars['sSortDir_' + str(i)]
+        except:
+            return ''
+
+    cols =  shn_get_columns(table)
+    return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])][1] + direction(i)
+        for i in xrange(0, int(request.vars['iSortingCols'])) ])
+#
+# shn_build_ssp_filter --------------------------------------------------------
+#
+def shn_build_ssp_filter(table, request):
+    def add_columns_to_search(searchq, cols, context):
+        for col in cols:
+            if searchq is None:
+                searchq = col.like(context)
+            else:
+                searchq = searchq | col.like(context)
+        return searchq
+    cols =  shn_get_columns(table)
+    context = '%' + request.vars.sSearch + '%'
+    searchq = None
+    for i in xrange(0, int(request.vars.iColumns) - 1):
+        column_type = table[cols[i][0]].type
+        if column_type in ['string','text'] or column_type.find('reference') == 0:
+            searchq = add_columns_to_search(searchq,cols[i][3],context)
+    return searchq
+#
+# shn_prepare_join --------------------------------------------------------
+#
+def shn_prepare_join(table, request):
+    """
+    A JOIN
+    >>> len(db(db.dog.owner==db.person.id).select())
+    >>> len(db().select(db.person.ALL, db.dog.name,left=[db.dog.on(db.dog.owner==db.person.id)]))
+    cols[i] has  [sector_id, or_sector.name, or_sector, name]
+    """
+    cols =  shn_get_columns(table)
+    fields_to_pull = ', '.join([col[1] for col in cols])
+    joins_to_pull = [col[2].on(table[col[0]].join_via(col[2].id)) for col in cols if (table._tablename+'.'+col[0]) <> col[1]]
+    represent_list = [col[1] for col in cols]
+    return (fields_to_pull, joins_to_pull, represent_list)
 
 # *****************************************************************************
 # CRUD Functions
@@ -1029,7 +1150,6 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalida
 
             output.update(module_name=module_name,
                           item=item,
-                          record_id=record_id,
                           title=title,
                           edit=edit,
                           delete=delete,
@@ -1038,12 +1158,13 @@ def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalida
             if jr.component and not jr.multiple:
                 del output["list_btn"]
 
+            output.update(jr=jr)
             return(output)
 
         elif jr.representation == "plain":
             item = crud.read(table, record_id)
             response.view = 'plain.html'
-            return dict(item=item)
+            return dict(item=item, jr=jr)
 
         elif jr.representation == "csv":
             query = db[table].id == record_id
@@ -1167,6 +1288,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     # dataTables representation
     # Migrate to an XSLT in future?
     if jr.representation=="aaData":
+
         if "iDisplayStart" in request.vars:
             start = int(request.vars.iDisplayStart)
         else:
@@ -1175,21 +1297,40 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             limit = int(request.vars.iDisplayLength)
         else:
             limit = None
+
+        if "iSortingCols" in request.vars and orderby is None:
+            orderby = shn_convert_orderby(table, request)
+            fields_to_pull,joins_to_pull,represent_list = shn_prepare_join(table, request)
+        else:
+            fields_to_pull,joins_to_pull = None, None
+            represent_list = [f for f in table.fields if table[f].readable]
+            
+        if request.vars.sSearch and request.vars.sSearch <> "":
+            query = shn_build_ssp_filter(table, request) & query
+ 
         sEcho = int(request.vars.sEcho)
         from gluon.serializers import json
         _table = '%s_%s' % (request.controller, request.function)
         table = db[_table]
-        query = (table.id > 0)
-        totalrows = db(query).count()
-        if limit:
-            rows = db(query).select(limitby = (start, start + limit))
+        query = query & (table.id > 0)
+        if fields_to_pull:
+            totalrows = db(query).select('count(*)',left=joins_to_pull)[0]['count(*)']
+            if limit:
+                rows = db(query).select(fields_to_pull, left=joins_to_pull, limitby = (start, start + limit), orderby = orderby)
+            else:
+                rows = db(query).select(fields_to_pull, left=joins_to_pull, orderby = orderby)
         else:
-            rows = db(query).select()
+            totalrows = db(query).count()
+            if limit:
+                rows = db(query).select(limitby = (start, start + limit), orderby = orderby)
+            else:
+                rows = db(query).select(orderby = orderby) 
+        
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
-               #ToDo: check for component list_fields & use them where available
-               aaData = [[shn_field_represent(table[f], row, f) for f in table.fields if table[f].readable] for row in rows])
+               # ToDo: check for component list_fields & use them where available
+               aaData = [[shn_field_represent_sspage(table._tablename, row, f) for f in represent_list] for row in rows])
         return json(r)
 
     if jr.representation=="html":
@@ -1251,14 +1392,30 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         authorised = shn_has_permission('update', table)
         if jr.component:
             if authorised:
-                linkto = shn_list_jlinkto_update
+                if jr.component.attr.linkto_update:
+                    linkto = jr.component.attr.linkto_update
+                else:
+                    linkto = shn_list_jlinkto_update
             else:
-                linkto = shn_list_jlinkto
+                if jr.component.attr.linkto:
+                    linkto = jr.component.attr.linkto
+                else:
+                    linkto = shn_list_jlinkto
         else:
             if authorised:
-                linkto = shn_list_linkto_update
+                if response.s3.linkto_update:
+                    linkto = response.s3.linkto_update
+                else:
+                    linkto = shn_list_linkto_update
             else:
-                linkto = shn_list_linkto
+                if response.s3.linkto:
+                    linkto = response.s3.linkto
+                else:
+                    linkto = shn_list_linkto
+
+        if response.s3.pagination and not limitby:
+            # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
+            limitby = (0, 1)
 
         items = crud.select(table, query=query,
             fields=fields,
@@ -1344,6 +1501,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
             # Check for presence of Custom View
             shn_custom_view(jr, 'list.html')
 
+        output.update(jr=jr)
         return output
 
     elif jr.representation=="ext":
@@ -1429,7 +1587,7 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
     elif jr.representation == "plain":
         items = crud.select(table, query, truncate=24)
         response.view = 'plain.html'
-        return dict(item=items)
+        return dict(item=items, jr=jr)
 
     elif jr.representation == "csv":
         return export_csv(resource, query)
@@ -1524,22 +1682,25 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or \
-                                        jr.there()
+            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, 'create_next') or jr.there()
         else:
             if not crud.settings.create_next:
                 crud.settings.create_next = jr.there()
+            if not onvalidation:
+                onvalidation = crud.settings.create_onvalidation
+            if not onaccept:
+                onaccept = crud.settings.create_onaccept
 
         if onaccept:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, 0) and \
+                        s3xrc.store_session(session, module, resource, form.vars.id) and \
                         onaccept(form)
 
         else:
             _onaccept = lambda form: \
                         shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, 0)
+                        s3xrc.store_session(session, module, resource, form.vars.id)
 
         try:
             message = s3.crud_strings[tablename].msg_record_created
@@ -1550,6 +1711,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
                            message=message,
                            onvalidation=onvalidation,
                            onaccept=_onaccept)
+
 
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
         if response.s3.cancel:
@@ -1568,6 +1730,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         if jr.component and not jr.multiple:
             del output["list_btn"]
 
+        output.update(jr=jr)
         return output
 
     elif jr.representation == "plain":
@@ -1581,7 +1744,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
         form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         response.view = 'plain.html'
-        return dict(item=form)
+        return dict(item=form, jr=jr)
 
     elif jr.representation == "ext":
         shn_custom_view(jr, 'create.html', format='ext')
@@ -1609,7 +1772,7 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
         # Read in POST
         file = request.vars.filename.file
         try:
-            import_csv(file, table)
+            shn_import_csv(file, table)
             session.flash = T('Data uploaded')
         except:
             session.error = T('Unable to parse CSV file!')
@@ -1738,6 +1901,10 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
             else:
                 if not crud.settings.update_next:
                     crud.settings.update_next = jr.here()
+                if not onvalidation:
+                    onvalidation = crud.settings.update_onvalidation
+                if not onaccept:
+                    onaccept = crud.settings.update_onaccept
 
             try:
                 message = s3.crud_strings[tablename].msg_record_modified
@@ -1772,7 +1939,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                 crud.settings.update_onaccept = update_onaccept
                 crud.settings.update_next = update_next
 
-            output.update(form=form, record_id=record_id)
+            output.update(form=form, jr=jr)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -1794,7 +1961,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
                                deletable=False)
 
             response.view = 'plain.html'
-            return dict(item=form)
+            return dict(item=form, jr=jr)
 
         elif jr.representation == "ext":
             shn_custom_view(jr, 'update.html', format='ext')
@@ -2066,15 +2233,34 @@ def shn_rest_controller(module, resource,
             #session.error = BADRECORD
             #redirect(URL(r=request, f='index'))
 
+    # Run prep, if set
+    if response.s3.prep is not None:
+        prep = response.s3.prep(jr)
+        if prep and isinstance(prep, dict):
+            bypass = prep.get('bypass', False)
+            output = prep.get('output', None)
+            if bypass and output:
+                return output
+            success = prep.get('success', True)
+            if not success:
+                if jr.representation=='html' and output:
+                    return output
+                status = prep.get('status', 400)
+                message = prep.get('message', INVALIDREQUEST)
+                raise HTTP(status, message)
+            else:
+                pass
+        elif not prep:
+            raise HTTP(400, body=INVALIDREQUEST)
+        else:
+            pass
+
     # *************************************************************************
     # Joined Table Operation
 
     if jr.component:
         if jr.method and jr.custom_action:
-            try:
-                return(jr.custom_action(jr, onvalidation=None, onaccept=None))
-            except:
-                raise HTTP(500)
+            return(jr.custom_action(jr, onvalidation=None, onaccept=None))
 
         # HTTP Multi-Record Operation *****************************************
         if jr.method==None and jr.multiple and not jr.component_id:
@@ -2234,10 +2420,7 @@ def shn_rest_controller(module, resource,
 
         # Custom Method *******************************************************
         if jr.method and jr.custom_action:
-            try:
-                return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
-            except:
-                raise HTTP(500)
+            return(jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept))
 
         # Clear Session *******************************************************
         elif jr.method=="clear":
@@ -2400,6 +2583,9 @@ def shn_rest_controller(module, resource,
                 # Filter search to items which aren't deleted
                 if 'deleted' in jr.table:
                     query = (jr.table.deleted==False) & query
+                # Respect response.s3.filter
+                if response.s3.filter:
+                    query = response.s3.filter & query
 
                 # Audit
                 shn_audit_read(operation='search', module=jr.prefix,
@@ -2423,18 +2609,51 @@ def shn_rest_controller(module, resource,
                     value = request.vars.value or request.vars.q or None
                     if request.vars.field and request.vars.filter and value:
                         field = str.lower(request.vars.field)
-                        if request.vars.field2 and request.vars.field3:
+
+                        # Optional fields
+                        if 'field2' in request.vars:
                             field2 = str.lower(request.vars.field2)
-                            field3 = str.lower(request.vars.field3)
+
                         else:
                             field2 = None
+                        if 'field3' in request.vars:
+                            field3 = str.lower(request.vars.field3)
+                        else:
                             field3 = None
+                        if 'extra_string' in request.vars:
+                            extra_string = str.lower(request.vars.extra_string)
+                        else:
+                            extra_string = None
+                        if 'parent' in request.vars:
+                            parent = int(request.vars.parent)
+                        else:
+                            parent = None
+                        if 'exclude' in request.vars:
+                            import urllib
+                            exclude = urllib.unquote(request.vars.exclude)
+                        else:
+                            exclude = None
+                        
                         filter = request.vars.filter
                         if filter == '~':
                             if field2 and field3:
                                 # pr_person name search
-                                query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                                if ' ' in value:
+                                    value1, value2 = value.split(' ', 1)
+                                    query = query & ((jr.table[field].like('%' + value1 + '%')) & (jr.table[field2].like('%' + value2 + '%')) | (jr.table[field3].like('%' + value2 + '%')))
+                                else:
+                                    query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
+                            elif extra_string:
+                                # gis_location hierarchical search
+                                if parent:
+                                    query = query & (jr.table.parent == parent) & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
+                                else:
+                                    query = query & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
+                            elif exclude:
+                                # gis_location without Admin Areas
+                                query = query & ~(jr.table[field].like(exclude)) & (jr.table[field].like('%' + value + '%'))
                             else:
+                                # Normal single-field
                                 query = query & (jr.table[field].like('%' + value + '%'))
                             limit = int(request.vars.limit) or None
                             if limit:

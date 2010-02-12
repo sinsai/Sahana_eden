@@ -12,7 +12,7 @@ $(function() {
         } else if (module=="pr") {
             var options_resource=["person"];
         } else if (module=="gis") {
-            var options_resource=["feature","location"];
+            var options_resource=["location"];
         } else if (module=="budget") {
             var options_resource=["item","kit_item"];
         }

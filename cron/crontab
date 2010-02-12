@@ -12,3 +12,6 @@
 # Process Import Jobs
 #*/5    *       *       *       *       root *applications/sahana/cron/import_job_do_processing.py
 #*/5    *       *       *       *       root *applications/sahana/cron/import_job_do_import.py
+# Poll RMS Feeds
+#*/5   *       *       *       *       root *applications/sahana/cron/rms_sms2record.py
+#*/5   *       *       *       *       root *applications/sahana/cron/rms_tweet2request.py

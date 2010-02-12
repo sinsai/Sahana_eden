@@ -12,32 +12,34 @@ response.menu_options = [
 ]
 
 # Model options used in multiple Actions
-table = 'gis_location'
-db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-db[table].name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
-db[table].name.label = T('Name')
-db[table].parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
-db[table].parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
-db[table].parent.label = T('Parent')
-db[table].gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-db[table].gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown'))
-db[table].gis_feature_type.label = T('Feature Type')
-db[table].wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
-db[table].lat.requires = IS_NULL_OR(IS_LAT())
-db[table].lat.label = T('Latitude')
-#db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table = db.gis_location
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+table.name.label = T('Name')
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
+table.parent.label = T('Parent')
+table.addr_street.label = T("Street Address")
+table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown'))
+table.gis_feature_type.label = T('Feature Type')
+table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
+table.lat.requires = IS_NULL_OR(IS_LAT())
+table.lat.label = T('Latitude')
+#table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 CONVERSION_TOOL = T("Conversion Tool")
-#db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-db[table].lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-db[table].lon.requires = IS_NULL_OR(IS_LON())
-db[table].lon.label = T('Longitude')
-db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+table.lon.requires = IS_NULL_OR(IS_LON())
+table.lon.label = T('Longitude')
+table.lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 # WKT validation is done in the onvalidation callback
-#db[table].wkt.requires=IS_NULL_OR(IS_WKT())
-db[table].wkt.label = T('Well-Known Text')
-db[table].wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-db[table].osm_id.label = 'OpenStreetMap'
-db[table].osm_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+#table.wkt.requires=IS_NULL_OR(IS_WKT())
+table.wkt.label = T('Well-Known Text')
+table.wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+table.osm_id.label = 'OpenStreetMap'
+table.osm_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+
 # Joined Resource
 #s3xrc.model.add_component('media', 'metadata',
 #    multiple=True,
@@ -98,37 +100,38 @@ def apikey():
 def config():
     "RESTlike CRUD controller"
     resource = 'config'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
-    db[table].uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-    db[table].lat.requires = IS_LAT()
-    db[table].lat.label = T('Latitude')
-    db[table].lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-    db[table].lon.requires = IS_LON()
-    db[table].lon.label = T('Longitude')
-    db[table].lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-    db[table].zoom.requires = IS_INT_IN_RANGE(0, 19)
-    db[table].zoom.label = T('Zoom')
-    db[table].zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-    db[table].marker_id.label = T('Default Marker')
-    db[table].map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
-    db[table].map_height.label = T('Map Height')
-    db[table].map_height.comment = SPAN("*", _class="req")
-    db[table].map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1280)]
-    db[table].map_width.label = T('Map Width')
-    db[table].map_width.comment = SPAN("*", _class="req")
-    db[table].zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
-    db[table].zoom_levels.label = T('Zoom Levels')
-    db[table].cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
-    db[table].cluster_distance.label = T('Cluster Distance')
-    db[table].cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
-    db[table].cluster_threshold.label = T('Cluster Threshold')
+    table.uuid.requires = IS_NOT_IN_DB(db, 'gis_config.uuid')
+    table.lat.requires = IS_LAT()
+    table.lat.label = T('Latitude')
+    table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+    table.lon.requires = IS_LON()
+    table.lon.label = T('Longitude')
+    table.lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+    table.zoom.requires = IS_INT_IN_RANGE(0, 19)
+    table.zoom.label = T('Zoom')
+    table.zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+    table.marker_id.label = T('Default Marker')
+    table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
+    table.map_height.label = T('Map Height')
+    table.map_height.comment = SPAN("*", _class="req")
+    table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1280)]
+    table.map_width.label = T('Map Width')
+    table.map_width.comment = SPAN("*", _class="req")
+    table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
+    table.zoom_levels.label = T('Zoom Levels')
+    table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
+    table.cluster_distance.label = T('Cluster Distance')
+    table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+    table.cluster_threshold.label = T('Cluster Threshold')
 
     # CRUD Strings
     ADD_CONFIG = T('Add Config')
     LIST_CONFIGS = T('List Configs')
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_CONFIG,
         title_display = T('Config Details'),
         title_list = LIST_CONFIGS,
@@ -246,14 +249,14 @@ def feature_class_to_feature_group():
 def location():
     "RESTlike CRUD controller"
     resource = 'location'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
 
     # Model options
     # used in multiple controllers, so at the top of the file
 
     # CRUD Strings
     LIST_LOCATIONS = T('List Locations')
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOCATION,
         title_display = T('Location Details'),
         title_list = LIST_LOCATIONS,
@@ -1266,7 +1269,7 @@ def layers():
             filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
             filepath = os.path.join(cachepath, filename)
             try:
-                # Download file to cache (maintain sessions for KML feeds which require Auth)
+                # Download file to cache (Keep Session for local URLs)
                 file = shn_fetch(url, keep_session=True)
                 f = open(filepath, 'w')
                 f.write(file)
@@ -1447,7 +1450,7 @@ def map_viewing_client():
     # Add the Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
     output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, js_layers=baselayers.js, kml_layers=baselayers.kml))
-    # MGRS isn't a Layer, but added here anyway
+    # MGRS isn't a Layer, it's a Control, but added here anyway
     output.update(dict(mgrs=baselayers.mgrs))
 
     # Internal Features

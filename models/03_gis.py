@@ -129,7 +129,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 gis_feature_type_opts = {
     1:T('Point'),
     2:T('Line'),
-    3:T('Polygon')
+    3:T('Polygon')'),
+    #4:T('MultiPolygon')
     }
 resource = 'location'
 tablename = "%s_%s" % (module, resource)
@@ -138,12 +139,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 feature_class_id,
                 #Field('resource_id', 'integer'), # ID in associated resource table. FIXME: Remove as link should be reversed?
                 Field('parent', 'reference gis_location', ondelete = 'RESTRICT'),   # This form of hierarchy may not work on all Databases
-                # Address fields
-                #Field('addr_country'),
-                #Field('addr_region'),
-                #Field('addr_town'),
-                #Field('addr_district'),
-                #Field('addr_street'),
+                # Street Address (other address fields come from hierarchy)
+                Field('addr_street'),
+                #Field('addr_postcode'),
                 Field('lft', 'integer', readable=False, writable=False), # Left will be for MPTT: http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
                 Field('rght', 'integer', readable=False, writable=False),# Right currently unused
                 marker_id,
@@ -159,12 +157,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('elevation', 'integer', writable=False, readable=False),   # m in height above sea-level. not displayed currently
                 admin_id,
                 migrate=migrate)
-
-#table.addr_country.label = T("Country")
-#table.addr_region.label = T("Region")
-#table.addr_town.label = T("Town")
-#table.addr_district.label = T("District")
-#table.addr_street.label = T("Street Address")
 
 # Reusable field for other tables to reference
 ADD_LOCATION = T('Add Location')

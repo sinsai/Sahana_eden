@@ -42,18 +42,23 @@ function TB_refresh() {
                     represent = "";
                 } 
                 append += "<option value='" + value + "'>" + represent + "</option>";
-                if (value > value_high) {
-                    value_high = value;
+                // Type conversion: http://www.jibbering.com/faq/faq_notes/type_convert.html#tcNumber
+                numeric_value = (+value)
+                if (numeric_value > value_high) {
+                    value_high = numeric_value;
+                    represent_high = represent;
                 }
             });
             selector.append(append);
-            // Set the newly-created value (one with highest value)
-            //selector.val(value_high);
             // IE6 needs time for DOM to settle: http://csharperimage.jeremylikness.com/2009/05/jquery-ie6-and-could-not-set-selected.html
-            setTimeout(function() { selector.val(value_high); }, 1);
-            // Also populate dummy, if present
-            // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
-            //self.parent.$('#dummy').val(represent);
+            setTimeout(function() {
+                    // Set the newly-created value (one with highest value)
+                    selector.val(value_high);
+                    // Also populate dummy, if present
+                    self.parent.$('#dummy_' + caller).val(represent_high);
+                },
+                1
+            );
             // Clean-up
             self.parent.tb_remove();
         });

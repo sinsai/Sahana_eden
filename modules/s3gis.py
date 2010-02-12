@@ -73,8 +73,8 @@ class GIS(object):
         self.messages.unknown_type = "Unknown Type!"
         self.messages.invalid_wkt_linestring = "Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!"
         self.messages.invalid_wkt_polygon = "Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!"
-        self.messages.lon_empty = "Invalid: Longitude can't be empty!"
-        self.messages.lat_empty = "Invalid: Latitude can't be empty!"
+        self.messages.lon_empty = "Invalid: Longitude can't be empty if Latitude specified!"
+        self.messages.lat_empty = "Invalid: Latitude can't be empty if Longitude specified!"
         self.messages.unknown_parent = "Invalid: %(parent_id)s is not a known Location"
         self.messages['T'] = self.environment.T
         self.messages.lock_keys = True
@@ -249,13 +249,19 @@ class GIS(object):
         """
         if form.vars.gis_feature_type == '1':
             # Point
-            if form.vars.lon == None:
-                form.errors['lon'] = self.messages.lon_empty
+            if form.vars.lon == None and form.vars.lat == None:
+                # No geo to create WKT from, so skip
                 return
-            if form.vars.lat == None:
+            elif form.vars.lat == None:
                 form.errors['lat'] = self.messages.lat_empty
                 return
-            form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
+            elif form.vars.lon == None:
+                form.errors['lon'] = self.messages.lon_empty
+                return
+            else:
+                form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
+                return
+            
         elif form.vars.gis_feature_type == '2':
             # Line
             try:

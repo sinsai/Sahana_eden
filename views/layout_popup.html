@@ -16,7 +16,14 @@ function TB_refresh() {
     // ToDo: Make this less fragile by passing these fields as separate vars?
     var $_GET = getQueryParams(document.location.search);
     var caller = $_GET["caller"];
-    var child_resource = '{{=request.function}}_id';
+    var child = $_GET["child"]
+    if (typeof child === "undefined"){
+            // Use default
+            var child_resource = '{{=request.function}}_id';
+        } else {
+            // Use manual override
+            var child_resource = child;
+        }
     var parent_field = caller.replace('_' + child_resource, '');
     var parent_module = parent_field.replace(/_.*/, '');
     var parent_resource = parent_field.replace(parent_module + '_', '');
@@ -69,7 +76,7 @@ function TB_refresh() {
 }
 // Function to get the URL parameters
 function getQueryParams(qs) {
-// We want everything after the ?
+// We want all the vars, i.e. after the ?
     qs = qs.split('?')[1]
     var pairs = qs.split('&');
     var params = {};

@@ -3,6 +3,14 @@
 <script type="text/javascript">//<![CDATA[
 
 {{include 'or/offices_by_org.js'}}
+var set_org_id = function(id){
+    var href = $('#add_office')[0].href;
+    if(!$('#add_office')[0].href.match(/organisation_id/)){
+        $('#add_office').attr('href', href.replace('?','?organisation_id=' + id + '&'));
+    }
+    else{
+        $('#add_office').attr('href', href.replace(/organisation_id=(.*?)&/,'organisation_id=' + id + '&'));
+    }};
 
 $(function() {
     // Person AutoComplete
@@ -37,6 +45,7 @@ $(function() {
     $("#dummy_organisation").result(function(event, data, formatted) {
         var newvalue = data.id;
         $("#or_contact_organisation_id").val(newvalue);
+        set_org_id(newvalue);
         // Load offices just for that Org
         load_offices();
     }); 

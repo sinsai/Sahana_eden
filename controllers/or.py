@@ -70,7 +70,8 @@ def office():
     #if request.args(0) in ('create','update'):
     if request.args(0) == 'create':
         db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_organisation.id'))
-
+        if request.vars.organisation_id:
+            session.s3.organisation_id = request.vars.organisation_id
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
 @service.jsonrpc

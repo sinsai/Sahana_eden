@@ -1779,3 +1779,23 @@ def display_features():
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
 
     return output
+    
+def geolocate():
+    " Call a Geocoder service "
+    if 'location' in request.vars:
+        location = request.vars.service
+    else:
+        session.error = T('Need to specify a location to search for.')
+        redirect(URL(r=request, f='index'))
+
+    if 'service' in request.vars:
+        service = request.vars.service
+    else:
+        # ToDo service=all should be default
+        service = "google"
+        
+    if service == "google":
+        return s3gis.GoogleGeocoder(location, db).get_kml()
+
+    if service == "yahoo":
+        return s3gis.YahooGeocoder(location, db).get_xml()

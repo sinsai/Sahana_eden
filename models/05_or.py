@@ -25,8 +25,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -82,8 +82,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -162,9 +162,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -260,10 +260,10 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 

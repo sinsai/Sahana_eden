@@ -111,7 +111,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                     migrate=migrate)
 
 # Field validation
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 #table.label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
 #table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent))
 
@@ -303,9 +303,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
                                         error_message="%s " % T("Enter a date before") + "%(max)s!"))
 table.first_name.requires = IS_NOT_EMPTY()   # People don't have to have unique names, some just have a single name
-table.email.requires = IS_NOT_IN_DB(db, '%s.email' % table)     # Needs to be unique as used for AAA
+table.email.requires = IS_NOT_IN_DB(db, '%s.email' % tablename)     # Needs to be unique as used for AAA
 table.email.requires = IS_NULL_OR(IS_EMAIL())
-table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % table))   # Needs to be unique as used for AAA
+table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.mobile_phone' % tablename))   # Needs to be unique as used for AAA
 table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_person.pr_pe_label'))
 
 # Field representation

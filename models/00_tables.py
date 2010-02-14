@@ -202,8 +202,8 @@ table = db.define_table(tablename, timestamp, uuidstamp,
             Field('name'),
             Field('description'),
             Field('url'))
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Source of Information')
 table.name.comment = SPAN("*", _class="req")
 table.url.requires = IS_NULL_OR(IS_URL())

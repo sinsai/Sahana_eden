@@ -258,7 +258,7 @@ table = db.define_table(tablename, timestamp,
                 migrate=migrate)
 # upload folder needs to be visible to the download() function as well as the upload
 table.track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 table.track.requires = IS_UPLOAD_FILENAME(extension='gpx')

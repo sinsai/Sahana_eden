@@ -24,7 +24,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field('expiry_time', 'datetime'),
                 Field('url'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.description.label = T('Description')
 table.person_id.label = T("Contact")
 table.source.label = T('Source')
@@ -54,7 +54,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 metadata_id,
                 Field('image', 'upload'),
                 migrate=migrate)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 # upload folder needs to be visible to the download() function as well as the upload

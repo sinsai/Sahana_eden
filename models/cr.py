@@ -25,7 +25,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('persons_per_dwelling', 'integer'),
                 Field('area'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
 table.name.label = T('Shelter Name')
 table.name.comment = SPAN("*", _class="req")

@@ -51,7 +51,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 opt_msg_group_type,
                 Field('comments'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
@@ -101,7 +101,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.phone_number.requires = IS_NOT_EMPTY()
 table.phone_number.label = T('Phone Number')
 #table.phone_number.comment = SPAN("*", _class="req")
@@ -130,7 +130,7 @@ table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_s
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 #table.phone_number.requires = IS_NOT_EMPTY()
 #table.phone_number.comment = SPAN("*", _class="req")
 table.contents.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Contents|If this is over 140 characters then it will be split into Multiple SMS's."))
@@ -161,7 +161,7 @@ table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_s
                 Field('contents', length=700),  # length=140 omitted to handle multi-part SMS
                 #Field('smsc', 'integer'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 #table.phone_number.requires = IS_NOT_EMPTY()
 #table.phone_number.comment = SPAN("*", _class="req")
 table.msg_group_id.label = T('Recipients')
@@ -190,7 +190,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.sender.requires = IS_EMAIL()
 table.sender.label = T('Sender')
 #table.sender.comment = SPAN("*", _class="req")
@@ -220,7 +220,7 @@ table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_s
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 #table.recipient.requires = IS_EMAIL()
 #table.recipient.comment = SPAN("*", _class="req")
 table.msg_group_id.label = T('Recipients')
@@ -251,7 +251,7 @@ table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_s
                 Field('subject', length=78),    # RFC 2822
                 Field('body', 'text'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 #table.recipient.requires = IS_EMAIL()
 #table.recipient.comment = SPAN("*", _class="req")
 table.msg_group_id.label = T('Recipients')

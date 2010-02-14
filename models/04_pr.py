@@ -52,7 +52,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'opt_pr_address_type', 'co_name', 'street1', 'postcode', 'city', 'opt_pr_country'])
 
 # Field validation
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
@@ -128,7 +128,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'name', 'person_name', 'opt_pr_contact_method', 'value', 'priority'])
 
 # Field validation
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.pr_pe_id.requires = IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=(1, 2))
 table.value.requires = IS_NOT_EMPTY()
 table.priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
@@ -200,7 +200,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'opt_pr_image_type', 'image', 'url', 'title','description'])
 
 # Field validation
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
 # Field representation
 table.image.represent = lambda image: image and \
@@ -313,7 +313,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id','time','location_id','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
 
 # Field validation
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 #table.lat.requires = IS_NULL_OR(IS_LAT())
 #table.lon.requires = IS_NULL_OR(IS_LON())
 
@@ -396,7 +396,7 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'opt_pr_id_type', 'type', 'value', 'country_code', 'ia_name'])
 
 # Field validation
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
 # Field representation
 

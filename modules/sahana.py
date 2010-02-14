@@ -731,7 +731,7 @@ class AuthS3(Auth):
             if self.settings.create_user_groups:
                 group_id = self.add_group("user_%s" % form.vars.id, description)
                 self.add_membership(group_id, form.vars.id)
-            if self.settings.registration_requires_verification:
+            if self.settings.registration_requires_verification and self.db(self.settings.table_user.id).count()>1:
                 if not self.settings.mailer or \
                    not self.settings.mailer.send(to=form.vars.email,
                         subject=self.messages.verify_email_subject,
@@ -741,7 +741,7 @@ class AuthS3(Auth):
                     response.error = self.messages.invalid_email
                     return form
                 session.confirmation = self.messages.email_sent
-            elif self.settings.registration_requires_approval:
+            elif self.settings.registration_requires_approval and self.db(self.settings.table_user.id).count()>1:
                 user[form.vars.id] = dict(registration_key='pending')
                 session.warning = self.messages.registration_pending
             else:
@@ -753,18 +753,24 @@ class AuthS3(Auth):
                     username = 'username'
                 else:
                     username = 'email'
-                users = self.db(table_user[username] == form.vars[username])\
-                    .select()
+                users = self.db(table_user[username] == form.vars[username]).select()
                 user = users[0]
                 user = Storage(table_user._filter_fields(user, id=True))
 
                 # Add the first user to admin group
                 # Installers should create a default user with random password to make this safe
-                if user.id==1 and self.db(table_user.id).count()==1:
+                if self.db(table_user.id).count()==1:
                     table_group = self.settings.table_group
                     admin_group = self.db(table_group.role=="Administrator").select(table_group.id).first()
                     if admin_group:
                         self.add_membership(admin_group.id, user.id)
+                    # Add extra startup roles for system administrator
+                    roles = self.settings.admin_startup_roles
+                    if roles:
+                        for r in roles:
+                            group = self.db(table_group.role==r).select(table_group.id).first()
+                            if group:
+                                self.add_membership(group.id, user.id)
 
                 session.auth = Storage(user=user, last_visit=request.now,
                                    expiration=self.settings.expiration)
@@ -840,7 +846,6 @@ class AuthS3(Auth):
 
                 if self.user and self.user.id==user.id:
                     self.user.person_uuid=person_uuid
-
 
     def requires_membership(self, role):
         """

@@ -91,6 +91,11 @@ def shn_auth_on_logout(user):
 auth.settings.logout_onlogout = shn_auth_on_logout
 auth.settings.login_onaccept = shn_auth_on_login
 
+# Extra startup roles for Admin:
+auth.settings.admin_startup_roles = [
+    #'AdvancedJS',
+]
+
 crud = CrudS3(globals(), db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
 #crud.settings.keepvalues = True

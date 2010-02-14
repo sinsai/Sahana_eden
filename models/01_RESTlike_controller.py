@@ -85,7 +85,7 @@ def shn_field_represent_sspage(tablename, row, col, joins_to_pull):
     colname = col.split('.')[1]
     tabname = col.split('.')[0]
     if joins_to_pull and len(joins_to_pull) > 0:
-        therow = row[tablename]
+        therow = row[tabname]
     else:
         therow = row
     

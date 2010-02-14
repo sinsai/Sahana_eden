@@ -295,3 +295,76 @@ class GIS(object):
             form.errors.gis_feature_type = self.messages.unknown_type
         
         return
+
+"""
+   Geolocator for sahana-py(using Google and Yahoo API`s)
+   Developed by Zubin Mithra (Copyright � 2009)
+   Email <zubin.mithra@gmail.com>
+   License: GPL v2
+
+   This file contains classes which can be used to access location
+   using Google and Yahoo API`s. 
+"""
+
+import logging                                                    
+from urllib import urlencode                                      
+from gluon.tools import fetch                                     
+
+class Geocoder(object):
+    """ base class for all geocoders"""
+    def __init__(self):
+        """ initializes the page content object """
+        self.page = "" 
+    def read_details(self, url):
+        self.page = fetch(url)  
+
+class Google(Geocoder):
+    """ Google Geocoder module """
+    def __init__(self, location, db, domain='maps.google.com', resource='maps/geo', output_format='kml'):
+        """sets values from arguments or default values"""                                                                             
+        self.api_key = self.get_api_key()                                                  
+        self.domain = domain                                                               
+        self.resource = resource                                                           
+        self.params = {'q': location, 'key': self.api_key}                                 
+        self.url = "http://%(domain)s/%(resource)?%%s" % locals()                          
+        self.db = db                                                                       
+
+    def get_api_key(self):
+        """ method to get the api key from the database """
+        #db = DAL('mysql://user:password@localhost/database', pool_size=10)
+        #db = DAL('sqlite://storage.db)                                    
+        query = self.db.gis_apikey.name=='google'                          
+        return self.db(query).select().first().apikey                      
+
+    def construct_url(self):
+        """ construct the url based on the arguments passed """
+        print self.url      
+        self.url = self.url % urlencode(params)
+    def get_kml(self):
+        """ returns the output in xml format """                         
+        return self.page.read()                
+
+class Yahoo(Geocoder):
+    """ Yahoo Geocoder module """
+    def __init__(self, location, db):
+        """ initialize the values based on arguments or default settings """
+        self.api_key = self.get_api_key()
+        self.location = location
+        self.params = {'location': self.location, 'appid': self.app_key}
+        self.db = db
+    def get_api_key(self):
+        """ acquire api key from the database """
+        #db = DAL('mysql://user:password@localhost/database', pool_size=10)
+        #db = DAL('sqlite://storage.db')
+        query = self.db.gis_apikey.name=='yahoo'
+        return self.db(query).select().first().apikey
+
+    def construct_url(self):
+        """ construct the url based on the arguments passed """
+        self.url = self.url % urlencode(params)
+
+    def get_xml(self):
+        """ return the output in xml format """
+        return self.page.read()        
+        
+

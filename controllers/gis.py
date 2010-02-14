@@ -1779,3 +1779,21 @@ def display_features():
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
 
     return output
+    
+def geolocate():
+    if 'service' in request.vars:
+        service = request.vars.service
+    else:
+        service = "google"
+    if 'location' in request.vars:
+        location = request.vars.service
+    else:
+        pass #redirect to error page or do something accordingly
+
+    if service == "google":
+        from geolocator import Google
+        return Google(location, db).get_kml()
+
+    if service == "yahoo":
+        from geolocator import Yahoo
+        return Yahoo(location, db).get_xml()

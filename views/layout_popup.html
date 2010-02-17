@@ -31,7 +31,7 @@ function TB_refresh() {
         //var selectedvalue = selector.attr("selectedIndex")+1;
         // Clean up the caller
         self.parent.$('#' + caller + ' >option').remove();
-        $.getJSON(url, function (data) {
+        $.getJSONS3(url, function (data) {
             var value, represent;
             var append = '';
             $.each(data['option'], function() {

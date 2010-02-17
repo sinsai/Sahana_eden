@@ -51,7 +51,11 @@ def organisation():
 
 def organisation_onaccept(form):
     session.flash = T('Submission Succesful')
-    redirect(URL(r=request, f='dashboard', args=form.vars.id))
+    if request.vars.format == 'popup':
+        redirect(organisation_popup_url + '&caller=' + request.vars.caller)
+    else:
+        f='dashboard'
+        redirect(URL(r=request, f=f, args=form.vars.id))
     
 @service.jsonrpc
 @service.xmlrpc
@@ -72,6 +76,8 @@ def office():
         db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, 'or_organisation.id'))
         if request.vars.organisation_id:
             session.s3.organisation_id = request.vars.organisation_id
+            # Organisation name should be displayed on the form if organisation_id is pre-selected
+            session.s3.organisation_name = db(db.or_organisation.id == int(session.s3.organisation_id)).select(db.or_organisation.name)[0]["name"]
     return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
 
 @service.jsonrpc
@@ -224,6 +230,7 @@ def dashboard():
 
     but_add_office = A(T('Add Office'),
                         _class='thickbox',
+                        _id = 'add_office',
                         _href=URL(r=request, 
                             c='or', f='office', args='create', 
                             vars=dict(format='popup', KeepThis='true')) + "&TB_iframe=true&mode=new",

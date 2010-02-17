@@ -2,22 +2,18 @@
 // the #dummy office select fills up with related offices
 var load_offices = function()
   {
-       theURL = '{{=URL(r=request, c='or', f='office', args='search.json', vars={'filter':'=', 'field':'organisation_id', 'value':''})}}' + 
+    theURL = '{{=URL(r=request, c='or', f='office', args='search.json', vars={'filter':'=', 'field':'organisation_id', 'value':''})}}' + 
                 $("#or_contact_organisation_id").val();
-       $.ajax({
-	    url: theURL,
-	    success: function(data, status, req) {
-                    var options = ''; //'<option value="">select an office</option>'; 
-                    var j = data; 
-                    for (var i = 0; i < j.length; i++) {
-                        options += '<option value="' +  j[i].id + '">' + 
-                                  j[i].name + '</option>';
-                        if (i == 0) {
-                            $("#or_contact_office_id").val(j[i].id);
-                        }
-                    }; 
-            $('#dummy_office').html(options); 
-
-            },
-	    dataType: 'json'});
+    offices_ok = function(data, status){
+	    if (data.length == 0)
+		options = '<option value="">No offices registered for organisation</options>';
+	    else {
+		$("#or_contact_office_id").val(data[0].id);
+		var options = '<option value="" selected>Select an office...</option>';
+		for (var i = 0; i < data.length; i++) 
+		    options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
+	    }
+	    $('#dummy_office').html(options); 
+	};	
+    $.getJSONS3(theURL, offices_ok, 'offices by organisation');
   };

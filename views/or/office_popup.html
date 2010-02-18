@@ -2,8 +2,9 @@
 {{include '_popup.html'}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function () {
-    $("#or_office_organisation_id").val("{{=session.s3.organisation_id}}");
-    //$("#or_office_organisation_id__row").hide();
+    $("#or_office_organisation_id").val("{{=request.vars.organisation_id}}");
+    if($("#or_office_organisation_id").val() != 'None')
+        $("#or_office_organisation_id__row").hide();
 });
 //]]></script>
 <script type="text/javascript">//<![CDATA[

@@ -64,6 +64,8 @@ def office():
     "RESTlike CRUD controller"
     resource = 'office'
     table = "%s_%s" % (module, resource)
+    if isinstance(request.vars.organisation_id,list):
+        request.vars.organisation_id = request.vars.organisation_id[0]
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
         db[table].admin.readable = db[table].admin.writable = False

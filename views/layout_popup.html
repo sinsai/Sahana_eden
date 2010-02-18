@@ -11,6 +11,13 @@
 {{include 'thickbox.html'}}
 
 <script type="text/javascript">//<![CDATA[
+
+function TB_cleanup(caller) {
+    if(self.parent.cleanup)
+       self.parent.cleanup(caller); 
+    self.parent.tb_remove();
+}
+
 function TB_refresh() {
     // The Get parameters
     // ToDo: Make this less fragile by passing these fields as separate vars?
@@ -50,12 +57,14 @@ function TB_refresh() {
             // Also populate dummy, if present
             // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
             //self.parent.$('#dummy').val(represent);
+
             // Clean-up
-            self.parent.tb_remove();
+            
+            TB_cleanup(caller);
         });
     } else {
         // Clean-up
-        self.parent.tb_remove();
+        TB_cleanup(caller);
     }
 }
 // Function to get the URL parameters

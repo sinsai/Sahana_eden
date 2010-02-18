@@ -30,18 +30,16 @@ $(document).ready(function() {
         $(this).attr('href', function() {
 	    if($(this).attr('id') == 'add_office' && $(this).parents('tr').attr('id') == 'or_contact_office_id__row') {
 	        set_org_id($("#or_contact_organisation_id").val());
-		//reset_org_office();
+            //reset_org_office();
 	    }
-            // Add the caller to the URL vars so that the popup knows which field to refresh/set
-            var url_in = $(this).attr('href');
-            var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
-            // This has to be the last var: &TB_iframe=true
-	    /* Why we accumulating caller= over and over? */
-            if(url_in.match(/caller=/)){
+        // Add the caller to the URL vars so that the popup knows which field to refresh/set
+        var url_in = $(this).attr('href');
+        var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
+        // This has to be the last var: &TB_iframe=true
+        if (url_in.match(/caller=/)) {
 	        return url_in.replace(/caller=.*?&/, 'caller=' + caller + '&');
-	    } 
-	    else{
-		return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
+	    } else {
+            return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
 	    }
         });
         return false;

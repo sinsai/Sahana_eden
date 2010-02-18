@@ -45,12 +45,8 @@ function TB_refresh() {
         //var selectedvalue = selector.attr("selectedIndex")+1;
         // Clean up the caller
         self.parent.$('#' + caller + ' >option').remove();
-<<<<<<< TREE
         var value_high = 1;
-        $.getJSON(url, function (data) {
-=======
         $.getJSONS3(url, function (data) {
->>>>>>> MERGE-SOURCE
             var value, represent;
             var append = '';
             $.each(data['option'], function() {
@@ -69,7 +65,6 @@ function TB_refresh() {
             });
             selector.append(append);
             // IE6 needs time for DOM to settle: http://csharperimage.jeremylikness.com/2009/05/jquery-ie6-and-could-not-set-selected.html
-<<<<<<< TREE
             setTimeout(function() {
                     // Set the newly-created value (one with highest value)
                     selector.val(value_high);
@@ -78,15 +73,7 @@ function TB_refresh() {
                 },
                 1
             );
-=======
-            setTimeout(function() { selector.val(value); }, 1);
-            // Also populate dummy, if present
-            // - not needed, gets caught anyway, which is good as otherwise overwrites for other popups too!
-            //self.parent.$('#dummy').val(represent);
-
->>>>>>> MERGE-SOURCE
             // Clean-up
-            
             TB_cleanup(caller);
         });
     } else {
@@ -125,7 +112,7 @@ TB_refresh();
         <p style='padding:20px 20px;'>
             <center>
                 <h2>
-                    {{=T("Submissions successful - please wait...")}}
+                    {{=T("Submission successful - please wait...")}}
                 </h2>
             </center>
         <p>

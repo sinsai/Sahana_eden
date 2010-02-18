@@ -259,8 +259,6 @@ def user_approve(form):
                     return
         else:
             return
-<<<<<<< TREE
-=======
 
 @auth.requires_membership('Administrator')
 def usergroup():
@@ -333,8 +331,6 @@ def usergroup():
         data['m_' + key] = request.vars[key]    
 
     return dict(data=data, records=records, form=form)
-
->>>>>>> MERGE-SOURCE
 
 @auth.requires_membership('Administrator')
 def group():

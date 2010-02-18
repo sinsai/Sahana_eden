@@ -33,9 +33,23 @@ def setting():
 
     # Model options
     db[table].port.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("Port|The serial port where your modem is connected."))
+        _title=T("Port|The serial port where your modem is connected."))
     db[table].baud.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("Baud|The Baud rate of your modem - Usually listed in your modem manual."))
+        _title=T("Baud|The Baud rate of your modem - Usually listed in your modem manual."))
+    db[table].account_name.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T("Account Name|Convenient name to identify the account."))
+    db[table].ip.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T("IP|The server IP sending the message to Clickatell - Required for secure use of Clickatell account."))
+    db[table].url.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T("URL|The url for the Clickatell API."))
+    db[table].user.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T("User|The username for the Clickatell account"))
+    db[table].api_id.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T("API ID|The s/http api id generated through the Clickatell account."))
+    db[table].password.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T("Password|The password for the ."))
+    db[table].sender_num.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T("Sender Phone number|The sender phone number displayed with the SMS message ."))
     
     # CRUD Strings
     ADD_SETTING = T('Add Setting')

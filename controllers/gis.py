@@ -1135,6 +1135,8 @@ def map_service_catalogue():
 def layers():
     "Provide the Enabled Layers"
 
+    from gluon.tools import fetch
+
     response.warning = ''
 
     layers = Storage()
@@ -1221,7 +1223,7 @@ def layers():
             filepath = os.path.join(cachepath, filename)
             try:
                 # Download file to cache
-                file = shn_fetch(url)
+                file = fetch(url)
                 f = open(filepath, 'w')
                 f.write(file)
                 f.close()
@@ -1270,7 +1272,15 @@ def layers():
             filepath = os.path.join(cachepath, filename)
             try:
                 # Download file to cache (Keep Session for local URLs)
-                file = shn_fetch(url, keep_session=True)
+                if '127.0.0.1' in url:
+                    # Keep Session for local URLs
+                    import Cookie
+                    cookie = Cookie.SimpleCookie()
+                    cookie[response.session_id_name] = response.session_id
+                    session._unlock(response)
+                    file = fetch(url, cookie=cookie)
+                else:
+                    file = fetch(url)
                 f = open(filepath, 'w')
                 f.write(file)
                 f.close()

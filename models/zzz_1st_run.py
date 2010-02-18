@@ -294,6 +294,10 @@ if empty:
             image = "gis_marker.image.E_Med_Hospital_S1.png"
         )
         db[table].insert(
+            name = "orphanage",
+            image = "gis_marker.image.Special_Needs_Child_Day_Care_S1.png"
+        )
+        db[table].insert(
             name = "airport",
             image = "gis_marker.image.Trans_Airport_S1.png"
         )

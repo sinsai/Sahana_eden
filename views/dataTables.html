@@ -28,9 +28,9 @@ $(document).ready(function() {
     {{except:}}
     {{pass}}
     {{if response.s3.pagination:}}
-            // Disable Dynamic Search (until support for this added)
+            // Disable Dynamic Search (until support for this fixed)
             "bFilter": true,
-            // Disable Dynamic Sorting (until support for this fixed)
+            // Disable Dynamic Sorting (until support for this fixed - works by value not representation)
             "bSort": true,
             "sPaginationType": "full_numbers",
             "iDisplayLength": 10,

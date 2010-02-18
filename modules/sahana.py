@@ -317,6 +317,7 @@ class AuthS3(Auth):
     Extended version of Auth from gluon/tools.py
     - override login() & register()
     - add shn_register() callback
+    - language
     """
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
@@ -374,6 +375,7 @@ class AuthS3(Auth):
                     #   - automatic DST adjustment could be nice
                     Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
                     Field('username', length=128, default=''),
+                    Field('language', length=16),
                     Field('email', length=512, default='',
                             label=self.messages.label_email),
                     Field(passfield, 'password', length=512,
@@ -403,6 +405,7 @@ class AuthS3(Auth):
                     #   - automatic DST adjustment could be nice
                     Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
                     #Field('username', length=128, default=''),
+                    Field('language', length=16),
                     Field('email', length=512, default='',
                             label=self.messages.label_email),
                     Field(passfield, 'password', length=512,

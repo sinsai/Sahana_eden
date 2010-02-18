@@ -432,7 +432,7 @@ def import_csv(file, table=None):
     else:
         # This is the preferred method as it updates reference fields
         db.import_from_csv_file(file)
-
+        db.commit()
 #
 # import_url ------------------------------------------------------------------
 #
@@ -981,8 +981,8 @@ def shn_custom_view(jr, default_name, format=None):
 def shn_get_columns(table):
     return [f for f in table.fields if table[f].readable]
 
-def shn_convert_orderby(table,request):
-    cols =  shn_get_columns(table)
+def shn_convert_orderby(table, request, fields=None):
+    cols = fields or shn_get_columns(table)
     try:
         return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)]
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
@@ -993,16 +993,20 @@ def shn_convert_orderby(table,request):
 #
 # shn_build_ssp_filter --------------------------------------------------------
 #
-def shn_build_ssp_filter(table, request):
-    cols =  shn_get_columns(table)
+def shn_build_ssp_filter(table, request, fields=None):
+
+    cols = fields or shn_get_columns(table)
     context = '%' + request.vars.sSearch + '%'
+    context = context.lower()
     searchq = None
+
+    # TODO: use FieldS3 (with representation_field)
     for i in xrange(0, int(request.vars.iColumns) - 1):
         if table[cols[i]].type in ['string','text']:
             if searchq is None:
-                searchq = table[cols[i]].like(context)
+                searchq = table[cols[i]].lower().like(context)
             else:
-                searchq = searchq | table[cols[i]].like(context)
+                searchq = searchq | table[cols[i]].lower().like(context)
     return searchq
 
 # *****************************************************************************
@@ -1014,6 +1018,8 @@ def shn_build_ssp_filter(table, request):
 def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalidation=None, onaccept=None):
 
     """ Read a single record. """
+
+    # TODO: this function not filter-aware!
 
     module, resource, table, tablename = jr.target()
 
@@ -1253,21 +1259,6 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
         else:
             limit = None
 
-        if "iSortingCols" in request.vars and orderby is None:
-            orderby = shn_convert_orderby(table, request)
-
-        if request.vars.sSearch and request.vars.sSearch <> "":
-            query = shn_build_ssp_filter(table, request) & query
-
-        sEcho = int(request.vars.sEcho)
-        from gluon.serializers import json
-        #query = query & (table.id > 0)
-        totalrows = db(query).count()
-        if limit:
-            rows = db(query).select(table.ALL, limitby = (start, start + limit), orderby = orderby)
-        else:
-            rows = db(query).select(table.ALL, orderby = orderby)
-
         # Which fields do we display?
         fields = None
 
@@ -1281,6 +1272,23 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 
         if not fields:
             fields = [f for f in table.fields if table[f].readable]
+
+        if "iSortingCols" in request.vars and orderby is None:
+            orderby = shn_convert_orderby(table, request, fields=fields)
+
+        if request.vars.sSearch and request.vars.sSearch <> "":
+            squery = shn_build_ssp_filter(table, request, fields=fields)
+            if squery is not None:
+                query = squery & query
+
+        sEcho = int(request.vars.sEcho)
+        from gluon.serializers import json
+        #query = query & (table.id > 0)
+        totalrows = db(query).count()
+        if limit:
+            rows = db(query).select(table.ALL, limitby = (start, start + limit), orderby = orderby)
+        else:
+            rows = db(query).select(table.ALL, orderby = orderby)
 
         # Where to link the ID column?
         authorised = shn_has_permission('update', table)
@@ -1750,12 +1758,14 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 
     elif jr.representation == "csv":
         # Read in POST
-        file = request.vars.filename.file
-        try:
-            import_csv(file, table)
-            session.flash = T('Data uploaded')
-        except:
-            session.error = T('Unable to parse CSV file!')
+        import csv
+        csv.field_size_limit(1000000000)
+        infile = open(request.vars.filename, 'rb')
+        #try:
+        import_csv(infile, table)
+        session.flash = T('Data uploaded')
+        #except:
+            #session.error = T('Unable to parse CSV file!')
         redirect(jr.there())
 
     elif jr.representation in shn_json_import_formats:
@@ -2250,7 +2260,8 @@ def shn_rest_controller(module, resource,
     if jr.component:
         if jr.method and jr.custom_action:
             output = jr.custom_action(jr, onvalidation=None, onaccept=None)
-            output.update(jr=jr)
+            if isinstance(output, dict):
+                output.update(jr=jr)
             return output
 
         # HTTP Multi-Record Operation *****************************************
@@ -2412,7 +2423,8 @@ def shn_rest_controller(module, resource,
         # Custom Method *******************************************************
         if jr.method and jr.custom_action:
             output = jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept)
-            output.update(jr=jr)
+            if isinstance(output, dict):
+                output.update(jr=jr)
             return output
 
         # Clear Session *******************************************************
@@ -2611,17 +2623,16 @@ def shn_rest_controller(module, resource,
                             field3 = str.lower(request.vars.field3)
                         else:
                             field3 = None
-                        
                         if 'extra_string' in request.vars:
                             extra_string = str.lower(request.vars.extra_string)
                         else:
                             extra_string = None
-                        if 'parent' in request.vars and request.vars.parent != '':
 
+                        if 'parent' in request.vars and request.vars.parent != '':
                             parent = int(request.vars.parent)
                         else:
                             parent = None
-                        
+
                         if 'exclude' in request.vars:
                             import urllib
                             exclude = urllib.unquote(request.vars.exclude)
@@ -2638,18 +2649,18 @@ def shn_rest_controller(module, resource,
                                     query = query & ((jr.table[field].like('%' + value1 + '%')) & (jr.table[field2].like('%' + value2 + '%')) | (jr.table[field3].like('%' + value2 + '%')))
                                 else:
                                     query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
-                            
+
                             elif extra_string:
                                 # gis_location hierarchical search
                                 if parent:
                                     query = query & (jr.table.parent == parent) & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
                                 else:
                                     query = query & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
-                            
+
                             elif exclude:
                                 # gis_location without Admin Areas
                                 query = query & ~(jr.table[field].like(exclude)) & (jr.table[field].like('%' + value + '%'))
-                            
+
                             else:
                                 # Normal single-field
                                 query = query & (jr.table[field].like('%' + value + '%'))

@@ -28,8 +28,16 @@ def user():
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
     if request.args and request.args(0)=="profile":
+        #auth.settings.table_user.organisation.writable = False
         auth.settings.table_user.utc_offset.readable = True
         auth.settings.table_user.utc_offset.writable = True
+
+    auth.settings.table_user.language.label = T("Language")
+    auth.settings.table_user.language.default = "en"
+    auth.settings.table_user.language.comment = DIV(_class="tooltip",
+        _title=T("Language|The language to use for notifications."))
+    auth.settings.table_user.language.requires = IS_IN_SET(shn_languages)
+    auth.settings.table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
 
     form = auth()
 

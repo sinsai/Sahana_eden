@@ -2193,7 +2193,7 @@ def shn_rest_controller(module, resource,
             - SMS, LDIF
 
     """
-
+    # test slow connection for ajaxS3: time.sleep(2)
     # Parse original request --------------------------------------------------
     jr = s3xrc.request(module, resource, request, session=session)
 

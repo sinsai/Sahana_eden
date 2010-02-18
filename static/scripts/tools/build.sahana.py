@@ -177,6 +177,7 @@ def docss(dogis = True):
         '../../styles/S3/ui.core.css',
         '../../styles/S3/ui.datepicker.css',
         '../../styles/S3/ui.theme.css',
+        '../../styles/S3/ajaxS3.css',
         '../../styles/T2/t2.css',
         '../../styles/web2py/calendar.css'
     ]

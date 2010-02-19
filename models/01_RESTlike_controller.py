@@ -2090,6 +2090,139 @@ def shn_options(jr):
         session.error = BADFORMAT
         redirect(URL(r=request, f='index'))
 
+#
+# shn_search ------------------------------------------------------------------
+#
+def shn_search(jr, main=None, extra=None, deletable=False):
+
+    """ Search function responding in JSON """
+
+    request = jr.request
+
+    # Filter Search list to just those records which user can read
+    query = shn_accessible_query('read', jr.table)
+
+    # Filter search to items which aren't deleted
+    if 'deleted' in jr.table:
+        query = (jr.table.deleted==False) & query
+
+    # Respect response.s3.filter
+    if response.s3.filter:
+        query = response.s3.filter & query
+
+    if jr.representation == "html":
+
+        shn_represent(jr.table, jr.prefix, jr.name, deletable, main, extra)
+        search = t2.search(jr.table, query=query)
+
+        # Check for presence of Custom View
+        shn_custom_view(jr, 'search.html')
+
+        # CRUD Strings
+        title = s3.crud_strings.title_search
+
+        output = dict(module_name=module_name, search=search, title=title)
+
+    elif jr.representation == "json":
+
+        # JQuery Autocomplete uses 'q' instead of 'value'
+        value = request.vars.value or request.vars.q or None
+
+        if request.vars.field and request.vars.filter and value:
+            field = str.lower(request.vars.field)
+
+            # Optional fields
+            if 'field2' in request.vars:
+                field2 = str.lower(request.vars.field2)
+            else:
+                field2 = None
+            if 'field3' in request.vars:
+                field3 = str.lower(request.vars.field3)
+            else:
+                field3 = None
+            if 'extra_string' in request.vars:
+                extra_string = str.lower(request.vars.extra_string)
+            else:
+                extra_string = None
+            if 'parent' in request.vars:
+                parent = int(request.vars.parent)
+            else:
+                parent = None
+            if 'exclude' in request.vars:
+                import urllib
+                exclude = urllib.unquote(request.vars.exclude)
+            else:
+                exclude = None
+
+            filter = request.vars.filter
+            if filter == '~':
+                if field2 and field3:
+
+                    # pr_person name search
+                    if ' ' in value:
+                        value1, value2 = value.split(' ', 1)
+                        query = query & ((jr.table[field].like('%' + value1 + '%')) & \
+                                        (jr.table[field2].like('%' + value2 + '%')) | \
+                                        (jr.table[field3].like('%' + value2 + '%')))
+                    else:
+                        query = query & ((jr.table[field].like('%' + value + '%')) | \
+                                        (jr.table[field2].like('%' + value + '%')) | \
+                                        (jr.table[field3].like('%' + value + '%')))
+
+                elif extra_string:
+
+                    # gis_location hierarchical search
+                    if parent:
+                        query = query & (jr.table.parent == parent) & \
+                                        (jr.table[field].like('%' + value + '%')) & \
+                                        (jr.table[field].like('%' + extra_string + '%'))
+                    else:
+                        query = query & (jr.table[field].like('%' + value + '%')) & \
+                                        (jr.table[field].like('%' + extra_string + '%'))
+
+                elif exclude:
+
+                    # gis_location without Admin Areas
+                    query = query & ~(jr.table[field].like(exclude)) & \
+                                    (jr.table[field].like('%' + value + '%'))
+
+                else:
+                    # Normal single-field
+                    query = query & (jr.table[field].like('%' + value + '%'))
+
+                limit = int(request.vars.limit or 0)
+                if limit:
+                    item = db(query).select(limitby=(0, limit)).json()
+                else:
+                    item = db(query).select().json()
+
+            elif filter == '=':
+                query = query & (jr.table[field] == value)
+                item = db(query).select().json()
+
+            elif filter == '<':
+                query = query & (jr.table[field] < value)
+                item = db(query).select().json()
+
+            elif filter == '>':
+                query = query & (jr.table[field] > value)
+                item = db(query).select().json()
+
+            else:
+                item = json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                raise HTTP(400, body=item)
+        else:
+            item = json_message(False, 400, "Search requires specifying Field, Filter & Value!")
+            raise HTTP(400, body=item)
+
+        response.view = 'plain.html'
+        output = dict(item=item)
+
+    else:
+        raise HTTP(501, body=BADFORMAT)
+
+    return output
+
 # *****************************************************************************
 # Main controller function
 
@@ -2193,7 +2326,7 @@ def shn_rest_controller(module, resource,
             - SMS, LDIF
 
     """
-    # test slow connection for ajaxS3: time.sleep(2)
+
     # Parse original request --------------------------------------------------
     jr = s3xrc.request(module, resource, request, session=session)
 
@@ -2229,8 +2362,6 @@ def shn_rest_controller(module, resource,
 
         else:
             raise HTTP(404, body=BADRECORD)
-            #session.error = BADRECORD
-            #redirect(URL(r=request, f='index'))
 
     # Run prep, if set
     if response.s3.prep is not None:
@@ -2239,10 +2370,14 @@ def shn_rest_controller(module, resource,
             bypass = prep.get('bypass', False)
             output = prep.get('output', None)
             if bypass and output:
+                if isinstance(output, dict):
+                    output.update(jr=jr)
                 return output
             success = prep.get('success', True)
             if not success:
                 if jr.representation=='html' and output:
+                    if isinstance(output, dict):
+                        output.update(jr=jr)
                     return output
                 status = prep.get('status', 400)
                 message = prep.get('message', INVALIDREQUEST)
@@ -2260,9 +2395,6 @@ def shn_rest_controller(module, resource,
     if jr.component:
         if jr.method and jr.custom_action:
             output = jr.custom_action(jr, onvalidation=None, onaccept=None)
-            if isinstance(output, dict):
-                output.update(jr=jr)
-            return output
 
         # HTTP Multi-Record Operation *****************************************
         if jr.method==None and jr.multiple and not jr.component_id:
@@ -2271,7 +2403,7 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET':
                 authorised = shn_has_permission('read', jr.component.table)
                 if authorised:
-                    return shn_list(jr, pheader, rss=rss)
+                    output = shn_list(jr, pheader, rss=rss)
                 else:
                     session.error = UNAUTHORISED
                     redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2280,14 +2412,14 @@ def shn_rest_controller(module, resource,
             elif jr.http=='PUT' or jr.http=='POST':
                 if jr.representation in shn_json_import_formats:
                     response.view = 'plain.html'
-                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.representation in shn_xml_import_formats:
                     response.view = 'plain.html'
-                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.http == "POST":
                     authorised = shn_has_permission('read', jr.component.table)
                     if authorised:
-                        return shn_list(jr, pheader, rss=rss)
+                        output = shn_list(jr, pheader, rss=rss)
                     else:
                         session.error = UNAUTHORISED
                         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
@@ -2313,7 +2445,7 @@ def shn_rest_controller(module, resource,
             if jr.http=='GET':
                 authorised = shn_has_permission('read', jr.component.table)
                 if authorised:
-                    return shn_read(jr, pheader=pheader,
+                    output = shn_read(jr, pheader=pheader,
                                     editable=editable,
                                     deletable=deletable,
                                     rss=rss,
@@ -2327,14 +2459,14 @@ def shn_rest_controller(module, resource,
             elif jr.http=='PUT' or jr.http == "POST":
                 if jr.representation in shn_json_import_formats:
                     response.view = 'plain.html'
-                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.representation in shn_xml_import_formats:
                     response.view = 'plain.html'
-                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.http == "POST":
                     authorised = shn_has_permission('read', jr.component.table)
                     if authorised:
-                        return shn_read(jr, pheader=pheader,
+                        output = shn_read(jr, pheader=pheader,
                                         editable=editable,
                                         deletable=deletable,
                                         rss=rss,
@@ -2362,7 +2494,7 @@ def shn_rest_controller(module, resource,
         elif jr.method=="create":
             authorised = shn_has_permission(jr.method, jr.component.table)
             if authorised:
-                return shn_create(jr, pheader)
+                output = shn_create(jr, pheader)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
@@ -2373,10 +2505,10 @@ def shn_rest_controller(module, resource,
             if authorised:
                 if jr.multiple and not jr.component_id:
                     # This is a list action
-                    return shn_list(jr, pheader, rss=rss)
+                    output = shn_list(jr, pheader, rss=rss)
                 else:
                     # This is a read action
-                    return shn_read(jr, pheader=pheader,
+                    output = shn_read(jr, pheader=pheader,
                                     editable=editable,
                                     deletable=deletable,
                                     rss=rss,
@@ -2390,7 +2522,7 @@ def shn_rest_controller(module, resource,
         elif jr.method=="update":
             authorised = shn_has_permission(jr.method, jr.component.table)
             if authorised:
-                return shn_update(jr, pheader)
+                output = shn_update(jr, pheader)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
@@ -2407,7 +2539,7 @@ def shn_rest_controller(module, resource,
 
         # Options (joined table) **********************************************
         elif jr.method=="options":
-            return shn_options(jr)
+            output = shn_options(jr)
 
         # Unsupported Method **************************************************
         else:
@@ -2423,9 +2555,6 @@ def shn_rest_controller(module, resource,
         # Custom Method *******************************************************
         if jr.method and jr.custom_action:
             output = jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept)
-            if isinstance(output, dict):
-                output.update(jr=jr)
-            return output
 
         # Clear Session *******************************************************
         elif jr.method=="clear":
@@ -2451,7 +2580,7 @@ def shn_rest_controller(module, resource,
 
             # HTTP List or List-Add -------------------------------------------
             if jr.http == 'GET':
-                return shn_list(jr, pheader, list_fields=list_fields,
+                output = shn_list(jr, pheader, list_fields=list_fields,
                                 listadd=listadd,
                                 main=main,
                                 extra=extra,
@@ -2465,12 +2594,12 @@ def shn_rest_controller(module, resource,
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
                 if jr.representation in shn_json_import_formats:
                     response.view = 'plain.html'
-                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.representation in shn_xml_import_formats:
                     response.view = 'plain.html'
-                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.http == "POST":
-                    return shn_list(jr, pheader, list_fields=list_fields,
+                    output = shn_list(jr, pheader, list_fields=list_fields,
                                     listadd=listadd,
                                     main=main,
                                     extra=extra,
@@ -2494,7 +2623,7 @@ def shn_rest_controller(module, resource,
 
             # HTTP Read (single record) ---------------------------------------
             if jr.http == 'GET':
-                return shn_read(jr, pheader=pheader,
+                output = shn_read(jr, pheader=pheader,
                                 editable=editable,
                                 deletable=deletable,
                                 rss=rss,
@@ -2506,12 +2635,12 @@ def shn_rest_controller(module, resource,
                 # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
                 if jr.representation in shn_json_import_formats:
                     response.view = 'plain.html'
-                    return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.representation in shn_xml_import_formats:
                     response.view = 'plain.html'
-                    return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
                 elif jr.http == "POST":
-                    return shn_read(jr, pheader=pheader,
+                    output = shn_read(jr, pheader=pheader,
                                     editable=editable,
                                     deletable=deletable,
                                     rss=rss,
@@ -2529,7 +2658,7 @@ def shn_rest_controller(module, resource,
                         shn_delete(jr)
                         item = json_message()
                         response.view = 'plain.html'
-                        return dict(item=item)
+                        output = dict(item=item)
                     else:
                         # Unauthorised
                         raise HTTP(401)
@@ -2548,7 +2677,7 @@ def shn_rest_controller(module, resource,
         elif jr.method == "create":
             authorised = shn_has_permission(jr.method, jr.table)
             if authorised:
-                return shn_create(jr, pheader, onvalidation=onvalidation,
+                output = shn_create(jr, pheader, onvalidation=onvalidation,
                                   onaccept=onaccept, main=main)
             else:
                 session.error = UNAUTHORISED
@@ -2563,7 +2692,7 @@ def shn_rest_controller(module, resource,
         elif jr.method == "update":
             authorised = shn_has_permission(jr.method, jr.table, jr.id)
             if authorised:
-                return shn_update(jr, pheader, deletable=deletable,
+                output = shn_update(jr, pheader, deletable=deletable,
                                   onvalidation=onvalidation, onaccept=onaccept)
             else:
                 session.error = UNAUTHORISED
@@ -2583,127 +2712,26 @@ def shn_rest_controller(module, resource,
         elif jr.method == "search":
             authorised = shn_has_permission('read', jr.table)
             if authorised:
-                # Filter Search list to just those records which user can read
-                query = shn_accessible_query('read', jr.table)
-                # Filter search to items which aren't deleted
-                if 'deleted' in jr.table:
-                    query = (jr.table.deleted==False) & query
-                # Respect response.s3.filter
-                if response.s3.filter:
-                    query = response.s3.filter & query
-
-                # Audit
-                shn_audit_read(operation='search', module=jr.prefix,
-                               resource=jr.name, representation=jr.representation)
-
-                if jr.representation == "html":
-
-                    shn_represent(jr.table, jr.prefix, jr.name, deletable, main, extra)
-                    search = t2.search(jr.table, query=query)
-
-                    # Check for presence of Custom View
-                    shn_custom_view(jr, 'search.html')
-
-                    # CRUD Strings
-                    title = s3.crud_strings.title_search
-
-                    return dict(module_name=module_name, search=search, title=title)
-
-                if jr.representation == "json":
-                    # JQuery Autocomplete uses 'q' instead of 'value'
-                    value = request.vars.value or request.vars.q or None
-                    if request.vars.field and request.vars.filter and value:
-                        field = str.lower(request.vars.field)
-                        # Optional fields
-                        if 'field2' in request.vars:
-                            field2 = str.lower(request.vars.field2)
-                        else:
-                            field2 = None
-                        if 'field3' in request.vars:
-                            field3 = str.lower(request.vars.field3)
-                        else:
-                            field3 = None
-                        if 'extra_string' in request.vars:
-                            extra_string = str.lower(request.vars.extra_string)
-                        else:
-                            extra_string = None
-
-                        if 'parent' in request.vars and request.vars.parent != '':
-                            parent = int(request.vars.parent)
-                        else:
-                            parent = None
-
-                        if 'exclude' in request.vars:
-                            import urllib
-                            exclude = urllib.unquote(request.vars.exclude)
-                        else:
-                            exclude = None
-
-                        filter = request.vars.filter
-                        if filter == '~':
-                            
-                            if field2 and field3:
-                                # pr_person name search
-                                if ' ' in value:
-                                    value1, value2 = value.split(' ', 1)
-                                    query = query & ((jr.table[field].like('%' + value1 + '%')) & (jr.table[field2].like('%' + value2 + '%')) | (jr.table[field3].like('%' + value2 + '%')))
-                                else:
-                                    query = query & ((jr.table[field].like('%' + value + '%')) | (jr.table[field2].like('%' + value + '%')) | (jr.table[field3].like('%' + value + '%')))
-
-                            elif extra_string:
-                                # gis_location hierarchical search
-                                if parent:
-                                    query = query & (jr.table.parent == parent) & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
-                                else:
-                                    query = query & (jr.table[field].like('%' + value + '%')) & (jr.table[field].like('%' + extra_string + '%'))
-
-                            elif exclude:
-                                # gis_location without Admin Areas
-                                query = query & ~(jr.table[field].like(exclude)) & (jr.table[field].like('%' + value + '%'))
-
-                            else:
-                                # Normal single-field
-                                query = query & (jr.table[field].like('%' + value + '%'))
-                            limit = int(request.vars.limit or 0)
-                            if limit:
-                                item = db(query).select(limitby=(0, limit)).json()
-                            else:
-                                item = db(query).select().json()
-                        elif filter == '=':
-                            query = query & (jr.table[field] == value)
-                            item = db(query).select().json()
-                        elif filter == '<':
-                            query = query & (jr.table[field] < value)
-                            item = db(query).select().json()
-                        elif filter == '>':
-                            query = query & (jr.table[field] > value)
-                            item = db(query).select().json()
-                        else:
-                            item = json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                            raise HTTP(400, body=item)
-                    else:
-                        item = json_message(False, 400, "Search requires specifying Field, Filter & Value!")
-                        raise HTTP(400, body=item)
-                    response.view = 'plain.html'
-                    return dict(item=item)
-
-                else:
-                    raise HTTP(501, body=BADFORMAT)
-                    #session.error = BADFORMAT
-                    #redirect(URL(r=request))
+                output = shn_search(jr, main=main, extra=extra, deletable=deletable)
             else:
                 session.error = UNAUTHORISED
                 redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
 
         # Options (single table) **********************************************
         elif jr.method=="options":
-            return shn_options(jr)
+            output = shn_options(jr)
 
         # Unsupported Method **************************************************
         else:
             raise HTTP(501, body=BADMETHOD)
             #session.error = BADMETHOD
             #redirect(URL(r=request))
+
+    # Add XRequest to output if dict
+    if isinstance(output, dict):
+        output.update(jr=jr)
+
+    return output
 
 # END
 # *****************************************************************************

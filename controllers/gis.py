@@ -1135,6 +1135,8 @@ def map_service_catalogue():
 def layers():
     "Provide the Enabled Layers"
 
+    from gluon.tools import fetch
+
     response.warning = ''
 
     layers = Storage()
@@ -1221,7 +1223,7 @@ def layers():
             filepath = os.path.join(cachepath, filename)
             try:
                 # Download file to cache
-                file = shn_fetch(url)
+                file = fetch(url)
                 f = open(filepath, 'w')
                 f.write(file)
                 f.close()
@@ -1270,7 +1272,15 @@ def layers():
             filepath = os.path.join(cachepath, filename)
             try:
                 # Download file to cache (Keep Session for local URLs)
-                file = shn_fetch(url, keep_session=True)
+                if '127.0.0.1' in url:
+                    # Keep Session for local URLs
+                    import Cookie
+                    cookie = Cookie.SimpleCookie()
+                    cookie[response.session_id_name] = response.session_id
+                    session._unlock(response)
+                    file = fetch(url, cookie=cookie)
+                else:
+                    file = fetch(url)
                 f = open(filepath, 'w')
                 f.write(file)
                 f.close()
@@ -1779,3 +1789,23 @@ def display_features():
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
 
     return output
+    
+def geolocate():
+    " Call a Geocoder service "
+    if 'location' in request.vars:
+        location = request.vars.service
+    else:
+        session.error = T('Need to specify a location to search for.')
+        redirect(URL(r=request, f='index'))
+
+    if 'service' in request.vars:
+        service = request.vars.service
+    else:
+        # ToDo service=all should be default
+        service = "google"
+        
+    if service == "google":
+        return s3gis.GoogleGeocoder(location, db).get_kml()
+
+    if service == "yahoo":
+        return s3gis.YahooGeocoder(location, db).get_xml()

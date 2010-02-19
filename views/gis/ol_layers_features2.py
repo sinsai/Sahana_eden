@@ -1,29 +1,29 @@
-﻿ol_layers_features.js old:
+ol_layers_features.js old:
     {{if feature.type==feature_1:}}
         var geom = new OpenLayers.Geometry.Point((new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({{=feature.lon}}, {{=feature.lat}}).transform(proj4326, proj_current)).lat));
     //ToDo: make work for more than just points!
     {{elif feature.feature_type==2:}}
-        coords = 
+        coords =
         var geom = new OpenLayers.Geometry.LineString(coords);
     {{elif feature.feature_type==3:}}
         var geom = new OpenLayers.Geometry.Polygon(new Array(new OpenLayers.Geometry.LinearRing(coords)));
     {{pass}}
-    
+
     # Bit of a hacky way to do it. Especially the transform...
     coordinates = shn_gis_coord_decode(feature['f_coords'])
     coords = ''
     if(count(coordinates) == 1):
-         coords += "var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat));\n"; 
+         coords += "var coords = new Array(new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat));\n";
     else:
          coords += "var coords = new Array(";
          ctot = count(coordinates) - 1;
          for(i = 1; i < ctot; i++):
              coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat), ";
          if(ctot > 0):
-         coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat)";   
-         coords += ");\n"            
+         coords += "new OpenLayers.Geometry.Point((new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lon, (new OpenLayers.LonLat({coordinates[i][0]}, {coordinates[i][1]}).transform(proj4326, proj_current)).lat)";
+         coords += ");\n"
 
-# Rewrite in JavaScript: http://javascript.about.com/library/bltut21.htm         
+# Rewrite in JavaScript: http://javascript.about.com/library/bltut21.htm
 def shn_gis_coord_decode(coords):
     """ Takes the coord string stored in the db and decodes it into an array of:
     [0 => center of obj][0 => x, 1 => y, 2 => z]
@@ -58,66 +58,66 @@ def shn_gis_coord_decode(coords):
     foreach(wkt as point):
         array_push(output, explode(' ' , point, 3) )
     return output
-   
-   
+
+
 def shn_gis_form_popupHTML_view(feature):
     "Generate vars for popup HTML content"
-        
+
     # Set Feature uuid
     if(isset(feature['f_uuid']) && feature['f_uuid'] != ''):
         feature_uuid = feature['f_uuid']
     else:
         # :(
         feature_uuid = 'popup_' . id++
-    
+
     # Set Feature Class
     if(isset(feature['f_class']) && feature['f_class'] != ''):
         feature_class = shn_gis_get_feature_class_uuid(feature['f_class'])
     else:
         feature_class = shn_gis_get_feature_class_uuid(conf['gis_feature_type_default'])
-    
+
     # Set name.
     if(isset(feature['f_name']) && feature['f_name'] != ''):
         name = feature['f_name']
     else:
         name = feature_class['c_name']
-    
+
     # Set Description
     if(isset(feature['f_description']) && feature['f_description'] != ''):
         description = feature['f_description']
     else:
         description = feature_class['c_description']
-    
+
     # Set Author
     if(isset(feature['f_author']) && feature['f_author'] != ''):
         author = feature['f_author']
     else:
         author = 'Anonymous'
-    
+
     # Set Address
     if(isset(feature['f_address']) && feature['f_address'] != ''):
         address = feature['f_address']
     else:
         address = false
-    
+
     # Set Event Date
     if(isset(feature['f_event_date'])):
         event_date = feature['f_event_date']
     else:
         event_date = 'Unknown'
-    
+
     # Set View URL
     if(isset(feature['f_url']) && feature['f_url'] != ''):
         url = feature['f_url']
     else:
         url = false
-    
+
     # Set View URL
     if(isset(feature['f_url_view']) && feature['f_url_view'] != ''):
         url_view = feature['f_url_view']
     else:
         url_view = false
-    
+
     # Set Edit URL
     if (isset(feature['f_url_edit']) && feature['f_url_edit'] != ''):
         # if feature has an edit url
@@ -131,7 +131,7 @@ def shn_gis_form_popupHTML_view(feature):
     else:
         # if feature is not module related and has a uuid to tie changes to. (can edit)
         url_edit = true
-    
+
     # Set Delete URL
     if (isset(feature['f_url_delete']) && feature['f_url_delete'] != ''):
         # if feature has a delete url
@@ -145,4 +145,3 @@ def shn_gis_form_popupHTML_view(feature):
     else:
         # if feature is not module related and has a uuid to tie changes to. (can del)
         url_del = true
- 

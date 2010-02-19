@@ -25,8 +25,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -82,8 +82,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -162,9 +162,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -207,13 +207,13 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T('No Organizations currently registered'))
 
 # Reusable field
-
+organisation_popup_url = URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true"
 organisation_id = SQLTable(None, 'organisation_id',
                            FieldS3('organisation_id', db.or_organisation, sortby='name',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
                            represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
                            label = T('Organization'),
-                           comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organization|The Organization this record is associated with."))),
+                           comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=organisation_popup_url, _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organization|The Organization this record is associated with."))),
                            ondelete = 'RESTRICT'
                           ))
 
@@ -260,10 +260,10 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -318,7 +318,7 @@ office_id = SQLTable(None, 'office_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0],
                 label = T('Office'),
-                comment = DIV(A(ADD_OFFICE, _class='thickbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
+                comment = DIV(A(ADD_OFFICE, _id='add_office', _class='thickbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
                 ondelete = 'RESTRICT'
                 ))
 

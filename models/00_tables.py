@@ -18,19 +18,31 @@ timestamp = db.Table(None, 'timestamp',
             )
 
 # Reusable author fields, TODO: make a better represent!
+def shn_user_represent(id):
+
+    if id:
+        user = db(db.auth_user.id==id).select()
+        if user:
+            user = user[0]
+            name = user.first_name
+            if user.last_name:
+                name = "%s %s" % (name, user.last_name)
+            return name
+    return None
+
 authorstamp = db.Table(None, 'authorstamp',
             Field('created_by', db.auth_user,
                           readable=False, # Enable when needed, not by default
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else None,
-                          represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
+                          represent = lambda id: id and shn_user_represent(id) or T("unknown"),
                           ondelete='RESTRICT'),
             Field('modified_by', db.auth_user,
                           readable=False, # Enable when needed, not by default
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else None,
                           update=session.auth.user.id if auth.is_logged_in() else None,
-                          represent = lambda id: (id and [db(db.auth_user.id==id).select()[0].first_name] or ["None"])[0],
+                          represent = lambda id: id and shn_user_represent(id) or T("unknown"),
                           ondelete='RESTRICT')
             )
 
@@ -202,8 +214,8 @@ table = db.define_table(tablename, timestamp, uuidstamp,
             Field('name'),
             Field('description'),
             Field('url'))
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Source of Information')
 table.name.comment = SPAN("*", _class="req")
 table.url.requires = IS_NULL_OR(IS_URL())

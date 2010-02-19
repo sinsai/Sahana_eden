@@ -3,13 +3,15 @@
 """
     SahanaPy GIS Module
 
-    @version: 0.0.2
+    @version: 0.0.3
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
-    @author: flavour
-    @copyright: (c) 2010 Fran Boon
+    @author: Fran Boon <francisboon@gmail.com>
+    @author: Timothy Caro-Bruce <tcarobruce@gmail.com>
+    @author: Zubin Mithra <zubin.mithra@gmail.com>
+    @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
-
+    
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
     files (the "Software"), to deal in the Software without
@@ -35,11 +37,14 @@
 
 __name__ = "S3GIS"
 
-__all__ = ['GIS']
+__all__ = ['GIS', 'GoogleGeocoder', 'YahooGeocoder']
 
 import sys, uuid
+import logging                                                    
+from urllib import urlencode                                      
 
 from gluon.storage import Storage, Messages
+from gluon.tools import fetch                                     
 
 SHAPELY = False
 try:
@@ -295,3 +300,62 @@ class GIS(object):
             form.errors.gis_feature_type = self.messages.unknown_type
         
         return
+
+
+class Geocoder(object):
+    " Base class for all geocoders "
+    
+    def __init__(self):
+        " Initializes the page content object "
+        self.page = ""
+        
+    def read_details(self, url):
+        self.page = fetch(url)  
+
+class GoogleGeocoder(Geocoder):
+    " Google Geocoder module "
+    
+    def __init__(self, location, db, domain='maps.google.com', resource='maps/geo', output_format='kml'):
+        " Initialize the values based on arguments or default settings "                        
+        self.api_key = self.get_api_key()                                                  
+        self.domain = domain                                                               
+        self.resource = resource                                                           
+        self.params = {'q': location, 'key': self.api_key}                                 
+        self.url = "http://%(domain)s/%(resource)?%%s" % locals()                          
+        self.db = db                                                                       
+
+    def get_api_key(self):
+        " Acquire API key from the database "
+        query = self.db.gis_apikey.name=='google'                          
+        return self.db(query).select().first().apikey                      
+
+    def construct_url(self):
+        " Construct the URL based on the arguments passed "
+        self.url = self.url % urlencode(params)
+    
+    def get_kml(self):
+        " Returns the output in KML format " 
+        return self.page.read()                
+
+class YahooGeocoder(Geocoder):
+    " Yahoo Geocoder module "
+    
+    def __init__(self, location, db):
+        " Initialize the values based on arguments or default settings "
+        self.api_key = self.get_api_key()
+        self.location = location
+        self.params = {'location': self.location, 'appid': self.app_key}
+        self.db = db
+        
+    def get_api_key(self):
+        " Acquire API key from the database "
+        query = self.db.gis_apikey.name=='yahoo'
+        return self.db(query).select().first().apikey
+
+    def construct_url(self):
+        " Construct the URL based on the arguments passed "
+        self.url = self.url % urlencode(params)
+
+    def get_xml(self):
+        " Return the output in XML format "
+        return self.page.read()        

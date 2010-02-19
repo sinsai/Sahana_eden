@@ -29,7 +29,7 @@ marker_id = SQLTable(None, 'marker_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select().first().image), _height=40))] or [''])[0],
                 label = T('Marker'),
-                comment = DIV(A(ADD_MARKER, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_MARKER), A(SPAN("[Help]"), _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
+                comment = DIV(A(ADD_MARKER, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -219,7 +219,7 @@ feature_group_id = SQLTable(None, 'feature_group_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Group'),
-                comment = DIV(A(ADD_FEATURE_GROUP, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_GROUP), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
+                comment = DIV(A(ADD_FEATURE_GROUP, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -258,13 +258,13 @@ table = db.define_table(tablename, timestamp,
                 migrate=migrate)
 # upload folder needs to be visible to the download() function as well as the upload
 table.track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 table.track.requires = IS_UPLOAD_FILENAME(extension='gpx')
 table.track.description = T('Description')
 table.track.label = T('GPS Track File')
-table.track.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
+table.track.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
 ADD_TRACK = T('Upload Track')
 LIST_TRACKS = T('List Tracks')
 s3.crud_strings[tablename] = Storage(
@@ -287,7 +287,7 @@ track_id = SQLTable(None, 'track_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_track.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_track.id==id).select().first().name] or ["None"])[0],
                 label = T('Track'),
-                comment = DIV(A(ADD_TRACK, _class='thickbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_TRACK), A(SPAN("[Help]"), _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                comment = DIV(A(ADD_TRACK, _class='thickbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
                 ondelete = 'RESTRICT'
                 ))
 

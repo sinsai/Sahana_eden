@@ -158,24 +158,24 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 migrate=migrate)
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
 table.organisation_id.represent = lambda id: \
     (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
-#table.ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % table))
+#table.ho_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.ho_uuid' % tablename))
 #table.ho_uuid.label = T('Health Org UUID')
 #table.ho_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
 #    _title=T("Health Organisation UUID|The Universal Unique Identifier (UUID) as assigned to this facility by Health Organisations (e.g. WHO))."))
 
-table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.gov_uuid' % table))
+table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, '%s.gov_uuid' % tablename))
 #table.gov_uuid.label = T('Government UUID')
 table.gov_uuid.label = T('MOH UUID')
 table.gov_uuid.comment = A(SPAN("[Help]"), _class="tooltip",
 #    _title=T("Government UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the government."))
     _title=T("Government UUID|The Universal Unique Identifier (UUID) as assigned to this facility by the MOH."))
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
 table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 
@@ -632,7 +632,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 migrate=migrate)
 
 # Field validation
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 
 table.image.label = T("Image Upload")
 table.image.represent = lambda image: image and \

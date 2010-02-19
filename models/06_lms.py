@@ -72,7 +72,7 @@ if not db(table.id).count():
     )
 
 table.base_unit.requires = IS_NULL_OR(IS_ONE_OF(db, "lms_unit.label", "lms_unit.name"))
-table.label.requires=IS_NOT_IN_DB(db, '%s.label' % table)
+table.label.requires=IS_NOT_IN_DB(db, '%s.label' % tablename)
 table.label.label = T('Unit')
 table.label.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Label| Unit Short Code for e.g. m for meter."))
 table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Unit Name| Complete Unit Label for e.g. meter for m."))
@@ -126,7 +126,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('attachment', 'upload', autodelete=True),
                 db.Field('comments'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
 table.name.label = T("Site Name")
 table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Name|A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar."))
@@ -168,7 +168,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('weight_unit'),
 				db.Field('attachment', 'upload', autodelete=True),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
 table.site_id.label = T("Site")
 table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
@@ -209,7 +209,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('name', notnull=True),
                 db.Field('description'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()
 table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Storage Bin Type|Name of Storage Bin Type."))
 table.description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Description of Bin Type|Use this space to add a description about the Bin Type."))
@@ -245,7 +245,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('attachment', 'upload', autodelete=True),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
 table.site_id.label = T("Site/Warehouse")
 table.site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Bin belongs to.")))
@@ -295,7 +295,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()
 table.name.label = T("Catalog Name")
 table.name.comment = SPAN("*", _class="req")
@@ -324,7 +324,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()
 table.name.label = T("Item Catalog Category")
 table.name.comment = SPAN("*", _class="req")
@@ -354,7 +354,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 db.Field('description'),
 				db.Field('comments', 'text'),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.name.requires = IS_NOT_EMPTY()
 table.name.label = T("Item Sub-Category")
 table.name.comment = SPAN("*", _class="req")
@@ -430,7 +430,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('currency'),
 				db.Field('track_status', readable='False'), #Linked to Shipment Transit Log table
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.way_bill.requires = IS_NOT_EMPTY()
 table.way_bill.label = T("Shipment/Way Bills")
 table.way_bill.comment = SPAN("*", _class="req")
@@ -488,7 +488,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('attachment', 'upload', autodelete=True),
                 db.Field('unit_cost', 'double', default=0.00),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name') #this should be automatically done. Using LMS User Preferences
 table.site_id.label = T("Site/Warehouse")
 table.site_id.comment = DIV(A(T('Add Site'), _class='thickbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top'), A(SPAN("[Help]"), _class="tooltip", _title=T("Site|Add the main Warehouse/Site information where this Item is to be added.")))
@@ -543,7 +543,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('shipment_id', db.lms_shipment),
 				db.Field('item_id', db.lms_item),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
 table.item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
 s3.crud_strings[tablename] = Storage(
@@ -570,7 +570,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 				db.Field('shipment_id', db.lms_shipment),
 				db.Field('item_id', db.lms_item),
                 migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
 table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
 table.item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
 ADD_SHIPMENT_TRANSIT_LOG = T('Add Shipment Transit Log')
@@ -602,7 +602,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('total_megabyte_cost', 'double', writable=False),
                 Field('comments'),
                 migrate=migrate)
-table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % tablename)]
 table.code.label = T('Code')
 table.code.comment = SPAN("*", _class="req")
 table.description.label = T('Description')

@@ -11,6 +11,13 @@
 {{include 'thickbox.html'}}
 
 <script type="text/javascript">//<![CDATA[
+
+function TB_cleanup(caller) {
+    if(self.parent.cleanup)
+       self.parent.cleanup(caller); 
+    self.parent.tb_remove();
+}
+
 function TB_refresh() {
     // The Get parameters
     // ToDo: Make this less fragile by passing these fields as separate vars?
@@ -39,7 +46,7 @@ function TB_refresh() {
         // Clean up the caller
         self.parent.$('#' + caller + ' >option').remove();
         var value_high = 1;
-        $.getJSON(url, function (data) {
+        $.getJSONS3(url, function (data) {
             var value, represent;
             var append = '';
             $.each(data['option'], function() {
@@ -47,7 +54,7 @@ function TB_refresh() {
                 represent = this['$'];
                 if(typeof represent === "undefined") {
                     represent = "";
-                } 
+                }
                 append += "<option value='" + value + "'>" + represent + "</option>";
                 // Type conversion: http://www.jibbering.com/faq/faq_notes/type_convert.html#tcNumber
                 numeric_value = (+value)
@@ -67,11 +74,11 @@ function TB_refresh() {
                 1
             );
             // Clean-up
-            self.parent.tb_remove();
+            TB_cleanup(caller);
         });
     } else {
         // Clean-up
-        self.parent.tb_remove();
+        TB_cleanup(caller);
     }
 }
 // Function to get the URL parameters
@@ -91,6 +98,7 @@ function getQueryParams(qs) {
 // If submission succesful
 {{if response.flash or response.confirmation:}}
 // Refresh the DIV and close the pop up
+$(document).ready( function() {self.parent.$(".TB_closeAjaxWindow").html('');});
 TB_refresh();
 {{pass}}
 
@@ -99,7 +107,19 @@ TB_refresh();
 </head>
 
 <body>
-{{include}}
+{{if response.flash or response.confirmation:}}
+    <div id='popup' class='clearfix'>
+        <p style='padding:20px 20px;'>
+            <center>
+                <h2>
+                    {{=T("Submission successful - please wait...")}}
+                </h2>
+            </center>
+        <p>
+    </div>
+{{else:}}
+    {{include}}
+{{pass}}
 </body>
 
 </html>

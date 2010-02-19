@@ -1760,13 +1760,14 @@ class S3XML(object):
                             LatLon = self.db(ktable.id == value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
                             if LatLon:
                                 LatLon = LatLon[0]
-                                reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
-                                reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
-                                # Look up the marker to display
-                                if self.gis is not None:
-                                    marker = self.gis.get_marker(value)
-                                    marker_url = "%s/%s" % (download_url, marker)
-                                    reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
+                                if LatLon[self.Lat] and LatLon[self.Lon]:
+                                    reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
+                                    reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
+                                    # Look up the marker to display
+                                    if self.gis is not None:
+                                        marker = self.gis.get_marker(value)
+                                        marker_url = "%s/%s" % (download_url, marker)
+                                        reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
 
 
             elif isinstance(table[f].type, str) and \

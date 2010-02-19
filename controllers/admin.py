@@ -261,6 +261,78 @@ def user_approve(form):
             return
 
 @auth.requires_membership('Administrator')
+def usergroup():
+    "User update form with groups"
+    user = request.vars.user
+
+    # redirect to the user list if user id is not given
+    if (user == None):
+        redirect(URL(r=request, f='user'))
+        return
+
+    # gathher common variables
+    data = {}
+    data['user_id'] = user
+    data['username'] = db.auth_user[user].first_name + " " + \
+                       db.auth_user[user].last_name
+    data['role'] = db.auth_group[user].role
+
+    # display the standard user details
+    record=db(db.auth_user.id==user).select()[0]
+    db.auth_user.id.readable=False
+
+    # Let admin view and modify the registration key
+    db.auth_user.registration_key.writable = True
+    db.auth_user.registration_key.readable = True
+    db.auth_user.registration_key.label = T('Disabled?')
+    db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
+
+    form = SQLFORM(db.auth_user, record, deletable=True)
+ 
+    # find all groups user belongs to
+    query = ( db.auth_membership.user_id == user )
+    allgroups = db().select(db.auth_group.ALL)
+    user_membership = db(query).select(db.auth_membership.ALL)
+
+    # db.auth_group[row.group_id].role
+    #records = SQLTABLE(db(query).select(db.auth_membership.ALL))
+
+    # handle the M to M of user to group membership for display
+    records = []
+    for group in allgroups:
+
+        user_group_count = 0
+
+        for row in user_membership:
+
+            
+            if (row.group_id == group.id):
+                records.append([group.role, 'on', group.id])
+                user_group_count += 1
+
+        if (user_group_count == 0):
+            # if the group does not exist currently and is enabled 
+            #if request.has_key(group.id):
+            if (group.id == 6):
+                db.auth_membership.insert(user_id = user, group_id = group.id)
+                records.append([group.role, 'on', group.id])
+                data['heehe'] = 'yes %d' % group.id
+                
+            records.append([group.role, '', group.id])
+  
+    # Update records for user details
+    if form.accepts(request.vars): \
+                    response.flash='User ' + data['username'] + ' Updated'
+    elif form.errors: \
+                    response.flash='There were errors in the form'
+
+    # Update records for group membership details
+    for key in request.vars.keys():
+        data['m_' + key] = request.vars[key]    
+
+    return dict(data=data, records=records, form=form)
+
+@auth.requires_membership('Administrator')
 def group():
     "RESTlike CRUD controller"
     module = 'auth'

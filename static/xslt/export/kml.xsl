@@ -15,7 +15,7 @@
     <xsl:template match="s3xrc">
         <Folder>
             <name>SahanaPy GIS Features</name>
-            <xsl:apply-templates select="resource"/>
+            <xsl:apply-templates select="./resource"/>
         </Folder>
     </xsl:template>
 

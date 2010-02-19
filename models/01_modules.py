@@ -27,10 +27,10 @@ table = db.define_table(tablename,
                 Field('description'),
                 Field('enabled', 'boolean', default=True),
                 migrate=migrate)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-table.name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name_nice' % table)]
-table.access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True)) # IS_ONE_OF ignores multiple!
-table.priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.priority' % table)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 's3_module.name')]
+table.name_nice.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 's3_module.name_nice')]
+table.access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', multiple=True))
+table.priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 's3_module.priority')]
 
 # Set to False in Production
 if db(db["s3_setting"].id).count():

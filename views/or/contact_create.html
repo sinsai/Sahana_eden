@@ -38,15 +38,16 @@ $(function() {
         var newvalue = data.id;
         $("#or_contact_organisation_id").val(newvalue);
         // Load offices just for that Org
-        load_offices();
+        load_offices(false);
     }); 
 
     // Office AutoComplete
     // Hide the real Input Field
     $("#or_contact_office_id").hide();
-    
+    // the default will be re-used upon Add Office click    
+    default_office_options = "<option value=''>{{=T('Select an Organization to see a list of offices')}}</option>";
     // Add a dummy field
-    $("#or_contact_office_id").after("<select id='dummy_office' class='reference'><option value=''>{{=T('Select an Organization to see a list of offices')}}</option></select>");
+    $("#or_contact_office_id").after("<select id='dummy_office' class='reference'>"+ default_office_options + "</select>");
 
     {{dummy_input = "dummy_office"}}
     {{urlpath_c = "or"}}
@@ -60,6 +61,20 @@ $(function() {
         $("#or_contact_office_id").val(newvalue);
     };
     $("#dummy_office").change(copy_office_id); 
+    
+    // Re-set organization and office when Add Office button is clicked
+    // The User will have to refresh the organisation and office list to see the updates
+    /*reset_org_office = function(event){
+        $("#or_contact_organisation_id").val('');
+        $("#or_contact_office_id").val('');
+        $('#dummy_office').html(default_office_options); 
+        $("#dummy_organisation").val('');
+    };*/
+    cleanup = function(id){
+        if(id == "or_contact_office_id"){
+            load_offices(true);
+        }
+    }
 });
 //]]></script>
 

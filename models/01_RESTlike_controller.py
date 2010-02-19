@@ -40,22 +40,21 @@ shn_json_export_formats = dict(
 UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported data format!')
 BADMETHOD = T('Unsupported method!')
-BADRECORD = T('No such record!')
+BADRECORD = T('Record not found!')
 INVALIDREQUEST = T('Invalid request!')
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
-
 PRETTY_PRINT = True
 
 # *****************************************************************************
-# S3XRC ResourceController
+# Load Controllers
 
-exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
-exec('from applications.%s.modules.s3xrc import json_message' % request.application)
+exec('from applications.%s.modules.s3xrc import *' % request.application)
+exec('from applications.%s.modules.s3rest import *' % request.application)
 # Faster for Production (where app-name won't change):
-#from applications.sahana.modules.s3xrc import ResourceController
-#from applications.sahana.modules.s3xrc import json_message
+#from applications.sahana.modules.s3xrc import *
+#from applications.sahana.modules.s3rest import *
 
 s3xrc = ResourceController(db,
                            domain=request.env.server_name,
@@ -63,14 +62,11 @@ s3xrc = ResourceController(db,
                            rpp=ROWSPERPAGE,
                            gis=gis)
 
-# *****************************************************************************
-# S3REST REST Controller
-
-exec('from applications.%s.modules.s3rest import S3REST' % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.sahana.modules.s3rest import S3REST
-
-s3rest = S3REST(rc=s3xrc, auth=auth)
+s3rest = RESTController(rc=s3xrc, auth=auth,
+    xml_import_formats = shn_xml_import_formats,
+    xml_export_formats = shn_xml_export_formats,
+    json_import_formats = shn_json_import_formats,
+    json_export_formats = shn_json_export_formats)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):
@@ -571,124 +567,6 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
 
     raise HTTP(error, body=item)
 
-#
-# import_json -----------------------------------------------------------------
-#
-def import_json(jr, **attr):
-
-    #return json_message(False, 501, "Not implemented!")
-
-    if attr is None:
-        attr = {}
-
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
-
-    if "filename" in jr.request.vars:
-        source = open(jr.request.vars["filename"])
-    elif "fetchurl" in jr.request.vars:
-        import urllib
-        source = urllib.urlopen(jr.request.vars["fetchurl"])
-    else:
-        #from StringIO import StringIO
-        #source = StringIO(jr.request.body)
-        source = jr.request.body
-
-    tree = s3xrc.xml.json2tree(source)
-
-    if hasattr(source, "close"):
-        source.close()
-
-    # XSLT Transformation
-    if not jr.representation=="json":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSL Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    # For testing:
-    #print s3xrc.xml.tostring(tree)
-    #return s3xrc.xml.tree2json(tree)
-
-    success = jr.import_xml(tree,
-                            permit=shn_has_permission,
-                            audit=shn_audit,
-                            onvalidation=onvalidation,
-                            onaccept=onaccept)
-
-    if success:
-        item = json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
-#
-# import_xml ------------------------------------------------------------------
-#
-def import_xml(jr, **attr):
-
-    """ Import XML data """
-
-    if attr is None:
-        attr = {}
-
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
-
-    if "filename" in jr.request.vars:
-        source = jr.request.vars["filename"]
-    elif "fetchurl" in jr.request.vars:
-        source = jr.request.vars["fetchurl"]
-    else:
-        source = jr.request.body
-
-    tree = s3xrc.xml.parse(source)
-
-    # XSLT Transformation
-    if not jr.representation=="xml":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    success = jr.import_xml(tree,
-                            permit=shn_has_permission,
-                            audit=shn_audit,
-                            onvalidation=onvalidation,
-                            onaccept=onaccept)
-
-    if success:
-        item = json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
 # *****************************************************************************
 # Authorisation
 
@@ -929,7 +807,15 @@ def shn_represent(table, module, resource, deletable=True, main='name', extra=No
 
     """ Designed to be called via table.represent to make t2.search() output useful """
 
-    db[table].represent = lambda table:shn_list_item(table, resource, action='display', main=main, extra=shn_represent_extra(table, module, resource, deletable, extra))
+    db[table].represent = lambda table: \
+                          shn_list_item(table, resource,
+                                        action='display',
+                                        main=main,
+                                        extra=shn_represent_extra(table,
+                                                                  module,
+                                                                  resource,
+                                                                  deletable,
+                                                                  extra))
     return
 
 #
@@ -1032,7 +918,148 @@ def shn_build_ssp_filter(table, request, fields=None):
     return searchq
 
 # *****************************************************************************
-# CRUD Functions
+# REST Method Handlers
+#
+# These functions are to handle REST methods.
+# Currently implemented methods are:
+#
+#   - import_json
+#   - import_xml
+#   - list
+#   - read
+#   - create
+#   - update
+#   - delete
+#   - search
+#   - options
+#
+# Handlers must be implemented as:
+#
+#   def method_handler(jr, **attr)
+#
+# where:
+#
+#   jr - is the XRequest
+#   attr - attributes of the call, passed through
+#
+
+#
+# import_json -----------------------------------------------------------------
+#
+def import_json(jr, **attr):
+
+    #return json_message(False, 501, "Not implemented!")
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+
+    if "filename" in jr.request.vars:
+        source = open(jr.request.vars["filename"])
+    elif "fetchurl" in jr.request.vars:
+        import urllib
+        source = urllib.urlopen(jr.request.vars["fetchurl"])
+    else:
+        #from StringIO import StringIO
+        #source = StringIO(jr.request.body)
+        source = jr.request.body
+
+    tree = s3xrc.xml.json2tree(source)
+
+    if hasattr(source, "close"):
+        source.close()
+
+    # XSLT Transformation
+    if not jr.representation=="json":
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
+        if os.path.exists(template_file):
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
+            if not tree:
+                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
+                redirect(URL(r=request, f="index"))
+        else:
+            session.error = str(T("XSL Template Not Found: ")) + \
+                            XSLT_IMPORT_TEMPLATES + "/" + template_name
+            #redirect(URL(r=request, f="index"))
+            item = json_message(False, 501, session.error)
+            raise HTTP(501)
+
+    # For testing:
+    #print s3xrc.xml.tostring(tree)
+    #return s3xrc.xml.tree2json(tree)
+
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
+                            onvalidation=onvalidation,
+                            onaccept=onaccept)
+
+    if success:
+        item = json_message()
+    else:
+        # TODO: export the whole tree on error
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
+        raise HTTP(400, body=item)
+
+    return dict(item=item)
+
+#
+# import_xml ------------------------------------------------------------------
+#
+def import_xml(jr, **attr):
+
+    """ Import XML data """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+
+    if "filename" in jr.request.vars:
+        source = jr.request.vars["filename"]
+    elif "fetchurl" in jr.request.vars:
+        source = jr.request.vars["fetchurl"]
+    else:
+        source = jr.request.body
+
+    tree = s3xrc.xml.parse(source)
+
+    # XSLT Transformation
+    if not jr.representation=="xml":
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
+        if os.path.exists(template_file):
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
+            if not tree:
+                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
+                redirect(URL(r=request, f="index"))
+        else:
+            session.error = str(T("XSLT Template Not Found: ")) + \
+                            XSLT_IMPORT_TEMPLATES + "/" + template_name
+            #redirect(URL(r=request, f="index"))
+            item = json_message(False, 501, session.error)
+            raise HTTP(501)
+
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
+                            onvalidation=onvalidation,
+                            onaccept=onaccept)
+
+    if success:
+        item = json_message()
+    else:
+        # TODO: export the whole tree on error
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
+        raise HTTP(400, body=item)
+
+    return dict(item=item)
 
 #
 # shn_read --------------------------------------------------------------------
@@ -2304,19 +2331,7 @@ def shn_search(jr, **attr):
 #
 # shn_rest_controller ---------------------------------------------------------
 #
-def shn_rest_controller(module, resource,
-    deletable=True,
-    editable=True,
-    listadd=True,
-    list_fields=None,
-    main='name',
-    extra=None,
-    orderby=None,
-    sortby=None,
-    pheader=None,
-    rss=None,
-    onvalidation=None,
-    onaccept=None):
+def shn_rest_controller(module, resource, **attr):
 
     """
         RESTlike controller function
@@ -2412,21 +2427,7 @@ def shn_rest_controller(module, resource,
     s3rest.set_handler('search', shn_search)
     s3rest.set_handler('options', shn_options)
 
-    # Parse original request --------------------------------------------------
-    output = s3rest(session, request, response, module, resource,
-        deletable=deletable,
-        editable=editable,
-        listadd=listadd,
-        list_fields=list_fields,
-        main=main,
-        extra=extra,
-        orderby=orderby,
-        sortby=sortby,
-        pheader=pheader,
-        rss=rss,
-        onvalidation=onvalidation,
-        onaccept=onaccept)
-
+    output = s3rest(session, request, response, module, resource, **attr)
     return output
 
 # END

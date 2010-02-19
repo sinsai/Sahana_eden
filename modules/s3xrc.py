@@ -825,6 +825,128 @@ class ResourceController(object):
         return self.xml.tree([options], domain=self.domain, url=self.base_url)
 
 # *****************************************************************************
+class XVector(object):
+
+    """ Helper class for database commits """
+
+    ACTION = dict(create="create", update="update")
+
+    UUID = "uuid"
+
+    #--------------------------------------------------------------------------
+    def __init__(self, db, prefix, name, id,
+                 record=None,
+                 permit=None,
+                 audit=None,
+                 onvalidation=None,
+                 onaccept=None):
+
+        self.db=db
+
+        self.prefix=prefix
+        self.name=name
+        self.tablename = "%s_%s" % (self.prefix, self.name)
+        self.table = self.db[self.tablename]
+
+        self.id=id
+
+        self.method=None
+        self.record=record
+
+        self.onvalidation=onvalidation
+        self.onaccept=onaccept
+        self.audit=audit
+
+        self.components = []
+
+        self.accepted=True
+        self.permitted=True
+        self.committed=False
+
+        if not self.id:
+            self.id = 0
+            self.method = permission = self.ACTION["create"]
+
+            if self.UUID in self.table:
+                uuid = self.record.get(self.UUID, None)
+                if uuid is not None:
+                    orig = self.db(self.table[self.UUID]==uuid).select(self.table.id, limitby=(0,1))
+                    if len(orig):
+                        self.id = orig[0].id
+                        self.method = permission = self.ACTION["update"]
+
+        else:
+            self.method = permission = self.ACTION["update"]
+
+            if not self.db(self.table.id==id).count():
+                self.id = 0
+                self.method = permission = self.ACTION["create"]
+            else:
+                if self.UUID in self.record:
+                    del self.record[self.UUID]
+
+        if permit and not \
+           permit(permission, self.tablename, record_id=self.id):
+            self.permitted=False
+
+
+    #--------------------------------------------------------------------------
+    def commit(self):
+
+        if not self.committed:
+
+            if self.accepted and self.permitted:
+                form = Storage() # PseudoForm for callbacks
+                form.method = self.method
+                form.vars = self.record
+                form.vars.id = self.id
+
+                if self.onvalidation:
+                    self.onvalidation(form)
+
+                if self.method == self.ACTION["update"]:
+                    try:
+                        success = self.db(self.table.id==self.id).update(**dict(self.record))
+                        if len(self.components):
+                            db_record = self.db(self.table.id==self.id).select(self.table.ALL)[0]
+                    except:
+                        return False
+                    if success:
+                        self.committed = True
+                elif self.method == self.ACTION["create"]:
+                    try:
+                        success = self.table.insert(**dict(self.record))
+                        if len(self.components):
+                            db_record = self.db(self.table.id==success).select(self.table.ALL)[0]
+                    except:
+                        return False
+                    if success:
+                        self.id = success
+                        self.committed = True
+
+                if self.committed:
+                    form.vars.id = self.id
+                    if self.audit:
+                        self.audit(self.method, self.prefix, self.name,
+                                   form=form, record=self.id, representation="xml")
+                    if self.onaccept:
+                        self.onaccept(form)
+                else:
+                    return False
+
+        for i in xrange(0, len(self.components)):
+            component = self.components[i]
+
+            pkey = component.pkey
+            fkey = component.fkey
+
+            component.record[fkey] = db_record[pkey]
+            component.commit()
+
+        return True
+
+
+# *****************************************************************************
 class S3XML(object):
 
     """

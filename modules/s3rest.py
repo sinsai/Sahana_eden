@@ -34,6 +34,8 @@
 
 __name__ = "S3REST"
 
+__all__ = ['RESTController', 'XRequest']
+
 import sys, uuid
 
 from gluon.storage import Storage
@@ -41,7 +43,7 @@ from gluon.html import URL
 from gluon.http import HTTP, redirect
 
 # *****************************************************************************
-class S3REST(object):
+class RESTController(object):
 
     # Error messages
     INVALIDREQUEST = 'Invalid request.'
@@ -60,6 +62,12 @@ class S3REST(object):
 
         if attr is None:
             attr = {}
+
+        self.xml_import_formats = attr.get('xml_import_formats', ['xml'])
+        self.xml_export_formats = attr.get('xml_export_formats', dict(xml="application/xml"))
+
+        self.json_import_formats = attr.get('json_import_formats', ['json'])
+        self.json_export_formats = attr.get('json_export_formats', dict(json="text/x-json"))
 
         self.__handler = Storage()
 
@@ -102,14 +110,14 @@ class S3REST(object):
         return authorised
 
     #--------------------------------------------------------------------------
-    def __unauthorised(self, jr):
+    def __unauthorised(self, jr, session):
 
         if jr.representation == "html":
-            session.error = UNAUTHORISED
-            login = URL(r=jr.request, c='default', f='user', args='login', vars={'_next': here })
+            session.error = self.UNAUTHORISED
+            login = URL(r=jr.request, c='default', f='user', args='login', vars={'_next': jr.here()})
             redirect(login)
         else:
-            raise HTTP(401, body = UNAUTHORISED)
+            raise HTTP(401, body = self.UNAUTHORISED)
 
     #--------------------------------------------------------------------------
     def __call__(self, session, request, response, module, resource, **attr):
@@ -118,22 +126,19 @@ class S3REST(object):
 
         if jr.invalid:
             if jr.badmethod:
-                raise HTTP(501, body=BADMETHOD)
+                raise HTTP(501, body=self.BADMETHOD)
             elif jr.badrecord:
-                raise HTTP(404, body=BADRECORD)
+                raise HTTP(404, body=self.BADRECORD)
             else:
-                raise HTTP(400, body=INVALIDREQUEST)
+                raise HTTP(400, body=self.INVALIDREQUEST)
 
         # Initialise
         output = {}
         method = handler = next = None
 
-        # Get backlinks
-        here, there, same = jr.here(), jr.there(), jr.same()
-
         # Check read permission on primary table
         if not self.__has_permission(session, 'read', jr.table):
-            self.__unauthorised()
+            self.__unauthorised(jr, session)
 
         # Record ID is required in joined-table operations and read action:
         if not jr.id and (jr.component or jr.method=="read") and \
@@ -146,10 +151,10 @@ class S3REST(object):
                     jr.method = "search_simple"
                     jr.custom_action = search_simple
                 else:
-                    session.error = BADRECORD
+                    session.error = self.BADRECORD
                     redirect(URL(r=jr.request, c=jr.prefix, f=jr.name))
             else:
-                raise HTTP(404, body=BADRECORD)
+                raise HTTP(404, body=self.BADRECORD)
 
         # Pre-process
         if 's3' in response and response.s3.prep is not None:
@@ -168,12 +173,12 @@ class S3REST(object):
                             output.update(jr=jr)
                         return output
                     status = prep.get('status', 400)
-                    message = prep.get('message', INVALIDREQUEST)
+                    message = prep.get('message', self.INVALIDREQUEST)
                     raise HTTP(status, message)
                 else:
                     pass
             elif not prep:
-                raise HTTP(400, body=INVALIDREQUEST)
+                raise HTTP(400, body=self.INVALIDREQUEST)
             else:
                 pass
 
@@ -198,22 +203,22 @@ class S3REST(object):
                         if authorised:
                             method = 'list'
                         else:
-                            self.__unauthorised(jr)
+                            self.__unauthorised(jr, session)
 
                     # HTTP Create
                     elif jr.http=='PUT' or jr.http=='POST':
-                        if jr.representation in shn_json_import_formats:
+                        if jr.representation in self.json_import_formats:
                             method = 'import_json'
-                        elif jr.representation in shn_xml_import_formats:
+                        elif jr.representation in self.xml_import_formats:
                             method = 'import_xml'
                         elif jr.http == "POST":
                             authorised = self.__has_permission(session, 'read', jr.component.table)
                             if authorised:
                                 method = 'list'
                             else:
-                                self.__unauthorised(jr)
+                                self.__unauthorised(jr, session)
                         else:
-                            raise HTTP(501, body=BADFORMAT)
+                            raise HTTP(501, body=self.BADFORMAT)
 
                     # HTTP Delete
                     elif jr.http=='DELETE':
@@ -236,22 +241,22 @@ class S3REST(object):
                         if authorised:
                             method = 'read'
                         else:
-                            self.__unauthorised(jr)
+                            self.__unauthorised(jr, session)
 
                     # HTTP Update
                     elif jr.http=='PUT' or jr.http == "POST":
-                        if jr.representation in shn_json_import_formats:
+                        if jr.representation in self.json_import_formats:
                             method = 'import_json'
-                        elif jr.representation in shn_xml_import_formats:
+                        elif jr.representation in self.xml_import_formats:
                             method = 'import_xml'
                         elif jr.http == "POST":
                             authorised = self.__has_permission(session, 'read', jr.component.table)
                             if authorised:
                                 method = 'read'
                             else:
-                                self.__unauthorised(jr)
+                                self.__unauthorised(jr, session)
                         else:
-                            raise HTTP(501, body=BADFORMAT)
+                            raise HTTP(501, body=self.BADFORMAT)
 
                     # HTTP Delete
                     elif jr.http=='DELETE':
@@ -271,7 +276,7 @@ class S3REST(object):
                     if authorised:
                         method = 'create'
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Read (joined table)
                 elif jr.method=="read" or jr.method=="display":
@@ -284,7 +289,7 @@ class S3REST(object):
                             # This is a read action
                             method = 'read'
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Update (joined table)
                 elif jr.method=="update":
@@ -292,16 +297,16 @@ class S3REST(object):
                     if authorised:
                         method = 'update'
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Delete (joined table)
                 elif jr.method=="delete":
                     authorised = self.__has_permission(session, jr.method, jr.component.table)
                     if authorised:
                         method = 'delete'
-                        next = there
+                        next = jr.there()
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Options (joined table)
                 elif jr.method=="options":
@@ -309,7 +314,7 @@ class S3REST(object):
 
                 # Unsupported Method
                 else:
-                    raise HTTP(501, body=BADMETHOD)
+                    raise HTTP(501, body=self.BADMETHOD)
 
             # Single Table Operation
             else:
@@ -345,14 +350,14 @@ class S3REST(object):
                     # HTTP Create
                     elif jr.http == 'PUT' or jr.http == "POST":
                         # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                        if jr.representation in shn_json_import_formats:
+                        if jr.representation in self.json_import_formats:
                             method = 'import_json'
-                        elif jr.representation in shn_xml_import_formats:
+                        elif jr.representation in self.xml_import_formats:
                             method = 'import_xml'
                         elif jr.http == "POST":
                             method = 'list'
                         else:
-                            raise HTTP(501, body=BADFORMAT)
+                            raise HTTP(501, body=self.BADFORMAT)
 
                     # Unsupported HTTP method
                     else:
@@ -371,14 +376,14 @@ class S3REST(object):
                     # HTTP Create/Update (single record)
                     elif jr.http == 'PUT' or jr.http == "POST":
                         # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                        if jr.representation in shn_json_import_formats:
+                        if jr.representation in self.json_import_formats:
                             method = 'import_json'
-                        elif jr.representation in shn_xml_import_formats:
+                        elif jr.representation in self.xml_import_formats:
                             method = 'import_xml'
                         elif jr.http == "POST":
                             method = 'read'
                         else:
-                            raise HTTP(501, body=BADFORMAT)
+                            raise HTTP(501, body=self.BADFORMAT)
 
                     # HTTP Delete (single record)
                     elif jr.http == 'DELETE':
@@ -407,7 +412,7 @@ class S3REST(object):
                     if authorised:
                         method = 'create'
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Read (single table)
                 elif jr.method == "read" or jr.method == "display":
@@ -420,16 +425,16 @@ class S3REST(object):
                     if authorised:
                         method = 'update'
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Delete (single table)
                 elif jr.method == "delete":
                     authorised = self.__has_permission(session, jr.method, jr.table, jr.id)
                     if authorised:
                         method = 'delete'
-                        next = there
+                        next = jr.there()
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Search (single table)
                 elif jr.method == "search":
@@ -437,7 +442,7 @@ class S3REST(object):
                     if authorised:
                         method = 'search'
                     else:
-                        self.__unauthorised(jr)
+                        self.__unauthorised(jr, session)
 
                 # Options (single table)
                 elif jr.method=="options":
@@ -445,7 +450,7 @@ class S3REST(object):
 
                 # Unsupported Method
                 else:
-                    raise HTTP(501, body=BADMETHOD)
+                    raise HTTP(501, body=self.BADMETHOD)
 
             # Get handler
             if method is not None:

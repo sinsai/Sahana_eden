@@ -9,7 +9,7 @@ db.define_table(table,
                 Field('audit_read', 'boolean'),
                 Field('audit_write', 'boolean'),
                 migrate=migrate)
- 
+
 # -------------------------------
 # Load lists/dictionaries for drop down menus
 
@@ -41,7 +41,7 @@ rms_req_source_type = { 1 : 'Manual',
 # -----------------
 # Requests table (Combined SMS, Tweets & Manual entry)
 
-def shn_req_aid_represent(id): 
+def shn_req_aid_represent(id):
     return  A(T('Make Pledge'), _href=URL(r=request, f='req', args=[id, 'pledge']))
 
 resource = 'req'
@@ -99,9 +99,9 @@ db[table].source_type.label = T(' Source Type')
 ADD_AID_REQUEST = T('Add Aid Request')
 
 s3.crud_strings[table] = Storage(title_create        = ADD_AID_REQUEST,
-                                 title_display       = "Aid Request Details", 
-                                 title_list          = "List Aid Requests", 
-                                 title_update        = "Edit Aid Request",  
+                                 title_display       = "Aid Request Details",
+                                 title_list          = "List Aid Requests",
+                                 title_update        = "Edit Aid Request",
                                  title_search        = "Search Aid Requests",
                                  subtitle_create     = "Add New Aid Request",
                                  subtitle_list       = "Aid Requests",
@@ -181,10 +181,16 @@ def shn_rms_get_req(label, fields=None, filterby=None):
 #
 # shn_rms_req_search_simple -------------------------------------------------
 # copied from pr.py
-def shn_rms_req_search_simple(xrequest, onvalidation=None, onaccept=None):
+def shn_rms_req_search_simple(xrequest, **attr):
     """
         Simple search form for persons
     """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
 
     if not shn_has_permission('read', db.rms_req):
         session.error = UNAUTHORISED
@@ -269,7 +275,7 @@ s3xrc.model.set_method(module, resource, method='search_simple', action=shn_rms_
 # ------------------
 # Create pledge table
 
-def shn_req_pledge_represent(id): 
+def shn_req_pledge_represent(id):
 #    return  A(T('Edit Pledge'), _href=URL(r=request, f='pledge', args=[id, 'pledge']))
     return  A(T('Edit Pledge'), _href=URL(r=request, f='pledge', args=[id]))
 
@@ -277,7 +283,7 @@ def shn_req_pledge_represent(id):
 resource = 'pledge'
 table = module + '_' + resource
 db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
-   Field('submitted_on', 'datetime'), 
+   Field('submitted_on', 'datetime'),
    Field("req_id", db.rms_req),
    Field("status", "integer"),
    organisation_id,
@@ -311,10 +317,10 @@ s3xrc.model.add_component(module, resource,
     editable=True,
     list_fields = ['id', 'organisation_id', 'person_id', 'submitted_on', 'status'])
 
-s3.crud_strings[table] = Storage(title_create        = "Add Pledge", 
-                                 title_display       = "Pledge Details", 
-                                 title_list          = "List Pledges", 
-                                 title_update        = "Edit Pledge",  
+s3.crud_strings[table] = Storage(title_create        = "Add Pledge",
+                                 title_display       = "Pledge Details",
+                                 title_list          = "List Pledges",
+                                 title_update        = "Edit Pledge",
                                  title_search        = "Search Pledges",
                                  subtitle_create     = "Add New Pledge",
                                  subtitle_list       = "Pledges",
@@ -354,10 +360,10 @@ db[table].req_id.writable = db[table].req_id.readable = False
 #db[table].value.writable = False
 
 ADD_REQUEST_DETAIL = T('Add Request Detail')
-s3.crud_strings[table] = Storage( title_create        = ADD_REQUEST_DETAIL, 
-                                  title_display       = "Request Detail", 
-                                  title_list          = "List Request Details", 
-                                  title_update        = "Edit Request Details",  
+s3.crud_strings[table] = Storage( title_create        = ADD_REQUEST_DETAIL,
+                                  title_display       = "Request Detail",
+                                  title_list          = "List Request Details",
+                                  title_update        = "Edit Request Details",
                                   title_search        = "Search Request Details",
                                   subtitle_create     = "Add New Request Detail",
                                   subtitle_list       = "Request Details",

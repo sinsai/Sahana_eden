@@ -461,9 +461,15 @@ def shn_dvi_get_body_id(label, fields=None, filterby=None):
 
 # -----------------------------------------------------------------------------
 #
-def shn_dvi_body_search_simple(xrequest, onvalidation=None, onaccept=None):
+def shn_dvi_body_search_simple(xrequest, **attr):
 
     """ Simple Search form for body recovery reports """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
 
     if not shn_has_permission('read', db.dvi_body):
         session.error = UNAUTHORISED

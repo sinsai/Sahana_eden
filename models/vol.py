@@ -484,7 +484,13 @@ s3.crud_strings[tablename] = Storage(
 # shn_vol_project_search_location:
 #   form function to search projects by location
 #
-def shn_vol_project_search_location(xrequest, onvalidation=None, onaccept=None):
+def shn_vol_project_search_location(xrequest, **attr):
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
 
     if not shn_has_permission('read', db.vol_project):
         session.error = UNAUTHORISED

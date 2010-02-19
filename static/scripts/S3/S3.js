@@ -139,9 +139,9 @@ $(document).ready(function() {
     };
 
     jQuery.ajaxS3Settings = {
-	timeout : 5000,
-	msgTimeout: 1000,
-	retryLimit : 3,
+	timeout : 10000,
+	msgTimeout: 2000,
+	retryLimit : 10,
 	dataType: 'json',
 	type: 'GET'
     };

@@ -128,7 +128,7 @@ _ajaxS3_rtr_ = {{=T('retry')}};
 	    data: data,
             success: callback,
             dataType: type,
-	    message: message,
+	    message: message
         });
     };
 

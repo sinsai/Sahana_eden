@@ -1,10 +1,10 @@
 .statusbar
 {
     position: fixed;
-    bottom: 5px;
-    left: 0px;
-    right: 0px;
-    height: 16px;    
+    top: 95px/*bottom: 5px*/;
+    left: 15px;
+    right: 14px;
+    height: 10px;    
     padding: 5px;
  
     background: black;

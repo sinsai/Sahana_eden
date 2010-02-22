@@ -8,11 +8,11 @@ var load_offices = function(selectlast)
 	    var options=''
 	    var v = ''
 	    if (data.length == 0)
-		options += '<option value="">No offices registered for organisation</options>';
+		options += '<option value="">' + '{{=T("No offices registered for organisation")}}</options>';
 	    else {
 		$("#or_contact_office_id").val(data[0].id);
 		if(!selectlast)
-		    options += '<option value="" selected>Select an office...</option>';
+		    options += '<option value="" selected>' + '{{=T("Select an office")}}' +'...</option>';
 		for (var i = 0; i < data.length; i++){
 		    v = data[i].id;
 		    options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
@@ -22,7 +22,7 @@ var load_offices = function(selectlast)
 	    if(selectlast)
 		$('#dummy_office').val(v); 
 	};	
-    $.getJSONS3(theURL, offices_ok, 'offices by organisation');
+    $.getJSONS3(theURL, offices_ok, '{{=T("offices by organisation")}}');
   };
 var select_last_added = function(){
     options = $('#dummy_office > option');

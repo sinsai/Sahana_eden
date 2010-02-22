@@ -42,6 +42,9 @@ jQuery(document).ready(function(){
 <script src="/{{=request.application}}/static/scripts/S3/S3.js" type="text/javascript" charset="utf-8"></script>
 <!--Scripts which need pre-processing by server must be called in-line-->
 <script type="text/javascript">//<![CDATA[
+
+{{include 'ajaxS3messages.js'}}
+
 function viewMap(feature_id) {
     var url = '{{=URL(r=request, c='gis', f='display_feature')}}/' + feature_id;
     var iframe = "<iframe width='810' height='610' src='" + url + "'></iframe>";

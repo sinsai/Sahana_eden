@@ -883,6 +883,7 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace('.html', '_%s.html' % format)
         else:
             response.view = default_name
+
 #
 # shn_convert_orderby ----------------------------------------------------------
 #
@@ -2137,9 +2138,12 @@ def shn_delete(jr, **attr):
                 if crud.settings.delete_onaccept:
                     crud.settings.delete_onaccept(row)
             else:
-                if jr.representation == "ajax":
-                    crud.settings.delete_next = jr.there(representation=jr.representation)
-                crud.delete(table, row.id)
+                # Do not CRUD.delete! (it never returns, but redirects)
+                if crud.settings.delete_onvalidation:
+                    crud.settings.delete_onvalidation(row)
+                del db[table][row.id]
+                if crud.settings.delete_onaccept:
+                    crud.settings.delete_onaccept(row)
         else:
             continue
 

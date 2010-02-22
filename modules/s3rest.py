@@ -42,6 +42,9 @@ from gluon.storage import Storage
 from gluon.html import URL
 from gluon.http import HTTP, redirect
 
+from xml.etree.cElementTree import ElementTree
+from lxml import etree
+
 # *****************************************************************************
 class RESTController(object):
 
@@ -189,7 +192,6 @@ class RESTController(object):
         # Analyse request
         if jr.method and jr.custom_action:
             handler = jr.custom_action
-
         else:
             # Joined Table Operation
             if jr.component:
@@ -270,14 +272,6 @@ class RESTController(object):
                         # Not implemented
                         raise HTTP(501)
 
-                # Create (joined table)
-                elif jr.method=="create":
-                    authorised = self.__has_permission(session, jr.method, jr.component.table)
-                    if authorised:
-                        method = 'create'
-                    else:
-                        self.__unauthorised(jr, session)
-
                 # Read (joined table)
                 elif jr.method=="read" or jr.method=="display":
                     authorised = self.__has_permission(session, 'read', jr.component.table)
@@ -288,6 +282,14 @@ class RESTController(object):
                         else:
                             # This is a read action
                             method = 'read'
+                    else:
+                        self.__unauthorised(jr, session)
+
+                # Create (joined table)
+                elif jr.method=="create":
+                    authorised = self.__has_permission(session, jr.method, jr.component.table)
+                    if authorised:
+                        method = 'create'
                     else:
                         self.__unauthorised(jr, session)
 
@@ -406,6 +408,13 @@ class RESTController(object):
                         # Not implemented
                         raise HTTP(501)
 
+                # Read (single table)
+                elif jr.method == "read" or jr.method == "display":
+                    # do not redirect here: redirection takes up to 450ms!
+                    method = 'read'
+                    #request.args.remove(jr.method)
+                    #next = URL(r=request, args=request.args, vars=request.vars)
+
                 # Create (single table)
                 elif jr.method == "create":
                     authorised = self.__has_permission(session, jr.method, jr.table)
@@ -413,11 +422,6 @@ class RESTController(object):
                         method = 'create'
                     else:
                         self.__unauthorised(jr, session)
-
-                # Read (single table)
-                elif jr.method == "read" or jr.method == "display":
-                    request.args.remove(jr.method)
-                    next = URL(r=request, args=request.args, vars=request.vars)
 
                 # Update (single table)
                 elif jr.method == "update":
@@ -438,11 +442,7 @@ class RESTController(object):
 
                 # Search (single table)
                 elif jr.method == "search":
-                    authorised = self.__has_permission(session, 'read', jr.table)
-                    if authorised:
-                        method = 'search'
-                    else:
-                        self.__unauthorised(jr, session)
+                    method = 'search'
 
                 # Options (single table)
                 elif jr.method=="options":

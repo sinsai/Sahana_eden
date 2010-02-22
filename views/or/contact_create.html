@@ -62,19 +62,27 @@ $(function() {
     };
     $("#dummy_office").change(copy_office_id); 
     
-    // Re-set organization and office when Add Office button is clicked
-    // The User will have to refresh the organisation and office list to see the updates
-    /*reset_org_office = function(event){
-        $("#or_contact_organisation_id").val('');
-        $("#or_contact_office_id").val('');
-        $('#dummy_office').html(default_office_options); 
-        $("#dummy_organisation").val('');
-    };*/
     cleanup = function(id){
         if(id == "or_contact_office_id"){
             load_offices(true);
         }
     }
+            
+    set_parent_id = function(href, caller){
+        if(caller != 'or_contact_office_id') 
+            return href;
+	   
+        id = $("#or_contact_organisation_id").val()
+	if(id == ''){
+            return href.replace(/organisation_id=(.*?)&/,'');
+        } 
+        else if(!href.match(/organisation_id/)){
+            return href.replace('?','?organisation_id=' + id + '&');
+        }
+        else{
+            return href.replace(/organisation_id=(.*?)&/,'organisation_id=' + id + '&');
+        }
+    };    
 });
 //]]></script>
 

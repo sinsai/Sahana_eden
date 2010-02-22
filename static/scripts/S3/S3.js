@@ -4,18 +4,6 @@ function openPopup(url) {
 		popupWin = window.open( url, "popupWin", "width=640,height=480" );
 	} else popupWin.focus();
 }
-function set_org_id(id){
-    var href = $('#add_office')[0].href;
-    if(id == ''){
-        $('#add_office').attr('href', href.replace(/organisation_id=(.*?)&/,''));
-    } 
-    else if(!$('#add_office')[0].href.match(/organisation_id/)){
-        $('#add_office').attr('href', href.replace('?','?organisation_id=' + id + '&'));
-    }
-    else{
-        $('#add_office').attr('href', href.replace(/organisation_id=(.*?)&/,'organisation_id=' + id + '&'));
-    }
-};
 $(document).ready(function() {
     $('.error').hide().slideDown('slow')
     $('.error').click(function() { $(this).fadeOut('slow'); return false; });
@@ -28,20 +16,19 @@ $(document).ready(function() {
     $("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
     $('a.thickbox').click(function(){
         $(this).attr('href', function() {
-	    if($(this).attr('id') == 'add_office' && $(this).parents('tr').attr('id') == 'or_contact_office_id__row') {
-	        set_org_id($("#or_contact_organisation_id").val());
-            //reset_org_office();
-	    }
-        // Add the caller to the URL vars so that the popup knows which field to refresh/set
-        var url_in = $(this).attr('href');
-        var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
-        // This has to be the last var: &TB_iframe=true
-        if (url_in.match(/caller=/)) {
+	    // Add the caller to the URL vars so that the popup knows which field to refresh/set
+	    var url_in = $(this).attr('href');
+	    var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
+	    // This has to be the last var: &TB_iframe=true
+	    if (set_parent_id) 
+	        url_in = set_parent_id(url_in,caller);
+
+	    if (url_in.match(/caller=/)) {
 	        return url_in.replace(/caller=.*?&/, 'caller=' + caller + '&');
-	    } else {
-            return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
+		} else {
+		return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
 	    }
-        });
+        });	    
         return false;
     });
     // IE6 non anchor hover hack
@@ -75,11 +62,22 @@ $(document).ready(function() {
   ajaxS3 ------------------------------------------------------------
   added by sunneach 2010-feb-14
 */
+
+/* 
+  these set in the ajaxS3messages.js :
+_ajaxS3_wht_ = {{=T('We have tried')}};
+_ajaxS3_gvn_ = {{=T('times and it is still not working. We give in. Sorry.')}};
+_ajaxS3_500_ = {{=T('Sorry - the server has a problem, please try again later.')}};
+_ajaxS3_dwn_ = {{=T('There was a problem, sorry, please try again later.')}};
+_ajaxS3_get_ = {{=T('getting')}};
+_ajaxS3_fmd_ = {{=T('form data')}};
+_ajaxS3_rtr_ = {{=T('retry')}};
+*/
 (function($) {
     jQuery.ajaxS3 = function(s) {
         var options = jQuery.extend({}, jQuery.ajaxS3Settings, s);
 	options.tryCount = 0;
-	showStatus('getting ' + (s.message ? s.message : 'form data') + '...', this.ajaxS3Settings.msgTimeout);
+	showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
 	options.success = function(data, status) {
 	    hideStatus();
 	    if(s.success)
@@ -90,19 +88,19 @@ $(document).ready(function() {
 		this.tryCount++;
 		if (this.tryCount <= this.retryLimit) {
 		    //try again
-    		    showStatus('getting ' + (s.message ? s.message : 'form data') + '... retry ' + this.tryCount, $.ajaxS3Settings.msgTimeout);
+    		    showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '... ' + _ajaxS3_rtr_+ ' ' + this.tryCount,
+				$.ajaxS3Settings.msgTimeout);
 		    $.ajax(this);
 		    return;
 		}
-		showStatus('We have tried ' + (this.retryLimit + 1) +
-		           ' times and it is still not working. We give in. Sorry.',
+		showStatus(_ajaxS3_wht_ + ' ' + (this.retryLimit + 1) + ' ' + _ajaxS3_gvn_,
 			   $.ajaxS3Settings.msgTimeout, false, true);
 		return;
 	    }
 	    if (xhr.status == 500) {
-		showStatus('Sorry - the server has a problem, please try again later.', $.ajaxS3Settings.msgTimeout, false, true);
+		showStatus(_ajaxS3_500_, $.ajaxS3Settings.msgTimeout, false, true);
 	    } else {
-		showStatus('There was a problem, sorry, please try again later.', $.ajaxS3Settings.msgTimeout, false, true);
+		showStatus(_ajaxS3_dwn_, $.ajaxS3Settings.msgTimeout, false, true);
 	    }
 	};
         jQuery.ajax(options);
@@ -130,11 +128,17 @@ $(document).ready(function() {
 	    data: data,
             success: callback,
             dataType: type,
-	    message: message,
+	    message: message
         });
     };
 
     jQuery.getJSONS3 = function(url, data, callback, message) {
+	// shift arguments if data argument was ommited
+	if ( jQuery.isFunction( data ) ) {
+		message = callback;
+		callback = data;
+		data = null;
+	}
         return jQuery.getS3(url, data, callback, 'json', message);
     };
 
@@ -233,8 +237,10 @@ function StatusBar(sel,options)
     }  
     this.release = function()
     {
-        if(_statusbar)
+        if(_statusbar){
             $('#_statusbar').remove();
+	    _statusbar = undefined;
+	}
     }       
 }
 // use this as a global instance to customize constructor

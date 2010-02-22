@@ -318,7 +318,7 @@ office_id = SQLTable(None, 'office_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0],
                 label = T('Office'),
-                comment = DIV(A(ADD_OFFICE, _id='add_office', _class='thickbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
+                comment = DIV(A(ADD_OFFICE, _class='thickbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
                 ondelete = 'RESTRICT'
                 ))
 

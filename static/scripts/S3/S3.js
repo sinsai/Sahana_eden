@@ -16,18 +16,20 @@ $(document).ready(function() {
     $("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
     $('a.thickbox').click(function(){
         $(this).attr('href', function() {
-	    // Add the caller to the URL vars so that the popup knows which field to refresh/set
-	    var url_in = $(this).attr('href');
-	    var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
-	    // This has to be the last var: &TB_iframe=true
-	    if (set_parent_id) 
-	        url_in = set_parent_id(url_in,caller);
-
-	    if (url_in.match(/caller=/)) {
-	        return url_in.replace(/caller=.*?&/, 'caller=' + caller + '&');
-		} else {
-		return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
-	    }
+            // Add the caller to the URL vars so that the popup knows which field to refresh/set
+            var url_in = $(this).attr('href');
+            var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
+            try {
+                url_in = set_parent_id(url_in, caller);
+            } catch (e) {
+                // pass
+            }
+            if (url_in.match(/caller=/)) {
+                return url_in.replace(/caller=.*?&/, 'caller=' + caller + '&');
+            } else {
+                // This has to be the last var: &TB_iframe=true
+                return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
+            }
         });	    
         return false;
     });

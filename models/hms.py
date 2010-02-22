@@ -773,9 +773,15 @@ def shn_hms_hospital_pheader(resource, record_id, representation, next=None, sam
 # -----------------------------------------------------------------------------
 # Hospital Search by Name
 #
-def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
+def shn_hms_hospital_search_simple(xrequest, **attr):
 
     """ Find hospitals by their name """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
 
     if not shn_has_permission('read', db.hms_hospital):
         session.error = UNAUTHORISED
@@ -866,7 +872,7 @@ def shn_hms_hospital_search_simple(xrequest, onvalidation=None, onaccept=None):
 # Plug into REST controller
 s3xrc.model.set_method(module, 'hospital',
                        method='search_simple',
-                       action=shn_hms_hospital_search_simple )
+                       action=shn_hms_hospital_search_simple)
 
 # -----------------------------------------------------------------------------
 # Hospital Requests for Support
@@ -1070,9 +1076,15 @@ def shn_hms_get_hrequest(label, fields=None, filterby=None):
 # -----------------------------------------------------------------------------
 # Request Search Form
 #
-def shn_hms_hrequest_search_simple(xrequest, onvalidation=None, onaccept=None):
+def shn_hms_hrequest_search_simple(xrequest, **attr):
 
     """ Simple search form for requests """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
 
     if not shn_has_permission('read', db.hms_hrequest):
         session.error = UNAUTHORISED

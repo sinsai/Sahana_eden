@@ -513,10 +513,16 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
 #
 # shn_pr_person_search_simple -------------------------------------------------
 #
-def shn_pr_person_search_simple(xrequest, onvalidation=None, onaccept=None):
+def shn_pr_person_search_simple(xrequest, **attr):
     """
         Simple search form for persons
     """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
 
     if not shn_has_permission('read', db.pr_person):
         session.error = UNAUTHORISED
@@ -638,14 +644,14 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
                         TH(T('Date of Birth: ')),
                         "%s" % (person.date_of_birth or T('unknown')),
                         TH(T('Gender: ')),
-                        "%s" % pr_person_gender_opts[person.opt_pr_gender],
+                        "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown")),
                         TH(""),
                         ),
                     TR(
                         TH(T('Nationality: ')),
-                        "%s" % pr_nationality_opts[person.opt_pr_nationality],
+                        "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
                         TH(T('Age Group: ')),
-                        "%s" % pr_person_age_group_opts[person.opt_pr_age_group],
+                        "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
                         TH(A(T('Edit Person'),
                             _href=URL(r=request, f='person', args=['update', record_id], vars={'_next': _next})))
                         )

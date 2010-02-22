@@ -40,22 +40,21 @@ shn_json_export_formats = dict(
 UNAUTHORISED = T('Not authorised!')
 BADFORMAT = T('Unsupported data format!')
 BADMETHOD = T('Unsupported method!')
-BADRECORD = T('No such record!')
+BADRECORD = T('Record not found!')
 INVALIDREQUEST = T('Invalid request!')
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
-
 PRETTY_PRINT = True
 
 # *****************************************************************************
-# S3XRC ResourceController
+# Load Controllers
 
-exec('from applications.%s.modules.s3xrc import ResourceController' % request.application)
-exec('from applications.%s.modules.s3xrc import json_message' % request.application)
+exec('from applications.%s.modules.s3xrc import *' % request.application)
+exec('from applications.%s.modules.s3rest import *' % request.application)
 # Faster for Production (where app-name won't change):
-#from applications.sahana.modules.s3xrc import ResourceController
-#from applications.sahana.modules.s3xrc import json_message
+#from applications.sahana.modules.s3xrc import *
+#from applications.sahana.modules.s3rest import *
 
 s3xrc = ResourceController(db,
                            domain=request.env.server_name,
@@ -63,6 +62,13 @@ s3xrc = ResourceController(db,
                            rpp=ROWSPERPAGE,
                            gis=gis)
 
+s3rest = RESTController(rc=s3xrc, auth=auth,
+    xml_import_formats = shn_xml_import_formats,
+    xml_export_formats = shn_xml_export_formats,
+    json_import_formats = shn_json_import_formats,
+    json_export_formats = shn_json_export_formats)
+
+# *****************************************************************************
 def shn_field_represent(field, row, col):
 
     """
@@ -561,112 +567,6 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
 
     raise HTTP(error, body=item)
 
-#
-# import_json -----------------------------------------------------------------
-#
-def import_json(jr, onvalidation=None, onaccept=None):
-
-    #return json_message(False, 501, "Not implemented!")
-
-    if "filename" in jr.request.vars:
-        source = open(jr.request.vars["filename"])
-    elif "fetchurl" in jr.request.vars:
-        import urllib
-        source = urllib.urlopen(jr.request.vars["fetchurl"])
-    else:
-        #from StringIO import StringIO
-        #source = StringIO(jr.request.body)
-        source = jr.request.body
-
-    tree = s3xrc.xml.json2tree(source)
-
-    if hasattr(source, "close"):
-        source.close()
-
-    # XSLT Transformation
-    if not jr.representation=="json":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSL Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    # For testing:
-    #print s3xrc.xml.tostring(tree)
-    #return s3xrc.xml.tree2json(tree)
-
-    success = jr.import_xml(tree,
-                            permit=shn_has_permission,
-                            audit=shn_audit,
-                            onvalidation=onvalidation,
-                            onaccept=onaccept)
-
-    if success:
-        item = json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
-#
-# import_xml ------------------------------------------------------------------
-#
-def import_xml(jr, onvalidation=None, onaccept=None):
-
-    """ Import XML data """
-
-    if "filename" in jr.request.vars:
-        source = jr.request.vars["filename"]
-    elif "fetchurl" in jr.request.vars:
-        source = jr.request.vars["fetchurl"]
-    else:
-        source = jr.request.body
-
-    tree = s3xrc.xml.parse(source)
-
-    # XSLT Transformation
-    if not jr.representation=="xml":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    success = jr.import_xml(tree,
-                            permit=shn_has_permission,
-                            audit=shn_audit,
-                            onvalidation=onvalidation,
-                            onaccept=onaccept)
-
-    if success:
-        item = json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
 # *****************************************************************************
 # Authorisation
 
@@ -907,7 +807,15 @@ def shn_represent(table, module, resource, deletable=True, main='name', extra=No
 
     """ Designed to be called via table.represent to make t2.search() output useful """
 
-    db[table].represent = lambda table:shn_list_item(table, resource, action='display', main=main, extra=shn_represent_extra(table, module, resource, deletable, extra))
+    db[table].represent = lambda table: \
+                          shn_list_item(table, resource,
+                                        action='display',
+                                        main=main,
+                                        extra=shn_represent_extra(table,
+                                                                  module,
+                                                                  resource,
+                                                                  deletable,
+                                                                  extra))
     return
 
 #
@@ -975,6 +883,7 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace('.html', '_%s.html' % format)
         else:
             response.view = default_name
+
 #
 # shn_convert_orderby ----------------------------------------------------------
 #
@@ -1010,14 +919,165 @@ def shn_build_ssp_filter(table, request, fields=None):
     return searchq
 
 # *****************************************************************************
-# CRUD Functions
+# REST Method Handlers
+#
+# These functions are to handle REST methods.
+# Currently implemented methods are:
+#
+#   - import_json
+#   - import_xml
+#   - list
+#   - read
+#   - create
+#   - update
+#   - delete
+#   - search
+#   - options
+#
+# Handlers must be implemented as:
+#
+#   def method_handler(jr, **attr)
+#
+# where:
+#
+#   jr - is the XRequest
+#   attr - attributes of the call, passed through
+#
+
+#
+# import_json -----------------------------------------------------------------
+#
+def import_json(jr, **attr):
+
+    #return json_message(False, 501, "Not implemented!")
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+
+    if "filename" in jr.request.vars:
+        source = open(jr.request.vars["filename"])
+    elif "fetchurl" in jr.request.vars:
+        import urllib
+        source = urllib.urlopen(jr.request.vars["fetchurl"])
+    else:
+        #from StringIO import StringIO
+        #source = StringIO(jr.request.body)
+        source = jr.request.body
+
+    tree = s3xrc.xml.json2tree(source)
+
+    if hasattr(source, "close"):
+        source.close()
+
+    # XSLT Transformation
+    if not jr.representation=="json":
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
+        if os.path.exists(template_file):
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
+            if not tree:
+                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
+                redirect(URL(r=request, f="index"))
+        else:
+            session.error = str(T("XSL Template Not Found: ")) + \
+                            XSLT_IMPORT_TEMPLATES + "/" + template_name
+            #redirect(URL(r=request, f="index"))
+            item = json_message(False, 501, session.error)
+            raise HTTP(501)
+
+    # For testing:
+    #print s3xrc.xml.tostring(tree)
+    #return s3xrc.xml.tree2json(tree)
+
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
+                            onvalidation=onvalidation,
+                            onaccept=onaccept)
+
+    if success:
+        item = json_message()
+    else:
+        # TODO: export the whole tree on error
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
+        raise HTTP(400, body=item)
+
+    return dict(item=item)
+
+#
+# import_xml ------------------------------------------------------------------
+#
+def import_xml(jr, **attr):
+
+    """ Import XML data """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+
+    if "filename" in jr.request.vars:
+        source = jr.request.vars["filename"]
+    elif "fetchurl" in jr.request.vars:
+        source = jr.request.vars["fetchurl"]
+    else:
+        source = jr.request.body
+
+    tree = s3xrc.xml.parse(source)
+
+    # XSLT Transformation
+    if not jr.representation=="xml":
+        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
+        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
+        if os.path.exists(template_file):
+            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
+            if not tree:
+                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
+                redirect(URL(r=request, f="index"))
+        else:
+            session.error = str(T("XSLT Template Not Found: ")) + \
+                            XSLT_IMPORT_TEMPLATES + "/" + template_name
+            #redirect(URL(r=request, f="index"))
+            item = json_message(False, 501, session.error)
+            raise HTTP(501)
+
+    success = jr.import_xml(tree,
+                            permit=shn_has_permission,
+                            audit=shn_audit,
+                            onvalidation=onvalidation,
+                            onaccept=onaccept)
+
+    if success:
+        item = json_message()
+    else:
+        # TODO: export the whole tree on error
+        tree = s3xrc.xml.tree2json(tree)
+        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
+        raise HTTP(400, body=item)
+
+    return dict(item=item)
 
 #
 # shn_read --------------------------------------------------------------------
 #
-def shn_read(jr, pheader=None, editable=True, deletable=True, rss=None, onvalidation=None, onaccept=None):
+def shn_read(jr, **attr):
 
     """ Read a single record. """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+    pheader = attr.get('pheader', None)
+    editable = attr.get('editable', True)
+    deletable = attr.get('deletable', True)
+    rss = attr.get('rss', None)
 
     # TODO: this function not filter-aware!
 
@@ -1180,9 +1240,25 @@ def shn_list_jlinkto_update(field):
     return URL(r=request, args=[request.args[0], request.args[1], 'update', field],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
-def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=None, orderby=None, sortby=None, onvalidation=None, onaccept=None, rss=None):
+def shn_list(jr, **attr):
 
     """ List records matching the request """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+    pheader = attr.get('pheader', None)
+    editable = attr.get('editable', True)
+    deletable = attr.get('deletable', True)
+    rss = attr.get('rss', None)
+    list_fields = attr.get('list_fields', None)
+    listadd = attr.get('listadd', True)
+    main = attr.get('main', None)
+    extra = attr.get('extra', None)
+    orderby = attr.get('orderby', None)
+    sortby = attr.get('sortby', None)
 
     module, resource, table, tablename = jr.target()
 
@@ -1602,9 +1678,17 @@ def shn_list(jr, pheader=None, list_fields=None, listadd=True, main=None, extra=
 #
 # shn_create ------------------------------------------------------------------
 #
-def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
+def shn_create(jr, **attr):
 
     """ Create new records """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+    pheader = attr.get('pheader', None)
+    main = attr.get('main', None)
 
     module, resource, table, tablename = jr.target()
 
@@ -1783,9 +1867,17 @@ def shn_create(jr, pheader=None, onvalidation=None, onaccept=None, main=None):
 #
 # shn_update ------------------------------------------------------------------
 #
-def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=None):
+def shn_update(jr, **attr):
 
     """ Update an existing record """
+
+    if attr is None:
+        attr = {}
+
+    onvalidation = attr.get('onvalidation', None)
+    onaccept = attr.get('onaccept', None)
+    pheader = attr.get('pheader', None)
+    deletable = attr.get('deletable', True)
 
     module, resource, table, tablename = jr.target()
 
@@ -1978,7 +2070,7 @@ def shn_update(jr, pheader=None, deletable=True, onvalidation=None, onaccept=Non
 #
 # shn_delete ------------------------------------------------------------------
 #
-def shn_delete(jr):
+def shn_delete(jr, **attr):
 
     """ Delete record(s) """
 
@@ -2046,9 +2138,12 @@ def shn_delete(jr):
                 if crud.settings.delete_onaccept:
                     crud.settings.delete_onaccept(row)
             else:
-                if jr.representation == "ajax":
-                    crud.settings.delete_next = jr.there(representation=jr.representation)
-                crud.delete(table, row.id)
+                # Do not CRUD.delete! (it never returns, but redirects)
+                if crud.settings.delete_onvalidation:
+                    crud.settings.delete_onvalidation(row)
+                del db[table][row.id]
+                if crud.settings.delete_onaccept:
+                    crud.settings.delete_onaccept(row)
         else:
             continue
 
@@ -2069,12 +2164,16 @@ def shn_delete(jr):
     if jr.component and delete_next: # but redirect here!
         redirect(delete_next)
 
-    return
+    item = json_message()
+    response.view = 'plain.html'
+    output = dict(item=item)
+
+    return output
 
 #
 # shn_options -----------------------------------------------------------------
 #
-def shn_options(jr):
+def shn_options(jr, **attr):
 
     if jr.representation=="xml":
         response.headers["Content-Type"] = "text/xml"
@@ -2093,9 +2192,16 @@ def shn_options(jr):
 #
 # shn_search ------------------------------------------------------------------
 #
-def shn_search(jr, main=None, extra=None, deletable=False):
+def shn_search(jr, **attr):
 
     """ Search function responding in JSON """
+
+    if attr is None:
+        attr = {}
+
+    deletable = attr.get('deletable', True)
+    main = attr.get('main', None)
+    extra = attr.get('extra', None)
 
     request = jr.request
 
@@ -2229,19 +2335,7 @@ def shn_search(jr, main=None, extra=None, deletable=False):
 #
 # shn_rest_controller ---------------------------------------------------------
 #
-def shn_rest_controller(module, resource,
-    deletable=True,
-    editable=True,
-    listadd=True,
-    list_fields=None,
-    main='name',
-    extra=None,
-    orderby=None,
-    sortby=None,
-    pheader=None,
-    rss=None,
-    onvalidation=None,
-    onaccept=None):
+def shn_rest_controller(module, resource, **attr):
 
     """
         RESTlike controller function
@@ -2327,410 +2421,17 @@ def shn_rest_controller(module, resource,
 
     """
 
-    # Parse original request --------------------------------------------------
-    jr = s3xrc.request(module, resource, request, session=session)
+    s3rest.set_handler('import_xml', import_xml)
+    s3rest.set_handler('import_json', import_json)
+    s3rest.set_handler('list', shn_list)
+    s3rest.set_handler('read', shn_read)
+    s3rest.set_handler('create', shn_create)
+    s3rest.set_handler('update', shn_update)
+    s3rest.set_handler('delete', shn_delete)
+    s3rest.set_handler('search', shn_search)
+    s3rest.set_handler('options', shn_options)
 
-    # Invalid request?
-    if jr.invalid:
-        if jr.badmethod:
-            #session.error = BADMETHOD
-            raise HTTP(501, body=BADMETHOD)
-        elif jr.badrecord:
-            #session.error = BADRECORD
-            raise HTTP(404, body=BADRECORD)
-        else:
-            #session.error = INVALIDREQUEST
-            raise HTTP(400, body=INVALIDREQUEST)
-        #redirect(URL(r=request, c=request.controller, f='index'))
-
-    # Get backlinks
-    here, there, same = jr.here(), jr.there(), jr.same()
-
-    # Check read permission on primary table
-    if not shn_has_permission('read', jr.table):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-    # Record ID is required in joined-table operations and read action:
-    if not jr.id and (jr.component or jr.method=="read") and not jr.method=="options" and not "select" in jr.request.vars:
-
-        if jr.prefix=="pr" and jr.name=="person" and jr.representation=='html':
-            redirect(URL(r=request, f='person', args='search_simple', vars={"_next": same}))
-
-        elif jr.prefix=="dvi" and jr.name=="body" and jr.representation=='html':
-            redirect(URL(r=request, f='body', args='search_simple', vars={"_next": same}))
-
-        else:
-            raise HTTP(404, body=BADRECORD)
-
-    # Run prep, if set
-    if response.s3.prep is not None:
-        prep = response.s3.prep(jr)
-        if prep and isinstance(prep, dict):
-            bypass = prep.get('bypass', False)
-            output = prep.get('output', None)
-            if bypass and output:
-                if isinstance(output, dict):
-                    output.update(jr=jr)
-                return output
-            success = prep.get('success', True)
-            if not success:
-                if jr.representation=='html' and output:
-                    if isinstance(output, dict):
-                        output.update(jr=jr)
-                    return output
-                status = prep.get('status', 400)
-                message = prep.get('message', INVALIDREQUEST)
-                raise HTTP(status, message)
-            else:
-                pass
-        elif not prep:
-            raise HTTP(400, body=INVALIDREQUEST)
-        else:
-            pass
-
-    # *************************************************************************
-    # Joined Table Operation
-
-    if jr.component:
-        if jr.method and jr.custom_action:
-            output = jr.custom_action(jr, onvalidation=None, onaccept=None)
-
-        # HTTP Multi-Record Operation *****************************************
-        if jr.method==None and jr.multiple and not jr.component_id:
-
-            # HTTP List/List-add ----------------------------------------------
-            if jr.http=='GET':
-                authorised = shn_has_permission('read', jr.component.table)
-                if authorised:
-                    output = shn_list(jr, pheader, rss=rss)
-                else:
-                    session.error = UNAUTHORISED
-                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
-
-            # HTTP Create -----------------------------------------------------
-            elif jr.http=='PUT' or jr.http=='POST':
-                if jr.representation in shn_json_import_formats:
-                    response.view = 'plain.html'
-                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.representation in shn_xml_import_formats:
-                    response.view = 'plain.html'
-                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.http == "POST":
-                    authorised = shn_has_permission('read', jr.component.table)
-                    if authorised:
-                        output = shn_list(jr, pheader, rss=rss)
-                    else:
-                        session.error = UNAUTHORISED
-                        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
-                else:
-                    raise HTTP(501, body=BADFORMAT)
-
-            # HTTP Delete -----------------------------------------------------
-            elif jr.http=='DELETE':
-                # Not implemented
-                raise HTTP(501)
-
-            # Unsupported HTTP method -----------------------------------------
-            else:
-                # Unsupported HTTP method for this context:
-                # HEAD, OPTIONS, TRACE, CONNECT
-                # Not implemented
-                raise HTTP(501)
-
-        # HTTP Single-Record Operation ****************************************
-        elif jr.method==None and (jr.component_id or not jr.multiple):
-
-            # HTTP Read/Update ------------------------------------------------
-            if jr.http=='GET':
-                authorised = shn_has_permission('read', jr.component.table)
-                if authorised:
-                    output = shn_read(jr, pheader=pheader,
-                                    editable=editable,
-                                    deletable=deletable,
-                                    rss=rss,
-                                    onvalidation=onvalidation,
-                                    onaccept=onaccept)
-                else:
-                    session.error = UNAUTHORISED
-                    redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
-
-            # HTTP Update -----------------------------------------------------
-            elif jr.http=='PUT' or jr.http == "POST":
-                if jr.representation in shn_json_import_formats:
-                    response.view = 'plain.html'
-                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.representation in shn_xml_import_formats:
-                    response.view = 'plain.html'
-                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.http == "POST":
-                    authorised = shn_has_permission('read', jr.component.table)
-                    if authorised:
-                        output = shn_read(jr, pheader=pheader,
-                                        editable=editable,
-                                        deletable=deletable,
-                                        rss=rss,
-                                        onvalidation=onvalidation,
-                                        onaccept=onaccept)
-                    else:
-                        session.error = UNAUTHORISED
-                        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
-                else:
-                    raise HTTP(501, body=BADFORMAT)
-
-            # HTTP Delete -----------------------------------------------------
-            elif jr.http=='DELETE':
-                # Not implemented
-                raise HTTP(501)
-
-            # Unsupported HTTP method -----------------------------------------
-            else:
-                # Unsupported HTTP method for this context:
-                # POST, HEAD, OPTIONS, TRACE, CONNECT
-                # Not implemented
-                raise HTTP(501)
-
-        # Create (joined table) ************************************************
-        elif jr.method=="create":
-            authorised = shn_has_permission(jr.method, jr.component.table)
-            if authorised:
-                output = shn_create(jr, pheader)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-        # Read (joined table) *************************************************
-        elif jr.method=="read" or jr.method=="display":
-            authorised = shn_has_permission('read', jr.component.table)
-            if authorised:
-                if jr.multiple and not jr.component_id:
-                    # This is a list action
-                    output = shn_list(jr, pheader, rss=rss)
-                else:
-                    # This is a read action
-                    output = shn_read(jr, pheader=pheader,
-                                    editable=editable,
-                                    deletable=deletable,
-                                    rss=rss,
-                                    onvalidation=onvalidation,
-                                    onaccept=onaccept)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here }))
-
-        # Update (joined table) ***********************************************
-        elif jr.method=="update":
-            authorised = shn_has_permission(jr.method, jr.component.table)
-            if authorised:
-                output = shn_update(jr, pheader)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-        # Delete (joined table) ***********************************************
-        elif jr.method=="delete":
-            authorised = shn_has_permission(jr.method, jr.component.table)
-            if authorised:
-                shn_delete(jr)
-                redirect(there)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-        # Options (joined table) **********************************************
-        elif jr.method=="options":
-            output = shn_options(jr)
-
-        # Unsupported Method **************************************************
-        else:
-            raise HTTP(501, body=BADMETHOD)
-            #session.error = BADMETHOD
-            #redirect(URL(r=request, f='index'))
-
-    # *************************************************************************
-    # Single Table Operation
-    #
-    else:
-
-        # Custom Method *******************************************************
-        if jr.method and jr.custom_action:
-            output = jr.custom_action(jr, onvalidation=onvalidation, onaccept=onaccept)
-
-        # Clear Session *******************************************************
-        elif jr.method=="clear":
-
-            # Clear session
-            s3xrc.clear_session(session, jr.prefix, jr.name)
-
-            if '_next' in request.vars:
-                request_vars = dict(_next=request.vars._next)
-            else:
-                request_vars = {}
-
-            # Redirect to search
-            if jr.prefix=="pr" and jr.name=="person" and jr.representation=="html":
-                redirect(URL(r=request, f='person', args='search_simple', vars=request_vars))
-            elif jr.prefix=="dvi" and jr.name=="body" and jr.representation=="html":
-                redirect(URL(r=request, f='body', args='search_simple', vars=request_vars))
-            else:
-                redirect(URL(r=request, f=jr.name))
-
-        # HTTP Multi-Record Operation *****************************************
-        elif not jr.method and not jr.id:
-
-            # HTTP List or List-Add -------------------------------------------
-            if jr.http == 'GET':
-                output = shn_list(jr, pheader, list_fields=list_fields,
-                                listadd=listadd,
-                                main=main,
-                                extra=extra,
-                                orderby=orderby,
-                                sortby=sortby,
-                                onvalidation=onvalidation,
-                                onaccept=onaccept,
-                                rss=rss)
-            # HTTP Create -----------------------------------------------------
-            elif jr.http == 'PUT' or jr.http == "POST":
-                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                if jr.representation in shn_json_import_formats:
-                    response.view = 'plain.html'
-                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.representation in shn_xml_import_formats:
-                    response.view = 'plain.html'
-                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.http == "POST":
-                    output = shn_list(jr, pheader, list_fields=list_fields,
-                                    listadd=listadd,
-                                    main=main,
-                                    extra=extra,
-                                    orderby=orderby,
-                                    sortby=sortby,
-                                    onvalidation=onvalidation,
-                                    onaccept=onaccept,
-                                    rss=rss)
-                else:
-                    raise HTTP(501, body=BADFORMAT)
-
-            # Unsupported HTTP method -----------------------------------------
-            else:
-                # Unsupported HTTP method for this context:
-                # DELETE, HEAD, OPTIONS, TRACE, CONNECT
-                # Not implemented
-                raise HTTP(501)
-
-        # HTTP Single Record Operation ****************************************
-        elif jr.id and not jr.method:
-
-            # HTTP Read (single record) ---------------------------------------
-            if jr.http == 'GET':
-                output = shn_read(jr, pheader=pheader,
-                                editable=editable,
-                                deletable=deletable,
-                                rss=rss,
-                                onvalidation=onvalidation,
-                                onaccept=onaccept)
-
-            # HTTP Create/Update (single record) ------------------------------
-            elif jr.http == 'PUT' or jr.http == "POST":
-                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                if jr.representation in shn_json_import_formats:
-                    response.view = 'plain.html'
-                    output = import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.representation in shn_xml_import_formats:
-                    response.view = 'plain.html'
-                    output = import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
-                elif jr.http == "POST":
-                    output = shn_read(jr, pheader=pheader,
-                                    editable=editable,
-                                    deletable=deletable,
-                                    rss=rss,
-                                    onvalidation=onvalidation,
-                                    onaccept=onaccept)
-                else:
-                    raise HTTP(501, body=BADFORMAT)
-
-            # HTTP Delete (single record) -------------------------------------
-            elif jr.http == 'DELETE':
-                # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7
-                if db(db[jr.table].id == jr.id).select():
-                    authorised = shn_has_permission('delete', jr.table, jr.id)
-                    if authorised:
-                        shn_delete(jr)
-                        item = json_message()
-                        response.view = 'plain.html'
-                        output = dict(item=item)
-                    else:
-                        # Unauthorised
-                        raise HTTP(401)
-                else:
-                    # Not found
-                    raise HTTP(404)
-
-            # Unsupported HTTP method -----------------------------------------
-            else:
-                # Unsupported HTTP method for this context:
-                # POST, HEAD, OPTIONS, TRACE, CONNECT
-                # Not implemented
-                raise HTTP(501)
-
-        # Create (single table) ***********************************************
-        elif jr.method == "create":
-            authorised = shn_has_permission(jr.method, jr.table)
-            if authorised:
-                output = shn_create(jr, pheader, onvalidation=onvalidation,
-                                  onaccept=onaccept, main=main)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-        # Read (single table) *************************************************
-        elif jr.method == "read" or jr.method == "display":
-            request.args.remove(jr.method)
-            redirect(URL(r=request, args=request.args, vars=request.vars))
-
-        # Update (single table) ***********************************************
-        elif jr.method == "update":
-            authorised = shn_has_permission(jr.method, jr.table, jr.id)
-            if authorised:
-                output = shn_update(jr, pheader, deletable=deletable,
-                                  onvalidation=onvalidation, onaccept=onaccept)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-        # Delete (single table) ***********************************************
-        elif jr.method == "delete":
-            authorised = shn_has_permission(jr.method, jr.table, jr.id)
-            if authorised:
-                shn_delete(jr)
-                redirect(there)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-        # Search (single table) ***********************************************
-        elif jr.method == "search":
-            authorised = shn_has_permission('read', jr.table)
-            if authorised:
-                output = shn_search(jr, main=main, extra=extra, deletable=deletable)
-            else:
-                session.error = UNAUTHORISED
-                redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': here}))
-
-        # Options (single table) **********************************************
-        elif jr.method=="options":
-            output = shn_options(jr)
-
-        # Unsupported Method **************************************************
-        else:
-            raise HTTP(501, body=BADMETHOD)
-            #session.error = BADMETHOD
-            #redirect(URL(r=request))
-
-    # Add XRequest to output if dict
-    if isinstance(output, dict):
-        output.update(jr=jr)
-
+    output = s3rest(session, request, response, module, resource, **attr)
     return output
 
 # END

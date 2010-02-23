@@ -17,68 +17,12 @@ table = db.define_table(tablename,
                 migrate=migrate)
 
 # -----------------------------------------------------------------------------
-# Services
-resource = 'service'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                Field('name', length=128, notnull=True, unique=True),
-                migrate=migrate)
-
-# Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
-table.name.label = T('Name')
-table.name.comment = SPAN("*", _class="req")
-
-# CRUD strings
-ADD_SERVICE = T('Add Service')
-LIST_SERVICES = T('List Services')
-
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_SERVICE,
-    title_display = T('Service Details'),
-    title_list = LIST_SERVICES,
-    title_update = T('Edit Service'),
-    title_search = T('Search Services'),
-    subtitle_create = T('Add New Service'),
-    subtitle_list = T('Services'),
-    label_list_button = LIST_SERVICES,
-    label_create_button = ADD_SERVICE,
-    msg_record_created = T('Service added'),
-    msg_record_modified = T('Service updated'),
-    msg_record_deleted = T('Service deleted'),
-    msg_list_empty = T('No Services currently registered'))
-
-# Functionsa
-def service_represent(service_ids):
-
-    if not service_ids:
-        return "None"
-    elif "|" in str(service_ids):
-        services = [db(db.or_service.id==id).select()[0].name for id in service_ids.split('|') if id]
-        return ", ".join(services)
-    else:
-        return db(db.or_service.id==service_ids).select()[0].name
-
-# Reusable field
-# 
-service_id = SQLTable(None, 'service_id',
-                      FieldS3('service_id', sortby='name',
-                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_service.id', '%(name)s', multiple=True)),
-                            represent = service_represent,
-                            label = T('Service'),
-                            comment = DIV(A(ADD_SERVICE, _class='thickbox', _href=URL(r=request, c='or', f='service', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SERVICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Service|The Service(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
-                            ondelete = 'RESTRICT'
-                           ))
-
-# -----------------------------------------------------------------------------
 # Sectors (to be renamed as Clusters)
 #
 resource = 'sector'
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', length=128, notnull=True, unique=True),
-                service_id,
                 migrate=migrate)
 
 # Field settings

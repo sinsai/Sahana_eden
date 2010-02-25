@@ -892,12 +892,16 @@ def shn_get_columns(table):
 
 def shn_convert_orderby(table, request, fields=None):
     cols = fields or shn_get_columns(table)
+    def colname(i):
+        return table._tablename + '.' + cols[int(request.vars['iSortCol_' + str(i)])]
+    
+    def rng():
+        return xrange(0, int(request.vars['iSortingCols']))
+    
     try:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)]
-            for i in xrange(0, int(request.vars['iSortingCols'])) ])
+        return ', '.join([colname(i) + ' ' + request.vars['sSortDir_' + str(i)] for i in rng()])
     except:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])]
-            for i in xrange(0, int(request.vars['iSortingCols'])) ])
+        return ', '.join([colname(i) for i in rng()])
 
 #
 # shn_build_ssp_filter --------------------------------------------------------

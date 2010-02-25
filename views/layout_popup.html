@@ -46,6 +46,7 @@ function TB_refresh() {
         // Clean up the caller
         self.parent.$('#' + caller + ' >option').remove();
         var value_high = 1;
+        var represent_high = "";
         $.getJSONS3(url, function (data) {
             var value, represent;
             var append = '';

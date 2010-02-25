@@ -917,7 +917,7 @@ def shn_build_ssp_filter(table, request, fields=None):
     searchq = None
 
     # TODO: use FieldS3 (with representation_field)
-    for i in xrange(0, int(request.vars.iColumns) - 1):
+    for i in xrange(0, int(request.vars.iColumns)):
         if table[cols[i]].type in ['string','text']:
             if searchq is None:
                 searchq = table[cols[i]].lower().like(context)

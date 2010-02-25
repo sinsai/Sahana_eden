@@ -898,10 +898,13 @@ def shn_convert_orderby(table, request, fields=None):
     def rng():
         return xrange(0, int(request.vars['iSortingCols']))
     
-    try:
-        return ', '.join([colname(i) + ' ' + request.vars['sSortDir_' + str(i)] for i in rng()])
-    except:
-        return ', '.join([colname(i) for i in rng()])
+    def direction(i):
+        dir = 'sSortDir_' + str(i)
+        if dir in request.vars:
+            return ' ' + request.vars[dir]
+        return ''
+    
+    return ', '.join([colname(i) + direction(i) for i in rng()])
 
 #
 # shn_build_ssp_filter --------------------------------------------------------

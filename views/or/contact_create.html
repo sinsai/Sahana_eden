@@ -6,68 +6,36 @@
 
 $(function() {
     // Person AutoComplete
-    // Hide the real Input Field
-    $("#or_contact_person_id").hide();
-    
-    // Add a dummy field
-    $("#or_contact_person_id").after("<input id='dummy_person' class='ac_input' size=50 />");
-
-    {{include 'pr/person_autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_person").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#or_contact_person_id").val(newvalue);
-    }); 
+    {{entity_id = "or_contact_person_id"}}
+    {{is_person = True}}
+    {{include 'auto_input.js'}}
     
     // Organisation AutoComplete
-    // Hide the real Input Field
-    $("#or_contact_organisation_id").hide();
-    
-    // Add a dummy field
-    $("#or_contact_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
-
-    {{dummy_input = "dummy_organisation"}}
+    {{entity_id = "or_contact_organisation_id"}}
     {{urlpath_c = "or"}}
     {{urlpath_f = "organisation"}}
     {{urlvar_field = "name"}}
-    {{include 'autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_organisation").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#or_contact_organisation_id").val(newvalue);
-        // Load offices just for that Org
-        load_offices(false);
-    }); 
+    {{post_process = "load_offices(false);"}}
+    {{include 'auto_input.js'}}
 
     // Office AutoComplete
-    // Hide the real Input Field
-    $("#or_contact_office_id").hide();
-    // the default will be re-used upon Add Office click    
-    default_office_options = "<option value=''>{{=T('Select an Organization to see a list of offices')}}</option>";
-    // Add a dummy field
-    $("#or_contact_office_id").after("<select id='dummy_office' class='reference'>"+ default_office_options + "</select>");
-
-    {{dummy_input = "dummy_office"}}
+    
+    {{entity_id = "or_contact_office_id"}}
+    {{dummy_select = True}}
+    {{default_value = T('Select an Organisation to see a list of offices')}}
     {{urlpath_c = "or"}}
     {{urlpath_f = "office"}}
     {{urlvar_field = "name"}}
-    {{include 'autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    copy_office_id = function(event){
-        var newvalue = $("#dummy_office option:selected").val();
-        $("#or_contact_office_id").val(newvalue);
-    };
-    $("#dummy_office").change(copy_office_id); 
+    {{include 'auto_input.js'}}
     
     cleanup = function(id){
-        if(id == "or_contact_office_id"){
+        if(id == "or_contact_office_id" || id == "or_contact_organisation_id" ){
             load_offices(true);
         }
     }
-            
+
+    // if we are going to add a new office, and the organisation is pre-selected,
+    // we would auto-assign the new office to that organisation
     set_parent_id = function(href, caller){
         if(caller != 'or_contact_office_id') 
             return href;

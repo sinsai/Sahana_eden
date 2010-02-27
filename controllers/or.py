@@ -232,7 +232,6 @@ def dashboard():
 
     but_add_office = A(T('Add Office'),
                         _class='thickbox',
-                        _id = 'add_office',
                         _href=URL(r=request, 
                             c='or', f='office', args='create', 
                             vars=dict(format='popup', KeepThis='true')) + "&TB_iframe=true&mode=new",

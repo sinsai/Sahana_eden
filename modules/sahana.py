@@ -865,16 +865,16 @@ class AuthS3(Auth):
 
             def f(*a, **b):
                 if not self.basic() and not self.is_logged_in():
-                    args = self.environment.request.args
-                    redirect(self.settings.login_url + \
-                                 '?_next='+urllib.quote(self.url(args=args)))
+                    request = self.environment.request
+                    next = URL(r=request,args=request.args,vars=request.get_vars)
+                    redirect(self.settings.login_url + '?_next='+urllib.quote(next))
                 if not self.has_membership(group_id):
-                    self.environment.session.error = \
+                    self.environment.session.flash = \
                         self.messages.access_denied
                     next = self.settings.on_failed_authorization
                     redirect(next)
                 return action(*a, **b)
-
+            f.__doc__ = action.__doc__
             return f
 
         return decorator
@@ -1237,7 +1237,7 @@ class QueryS3(Query):
         left,
         op=None,
         right=None,
-        ):    
+        ):
         if op <> 'join_via':
             Query.__init__(self, left, op, right)
         else:

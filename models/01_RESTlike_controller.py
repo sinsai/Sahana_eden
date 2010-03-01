@@ -1209,37 +1209,41 @@ def shn_read(jr, **attr):
     else:
         session.error = UNAUTHORISED
         redirect(URL(r=request, c='default', f='user', args='login', vars={'_next': jr.here()}))
+
 #
-# shn_list --------------------------------------------------------------------
+# shn_linkto ------------------------------------------------------------------
 #
-def shn_list_linkto(field):
-
-    """ Helper function to generate links in list views to Display items """
-
-    return URL(r=request, args=[field],
-                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-
-def shn_list_linkto_update(field):
-
-    """ Helper function to generate links in list views to Update items"""
-
-    return URL(r=request, args=['update', field],
-                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-
-def shn_list_jlinkto(field):
+def shn_linkto(jr):
 
     """ Helper function to generate links in list views """
 
-    return URL(r=request, args=[request.args[0], request.args[1], field],
-                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+    def shn_list_linkto(field, jr=jr):
+        if jr.component:
+            authorised = shn_has_permission('update', jr.component.table)
+            if authorised:
+                return jr.component.attr.linkto_update or \
+                       URL(r=request, args=[jr.id, jr.component_name, 'update', field],
+                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+            else:
+                return jr.component.attr.linkto or \
+                       URL(r=request, args=[jr.id, jr.component_name, field],
+                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+        else:
+            authorised = shn_has_permission('update', jr.table)
+            if authorised:
+                return response.s3.linkto_update or \
+                       URL(r=request, args=['update', field],
+                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+            else:
+                return response.s3.linkto or \
+                       URL(r=request, args=[field],
+                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
-def shn_list_jlinkto_update(field):
+    return shn_list_linkto
 
-    """ Helper function to generate links in list views to update items"""
-
-    return URL(r=request, args=[request.args[0], request.args[1], 'update', field],
-                vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-
+#
+# shn_list --------------------------------------------------------------------
+#
 def shn_list(jr, **attr):
 
     """ List records matching the request """
@@ -1247,20 +1251,24 @@ def shn_list(jr, **attr):
     if attr is None:
         attr = {}
 
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
-    pheader = attr.get('pheader', None)
-    editable = attr.get('editable', True)
-    deletable = attr.get('deletable', True)
-    rss = attr.get('rss', None)
-    list_fields = attr.get('list_fields', None)
-    listadd = attr.get('listadd', True)
-    main = attr.get('main', None)
-    extra = attr.get('extra', None)
-    orderby = attr.get('orderby', None)
-    sortby = attr.get('sortby', None)
-
+    # Get the target table
     module, resource, table, tablename = jr.target()
+
+    # Get request arguments
+    pheader = attr.get('pheader', None)
+    _attr = jr.component and jr.component.attr or attr
+
+    onvalidation = _attr.get('onvalidation', None)
+    onaccept = _attr.get('onaccept', None)
+    editable = _attr.get('editable', True)
+    deletable = _attr.get('deletable', True)
+    rss = _attr.get('rss', None)
+    list_fields = _attr.get('list_fields', None)
+    listadd = _attr.get('listadd', True)
+    main = _attr.get('main', None)
+    extra = _attr.get('extra', None)
+    orderby = _attr.get('orderby', None)
+    sortby = _attr.get('sortby', None)
 
     # Provide the ability to get a subset of records
     if request.vars.limit:
@@ -1273,33 +1281,20 @@ def shn_list(jr, **attr):
     else:
         limitby = None
 
+    # Get the initial query
+    query = shn_accessible_query('read', table)
+
+    # Get qualified query and create link
     if jr.component:
-
-        listadd = jr.component.attr.listadd
-        if listadd is None:
-            listadd=True
-
-        main, extra = jr.component.attr.main, jr.component.attr.extra
-        orderby = jr.component.attr.orderby
-        sortby = jr.component.attr.sortby
-        onvalidation = jr.component.attr.onvalidation
-        onaccept =  jr.component.attr.onaccept
-        rss = jr.component.attr.rss
-
-        query = shn_accessible_query('read', table)
         if jr.record:
             query = ((table[jr.fkey]==jr.table[jr.pkey]) & \
                      (table[jr.fkey]==jr.record[jr.pkey])) & query
         else:
             query = (table[jr.fkey]==jr.table[jr.pkey]) & query
-
         if jr.component_id:
             query = (table.id==jr.component_id) & query
-
         href_add = URL(r=jr.request, f=jr.name, args=[jr.id, resource, 'create'])
-
     else:
-        query = shn_accessible_query('read', table)
         href_add = URL(r=jr.request, f=jr.name, args=['create'])
 
     # SSPag filter handling
@@ -1311,12 +1306,15 @@ def shn_list(jr, **attr):
         if session.s3.filter is not None:
             response.s3.filter = session.s3.filter
 
+    # Add filter to query
     if response.s3.filter:
         query = response.s3.filter & query
 
+    # Filter deleted records
     if 'deleted' in table:
         query = ((table.deleted == False) | (table.deleted == None)) & query
 
+    # Call audit
     shn_audit_read(operation='list',
                    module=module,
                    resource=resource,
@@ -1358,8 +1356,7 @@ def shn_list(jr, **attr):
                 query = squery & query
 
         sEcho = int(request.vars.sEcho)
-        from gluon.serializers import json
-        #query = query & (table.id > 0)
+
         totalrows = db(query).count()
         if limit:
             rows = db(query).select(table.ALL, limitby = (start, start + limit), orderby = orderby)
@@ -1367,34 +1364,15 @@ def shn_list(jr, **attr):
             rows = db(query).select(table.ALL, orderby = orderby)
 
         # Where to link the ID column?
-        authorised = shn_has_permission('update', table)
-        if jr.component:
-            if authorised:
-                if jr.component.attr.linkto_update:
-                    linkto = jr.component.attr.linkto_update
-                else:
-                    linkto = shn_list_jlinkto_update
-            else:
-                if jr.component.attr.linkto:
-                    linkto = jr.component.attr.linkto
-                else:
-                    linkto = shn_list_jlinkto
-        else:
-            if authorised:
-                if response.s3.linkto_update:
-                    linkto = response.s3.linkto_update
-                else:
-                    linkto = shn_list_linkto_update
-            else:
-                if response.s3.linkto:
-                    linkto = response.s3.linkto
-                else:
-                    linkto = shn_list_linkto
+        linkto = shn_linkto(jr)
 
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
                iTotalDisplayRecords = totalrows,
-               aaData = [[shn_field_represent_sspage(table[f], row, f, linkto=linkto) for f in fields] for row in rows])
+               aaData = [[shn_field_represent_sspage(table[f], row, f, linkto=linkto)
+                          for f in fields] for row in rows])
+
+        from gluon.serializers import json
         return json(r)
 
     if jr.representation=="html":
@@ -1435,8 +1413,8 @@ def shn_list(jr, **attr):
         fields = None
 
         if jr.component:
-            list_fields = jr.component.attr.list_fields
-            _fields = [jr.component.table[f] for f in jr.component.table.fields if f in list_fields]
+            list_fields = jr.component.attr.list_fields or []
+            _fields = [jr.component.table[f] for f in list_fields if f in jr.component.table.fields]
             if _fields:
                 fields = [f for f in _fields if f.readable]
             else:
@@ -1453,33 +1431,11 @@ def shn_list(jr, **attr):
         # Column labels: use custom or prettified label
         headers = dict(map(lambda f: (str(f), f.label), fields))
 
-        authorised = shn_has_permission('update', table)
-        if jr.component:
-            if authorised:
-                if jr.component.attr.linkto_update:
-                    linkto = jr.component.attr.linkto_update
-                else:
-                    linkto = shn_list_jlinkto_update
-            else:
-                if jr.component.attr.linkto:
-                    linkto = jr.component.attr.linkto
-                else:
-                    linkto = shn_list_jlinkto
-        else:
-            if authorised:
-                if response.s3.linkto_update:
-                    linkto = response.s3.linkto_update
-                else:
-                    linkto = shn_list_linkto_update
-            else:
-                if response.s3.linkto:
-                    linkto = response.s3.linkto
-                else:
-                    linkto = shn_list_linkto
-
         if response.s3.pagination and not limitby:
             # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
             limitby = (0, 1)
+
+        linkto = shn_linkto(jr)
 
         items = crud.select(table, query=query,
             fields=fields,
@@ -1565,7 +1521,6 @@ def shn_list(jr, **attr):
             # Check for presence of Custom View
             shn_custom_view(jr, 'list.html')
 
-        output.update(jr=jr)
         return output
 
     elif jr.representation=="ext":

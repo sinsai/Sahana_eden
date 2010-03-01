@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    S3XRC SahanaPy XML+JSON Resource Controller
+    S3XCR SahanaPy XML+JSON Resource Controller
 
-    @version: 1.5.0
+    @version: 1.5.1
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -824,6 +824,7 @@ class ResourceController(object):
 
         return self.xml.tree([options], domain=self.domain, url=self.base_url)
 
+
 # *****************************************************************************
 class XVector(object):
 
@@ -944,7 +945,6 @@ class XVector(object):
             component.commit()
 
         return True
-
 
 # *****************************************************************************
 class S3XML(object):

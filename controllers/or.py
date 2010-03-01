@@ -45,7 +45,7 @@ def sector():
 @service.amfrpc
 def organisation():
     "RESTlike CRUD controller"
-    # ServerSidePagination not ready yet
+    # ServerSidePagination
     response.s3.pagination = True
     return shn_rest_controller(module, 'organisation', listadd=False, onaccept=lambda form: organisation_onaccept(form))
 
@@ -69,7 +69,7 @@ def office():
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
         db[table].admin.readable = db[table].admin.writable = False
-    # ServerSidePagination not ready yet
+    # ServerSidePagination
     response.s3.pagination = True
 
     # the update forms are not ready. when they will - uncomment this and comment the next one
@@ -90,7 +90,7 @@ def contact():
     resource = 'contact'
     table = '%s_%s' % (module, resource)
     
-    # ServerSidePagination not ready yet
+    # ServerSidePagination
     response.s3.pagination = True
     
     # No point in downloading large dropdowns which we hide, so provide a smaller represent

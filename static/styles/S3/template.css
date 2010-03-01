@@ -293,3 +293,5 @@ div#pheader td { text-align: left; padding: 1px 6px 1px 1px; width: 20%; }
 .modlist li.hovered, .modlist li:hover{ background: #ffff99; }
 .modlist li strong a { text-decoration: none; font-size: 14px; }
 .modlist li strong { display: block; margin-bottom: 5px; }
+
+#list_formats {float: right;}

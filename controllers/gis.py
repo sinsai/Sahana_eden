@@ -1264,6 +1264,13 @@ def layers():
     layers_kml = db(db.gis_layer_kml.enabled==True).select()
     if layers_kml and not cache:
         response.warning += cachepath + ' ' + str(T('not writable - unable to cache KML layers!')) + '\n'
+    
+    # Append dynamic feed:
+    # /gis/map_viewing_client?kml_feed=<url>&kml_name=<feed_name>
+    layers_kml = [Storage(name=l.name, url=l.url) for l in layers_kml]
+    if 'kml_feed' in request.vars and 'kml_name' in request.vars:
+        layers_kml.append(Storage(name=request.vars['kml_name'], url=request.vars['kml_feed']))
+
     for layer in layers_kml:
         name = layer.name
         url = layer.url
@@ -1271,8 +1278,8 @@ def layers():
             filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
             filepath = os.path.join(cachepath, filename)
             try:
-                # Download file to cache (Keep Session for local URLs)
-                if '127.0.0.1' in url:
+                # Download file to cache
+                if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
                     # Keep Session for local URLs
                     import Cookie
                     cookie = Cookie.SimpleCookie()

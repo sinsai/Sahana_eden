@@ -1,0 +1,31 @@
+{{extend 'layout.html'}}
+<div id='home' class='clearfix'>
+<h2 class='error'>Oops! Something went wrong</h2>
+<p class='errors'>
+    <img src='/sahana/static/img/smile_sad_48.png' alt='a sad smiley' />
+    <br/>
+    <h3>It could be for one of the following reasons:</h3>
+    <ul>
+        <li>You may have mistyped the web address of the page you're looking for.</li>
+        <li>The page you are looking for does not exist, might have been removed or has been renamed</li>
+        <li>There is a broken link within this SahanaPy instance, please report a bug here - <a href='http://trac.sahanapy.org/report'>http://trac.sahanapy.org/report</a></li> 
+        <li>The error code was {{=res.code}} due to {{=description}}</li>
+    </ul>
+    <br/>
+    <img src='/sahana/static/img/smile_grin_48.png' alt='a happy smiley' />
+    <h3>You might try one of the following:</h3>
+    <ul>
+        <li>Return to the <a href='/'>homepage</a>, then look for links to information you want.</li>
+        <li>Press back button and try another link.</li>
+        {{ if res.ticket!='None': }}
+        <li>View ticket for this problem here - <a href='/admin/default/ticket/{{=res.ticket}}' target='_blank'>{{=res.ticket}}</a></li>
+        {{ pass }}
+    </ul>
+</p>
+</div>
+<!--
+http://localhost:8000/sahana/errors/index?
+code=400&
+ticket=None&
+requested_uri=/sahana/pr/ind4545ex
+-->

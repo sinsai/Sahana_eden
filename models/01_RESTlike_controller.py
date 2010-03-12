@@ -893,10 +893,10 @@ def shn_get_columns(table):
 def shn_convert_orderby(table, request, fields=None):
     cols = fields or shn_get_columns(table)
     try:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)]
+        return ', '.join([table._tablename + '.' + cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)]
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
     except:
-        return ', '.join([cols[int(request.vars['iSortCol_' + str(i)])]
+        return ', '.join([table._tablename + '.' + cols[int(request.vars['iSortCol_' + str(i)])]
             for i in xrange(0, int(request.vars['iSortingCols'])) ])
 
 #
@@ -950,9 +950,6 @@ def shn_build_ssp_filter(table, request, fields=None):
 def import_json(jr, **attr):
 
     #return json_message(False, 501, "Not implemented!")
-
-    if attr is None:
-        attr = {}
 
     onvalidation = attr.get('onvalidation', None)
     onaccept = attr.get('onaccept', None)
@@ -1015,9 +1012,6 @@ def import_xml(jr, **attr):
 
     """ Import XML data """
 
-    if attr is None:
-        attr = {}
-
     onvalidation = attr.get('onvalidation', None)
     onaccept = attr.get('onaccept', None)
 
@@ -1069,9 +1063,6 @@ def shn_read(jr, **attr):
 
     """ Read a single record. """
 
-    if attr is None:
-        attr = {}
-
     onvalidation = attr.get('onvalidation', None)
     onaccept = attr.get('onaccept', None)
     pheader = attr.get('pheader', None)
@@ -1116,12 +1107,8 @@ def shn_read(jr, **attr):
         href_edit = URL(r=jr.request, f=jr.name, args=['update', record_id])
 
     authorised = shn_has_permission('update', table, record_id)
-    if authorised and jr.representation=="html":
-        return shn_update(jr,
-                          pheader=pheader,
-                          deletable=deletable,
-                          onvalidation=onvalidation,
-                          onaccept=onaccept)
+    if authorised and jr.representation=="html" and editable:
+        return shn_update(jr, **attr)
 
     authorised = shn_has_permission('read', table, record_id)
     if authorised:
@@ -1247,9 +1234,6 @@ def shn_linkto(jr):
 def shn_list(jr, **attr):
 
     """ List records matching the request """
-
-    if attr is None:
-        attr = {}
 
     # Get the target table
     module, resource, table, tablename = jr.target()
@@ -1637,9 +1621,6 @@ def shn_create(jr, **attr):
 
     """ Create new records """
 
-    if attr is None:
-        attr = {}
-
     onvalidation = attr.get('onvalidation', None)
     onaccept = attr.get('onaccept', None)
     pheader = attr.get('pheader', None)
@@ -1826,12 +1807,10 @@ def shn_update(jr, **attr):
 
     """ Update an existing record """
 
-    if attr is None:
-        attr = {}
-
     onvalidation = attr.get('onvalidation', None)
     onaccept = attr.get('onaccept', None)
     pheader = attr.get('pheader', None)
+    editable = attr.get('editable', True)
     deletable = attr.get('deletable', True)
 
     module, resource, table, tablename = jr.target()
@@ -1858,15 +1837,18 @@ def shn_update(jr, **attr):
 
         onvalidation = s3xrc.model.get_attr(resource, 'onvalidation')
         onaccept = s3xrc.model.get_attr(resource, 'onaccept')
+        editable = s3xrc.model.get_attr(resource, 'editable')
         deletable = s3xrc.model.get_attr(resource, 'deletable')
 
     else:
         record_id = jr.id
         deletable = deletable and shn_has_permission('delete', table, record_id)
 
+    if not editable and jr.representation=="html":
+        return shn_read(jr, **attr)
+
     authorised = shn_has_permission('update', table, record_id)
     if authorised:
-
         crud.settings.update_deletable = deletable
 
         if jr.representation == "html":
@@ -2150,9 +2132,6 @@ def shn_options(jr, **attr):
 def shn_search(jr, **attr):
 
     """ Search function responding in JSON """
-
-    if attr is None:
-        attr = {}
 
     deletable = attr.get('deletable', True)
     main = attr.get('main', None)

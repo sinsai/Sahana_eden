@@ -872,7 +872,11 @@ class XRequest(object):
                                   limit=limit)
 
         if template is not None:
-            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain, base_url=self.rc.base_url)
+            args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
+            mode = self.request.vars.get('mode', None)
+            if mode is not None:
+                args.update(mode=mode)
+            tree = self.rc.xml.transform(tree, template, **args)
             if not tree:
                 self.error = self.rc.error
                 return None
@@ -919,7 +923,11 @@ class XRequest(object):
                                show_urls=False)
 
         if template is not None:
-            tree = self.rc.xml.transform(tree, template, domain=self.rc.domain, base_url=self.rc.base_url)
+            args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
+            mode = self.request.vars.get('mode', None)
+            if mode is not None:
+                args.update(mode=mode)
+            tree = self.rc.xml.transform(tree, template, **args)
             if not tree:
                 self.error = self.rc.error
                 return None

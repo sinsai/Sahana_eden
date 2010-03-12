@@ -1068,9 +1068,15 @@ class S3XML(object):
 
 
     #--------------------------------------------------------------------------
-    def transform(self, tree, template_path, domain=None, base_url=None):
+    def transform(self, tree, template_path, **args):
 
         self.error = None
+
+        if args and len(args):
+            _args = [(k, "'%s'" % args[k]) for k in args.keys()]
+            _args = dict(_args)
+        else:
+            _args = None
 
         ac = etree.XSLTAccessControl(read_file=True, read_network=True)
 
@@ -1078,13 +1084,8 @@ class S3XML(object):
         if template:
             try:
                 transformer = etree.XSLT(template, access_control=ac)
-                if domain is not None:
-                    domain = "'%s'" % domain
-                    if base_url is not None:
-                        base_url = "'%s'" % base_url
-                        result = transformer(tree, domain=domain, base_url=base_url)
-                    else:
-                        result = transformer(tree, domain=domain)
+                if _args is not None:
+                    result = transformer(tree, **_args)
                 else:
                     result = transformer(tree)
                 return result

@@ -6,9 +6,11 @@
 #   routes_onerror = [
 #       ('sahana/401', '/sahana/default/user/login'),
 #       ('sahana/*', '/sahana/errors/index'),
+#       ('*/*', '/sahana/errors/index'),
 #   ]
 # NOTE: if sahana is installed elsewhere or exists under different name in applications folder,
-#       just rename it in above list.
+#       just rename it in above list. Comment the last route to disable error
+#       catching for other apps in the same web2py environment
 
 module = 'errors'
 

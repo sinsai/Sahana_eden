@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
-# Error controller implements nicer error pages
-#   HTTP error codes and their descriptions - http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_Error
+# HTTP Error handler -- implements nicer error pages
+# 
+
+# TODO: add/replace the following to your routes.py in web2py directory
+#   routes_onerror = [
+#       ('sahana/401', '/sahana/default/user/login'),
+#       ('sahana/400', '/sahana/errors/e400'),
+#       ('sahana/403', '/sahana/errors/e403'),
+#       ('sahana/404', '/sahana/errors/e404'),
+#       ('sahana/500', '/sahana/errors/e500'),
+#       ('sahana/502', '/sahana/errors/e502'),
+#       ('sahana/503', '/sahana/errors/e503'),
+#       ('sahana/504', '/sahana/errors/e504'),
+#       ('sahana/*', '/sahana/errors/index'),
+#   ]
+# NOTE: if sahana is installed elsewhere or exists under different name in applications folder,
+#       just rename it in above list.
 
 module = 'errors'
 

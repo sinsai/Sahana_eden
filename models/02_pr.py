@@ -21,26 +21,17 @@ table = db.define_table(tablename,
                 migrate=migrate)
 
 # *****************************************************************************
-# Import VITA
-#
-exec('from applications.%s.modules.vita import *' % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.sahana.modules.vita import *
-
-vita = Vita(globals(), db)
-
-# *****************************************************************************
 # PersonEntity (pentity)
 
 # -----------------------------------------------------------------------------
 # Entity types
 #
 opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
-                    Field('opt_pr_entity_type', 'integer',
-                        requires = IS_IN_SET(vita.trackable_types),
-                        default = vita.DEFAULT_TRACKABLE,
-                        label = T('Entity Type'),
-                        represent = lambda opt: vita.trackable_types.get(opt, T('Unknown'))))
+                              Field('opt_pr_entity_type', 'integer',
+                                    requires = IS_IN_SET(vita.trackable_types),
+                                    default = vita.DEFAULT_TRACKABLE,
+                                    label = T('Entity Type'),
+                                    represent = lambda opt: vita.trackable_types.get(opt, T('Unknown'))))
 
 # -----------------------------------------------------------------------------
 # shn_pentity_represent

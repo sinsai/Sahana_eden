@@ -40,3 +40,7 @@ exec('from applications.%s.modules.validators import *' % request.application)
 # GIS Module
 s3gis = local_import('s3gis')
 gis = s3gis.GIS(globals(), db)
+
+# VITA
+s3vita = local_import('s3vita')
+vita = s3vita.Vita(globals(), db)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    SahanaPy RESTful CRUD Controller
+    CRUD+LSO Method Handlers (Frontend for S3REST)
 
     @author: Fran Boon
     @author: nursix

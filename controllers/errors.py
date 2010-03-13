@@ -10,4 +10,4 @@ def index():
         description = defined_status[int(request.vars['code'])]
     except IndexError:
         description = 'unknown error'
-    return dict(res=request.vars, description=description)
+    return dict(res=request.vars, description=description, app=request.application)

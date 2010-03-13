@@ -18,7 +18,7 @@
         <li>Return to the <a href='/'>homepage</a>, then look for links to information you want.</li>
         <li>Press back button and try another link.</li>
         {{ if res.ticket!='None': }}
-        <li>View ticket for this problem here - <a href='/admin/default/ticket/{{=res.ticket}}' target='_blank'>{{=res.ticket}}</a></li>
+        <li>View ticket for this problem here - <a href='/{{=app}}/admin/ticket/{{=res.ticket}}' target='_blank'>{{=res.ticket}}</a></li>
         {{ pass }}
     </ul>
 </p>

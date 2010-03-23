@@ -8,11 +8,11 @@
 
 module = 'hms'
 
-
+# -----------------------------------------------------------------------------
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select()[0].name_nice
 
-
+# -----------------------------------------------------------------------------
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Home'), False, URL(r=request, f='index')],
@@ -26,7 +26,7 @@ response.menu_options = [
     [T('Pledges'), False, URL(r=request, f='hpledge')],
 ]
 
-
+# -----------------------------------------------------------------------------
 def shn_hms_menu_ext():
     menu = [
         [T('Home'), False, URL(r=request, f='index')],
@@ -60,62 +60,82 @@ def shn_hms_menu_ext():
     menu.extend(menu2)
     response.menu_options = menu
 
-
 shn_hms_menu_ext()
 
-
+# -----------------------------------------------------------------------------
 def index():
-    "Module's Home Page"
+
+    """ Module's Home Page """
+
     return dict(module_name=module_name)
 
-
+# -----------------------------------------------------------------------------
 def hospital():
 
     """ Main controller for hospital data entry """
 
-    output = shn_rest_controller(module , 'hospital', listadd=False,
+    response.s3.pagination = True
+
+    output = shn_rest_controller(module , 'hospital',
         pheader = shn_hms_hospital_pheader,
+        list_fields=['id',
+            'gov_uuid',
+            'name',
+            'organisation_id',
+            'location_id',
+            'phone_business',
+            'ems_status',
+            'facility_status',
+            'clinical_status',
+            'security_status',
+            'total_beds',
+            'available_beds'
+        ],
         rss=dict(
             title="%(name)s",
             description=shn_hms_hospital_rss
         ),
         onvalidation = shn_hms_hospital_onvalidation,
-        list_fields=['id', 'gov_uuid', 'name', 'organisation_id', 'location_id', 'phone_business', 'ems_status', 'facility_status', 'clinical_status', 'security_status', 'total_beds', 'available_beds'])
+        listadd=False)
+
     shn_hms_menu_ext()
+
     return output
 
-
+# -----------------------------------------------------------------------------
 def hrequest():
 
     """ Hospital Requests Controller """
 
     resource = 'hrequest'
 
-    if request.args(0) and request.args(0) == 'search_simple':
-        pass
-    else:
-        # Uncomment to enable Server-side pagination:
-        #response.s3.pagination = True
-        pass
-
     if auth.user is not None:
         person = db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id)
         if person:
             db.hms_hpledge.person_id.default = person[0].id
 
+    response.s3.pagination = True
+
     output = shn_rest_controller(module , resource, listadd=False, deletable=False,
         pheader=shn_hms_hrequest_pheader,
+        list_fields=['id',
+            'timestamp',
+            'hospital_id',
+            'city',
+            'type',
+            'subject',
+            'priority',
+            'status'],
         rss=dict(
             title="%(subject)s",
             description="%(message)s"
         ),
-        list_fields=['id', 'timestamp', 'hospital_id', 'city', 'type', 'subject', 'priority', 'status'],
         onaccept = shn_hms_hrequest_onaccept)
 
     shn_hms_menu_ext()
     return output
 
-
+# -----------------------------------------------------------------------------
 def hpledge():
 
     """ Pledges Controller """
@@ -141,8 +161,11 @@ def hpledge():
     shn_hms_menu_ext()
     return output
 
-
+# -----------------------------------------------------------------------------
 def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, same=None):
+
+    """ Request PHeader """
+
     if representation == "html":
 
         if next:
@@ -194,3 +217,5 @@ def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, sam
     else:
         return None
 
+#
+# -----------------------------------------------------------------------------

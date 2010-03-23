@@ -1,11 +1,35 @@
 # -*- coding: utf-8 -*-
 
 """
-This file was developed by Dominic König (aka nursix) as a web2py extension for Sahanapy.
-This file is released under the BSD license 
-(you can include it in bytecode compiled web2py apps as long as you acknowledge the author).
+    S3VITA SahanaPy Person Management Toolkit
 
-web2py (required to run this file) is released under the GPLv2 license.
+    @version: 0.5.0
+
+    @author: nursix
+    @copyright: 2010 (c) Sahana Software Foundation
+    @license: MIT
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use,
+    copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following
+    conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
+
 """
 
 import time
@@ -38,18 +62,10 @@ from gluon.html import *
 
 __all__ = ['Vita']
 
-#
-# VITA Toolkit ----------------------------------------------------------------
-#
+# *****************************************************************************
 class Vita(object):
-    """
-        Toolkit for Person Identification, Tracking and Tracing
 
-        Import:
-
-        exec('from applications.%s.modules.vita import *' % request.application)
-        vita = Vita(globals(),db)
-    """
+    """ Toolkit for Person Identification, Tracking and Tracing """
 
     trackable_types = None
     presence_conditions = None
@@ -57,11 +73,9 @@ class Vita(object):
     DEFAULT_TRACKABLE = 1
     DEFAULT_PRESENCE = 4
 
-    # *************************************************************************
-    # Physical Description
-    #
-
+    # -------------------------------------------------------------------------
     def __init__(self, environment, db=None, T=None):
+
         self.environment = Storage(environment)
         self.db = db
 
@@ -95,6 +109,7 @@ class Vita(object):
         }
         self.DEFAULT_PRESENCE = 4
 
+    # -------------------------------------------------------------------------
     def pentity(self,entity):
         """
             Get the PersonEntity record for the given ID, ID label, sub-entity or related record
@@ -130,6 +145,7 @@ class Vita(object):
         else:
             return None
 
+    # -------------------------------------------------------------------------
     def person(self,entity):
         """
             Get the Person record for the given ID, PersonEntity record or Person-related record
@@ -166,6 +182,7 @@ class Vita(object):
         else:
             return None
 
+    # -------------------------------------------------------------------------
     def group(self,entity):
         """
             Get the Group record for the given ID, PersonEntity record or Group-related record
@@ -203,6 +220,7 @@ class Vita(object):
             return None
 
 
+    # -------------------------------------------------------------------------
     def fullname(self,record):
         """
             Returns the full name of a person
@@ -224,6 +242,7 @@ class Vita(object):
         else:
             return ''
 
+    # -------------------------------------------------------------------------
     def rlevenshtein(self, str1, str2):
         """
             Returns a relative value for the Levenshtein distance of two strings
@@ -242,7 +261,7 @@ class Vita(object):
         l2 = len(str2)
 
         for i in range(0, l1+1): matrix[i, 0] = i
-        for j in range(0, l2+1): matrix[0, j] = j 
+        for j in range(0, l2+1): matrix[0, j] = j
 
         for i in range(1, l1+1):
             for j in range(1, l2+1):
@@ -257,3 +276,6 @@ class Vita(object):
                 matrix[i, j] = min(x, y, z)
 
         return float(matrix[l1, l2])/float(max(l1, l2))
+
+#
+# *****************************************************************************

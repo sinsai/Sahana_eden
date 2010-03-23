@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 def shn_sessions():
     """
     Extend session to support:
@@ -58,7 +60,7 @@ s3_settings = shn_sessions()
 #
 shn_languages = {
     "en": T('English'),
-    #"fr": T('French')
+    "fr": T('French')
 }
 
 #
@@ -106,7 +108,7 @@ shn_list_of_nations = {
     39:T('Congo, Democratic Republic of the (Congo-Kinshasa)'),
     40:T('Congo, Republic of the (Congo-Brazzaville)'),
     41:T('Costa Rica'),
-    42:T('C�te d\'Ivoire'),
+    42:T("Côte d'Ivoire"),
     43:T('Croatia'),
     44:T('Cuba'),
     45:T('Cyprus'),
@@ -214,7 +216,7 @@ shn_list_of_nations = {
     147:T('Saint Vincent and the Grenadines'),
     148:T('Samoa'),
     149:T('San Marino'),
-    150:T('S�o Tom� and Pr�ncipe'),
+    150:T('São Tomé and Príncipe'),
     151:T('Saudi Arabia'),
     152:T('Senegal'),
     153:T('Serbia'),

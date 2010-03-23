@@ -271,8 +271,11 @@ hospital_id = SQLTable(None, 'hospital_id',
                              comment = DIV(A(s3.crud_strings[tablename].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[tablename].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Hospital|The hospital this record is associated with."))),
                              ondelete = 'RESTRICT'))
 
-# RSS Feed
+# -----------------------------------------------------------------------------
 def shn_hms_hospital_rss(record):
+
+    """ Hospital RSS Feed """
+
     if record:
         lat = lon = T("unknown")
         location_name = T("unknown")

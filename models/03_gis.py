@@ -169,7 +169,10 @@ location_id = SQLTable(None, 'location_id',
                 ondelete = 'RESTRICT'
                 ))
 
+# -----------------------------------------------------------------------------
+#
 def shn_gis_location_represent(id):
+    # TODO: optimize! (very slow)
     try:
         location = db(db.gis_location.id==id).select().first()
         # Simple
@@ -202,6 +205,7 @@ def shn_gis_location_represent(id):
         except:
             represent = None
     return represent
+
 
 # Feature Groups
 # Used to select a set of Features for either Display or Export

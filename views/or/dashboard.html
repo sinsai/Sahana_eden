@@ -35,6 +35,28 @@ $(function() {
         //alert("changed: " + new_url + $("select").val()); //This is a bit of a hack, as iot may break if there is more than one select
 		window.location.replace("{{=URL(r=request, c="or", f="dashboard")}}/" + $("#organisation_select").val());
     });
+    
+    
+    // if we are going to add a new office, and the organisation is pre-selected,
+    // we would auto-assign the new office to that organisation
+    set_parent_id = function(href, caller){
+        id = $("#organisation_select").val();
+	if(id == ''){
+            return href.replace(/organisation_id=(.*?)&/,'');
+        } 
+        else if(!href.match(/organisation_id/)){
+            return href.replace('?','?organisation_id=' + id + '&');
+        }
+        else{
+            return href.replace(/organisation_id=(.*?)&/,'organisation_id=' + id + '&');
+        }
+    };    
+    
+    cleanup = function(id){
+	window.location.replace("{{=URL(r=request, c="or", f="dashboard")}}/" + $("#organisation_select").val());
+    }
+
+
 });
 {{if response.flash or response.confirmation:}}
 // Refresh the DIV and close the pop up

@@ -41,39 +41,66 @@ $(function() {
     }
 });
 
+function TB_cleanup(caller) {
+    if(self.parent.cleanup)
+       self.parent.cleanup(caller); 
+    self.parent.tb_remove();
+}
+
 function TB_refresh() {
     // The Get parameters
+    // ToDo: Make this less fragile by passing these fields as separate vars?
     var $_GET = getQueryParams(document.location.search);
+    var caller = $_GET["caller"];
     // The JSON of the resource we just created
-    var listsource = document.location.pathname.replace("/create",".json");
-    if(self.parent.$('#' + $_GET["caller"] + ' >option').length ){
-        // We have been called next to a drop-down
-        // Get the previously selected value
-        var selectedvalue = self.parent.$('#' + $_GET["caller"]).attr("selectedIndex")+1;
-        // Clean up the caller
-        self.parent.$('#' + $_GET["caller"] + ' >option').remove();
-        $.getJSON(listsource, function (data) {
-            var name;
-            $.each(data, function() {
-                if (null == this['middle_name']) {
-                    name = this['first_name'] + ' ' + this['last_name'];
-                } else {
-                    name = this['first_name'] + ' ' + this['middle_name'] + ' ' + this['last_name'];    
-                }
-                self.parent.$('#' + $_GET["caller"]).append($("<option></option>").val(this['id']).html(name));
-                selectedvalue = this['id'];
-            });
-            // Set the newly-created value
-            self.parent.$('#' + $_GET["caller"]).val(selectedvalue);
-            // Also populate dummy, if present
-            self.parent.$('#dummy').val(name);
-            // Clean-up
-            self.parent.tb_remove();
-        });
-    } else {
-        // Clean-up
-        self.parent.tb_remove();
+    var url = document.location.pathname.replace("/create","/options.json?field=pr_pe_id");
+    var selector = self.parent.$('#' + caller);
+    var dummy = self.parent.$('#dummy_' + caller);
+    var has_dummy = (dummy.val() != undefined);
+    var options = self.parent.$('#' + caller + ' >option')
+    var dropdown = options.length
+    if ( dropdown ) {
+        var append=[];
     }
+    var value_high = 1;
+    var represent_high = "";
+    $.getJSONS3(url, function (data) {
+        // Clean-up
+        TB_cleanup(caller);
+        var value, represent;
+        $.each(data['option'], function() {
+            value = this['@value'];
+            represent = this['$'];
+            if(typeof represent === "undefined") {
+                represent = "";
+            } else {
+                represent = represent.split(' [')[0];
+            }
+            if (dropdown) {
+                append.push(["<option value='", value, "'>", represent, "</option>"].join(''));
+            }
+            // Type conversion: http://www.jibbering.com/faq/faq_notes/type_convert.html#tcNumber
+            numeric_value = (+value)
+            if (numeric_value > value_high) {
+                value_high = numeric_value;
+                represent_high = represent;
+            }
+        });
+        if (has_dummy) {
+            dummy.val(represent_high);
+        }
+        if (dropdown) {
+           // We have been called next to a drop-down
+           // Clean up the caller
+           options.remove();
+           selector.append(append);
+        }
+        // IE6 needs time for DOM to settle: http://csharperimage.jeremylikness.com/2009/05/jquery-ie6-and-could-not-set-selected.html
+        setTimeout(function() {
+                       // Set the newly-created value (one with highest value)
+                           selector.val(value_high);
+                       }, 1 );
+    });
 }
 // Function to get the URL parameters
 // duplicate of layout_popup.html's
@@ -94,6 +121,7 @@ function getQueryParams(qs) {
 // If submission succesful
 {{if response.flash or response.confirmation:}}
 // Refresh the DIV and close the pop up
+$(document).ready( function() {self.parent.$(".TB_closeAjaxWindow").html('');});
 TB_refresh();
 {{pass}}
 

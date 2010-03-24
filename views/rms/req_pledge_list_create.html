@@ -3,35 +3,16 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Person AutoComplete
-    // Hide the real Input Field
-    $("#rms_pledge_person_id").hide();
-    
-    // Add a dummy field
-    $("#rms_pledge_person_id").after("<input id='dummy_person' class='ac_input' size=50 />");
-
-    {{include 'pr/person_autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_person").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#rms_pledge_person_id").val(newvalue);
-    }); 
+    {{entity_id = "rms_pledge_person_id"}}
+    {{is_person = True}}
+    {{include 'auto_input.js'}}
 
     // Organisation AutoComplete
-    // Hide the real Input Field
-    $("#rms_pledge_organisation_id").hide();
-    
-    // Add a dummy field
-    $("#rms_pledge_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
-
-    {{include 'or/organisation_autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_organisation").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#rms_pledge_organisation_id").val(newvalue);
-    }); 
-    
+    {{entity_id = "rms_pledge_organisation_id"}}
+    {{urlpath_c = "or"}}
+    {{urlpath_f = "organisation"}}
+    {{urlvar_field = "name"}}
+    {{include 'auto_input.js'}}   
 });
 //]]></script>
 

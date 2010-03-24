@@ -892,12 +892,20 @@ def shn_get_columns(table):
 
 def shn_convert_orderby(table, request, fields=None):
     cols = fields or shn_get_columns(table)
-    try:
-        return ', '.join([table._tablename + '.' + cols[int(request.vars['iSortCol_' + str(i)])] + ' ' + request.vars['sSortDir_' + str(i)]
-            for i in xrange(0, int(request.vars['iSortingCols'])) ])
-    except:
-        return ', '.join([table._tablename + '.' + cols[int(request.vars['iSortCol_' + str(i)])]
-            for i in xrange(0, int(request.vars['iSortingCols'])) ])
+
+    def colname(i):
+        return table._tablename + '.' + cols[int(request.vars['iSortCol_' + str(i)])]
+
+    def rng():
+        return xrange(0, int(request.vars['iSortingCols']))
+
+    def direction(i):
+        dir = 'sSortDir_' + str(i)
+        if dir in request.vars:
+            return ' ' + request.vars[dir]
+        return ''
+
+    return ', '.join([colname(i) + direction(i) for i in rng()])
 
 #
 # shn_build_ssp_filter --------------------------------------------------------
@@ -910,7 +918,7 @@ def shn_build_ssp_filter(table, request, fields=None):
     searchq = None
 
     # TODO: use FieldS3 (with representation_field)
-    for i in xrange(0, int(request.vars.iColumns) - 1):
+    for i in xrange(0, int(request.vars.iColumns)):
         if table[cols[i]].type in ['string','text']:
             if searchq is None:
                 searchq = table[cols[i]].lower().like(context)

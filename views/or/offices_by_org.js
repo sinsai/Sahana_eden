@@ -18,9 +18,9 @@ var load_offices = function(selectlast)
 		    options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
 		}
 	    }
-	    $('#dummy_office').html(options); 
+	    $('#dummy_or_contact_office_id').html(options); 
 	    if(selectlast)
-		$('#dummy_office').val(v); 
+		$('#dummy_or_contact_office_id').val(v); 
 	};	
     $.getJSONS3(theURL, offices_ok, '{{=T("offices by organisation")}}');
   };

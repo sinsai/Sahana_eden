@@ -6,11 +6,11 @@
       {{pass}}
         wrapDateLine: 'true',
       {{if wms_layers[layer].map:}}
-        map: '$map',
+        map: '{{=wms_layers[layer].map}}',
       {{pass}}
       layers: '{{=wms_layers[layer].layers}}',
       {{if wms_layers[layer].format:}}
-        type: '$format',
+        type: '{{=wms_layers[layer].format}}',
       {{pass}}
       {{if wms_layers[layer].transparent:}}
         transparent: true,

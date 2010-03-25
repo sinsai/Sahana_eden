@@ -7,12 +7,13 @@ $(function() {
     $("#rms_pledge_person_id").hide();
 
     // Add a dummy field
-    $("#rms_pledge_person_id").after("<input id='dummy_person' class='ac_input' size=50 />");
-
+    $("#rms_pledge_person_id").after("<input id='dummy_rms_pledge_person_id' class='ac_input' size=50 />");
+    
+    {{dummy_input = 'dummy_rms_pledge_person_id'}}
     {{include 'pr/person_autocomplete.js'}}
 
     // Populate the real Input when the Dummy is selected
-    $("#dummy_person").result(function(event, data, formatted) {
+    $("#dummy_rms_pledge_person_id").result(function(event, data, formatted) {
         var newvalue = data.id;
         $("#rms_pledge_person_id").val(newvalue);
     });
@@ -22,12 +23,16 @@ $(function() {
     $("#rms_pledge_organisation_id").hide();
 
     // Add a dummy field
-    $("#rms_pledge_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
+    $("#rms_pledge_organisation_id").after("<input id='dummy_rms_pledge_organisation_id' class='ac_input' size=50 />");
 
-    {{include 'or/organisation_autocomplete.js'}}
+    {{dummy_input = "dummy_rms_pledge_organisation_id"}}
+    {{urlpath_c = "or"}}
+    {{urlpath_f = "organisation"}}
+    {{urlvar_field = "name"}}
+    {{include 'autocomplete.js'}}
 
     // Populate the real Input when the Dummy is selected
-    $("#dummy_organisation").result(function(event, data, formatted) {
+    $("#dummy_rms_pledge_organisation_id").result(function(event, data, formatted) {
         var newvalue = data.id;
         $("#rms_pledge_organisation_id").val(newvalue);
     });

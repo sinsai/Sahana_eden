@@ -9,24 +9,14 @@ $(document).ready(function () {
 //]]></script>
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Hide the real Input Field
-    $("#or_office_organisation_id").hide();
-    
-    // Add a dummy field
-    
-    $("#or_office_organisation_id").after("<input id='dummy_organisation' class='ac_input' value='" + {{if session.s3.organisation_name:}}"{{=session.s3.organisation_name}}"{{else:}}""{{pass}} + "' size=50 />");
-
-    {{dummy_input = "dummy_organisation"}}
+    {{entity_id = "or_office_organisation_id"}}
     {{urlpath_c = "or"}}
     {{urlpath_f = "organisation"}}
     {{urlvar_field = "name"}}
-    {{include 'autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_organisation").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#or_office_organisation_id").val(newvalue);
-    });     
+    {{if session.s3.organisation_name:}}
+        {{default_value = session.s3.organisation_name}}
+    {{pass}}
+    {{include 'auto_input.js'}}
 });
 
 // If submission succesful

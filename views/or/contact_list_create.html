@@ -1,59 +1,57 @@
 {{extend 'layout.html'}}
 {{include '_list_create.html'}}
 <script type="text/javascript">//<![CDATA[
+
+//copy from views/or/contact_create
+
+{{include 'or/offices_by_org.js'}}
+
 $(function() {
     // Person AutoComplete
-    // Hide the real Input Field
-    $("#or_contact_person_id").hide();
+    {{entity_id = "or_contact_person_id"}}
+    {{is_person = True}}
+    {{include 'auto_input.js'}}
     
-    // Add a dummy field
-    $("#or_contact_person_id").after("<input id='dummy_person' class='ac_input' size=50 />");
-
-    {{include 'pr/person_autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_person").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#or_contact_person_id").val(newvalue);
-    }); 
-
     // Organisation AutoComplete
-    // Hide the real Input Field
-    $("#or_contact_organisation_id").hide();
-    
-    // Add a dummy field
-    $("#or_contact_organisation_id").after("<input id='dummy_organisation' class='ac_input' size=50 />");
-
-    {{dummy_input = "dummy_organisation"}}
+    {{entity_id = "or_contact_organisation_id"}}
     {{urlpath_c = "or"}}
     {{urlpath_f = "organisation"}}
     {{urlvar_field = "name"}}
-    {{include 'autocomplete.js'}}
+    {{post_process = "load_offices(false);"}}
+    {{include 'auto_input.js'}}
 
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_organisation").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#or_contact_organisation_id").val(newvalue);
-    }); 
-    
     // Office AutoComplete
-    // Hide the real Input Field
-    $("#or_contact_office_id").hide();
     
-    // Add a dummy field
-    $("#or_contact_office_id").after("<input id='dummy_office' class='ac_input' size=50 />");
-
-    {{dummy_input = "dummy_office"}}
+    {{entity_id = "or_contact_office_id"}}
+    {{dummy_select = True}}
+    {{default_value = T('Select an Organisation to see a list of offices')}}
     {{urlpath_c = "or"}}
     {{urlpath_f = "office"}}
     {{urlvar_field = "name"}}
-    {{include 'autocomplete.js'}}
-
-    // Populate the real Input when the Dummy is selected
-    $("#dummy_office").result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $("#or_contact_office_id").val(newvalue);
-    }); 
+    {{include 'auto_input.js'}}
+    
+    cleanup = function(id){
+        if(id == "or_contact_office_id" || id == "or_contact_organisation_id" ){
+            load_offices(true);
+        }
+    }
+    // if we are going to add a new office, and the organisation is pre-selected,
+    // we would auto-assign the new office to that organisation
+    set_parent_id = function(href, caller){
+        if(caller != 'or_contact_office_id') 
+            return href;
+	   
+        id = $("#or_contact_organisation_id").val()
+	if(id == ''){
+            return href.replace(/organisation_id=(.*?)&/,'');
+        } 
+        else if(!href.match(/organisation_id/)){
+            return href.replace('?','?organisation_id=' + id + '&');
+        }
+        else{
+            return href.replace(/organisation_id=(.*?)&/,'organisation_id=' + id + '&');
+        }
+    };    
 });
 //]]></script>
 

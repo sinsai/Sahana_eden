@@ -19,11 +19,9 @@ $(document).ready(function() {
             // Add the caller to the URL vars so that the popup knows which field to refresh/set
             var url_in = $(this).attr('href');
             var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
-            try {
-                url_in = set_parent_id(url_in, caller);
-            } catch (e) {
-                // pass
-            }
+	    // try-catch drive the firebug crazy
+            if('undefined' != typeof(set_parent_id))
+	        url_in = set_parent_id(url_in, caller);
             if (url_in.match(/caller=/)) {
                 return url_in.replace(/caller=.*?&/, 'caller=' + caller + '&');
             } else {

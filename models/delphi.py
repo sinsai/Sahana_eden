@@ -8,12 +8,28 @@ group_table = module + '_' + resource
 db.define_table(group_table,
     Field('title', 'string', notnull=True),
     Field('description', 'text'),
-    Field('moderator', db.auth_user, writable=False),
+    Field('active', 'boolean', default=True),
     Field('last_modification','datetime', default=request.now, writable=False))
 
 db[group_table].title.label = T('Group Title')
 db[group_table].title.requires = IS_NOT_IN_DB(db,"%s.title" % group_table) and IS_NOT_EMPTY()
-db[group_table].moderator.default = auth.user.id if auth.user else 0
+
+# Group Membership
+resource = 'grp_m'
+group_m_table = module + '_' + resource
+db.define_table(group_m_table,
+    Field('grp', db[group_table], notnull=True),
+    Field('user', db.auth_user, notnull=True),
+    Field('description', 'text'),
+    Field('req', 'boolean', default=False),
+    Field('status','string', default='guest'))
+
+db[group_m_table].grp.label = T('Problem Group')
+db[group_m_table].grp.requires = IS_IN_DB(db, '%s.id' % group_table, '%(title)s')
+db[group_m_table].user.label = T('User')
+db[group_m_table].user.represent = lambda user_id: (user_id == 0) and '-' or '%(first_name)s %(last_name)s [%(id)d]' % db(db.auth_user.id==user_id).select()[0]
+db[group_m_table].user.requires = IS_IN_DB(db, 'auth_user.id', '%(first_name)s %(last_name)s [%(id)d]')
+db[group_m_table].status.requires = IS_IN_SET(('guest', 'contributor', 'participant', 'moderator'))
 
 # Problem
 resource = 'problem'

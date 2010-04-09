@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Synchronization
+"""
+
 module = 'sync'
 
 sync_policy_opts = {

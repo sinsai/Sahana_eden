@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 module = 'budget'
 # Current Module (for sidebar title)
@@ -192,7 +192,7 @@ def parameter():
     "RESTlike CRUD controller"
     resource = 'parameter'
     table = module + '_' + resource
-    
+
     # Model Options
     db[table].shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
     db[table].shipping.label = "Shipping cost"
@@ -209,14 +209,14 @@ def parameter():
         title_display = T('Parameters'))
 
     return shn_rest_controller(module, resource, deletable=False)
-    
+
 def item():
     "RESTlike CRUD controller"
     resource = 'item'
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
-    
+
     # CRUD Strings
     ADD_ITEM = T('Add Item')
     LIST_ITEMS = T('List Items')
@@ -237,7 +237,7 @@ def item():
         msg_list_empty = T('No Items currently registered'))
 
     response.s3.pdf = URL(r=request, f='item_export_pdf')
-    
+
     return shn_rest_controller(module, resource, main='code', extra='description', orderby=db.budget_item.category_type, sortby=[[1, "asc"]], onaccept=lambda form: item_cascade(form))
     #return shn_rest_controller(module, resource, main='code', extra='description', orderby=db.budget_item.category_type, onaccept=lambda form: item_cascade(form))
 
@@ -298,10 +298,10 @@ def item_export_pdf():
     if not objects_list:
         session.warning = T('No data in this table - cannot create PDF!')
         redirect(URL(r=request, f='item'))
-    
+
     import StringIO
     output = StringIO.StringIO()
-    
+
     class MyReport(Report):
         def __init__(self, queryset=None, T=None):
             " Initialise parent class & make any necessary modifications "
@@ -373,14 +373,14 @@ def item_export_pdf():
     filename = "%s_items.pdf" % (request.env.server_name)
     response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
     return output.read()
-    
+
 def kit():
     "RESTlike CRUD controller"
     resource = 'kit'
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
-    
+
     # CRUD Strings
     ADD_KIT = T('Add Kit')
     LIST_KITS = T('List Kits')
@@ -432,7 +432,7 @@ def kit_item():
     kit = request.args(0)
     table = db.budget_kit_item
     authorised = shn_has_permission('update', table)
-    
+
     title = db.budget_kit[kit].code
     kit_description = db.budget_kit[kit].description
     kit_total_cost = db.budget_kit[kit].total_unit_cost
@@ -468,12 +468,12 @@ def kit_item():
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
             item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minute_cost), TD(megabyte_cost), TD(total_units), TD(total_monthly), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-            
+
         table_header = THEAD(TR(TH('ID'), TH(table.item_id.label), TH(table.quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(db.budget_item.minute_cost.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly')), TH(T('Remove'))))
         table_footer = TFOOT(TR(TD(B(T('Totals for Kit:')), _colspan=7), TD(B(kit_total_cost)), TD(B(kit_monthly_cost)), TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')))), _align='right')
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='kit_update_items', args=[kit])))
         subtitle = T("Contents")
-        
+
         crud.messages.submit_button=T('Add')
         # Check for duplicates before Item is added to DB
         crud.settings.create_onvalidation = lambda form: kit_dupes(form)
@@ -504,7 +504,7 @@ def kit_item():
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minute_cost), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
-            
+
         table_header = THEAD(TR(TH('ID'), TH(table.item_id.label), TH(table.quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(db.budget_item.minute_cost.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly'))))
         table_footer = TFOOT(TR(TD(B(T('Totals for Kit:')), _colspan=7), TD(B(kit_total_cost)), TD(B(kit_monthly_cost)), _align='right'))
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
@@ -525,7 +525,7 @@ def kit_dupes(form):
         redirect(URL(r=request, args=kit))
     else:
         return
-    
+
 def kit_total(form):
     "Calculate Totals for the Kit specified by Form"
     if 'kit_id' in form.vars:
@@ -535,7 +535,7 @@ def kit_total(form):
         # called by kit()
         kit = form.vars.id
     kit_totals(kit)
-    
+
 def kit_totals(kit):
     "Calculate Totals for a Kit"
     table = db.budget_kit_item
@@ -593,10 +593,10 @@ def kit_export_xls():
     except ImportError:
         session.error = T('xlwt module not available within the running Python - this needs installing to do XLS Reporting!')
         redirect(URL(r=request, c='kit'))
-    
+
     import StringIO
     output = StringIO.StringIO()
-    
+
     book = xlwt.Workbook()
     # List of Kits
     sheet1 = book.add_sheet('Kits')
@@ -609,11 +609,11 @@ def kit_export_xls():
     for field in fields:
         row0.write(cell, field.label, xlwt.easyxf('font: bold True;'))
         cell += 1
-    
+
     # For Header row on Items sheets
     table = db.budget_item
     fields_items = [table[f] for f in table.fields if table[f].readable]
-    
+
     row = 1
     for kit in kits:
         # The Kit details on Sheet 1
@@ -657,7 +657,7 @@ def kit_export_xls():
                     value = item[col]
                 rowx.write(cell, value)
                 cell += 1
-    
+
     book.save(output)
 
     output.seek(0)
@@ -666,7 +666,7 @@ def kit_export_xls():
     filename = "%s_kits.xls" % (request.env.server_name)
     response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
     return output.read()
-    
+
 def kit_export_pdf():
     """
     Export a list of Kits in Adobe PDF format
@@ -691,10 +691,10 @@ def kit_export_pdf():
     if not objects_list:
         session.warning = T('No data in this table - cannot create PDF!')
         redirect(URL(r=request))
-    
+
     import StringIO
     output = StringIO.StringIO()
-    
+
     #class MySubReport(SubReport):
     #    def __init__(self, db=None, **kwargs):
     #        " Initialise parent class & make any necessary modifications "
@@ -769,7 +769,7 @@ def kit_export_pdf():
                 ),
             ]
 
-        
+
     #report = MyReport(queryset=objects_list)
     report = MyReport(queryset=objects_list, db=db)
     report.generate_by(PDFGenerator, filename=output)
@@ -780,14 +780,14 @@ def kit_export_pdf():
     filename = "%s_kits.pdf" % (request.env.server_name)
     response.headers['Content-disposition'] = "attachment; filename=\"%s\"" % filename
     return output.read()
-    
+
 def kit_export_csv():
     """
     Export kits in CSV format
     Concatenates: kits, items & kit_item
     """
     output = ''
-    
+
     for resource in ['kit', 'item', 'kit_item']:
         _table = module + '_' + resource
         table = db[_table]
@@ -799,13 +799,13 @@ def kit_export_csv():
         output += 'TABLE ' + _table + '\n'
         output += str(db(query).select())
         output += '\n\n'
-        
+
     import gluon.contenttype
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
     filename = "%s_kits.csv" % (request.env.server_name)
     response.headers['Content-disposition'] = "attachment; filename=%s" % filename
     return output
-    
+
 def kit_import_csv():
     """
     Import kits in CSV format
@@ -817,17 +817,17 @@ def kit_import_csv():
         # Assumes that it is a concatenation of tables
         shn_import_csv(file)
         session.flash = T('Data uploaded')
-    except: 
+    except:
         session.error = T('Unable to parse CSV file!')
     redirect(URL(r=request, f='kit'))
-    
+
 def bundle():
     "RESTlike CRUD controller"
     resource = 'bundle'
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
-    
+
     # CRUD Strings
     ADD_BUNDLE = T('Add Bundle')
     LIST_BUNDLES = T('List Bundles')
@@ -859,7 +859,7 @@ def bundle_kit_item():
     bundle = request.args(0)
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
-    
+
     title = db.budget_bundle[bundle].name
     bundle_description = db.budget_bundle[bundle].description
     bundle_total_cost = db.budget_bundle[bundle].total_unit_cost
@@ -874,7 +874,7 @@ def bundle_kit_item():
         # Audit
         crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'bundle_kit_item', 'html')
         # Display a List_Create page with editable Quantities, Minutes & Megabytes
-        
+
         # Kits
         query = tables[0].bundle_id==bundle
         sqlrows = db(query).select()
@@ -907,7 +907,7 @@ def bundle_kit_item():
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name='kit_' + str(id), _class="remove_item")
             item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-            
+
         # Items
         query = tables[1].bundle_id==bundle
         sqlrows = db(query).select()
@@ -940,12 +940,12 @@ def bundle_kit_item():
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name='item_' + str(id), _class="remove_item")
             item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-        
+
         table_header = THEAD(TR(TH('ID'), TH(T('Description')), TH(tables[0].quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(tables[0].minutes.label), TH(db.budget_item.minute_cost.label), TH(tables[0].megabytes.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly')), TH(T('Remove'))))
         table_footer = TFOOT(TR(TD(B(T('Totals for Bundle:')), _colspan=9), TD(B(bundle_total_cost)), TD(B(bundle_monthly_cost)), TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')))), _align='right')
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='bundle_update_items', args=[bundle])))
         subtitle = T("Contents")
-        
+
         crud.messages.submit_button=T('Add')
         # Check for duplicates before Item is added to DB
         crud.settings.create_onvalidation = lambda form: bundle_dupes(form)
@@ -993,7 +993,7 @@ def bundle_kit_item():
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name='kit_' + str(id), _class="remove_item")
             item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
-            
+
         # Items
         query = tables[1].bundle_id==bundle
         sqlrows = db(query).select()
@@ -1019,11 +1019,11 @@ def bundle_kit_item():
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
-        
+
         table_header = THEAD(TR(TH('ID'), TH(T('Description')), TH(tables[0].quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(tables[0].minutes.label), TH(db.budget_item.minute_cost.label), TH(tables[0].megabytes.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly'))))
         table_footer = TFOOT(TR(TD(B(T('Totals for Bundle:')), _colspan=9), TD(B(bundle_total_cost)), TD(B(bundle_monthly_cost))), _align='right')
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
-        
+
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/bundle_kit_item_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
@@ -1049,7 +1049,7 @@ def bundle_dupes(form):
         redirect(URL(r=request, args=bundle))
     else:
         return
-    
+
 def bundle_total(form):
     "Calculate Totals for the Bundle specified by Form"
     if 'bundle_id' in form.vars:
@@ -1059,12 +1059,12 @@ def bundle_total(form):
         # called by bundle()
         bundle = form.vars.id
     bundle_totals(bundle)
-    
+
 def bundle_totals(bundle):
     "Calculate Totals for a Bundle"
     total_unit_cost = 0
     total_monthly_cost = 0
-    
+
     table = db.budget_bundle_kit
     query = table.bundle_id==bundle
     kits = db(query).select()
@@ -1074,7 +1074,7 @@ def bundle_totals(bundle):
         total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_monthly_cost) * (db(query).select().first().quantity)
         total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
         total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
-    
+
     table = db.budget_bundle_item
     query = table.bundle_id==bundle
     items = db(query).select()
@@ -1084,7 +1084,7 @@ def bundle_totals(bundle):
         total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().monthly_cost) * (db(query).select().first().quantity)
         total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
         total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
-    
+
     db(db.budget_bundle.id==bundle).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost)
 
 def bundle_update_items():
@@ -1154,7 +1154,7 @@ def staff():
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
-    
+
     # CRUD Strings
     ADD_STAFF_TYPE = T('Add Staff Type')
     LIST_STAFF_TYPE = T('List Staff Types')
@@ -1181,7 +1181,7 @@ def location():
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
-    
+
     # CRUD Strings
     ADD_LOCATION = T('Add Location')
     LIST_LOCATIONS = T('List Locations')
@@ -1208,7 +1208,7 @@ def project():
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
-    
+
     # CRUD Strings
     ADD_PROJECT = T('Add Project')
     LIST_PROJECTS = T('List Projects')
@@ -1235,7 +1235,7 @@ def budget():
     table = module + '_' + resource
 
     # Model options used in multiple controllers so defined at the top of the file
-    
+
     # CRUD Strings
     ADD_BUDGET = T('Add Budget')
     LIST_BUDGETS = T('List Budgets')
@@ -1264,7 +1264,7 @@ def budget_staff_bundle():
     budget = request.args(0)
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
-    
+
     title = db.budget_budget[budget].name
     budget_description = db.budget_budget[budget].description
     budget_onetime_cost = db.budget_budget[budget].total_onetime_costs
@@ -1279,7 +1279,7 @@ def budget_staff_bundle():
         # Audit
         crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'budget_staff_bundle', 'html')
         # Display a List_Create page with editable Quantities & Months
-        
+
         # Staff
         query = tables[0].budget_id==budget
         sqlrows = db(query).select()
@@ -1306,7 +1306,7 @@ def budget_staff_bundle():
             recurring = salary * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name='staff_' + str(id), _class="remove_item")
             item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(travel), TD(salary), TD(months_box), TD(onetime), TD(recurring), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-            
+
         # Bundles
         query = tables[1].budget_id==budget
         sqlrows = db(query).select()
@@ -1333,12 +1333,12 @@ def budget_staff_bundle():
             recurring = monthly_cost * row.months
             checkbox = INPUT(_type="checkbox", _value="on", _name='bundle_' + str(id), _class="remove_item")
             item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-        
+
         table_header = THEAD(TR(TH('Location'), TH('Project'), TH('Item'), TH(T('Description')), TH(tables[0].quantity.label), TH(T('One-time costs')), TH(T('Recurring costs')), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label), TH(T('Remove'))))
         table_footer = TFOOT(TR(TD(B(T('Totals for Budget:')), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost)), TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')))), _align='right')
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='budget_update_items', args=[budget])))
         subtitle = T("Contents")
-        
+
         crud.messages.submit_button=T('Add')
         # Check for duplicates before Item is added to DB
         crud.settings.create_onvalidation = lambda form: budget_dupes(form)
@@ -1380,7 +1380,7 @@ def budget_staff_bundle():
             recurring = salary * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name='staff_' + str(id), _class="remove_item")
             item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(travel), TD(salary), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align='right'))
-            
+
         # Bundles
         query = tables[1].budget_id==budget
         sqlrows = db(query).select()
@@ -1406,11 +1406,11 @@ def budget_staff_bundle():
             onetime = unit_cost * row.quantity
             recurring = monthly_cost * row.months
             item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align='right'))
-        
+
         table_header = THEAD(TR(TH('Location'), TH('Project'), TH('Item'), TH(T('Description')), TH(tables[0].quantity.label), TH(T('One-time costs')), TH(T('Recurring costs')), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label)))
         table_footer = TFOOT(TR(TD(B(T('Totals for Budget:')), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost))), _align='right')
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
-        
+
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
         response.view = '%s/budget_staff_bundle_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
@@ -1436,7 +1436,7 @@ def budget_dupes(form):
         redirect(URL(r=request, args=budget))
     else:
         return
-    
+
 def budget_total(form):
     "Calculate Totals for the budget specified by Form"
     if 'budget_id' in form.vars:
@@ -1446,12 +1446,12 @@ def budget_total(form):
         # called by budget()
         budget = form.vars.id
     budget_totals(budget)
-    
+
 def budget_totals(budget):
     "Calculate Totals for a budget"
     total_onetime_cost = 0
     total_recurring_cost = 0
-    
+
     table = db.budget_budget_staff
     query = table.budget_id==budget
     staffs = db(query).select()
@@ -1461,7 +1461,7 @@ def budget_totals(budget):
         total_recurring_cost += (db(db.budget_staff.id==staff.staff_id).select().first().salary) * (db(query).select().first().quantity) * (db(query).select().first().months)
         total_recurring_cost += (db(db.budget_location.id==staff.location_id).select().first().subsistence) * (db(query).select().first().quantity) * (db(query).select().first().months)
         total_recurring_cost += (db(db.budget_location.id==staff.location_id).select().first().hazard_pay) * (db(query).select().first().quantity) * (db(query).select().first().months)
-        
+
     table = db.budget_budget_bundle
     query = table.budget_id==budget
     bundles = db(query).select()
@@ -1469,7 +1469,7 @@ def budget_totals(budget):
         query = (table.budget_id==budget) & (table.bundle_id==bundle.bundle_id)
         total_onetime_cost += (db(db.budget_bundle.id==bundle.bundle_id).select().first().total_unit_cost) * (db(query).select().first().quantity)
         total_recurring_cost += (db(db.budget_bundle.id==bundle.bundle_id).select().first().total_monthly_cost) * (db(query).select().first().quantity) * (db(query).select().first().months)
-        
+
     db(db.budget_budget.id==budget).update(total_onetime_costs=total_onetime_cost, total_recurring_costs=total_recurring_cost)
 
 def budget_update_items():

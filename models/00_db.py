@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    DB configuration
+"""
+
 import os, traceback, datetime
 import re
 # All dates should be stored in UTC for Sync to work reliably

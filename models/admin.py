@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+"""
+    Admin module
+"""
+
 import cPickle as pickle
 
 module = 'admin'

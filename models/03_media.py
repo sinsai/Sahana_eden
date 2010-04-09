@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Media Manager
+"""
+
 module = 'media'
 
 # Settings

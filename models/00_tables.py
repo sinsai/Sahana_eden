@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Global tables and re-usable fields
+"""
+
 from gluon.tools import Service
 
 service = Service(globals())

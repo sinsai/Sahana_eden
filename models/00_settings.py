@@ -110,4 +110,3 @@ from gluon.storage import Messages
 s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = 'Sahana access granted'
 s3.messages.confirmation_email = 'Welcome to the Sahana Portal at ' + S3_PUBLIC_URL + '. Thanks for your assistance.'
-import_delphi = False

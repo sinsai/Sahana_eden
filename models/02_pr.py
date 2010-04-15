@@ -440,6 +440,20 @@ group_id = SQLTable(None, 'group_id',
 # *****************************************************************************
 # Functions:
 #
+def shn_pr_person_list_fields():
+
+    list_fields = ['id',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'date_of_birth',
+            'opt_pr_nationality',
+            'missing']
+
+    return list_fields
+
+# -----------------------------------------------------------------------------
+#
 def shn_pentity_ondelete(record):
 
     """
@@ -510,9 +524,12 @@ def shn_pr_person_search_simple(xrequest, **attr):
     onvalidation = attr.get('onvalidation', None)
     onaccept = attr.get('onaccept', None)
 
-    if not shn_has_permission('read', db.pr_person):
+    table = db.pr_person
+
+    if not shn_has_permission('read', table):
         session.error = UNAUTHORISED
-        redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
+        redirect(URL(r=request, c='default', f='user', args='login',
+            vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
 
     if xrequest.representation=="html":
         # Check for redirection
@@ -550,33 +567,34 @@ def shn_pr_person_search_simple(xrequest, **attr):
                 label=form.vars.label)
 
             if results and len(results):
-                rows = db(db.pr_person.id.belongs(results)).select()
+                query = table.id.belongs(results)
             else:
+                query = (table.id == 0)
                 rows = None
 
-            # Build table rows from matching records
-            if rows:
-                records = []
-                for row in rows:
-                    href = next.replace('%5bid%5d', '%s' % row.id)
-                    records.append(TR(
-                        row.pr_pe_label or '[no label]',
-                        A(vita.fullname(row), _href=href),
-                        row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
-                        row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
-                        row.opt_pr_nationality and pr_nationality_opts[row.opt_pr_nationality] or 'unknown',
-                        row.date_of_birth or 'unknown'
-                        ))
-                items=DIV(TABLE(THEAD(TR(
-                    TH("ID Label"),
-                    TH("Name"),
-                    TH("Gender"),
-                    TH("Age Group"),
-                    TH("Nationality"),
-                    TH("Date of Birth"))),
-                    TBODY(records), _id='list', _class="display"))
+            # Add filter
+            if response.s3.filter:
+                response.s3.filter = (response.s3.filter) & (query)
             else:
-                items = T('None')
+                response.s3.filter = (query)
+
+            xrequest.id = None
+
+            # Get report from HTML exporter
+            report = shn_list(xrequest,
+                              listadd=False,
+                              list_fields=shn_pr_person_list_fields(),
+                              onvalidation=onvalidation, onaccept=onaccept)
+
+            output.update(dict(report))
+
+        # Title and subtitle
+        title = T('List of persons')
+        subtitle = T('Matching Records')
+        output.update(title=title, subtitle=subtitle)
+
+        # Custom view
+        response.view = '%s/person_search.html' % xrequest.prefix
 
         try:
             label_create_button = s3.crud_strings['pr_person'].label_create_button
@@ -585,7 +603,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
 
         add_btn = A(label_create_button, _href=URL(r=request, f='person', args='create'), _id='add-btn')
 
-        output.update(dict(items=items, add_btn=add_btn))
+        output.update(add_btn=add_btn)
         return output
 
     else:

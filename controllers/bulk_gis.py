@@ -1,20 +1,20 @@
 #!/usr/bin/python
+
 """
+    Bulk Uploader - Controllers
 
-bulk_gis.py
+    A simple loader for GIS files in CSV format.  Developed primarily for loading Administrative Areas for Haiti.
 
-A simple loader for GIS files in CSV format.  Developed primarily for loading Administrative Areas for Haiti.
+    LICENSE:
+    This source file is subject to LGPL license that is available
+    through the world-wide-web at the following URI:
+    http://www.gnu.org/copyleft/lesser.html
 
-LICENSE: This source file is subject to LGPL license 
-that is available through the world-wide-web at the following URI:
-http://www.gnu.org/copyleft/lesser.html
-
-author     Timothy Caro-Bruce <tcarobruce@gmail.com> 
-package    Sahana - http://sahana.lk/
-module     bulk_gis 
-copyright  Lanka Software Foundation - http://www.opensource.lk 
-license    http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License (LGPL) 
-
+    @author: Timothy Caro-Bruce <tcarobruce@gmail.com>
+    @package: Sahana - http://sahana.lk/
+    @module: bulk_gis
+    @copyright: Lanka Software Foundation - http://www.opensource.lk
+    @license: http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License (LGPL)
 """
 
 import sys
@@ -49,7 +49,7 @@ PREFIXES = {
 
 csv.field_size_limit(2**20 * 10)  # 10 megs
 
-# from http://docs.python.org/library/csv.html#csv-examples 
+# from http://docs.python.org/library/csv.html#csv-examples
 def latin_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
     for row in csv.reader(unicode_csv_data):
         yield [unicode(cell, 'latin-1') for cell in row]
@@ -60,7 +60,7 @@ def latin_dict_reader(data, dialect=csv.excel, **kwargs):
     for r in reader:
         yield dict(zip(headers, r))
 
-# TEST 
+# TEST
 def test():
     maxlen = 0
     from pprint import pprint
@@ -76,18 +76,18 @@ def test():
         if len(nn) > 1:
             for a in nn:
                 print n, ": ", ','.join([a.get("DEPARTEMEN",''), a.get("COMMUNE",''), a.get("NOM_SECTIO",'')])
-    
+
     #print "longest wkt was %d bytes" % maxlen
 
 # LOCATION LOADING
 
 def load_gis_locations(data, make_feature_group=False):
-    """Loads locations from a list of dictionaries which must have, 
+    """Loads locations from a list of dictionaries which must have,
         at minimum 'name' and either 'wkt' or 'lat' and 'lon'.
         Also accepts:
             'parent'
             'feature_class_id'
-        If make_feature_group is True, 
+        If make_feature_group is True,
         a feature_group with the same name will be created.
         This procedure changes the dictionaries passed to it.
     """
@@ -113,7 +113,7 @@ def make_name(name, admin_type):
     if admin_type != 'Sections':  # Sections happen to be already appropriately capitalized
         name = name.title()
     return ': '.join([PREFIXES[admin_type], name])
-    
+
 def get_name(d, admin_type):
     return make_name(d[NAME_MAP[admin_type]], admin_type)
 
@@ -141,9 +141,9 @@ def make_unique_sections(data):
 def load_level(admin_type, parent_type=None):
     """Load an administrative level.  Transforms dictionaries from csv, resolves naming conflicts for sections, and calls load_gis_locations to load into database."""
     filename = '/'.join([BASEDIR, FILES[admin_type]])
-    
+
     admin_area_class_id = db(db.gis_feature_class.name==ADMIN_FEATURE_CLASS_NAME).select().first().id
-        
+
     data = list(latin_dict_reader(open(filename)))
 
     if admin_type == 'Sections':
@@ -159,7 +159,7 @@ def load_level(admin_type, parent_type=None):
             if parent_type:
                 transformed['parent'] = get_parent_id(d, parent_type)
             yield transformed
-            
+
     load_gis_locations(transformed_dict_gen(), make_feature_group=True)
 
 def create_haiti_admin_areas():
@@ -172,7 +172,7 @@ def create_haiti_admin_areas():
 
 def assign_parents():
     admin_area_class_id = db(db.gis_feature_class.name==ADMIN_FEATURE_CLASS_NAME).select().first().id
-    unassigned = db((db.gis_location.parent==None) & 
+    unassigned = db((db.gis_location.parent==None) &
                     (db.gis_location.feature_class_id != admin_area_class_id)
                  ).select()
     for location in unassigned:
@@ -184,7 +184,7 @@ def assign_parents():
                 # only set admin areas as parents
                 if candidate.feature_class_id == admin_area_class_id:
                     # prefer parents whose names sort later -- ensures L3 is preferred over L2, L1
-                    # ...this is a bit hacky -- depends on names being prefixed with L1,L2,L3                    
+                    # ...this is a bit hacky -- depends on names being prefixed with L1,L2,L3
                     if not parent or parent.name < candidate.name:
                         parent = candidate
         if parent:
@@ -204,7 +204,7 @@ def wipe_admin_areas():
     for i in range(4):
         db(db.gis_feature_group.name.like("L%d:%%"%i)).delete()
     db.commit()
-    
+
 def export_admin_areas_csv():
     """
     Exports (in db format) locations, feature_class and feature_groups relevant to admin areas only.
@@ -220,7 +220,7 @@ def export_admin_areas_csv():
         ('gis_feature_group', feature_groups),
         ('gis_location_to_feature_group', location_to_fgs),
     ]
-    
+
     s = StringIO()
     for table, query in admin_area_data:
         s.write('TABLE %s\r\n' % table)
@@ -229,6 +229,4 @@ def export_admin_areas_csv():
     s.write('END')
     response.headers['Content-Type'] = 'text/plain; charset=utf-8'
     return s.getvalue()
-    
-    
-    
+

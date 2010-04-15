@@ -92,6 +92,7 @@ def shn_auth_on_logout(user):
     # S3XRC
     s3xrc.clear_session(session)
 
+auth.settings.lock_keys = False
 auth.settings.logout_onlogout = shn_auth_on_logout
 auth.settings.login_onaccept = shn_auth_on_login
 
@@ -99,6 +100,7 @@ auth.settings.login_onaccept = shn_auth_on_login
 auth.settings.admin_startup_roles = [
     #'AdvancedJS',
 ]
+auth.settings.lock_keys = True
 
 crud = CrudS3(globals(), db)
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34

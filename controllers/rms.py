@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Request Management System - Controllers
+"""
+
 module = 'rms'
 
 # Current Module (for sidebar title)
@@ -12,7 +16,7 @@ response.menu_options = [
     [T('View Requests & Pledge Aid'), False, URL(r=request, f='req')],
     [T('View & Edit Pledges'),False, URL(r=request, f='pledge')]
 #    [T('Search Requests'), False, URL(r=request, f='req', args='search')] #disabled due to problems with pagination
-    
+
 ]
 
 # S3 framework functions
@@ -26,18 +30,18 @@ def test():
 
 def req(): #aid requests
     "RESTlike CRUD controller"
-    
+
     resource = 'req' # pulls from table of combined aid request feeds (sms, tweets, manual)
-    
+
     # Filter out non-actionable SMS requests:
 #    response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
-    
+
     if request.args(0) and request.args(0) == 'search_simple':
         pass
     else:
         # Uncomment to enable Server-side pagination:
         response.s3.pagination = True
-        
+
     return shn_rest_controller(module, resource, editable=False, listadd=False, pheader=shn_rms_req_pheader) #call pheader to act as parent header for parent/child forms (layout defined below)
 #    return shn_rest_controller(module, resource, editable=False, listadd=False)
 
@@ -52,15 +56,15 @@ def req_detail(): #arbitrary key:value pairs for aid requests
 
     return shn_rest_controller( module , resource, editable=False, listadd=False)
 
-    
+
 def pledge(): #pledges from agencies
     "RESTlike CRUD controller"
-    
+
     resource = 'pledge'
-    
+
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True  #commented due to display problems
-    
+
     pledges = db(db.rms_pledge.status == 3).select() # changes the request status to completed when pledge delivered
                                                      # this is necessary to close the loop
     for pledge in pledges:
@@ -89,7 +93,7 @@ def shn_rms_req_pheader(resource, record_id, representation, next=None, same=Non
             location_represent = shn_gis_location_represent(location.id)
         except:
             location_represent = None
-        
+
         pheader = TABLE(
                     TR(
                         TH(T('Message: ')),
@@ -139,7 +143,7 @@ def sms_complete(): #contributes to RSS feed for closing the loop with Ushahidi
             "Ushahidi Link: " + A(ush_id, _href=ush_id).xml() + '<br>' + \
             "SMS Record: " + str(smsrec)
 
-    rss = { "title" : t , "description" : d }    
+    rss = { "title" : t , "description" : d }
     response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 2)
     return shn_rest_controller(module, 'req', editable=False, listadd=False, rss=rss)
 

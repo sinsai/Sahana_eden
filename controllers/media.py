@@ -1,4 +1,10 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+    Media Manager - Controllers
+
+    @author: Fran Boon
+"""
 
 module = 'media'
 # Current Module (for sidebar title)
@@ -13,7 +19,7 @@ response.menu_options = [
 # Web2Py Tools functions
 def download():
     "Download a file."
-    return response.download(request, db) 
+    return response.download(request, db)
 
 # S3 framework functions
 def index():
@@ -24,10 +30,10 @@ def metadata():
     "RESTlike CRUD controller"
     resource = 'metadata'
     table = module + '_' + resource
-    
+
     # Model options
     # used in multiple controllers, so in the model
-    
+
     # CRUD Strings
     LIST_METADATA = T('List Metadata')
     s3.crud_strings[table] = Storage(
@@ -44,14 +50,14 @@ def metadata():
         msg_record_modified = T('Metadata updated'),
         msg_record_deleted = T('Metadata deleted'),
         msg_list_empty = T('No Metadata currently defined'))
-    
+
     return shn_rest_controller(module, resource)
 
 def image():
     "RESTlike CRUD controller"
     resource = 'image'
     table = module + '_' + resource
-    
+
     # Model options
     # used in multiple controllers, so in the model
 
@@ -79,25 +85,25 @@ def bulk_upload():
     Custom view to allow bulk uploading of photos which are made into GIS Features.
     Lat/Lon can be pulled from an associated GPX track with timestamp correlation.
     """
-    
+
     crud.messages.submit_button = T('Upload')
 
     form = crud.create(db.media_metadata)
-    
+
     gpx_tracks = OptionsWidget()
     gpx_widget = gpx_tracks.widget(track_id.track_id, track_id.track_id.default, _id='gis_layer_gpx_track_id')
     gpx_label = track_id.track_id.label
     gpx_comment = track_id.track_id.comment
-    
+
     feature_group = OptionsWidget()
     fg_widget = feature_group.widget(feature_group_id.feature_group_id, feature_group_id.feature_group_id.default, _id='gis_location_to_feature_group_feature_group_id')
     fg_label = feature_group_id.feature_group_id.label
     fg_comment = feature_group_id.feature_group_id.comment
-    
+
     response.title = T('Bulk Uploader')
-    
+
     return dict(form=form, gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, fg_widget=fg_widget, fg_label=fg_label, fg_comment=fg_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
- 
+
 def upload_bulk():
     "Receive the Uploaded data from bulk_upload()"
     # Is there a GPX track to correlate timestamps with?
@@ -113,19 +119,19 @@ def upload_bulk():
     #event_time = form.vars.event_time
     #expiry_time = form.vars.expiry_time
     #url = form.vars.url
-    
+
     # Insert initial metadata
     #metadata_id = db.media_metadata.insert(description=description, person_id=person_id, source=source, accuracy=accuracy, sensitivity=sensitivity, event_time=event_time, expiry_time=expiry_time)
 
     # Extract timestamps from GPX file
     # ToDo: Parse using lxml?
-	
+
     # Receive file
     #location_id
     #image
-                
+
     #image_filename = db.insert()
-    
+
     # Read EXIF Info from file
     #exec('import applications.%s.modules.EXIF as EXIF' % request.application)
     # Faster for Production (where app-name won't change):
@@ -142,15 +148,15 @@ def upload_bulk():
 
     # Add image to database
     image_id = db.media_image.insert()
-    
+
     return json_message(True, '200', "Files Processed.")
 
 def upload(module, resource, table, tablename, onvalidation=None, onaccept=None):
     # Receive file ( from import_url() )
     record = Storage()
-    
+
     for var in request.vars:
-        
+
         # Skip the Representation
         if var == 'format':
             continue
@@ -176,7 +182,7 @@ def upload(module, resource, table, tablename, onvalidation=None, onaccept=None)
                 (source_file, original_filename) = \
                     (cStringIO.StringIO(f), 'file.txt')
             newfilename = field.store(source_file, original_filename)
-            request.vars['%s_newfilename' % fieldname] = record[fieldname] = newfilename 
+            request.vars['%s_newfilename' % fieldname] = record[fieldname] = newfilename
             if field.uploadfield and not field.uploadfield==True:
                 record[field.uploadfield] = source_file.read()
         else:

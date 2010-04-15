@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Default Controllers
+
+    @author: Fran Boon
+"""
+
 module = 'default'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions)

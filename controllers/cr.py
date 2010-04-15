@@ -1,6 +1,11 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+    Shelter Registry - Controllers
+"""
 
 module = 'cr'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
@@ -9,7 +14,7 @@ response.menu_options = [
     [T('List Shelters'), False, URL(r=request, f='shelter')],
     #[T('Search Shelters'), False, URL(r=request, f='shelter', args='search')]
 ]
-        
+
 # S3 framework functions
 def index():
     "Module's Home Page"

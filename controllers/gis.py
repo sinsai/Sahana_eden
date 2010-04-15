@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
+
+"""
+    GIS Controllers
+
+    @author: Fran Boon
+"""
+
 from operator import __and__
 
 module = 'gis'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)

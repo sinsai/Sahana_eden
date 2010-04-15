@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Volunteer Management Module
-#
+"""
+    Volunteer Management Module
+"""
 
 module = 'vol'
 

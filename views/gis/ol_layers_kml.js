@@ -1,6 +1,6 @@
 ﻿var kmlLayers = new Array();
 {{for layer in kml_layers:}}
-    {{name = layer.replace(' ', '_').replace(':', '_')}}
+    {{name = re.sub('\W', '_', layer)}}
     var kmlLayer{{=name}} = new OpenLayers.Layer.GML( "{{=layer}}", "{{=kml_layers[layer].url}}", {
         strategies: [ strategy ],
         format: OpenLayers.Format.KML,

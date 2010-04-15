@@ -1,5 +1,5 @@
 ﻿{{for layer in wms_layers:}}
-  {{name = layer.replace(' ', '_').replace(':', '_')}}
+  {{name = re.sub('\W', '_', layer)}}
     var wmsLayer{{=name}} = new OpenLayers.Layer.WMS( "{{=layer}}", "{{=wms_layers[layer].url}}", {
       {{if wms_layers[layer].base:}}
         isBaseLayer: 'true',

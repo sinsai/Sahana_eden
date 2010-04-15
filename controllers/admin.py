@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
+
+"""
+    Admin Controllers
+"""
+
 import cPickle as pickle
 import csv
 from gluon.admin import *
 from gluon.fileutils import listdir
 
 module = 'admin'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
@@ -288,7 +294,7 @@ def usergroup():
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
 
     form = SQLFORM(db.auth_user, record, deletable=True)
- 
+
     # find all groups user belongs to
     query = ( db.auth_membership.user_id == user )
     allgroups = db().select(db.auth_group.ALL)
@@ -305,21 +311,21 @@ def usergroup():
 
         for row in user_membership:
 
-            
+
             if (row.group_id == group.id):
                 records.append([group.role, 'on', group.id])
                 user_group_count += 1
 
         if (user_group_count == 0):
-            # if the group does not exist currently and is enabled 
+            # if the group does not exist currently and is enabled
             #if request.has_key(group.id):
             if (group.id == 6):
                 db.auth_membership.insert(user_id = user, group_id = group.id)
                 records.append([group.role, 'on', group.id])
                 data['heehe'] = 'yes %d' % group.id
-                
+
             records.append([group.role, '', group.id])
-  
+
     # Update records for user details
     if form.accepts(request.vars): \
                     response.flash='User ' + data['username'] + ' Updated'
@@ -328,7 +334,7 @@ def usergroup():
 
     # Update records for group membership details
     for key in request.vars.keys():
-        data['m_' + key] = request.vars[key]    
+        data['m_' + key] = request.vars[key]
 
     return dict(data=data, records=records, form=form)
 

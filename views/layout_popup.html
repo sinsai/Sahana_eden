@@ -8,13 +8,13 @@
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include 'sahana_scripts_min.html'}}
 {{pass}}
-{{include 'thickbox.html'}}
+{{include 'colorbox.html'}}
 
 <script type="text/javascript">//<![CDATA[
 
 function TB_cleanup(caller) {
     if(self.parent.cleanup)
-       self.parent.cleanup(caller); 
+       self.parent.cleanup(caller);
     self.parent.tb_remove();
 }
 
@@ -48,7 +48,7 @@ function TB_refresh() {
     var dropdown = options.length
     if ( dropdown ) {
         var append=[];
-    } 
+    }
     var value_high = 1;
     var represent_high = "";
     $.getJSONS3(url, function (data) {
@@ -86,7 +86,7 @@ function TB_refresh() {
             }, 1);
         // Clean-up
         TB_cleanup(caller);
-    }); 
+    });
 }
 // Function to get the URL parameters
 function getQueryParams(qs) {

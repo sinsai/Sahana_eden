@@ -1,6 +1,9 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
-# This file is used to test out various ideas or new Web2Py features
+"""
+    This file is used to test out various ideas or new Web2Py features
+"""
+
 module = 'test'
 response.menu_options = [
 ]
@@ -8,7 +11,7 @@ response.menu_options = [
 def index():
     "Shows request/session state for debugging"
     return dict()
-    
+
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
     # If webservices don't use sessions, avoid cluttering up the storage
@@ -16,7 +19,7 @@ def call():
     return service()
 
 def test():
-    #items = 
+    #items =
     form = crud.create(db.atable)
     return dict(form=form)
 
@@ -31,7 +34,7 @@ def webgrid():
     #grid.id = 'myTable'
     # No add_links as they interfere with dataTables
     #grid.enabled_rows = ['header', 'totals', 'pager', 'footer']
-    
+
     # Show Edit/Delete links based on whether user can access them:
     grid.action_links = ['view']
     grid.action_headers = ['']
@@ -39,9 +42,9 @@ def webgrid():
     #    grid.action_links.append('edit')
     #if auth.has_permission(table, 'delete'):
     #    grid.action_links.append('delete')
-    
+
     return dict(grid=grid())
-    
+
 def post():
     """Test for JSON POST
     #curl -i -X POST http://127.0.0.1:8000/sahana/test/post -H "Content-Type: application/json" -d {"name": "John"}
@@ -70,7 +73,7 @@ def feature():
     return dict(row=row)
 
 def refresh():
-    response.refresh = '<noscript><meta http-equiv="refresh" content="2; url=' + URL(r=request, c='budget', f='item') + '" /></noscript>' 
+    response.refresh = '<noscript><meta http-equiv="refresh" content="2; url=' + URL(r=request, c='budget', f='item') + '" /></noscript>'
     return dict()
 
 def photo():
@@ -83,14 +86,14 @@ def user():
     else:
         user = None
     return user
-    
+
 def css():
     items = crud.select(db.pr_person, _id='myid', _class='myclass')
     form = crud.create(db.pr_person)
     form['_class'] = 'my2class'
     form['_id'] = 'my2id'
     return dict(items=items, form=form)
-    
+
 def type():
     table = db.msg_group_type
     table.name.represent = lambda name: T(name)

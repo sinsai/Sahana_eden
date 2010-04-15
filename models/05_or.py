@@ -66,7 +66,7 @@ sector_id = SQLTable(None, 'sector_id',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_sector.id', '%(name)s', multiple=True)),
                            represent = sector_represent,
                            label = T('Sector'),
-                           comment = DIV(A(ADD_SECTOR, _class='thickbox', _href=URL(r=request, c='or', f='sector', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SECTOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
+                           comment = DIV(A(ADD_SECTOR, _class='colorbox', _href=URL(r=request, c='or', f='sector', args='create', vars=dict(format='popup')), _target='top', _title=ADD_SECTOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key"))),
                            ondelete = 'RESTRICT'
                           ))
 
@@ -151,13 +151,13 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T('No Organizations currently registered'))
 
 # Reusable field
-organisation_popup_url = URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true"
+organisation_popup_url = URL(r=request, c='or', f='organisation', args='create', vars=dict(format='popup'))
 organisation_id = SQLTable(None, 'organisation_id',
                            FieldS3('organisation_id', db.or_organisation, sortby='name',
                            requires = IS_NULL_OR(IS_ONE_OF(db, 'or_organisation.id', '%(name)s')),
                            represent = lambda id: (id and [db(db.or_organisation.id==id).select()[0].name] or ["None"])[0],
                            label = T('Organization'),
-                           comment = DIV(A(ADD_ORGANISATION, _class='thickbox', _href=organisation_popup_url, _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organization|The Organization this record is associated with."))),
+                           comment = DIV(A(ADD_ORGANISATION, _class='colorbox', _href=organisation_popup_url, _target='top', _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organization|The Organization this record is associated with."))),
                            ondelete = 'RESTRICT'
                           ))
 
@@ -262,7 +262,7 @@ office_id = SQLTable(None, 'office_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'or_office.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.or_office.id==id).select()[0].name] or ["None"])[0],
                 label = T('Office'),
-                comment = DIV(A(ADD_OFFICE, _class='thickbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
+                comment = DIV(A(ADD_OFFICE, _class='colorbox', _href=URL(r=request, c='or', f='office', args='create', vars=dict(format='popup')), _target='top', _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -325,7 +325,7 @@ def shn_or_contact_represent(contact_id):
         return vita.fullname(person[0])
     else:
         return None
- 
+
 table.focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
 table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
 

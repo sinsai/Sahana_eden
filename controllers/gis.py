@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
+
+"""
+    GIS Controllers
+
+    @author: Fran Boon
+"""
+
 from operator import __and__
 
 module = 'gis'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
@@ -29,7 +37,7 @@ table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lat.label = T('Latitude')
 #table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 CONVERSION_TOOL = T("Conversion Tool")
-#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='colorbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.lon.label = T('Longitude')
@@ -1265,7 +1273,7 @@ def layers():
     layers_kml = db(db.gis_layer_kml.enabled==True).select()
     if layers_kml and not cache:
         response.warning += cachepath + ' ' + str(T('not writable - unable to cache KML layers!')) + '\n'
-    
+
     # Append dynamic feed:
     # /gis/map_viewing_client?kml_feed=<url>&kml_name=<feed_name>
     layers_kml = [Storage(name=l.name, url=l.url) for l in layers_kml]
@@ -1797,7 +1805,7 @@ def display_features():
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
 
     return output
-    
+
 def geolocate():
     " Call a Geocoder service "
     if 'location' in request.vars:
@@ -1811,7 +1819,7 @@ def geolocate():
     else:
         # ToDo service=all should be default
         service = "google"
-        
+
     if service == "google":
         return s3gis.GoogleGeocoder(location, db).get_kml()
 

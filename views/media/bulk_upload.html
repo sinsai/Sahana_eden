@@ -68,7 +68,7 @@
  {{=list_btn}}
 {{except:}}
 {{pass}}
-{{include 'thickbox.html'}}
+{{include 'colorbox.html'}}
 <!-- Currently requires Ext20. To be replaced with main Ext3 -->
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-2.2.1/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/Ext.ux.UploadDialog.css" />
@@ -144,7 +144,7 @@ Ext.onReady(function() {
             } else {
                 filename = parts.pop();
             }
-            
+
             //file_list_tpl.append('file-list', {name: filename});
             var textbox = document.getElementById ('file-list');
             textbox.innerHTML = textbox.innerHTML + '|' + filename;
@@ -159,7 +159,7 @@ Ext.onReady(function() {
                 dialog.base_params['description'] = $("#media_metadata_description").val();
                 dialog.base_params['person_id'] = $("#media_metadata_person_id").val();
                 dialog.base_params['source'] = $("#media_metadata_source").val();
-                dialog.base_params['accuracy'] = $("#media_metadata_accuracy").val();        
+                dialog.base_params['accuracy'] = $("#media_metadata_accuracy").val();
                 dialog.base_params['sensitivity'] = $("#media_metadata_sensitivity").val();
                 dialog.base_params['event_time'] = $("#media_metadata_event_time").val();
                 dialog.base_params['expiry_time'] = $("#media_metadata_expiry_time").val();
@@ -192,17 +192,17 @@ Ext.onReady(function() {
 
 // jQuery for the Workflow
 $(function() {
-    
+
     // Hide the Flash uploader since not yet ready
     $("#flash_uploader").hide();
-    
+
     // Hide the Results DIV
     $("#file-list").hide();
-    
+
     // Hide the Forms initially
     $("#form_gps_track").hide();
     $("#form_metadata").hide();
-    
+
     // Hide the Location Field (we do this via EXIF header or GPX track)
     $("#media_metadata_location_id__row").hide();
     // Hide the Image Field (we use Ext multiple upload widget)
@@ -222,7 +222,7 @@ $(function() {
             $("#form_gps_track").show();
         }
     })
-    
+
     // When the Metadata answer changes:
 	$("#overwrite").change(function() {
 		// What is the new answer?

@@ -8,7 +8,7 @@
 
 if empty:
 
-    # Theme
+    # Themes
     table = 'admin_theme'
     if not db(db[table].id).count():
         db[table].insert(
@@ -69,7 +69,7 @@ if empty:
             col_btn_hover = '3377bb',
         )
 
-    # Settings
+    # Global Settings
     table = 's3_setting'
     if not db(db[table].id).count():
         db[table].insert(
@@ -95,47 +95,6 @@ if empty:
             audit_write = False
         )
 
-    # Budget Module
-    table = 'budget_setting'
-    if not db(db[table].id).count():
-        db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    table = 'budget_parameter'
-    if not db(db[table].id).count():
-        db[table].insert(
-        )
-
-    # Shelter Registry
-    table = 'cr_setting'
-    if not db(db[table].id).count():
-        db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    # Disaster Victim Identification
-    table = 'dvi_setting'
-    if not db(db[table].id).count():
-        db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    # Disaster Victim Registration
-    table = 'dvr_setting'
-    if not db(db[table].id).count():
-        db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
     table = 'gis_setting'
     if not db(db[table].id).count():
         db[table].insert(
@@ -144,58 +103,10 @@ if empty:
             audit_write = False
         )
 
-    # Human Remains Management
-    table = 'hrm_setting'
+    # Person Registry
+    table = 'pr_setting'
     if not db(db[table].id).count():
-        db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    # Logistics
-    table = 'lms_setting'
-    if not db(db[table].id).count():
-        db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    table = 'lms_catalog'
-    if not db(db[table].id).count():
-        db[table].insert(
-            name="Default",
-            description="Default Catalog",
-            comments="All items are by default added to this Catalog"
-        )
-
-    # Messaging
-    table = 'mobile_setting'
-    if not db(db[table].id).count():
-        db[table].insert(baud=115200)
-
-    table = 'msg_setting'
-    if not db(db[table].id).count():
-        db[table].insert(
-            inbound_mail_server = 'imap.gmail.com',
-            inbound_mail_type = 'imap',
-            inbound_mail_ssl = True,
-            inbound_mail_port = '993',
-            inbound_mail_username = 'username',
-            inbound_mail_password = 'password',
-            inbound_mail_delete = False,
-            #outbound_mail_server = 'mail:25',
-            #outbound_mail_from = 'demo@sahanapy.org',
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    # Missing Person Registry
-    table = 'mpr_setting'
-    if not db(db[table].id).count():
-        db[table].insert(
+       db[table].insert(
             # If Disabled at the Global Level then can still Enable just for this Module here
             audit_read = False,
             audit_write = False
@@ -224,24 +135,6 @@ if empty:
         db[table].insert( name = 'Protection and Human Rights and Rule of Law' )
         db[table].insert( name = 'Urban Search and Rescue' )
 
-    # Person Registry
-    table = 'pr_setting'
-    if not db(db[table].id).count():
-       db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    # Request Management System
-    table = 'rms_setting'
-    if not db(db[table].id).count():
-       db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
     # Synchronisation
     table = 'sync_setting'
     if not db(db[table].id).count():
@@ -249,14 +142,131 @@ if empty:
             uuid = uuid.uuid4()
         )
 
-    # Volunteer Management
-    table = 'vol_setting'
+    # Logistics
+    if shn_module_enable.get('lms', False):
+        table = 'lms_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+        table = 'lms_catalog'
+        if not db(db[table].id).count():
+            db[table].insert(
+                name="Default",
+                description="Default Catalog",
+                comments="All items are by default added to this Catalog"
+            )
+
+    # Budget Module
+    if shn_module_enable.get('budget', False):
+        table = 'budget_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+        table = 'budget_parameter'
+        if not db(db[table].id).count():
+            db[table].insert(
+            )
+
+    # Shelter Registry
+    if shn_module_enable.get('cr', False):
+        table = 'cr_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+    # Disaster Victim Identification
+    if shn_module_enable.get('dvi', False):
+        table = 'dvi_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+    # Disaster Victim Registration
+    if shn_module_enable.get('dvr', False):
+        table = 'dvr_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+    # Human Remains Management
+    if shn_module_enable.get('hrm', False):
+        table = 'hrm_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+    # Messaging
+    table = 'mobile_setting'
     if not db(db[table].id).count():
-       db[table].insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
+        db[table].insert(baud=115200)
+
+    if shn_module_enable.get('msg', False):
+        table = 'msg_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                inbound_mail_server = 'imap.gmail.com',
+                inbound_mail_type = 'imap',
+                inbound_mail_ssl = True,
+                inbound_mail_port = '993',
+                inbound_mail_username = 'username',
+                inbound_mail_password = 'password',
+                inbound_mail_delete = False,
+                #outbound_mail_server = 'mail:25',
+                #outbound_mail_from = 'demo@sahanapy.org',
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+    # Missing Person Registry
+    if shn_module_enable.get('mpr', False):
+        table = 'mpr_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+    # Request Management System
+    if shn_module_enable.get('rms', False):
+        table = 'rms_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+
+    # Volunteer Management
+    if shn_module_enable.get('vol', False):
+        table = 'vol_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
 
     # GIS Module
     table = 'gis_marker'

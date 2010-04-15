@@ -232,10 +232,6 @@ s3.crud_strings[tablename] = Storage(
 # *****************************************************************************
 # Presence Log (presence)
 #
-
-#
-# Presence Conditions ---------------------------------------------------------
-#
 pr_presence_condition_opts = vita.presence_conditions
 
 #
@@ -246,7 +242,7 @@ orig_id = SQLTable(None, 'orig_id',
                          requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
                          label = T('Origin'),
-                         comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         comment = DIV(A(ADD_LOCATION, _class='colorbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup')), _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                          ondelete = 'RESTRICT'
                         )
                   )
@@ -256,7 +252,7 @@ dest_id = SQLTable(None, 'dest_id',
                          requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
                          label = T('Destination'),
-                         comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         comment = DIV(A(ADD_LOCATION, _class='colorbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup')), _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                          ondelete = 'RESTRICT'
                         )
                   )
@@ -299,7 +295,7 @@ def shn_pr_presence_rss(record):
     else:
         return None
 
-# Joined Resource
+# Component of person entities
 s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby='pr_pe_id',
@@ -310,7 +306,15 @@ s3xrc.model.add_component(module, resource,
         title="%(time)s",
         description=shn_pr_presence_rss
     ),
-    list_fields = ['id','time','location_id','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
+    list_fields = ['id',
+        'time',
+        'location_id',
+        'location_details',
+        'lat',
+        'lon',
+        'opt_pr_presence_condition',
+        'origin',
+        'destination'])
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
@@ -450,1011 +454,6 @@ s3xrc.model.add_component(module, resource,
     list_fields = ['id', 'pr_pe_id', 'role'])
 
 # *****************************************************************************
-# Physical Description (pd_xxx)
-#   - for identification purposes
-#   - following Interpol DVI Forms http://www.interpol.int/Public/DisasterVictim/Forms
-#   - appliable for both Missing Persons and Dead Bodies
-#
-#   TODO: elaborate on field types and field options!
-#
-
-pr_pe_id2 = SQLTable(None, 'pr_pe_id',
-                    Field('pr_pe_id', db.pr_pentity,
-                    requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=[1,3])),
-                    represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
-                    ondelete = 'RESTRICT',
-                    label = T('ID')
-                ))
-
-# -----------------------------------------------------------------------------
-# Field options for physical descriptions (MPR, DVI)
-#
-pr_pd_bodily_constitution_opts = {
-    1: T('light'),
-    2: T('medium'),
-    3: T('heavy'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-44/01 Lips, Shape
-# D2-39/03 Eyes, Distance between Eyes
-# D2-40/01 Nose, size
-# D2-42/01 Ears, size
-# D2-43/01 Mouth, Size
-# D3-47/01 Chin, Size
-# D3-49/01 Hands, Size
-pr_pd_size_opts = {
-    1: T('small'),
-    2: T('medium'),
-    3: T('large'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-48/01 Neck, Length
-# D3-49/02 Hands, Nail length
-pr_pd_length_opts = {
-    1: T('short'),
-    2: T('medium'),
-    3: T('long'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-48/01 Neck, Shape
-# D1-36/05 Hair of the head, Thickness
-# D2-38/01 Eyebrows, Thickness
-pr_pd_thickness_opts = {
-    1: T('thin'),
-    2: T('medium'),
-    3: T('thick'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-36/03 Hair of the head, Colour
-# D2-41/02 Facial hair, Colour
-# D3-51/02 Body hair, Colour
-# D3-52/02 Pubic hair, Colour
-pr_pd_hair_colour_opts = {
-    1: T('blond'),
-    2: T('brown'),
-    3: T('black'),
-    4: T('red'),
-    5: T('grey'),
-    6: T('white'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-35/01 Race, group
-pr_pd_race_group_opts = {
-    1: T('caucasoid'),
-    2: T('mongoloid'),
-    3: T('negroid'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-35/01 Race, complexion
-pr_pd_race_complexion_opts = {
-    1: T('light'),
-    2: T('medium'),
-    3: T('dark'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-34/02 Head form, front
-pr_pd_head_form_front_opts = {
-    1: T('oval'),
-    2: T('pointheaded'),
-    3: T('pyramidal'),
-    4: T('circular'),
-    5: T('rectangular'),
-    6: T('quadrangular'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-34/03 Head form, profile
-pr_pd_head_form_profile_opts = {
-    1: T('shallow'),
-    2: T('medium'),
-    3: T('deep'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-36/01 Hair of the head, Type
-pr_pd_hair_head_type_opts = {
-    1: T('none'),
-    2: T('natural'),
-    3: T('artificial'),
-    4: T('Hair-piece'),
-    5: T('Wig'),
-    6: T('braided'),
-    7: T('implanted'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-36/02 Hair of the head, Length
-pr_pd_hair_head_length_opts = {
-    1: T('short<6cm'),
-    2: T('medium<12cm'),
-    3: T('long>12cm'),
-    4: T('shaved'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-36/04 Hair of the head, Shade of colour
-pr_pd_hair_head_shade_opts = {
-    1: T('light'),
-    2: T('medium'),
-    3: T('dark'),
-    4: T('turning grey'),
-    5: T('dyed'),
-    6: T('streaked'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-36/06 Hair of the head, Style
-pr_pd_hair_head_style_opts = {
-    1: T('straight'),
-    2: T('wavy'),
-    3: T('curly'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-36/06 Hair of the head, Parting
-pr_pd_hair_head_parting_opts = {
-    1: T('none'),
-    2: T('left'),
-    3: T('right'),
-    4: T('middle'),
-    97:T('other'),
-    98:T('not applicable'),
-    99:T('Data not available')
-}
-
-# D1-36/07 Hair of the head, Baldness (extent)
-pr_pd_hair_head_baldness_ext_opts = {
-    1: T('none'),
-    2: T('beginning'),
-    3: T('advanced'),
-    4: T('total'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D1-36/07 Hair of the head, Baldness (location)
-pr_pd_hair_head_baldness_loc_opts = {
-    1: T('forehead'),
-    2: T('sides'),
-    3: T('tonsure'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-37/01 Forehead, Height
-pr_pd_forehead_height_opts = {
-    1: T('low'),
-    2: T('medium'),
-    3: T('high'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-37/01 Forehead, Width
-pr_pd_forehead_width_opts = {
-    1: T('narrow'),
-    2: T('medium'),
-    3: T('wide'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-37/02 Forehead, Inclination
-pr_pd_forehead_inclination_opts = {
-    1: T('protruding'),
-    2: T('vertical'),
-    3: T('slightly receding'),
-    4: T('clearly receding'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-38/01 Eyebrows, Shape
-pr_pd_eyebrows_shape_opts = {
-    1: T('straight'),
-    2: T('arched'),
-    3: T('joining'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-38/02 Eyebrows, Peculiarities
-pr_pd_eyebrows_peculiarities_opts = {
-    1: T('normal'),
-    2: T('plucked'),
-    3: T('tattooed'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-39/01 Eyes, Colour
-pr_pd_eyes_colour_opts = {
-    1: T('blue'),
-    2: T('grey'),
-    3: T('green'),
-    4: T('brown'),
-    5: T('black'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-39/02 Eyes, Shade
-pr_pd_eyes_shade_opts = {
-    1: T('light'),
-    2: T('medium'),
-    3: T('dark'),
-    4: T('mixed'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-39/04 Eyes, Peculiarities
-pr_pd_eyes_peculiarities_opts = {
-    1: T('normal'),
-    2: T('cross-eyed'),
-    3: T('squint-eyed'),
-    4: T('Artificial eye left'),
-    5: T('Artificial eye right'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-40/01 Nose, shape
-pr_pd_nose_shape_opts = {
-    1: T('pointed'),
-    2: T('Roman'),
-    3: T('Alcoholics'),
-    4: T('misshapen'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-40/03 Nose, Curve
-pr_pd_nose_curve_opts = {
-    1: T('concave'),
-    2: T('straight'),
-    3: T('convex'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-40/03 Nose, Angle
-pr_pd_nose_angle_opts = {
-    1: T('turned down'),
-    2: T('horizontal'),
-    3: T('turned up'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-41/01 Facial hair, Type
-pr_pd_hair_facial_type_opts = {
-    1: T('none'),
-    2: T('Moustache'),
-    3: T('Goatee'),
-    4: T('Whiskers'),
-    5: T('Full beard'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-42/01 Ears, angle
-pr_pd_ears_angle_opts = {
-    1: T('close-set'),
-    2: T('medium'),
-    3: T('protruding'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-47/01 Chin, Inclination
-pr_pd_chin_inclination_opts = {
-    1: T('receding'),
-    2: T('medium'),
-    3: T('protruding'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-47/02 Chin, Shape
-pr_pd_chin_shape_opts = {
-    1: T('pointed'),
-    2: T('round'),
-    3: T('angular'),
-    4: T('Cleft chin'),
-    5: T('groove'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-45/02 Teeth, Gaps between front teeth
-# D2-45/02 Teeth, Missing teeth
-# D2-45/02 Teeth, Toothless
-pr_pd_ul_opts = {
-    1: T('no'),
-    2: T('upper'),
-    3: T('lower'),
-    4: T('upper+lower'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-45/03 Teeth, Dentures
-pr_pd_teeth_dentures_lower_opts = {
-    1: T('none'),
-    2: T('part'),
-    3: T('full'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-45/03 Teeth, Dentures
-pr_pd_teeth_dentures_upper_opts = {
-    1: T('none'),
-    2: T('part'),
-    3: T('full'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-48/02 Neck, Peculiarities
-pr_pd_neck_peculiarities_opts = {
-    1: T('normal'),
-    2: T('Goitre'),
-    3: T('Prominent Adams apple'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-49/01 Hands, Shape
-pr_pd_hands_shape_opts = {
-    1: T('slender'),
-    2: T('medium'),
-    3: T('broad'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-49/03 Hands, Nail peculiarities
-pr_pd_hands_nails_peculiarities_opts = {
-    1: T('normal'),
-    2: T('bitten short'),
-    3: T('manicured'),
-    4: T('painted'),
-    5: T('artificial'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-49/03 Hands, Nicotine
-pr_pd_hands_nicotine_opts = {
-    1: T('none'),
-    2: T('left'),
-    3: T('right'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-50/01 Feet, Shape
-pr_pd_feet_shape_opts = {
-    1: T('slender'),
-    2: T('medium'),
-    3: T('broad'),
-    4: T('flatfooted'),
-    5: T('arched'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-50/02 Feet, Condition
-pr_pd_feet_condition_opts = {
-    1: T('normal'),
-    2: T('Bunion'),
-    3: T('Corn'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-50/02 Feet, Nails Conditions
-pr_pd_feet_nails_opts = {
-    1: T('normal'),
-    2: T('painted'),
-    3: T('defective'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-51/01 Body hair, Extent
-pr_pd_hair_body_extent_opts = {
-    1: T('none'),
-    2: T('slight'),
-    3: T('medium'),
-    4: T('pronounced'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D3-52/01 Pubic hair, Extent
-pr_pd_hair_pubic_extent_opts = {
-    1: T('none'),
-    2: T('slight'),
-    3: T('medium'),
-    4: T('pronounced'),
-    5: T('shaved'),
-    97:T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# D2-46/01 Smoking Habits, Type
-pr_pd_smoking_habits_opts = {
-    1: T('none'),
-    2: T('Cigarettes'),
-    3: T('Cigars'),
-    4: T('Pipe'),
-    5: T('Chewing tobacco'),
-    97: T('other'),
-    98: T('not applicable'),
-    99: T('Data not available')
-}
-
-# -----------------------------------------------------------------------------
-# Physical Description Tables
-#
-
-#
-# pd_general table ------------------------------------------------------------
-#
-resource = 'pd_general'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_id2,
-                Field('est_age'),                       # D1-31A   Estimated Age
-                Field('height'),                        # D1-32    Height
-                Field('weight'),                        # D1-33    Weight
-                Field('opt_pr_pd_bodily_constitution',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_bodily_constitution_opts),
-                      default = 99,
-                      label = T('Bodily Constitution'),
-                      represent = lambda opt: pr_pd_bodily_constitution_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_race_group',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_race_group_opts),
-                      default = 99,
-                      label = T('Race group'),
-                      represent = lambda opt: pr_pd_race_group_opts.get(opt, T('Unknown'))),
-                Field('race_type'),                     # D1-35/01 Race, type
-                Field('opt_pr_pd_race_complexion',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_race_complexion_opts),
-                      default = 99,
-                      label = T('Race, complexion'),
-                      represent = lambda opt: pr_pd_race_complexion_opts.get(opt, T('Unknown'))),
-                Field('other_peculiarities', 'text'),   # D3-55    Other Peculiarities
-                #Field('body_sketch'),                   # D4       Body Sketch
-                migrate=migrate)
-
-# Joined Resource
-s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
-
-# Field validation
-
-# Field representation
-
-# Field labels
-
-# CRUD Strings
-
-#
-# pd_head table ---------------------------------------------------------------
-#
-resource = 'pd_head'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_id2,
-                Field('opt_pr_pd_head_form_front',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_head_form_front_opts),
-                      default = 99,
-                      label = T('Head form, front'),
-                      represent = lambda opt: pr_pd_head_form_front_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_head_form_profile',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_head_form_profile_opts),
-                      default = 99,
-                      label = T('Head form, profile'),
-                      represent = lambda opt: pr_pd_head_form_profile_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_type',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_head_type_opts),
-                      default = 99,
-                      label = T('Hair of the head, Type'),
-                      represent = lambda opt: pr_pd_hair_head_type_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_length',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_head_length_opts),
-                      default = 99,
-                      label = T('Hair of the head, Length'),
-                      represent = lambda opt: pr_pd_hair_head_length_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_colour',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                      default = 99,
-                      label = T('Hair of the head, Colour'),
-                      represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_shade',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_head_shade_opts),
-                      default = 99,
-                      label = T('Hair of the head, Shade of colour'),
-                      represent = lambda opt: pr_pd_hair_head_shade_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_thickness',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_thickness_opts),
-                      default = 99,
-                      label = T('Hair of the head, Thickness'),
-                      represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_style',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_head_style_opts),
-                      default = 99,
-                      label = T('Hair of the head, Style'),
-                      represent = lambda opt: pr_pd_hair_head_style_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_parting',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_head_parting_opts),
-                      default = 99,
-                      label = T('Hair of the head, Parting'),
-                      represent = lambda opt: pr_pd_hair_head_parting_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_baldness_ext',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_head_baldness_ext_opts),
-                      default = 99,
-                      label = T('Hair of the head, Baldness (extent)'),
-                      represent = lambda opt: pr_pd_hair_head_baldness_ext_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_head_baldness_loc',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_head_baldness_loc_opts),
-                      default = 99,
-                      label = T('Hair of the head, Baldness (location)'),
-                      represent = lambda opt: pr_pd_hair_head_baldness_loc_opts.get(opt, T('Unknown'))),
-                Field('hair_head_other'),               # D1-36/08 Hair of the head, Other information
-                migrate=migrate)
-
-# Joined Resource
-s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
-
-# Field validation
-
-# Field representation
-table.opt_pr_pd_head_form_front.comment = A(SPAN("[Help]"), _class="ajaxtip", _rel="/%s/pr/tooltip?formfield=head_form_front" % request.application )
-# Field labels
-
-# CRUD Strings
-
-#
-# pd_face table ---------------------------------------------------------------
-#
-resource = 'pd_face'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_id2,
-                Field('opt_pr_pd_forehead_height',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_forehead_height_opts),
-                      default = 99,
-                      label = T('Forehead, Height'),
-                      represent = lambda opt: pr_pd_forehead_height_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_forehead_width',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_forehead_width_opts),
-                      default = 99,
-                      label = T('Forehead, Width'),
-                      represent = lambda opt: pr_pd_forehead_width_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_forehead_inclination',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_forehead_inclination_opts),
-                      default = 99,
-                      label = T('Forehead, Inclination'),
-                      represent = lambda opt: pr_pd_forehead_inclination_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_eyebrows_shape',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_eyebrows_shape_opts),
-                      default = 99,
-                      label = T('Eyebrows, Shape'),
-                      represent = lambda opt: pr_pd_eyebrows_shape_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_eyebrows_thickness',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_thickness_opts),
-                      default = 99,
-                      label = T('Eyebrows, Thickness'),
-                      represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_eyebrows_peculiarities',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_eyebrows_peculiarities_opts),
-                      default = 99,
-                      label = T('Eyebrows, Peculiarities'),
-                      represent = lambda opt: pr_pd_eyebrows_peculiarities_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_eyes_colour',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_eyes_colour_opts),
-                      default = 99,
-                      label = T('Eyes, Colour'),
-                      represent = lambda opt: pr_pd_eyes_colour_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_eyes_shade',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_eyes_shade_opts),
-                      default = 99,
-                      label = T('Eyes, Shade'),
-                      represent = lambda opt: pr_pd_eyes_shade_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_eyes_distance',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_size_opts),
-                      default = 99,
-                      label = T('Eyes, Distance between Eyes'),
-                      represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_eyes_peculiarities',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_eyes_peculiarities_opts),
-                      default = 99,
-                      label = T('Eyes, Peculiarities'),
-                      represent = lambda opt: pr_pd_eyes_peculiarities_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_nose_size',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_size_opts),
-                      default = 99,
-                      label = T('Nose, size'),
-                      represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_nose_shape',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_nose_shape_opts),
-                      default = 99,
-                      label = T('Nose, shape'),
-                      represent = lambda opt: pr_pd_nose_shape_opts.get(opt, T('Unknown'))),
-                Field('nose_spectacle_marks', 'boolean', default=False),          # D2-40/02 Nose, Peculiarities - Marks of spectacles
-                #Field('nose_misshapen'),                # D2-40/02 Nose, Peculiarities - Misshapen
-                Field('nose_peculiarities'),            # D2-40/02 Nose, Peculiarities
-                Field('opt_pr_pd_nose_curve',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_nose_curve_opts),
-                      default = 99,
-                      label = T('Nose, Curve'),
-                      represent = lambda opt: pr_pd_nose_curve_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_nose_angle',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_nose_angle_opts),
-                      default = 99,
-                      label = T('Nose, Angle'),
-                      represent = lambda opt: pr_pd_nose_angle_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_facial_type',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_facial_type_opts),
-                      default = 99,
-                      label = T('Facial hair, Type'),
-                      represent = lambda opt: pr_pd_hair_facial_type_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_facial_colour',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                      default = 99,
-                      label = T('Facial hair, Colour'),
-                      represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_ears_size',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_size_opts),
-                      default = 99,
-                      label = T('Ears, size'),
-                      represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_ears_angle',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_ears_angle_opts),
-                      default = 99,
-                      label = T('Ears, angle'),
-                      represent = lambda opt: pr_pd_ears_angle_opts.get(opt, T('Unknown'))),
-                Field('ears_lobes_attached', 'boolean', default=False),           # D2-42/02 Ears, Ear Lobes
-                Field('ears_piercings_left', 'integer', default=0),           # D2-42/02 Ears, Number of Piercings, left
-                Field('ears_piercings_right', 'integer', default=0),          # D2-42/02 Ears, Number of Piercings, right
-                Field('opt_pr_pd_mouth_size',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_size_opts),
-                      default = 99,
-                      label = T('Mouth, Size'),
-                      represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
-                Field('mouth_other'),                   # D2-43/01 Mouth, Other
-                Field('opt_pr_pd_lips_shape',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_thickness_opts),
-                      default = 99,
-                      label = T('Lips, Shape'),
-                      represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
-                Field('lips_madeup', 'boolean', default=False), # D2.44/01 Lips, made-up
-                Field('lips_other'),                    # D2-44/01 Lips, Other
-                Field('opt_pr_pd_chin_size',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_size_opts),
-                      default = 99,
-                      label = T('Chin, Size'),
-                      represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_chin_inclination',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_chin_inclination_opts),
-                      default = 99,
-                      label = T('Chin, Inclination'),
-                      represent = lambda opt: pr_pd_chin_inclination_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_chin_shape',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_chin_shape_opts),
-                      default = 99,
-                      label = T('Chin, Shape'),
-                      represent = lambda opt: pr_pd_chin_shape_opts.get(opt, T('Unknown'))),
-                migrate=migrate)
-
-# Joined Resource
-s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
-
-# Field validation
-
-# Field representation
-
-# Field labels
-
-# CRUD Strings
-
-#
-# pd_teeth table --------------------------------------------------------------
-#
-resource = 'pd_teeth'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_id2,
-                Field('teeth_natural', 'boolean', default=True),        # D2-45/01 Teeth, Conditions
-                Field('teeth_treated', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
-                Field('teeth_crowns', 'boolean', default=False),        # D2-45/01 Teeth, Conditions
-                Field('teeth_bridges', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
-                Field('teeth_implants', 'boolean', default=False),      # D2-45/01 Teeth, Conditions
-                Field('opt_pr_pd_teeth_gaps',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_ul_opts),
-                      default = 99,
-                      label = T('Teeth, Gaps between front teeth'),
-                      represent = lambda opt: pr_pd_ul_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_teeth_missing',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_ul_opts),
-                      default = 99,
-                      label = T('Teeth, Missing teeth'),
-                      represent = lambda opt: pr_pd_ul_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_teeth_toothless',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_ul_opts),
-                      default = 99,
-                      label = T('Teeth, Toothless'),
-                      represent = lambda opt: pr_pd_ul_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_teeth_dentures_lower',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_teeth_dentures_lower_opts),
-                      default = 99,
-                      label = T('Teeth, Dentures'),
-                      represent = lambda opt: pr_pd_teeth_dentures_lower_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_teeth_dentures_upper',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_teeth_dentures_upper_opts),
-                      default = 99,
-                      label = T('Teeth, Dentures'),
-                      represent = lambda opt: pr_pd_teeth_dentures_upper_opts.get(opt, T('Unknown'))),
-                Field('teeth_dentures_id'),             # D2-45/03 Teeth, Dentures, ID-number
-                migrate=migrate)
-
-# Joined Resource
-s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
-
-# Field validation
-
-# Field representation
-
-# Field labels
-
-# CRUD Strings
-
-#
-# pd_body table ---------------------------------------------------------------
-#
-resource = 'pd_body'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_id2,
-                Field('opt_pr_pd_neck_length',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_length_opts),
-                      default = 99,
-                      label = T('Neck, Length'),
-                      represent = lambda opt: pr_pd_length_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_neck_shape',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_thickness_opts),
-                      default = 99,
-                      label = T('Neck, Shape'),
-                      represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_neck_peculiarities',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_neck_peculiarities_opts),
-                      default = 99,
-                      label = T('Neck, Peculiarities'),
-                      represent = lambda opt: pr_pd_neck_peculiarities_opts.get(opt, T('Unknown'))),
-                Field('neck_collar_size', length=10),              # D3-48/02 Neck, Collar Size
-                Field('neck_circumference', length=10),            # D3-48/02 Neck, Circumference
-                Field('opt_pr_pd_hands_shape',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hands_shape_opts),
-                      default = 99,
-                      label = T('Hands, Shape'),
-                      represent = lambda opt: pr_pd_hands_shape_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hands_size',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_size_opts),
-                      default = 99,
-                      label = T('Hands, Size'),
-                      represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hands_nails_length',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_length_opts),
-                      default = 99,
-                      label = T('Hands, Nail length'),
-                      represent = lambda opt: pr_pd_length_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hands_nails_peculiarities',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hands_nails_peculiarities_opts),
-                      default = 99,
-                      label = T('Hands, Nail peculiarities'),
-                      represent = lambda opt: pr_pd_hands_nails_peculiarities_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hands_nicotine',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hands_nicotine_opts),
-                      default = 99,
-                      label = T('Hands, Nicotine'),
-                      represent = lambda opt: pr_pd_hands_nicotine_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_feet_shape',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_feet_shape_opts),
-                      default = 99,
-                      label = T('Feet, Shape'),
-                      represent = lambda opt: pr_pd_feet_shape_opts.get(opt, T('Unknown'))),
-                Field('pd_feet_size'),                     # D3-50/01 Feet, Size
-                Field('opt_pr_pd_feet_condition',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_feet_condition_opts),
-                      default = 99,
-                      label = T('Feet, Condition'),
-                      represent = lambda opt: pr_pd_feet_condition_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_feet_nails',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_feet_nails_opts),
-                      default = 99,
-                      label = T('Feet, Nails'),
-                      represent = lambda opt: pr_pd_feet_nails_opts.get(opt, T('Unknown'))),
-                Field('feet_peculiarities'),            # D3-50/03 Feet, Peculiarities
-                Field('opt_pr_pd_hair_body_extent',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_body_extent_opts),
-                      default = 99,
-                      label = T('Body hair, Extent'),
-                      represent = lambda opt: pr_pd_hair_body_extent_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_body_colour',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                      default = 99,
-                      label = T('Body hair, Colour'),
-                      represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_pubic_extent',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_pubic_extent_opts),
-                      default = 99,
-                      label = T('Pubic hair, Extent'),
-                      represent = lambda opt: pr_pd_hair_pubic_extent_opts.get(opt, T('Unknown'))),
-                Field('opt_pr_pd_hair_pubic_colour',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_hair_colour_opts),
-                      default = 99,
-                      label = T('Pubic hair, Colour'),
-                      represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
-                Field('circumcision', 'boolean', default=False),                  # D3-54    Circumcision
-                Field('opt_pr_pd_smoking_habits',
-                      'integer',
-                      requires = IS_IN_SET(pr_pd_smoking_habits_opts),
-                      default = 99,
-                      label = T('Smoking habits'),
-                      represent = lambda opt: pr_pd_smoking_habits_opts.get(opt, T('Unknown'))),
-                Field('smoking_stains_teeth', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
-                Field('smoking_stains_lips', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
-                Field('smoking_stains_moustache', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
-                Field('smoking_stains_hand_left', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
-                Field('smoking_stains_hand_right', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
-                Field('specific_details_head'),         # D3-53    Specific Details
-                Field('specific_details_throat'),       # D3-53    Specific Details
-                Field('specific_details_arm_left'),     # D3-53    Specific Details
-                Field('specific_details_arm_right'),    # D3-53    Specific Details
-                Field('specific_details_hand_left'),    # D3-53    Specific Details
-                Field('specific_details_hand_right'),   # D3-53    Specific Details
-                Field('specific_details_body_front'),   # D3-53    Specific Details
-                Field('specific_details_body_back'),    # D3-53    Specific Details
-                Field('specific_details_leg_left'),     # D3-53    Specific Details
-                Field('specific_details_leg_right'),    # D3-53    Specific Details
-                Field('specific_details_foot_left'),    # D3-53    Specific Details
-                Field('specific_details_foot_right'),   # D3-53    Specific Details
-                migrate=migrate)
-
-# Joined Resource
-s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
-
-# Field validation
-
-# Field representation
-
-# Field labels
-
-# CRUD Strings
-
-# *****************************************************************************
 # Group membership (group_membership)
 #
 
@@ -1502,10 +501,1015 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T('Group Membership deleted'),
     msg_list_empty = T('No Group Memberships currently registered'))
 
-# *****************************************************************************
-# Functions:
+# -----------------------------------------------------------------------------
+# PR Extension: physical descriptions
 #
+if shn_module_enable.get('pr_ext', False):
 
-#
+    # *****************************************************************************
+    # Physical Description (pd_xxx)
+    #   - for identification purposes
+    #   - following Interpol DVI Forms http://www.interpol.int/Public/DisasterVictim/Forms
+    #   - appliable for both Missing Persons and Dead Bodies
+    #
+    #   TODO: elaborate on field types and field options!
+    #
+
+    pr_pe_id2 = SQLTable(None, 'pr_pe_id',
+                        Field('pr_pe_id', db.pr_pentity,
+                        requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent, filterby='opt_pr_entity_type', filter_opts=[1,3])),
+                        represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+                        ondelete = 'RESTRICT',
+                        label = T('ID')
+                    ))
+
+    # -----------------------------------------------------------------------------
+    # Field options for physical descriptions (MPR, DVI)
+    #
+    pr_pd_bodily_constitution_opts = {
+        1: T('light'),
+        2: T('medium'),
+        3: T('heavy'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-44/01 Lips, Shape
+    # D2-39/03 Eyes, Distance between Eyes
+    # D2-40/01 Nose, size
+    # D2-42/01 Ears, size
+    # D2-43/01 Mouth, Size
+    # D3-47/01 Chin, Size
+    # D3-49/01 Hands, Size
+    pr_pd_size_opts = {
+        1: T('small'),
+        2: T('medium'),
+        3: T('large'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-48/01 Neck, Length
+    # D3-49/02 Hands, Nail length
+    pr_pd_length_opts = {
+        1: T('short'),
+        2: T('medium'),
+        3: T('long'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-48/01 Neck, Shape
+    # D1-36/05 Hair of the head, Thickness
+    # D2-38/01 Eyebrows, Thickness
+    pr_pd_thickness_opts = {
+        1: T('thin'),
+        2: T('medium'),
+        3: T('thick'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-36/03 Hair of the head, Colour
+    # D2-41/02 Facial hair, Colour
+    # D3-51/02 Body hair, Colour
+    # D3-52/02 Pubic hair, Colour
+    pr_pd_hair_colour_opts = {
+        1: T('blond'),
+        2: T('brown'),
+        3: T('black'),
+        4: T('red'),
+        5: T('grey'),
+        6: T('white'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-35/01 Race, group
+    pr_pd_race_group_opts = {
+        1: T('caucasoid'),
+        2: T('mongoloid'),
+        3: T('negroid'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-35/01 Race, complexion
+    pr_pd_race_complexion_opts = {
+        1: T('light'),
+        2: T('medium'),
+        3: T('dark'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-34/02 Head form, front
+    pr_pd_head_form_front_opts = {
+        1: T('oval'),
+        2: T('pointheaded'),
+        3: T('pyramidal'),
+        4: T('circular'),
+        5: T('rectangular'),
+        6: T('quadrangular'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-34/03 Head form, profile
+    pr_pd_head_form_profile_opts = {
+        1: T('shallow'),
+        2: T('medium'),
+        3: T('deep'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-36/01 Hair of the head, Type
+    pr_pd_hair_head_type_opts = {
+        1: T('none'),
+        2: T('natural'),
+        3: T('artificial'),
+        4: T('Hair-piece'),
+        5: T('Wig'),
+        6: T('braided'),
+        7: T('implanted'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-36/02 Hair of the head, Length
+    pr_pd_hair_head_length_opts = {
+        1: T('short<6cm'),
+        2: T('medium<12cm'),
+        3: T('long>12cm'),
+        4: T('shaved'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-36/04 Hair of the head, Shade of colour
+    pr_pd_hair_head_shade_opts = {
+        1: T('light'),
+        2: T('medium'),
+        3: T('dark'),
+        4: T('turning grey'),
+        5: T('dyed'),
+        6: T('streaked'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-36/06 Hair of the head, Style
+    pr_pd_hair_head_style_opts = {
+        1: T('straight'),
+        2: T('wavy'),
+        3: T('curly'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-36/06 Hair of the head, Parting
+    pr_pd_hair_head_parting_opts = {
+        1: T('none'),
+        2: T('left'),
+        3: T('right'),
+        4: T('middle'),
+        97:T('other'),
+        98:T('not applicable'),
+        99:T('Data not available')
+    }
+
+    # D1-36/07 Hair of the head, Baldness (extent)
+    pr_pd_hair_head_baldness_ext_opts = {
+        1: T('none'),
+        2: T('beginning'),
+        3: T('advanced'),
+        4: T('total'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D1-36/07 Hair of the head, Baldness (location)
+    pr_pd_hair_head_baldness_loc_opts = {
+        1: T('forehead'),
+        2: T('sides'),
+        3: T('tonsure'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-37/01 Forehead, Height
+    pr_pd_forehead_height_opts = {
+        1: T('low'),
+        2: T('medium'),
+        3: T('high'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-37/01 Forehead, Width
+    pr_pd_forehead_width_opts = {
+        1: T('narrow'),
+        2: T('medium'),
+        3: T('wide'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-37/02 Forehead, Inclination
+    pr_pd_forehead_inclination_opts = {
+        1: T('protruding'),
+        2: T('vertical'),
+        3: T('slightly receding'),
+        4: T('clearly receding'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-38/01 Eyebrows, Shape
+    pr_pd_eyebrows_shape_opts = {
+        1: T('straight'),
+        2: T('arched'),
+        3: T('joining'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-38/02 Eyebrows, Peculiarities
+    pr_pd_eyebrows_peculiarities_opts = {
+        1: T('normal'),
+        2: T('plucked'),
+        3: T('tattooed'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-39/01 Eyes, Colour
+    pr_pd_eyes_colour_opts = {
+        1: T('blue'),
+        2: T('grey'),
+        3: T('green'),
+        4: T('brown'),
+        5: T('black'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-39/02 Eyes, Shade
+    pr_pd_eyes_shade_opts = {
+        1: T('light'),
+        2: T('medium'),
+        3: T('dark'),
+        4: T('mixed'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-39/04 Eyes, Peculiarities
+    pr_pd_eyes_peculiarities_opts = {
+        1: T('normal'),
+        2: T('cross-eyed'),
+        3: T('squint-eyed'),
+        4: T('Artificial eye left'),
+        5: T('Artificial eye right'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-40/01 Nose, shape
+    pr_pd_nose_shape_opts = {
+        1: T('pointed'),
+        2: T('Roman'),
+        3: T('Alcoholics'),
+        4: T('misshapen'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-40/03 Nose, Curve
+    pr_pd_nose_curve_opts = {
+        1: T('concave'),
+        2: T('straight'),
+        3: T('convex'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-40/03 Nose, Angle
+    pr_pd_nose_angle_opts = {
+        1: T('turned down'),
+        2: T('horizontal'),
+        3: T('turned up'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-41/01 Facial hair, Type
+    pr_pd_hair_facial_type_opts = {
+        1: T('none'),
+        2: T('Moustache'),
+        3: T('Goatee'),
+        4: T('Whiskers'),
+        5: T('Full beard'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-42/01 Ears, angle
+    pr_pd_ears_angle_opts = {
+        1: T('close-set'),
+        2: T('medium'),
+        3: T('protruding'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-47/01 Chin, Inclination
+    pr_pd_chin_inclination_opts = {
+        1: T('receding'),
+        2: T('medium'),
+        3: T('protruding'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-47/02 Chin, Shape
+    pr_pd_chin_shape_opts = {
+        1: T('pointed'),
+        2: T('round'),
+        3: T('angular'),
+        4: T('Cleft chin'),
+        5: T('groove'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-45/02 Teeth, Gaps between front teeth
+    # D2-45/02 Teeth, Missing teeth
+    # D2-45/02 Teeth, Toothless
+    pr_pd_ul_opts = {
+        1: T('no'),
+        2: T('upper'),
+        3: T('lower'),
+        4: T('upper+lower'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-45/03 Teeth, Dentures
+    pr_pd_teeth_dentures_lower_opts = {
+        1: T('none'),
+        2: T('part'),
+        3: T('full'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-45/03 Teeth, Dentures
+    pr_pd_teeth_dentures_upper_opts = {
+        1: T('none'),
+        2: T('part'),
+        3: T('full'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-48/02 Neck, Peculiarities
+    pr_pd_neck_peculiarities_opts = {
+        1: T('normal'),
+        2: T('Goitre'),
+        3: T('Prominent Adams apple'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-49/01 Hands, Shape
+    pr_pd_hands_shape_opts = {
+        1: T('slender'),
+        2: T('medium'),
+        3: T('broad'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-49/03 Hands, Nail peculiarities
+    pr_pd_hands_nails_peculiarities_opts = {
+        1: T('normal'),
+        2: T('bitten short'),
+        3: T('manicured'),
+        4: T('painted'),
+        5: T('artificial'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-49/03 Hands, Nicotine
+    pr_pd_hands_nicotine_opts = {
+        1: T('none'),
+        2: T('left'),
+        3: T('right'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-50/01 Feet, Shape
+    pr_pd_feet_shape_opts = {
+        1: T('slender'),
+        2: T('medium'),
+        3: T('broad'),
+        4: T('flatfooted'),
+        5: T('arched'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-50/02 Feet, Condition
+    pr_pd_feet_condition_opts = {
+        1: T('normal'),
+        2: T('Bunion'),
+        3: T('Corn'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-50/02 Feet, Nails Conditions
+    pr_pd_feet_nails_opts = {
+        1: T('normal'),
+        2: T('painted'),
+        3: T('defective'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-51/01 Body hair, Extent
+    pr_pd_hair_body_extent_opts = {
+        1: T('none'),
+        2: T('slight'),
+        3: T('medium'),
+        4: T('pronounced'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D3-52/01 Pubic hair, Extent
+    pr_pd_hair_pubic_extent_opts = {
+        1: T('none'),
+        2: T('slight'),
+        3: T('medium'),
+        4: T('pronounced'),
+        5: T('shaved'),
+        97:T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # D2-46/01 Smoking Habits, Type
+    pr_pd_smoking_habits_opts = {
+        1: T('none'),
+        2: T('Cigarettes'),
+        3: T('Cigars'),
+        4: T('Pipe'),
+        5: T('Chewing tobacco'),
+        97: T('other'),
+        98: T('not applicable'),
+        99: T('Data not available')
+    }
+
+    # -----------------------------------------------------------------------------
+    # Physical Description Tables
+    #
+
+    #
+    # pd_general table ------------------------------------------------------------
+    #
+    resource = 'pd_general'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                    pr_pe_id2,
+                    Field('est_age'),                       # D1-31A   Estimated Age
+                    Field('height'),                        # D1-32    Height
+                    Field('weight'),                        # D1-33    Weight
+                    Field('opt_pr_pd_bodily_constitution',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_bodily_constitution_opts),
+                        default = 99,
+                        label = T('Bodily Constitution'),
+                        represent = lambda opt: pr_pd_bodily_constitution_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_race_group',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_race_group_opts),
+                        default = 99,
+                        label = T('Race group'),
+                        represent = lambda opt: pr_pd_race_group_opts.get(opt, T('Unknown'))),
+                    Field('race_type'),                     # D1-35/01 Race, type
+                    Field('opt_pr_pd_race_complexion',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_race_complexion_opts),
+                        default = 99,
+                        label = T('Race, complexion'),
+                        represent = lambda opt: pr_pd_race_complexion_opts.get(opt, T('Unknown'))),
+                    Field('other_peculiarities', 'text'),   # D3-55    Other Peculiarities
+                    #Field('body_sketch'),                   # D4       Body Sketch
+                    migrate=migrate)
+
+    # Joined Resource
+    s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+    # Field validation
+
+    # Field representation
+
+    # Field labels
+
+    # CRUD Strings
+
+    #
+    # pd_head table ---------------------------------------------------------------
+    #
+    resource = 'pd_head'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                    pr_pe_id2,
+                    Field('opt_pr_pd_head_form_front',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_head_form_front_opts),
+                        default = 99,
+                        label = T('Head form, front'),
+                        represent = lambda opt: pr_pd_head_form_front_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_head_form_profile',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_head_form_profile_opts),
+                        default = 99,
+                        label = T('Head form, profile'),
+                        represent = lambda opt: pr_pd_head_form_profile_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_type',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_head_type_opts),
+                        default = 99,
+                        label = T('Hair of the head, Type'),
+                        represent = lambda opt: pr_pd_hair_head_type_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_length',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_head_length_opts),
+                        default = 99,
+                        label = T('Hair of the head, Length'),
+                        represent = lambda opt: pr_pd_hair_head_length_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_colour',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                        default = 99,
+                        label = T('Hair of the head, Colour'),
+                        represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_shade',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_head_shade_opts),
+                        default = 99,
+                        label = T('Hair of the head, Shade of colour'),
+                        represent = lambda opt: pr_pd_hair_head_shade_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_thickness',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_thickness_opts),
+                        default = 99,
+                        label = T('Hair of the head, Thickness'),
+                        represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_style',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_head_style_opts),
+                        default = 99,
+                        label = T('Hair of the head, Style'),
+                        represent = lambda opt: pr_pd_hair_head_style_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_parting',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_head_parting_opts),
+                        default = 99,
+                        label = T('Hair of the head, Parting'),
+                        represent = lambda opt: pr_pd_hair_head_parting_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_baldness_ext',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_head_baldness_ext_opts),
+                        default = 99,
+                        label = T('Hair of the head, Baldness (extent)'),
+                        represent = lambda opt: pr_pd_hair_head_baldness_ext_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_head_baldness_loc',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_head_baldness_loc_opts),
+                        default = 99,
+                        label = T('Hair of the head, Baldness (location)'),
+                        represent = lambda opt: pr_pd_hair_head_baldness_loc_opts.get(opt, T('Unknown'))),
+                    Field('hair_head_other'),               # D1-36/08 Hair of the head, Other information
+                    migrate=migrate)
+
+    # Joined Resource
+    s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+    # Field validation
+
+    # Field representation
+    table.opt_pr_pd_head_form_front.comment = A(SPAN("[Help]"), _class="ajaxtip", _rel="/%s/pr/tooltip?formfield=head_form_front" % request.application )
+    # Field labels
+
+    # CRUD Strings
+
+    #
+    # pd_face table ---------------------------------------------------------------
+    #
+    resource = 'pd_face'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                    pr_pe_id2,
+                    Field('opt_pr_pd_forehead_height',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_forehead_height_opts),
+                        default = 99,
+                        label = T('Forehead, Height'),
+                        represent = lambda opt: pr_pd_forehead_height_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_forehead_width',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_forehead_width_opts),
+                        default = 99,
+                        label = T('Forehead, Width'),
+                        represent = lambda opt: pr_pd_forehead_width_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_forehead_inclination',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_forehead_inclination_opts),
+                        default = 99,
+                        label = T('Forehead, Inclination'),
+                        represent = lambda opt: pr_pd_forehead_inclination_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_eyebrows_shape',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_eyebrows_shape_opts),
+                        default = 99,
+                        label = T('Eyebrows, Shape'),
+                        represent = lambda opt: pr_pd_eyebrows_shape_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_eyebrows_thickness',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_thickness_opts),
+                        default = 99,
+                        label = T('Eyebrows, Thickness'),
+                        represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_eyebrows_peculiarities',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_eyebrows_peculiarities_opts),
+                        default = 99,
+                        label = T('Eyebrows, Peculiarities'),
+                        represent = lambda opt: pr_pd_eyebrows_peculiarities_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_eyes_colour',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_eyes_colour_opts),
+                        default = 99,
+                        label = T('Eyes, Colour'),
+                        represent = lambda opt: pr_pd_eyes_colour_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_eyes_shade',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_eyes_shade_opts),
+                        default = 99,
+                        label = T('Eyes, Shade'),
+                        represent = lambda opt: pr_pd_eyes_shade_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_eyes_distance',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_size_opts),
+                        default = 99,
+                        label = T('Eyes, Distance between Eyes'),
+                        represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_eyes_peculiarities',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_eyes_peculiarities_opts),
+                        default = 99,
+                        label = T('Eyes, Peculiarities'),
+                        represent = lambda opt: pr_pd_eyes_peculiarities_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_nose_size',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_size_opts),
+                        default = 99,
+                        label = T('Nose, size'),
+                        represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_nose_shape',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_nose_shape_opts),
+                        default = 99,
+                        label = T('Nose, shape'),
+                        represent = lambda opt: pr_pd_nose_shape_opts.get(opt, T('Unknown'))),
+                    Field('nose_spectacle_marks', 'boolean', default=False),          # D2-40/02 Nose, Peculiarities - Marks of spectacles
+                    #Field('nose_misshapen'),                # D2-40/02 Nose, Peculiarities - Misshapen
+                    Field('nose_peculiarities'),            # D2-40/02 Nose, Peculiarities
+                    Field('opt_pr_pd_nose_curve',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_nose_curve_opts),
+                        default = 99,
+                        label = T('Nose, Curve'),
+                        represent = lambda opt: pr_pd_nose_curve_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_nose_angle',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_nose_angle_opts),
+                        default = 99,
+                        label = T('Nose, Angle'),
+                        represent = lambda opt: pr_pd_nose_angle_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_facial_type',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_facial_type_opts),
+                        default = 99,
+                        label = T('Facial hair, Type'),
+                        represent = lambda opt: pr_pd_hair_facial_type_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_facial_colour',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                        default = 99,
+                        label = T('Facial hair, Colour'),
+                        represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_ears_size',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_size_opts),
+                        default = 99,
+                        label = T('Ears, size'),
+                        represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_ears_angle',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_ears_angle_opts),
+                        default = 99,
+                        label = T('Ears, angle'),
+                        represent = lambda opt: pr_pd_ears_angle_opts.get(opt, T('Unknown'))),
+                    Field('ears_lobes_attached', 'boolean', default=False),           # D2-42/02 Ears, Ear Lobes
+                    Field('ears_piercings_left', 'integer', default=0),           # D2-42/02 Ears, Number of Piercings, left
+                    Field('ears_piercings_right', 'integer', default=0),          # D2-42/02 Ears, Number of Piercings, right
+                    Field('opt_pr_pd_mouth_size',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_size_opts),
+                        default = 99,
+                        label = T('Mouth, Size'),
+                        represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
+                    Field('mouth_other'),                   # D2-43/01 Mouth, Other
+                    Field('opt_pr_pd_lips_shape',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_thickness_opts),
+                        default = 99,
+                        label = T('Lips, Shape'),
+                        represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
+                    Field('lips_madeup', 'boolean', default=False), # D2.44/01 Lips, made-up
+                    Field('lips_other'),                    # D2-44/01 Lips, Other
+                    Field('opt_pr_pd_chin_size',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_size_opts),
+                        default = 99,
+                        label = T('Chin, Size'),
+                        represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_chin_inclination',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_chin_inclination_opts),
+                        default = 99,
+                        label = T('Chin, Inclination'),
+                        represent = lambda opt: pr_pd_chin_inclination_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_chin_shape',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_chin_shape_opts),
+                        default = 99,
+                        label = T('Chin, Shape'),
+                        represent = lambda opt: pr_pd_chin_shape_opts.get(opt, T('Unknown'))),
+                    migrate=migrate)
+
+    # Joined Resource
+    s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+    # Field validation
+
+    # Field representation
+
+    # Field labels
+
+    # CRUD Strings
+
+    #
+    # pd_teeth table --------------------------------------------------------------
+    #
+    resource = 'pd_teeth'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                    pr_pe_id2,
+                    Field('teeth_natural', 'boolean', default=True),        # D2-45/01 Teeth, Conditions
+                    Field('teeth_treated', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
+                    Field('teeth_crowns', 'boolean', default=False),        # D2-45/01 Teeth, Conditions
+                    Field('teeth_bridges', 'boolean', default=False),       # D2-45/01 Teeth, Conditions
+                    Field('teeth_implants', 'boolean', default=False),      # D2-45/01 Teeth, Conditions
+                    Field('opt_pr_pd_teeth_gaps',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_ul_opts),
+                        default = 99,
+                        label = T('Teeth, Gaps between front teeth'),
+                        represent = lambda opt: pr_pd_ul_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_teeth_missing',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_ul_opts),
+                        default = 99,
+                        label = T('Teeth, Missing teeth'),
+                        represent = lambda opt: pr_pd_ul_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_teeth_toothless',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_ul_opts),
+                        default = 99,
+                        label = T('Teeth, Toothless'),
+                        represent = lambda opt: pr_pd_ul_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_teeth_dentures_lower',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_teeth_dentures_lower_opts),
+                        default = 99,
+                        label = T('Teeth, Dentures'),
+                        represent = lambda opt: pr_pd_teeth_dentures_lower_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_teeth_dentures_upper',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_teeth_dentures_upper_opts),
+                        default = 99,
+                        label = T('Teeth, Dentures'),
+                        represent = lambda opt: pr_pd_teeth_dentures_upper_opts.get(opt, T('Unknown'))),
+                    Field('teeth_dentures_id'),             # D2-45/03 Teeth, Dentures, ID-number
+                    migrate=migrate)
+
+    # Joined Resource
+    s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+    # Field validation
+
+    # Field representation
+
+    # Field labels
+
+    # CRUD Strings
+
+    #
+    # pd_body table ---------------------------------------------------------------
+    #
+    resource = 'pd_body'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                    pr_pe_id2,
+                    Field('opt_pr_pd_neck_length',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_length_opts),
+                        default = 99,
+                        label = T('Neck, Length'),
+                        represent = lambda opt: pr_pd_length_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_neck_shape',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_thickness_opts),
+                        default = 99,
+                        label = T('Neck, Shape'),
+                        represent = lambda opt: pr_pd_thickness_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_neck_peculiarities',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_neck_peculiarities_opts),
+                        default = 99,
+                        label = T('Neck, Peculiarities'),
+                        represent = lambda opt: pr_pd_neck_peculiarities_opts.get(opt, T('Unknown'))),
+                    Field('neck_collar_size', length=10),              # D3-48/02 Neck, Collar Size
+                    Field('neck_circumference', length=10),            # D3-48/02 Neck, Circumference
+                    Field('opt_pr_pd_hands_shape',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hands_shape_opts),
+                        default = 99,
+                        label = T('Hands, Shape'),
+                        represent = lambda opt: pr_pd_hands_shape_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hands_size',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_size_opts),
+                        default = 99,
+                        label = T('Hands, Size'),
+                        represent = lambda opt: pr_pd_size_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hands_nails_length',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_length_opts),
+                        default = 99,
+                        label = T('Hands, Nail length'),
+                        represent = lambda opt: pr_pd_length_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hands_nails_peculiarities',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hands_nails_peculiarities_opts),
+                        default = 99,
+                        label = T('Hands, Nail peculiarities'),
+                        represent = lambda opt: pr_pd_hands_nails_peculiarities_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hands_nicotine',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hands_nicotine_opts),
+                        default = 99,
+                        label = T('Hands, Nicotine'),
+                        represent = lambda opt: pr_pd_hands_nicotine_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_feet_shape',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_feet_shape_opts),
+                        default = 99,
+                        label = T('Feet, Shape'),
+                        represent = lambda opt: pr_pd_feet_shape_opts.get(opt, T('Unknown'))),
+                    Field('pd_feet_size'),                     # D3-50/01 Feet, Size
+                    Field('opt_pr_pd_feet_condition',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_feet_condition_opts),
+                        default = 99,
+                        label = T('Feet, Condition'),
+                        represent = lambda opt: pr_pd_feet_condition_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_feet_nails',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_feet_nails_opts),
+                        default = 99,
+                        label = T('Feet, Nails'),
+                        represent = lambda opt: pr_pd_feet_nails_opts.get(opt, T('Unknown'))),
+                    Field('feet_peculiarities'),            # D3-50/03 Feet, Peculiarities
+                    Field('opt_pr_pd_hair_body_extent',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_body_extent_opts),
+                        default = 99,
+                        label = T('Body hair, Extent'),
+                        represent = lambda opt: pr_pd_hair_body_extent_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_body_colour',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                        default = 99,
+                        label = T('Body hair, Colour'),
+                        represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_pubic_extent',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_pubic_extent_opts),
+                        default = 99,
+                        label = T('Pubic hair, Extent'),
+                        represent = lambda opt: pr_pd_hair_pubic_extent_opts.get(opt, T('Unknown'))),
+                    Field('opt_pr_pd_hair_pubic_colour',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_hair_colour_opts),
+                        default = 99,
+                        label = T('Pubic hair, Colour'),
+                        represent = lambda opt: pr_pd_hair_colour_opts.get(opt, T('Unknown'))),
+                    Field('circumcision', 'boolean', default=False),                  # D3-54    Circumcision
+                    Field('opt_pr_pd_smoking_habits',
+                        'integer',
+                        requires = IS_IN_SET(pr_pd_smoking_habits_opts),
+                        default = 99,
+                        label = T('Smoking habits'),
+                        represent = lambda opt: pr_pd_smoking_habits_opts.get(opt, T('Unknown'))),
+                    Field('smoking_stains_teeth', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
+                    Field('smoking_stains_lips', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
+                    Field('smoking_stains_moustache', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
+                    Field('smoking_stains_hand_left', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
+                    Field('smoking_stains_hand_right', 'boolean', default=False),                # D2-46/01 Smoking Habits, Stains Found
+                    Field('specific_details_head'),         # D3-53    Specific Details
+                    Field('specific_details_throat'),       # D3-53    Specific Details
+                    Field('specific_details_arm_left'),     # D3-53    Specific Details
+                    Field('specific_details_arm_right'),    # D3-53    Specific Details
+                    Field('specific_details_hand_left'),    # D3-53    Specific Details
+                    Field('specific_details_hand_right'),   # D3-53    Specific Details
+                    Field('specific_details_body_front'),   # D3-53    Specific Details
+                    Field('specific_details_body_back'),    # D3-53    Specific Details
+                    Field('specific_details_leg_left'),     # D3-53    Specific Details
+                    Field('specific_details_leg_right'),    # D3-53    Specific Details
+                    Field('specific_details_foot_left'),    # D3-53    Specific Details
+                    Field('specific_details_foot_right'),   # D3-53    Specific Details
+                    migrate=migrate)
+
+    # Joined Resource
+    s3xrc.model.add_component(module, resource, multiple=False, joinby='pr_pe_id', deletable=False, editable=True)
+
+    # Field validation
+
+    # Field representation
+
+    # Field labels
+
+    # CRUD Strings
+
 # End
 # *****************************************************************************

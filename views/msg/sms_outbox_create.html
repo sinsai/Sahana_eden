@@ -1,4 +1,4 @@
-﻿{{extend 'layout.html'}}
+{{extend 'layout.html'}}
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -43,7 +43,7 @@
  </td>
  </tbody>
  </table>
- {{=form.custom.end}} 
+ {{=form.custom.end}}
 {{except:}}
 {{pass}}
 </div>
@@ -52,7 +52,7 @@
  {{=list_btn}}
 {{except:}}
 {{pass}}
-{{include 'thickbox.html'}}
+{{include 'colorbox.html'}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Warn when SMS goes over 140 characters
@@ -80,6 +80,6 @@ $(function() {
     $("#dummy").result(function(event, data, formatted) {
         var newvalue = data.id;
         $("#msg_sms_outbox_msg_group_id").val(newvalue);
-    }); 
+    });
 });
 //]]></script>

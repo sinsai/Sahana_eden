@@ -1,6 +1,11 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+    Synchronisation - Controllers
+"""
 
 module = 'admin'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
@@ -20,7 +25,7 @@ def index():
     return dict(module_name=module_name)
 
 logtable = "sync_log"
-    
+
 @auth.requires_membership('Administrator')
 def partner():
     "RESTlike CRUD controller"
@@ -92,7 +97,7 @@ def history():
         timestamps[j] = save
         synced[j] = saverow
     synced.reverse()
-    
+
     # SQLRows to list so that we can reverse it
     history = [i for i in history]
     history.reverse()
@@ -116,7 +121,7 @@ def getconf():
         if not i is "update_record":
             toreturn[str(i)] = temp[str(i)]
     return toreturn
-    
+
 @service.json
 @service.xml
 @service.jsonrpc
@@ -151,7 +156,7 @@ def getAuthCred(uuid):
         toreturn['username'] = None
         toreturn['password'] = None
     else:
-        # This is an existing partner 
+        # This is an existing partner
         toreturn['username'] = temp[0].username
         toreturn['password'] = temp[0].password
     return toreturn
@@ -176,17 +181,17 @@ def putdata(uuid, username, password, nicedbdump):
             break
     if not sync_policy:
         return T("Invalid UUID!")
-    
+
     if sync_policy == 1:
         # No Sync
         return T("No sync permitted!")
-    
+
     # Authentication is mandatory here
     user = auth.login_bare(username, password)
     if not user:
         return T("Authentication failed!")
-    
-    # Parsing nicedbdump to see if it valid, otherwise we will throw error    
+
+    # Parsing nicedbdump to see if it valid, otherwise we will throw error
     # validator: validates if nicedbdump adhears to protocol defined by us
     # we never check nicedbdump size because its size reflects number of tables to be synced, as sahana is developing fastly so syncable tables can increase, moreover it doesnt fixin sync protocol
     if type(nicedbdump) == list:
@@ -235,7 +240,7 @@ def putdata(uuid, username, password, nicedbdump):
         tablename = str(table[0]) #it might be unicode here
         tableattrib = table[1]
         tablerows = table[2]
-            
+
         if tablename in db:
             # If a table in sent data is not present in the local database, it is simply ignored
             canupdate = shn_has_permission('update', tablename)
@@ -258,7 +263,7 @@ def putdata(uuid, username, password, nicedbdump):
                 if 'id' in vals:
                     del vals['id']
                 # vals now has dictionary ready for insert/update
-                
+
                 if uuidcount == 0 and caninsert:
                     # This row isn't present in current database
                     rowid = db[tablename].insert(**vals)
@@ -269,7 +274,7 @@ def putdata(uuid, username, password, nicedbdump):
                         # Newer Timestamp: Update only if given row is newer
                         a = row[tableattrib.index('modified_on')]
                         a = datetime.strptime(a, "%Y-%m-%d %H:%M:%S")
-                        b = db(db[tablename].uuid == row[tableattrib.index('uuid')]).select(db[tablename].modified_on)                
+                        b = db(db[tablename].uuid == row[tableattrib.index('uuid')]).select(db[tablename].modified_on)
                         b = b[0].modified_on
                         if a > b:
                             rowid = db(query).update(**vals)
@@ -282,14 +287,14 @@ def putdata(uuid, username, password, nicedbdump):
                     #uuidcount can never be more than 2, if we reach this place it means user is restricted by authentication
                     #if interpreter reached this line then either I am bad coder or you are hacker
                     return "error code number ..."
-    
+
     # Logging (not auditing)
     db[logtable].insert(
         uuid=uuid,
         function='putdata',
         timestamp=request.utcnow,
         )
-    
+
     return True
 
 #function will take a date and uuid to caller and return new data only
@@ -305,7 +310,7 @@ def getdata(uuid, username, password, timestamp = None):
     http://localhost:8000/sahana/sync/call/json/getdata?timestamp=0&uuid=myuuid&username=user@domain.com&password=mypassword
     If no timestamp is passed, system will return new data since the last sync operation
     """
-    
+
     if not IS_DATETIME(timestamp):
         return "invalid call -- time?"
 
@@ -314,7 +319,7 @@ def getdata(uuid, username, password, timestamp = None):
         user = auth.login_bare(username, password)
         if not user:
             return "authentication failed"
-    
+
     #this is buggy, check it
     #timestamp determination
     if timestamp == None:
@@ -325,7 +330,7 @@ def getdata(uuid, username, password, timestamp = None):
             timestamp = 0
         else:
             # The date since last sync
-            timestamp = lastsynctime[0] 
+            timestamp = lastsynctime[0]
 
     tables = [['budget', 'item'],
             ['budget', 'kit'],
@@ -342,7 +347,7 @@ def getdata(uuid, username, password, timestamp = None):
         table = db[_table]
         query = shn_accessible_query('read', table)
         query = query & (db[_table].modified_on > timestamp)
-        sqltabledump = db(query).select(db[_table].ALL) 
+        sqltabledump = db(query).select(db[_table].ALL)
         nicetabledump = []
         nicetabledump.append(_table)
         nicetabledump.append(db[_table]["fields"])
@@ -354,12 +359,12 @@ def getdata(uuid, username, password, timestamp = None):
         nicetabledump.append(nicetabledumpdata)
         #nicetabledump.append(function(table, query)) # we aren't using this function because then we will have to manually translate json back into objects, let web2py do it for us
         nicedbdump.append(nicetabledump)
-    
+
     # Logging (not auditing)
     db[logtable].insert(
         uuid=uuid,
         function='getdata',
         timestamp=request.utcnow,
         )
-    
+
     return nicedbdump

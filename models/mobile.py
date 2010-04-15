@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Mobile Messaging
+"""
+
 module = 'mobile'
 
 # Settings

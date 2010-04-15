@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    OCR - Controllers
+"""
+
 import StringIO
 #Importing reportlab stuff
 from reportlab.pdfgen.canvas import Canvas
@@ -74,7 +78,7 @@ class Form:
 	if fontsize == 0 :
 	  fontsize = self.fontsize
 	else:
-	  self.fontsize = fontsize	
+	  self.fontsize = fontsize
 	for i in range(boxes):
 	  c.rect(self.x, self.y, self.fontsize, self.fontsize, stroke=1)
 	  self.x = self.x + self.fontsize
@@ -131,18 +135,18 @@ def create():
 	    for i in range(100):
 	      try:
 		choice = str(table[field].represent(i+1))
-		form.print_text([str(i+1)+". "],seek = 20, fontsize = 12)		
+		form.print_text([str(i+1)+". "],seek = 20, fontsize = 12)
 		form.print_text([choice],continuetext = 1, fontsize = 12)
 		#form.draw_check_boxes(continuetext=1,style = "center",fontsize = 10, gray = 0.9) # reduce font size by 2
 	      except:
 		break
-	    form.print_text([""]) # leave a space		
+	    form.print_text([""]) # leave a space
 	    form.print_text([Tstr("Put a choice in the box")], fontsize = 13, gray = 0)
 	    form.draw_check_boxes(boxes = 2, continuetext=1, gray = 0.9, fontsize = 20, seek = 10)
 	    form.print_text([""]) # leave a space
 	  else:
 	    form.draw_check_boxes(boxes = table[field].length,fontsize = 20, gray = 0.9)
-	 
+
     form.save()
     output.seek(0)
     import gluon.contenttype

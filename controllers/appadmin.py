@@ -1,4 +1,8 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+    Application Admin Controllers
+"""
 
 import os
 #import socket
@@ -51,7 +55,7 @@ response.view = 'admin/appadmin.html'
 #                 args=[request.application])], [T('db'), False,
 #                 URL(r=request, f='index')], [T('state'), False,
 #                 URL(r=request, f='state')]]
-                 
+
 
 # ##########################################################
 # ## auxiliary functions

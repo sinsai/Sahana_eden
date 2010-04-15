@@ -1,6 +1,36 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Module configuration
+"""
+
 module = 's3'
+
+# Model enablement
+# Attention: this enables/disables model code, not modules!
+# If you disable a model, you need to disable the respective
+# controllers separately (you can use this variable to check)!
+#
+shn_module_enable = {
+    "gis" : True,               # GIS
+    "media": True,              # Media Manager
+    "pr" : True,                # Person Registry
+    "pr_ext" : True,            # Person Registry Extensions
+    "or" : True,                # Organisation Registry
+    "lms" : False,              # Logistics
+    "budget" : True,           # Budgetting
+    "cr" : True,               # Camp Registry
+    "delphi" : True,           # Delphi Decision Maker
+    "dvi" : True,               # Disaster Victim Identification
+    "dvr" : True,               # Disaster Victim Registry
+    "hms" : True,               # Hospital Management
+    "hrm" : True,               # Human Resources Management
+    "mpr" : True,               # Missing Person Registry
+    "msg" : True,              # Messaging
+    "nim" : False,              # Nursing Information Manager
+    "rms" : True,              # Request Management
+    "vol" : True                # Volunteer Management
+}
 
 # Modules
 s3_module_type_opts = {
@@ -48,7 +78,7 @@ if empty:
             module_type=1,
             access='',
             description="",
-            enabled='True'
+            enabled='True' # can't disable
         )
         table.insert(
             name="admin",
@@ -57,7 +87,7 @@ if empty:
             module_type=1,
             access='|1|',        # Administrator
             description="Site Administration",
-            enabled='True'
+            enabled='True' # can't disable
         )
         table.insert(
             name="gis",
@@ -66,124 +96,7 @@ if empty:
             module_type=2,
             access='',
             description="Situation Awareness & Geospatial Analysis",
-            enabled='True'
-        )
-        table.insert(
-            name="pr",
-            name_nice="Person Registry",
-            priority=3,
-            module_type=3,
-            access='',
-            description="Central point to record details on People",
-            enabled='True'
-        )
-        table.insert(
-            name="mpr",
-            name_nice="Missing Persons Registry",
-            priority=4,
-            module_type=3,
-            access='',
-            description="Helps to report and search for Missing Persons",
-            enabled='True'
-        )
-        table.insert(
-            name="dvr",
-            name_nice="Disaster Victim Registry",
-            priority=5,
-            module_type=3,
-            access='',
-            description="Traces internally displaced people (IDPs) and their needs",
-            enabled='True'
-        )
-        table.insert(
-            name="hrm",
-            name_nice="Human Resources",
-            priority=6,
-            module_type=4,
-            access='',
-            description="Helps to manage human resources",
-            enabled='True'
-        )
-        table.insert(
-            name="dvi",
-            name_nice="Disaster Victim Identification",
-            priority=7,
-            module_type=3,
-            access='',
-            description="Disaster Victim Identification",
-            enabled='True'
-        )
-        table.insert(
-            name="or",
-            name_nice="Organization Registry",
-            priority=8,
-            module_type=4,
-            access='',
-            description="Lists 'who is doing what & where'. Allows relief agencies to coordinate their activities",
-            enabled='True'
-        )
-        table.insert(
-            name="cr",
-            name_nice="Shelter Registry",
-            priority=9,
-            module_type=4,
-            access='',
-            description="Tracks the location, distibution, capacity and breakdown of victims in Shelters",
-            enabled='True'
-        )
-        table.insert(
-            name="vol",
-            name_nice="Volunteer Registry",
-            priority=10,
-            module_type=4,
-            access='',
-            description="Manage volunteers by capturing their skills, availability and allocation",
-            enabled='True'
-        )
-        table.insert(
-            name="lms",
-            name_nice="Logistics Management System",
-            priority=11,
-            module_type=4,
-            access='',
-            description="Several sub-modules that work together to provide for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.",
-            enabled='True'
-        )
-        table.insert(
-            name="rms",
-            name_nice="Request Management",
-            priority=12,
-            module_type=4,
-            access='',
-            description="Tracks requests for aid and matches them against donors who have pledged aid",
-            enabled='True'
-        )
-        table.insert(
-            name="budget",
-            name_nice="Budgeting Module",
-            priority=13,
-            module_type=4,
-            access='',
-            description="Allows a Budget to be drawn up",
-            enabled='True'
-        )
-        table.insert(
-            name="msg",
-            name_nice="Messaging Module",
-            priority=14,
-            module_type=5,
-            access='',
-            description="Sends & Receives Alerts via Email & SMS",
-            enabled='True'
-        )
-        table.insert(
-            name="delphi",
-            name_nice="Delphi Decision Maker",
-            priority=15,
-            module_type=4,
-            access='',
-            description="Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
-            enabled='True'
+            enabled=shn_module_enable.get('gis', False)
         )
         table.insert(
             name="media",
@@ -192,7 +105,124 @@ if empty:
             module_type=4,
             access='',
             description="A library of digital resources, such as Photos.",
-            enabled='True'
+            enabled=shn_module_enable.get('media', False)
+        )
+        table.insert(
+            name="pr",
+            name_nice="Person Registry",
+            priority=3,
+            module_type=3,
+            access='',
+            description="Central point to record details on People",
+            enabled=shn_module_enable.get('pr', False)
+        )
+        table.insert(
+            name="or",
+            name_nice="Organization Registry",
+            priority=8,
+            module_type=4,
+            access='',
+            description="Lists 'who is doing what & where'. Allows relief agencies to coordinate their activities",
+            enabled=shn_module_enable.get('or', False)
+        )
+        table.insert(
+            name="lms",
+            name_nice="Logistics Management System",
+            priority=11,
+            module_type=4,
+            access='',
+            description="Several sub-modules that work together to provide for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.",
+            enabled=shn_module_enable.get('lms', False)
+        )
+        table.insert(
+            name="mpr",
+            name_nice="Missing Persons Registry",
+            priority=4,
+            module_type=3,
+            access='',
+            description="Helps to report and search for Missing Persons",
+            enabled=shn_module_enable.get('mpr', False)
+        )
+        table.insert(
+            name="dvr",
+            name_nice="Disaster Victim Registry",
+            priority=5,
+            module_type=3,
+            access='',
+            description="Traces internally displaced people (IDPs) and their needs",
+            enabled=shn_module_enable.get('dvr', False)
+        )
+        table.insert(
+            name="hrm",
+            name_nice="Human Resources",
+            priority=6,
+            module_type=4,
+            access='',
+            description="Helps to manage human resources",
+            enabled=shn_module_enable.get('hrm', False)
+        )
+        table.insert(
+            name="dvi",
+            name_nice="Disaster Victim Identification",
+            priority=7,
+            module_type=3,
+            access='',
+            description="Disaster Victim Identification",
+            enabled=shn_module_enable.get('dvi', False)
+        )
+        table.insert(
+            name="cr",
+            name_nice="Shelter Registry",
+            priority=9,
+            module_type=4,
+            access='',
+            description="Tracks the location, distibution, capacity and breakdown of victims in Shelters",
+            enabled=shn_module_enable.get('cr', False)
+        )
+        table.insert(
+            name="vol",
+            name_nice="Volunteer Registry",
+            priority=10,
+            module_type=4,
+            access='',
+            description="Manage volunteers by capturing their skills, availability and allocation",
+            enabled=shn_module_enable.get('vol', False)
+        )
+        table.insert(
+            name="rms",
+            name_nice="Request Management",
+            priority=12,
+            module_type=4,
+            access='',
+            description="Tracks requests for aid and matches them against donors who have pledged aid",
+            enabled=shn_module_enable.get('rms', False)
+        )
+        table.insert(
+            name="budget",
+            name_nice="Budgeting Module",
+            priority=13,
+            module_type=4,
+            access='',
+            description="Allows a Budget to be drawn up",
+            enabled=shn_module_enable.get('budget', False)
+        )
+        table.insert(
+            name="msg",
+            name_nice="Messaging Module",
+            priority=14,
+            module_type=5,
+            access='',
+            description="Sends & Receives Alerts via Email & SMS",
+            enabled=shn_module_enable.get('msg', False)
+        )
+        table.insert(
+            name="delphi",
+            name_nice="Delphi Decision Maker",
+            priority=15,
+            module_type=4,
+            access='',
+            description="Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
+            enabled=shn_module_enable.get('delphi', False)
         )
         table.insert(
             name="nim",
@@ -201,7 +231,7 @@ if empty:
             module_type=3,
             access='',
             description="Module to assist disaster nurses.",
-            enabled='True'
+            enabled=shn_module_enable.get('nim', False)
         )
         table.insert(
             name="hms",
@@ -210,9 +240,8 @@ if empty:
             module_type=4,
             access='',
             description="Helps to monitor status of hospitals",
-            enabled='True'
+            enabled=shn_module_enable.get('hms', False)
         )
-
 
 # Modules Menu (available in all Controllers)
 s3.menu_modules = []

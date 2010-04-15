@@ -1,4 +1,8 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+    Mobile Messaging - Controllers
+"""
 
 module = 'admin'
 # Current Module (for sidebar title)
@@ -50,7 +54,7 @@ def setting():
             _title=T("Password|The password for the ."))
     db[table].sender_num.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T("Sender Phone number|The sender phone number displayed with the SMS message ."))
-    
+
     # CRUD Strings
     ADD_SETTING = T('Add Setting')
     VIEW_SETTINGS = T('View Settings')
@@ -69,6 +73,6 @@ def setting():
         msg_list_empty = T('No Settings currently defined'))
 
     crud.settings.update_next = URL(r=request, args=['update', 1])
-    
+
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 

@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+"""
+    DVI Module - Controllers
+"""
+
+module = 'dvi'
+
 # Only people with the DVI role should be able to access this module
 #try:
 #    dvi_group = db(db[auth.settings.table_group_name] == 'DVI').select().first().id
@@ -12,8 +18,6 @@
 #    session.error=T('Not Authorised!')
 #    redirect(URL(r=request, c='default', f='user', args='login'))
 
-
-module = 'dvi'
 # Current Module (for sidebar title)
 try:
     module_name = db(db.s3_module.name==module).select().first().name_nice

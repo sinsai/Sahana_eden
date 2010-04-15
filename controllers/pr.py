@@ -91,13 +91,7 @@ def person():
         main='first_name',
         extra='last_name',
         pheader=shn_pr_pheader,
-        list_fields=['id',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'date_of_birth',
-            'opt_pr_nationality',
-            'missing'],
+        list_fields=shn_pr_person_list_fields(),
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"

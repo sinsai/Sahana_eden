@@ -123,7 +123,7 @@ if shn_module_enable.get(module, False):
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req.id', '%(message)s')),
                     represent = lambda id: (id and [db(db.rms_req.id==id).select().first().updated] or ["None"])[0],
                     label = T('Aid Request'),
-                    comment = DIV(A(ADD_AID_REQUEST, _class='thickbox', _href=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
+                    comment = DIV(A(ADD_AID_REQUEST, _class='colorbox', _href=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup')), _target='top', _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
                     ondelete = 'RESTRICT'
                     ))
 
@@ -386,6 +386,6 @@ if shn_module_enable.get(module, False):
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req_detail.id', '%( request_key)s')),
                     represent = lambda id: (id and [db(db.rms_req_detail.id==id).select().first().updated] or ["None"])[0],
                     label = T('Request Detail'),
-                    comment = DIV(A(ADD_REQUEST_DETAIL, _class='thickbox', _href=URL(r=request, c='rms', f='req_detail', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
+                    comment = DIV(A(ADD_REQUEST_DETAIL, _class='colorbox', _href=URL(r=request, c='rms', f='req_detail', args='create', vars=dict(format='popup')), _target='top', _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
                     ondelete = 'RESTRICT'
                     ))

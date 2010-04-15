@@ -85,7 +85,7 @@ admin_id = db.Table(None, 'admin_id',
             FieldS3('admin', db.auth_group, sortby='role',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'auth_group.id', '%(role)s')),
                 represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
-                comment = DIV(A(T('Add Role'), _class='thickbox', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
+                comment = DIV(A(T('Add Role'), _class='colorbox', _href=URL(r=request, c='admin', f='group', args='create', vars=dict(format='popup')), _target='top', _title=T('Add Role')), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
                 ondelete='RESTRICT'
                 ))
 
@@ -182,7 +182,7 @@ table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Se
 table.theme.label = T('Theme')
 table.theme.requires = IS_IN_DB(db, 'admin_theme.id', 'admin_theme.name')
 table.theme.represent = lambda name: db(db.admin_theme.id==name).select()[0].name
-table.theme.comment = DIV(A(T('Add Theme'), _class='thickbox', _href=URL(r=request, c='admin', f='theme', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Theme'))),
+table.theme.comment = DIV(A(T('Add Theme'), _class='colorbox', _href=URL(r=request, c='admin', f='theme', args='create', vars=dict(format='popup')), _target='top', _title=T('Add Theme'))),
 table.debug.label = T('Debug')
 table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
 table.self_registration.label = T('Self Registration')
@@ -246,7 +246,7 @@ source_id = SQLTable(None, 'source_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 's3_source.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.s3_source.id==id).select()[0].name] or ["None"])[0],
                 label = T('Source of Information'),
-                comment = DIV(A(ADD_SOURCE, _class='thickbox', _href=URL(r=request, c='default', f='source', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_SOURCE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Source|The Source this information came from."))),
+                comment = DIV(A(ADD_SOURCE, _class='colorbox', _href=URL(r=request, c='default', f='source', args='create', vars=dict(format='popup')), _target='top', _title=ADD_SOURCE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Source|The Source this information came from."))),
                 ondelete = 'RESTRICT'
                 ))
 

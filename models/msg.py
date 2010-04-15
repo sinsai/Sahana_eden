@@ -83,7 +83,7 @@ if shn_module_enable.get(module, False):
                     requires = IS_ONE_OF(db, 'msg_group.id', '%(name)s'),
                     represent = lambda id: (id and [db(db.msg_group.id==id).select()[0].name] or ["None"])[0],
                     label = T('Group'),
-                    comment = DIV(A(T('Add Group'), _class='thickbox', _href=URL(r=request, c='msg', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=T('Add Group')), A(SPAN("[Help]"), _class="tooltip", _title=T("Distribution Group|The Group of People to whom this Message should be sent."))),
+                    comment = DIV(A(T('Add Group'), _class='colorbox', _href=URL(r=request, c='msg', f='group', args='create', vars=dict(format='popup')), _target='top', _title=T('Add Group')), A(SPAN("[Help]"), _class="tooltip", _title=T("Distribution Group|The Group of People to whom this Message should be sent."))),
                     ondelete = 'RESTRICT'
                     ))
 

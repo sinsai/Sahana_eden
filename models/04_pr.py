@@ -232,10 +232,6 @@ s3.crud_strings[tablename] = Storage(
 # *****************************************************************************
 # Presence Log (presence)
 #
-
-#
-# Presence Conditions ---------------------------------------------------------
-#
 pr_presence_condition_opts = vita.presence_conditions
 
 #
@@ -246,7 +242,7 @@ orig_id = SQLTable(None, 'orig_id',
                          requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
                          label = T('Origin'),
-                         comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         comment = DIV(A(ADD_LOCATION, _class='colorbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup')), _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                          ondelete = 'RESTRICT'
                         )
                   )
@@ -256,7 +252,7 @@ dest_id = SQLTable(None, 'dest_id',
                          requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href='#', _onclick='viewMap(' + str(id) +');return false')] or [''])[0],
                          label = T('Destination'),
-                         comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         comment = DIV(A(ADD_LOCATION, _class='colorbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup')), _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                          ondelete = 'RESTRICT'
                         )
                   )
@@ -299,7 +295,7 @@ def shn_pr_presence_rss(record):
     else:
         return None
 
-# Joined Resource
+# Component of person entities
 s3xrc.model.add_component(module, resource,
     multiple=True,
     joinby='pr_pe_id',
@@ -310,7 +306,15 @@ s3xrc.model.add_component(module, resource,
         title="%(time)s",
         description=shn_pr_presence_rss
     ),
-    list_fields = ['id','time','location_id','location_details','lat','lon','opt_pr_presence_condition','origin','destination'])
+    list_fields = ['id',
+        'time',
+        'location_id',
+        'location_details',
+        'lat',
+        'lon',
+        'opt_pr_presence_condition',
+        'origin',
+        'destination'])
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
@@ -498,7 +502,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T('No Group Memberships currently registered'))
 
 # -----------------------------------------------------------------------------
-# PR Extensions
+# PR Extension: physical descriptions
 #
 if shn_module_enable.get('pr_ext', False):
 
@@ -1507,10 +1511,5 @@ if shn_module_enable.get('pr_ext', False):
 
     # CRUD Strings
 
-# *****************************************************************************
-# Functions:
-#
-
-#
 # End
 # *****************************************************************************

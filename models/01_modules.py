@@ -17,18 +17,18 @@ shn_module_enable = {
     "pr" : True,                # Person Registry
     "pr_ext" : True,            # Person Registry Extensions
     "or" : True,                # Organisation Registry
-    "lms" : True,               # Logistics
-    "budget" : True,            # Budgetting
-    "cr" : True,                # Camp Registry
-    "delphi" : True,            # Delphi Decision Maker
+    "lms" : False,              # Logistics
+    "budget" : False,           # Budgetting
+    "cr" : False,               # Camp Registry
+    "delphi" : False,           # Delphi Decision Maker
     "dvi" : True,               # Disaster Victim Identification
     "dvr" : True,               # Disaster Victim Registry
     "hms" : True,               # Hospital Management
     "hrm" : True,               # Human Resources Management
     "mpr" : True,               # Missing Person Registry
-    "msg" : True,               # Messaging
-    "nim" : True,               # Nursing Information Manager
-    "rms" : True,               # Request Management
+    "msg" : False,              # Messaging
+    "nim" : False,              # Nursing Information Manager
+    "rms" : False,              # Request Management
     "vol" : True                # Volunteer Management
 }
 

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    SahanaPy Person Registry
+    S3 Person Registry
 
     @author: nursix
-
     @see: U{http://trac.sahanapy.org/wiki/BluePrintVITA}
 """
 
@@ -22,21 +21,20 @@ table = db.define_table(tablename,
 
 # *****************************************************************************
 # PersonEntity (pentity)
-
-# -----------------------------------------------------------------------------
-# Entity types
 #
 opt_pr_entity_type = SQLTable(None, 'opt_pr_entity_type',
                               Field('opt_pr_entity_type', 'integer',
                                     requires = IS_IN_SET(vita.trackable_types),
                                     default = vita.DEFAULT_TRACKABLE,
                                     label = T('Entity Type'),
-                                    represent = lambda opt: vita.trackable_types.get(opt, T('Unknown'))))
+                                    represent = lambda opt:
+                                        vita.trackable_types.get(opt, T('Unknown'))))
+
 
 # -----------------------------------------------------------------------------
-# shn_pentity_represent
 #
 def shn_pentity_represent(id):
+
     """
         Represent a Person Entity in option fields or list views
     """
@@ -90,8 +88,7 @@ def shn_pentity_represent(id):
 
     return pentity_str
 
-#
-# pentity table ---------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #
 resource = 'pentity'
 tablename = "%s_%s" % (module, resource)
@@ -136,14 +133,14 @@ pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
                         readable = False,   # should be invisible in (most) forms
                         writable = False    # should be invisible in (most) forms
                     ),
-#                    Field('pr_pe_parent', db.pr_pentity,
-#                        requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
-#                        represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
-#                        ondelete = 'RESTRICT',
-#                        label = T('belongs to'),
-#                        readable = False,   # should be invisible in (most) forms
-#                        writable = False    # should be invisible in (most) forms
-#                    ),
+                    #Field('pr_pe_parent', db.pr_pentity,
+                        #requires =  IS_NULL_OR(IS_ONE_OF(db, 'pr_pentity.id', shn_pentity_represent)),
+                        #represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+                        #ondelete = 'RESTRICT',
+                        #label = T('belongs to'),
+                        #readable = False,   # should be invisible in (most) forms
+                        #writable = False    # should be invisible in (most) forms
+                    #),
                     Field('pr_pe_label', length=128,
                         label = T('ID Label'),
                         requires = IS_NULL_OR(IS_NOT_IN_DB(db, 'pr_pentity.label'))
@@ -153,8 +150,8 @@ pr_pe_fieldset = SQLTable(None, 'pr_pe_fieldset',
 # Person (person)
 #
 
-#
-# Gender ----------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Gender
 #
 pr_person_gender_opts = {
     1:T('unknown'),
@@ -169,8 +166,8 @@ opt_pr_gender = SQLTable(None, 'opt_pr_gender',
                         label = T('Gender'),
                         represent = lambda opt: pr_person_gender_opts.get(opt, T('Unknown'))))
 
-#
-# Age Group -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Age Group
 #
 pr_person_age_group_opts = {
     1:T('unknown'),
@@ -186,10 +183,11 @@ opt_pr_age_group = SQLTable(None, 'opt_pr_age_group',
                         requires = IS_IN_SET(pr_person_age_group_opts),
                         default = 1,
                         label = T('Age Group'),
-                        represent = lambda opt: pr_person_age_group_opts.get(opt, T('Unknown'))))
+                        represent = lambda opt:
+                            pr_person_age_group_opts.get(opt, T('Unknown'))))
 
-#
-# Marital Status --------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Marital Status
 #
 pr_marital_status_opts = {
     1:T('unknown'),
@@ -206,10 +204,11 @@ opt_pr_marital_status = SQLTable(None, 'opt_pr_marital_status',
                             requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
                             default = 1,
                             label = T('Marital Status'),
-                            represent = lambda opt: opt and pr_marital_status_opts.get(opt, T('Unknown'))))
+                            represent = lambda opt:
+                                opt and pr_marital_status_opts.get(opt, T('Unknown'))))
 
-#
-# Religion --------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Religion
 #
 pr_religion_opts = {
     1:T('none'),
@@ -338,7 +337,7 @@ s3.crud_strings[tablename] = Storage(
 #
 # person_id: reusable field for other tables to reference ---------------------
 #
-shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button, _class='thickbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.pr_person.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry.")))
+shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button, _class='colorbox', _href=URL(r=request, c='pr', f='person', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings.pr_person.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry.")))
 person_id = SQLTable(None, 'person_id',
                 FieldS3('person_id', db.pr_person, sortby=['first_name','middle_name','last_name'],
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_person.id', shn_pr_person_represent)),
@@ -434,15 +433,12 @@ group_id = SQLTable(None, 'group_id',
                 FieldS3('group_id', db.pr_group, sortby='group_name',
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'pr_group.id', '%(id)s: %(group_name)s', filterby='system', filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
-                    comment = DIV(A(s3.crud_strings.pr_group.label_create_button, _class='thickbox', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.pr_group.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
+                    comment = DIV(A(s3.crud_strings.pr_group.label_create_button, _class='colorbox', _href=URL(r=request, c='pr', f='group', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings.pr_group.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
                     ondelete = 'RESTRICT'
                 ))
 
 # *****************************************************************************
 # Functions:
-
-#
-# shn_pentity_ondelete --------------------------------------------------------
 #
 def shn_pentity_ondelete(record):
 
@@ -474,8 +470,7 @@ def shn_pentity_ondelete(record):
 
     return True
 
-#
-# shn_pentity_onaccept --------------------------------------------------------
+# -----------------------------------------------------------------------------
 #
 def shn_pentity_onaccept(form, table=None, entity_type=1):
 
@@ -501,10 +496,10 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
 
     return True
 
-#
-# shn_pr_person_search_simple -------------------------------------------------
+# -----------------------------------------------------------------------------
 #
 def shn_pr_person_search_simple(xrequest, **attr):
+
     """
         Simple search form for persons
     """
@@ -600,10 +595,13 @@ def shn_pr_person_search_simple(xrequest, **attr):
 # Plug into REST controller
 s3xrc.model.set_method(module, 'person', method='search_simple', action=shn_pr_person_search_simple )
 
-#
-# shn_pr_pheader --------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #
 def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
+
+    """
+        Person Registry page headers
+    """
 
     if resource == "person":
 
@@ -659,5 +657,6 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
 
     return None
 
+#
 # END
 # *****************************************************************************

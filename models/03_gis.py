@@ -33,7 +33,7 @@ marker_id = SQLTable(None, 'marker_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select().first().image), _height=40))] or [''])[0],
                 label = T('Marker'),
-                comment = DIV(A(ADD_MARKER, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
+                comment = DIV(A(ADD_MARKER, _class='colorbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup')), _target='top', _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -115,7 +115,7 @@ feature_class_id = SQLTable(None, 'feature_class_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Class'),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class='thickbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
+                comment = DIV(A(ADD_FEATURE_CLASS, _class='colorbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup')), _target='top', _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -169,7 +169,7 @@ location_id = SQLTable(None, 'location_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                 represent = lambda id: shn_gis_location_represent(id),
                 label = T('Location'),
-                comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                comment = DIV(A(ADD_LOCATION, _class='colorbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup')), _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -227,7 +227,7 @@ feature_group_id = SQLTable(None, 'feature_group_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Group'),
-                comment = DIV(A(ADD_FEATURE_GROUP, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
+                comment = DIV(A(ADD_FEATURE_GROUP, _class='colorbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup')), _target='top', _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -295,7 +295,7 @@ track_id = SQLTable(None, 'track_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_track.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_track.id==id).select().first().name] or ["None"])[0],
                 label = T('Track'),
-                comment = DIV(A(ADD_TRACK, _class='thickbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                comment = DIV(A(ADD_TRACK, _class='colorbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup')), _target='top', _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
                 ondelete = 'RESTRICT'
                 ))
 

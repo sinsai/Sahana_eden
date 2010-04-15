@@ -269,7 +269,7 @@ if shn_module_enable.get(module, False):
                                 requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hospital.id', '%(name)s')),
                                 represent = lambda id: (id and [db(db.hms_hospital.id==id).select()[0].name] or ["None"])[0],
                                 label = T('Hospital'),
-                                comment = DIV(A(s3.crud_strings[tablename].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[tablename].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Hospital|The hospital this record is associated with."))),
+                                comment = DIV(A(s3.crud_strings[tablename].title_create, _class='colorbox', _href=URL(r=request, c='hms', f='hospital', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings[tablename].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Hospital|The hospital this record is associated with."))),
                                 ondelete = 'RESTRICT'))
 
     # -----------------------------------------------------------------------------
@@ -998,7 +998,7 @@ if shn_module_enable.get(module, False):
                                 requires = IS_NULL_OR(IS_ONE_OF(db, 'hms_hrequest.id', '%(id)s')),
                                 represent = lambda id: (id and [db(db.hms_hrequest.id==id).select()[0].id] or ["None"])[0],
                                 label = T('Request'),
-                                comment = DIV(A(s3.crud_strings[tablename].title_create, _class='thickbox', _href=URL(r=request, c='hms', f='hrequest', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings[tablename].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Request|The request this record is associated with."))),
+                                comment = DIV(A(s3.crud_strings[tablename].title_create, _class='colorbox', _href=URL(r=request, c='hms', f='hrequest', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings[tablename].title_create), A(SPAN("[Help]"), _class="tooltip", _title=T("Request|The request this record is associated with."))),
                                 ondelete = 'RESTRICT'))
 
     s3xrc.model.add_component(module, resource,

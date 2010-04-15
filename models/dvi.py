@@ -93,7 +93,7 @@ if shn_module_enable.get(module, False):
                         Field('dvi_find_id', db.dvi_find,
                                 requires = IS_NULL_OR(IS_ONE_OF(db, 'dvi_find.id', '[%(id)s] %(find_date)s: %(bodies_est)s bodies')),
                                 represent = lambda id: (id and [DIV(A(db(db.dvi_find.id==id).select()[0].id, _class='popup', _href=URL(r=request, c='dvi', f='find', args=['read', str(id).strip()], vars=dict(format='plain')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button))] or ["None"])[0],
-                                comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='thickbox', _href=URL(r=request, c='dvi', f='find', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
+                                comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='colorbox', _href=URL(r=request, c='dvi', f='find', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
                                 ondelete = 'RESTRICT'))
 
     #

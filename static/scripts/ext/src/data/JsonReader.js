@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -165,12 +165,15 @@ Ext.extend(Ext.data.JsonReader, Ext.data.DataReader, {
         return this.readRecords(o);
     },
 
-    /**
-     * Decode a json response from server.
-     * @param {String} action [Ext.data.Api.actions.create|read|update|destroy]
-     * @param {Object} response
+    /*
      * TODO: refactor code between JsonReader#readRecords, #readResponse into 1 method.
      * there's ugly duplication going on due to maintaining backwards compat. with 2.0.  It's time to do this.
+     */
+    /**
+     * Decode a JSON response from server.
+     * @param {String} action [Ext.data.Api.actions.create|read|update|destroy]
+     * @param {Object} response The XHR object returned through an Ajax server request.
+     * @return {Response} A {@link Ext.data.Response Response} object containing the data response, and also status information.
      */
     readResponse : function(action, response) {
         var o = (response.responseText !== undefined) ? Ext.decode(response.responseText) : response;
@@ -193,7 +196,7 @@ Ext.extend(Ext.data.JsonReader, Ext.data.DataReader, {
         var res = new Ext.data.Response({
             action: action,
             success: this.getSuccess(o),
-            data: this.extractData(root),
+            data: (root) ? this.extractData(root, false) : [],
             message: this.getMessage(o),
             raw: o
         });
@@ -298,50 +301,22 @@ Ext.extend(Ext.data.JsonReader, Ext.data.DataReader, {
     createAccessor : function(){
         var re = /[\[\.]/;
         return function(expr) {
-            try {
-                return(re.test(expr)) ?
-                new Function('obj', 'return obj.' + expr) :
-                function(obj){
-                    return obj[expr];
-                };
-            } catch(e){}
-            return Ext.emptyFn;
+            if(Ext.isEmpty(expr)){
+                return Ext.emptyFn;
+            }
+            if(Ext.isFunction(expr)){
+                return expr;
+            }
+            var i = String(expr).search(re);
+            if(i >= 0){
+                return new Function('obj', 'return obj' + (i > 0 ? '.' : '') + expr);
+            }
+            return function(obj){
+                return obj[expr];
+            };
+
         };
     }(),
-
-    /**
-     * returns extracted, type-cast rows of data.  Iterates to call #extractValues for each row
-     * @param {Object[]/Object} data-root from server response
-     * @param {Boolean} returnRecords [false] Set true to return instances of Ext.data.Record
-     * @private
-     */
-    extractData : function(root, returnRecords) {
-        var rs = undefined;
-        if (this.isData(root)) {
-            root = [root];
-        }
-        if (Ext.isArray(root)) {
-            var f       = this.recordType.prototype.fields,
-                fi      = f.items,
-                fl      = f.length,
-                rs      = [];
-            if (returnRecords === true) {
-                var Record = this.recordType;
-                for (var i = 0; i < root.length; i++) {
-                    var n = root[i];
-                    var record = new Record(this.extractValues(n, fi, fl), this.getId(n));
-                    record.json = n;
-                    rs.push(record);
-                }
-            }
-            else {
-                for (var i = 0; i < root.length; i++) {
-                    rs.push(this.extractValues(root[i], fi, fl));
-                }
-            }
-        }
-        return rs;
-    },
 
     /**
      * type-casts a single row of raw-data from server

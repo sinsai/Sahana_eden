@@ -182,16 +182,7 @@ OpenLayers.Control.SelectFeature = OpenLayers.Class(OpenLayers.Control, {
         if(this.scope === null) {
             this.scope = this;
         }
-        if(layers instanceof Array) {
-            this.layers = layers;
-            this.layer = new OpenLayers.Layer.Vector.RootContainer(
-                this.id + "_container", {
-                    layers: layers
-                }
-            );
-        } else {
-            this.layer = layers;
-        }
+        this.initLayer(layers);
         var callbacks = {
             click: this.clickFeature,
             clickout: this.clickoutFeature
@@ -216,11 +207,35 @@ OpenLayers.Control.SelectFeature = OpenLayers.Class(OpenLayers.Control, {
             ); 
         }
     },
+
+    /**
+     * Method: initLayer
+     * Assign the layer property. If layers is an array, we need to use
+     *     a RootContainer.
+     *
+     * Parameters:
+     * layers - {<OpenLayers.Layer.Vector>}, or an array of vector layers.
+     */
+    initLayer: function(layers) {
+        if(layers instanceof Array) {
+            this.layers = layers;
+            this.layer = new OpenLayers.Layer.Vector.RootContainer(
+                this.id + "_container", {
+                    layers: layers
+                }
+            );
+        } else {
+            this.layer = layers;
+        }
+    },
     
     /**
      * Method: destroy
      */
     destroy: function() {
+        if(this.active && this.layers) {
+            this.map.removeLayer(this.layer);
+        }
         OpenLayers.Control.prototype.destroy.apply(this, arguments);
         if(this.layers) {
             this.layer.destroy();
@@ -472,6 +487,13 @@ OpenLayers.Control.SelectFeature = OpenLayers.Class(OpenLayers.Control, {
             if(cont !== false) {
                 layer.selectedFeatures.push(feature);
                 this.highlight(feature);
+                // if the feature handler isn't involved in the feature
+                // selection (because the box handler is used or the
+                // feature is selected programatically) we fake the
+                // feature handler to allow unselecting on click
+                if(!this.handlers.feature.lastFeature) {
+                    this.handlers.feature.lastFeature = layer.selectedFeatures[0];
+                }
                 layer.events.triggerEvent("featureselected", {feature: feature});
                 this.onSelect.call(this.scope, feature);
             }
@@ -529,6 +551,11 @@ OpenLayers.Control.SelectFeature = OpenLayers.Class(OpenLayers.Control, {
                 layer = layers[l];
                 for(var i=0, len = layer.features.length; i<len; ++i) {
                     var feature = layer.features[i];
+                    // check if the feature is displayed
+                    if (!feature.getVisibility()) {
+                        continue;
+                    }
+
                     if (this.geometryTypes == null || OpenLayers.Util.indexOf(
                             this.geometryTypes, feature.geometry.CLASS_NAME) > -1) {
                         if (bounds.toGeometry().intersects(feature.geometry)) {
@@ -556,6 +583,29 @@ OpenLayers.Control.SelectFeature = OpenLayers.Class(OpenLayers.Control, {
             this.handlers.box.setMap(map);
         }
         OpenLayers.Control.prototype.setMap.apply(this, arguments);
+    },
+    
+    /**
+     * Method: setLayer
+     * Attach a new layer to the control, overriding any existing layers.
+     *
+     * Parameters:
+     * layers - Array of {<OpenLayers.Layer.Vector>} or a single
+     *     {<OpenLayers.Layer.Vector>}
+     */
+    setLayer: function(layers) {
+        var isActive = this.active;
+        this.unselectAll();
+        this.deactivate();
+        if(this.layers) {
+            this.layer.destroy();
+            this.layers = null;
+        }
+        this.initLayer(layers);
+        this.handlers.feature.layer = this.layer;
+        if (isActive) {
+            this.activate();
+        }
     },
     
     CLASS_NAME: "OpenLayers.Control.SelectFeature"

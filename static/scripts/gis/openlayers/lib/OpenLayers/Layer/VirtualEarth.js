@@ -28,9 +28,9 @@ OpenLayers.Layer.VirtualEarth = OpenLayers.Class(
     
     /** 
      * Constant: MAX_ZOOM_LEVEL
-     * {Integer} 17
+     * {Integer} 19
      */
-    MAX_ZOOM_LEVEL: 17,
+    MAX_ZOOM_LEVEL: 19,
 
     /** 
      * Constant: RESOLUTIONS
@@ -54,7 +54,9 @@ OpenLayers.Layer.VirtualEarth = OpenLayers.Class(
         0.000171661376953125, 
         0.0000858306884765625, 
         0.00004291534423828125,
-        0.00002145767211914062
+        0.00002145767211914062, 
+        0.00001072883605957031,
+        0.00000536441802978515
     ],
 
     /**
@@ -121,7 +123,7 @@ OpenLayers.Layer.VirtualEarth = OpenLayers.Class(
                 // http://blogs.msdn.com/virtualearth/archive/2007/09/28/locking-a-virtual-earth-map.aspx
                 //
                 this.mapObject.LoadMap(null, null, this.type, true);
-                this.mapObject.AttachEvent("onmousedown", function() {return true; });
+                this.mapObject.AttachEvent("onmousedown", OpenLayers.Function.True);
 
             } catch (e) { }
             this.mapObject.HideDashboard();

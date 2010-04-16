@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -32,8 +32,9 @@ Ext.extend(Ext.Editor, Ext.Component, {
     /**
      * @cfg {Boolean} allowBlur
      * True to {@link #completeEdit complete the editing process} if in edit mode when the
-     * field is blurred. Defaults to <tt>false</tt>.
+     * field is blurred. Defaults to <tt>true</tt>.
      */
+    allowBlur: true,
     /**
      * @cfg {Boolean/String} autoSize
      * True for the editor to automatically adopt the size of the underlying field, "width" to adopt the width only,
@@ -64,6 +65,11 @@ Ext.extend(Ext.Editor, Ext.Component, {
      * The position to align to (see {@link Ext.Element#alignTo} for more details, defaults to "c-c?").
      */
     alignment: "c-c?",
+    /**
+     * @cfg {Array} offsets
+     * The offsets to use when aligning (see {@link Ext.Element#alignTo} for more details. Defaults to <tt>[0, 0]</tt>.
+     */
+    offsets: [0, 0],
     /**
      * @cfg {Boolean/String} shadow "sides" for sides/bottom only, "frame" for 4-way shadow, and "drop"
      * for bottom-right shadow (defaults to "frame")
@@ -197,7 +203,7 @@ Ext.extend(Ext.Editor, Ext.Component, {
                 this.cancelEdit();
             }
             if(field.triggerBlur){
-                field.triggerBlur(); 
+                field.triggerBlur();
             }
         }
         this.fireEvent('specialkey', field, e);
@@ -220,9 +226,9 @@ Ext.extend(Ext.Editor, Ext.Component, {
         }
         if(this.fireEvent("beforestartedit", this, this.boundEl, v) !== false){
             this.startValue = v;
+            this.field.reset();
             this.field.setValue(v);
-            this.doAutoSize();
-            this.el.alignTo(this.boundEl, this.alignment);
+            this.realign(true);
             this.editing = true;
             this.show();
         }
@@ -269,9 +275,13 @@ Ext.extend(Ext.Editor, Ext.Component, {
 
     /**
      * Realigns the editor to the bound field based on the current alignment config value.
+     * @param {Boolean} autoSize (optional) True to size the field to the dimensions of the bound element.
      */
-    realign : function(){
-        this.el.alignTo(this.boundEl, this.alignment);
+    realign : function(autoSize){
+        if(autoSize === true){
+            this.doAutoSize();
+        }
+        this.el.alignTo(this.boundEl, this.alignment, this.offsets);
     },
 
     /**
@@ -281,6 +291,10 @@ Ext.extend(Ext.Editor, Ext.Component, {
     completeEdit : function(remainVisible){
         if(!this.editing){
             return;
+        }
+        // Assert combo values first
+        if (this.field.assertValue) {
+            this.field.assertValue();
         }
         var v = this.getValue();
         if(!this.field.isValid()){
@@ -327,7 +341,7 @@ Ext.extend(Ext.Editor, Ext.Component, {
             this.fireEvent("canceledit", this, v, this.startValue);
         }
     },
-    
+
     // private
     hideEdit: function(remainVisible){
         if(remainVisible !== true){
@@ -338,7 +352,8 @@ Ext.extend(Ext.Editor, Ext.Component, {
 
     // private
     onBlur : function(){
-        if(this.allowBlur !== true && this.editing){
+        // selectSameEditor flag allows the same editor to be started without onBlur firing on itself
+        if(this.allowBlur === true && this.editing && this.selectSameEditor !== true){
             this.completeEdit();
         }
     },
@@ -376,8 +391,10 @@ Ext.extend(Ext.Editor, Ext.Component, {
     },
 
     beforeDestroy : function(){
-        Ext.destroy(this.field);
-        this.field = null;
+        Ext.destroyMembers(this, 'field');
+
+        delete this.parentEl;
+        delete this.boundEl;
     }
 });
 Ext.reg('editor', Ext.Editor);

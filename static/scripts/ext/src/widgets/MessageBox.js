@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -38,10 +38,12 @@ Ext.Msg.show({
 Ext.MessageBox = function(){
     var dlg, opt, mask, waitTimer,
         bodyEl, msgEl, textboxEl, textareaEl, progressBar, pp, iconEl, spacerEl,
-        buttons, activeTextEl, bwidth, bufferIcon = '', iconCls = '';
+        buttons, activeTextEl, bwidth, bufferIcon = '', iconCls = '',
+        buttonNames = ['ok', 'yes', 'no', 'cancel'];
 
     // private
     var handleButton = function(button){
+        buttons[button].blur();
         if(dlg.isVisible()){
             dlg.hide();
             handleHide();
@@ -54,7 +56,7 @@ Ext.MessageBox = function(){
         if(opt && opt.cls){
             dlg.el.removeClass(opt.cls);
         }
-        progressBar.reset();
+        progressBar.reset();        
     };
 
     // private
@@ -70,26 +72,25 @@ Ext.MessageBox = function(){
 
     // private
     var updateButtons = function(b){
-        var width = 0;
+        var width = 0,
+            cfg;
         if(!b){
-            buttons["ok"].hide();
-            buttons["cancel"].hide();
-            buttons["yes"].hide();
-            buttons["no"].hide();
+            Ext.each(buttonNames, function(name){
+                buttons[name].hide();
+            });
             return width;
         }
         dlg.footer.dom.style.display = '';
-        for(var k in buttons){
-            if(!Ext.isFunction(buttons[k])){
-                if(b[k]){
-                    buttons[k].show();
-                    buttons[k].setText(Ext.isString(b[k]) ? b[k] : Ext.MessageBox.buttonText[k]);
-                    width += buttons[k].el.getWidth()+15;
-                }else{
-                    buttons[k].hide();
-                }
+        Ext.iterate(buttons, function(name, btn){
+            cfg = b[name];
+            if(cfg){
+                btn.show();
+                btn.setText(Ext.isString(cfg) ? cfg : Ext.MessageBox.buttonText[name]);
+                width += btn.getEl().getWidth() + 15;
+            }else{
+                btn.hide();
             }
-        }
+        });
         return width;
     };
 
@@ -100,6 +101,16 @@ Ext.MessageBox = function(){
          */
         getDialog : function(titleText){
            if(!dlg){
+                var btns = [];
+                
+                buttons = {};
+                Ext.each(buttonNames, function(name){
+                    btns.push(buttons[name] = new Ext.Button({
+                        text: this.buttonText[name],
+                        handler: handleButton.createCallback(name),
+                        hideMode: 'offsets'
+                    }));
+                }, this);
                 dlg = new Ext.Window({
                     autoCreate : true,
                     title:titleText,
@@ -124,16 +135,12 @@ Ext.MessageBox = function(){
                         }else{
                             handleButton("cancel");
                         }
-                    }
+                    },
+                    fbar: new Ext.Toolbar({
+                        items: btns,
+                        enableOverflow: false
+                    })
                 });
-                buttons = {};
-                var bt = this.buttonText;
-                //TODO: refactor this block into a buttons config to pass into the Window constructor
-                buttons["ok"] = dlg.addButton(bt["ok"], handleButton.createCallback("ok"));
-                buttons["yes"] = dlg.addButton(bt["yes"], handleButton.createCallback("yes"));
-                buttons["no"] = dlg.addButton(bt["no"], handleButton.createCallback("no"));
-                buttons["cancel"] = dlg.addButton(bt["cancel"], handleButton.createCallback("cancel"));
-                buttons["ok"].hideMode = buttons["yes"].hideMode = buttons["no"].hideMode = buttons["cancel"].hideMode = 'offsets';
                 dlg.render(document.body);
                 dlg.getEl().addClass('x-window-dlg');
                 mask = dlg.mask;
@@ -176,17 +183,19 @@ Ext.MessageBox = function(){
             }
             msgEl.update(text || '&#160;');
 
-            var iw = iconCls != '' ? (iconEl.getWidth() + iconEl.getMargins('lr')) : 0;
-            var mw = msgEl.getWidth() + msgEl.getMargins('lr');
-            var fw = dlg.getFrameWidth('lr');
-            var bw = dlg.body.getFrameWidth('lr');
+            var iw = iconCls != '' ? (iconEl.getWidth() + iconEl.getMargins('lr')) : 0,
+                mw = msgEl.getWidth() + msgEl.getMargins('lr'),
+                fw = dlg.getFrameWidth('lr'),
+                bw = dlg.body.getFrameWidth('lr'),
+                w;
+                
             if (Ext.isIE && iw > 0){
                 //3 pixels get subtracted in the icon CSS for an IE margin issue,
                 //so we have to add it back here for the overall width to be consistent
                 iw += 3;
             }
-            var w = Math.max(Math.min(opt.width || iw+mw+fw+bw, this.maxWidth),
-                        Math.max(opt.minWidth || this.minWidth, bwidth || 0));
+            w = Math.max(Math.min(opt.width || iw+mw+fw+bw, opt.maxWidth || this.maxWidth),
+                    Math.max(opt.minWidth || this.minWidth, bwidth || 0));
 
             if(opt.prompt === true){
                 activeTextEl.setWidth(w-iw-fw-bw);
@@ -373,18 +382,16 @@ Ext.Msg.show({
                 // force it to the end of the z-index stack so it gets a cursor in FF
                 document.body.appendChild(dlg.el.dom);
                 d.setAnimateTarget(opt.animEl);
+                //workaround for window internally enabling keymap in afterShow
+                d.on('show', function(){
+                    if(allowClose === true){
+                        d.keyMap.enable();
+                    }else{
+                        d.keyMap.disable();
+                    }
+                }, this, {single:true});
                 d.show(opt.animEl);
             }
-
-            //workaround for window internally enabling keymap in afterShow
-            d.on('show', function(){
-                if(allowClose === true){
-                    d.keyMap.enable();
-                }else{
-                    d.keyMap.disable();
-                }
-            }, this, {single:true});
-
             if(opt.wait === true){
                 progressBar.wait(opt.waitConfig);
             }
@@ -477,7 +484,7 @@ Ext.MessageBox.ERROR
          * @param {String} title The title bar text
          * @param {String} msg The message box body text
          * @param {Function} fn (optional) The callback function invoked after the message box is closed
-         * @param {Object} scope (optional) The scope of the callback function
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to the browser wnidow.
          * @return {Ext.MessageBox} this
          */
         alert : function(title, msg, fn, scope){
@@ -486,7 +493,8 @@ Ext.MessageBox.ERROR
                 msg : msg,
                 buttons: this.OK,
                 fn: fn,
-                scope : scope
+                scope : scope,
+                minWidth: this.minWidth
             });
             return this;
         },
@@ -499,7 +507,7 @@ Ext.MessageBox.ERROR
          * @param {String} title The title bar text
          * @param {String} msg The message box body text
          * @param {Function} fn (optional) The callback function invoked after the message box is closed
-         * @param {Object} scope (optional) The scope of the callback function
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to the browser wnidow.
          * @return {Ext.MessageBox} this
          */
         confirm : function(title, msg, fn, scope){
@@ -509,7 +517,8 @@ Ext.MessageBox.ERROR
                 buttons: this.YESNO,
                 fn: fn,
                 scope : scope,
-                icon: this.QUESTION
+                icon: this.QUESTION,
+                minWidth: this.minWidth
             });
             return this;
         },
@@ -522,7 +531,7 @@ Ext.MessageBox.ERROR
          * @param {String} title The title bar text
          * @param {String} msg The message box body text
          * @param {Function} fn (optional) The callback function invoked after the message box is closed
-         * @param {Object} scope (optional) The scope of the callback function
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to the browser wnidow.
          * @param {Boolean/Number} multiline (optional) True to create a multiline textbox using the defaultTextHeight
          * property, or the height in pixels to create the textbox (defaults to false / single-line)
          * @param {String} value (optional) Default value of the text input element (defaults to '')
@@ -534,7 +543,7 @@ Ext.MessageBox.ERROR
                 msg : msg,
                 buttons: this.OKCANCEL,
                 fn: fn,
-                minWidth:250,
+                minWidth: this.minPromptWidth,
                 scope : scope,
                 prompt:true,
                 multiline: multiline,
@@ -606,10 +615,16 @@ Ext.MessageBox.ERROR
         minWidth : 100,
         /**
          * The minimum width in pixels of the message box if it is a progress-style dialog.  This is useful
-         * for setting a different minimum width than text-only dialogs may need (defaults to 250)
+         * for setting a different minimum width than text-only dialogs may need (defaults to 250).
          * @type Number
          */
         minProgressWidth : 250,
+        /**
+         * The minimum width in pixels of the message box if it is a prompt dialog.  This is useful
+         * for setting a different minimum width than text-only dialogs may need (defaults to 250).
+         * @type Number
+         */
+        minPromptWidth: 250,
         /**
          * An object containing the default button text strings that can be overriden for localized language support.
          * Supported properties are: ok, cancel, yes and no.  Generally you should include a locale-specific

@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -78,7 +78,7 @@ Ext.layout.CardLayout = Ext.extend(Ext.layout.FitLayout, {
      * true might improve performance.
      */
     deferredRender : false,
-    
+
     /**
      * @cfg {Boolean} layoutOnCardChange
      * True to force a layout of the active item when the active card is changed. Defaults to false.
@@ -90,29 +90,48 @@ Ext.layout.CardLayout = Ext.extend(Ext.layout.FitLayout, {
      */
     // private
     renderHidden : true,
-    
-    constructor: function(config){
-        Ext.layout.CardLayout.superclass.constructor.call(this, config);
-        this.forceLayout = (this.deferredRender === false);
-    },
+
+    type: 'card',
 
     /**
      * Sets the active (visible) item in the layout.
      * @param {String/Number} item The string component id or numeric index of the item to activate
      */
     setActiveItem : function(item){
-        item = this.container.getComponent(item);
-        if(this.activeItem != item){
-            if(this.activeItem){
-                this.activeItem.hide();
+        var ai = this.activeItem,
+            ct = this.container;
+        item = ct.getComponent(item);
+
+        // Is this a valid, different card?
+        if(item && ai != item){
+
+            // Changing cards, hide the current one
+            if(ai){
+                ai.hide();
+                if (ai.hidden !== true) {
+                    return false;
+                }
+                ai.fireEvent('deactivate', ai);
             }
+
             var layout = item.doLayout && (this.layoutOnCardChange || !item.rendered);
+
+            // Change activeItem reference
             this.activeItem = item;
+
+            // The container is about to get a recursive layout, remove any deferLayout reference
+            // because it will trigger a redundant layout.
+            delete item.deferLayout;
+
+            // Show the new component
             item.show();
+
             this.layout();
+
             if(layout){
                 item.doLayout();
             }
+            item.fireEvent('activate', item);
         }
     },
 

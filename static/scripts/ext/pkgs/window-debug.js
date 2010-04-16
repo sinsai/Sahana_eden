@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -50,8 +50,13 @@ Ext.Window = Ext.extend(Ext.Panel, {
      * A reference to the WindowGroup that should manage this window (defaults to {@link Ext.WindowMgr}).
      */
     /**
-    * @cfg {String/Number/Button} defaultButton
-    * The id / index of a button or a button instance to focus when this window received the focus.
+    * @cfg {String/Number/Component} defaultButton
+    * <p>Specifies a Component to receive focus when this Window is focussed.</p>
+    * <p>This may be one of:</p><div class="mdetail-params"><ul>
+    * <li>The index of a footer Button.</li>
+    * <li>The id of a Component.</li>
+    * <li>A Component.</li>
+    * </ul></div>
     */
     /**
     * @cfg {Function} onEsc
@@ -183,19 +188,13 @@ Ext.Window = Ext.extend(Ext.Panel, {
      * @deprecated
      */
     initHidden : undefined,
-    
+
     /**
      * @cfg {Boolean} hidden
      * Render this component hidden (default is <tt>true</tt>). If <tt>true</tt>, the
      * {@link #hide} method will be called internally.
      */
     hidden : true,
-    
-    /**
-    * @cfg {Boolean} monitorResize @hide
-    * This is automatically managed based on the value of constrain and constrainToHeader
-    */
-    monitorResize : true,
 
     // The following configs are set to provide the basic functionality of a window.
     // Changing them would require additional code to handle correctly and should
@@ -306,7 +305,8 @@ Ext.Window = Ext.extend(Ext.Panel, {
                 minHeight:this.minHeight,
                 handles: this.resizeHandles || 'all',
                 pinned: true,
-                resizeElement : this.resizerAction
+                resizeElement : this.resizerAction,
+                handleCls: 'x-window-handle'
             });
             this.resizer.window = this;
             this.mon(this.resizer, 'beforeresize', this.beforeResize, this);
@@ -331,8 +331,12 @@ Ext.Window = Ext.extend(Ext.Panel, {
 
     initDraggable : function(){
         /**
-         * If this Window is configured {@link #draggable}, this property will contain
-         * an instance of {@link Ext.dd.DD} which handles dragging the Window's DOM Element.
+         * <p>If this Window is configured {@link #draggable}, this property will contain
+         * an instance of {@link Ext.dd.DD} which handles dragging the Window's DOM Element.</p>
+         * <p>This has implementations of <code>startDrag</code>, <code>onDrag</code> and <code>endDrag</code>
+         * which perform the dragging action. If extra logic is needed at these points, use
+         * {@link Function#createInterceptor createInterceptor} or {@link Function#createSequence createSequence} to
+         * augment the existing implementations.</p>
          * @type Ext.dd.DD
          * @property dd
          */
@@ -340,18 +344,16 @@ Ext.Window = Ext.extend(Ext.Panel, {
     },
 
    // private
-    onEsc : function(){
+    onEsc : function(k, e){
+        e.stopEvent();
         this[this.closeAction]();
     },
 
     // private
     beforeDestroy : function(){
-        if (this.rendered){
+        if(this.rendered){
             this.hide();
-          if(this.doAnchor){
-                Ext.EventManager.removeResizeListener(this.doAnchor, this);
-              Ext.EventManager.un(window, 'scroll', this.doAnchor, this);
-            }
+            this.clearAnchor();
             Ext.destroy(
                 this.focusEl,
                 this.resizer,
@@ -428,11 +430,13 @@ Ext.Window = Ext.extend(Ext.Panel, {
             this.updateBox(box);
         }else{
             this.setSize(box);
+            if (Ext.isIE6 && Ext.isStrict) {
+                this.doLayout();
+            }
         }
         this.focus();
         this.updateHandles();
         this.saveState();
-        this.doLayout();
     },
 
     /**
@@ -440,7 +444,11 @@ Ext.Window = Ext.extend(Ext.Panel, {
      * window itself will receive focus.
      */
     focus : function(){
-        var f = this.focusEl, db = this.defaultButton, t = typeof db;
+        var f = this.focusEl,
+            db = this.defaultButton,
+            t = typeof db,
+            el,
+            ct;
         if(Ext.isDefined(db)){
             if(Ext.isNumber(db) && this.fbar){
                 f = this.fbar.items.get(db);
@@ -448,6 +456,13 @@ Ext.Window = Ext.extend(Ext.Panel, {
                 f = Ext.getCmp(db);
             }else{
                 f = db;
+            }
+            el = f.getEl();
+            ct = Ext.getDom(this.container);
+            if (el && ct) {
+                if (!Ext.lib.Region.getRegion(ct).contains(Ext.lib.Region.getRegion(el.dom))){
+                    return;
+                }
             }
         }
         f = f || this.focusEl;
@@ -491,7 +506,7 @@ Ext.Window = Ext.extend(Ext.Panel, {
      * @param {String/Element} animateTarget (optional) The target element or id from which the window should
      * animate while opening (defaults to null with no animation)
      * @param {Function} callback (optional) A callback function to call after the window is displayed
-     * @param {Object} scope (optional) The scope in which to execute the callback
+     * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to this Window.
      * @return {Ext.Window} this
      */
     show : function(animateTarget, cb, scope){
@@ -523,13 +538,16 @@ Ext.Window = Ext.extend(Ext.Panel, {
 
     // private
     afterShow : function(isAnim){
+        if (this.isDestroyed){
+            return false;
+        }
         this.proxy.hide();
         this.el.setStyle('display', 'block');
         this.el.show();
         if(this.maximized){
             this.fitContainer();
         }
-        if(Ext.isMac && Ext.isGecko){ // work around stupid FF 2.0/Mac scroll bar bug
+        if(Ext.isMac && Ext.isGecko2){ // work around stupid FF 2.0/Mac scroll bar bug
             this.cascade(this.setAutoScroll);
         }
 
@@ -547,6 +565,7 @@ Ext.Window = Ext.extend(Ext.Panel, {
             var sz = this.getSize();
             this.onResize(sz.width, sz.height);
         }
+        this.onShow();
         this.fireEvent('show', this);
     },
 
@@ -571,7 +590,7 @@ Ext.Window = Ext.extend(Ext.Panel, {
      * @param {String/Element} animateTarget (optional) The target element or id to which the window should
      * animate while hiding (defaults to null with no animation)
      * @param {Function} callback (optional) A callback function to call after the window is hidden
-     * @param {Object} scope (optional) The scope in which to execute the callback
+     * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to this Window.
      * @return {Ext.Window} this
      */
     hide : function(animateTarget, cb, scope){
@@ -607,6 +626,7 @@ Ext.Window = Ext.extend(Ext.Panel, {
         if(this.keyMap){
             this.keyMap.disable();
         }
+        this.onHide();
         this.fireEvent('hide', this);
     },
 
@@ -625,6 +645,18 @@ Ext.Window = Ext.extend(Ext.Panel, {
             opacity: 0
         }));
     },
+
+    /**
+     * Method that is called immediately before the <code>show</code> event is fired.
+     * Defaults to <code>Ext.emptyFn</code>.
+     */
+    onShow : Ext.emptyFn,
+
+    /**
+     * Method that is called immediately before the <code>hide</code> event is fired.
+     * Defaults to <code>Ext.emptyFn</code>.
+     */
+    onHide : Ext.emptyFn,
 
     // private
     onWindowResize : function(){
@@ -682,8 +714,8 @@ Ext.Window = Ext.extend(Ext.Panel, {
         }
         if(show !== false){
             this.el.show();
-            this.focus();
-            if(Ext.isMac && Ext.isGecko){ // work around stupid FF 2.0/Mac scroll bar bug
+            this.focus.defer(10, this);
+            if(Ext.isMac && Ext.isGecko2){ // work around stupid FF 2.0/Mac scroll bar bug
                 this.cascade(this.setAutoScroll);
             }
         }
@@ -723,7 +755,7 @@ Ext.Window = Ext.extend(Ext.Panel, {
             }
         }
     },
-    
+
     // private
     doClose : function(){
         this.fireEvent('close', this);
@@ -773,9 +805,14 @@ Ext.Window = Ext.extend(Ext.Panel, {
      */
     restore : function(){
         if(this.maximized){
+            var t = this.tools;
             this.el.removeClass('x-window-maximized');
-            this.tools.restore.hide();
-            this.tools.maximize.show();
+            if(t.restore){
+                t.restore.hide();
+            }
+            if(t.maximize){
+                t.maximize.show();
+            }
             this.setPosition(this.restorePos[0], this.restorePos[1]);
             this.setSize(this.restoreSize.width, this.restoreSize.height);
             delete this.restorePos;
@@ -786,8 +823,8 @@ Ext.Window = Ext.extend(Ext.Panel, {
             if(this.dd){
                 this.dd.unlock();
             }
-            if(this.collapsible){
-                this.tools.toggle.show();
+            if(this.collapsible && t.toggle){
+                t.toggle.show();
             }
             this.container.removeClass('x-window-maximized-ct');
 
@@ -808,7 +845,7 @@ Ext.Window = Ext.extend(Ext.Panel, {
 
     // private
     fitContainer : function(){
-        var vs = this.container.getViewSize();
+        var vs = this.container.getViewSize(false);
         this.setSize(vs.width, vs.height);
     },
 
@@ -831,7 +868,7 @@ Ext.Window = Ext.extend(Ext.Panel, {
     /**
      * Aligns the window to the specified element
      * @param {Mixed} element The element to align to.
-     * @param {String} position The position to align to (see {@link Ext.Element#alignTo} for more details).
+     * @param {String} position (optional, defaults to "tl-bl?") The position to align to (see {@link Ext.Element#alignTo} for more details).
      * @param {Array} offsets (optional) Offset the positioning by [x, y]
      * @return {Ext.Window} this
      */
@@ -851,22 +888,44 @@ Ext.Window = Ext.extend(Ext.Panel, {
      * @return {Ext.Window} this
      */
     anchorTo : function(el, alignment, offsets, monitorScroll){
-      if(this.doAnchor){
-          Ext.EventManager.removeResizeListener(this.doAnchor, this);
-          Ext.EventManager.un(window, 'scroll', this.doAnchor, this);
-      }
-      this.doAnchor = function(){
-          this.alignTo(el, alignment, offsets);
-      };
-      Ext.EventManager.onWindowResize(this.doAnchor, this);
+        this.clearAnchor();
+        this.anchorTarget = {
+            el: el,
+            alignment: alignment,
+            offsets: offsets
+        };
 
-      var tm = typeof monitorScroll;
-      if(tm != 'undefined'){
-          Ext.EventManager.on(window, 'scroll', this.doAnchor, this,
-              {buffer: tm == 'number' ? monitorScroll : 50});
-      }
-      this.doAnchor();
-      return this;
+        Ext.EventManager.onWindowResize(this.doAnchor, this);
+        var tm = typeof monitorScroll;
+        if(tm != 'undefined'){
+            Ext.EventManager.on(window, 'scroll', this.doAnchor, this,
+                {buffer: tm == 'number' ? monitorScroll : 50});
+        }
+        return this.doAnchor();
+    },
+
+    /**
+     * Performs the anchor, using the saved anchorTarget property.
+     * @return {Ext.Window} this
+     * @private
+     */
+    doAnchor : function(){
+        var o = this.anchorTarget;
+        this.alignTo(o.el, o.alignment, o.offsets);
+        return this;
+    },
+
+    /**
+     * Removes any existing anchor from this window. See {@link #anchorTo}.
+     * @return {Ext.Window} this
+     */
+    clearAnchor : function(){
+        if(this.anchorTarget){
+            Ext.EventManager.removeResizeListener(this.doAnchor, this);
+            Ext.EventManager.un(window, 'scroll', this.doAnchor, this);
+            delete this.anchorTarget;
+        }
+        return this;
     },
 
     /**
@@ -961,7 +1020,7 @@ Ext.extend(Ext.Window.DD, Ext.dd.DD, {
 });
 /**
  * @class Ext.WindowGroup
- * An object that represents a group of {@link Ext.Window} instances and provides z-order management
+ * An object that manages a group of {@link Ext.Window} instances and provides z-order management
  * and window activation behavior.
  * @constructor
  */
@@ -1018,20 +1077,42 @@ Ext.WindowGroup = function(){
 
     return {
         /**
-         * The starting z-index for windows (defaults to 9000)
+         * The starting z-index for windows in this WindowGroup (defaults to 9000)
          * @type Number The z-index value
          */
         zseed : 9000,
 
-        // private
+        /**
+         * <p>Registers a {@link Ext.Window Window} with this WindowManager. This should not
+         * need to be called under normal circumstances. Windows are automatically registered
+         * with a {@link Ext.Window#manager manager} at construction time.</p>
+         * <p>Where this may be useful is moving Windows between two WindowManagers. For example,
+         * to bring the Ext.MessageBox dialog under the same manager as the Desktop's
+         * WindowManager in the desktop sample app:</p><code><pre>
+var msgWin = Ext.MessageBox.getDialog();
+MyDesktop.getDesktop().getManager().register(msgWin);
+</pre></code>
+         * @param {Window} win The Window to register.
+         */
         register : function(win){
+            if(win.manager){
+                win.manager.unregister(win);
+            }
+            win.manager = this;
+
             list[win.id] = win;
             accessList.push(win);
             win.on('hide', activateLast);
         },
 
-        // private
+        /**
+         * <p>Unregisters a {@link Ext.Window Window} from this WindowManager. This should not
+         * need to be called. Windows are automatically unregistered upon destruction.
+         * See {@link #register}.</p>
+         * @param {Window} win The Window to unregister.
+         */
         unregister : function(win){
+            delete win.manager;
             delete list[win.id];
             win.un('hide', activateLast);
             accessList.remove(win);
@@ -1047,7 +1128,7 @@ Ext.WindowGroup = function(){
         },
 
         /**
-         * Brings the specified window to the front of any other active windows.
+         * Brings the specified window to the front of any other active windows in this WindowGroup.
          * @param {String/Object} win The id of the window or a {@link Ext.Window} instance
          * @return {Boolean} True if the dialog was brought to the front, else false
          * if it was already in front
@@ -1063,7 +1144,7 @@ Ext.WindowGroup = function(){
         },
 
         /**
-         * Sends the specified window to the back of other active windows.
+         * Sends the specified window to the back of other active windows in this WindowGroup.
          * @param {String/Object} win The id of the window or a {@link Ext.Window} instance
          * @return {Ext.Window} The window
          */
@@ -1075,7 +1156,7 @@ Ext.WindowGroup = function(){
         },
 
         /**
-         * Hides all windows in the group.
+         * Hides all windows in this WindowGroup.
          */
         hideAll : function(){
             for(var id in list){
@@ -1086,7 +1167,7 @@ Ext.WindowGroup = function(){
         },
 
         /**
-         * Gets the currently-active window in the group.
+         * Gets the currently-active window in this WindowGroup.
          * @return {Ext.Window} The active window
          */
         getActive : function(){
@@ -1094,11 +1175,11 @@ Ext.WindowGroup = function(){
         },
 
         /**
-         * Returns zero or more windows in the group using the custom search function passed to this method.
+         * Returns zero or more windows in this WindowGroup using the custom search function passed to this method.
          * The function should accept a single {@link Ext.Window} reference as its only argument and should
          * return true if the window matches the search criteria, otherwise it should return false.
          * @param {Function} fn The search function
-         * @param {Object} scope (optional) The scope in which to execute the function (defaults to the window
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the function is executed. Defaults to the Window being tested.
          * that gets passed to the function if not specified)
          * @return {Array} An array of zero or more matching windows
          */
@@ -1114,10 +1195,10 @@ Ext.WindowGroup = function(){
         },
 
         /**
-         * Executes the specified function once for every window in the group, passing each
+         * Executes the specified function once for every window in this WindowGroup, passing each
          * window as the only parameter. Returning false from the function will stop the iteration.
          * @param {Function} fn The function to execute for each item
-         * @param {Object} scope (optional) The scope in which to execute the function
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the function is executed. Defaults to the current Window in the iteration.
          */
         each : function(fn, scope){
             for(var id in list){
@@ -1173,10 +1254,12 @@ Ext.Msg.show({
 Ext.MessageBox = function(){
     var dlg, opt, mask, waitTimer,
         bodyEl, msgEl, textboxEl, textareaEl, progressBar, pp, iconEl, spacerEl,
-        buttons, activeTextEl, bwidth, bufferIcon = '', iconCls = '';
+        buttons, activeTextEl, bwidth, bufferIcon = '', iconCls = '',
+        buttonNames = ['ok', 'yes', 'no', 'cancel'];
 
     // private
     var handleButton = function(button){
+        buttons[button].blur();
         if(dlg.isVisible()){
             dlg.hide();
             handleHide();
@@ -1189,7 +1272,7 @@ Ext.MessageBox = function(){
         if(opt && opt.cls){
             dlg.el.removeClass(opt.cls);
         }
-        progressBar.reset();
+        progressBar.reset();        
     };
 
     // private
@@ -1205,26 +1288,25 @@ Ext.MessageBox = function(){
 
     // private
     var updateButtons = function(b){
-        var width = 0;
+        var width = 0,
+            cfg;
         if(!b){
-            buttons["ok"].hide();
-            buttons["cancel"].hide();
-            buttons["yes"].hide();
-            buttons["no"].hide();
+            Ext.each(buttonNames, function(name){
+                buttons[name].hide();
+            });
             return width;
         }
         dlg.footer.dom.style.display = '';
-        for(var k in buttons){
-            if(!Ext.isFunction(buttons[k])){
-                if(b[k]){
-                    buttons[k].show();
-                    buttons[k].setText(Ext.isString(b[k]) ? b[k] : Ext.MessageBox.buttonText[k]);
-                    width += buttons[k].el.getWidth()+15;
-                }else{
-                    buttons[k].hide();
-                }
+        Ext.iterate(buttons, function(name, btn){
+            cfg = b[name];
+            if(cfg){
+                btn.show();
+                btn.setText(Ext.isString(cfg) ? cfg : Ext.MessageBox.buttonText[name]);
+                width += btn.getEl().getWidth() + 15;
+            }else{
+                btn.hide();
             }
-        }
+        });
         return width;
     };
 
@@ -1235,6 +1317,16 @@ Ext.MessageBox = function(){
          */
         getDialog : function(titleText){
            if(!dlg){
+                var btns = [];
+                
+                buttons = {};
+                Ext.each(buttonNames, function(name){
+                    btns.push(buttons[name] = new Ext.Button({
+                        text: this.buttonText[name],
+                        handler: handleButton.createCallback(name),
+                        hideMode: 'offsets'
+                    }));
+                }, this);
                 dlg = new Ext.Window({
                     autoCreate : true,
                     title:titleText,
@@ -1259,16 +1351,12 @@ Ext.MessageBox = function(){
                         }else{
                             handleButton("cancel");
                         }
-                    }
+                    },
+                    fbar: new Ext.Toolbar({
+                        items: btns,
+                        enableOverflow: false
+                    })
                 });
-                buttons = {};
-                var bt = this.buttonText;
-                //TODO: refactor this block into a buttons config to pass into the Window constructor
-                buttons["ok"] = dlg.addButton(bt["ok"], handleButton.createCallback("ok"));
-                buttons["yes"] = dlg.addButton(bt["yes"], handleButton.createCallback("yes"));
-                buttons["no"] = dlg.addButton(bt["no"], handleButton.createCallback("no"));
-                buttons["cancel"] = dlg.addButton(bt["cancel"], handleButton.createCallback("cancel"));
-                buttons["ok"].hideMode = buttons["yes"].hideMode = buttons["no"].hideMode = buttons["cancel"].hideMode = 'offsets';
                 dlg.render(document.body);
                 dlg.getEl().addClass('x-window-dlg');
                 mask = dlg.mask;
@@ -1311,17 +1399,19 @@ Ext.MessageBox = function(){
             }
             msgEl.update(text || '&#160;');
 
-            var iw = iconCls != '' ? (iconEl.getWidth() + iconEl.getMargins('lr')) : 0;
-            var mw = msgEl.getWidth() + msgEl.getMargins('lr');
-            var fw = dlg.getFrameWidth('lr');
-            var bw = dlg.body.getFrameWidth('lr');
+            var iw = iconCls != '' ? (iconEl.getWidth() + iconEl.getMargins('lr')) : 0,
+                mw = msgEl.getWidth() + msgEl.getMargins('lr'),
+                fw = dlg.getFrameWidth('lr'),
+                bw = dlg.body.getFrameWidth('lr'),
+                w;
+                
             if (Ext.isIE && iw > 0){
                 //3 pixels get subtracted in the icon CSS for an IE margin issue,
                 //so we have to add it back here for the overall width to be consistent
                 iw += 3;
             }
-            var w = Math.max(Math.min(opt.width || iw+mw+fw+bw, this.maxWidth),
-                        Math.max(opt.minWidth || this.minWidth, bwidth || 0));
+            w = Math.max(Math.min(opt.width || iw+mw+fw+bw, opt.maxWidth || this.maxWidth),
+                    Math.max(opt.minWidth || this.minWidth, bwidth || 0));
 
             if(opt.prompt === true){
                 activeTextEl.setWidth(w-iw-fw-bw);
@@ -1508,18 +1598,16 @@ Ext.Msg.show({
                 // force it to the end of the z-index stack so it gets a cursor in FF
                 document.body.appendChild(dlg.el.dom);
                 d.setAnimateTarget(opt.animEl);
+                //workaround for window internally enabling keymap in afterShow
+                d.on('show', function(){
+                    if(allowClose === true){
+                        d.keyMap.enable();
+                    }else{
+                        d.keyMap.disable();
+                    }
+                }, this, {single:true});
                 d.show(opt.animEl);
             }
-
-            //workaround for window internally enabling keymap in afterShow
-            d.on('show', function(){
-                if(allowClose === true){
-                    d.keyMap.enable();
-                }else{
-                    d.keyMap.disable();
-                }
-            }, this, {single:true});
-
             if(opt.wait === true){
                 progressBar.wait(opt.waitConfig);
             }
@@ -1612,7 +1700,7 @@ Ext.MessageBox.ERROR
          * @param {String} title The title bar text
          * @param {String} msg The message box body text
          * @param {Function} fn (optional) The callback function invoked after the message box is closed
-         * @param {Object} scope (optional) The scope of the callback function
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to the browser wnidow.
          * @return {Ext.MessageBox} this
          */
         alert : function(title, msg, fn, scope){
@@ -1621,7 +1709,8 @@ Ext.MessageBox.ERROR
                 msg : msg,
                 buttons: this.OK,
                 fn: fn,
-                scope : scope
+                scope : scope,
+                minWidth: this.minWidth
             });
             return this;
         },
@@ -1634,7 +1723,7 @@ Ext.MessageBox.ERROR
          * @param {String} title The title bar text
          * @param {String} msg The message box body text
          * @param {Function} fn (optional) The callback function invoked after the message box is closed
-         * @param {Object} scope (optional) The scope of the callback function
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to the browser wnidow.
          * @return {Ext.MessageBox} this
          */
         confirm : function(title, msg, fn, scope){
@@ -1644,7 +1733,8 @@ Ext.MessageBox.ERROR
                 buttons: this.YESNO,
                 fn: fn,
                 scope : scope,
-                icon: this.QUESTION
+                icon: this.QUESTION,
+                minWidth: this.minWidth
             });
             return this;
         },
@@ -1657,7 +1747,7 @@ Ext.MessageBox.ERROR
          * @param {String} title The title bar text
          * @param {String} msg The message box body text
          * @param {Function} fn (optional) The callback function invoked after the message box is closed
-         * @param {Object} scope (optional) The scope of the callback function
+         * @param {Object} scope (optional) The scope (<code>this</code> reference) in which the callback is executed. Defaults to the browser wnidow.
          * @param {Boolean/Number} multiline (optional) True to create a multiline textbox using the defaultTextHeight
          * property, or the height in pixels to create the textbox (defaults to false / single-line)
          * @param {String} value (optional) Default value of the text input element (defaults to '')
@@ -1669,7 +1759,7 @@ Ext.MessageBox.ERROR
                 msg : msg,
                 buttons: this.OKCANCEL,
                 fn: fn,
-                minWidth:250,
+                minWidth: this.minPromptWidth,
                 scope : scope,
                 prompt:true,
                 multiline: multiline,
@@ -1741,10 +1831,16 @@ Ext.MessageBox.ERROR
         minWidth : 100,
         /**
          * The minimum width in pixels of the message box if it is a progress-style dialog.  This is useful
-         * for setting a different minimum width than text-only dialogs may need (defaults to 250)
+         * for setting a different minimum width than text-only dialogs may need (defaults to 250).
          * @type Number
          */
         minProgressWidth : 250,
+        /**
+         * The minimum width in pixels of the message box if it is a prompt dialog.  This is useful
+         * for setting a different minimum width than text-only dialogs may need (defaults to 250).
+         * @type Number
+         */
+        minPromptWidth: 250,
         /**
          * An object containing the default button text strings that can be overriden for localized language support.
          * Supported properties are: ok, cancel, yes and no.  Generally you should include a locale-specific
@@ -1837,7 +1933,7 @@ Ext.dd.PanelProxy.prototype = {
     show : function(){
         if(!this.ghost){
             this.ghost = this.panel.createGhost(undefined, undefined, Ext.getBody());
-            this.ghost.setXY(this.panel.el.getXY())
+            this.ghost.setXY(this.panel.el.getXY());
             if(this.insertProxy){
                 this.proxy = this.panel.el.insertSibling({cls:'x-panel-dd-spacer'});
                 this.proxy.setSize(this.panel.getSize());

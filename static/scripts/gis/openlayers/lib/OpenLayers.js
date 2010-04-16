@@ -18,6 +18,12 @@
     var singleFile = (typeof OpenLayers == "object" && OpenLayers.singleFile);
     
     /**
+     * Cache for the script location returned from
+     * OpenLayers._getScriptLocation
+     */
+    var scriptLocation;
+    
+    /**
      * Namespace: OpenLayers
      * The OpenLayers object provides a namespace for all things OpenLayers
      */
@@ -37,7 +43,10 @@
          * {String} Path to this script
          */
         _getScriptLocation: function () {
-            var scriptLocation = "";            
+            if (scriptLocation != undefined) {
+                return scriptLocation;
+            }
+            scriptLocation = "";            
             var isOL = new RegExp("(^|(.*?\\/))(" + OpenLayers._scriptName + ")(\\?|$)");
          
             var scripts = document.getElementsByTagName('script');
@@ -121,6 +130,7 @@
             "OpenLayers/Layer/XYZ.js",
             "OpenLayers/Layer/TMS.js",
             "OpenLayers/Layer/TileCache.js",
+            "OpenLayers/Layer/Zoomify.js",
             "OpenLayers/Popup/Anchored.js",
             "OpenLayers/Popup/AnchoredBubble.js",
             "OpenLayers/Popup/Framed.js",
@@ -164,11 +174,12 @@
             "OpenLayers/Control/DragFeature.js",
             "OpenLayers/Control/ModifyFeature.js",
             "OpenLayers/Control/Panel.js",
-            "OpenLayers/Control/RemoveFeature.js",
             "OpenLayers/Control/SelectFeature.js",
             "OpenLayers/Control/NavigationHistory.js",
             "OpenLayers/Control/Measure.js",
             "OpenLayers/Control/WMSGetFeatureInfo.js",
+            "OpenLayers/Control/Graticule.js",
+            "OpenLayers/Control/TransformFeature.js",
             "OpenLayers/Geometry.js",
             "OpenLayers/Geometry/Rectangle.js",
             "OpenLayers/Geometry/Collection.js",
@@ -194,6 +205,12 @@
             "OpenLayers/Strategy/Paging.js",
             "OpenLayers/Strategy/BBOX.js",
             "OpenLayers/Strategy/Save.js",
+            "OpenLayers/Strategy/Refresh.js",
+            "OpenLayers/Filter.js",
+            "OpenLayers/Filter/FeatureId.js",
+            "OpenLayers/Filter/Logical.js",
+            "OpenLayers/Filter/Comparison.js",
+            "OpenLayers/Filter/Spatial.js",
             "OpenLayers/Protocol.js",
             "OpenLayers/Protocol/HTTP.js",
             "OpenLayers/Protocol/SQL.js",
@@ -202,16 +219,13 @@
             "OpenLayers/Protocol/WFS/v1.js",
             "OpenLayers/Protocol/WFS/v1_0_0.js",
             "OpenLayers/Protocol/WFS/v1_1_0.js",
+            "OpenLayers/Protocol/SOS.js",
+            "OpenLayers/Protocol/SOS/v1_0_0.js",
             "OpenLayers/Layer/PointTrack.js",
             "OpenLayers/Layer/GML.js",
             "OpenLayers/Style.js",
             "OpenLayers/StyleMap.js",
             "OpenLayers/Rule.js",
-            "OpenLayers/Filter.js",
-            "OpenLayers/Filter/FeatureId.js",
-            "OpenLayers/Filter/Logical.js",
-            "OpenLayers/Filter/Comparison.js",
-            "OpenLayers/Filter/Spatial.js",
             "OpenLayers/Format.js",
             "OpenLayers/Format/XML.js",
             "OpenLayers/Format/ArcXML.js",
@@ -220,6 +234,7 @@
             "OpenLayers/Format/GML/Base.js",
             "OpenLayers/Format/GML/v2.js",
             "OpenLayers/Format/GML/v3.js",
+            "OpenLayers/Format/Atom.js",
             "OpenLayers/Format/KML.js",
             "OpenLayers/Format/GeoRSS.js",
             "OpenLayers/Format/WFS.js",
@@ -256,10 +271,18 @@
             "OpenLayers/Format/WMC/v1_0_0.js",
             "OpenLayers/Format/WMC/v1_1_0.js",
             "OpenLayers/Format/WMSCapabilities.js",
+            "OpenLayers/Format/WMSCapabilities/v1.js",
             "OpenLayers/Format/WMSCapabilities/v1_1.js",
             "OpenLayers/Format/WMSCapabilities/v1_1_0.js",
             "OpenLayers/Format/WMSCapabilities/v1_1_1.js",
+            "OpenLayers/Format/WMSCapabilities/v1_3.js",
+            "OpenLayers/Format/WMSCapabilities/v1_3_0.js",
             "OpenLayers/Format/WMSGetFeatureInfo.js",
+            "OpenLayers/Format/OWSCommon/v1_1_0.js",
+            "OpenLayers/Format/SOSCapabilities.js",
+            "OpenLayers/Format/SOSCapabilities/v1_0_0.js",
+            "OpenLayers/Format/SOSGetObservation.js",
+            "OpenLayers/Format/SOSGetFeatureOfInterest.js",
             "OpenLayers/Layer/WFS.js",
             "OpenLayers/Control/GetFeature.js",
             "OpenLayers/Control/MouseToolbar.js",
@@ -302,4 +325,4 @@
 /**
  * Constant: VERSION_NUMBER
  */
-OpenLayers.VERSION_NUMBER="$Revision: 9734 $";
+OpenLayers.VERSION_NUMBER="$Revision: 10129 $";

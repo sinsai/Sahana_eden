@@ -35,7 +35,7 @@ OpenLayers.Handler.Point = OpenLayers.Class(OpenLayers.Handler, {
     layer: null,
     
     /**
-     * Property: multi
+     * APIProperty: multi
      * {Boolean} Cast features to multi-part geometries before passing to the
      *     layer.  Default is false.
      */
@@ -125,7 +125,7 @@ OpenLayers.Handler.Point = OpenLayers.Class(OpenLayers.Handler, {
             // without this, resolution properties must be specified at the
             // map-level for this temporary layer to init its resolutions
             // correctly
-            calculateInRange: function() { return true; }
+            calculateInRange: OpenLayers.Function.True
         }, this.layerOptions);
         this.layer = new OpenLayers.Layer.Vector(this.CLASS_NAME, options);
         this.map.addLayer(this.layer);

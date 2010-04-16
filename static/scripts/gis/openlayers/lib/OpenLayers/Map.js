@@ -149,7 +149,8 @@ OpenLayers.Map = OpenLayers.Class({
      *     is not provided, the map can be rendered to a container later
      *     using the <render> method.
      *     
-     * Note: If you calling <render> after map construction, do not use
+     * Note:
+     * If you are calling <render> after map construction, do not use
      *     <maxResolution>  auto.  Instead, divide your <maxExtent> by your
      *     maximum expected dimension.
      */
@@ -423,9 +424,9 @@ OpenLayers.Map = OpenLayers.Class({
      *     ways to call the map constructor.  See the examples below.
      *
      * Parameters:
-     * div - {String} Id of an element in your page that will contain the map.
-     *     May be omitted if the <div> option is provided or if you intend
-     *     to use <render> later.
+     * div - {DOMElement|String}  The element or id of an element in your page
+     *     that will contain the map.  May be omitted if the <div> option is
+     *     provided or if you intend to call the <render> method later.
      * options - {Object} Optional object with properties to tag onto the map.
      *
      * Examples (method one):
@@ -484,6 +485,9 @@ OpenLayers.Map = OpenLayers.Class({
 
         // now override default options 
         OpenLayers.Util.extend(this, options);
+
+        // initialize layers array
+        this.layers = [];
 
         this.id = OpenLayers.Util.createUniqueID("OpenLayers.Map_");
 
@@ -563,8 +567,6 @@ OpenLayers.Map = OpenLayers.Class({
                 document.getElementsByTagName('head')[0].appendChild(cssNode);
             }
         }
-
-        this.layers = [];
         
         if (this.controls == null) {
             if (OpenLayers.Control != null) { // running full or lite?
@@ -589,6 +591,16 @@ OpenLayers.Map = OpenLayers.Class({
 
         // always call map.destroy()
         OpenLayers.Event.observe(window, 'unload', this.unloadDestroy);
+        
+        // add any initial layers
+        if (options && options.layers) {
+            this.addLayers(options.layers);        
+            // set center (and optionally zoom)
+            if (options.center) {
+                // zoom can be undefined here
+                this.setCenter(options.center, options.zoom);
+            }
+        }
     },
     
     /**
@@ -906,7 +918,9 @@ OpenLayers.Map = OpenLayers.Class({
             layer.isBaseLayer = false;
         }
 
-        this.events.triggerEvent("preaddlayer", {layer: layer});
+        if (this.events.triggerEvent("preaddlayer", {layer: layer}) === false) {
+            return;
+        }
         
         layer.div.className = "olLayerDiv";
         layer.div.style.overflow = "";
@@ -1095,15 +1109,17 @@ OpenLayers.Map = OpenLayers.Class({
      * newBaseLayer - {<OpenLayers.Layer>}
      */
     setBaseLayer: function(newBaseLayer) {
-        var oldExtent = null;
-        if (this.baseLayer) {
-            oldExtent = this.baseLayer.getExtent();
-        }
-
+        
         if (newBaseLayer != this.baseLayer) {
           
-            // is newBaseLayer an already loaded layer?m
+            // ensure newBaseLayer is already loaded
             if (OpenLayers.Util.indexOf(this.layers, newBaseLayer) != -1) {
+
+                // preserve center and scale when changing base layers
+                var center = this.getCenter();
+                var newResolution = OpenLayers.Util.getResolutionFromScale(
+                    this.getScale(), newBaseLayer.units
+                );
 
                 // make the old base layer invisible 
                 if (this.baseLayer != null && !this.allOverlays) {
@@ -1117,28 +1133,18 @@ OpenLayers.Map = OpenLayers.Class({
                 // changing. This is used by tiles to check if they should 
                 // draw themselves.
                 this.viewRequestID++;
-                if(!this.allOverlays) {
-                    this.baseLayer.visibility = true;
+                if(!this.allOverlays || this.baseLayer.visibility) {
+                    this.baseLayer.setVisibility(true);
                 }
 
-                //redraw all layers
-                var center = this.getCenter();
+                // recenter the map
                 if (center != null) {
-
-                    //either get the center from the old Extent or just from
-                    // the current center of the map. 
-                    var newCenter = (oldExtent) 
-                        ? oldExtent.getCenterLonLat()
-                        : center;
-
-                    //the new zoom will either come from the old Extent or 
-                    // from the current resolution of the map                                                
-                    var newZoom = (oldExtent) 
-                        ? this.getZoomForExtent(oldExtent, true)
-                        : this.getZoomForResolution(this.resolution, true);
-
+                    // new zoom level derived from old scale
+                    var newZoom = this.getZoomForResolution(
+                        newResolution || this.resolution, true
+                    );
                     // zoom and force zoom change
-                    this.setCenter(newCenter, newZoom, false, true);
+                    this.setCenter(center, newZoom, false, true);
                 }
 
                 this.events.triggerEvent("changebaselayer", {
@@ -1160,6 +1166,8 @@ OpenLayers.Map = OpenLayers.Class({
 
     /**
      * APIMethod: addControl
+     * Add the passed over control to the map. Optionally 
+     *     position the control at the given pixel.
      * 
      * Parameters:
      * control - {<OpenLayers.Control>}
@@ -1168,6 +1176,28 @@ OpenLayers.Map = OpenLayers.Class({
     addControl: function (control, px) {
         this.controls.push(control);
         this.addControlToMap(control, px);
+    },
+    
+    /**
+     * APIMethod: addControls
+     * Add all of the passed over controls to the map. 
+     *     You can pass over an optional second array
+     *     with pixel-objects to position the controls.
+     *     The indices of the two arrays should match and
+     *     you can add null as pixel for those controls 
+     *     you want to be autopositioned.   
+     *     
+     * Parameters:
+     * controls - {Array(<OpenLayers.Control>)}
+     * pixels - {Array(<OpenLayers.Pixel>)}
+     */    
+    addControls: function (controls, pixels) {
+        var pxs = (arguments.length === 1) ? [] : pixels;
+        for (var i=0, len=controls.length; i<len; i++) {
+            var ctrl = controls[i];
+            var px = (pxs[i]) ? pxs[i] : null;
+            this.addControl( ctrl, px );
+        }
     },
 
     /**
@@ -1331,30 +1361,32 @@ OpenLayers.Map = OpenLayers.Class({
      */
     updateSize: function() {
         // the div might have moved on the page, also
-        this.events.clearMouseCache();
         var newSize = this.getCurrentSize();
-        var oldSize = this.getSize();
-        if (oldSize == null) {
-            this.size = oldSize = newSize;
-        }
-        if (!newSize.equals(oldSize)) {
-            
-            // store the new size
-            this.size = newSize;
-
-            //notify layers of mapresize
-            for(var i=0, len=this.layers.length; i<len; i++) {
-                this.layers[i].onMapResize();                
+        if (newSize && !isNaN(newSize.h) && !isNaN(newSize.w)) {
+            this.events.clearMouseCache();
+            var oldSize = this.getSize();
+            if (oldSize == null) {
+                this.size = oldSize = newSize;
             }
-
-            var center = this.getCenter();
-
-            if (this.baseLayer != null && center != null) {
-                var zoom = this.getZoom();
-                this.zoom = null;
-                this.setCenter(center, zoom);
+            if (!newSize.equals(oldSize)) {
+                
+                // store the new size
+                this.size = newSize;
+    
+                //notify layers of mapresize
+                for(var i=0, len=this.layers.length; i<len; i++) {
+                    this.layers[i].onMapResize();                
+                }
+    
+                var center = this.getCenter();
+    
+                if (this.baseLayer != null && center != null) {
+                    var zoom = this.getZoom();
+                    this.zoom = null;
+                    this.setCenter(center, zoom);
+                }
+    
             }
-
         }
     },
     
@@ -1370,12 +1402,6 @@ OpenLayers.Map = OpenLayers.Class({
         var size = new OpenLayers.Size(this.div.clientWidth, 
                                        this.div.clientHeight);
 
-        // Workaround for the fact that hidden elements return 0 for size.
-        if (size.w == 0 && size.h == 0 || isNaN(size.w) && isNaN(size.h)) {
-            var dim = OpenLayers.Element.getDimensions(this.div);
-            size.w = dim.width;
-            size.h = dim.height;
-        }
         if (size.w == 0 && size.h == 0 || isNaN(size.w) && isNaN(size.h)) {
             size.w = parseInt(this.div.style.width);
             size.h = parseInt(this.div.style.height);
@@ -1579,7 +1605,13 @@ OpenLayers.Map = OpenLayers.Class({
     moveTo: function(lonlat, zoom, options) {
         if (!options) { 
             options = {};
-        }    
+        }
+        if (zoom != null) {
+            zoom = parseFloat(zoom);
+            if (!this.fractionalZoom) {
+                zoom = Math.round(zoom);
+            }
+        }
         // dragging is false by default
         var dragging = options.dragging;
         // forceZoomChange is false by default
@@ -1923,6 +1955,11 @@ OpenLayers.Map = OpenLayers.Class({
         var resolution = null;
         if (this.baseLayer != null) {
             resolution = this.baseLayer.getResolution();
+        } else if(this.allOverlays === true && this.layers.length > 0) {
+            // while adding the 1st layer to the map in allOverlays mode,
+            // this.baseLayer is not set yet when we need the resolution
+            // for calculateInRange.
+            resolution = this.layers[0].getResolution();
         }
         return resolution;
     },

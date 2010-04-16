@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -14,6 +14,12 @@
  * @xtype field
  */
 Ext.form.Field = Ext.extend(Ext.BoxComponent,  {
+    /**
+     * <p>The label Element associated with this Field. <b>Only available after this Field has been rendered by a
+     * {@link form Ext.layout.FormLayout} layout manager.</b></p>
+     * @type Ext.Element
+     * @property label
+     */
     /**
      * @cfg {String} inputType The type attribute for input fields -- e.g. radio, text, password, file (defaults
      * to 'text'). The types 'file' and 'password' must be used to render those field types currently -- there are
@@ -80,17 +86,16 @@ Ext.form.Field = Ext.extend(Ext.BoxComponent,  {
      */
     fieldClass : 'x-form-field',
     /**
-     * @cfg {String} msgTarget The location where error text should display.  Should be one of the following values
-     * (defaults to 'qtip'):
-     *<pre>
-Value         Description
------------   ----------------------------------------------------------------------
-qtip          Display a quick tip when the user hovers over the field
-title         Display a default browser title attribute popup
-under         Add a block div beneath the field containing the error text
-side          Add an error icon to the right of the field with a popup on hover
-[element id]  Add the error text directly to the innerHTML of the specified element
-</pre>
+     * @cfg {String} msgTarget <p>The location where the message text set through {@link #markInvalid} should display.
+     * Must be one of the following values:</p>
+     * <div class="mdetail-params"><ul>
+     * <li><code>qtip</code> Display a quick tip containing the message when the user hovers over the field. This is the default.
+     * <div class="subdesc"><b>{@link Ext.QuickTips#init Ext.QuickTips.init} must have been called for this setting to work.</b></div</li>
+     * <li><code>title</code> Display the message in a default browser title attribute popup.</li>
+     * <li><code>under</code> Add a block div beneath the field containing the error message.</li>
+     * <li><code>side</code> Add an error icon to the right of the field, displaying the message in a popup on hover.</li>
+     * <li><code>[element id]</code> Add the error message directly to the innerHTML of the specified element.</li>
+     * </ul></div>
      */
     msgTarget : 'qtip',
     /**
@@ -114,6 +119,11 @@ side          Add an error icon to the right of the field with a popup on hover
      * disabled Fields will not be {@link Ext.form.BasicForm#submit submitted}.</p>
      */
     disabled : false,
+    /**
+     * @cfg {Boolean} submitValue False to clear the name attribute on the field so that it is not submitted during a form post.
+     * Defaults to <tt>true</tt>.
+     */
+    submitValue: true,
 
     // private
     isFormField : true,
@@ -221,7 +231,9 @@ var form = new Ext.form.FormPanel({
             this.autoEl = cfg;
         }
         Ext.form.Field.superclass.onRender.call(this, ct, position);
-
+        if(this.submitValue === false){
+            this.el.dom.removeAttribute('name');
+        }
         var type = this.el.dom.type;
         if(type){
             if(type == 'password'){
@@ -230,7 +242,7 @@ var form = new Ext.form.FormPanel({
             this.el.addClass('x-form-'+type);
         }
         if(this.readOnly){
-            this.el.dom.readOnly = true;
+            this.setReadOnly(true);
         }
         if(this.tabIndex !== undefined){
             this.el.dom.setAttribute('tabIndex', this.tabIndex);
@@ -278,6 +290,17 @@ var form = new Ext.form.FormPanel({
         return String(this.getValue()) !== String(this.originalValue);
     },
 
+    /**
+     * Sets the read only state of this field.
+     * @param {Boolean} readOnly Whether the field should be read only.
+     */
+    setReadOnly : function(readOnly){
+        if(this.rendered){
+            this.el.dom.readOnly = readOnly;
+        }
+        this.readOnly = readOnly;
+    },
+
     // private
     afterRender : function(){
         Ext.form.Field.superclass.afterRender.call(this);
@@ -322,6 +345,13 @@ var form = new Ext.form.FormPanel({
         }
         if(!this.hasFocus){
             this.hasFocus = true;
+            /**
+             * <p>The value that the Field had at the time it was last focused. This is the value that is passed
+             * to the {@link #change} event which is fired if the value has been changed when the Field is blurred.</p>
+             * <p><b>This will be undefined until the Field has been visited.</b> Compare {@link #originalValue}.</p>
+             * @type mixed
+             * @property startValue
+             */
             this.startValue = this.getValue();
             this.fireEvent('focus', this);
         }
@@ -337,7 +367,7 @@ var form = new Ext.form.FormPanel({
             this.el.removeClass(this.focusClass);
         }
         this.hasFocus = false;
-        if(this.validationEvent !== false && (this.validateOnBlur || this.validationEvent != 'blur')){
+        if(this.validationEvent !== false && (this.validateOnBlur || this.validationEvent == 'blur')){
             this.validate();
         }
         var v = this.getValue();
@@ -393,61 +423,116 @@ var form = new Ext.form.FormPanel({
     },
 
     /**
-     * @private
-     * Subclasses should provide the validation implementation by overriding this
-     * @param {Mixed} value
+     * Uses getErrors to build an array of validation errors. If any errors are found, markInvalid is called
+     * with the first and false is returned, otherwise true is returned. Previously, subclasses were invited
+     * to provide an implementation of this to process validations - from 3.2 onwards getErrors should be
+     * overridden instead.
+     * @param {Mixed} The current value of the field
+     * @return {Boolean} True if all validations passed, false if one or more failed
      */
-    validateValue : function(value){
-        return true;
+     validateValue : function(value) {
+         //currently, we only show 1 error at a time for a field, so just use the first one
+         var error = this.getErrors(value)[0];
+
+         if (error == undefined) {
+             return true;
+         } else {
+             this.markInvalid(error);
+             return false;
+         }
+     },
+    
+    /**
+     * Runs this field's validators and returns an array of error messages for any validation failures.
+     * This is called internally during validation and would not usually need to be used manually.
+     * Each subclass should override or augment the return value to provide their own errors
+     * @return {Array} All error messages for this field
+     */
+    getErrors: function() {
+        return [];
     },
 
     /**
-     * Mark this field as invalid, using {@link #msgTarget} to determine how to
-     * display the error and applying {@link #invalidClass} to the field's element.
-     * <b>Note</b>: this method does not actually make the field
+     * Gets the active error message for this field.
+     * @return {String} Returns the active error message on the field, if there is no error, an empty string is returned.
+     */
+    getActiveError : function(){
+        return this.activeError || '';
+    },
+
+    /**
+     * <p>Display an error message associated with this field, using {@link #msgTarget} to determine how to
+     * display the message and applying {@link #invalidClass} to the field's UI element.</p>
+     * <p><b>Note</b>: this method does not cause the Field's {@link #validate} method to return <code>false</code>
+     * if the value does <i>pass</i> validation. So simply marking a Field as invalid will not prevent
+     * submission of forms submitted with the {@link Ext.form.Action.Submit#clientValidation} option set.</p>
      * {@link #isValid invalid}.
      * @param {String} msg (optional) The validation message (defaults to {@link #invalidText})
      */
     markInvalid : function(msg){
-        if(!this.rendered || this.preventMark){ // not rendered
-            return;
-        }
-        msg = msg || this.invalidText;
+        //don't set the error icon if we're not rendered or marking is prevented
+        if (this.rendered && !this.preventMark) {
+            msg = msg || this.invalidText;
 
-        var mt = this.getMessageHandler();
-        if(mt){
-            mt.mark(this, msg);
-        }else if(this.msgTarget){
-            this.el.addClass(this.invalidClass);
-            var t = Ext.getDom(this.msgTarget);
-            if(t){
-                t.innerHTML = msg;
-                t.style.display = this.msgDisplay;
+            var mt = this.getMessageHandler();
+            if(mt){
+                mt.mark(this, msg);
+            }else if(this.msgTarget){
+                this.el.addClass(this.invalidClass);
+                var t = Ext.getDom(this.msgTarget);
+                if(t){
+                    t.innerHTML = msg;
+                    t.style.display = this.msgDisplay;
+                }
             }
         }
-        this.fireEvent('invalid', this, msg);
+        
+        this.setActiveError(msg);
     },
-
+    
     /**
      * Clear any invalid styles/messages for this field
      */
     clearInvalid : function(){
-        if(!this.rendered || this.preventMark){ // not rendered
-            return;
-        }
-        this.el.removeClass(this.invalidClass);
-        var mt = this.getMessageHandler();
-        if(mt){
-            mt.clear(this);
-        }else if(this.msgTarget){
+        //don't remove the error icon if we're not rendered or marking is prevented
+        if (this.rendered && !this.preventMark) {
             this.el.removeClass(this.invalidClass);
-            var t = Ext.getDom(this.msgTarget);
-            if(t){
-                t.innerHTML = '';
-                t.style.display = 'none';
+            var mt = this.getMessageHandler();
+            if(mt){
+                mt.clear(this);
+            }else if(this.msgTarget){
+                this.el.removeClass(this.invalidClass);
+                var t = Ext.getDom(this.msgTarget);
+                if(t){
+                    t.innerHTML = '';
+                    t.style.display = 'none';
+                }
             }
         }
-        this.fireEvent('valid', this);
+        
+        this.unsetActiveError();
+    },
+
+    /**
+     * Sets the current activeError to the given string. Fires the 'invalid' event.
+     * This does not set up the error icon, only sets the message and fires the event. To show the error icon,
+     * use markInvalid instead, which calls this method internally
+     * @param {String} msg The error message
+     * @param {Boolean} suppressEvent True to suppress the 'invalid' event from being fired
+     */
+    setActiveError: function(msg, suppressEvent) {
+        this.activeError = msg;
+        if (suppressEvent !== true) this.fireEvent('invalid', this, msg);
+    },
+    
+    /**
+     * Clears the activeError and fires the 'valid' event. This is called internally by clearInvalid and would not
+     * usually need to be called manually
+     * @param {Boolean} suppressEvent True to suppress the 'invalid' event from being fired
+     */
+    unsetActiveError: function(suppressEvent) {
+        delete this.activeError;
+        if (suppressEvent !== true) this.fireEvent('valid', this);
     },
 
     // private
@@ -461,7 +546,12 @@ var form = new Ext.form.FormPanel({
             this.el.findParent('.x-form-field-wrap', 5, true);   // else direct field wrap
     },
 
-    // private
+    // Alignment for 'under' target
+    alignErrorEl : function(){
+        this.errorEl.setWidth(this.getErrorCt().getWidth(true) - 20);
+    },
+
+    // Alignment for 'side' target
     alignErrorIcon : function(){
         this.errorIcon.alignTo(this.el, 'tl-tr', [2, 0]);
     },
@@ -568,8 +658,12 @@ Ext.form.MessageTargets = {
                     return;
                 }
                 field.errorEl = elp.createChild({cls:'x-form-invalid-msg'});
-                field.errorEl.setWidth(elp.getWidth(true)-20);
+                field.on('resize', field.alignErrorEl, field);
+                field.on('destroy', function(){
+                    Ext.destroy(this.errorEl);
+                }, field);
             }
+            field.alignErrorEl();
             field.errorEl.update(msg);
             Ext.form.Field.msgFx[field.msgFx].show(field.errorEl, field);
         },
@@ -587,24 +681,31 @@ Ext.form.MessageTargets = {
             field.el.addClass(field.invalidClass);
             if(!field.errorIcon){
                 var elp = field.getErrorCt();
-                if(!elp){ // field has no container el
+                // field has no container el
+                if(!elp){
                     field.el.dom.title = msg;
                     return;
                 }
                 field.errorIcon = elp.createChild({cls:'x-form-invalid-icon'});
+                if (field.ownerCt) {
+                    field.ownerCt.on('afterlayout', field.alignErrorIcon, field);
+                    field.ownerCt.on('expand', field.alignErrorIcon, field);
+                }
+                field.on('resize', field.alignErrorIcon, field);
+                field.on('destroy', function(){
+                    Ext.destroy(this.errorIcon);
+                }, field);
             }
             field.alignErrorIcon();
             field.errorIcon.dom.qtip = msg;
             field.errorIcon.dom.qclass = 'x-form-invalid-tip';
             field.errorIcon.show();
-            field.on('resize', field.alignErrorIcon, field);
         },
         clear: function(field){
             field.el.removeClass(field.invalidClass);
             if(field.errorIcon){
                 field.errorIcon.dom.qtip = '';
                 field.errorIcon.hide();
-                field.un('resize', field.alignErrorIcon, field);
             }else{
                 field.el.dom.title = '';
             }
@@ -921,9 +1022,14 @@ var myField = new Ext.form.NumberField({
 
     // private
     onKeyUpBuffered : function(e){
-        if(!e.isNavKeyPress()){
+        if(this.doAutoSize(e)){
             this.autoSize();
         }
+    },
+    
+    // private
+    doAutoSize : function(e){
+        return !e.isNavKeyPress();
     },
 
     // private
@@ -979,12 +1085,18 @@ var myField = new Ext.form.NumberField({
 
     // private
     filterKeys : function(e){
-        // special keys don't generate charCodes, so leave them alone
-        if(e.ctrlKey || e.isSpecialKey()){
+        if(e.ctrlKey){
             return;
         }
-        
-        if(!this.maskRe.test(String.fromCharCode(e.getCharCode()))){
+        var k = e.getKey();
+        if(Ext.isGecko && (e.isNavKeyPress() || k == e.BACKSPACE || (k == e.DELETE && e.button == -1))){
+            return;
+        }
+        var cc = String.fromCharCode(e.getCharCode());
+        if(!Ext.isGecko && e.isSpecialKey() && !cc){
+            return;
+        }
+        if(!this.maskRe.test(cc)){
             e.stopEvent();
         }
     },
@@ -1000,8 +1112,8 @@ var myField = new Ext.form.NumberField({
     },
 
     /**
-     * <p>Validates a value according to the field's validation rules and marks the field as invalid
-     * if the validation fails. Validation rules are processed in the following order:</p>
+     * <p>Validates a value according to the field's validation rules and returns an array of errors
+     * for any failing validations. Validation rules are processed in the following order:</p>
      * <div class="mdetail-params"><ul>
      * 
      * <li><b>1. Field specific validator</b>
@@ -1064,46 +1176,45 @@ var myField = new Ext.form.NumberField({
      * <code>{@link #regexText}</code>.</p>
      * </div></li>
      * 
-     * @param {Mixed} value The value to validate
-     * @return {Boolean} True if the value is valid, else false
+     * @param {Mixed} value The value to validate. The processed raw value will be used if nothing is passed
+     * @return {Array} Array of any validation errors
      */
-    validateValue : function(value){
+    getErrors: function(value) {
+        var errors = Ext.form.TextField.superclass.getErrors.apply(this, arguments);
+        
+        value = value || this.processValue(this.getRawValue());        
+        
         if(Ext.isFunction(this.validator)){
             var msg = this.validator(value);
-            if(msg !== true){
-                this.markInvalid(msg);
-                return false;
+            if (msg !== true) {
+                errors.push(msg);
             }
         }
-        if(value.length < 1 || value === this.emptyText){ // if it's blank
-             if(this.allowBlank){
-                 this.clearInvalid();
-                 return true;
-             }else{
-                 this.markInvalid(this.blankText);
-                 return false;
-             }
+        
+        if (!this.allowBlank && (value.length < 1 || value === this.emptyText)) { // if it's blank
+            errors.push(this.blankText);
         }
-        if(value.length < this.minLength){
-            this.markInvalid(String.format(this.minLengthText, this.minLength));
-            return false;
+        
+        if (value.length < this.minLength) {
+            errors.push(String.format(this.minLengthText, this.minLength));
         }
-        if(value.length > this.maxLength){
-            this.markInvalid(String.format(this.maxLengthText, this.maxLength));
-            return false;
-        }	
-        if(this.vtype){
+        
+        if (value.length > this.maxLength) {
+            errors.push(String.format(this.maxLengthText, this.maxLength));
+        }
+        
+        if (this.vtype) {
             var vt = Ext.form.VTypes;
             if(!vt[this.vtype](value, this)){
-                this.markInvalid(this.vtypeText || vt[this.vtype +'Text']);
-                return false;
+                errors.push(this.vtypeText || vt[this.vtype +'Text']);
             }
         }
-        if(this.regex && !this.regex.test(value)){
-            this.markInvalid(this.regexText);
-            return false;
+        
+        if (this.regex && !this.regex.test(value)) {
+            errors.push(this.regexText);
         }
-        return true;
+        
+        return errors;
     },
 
     /**
@@ -1151,8 +1262,8 @@ var myField = new Ext.form.NumberField({
         var d = document.createElement('div');
         d.appendChild(document.createTextNode(v));
         v = d.innerHTML;
-        d = null;
         Ext.removeNode(d);
+        d = null;
         v += '&#160;';
         var w = Math.min(this.growMax, Math.max(this.metrics.getWidth(v) + /* add extra padding */ 10, this.growMin));
         this.el.setWidth(w);
@@ -1183,7 +1294,7 @@ trigger.applyToMarkup('my-field');
  *
  * However, in general you will most likely want to use TriggerField as the base class for a reusable component.
  * {@link Ext.form.DateField} and {@link Ext.form.ComboBox} are perfect examples of this.
- * 
+ *
  * @constructor
  * Create a new TriggerField.
  * @param {Object} config Configuration options (valid {@Ext.form.TextField} config options will also be applied
@@ -1219,16 +1330,22 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
     hideTrigger:false,
     /**
      * @cfg {Boolean} editable <tt>false</tt> to prevent the user from typing text directly into the field,
-     * the field will only respond to a click on the trigger to set the value. (defaults to <tt>true</tt>)
+     * the field will only respond to a click on the trigger to set the value. (defaults to <tt>true</tt>).
      */
     editable: true,
+    /**
+     * @cfg {Boolean} readOnly <tt>true</tt> to prevent the user from changing the field, and
+     * hides the trigger.  Superceeds the editable and hideTrigger options if the value is true.
+     * (defaults to <tt>false</tt>)
+     */
+    readOnly: false,
     /**
      * @cfg {String} wrapFocusClass The class added to the to the wrap of the trigger element. Defaults to
      * <tt>x-trigger-wrap-focus</tt>.
      */
     wrapFocusClass: 'x-trigger-wrap-focus',
     /**
-     * @hide 
+     * @hide
      * @method autoSize
      */
     autoSize: Ext.emptyFn,
@@ -1238,9 +1355,9 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
     deferHeight : true,
     // private
     mimicing : false,
-    
+
     actionMode: 'wrap',
-    
+
     defaultTriggerWidth: 17,
 
     // private
@@ -1252,10 +1369,10 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         }
         this.wrap.setWidth(this.el.getWidth() + tw);
     },
-    
+
     getTriggerWidth: function(){
         var tw = this.trigger.getWidth();
-        if(!this.hideTrigger && tw === 0){
+        if(!this.hideTrigger && !this.readOnly && tw === 0){
             tw = this.defaultTriggerWidth;
         }
         return tw;
@@ -1276,22 +1393,78 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         this.wrap = this.el.wrap({cls: 'x-form-field-wrap x-form-field-trigger-wrap'});
         this.trigger = this.wrap.createChild(this.triggerConfig ||
                 {tag: "img", src: Ext.BLANK_IMAGE_URL, cls: "x-form-trigger " + this.triggerClass});
-        if(this.hideTrigger){
-            this.trigger.setDisplayed(false);
-        }
         this.initTrigger();
         if(!this.width){
             this.wrap.setWidth(this.el.getWidth()+this.trigger.getWidth());
         }
-        if(!this.editable){
-            this.editable = true;
-            this.setEditable(false);
-        }
         this.resizeEl = this.positionEl = this.wrap;
+    },
+
+    getWidth: function() {
+        return(this.el.getWidth() + this.trigger.getWidth());
+    },
+
+    updateEditState: function(){
+        if(this.rendered){
+            if (this.readOnly) {
+                this.el.dom.readOnly = true;
+                this.el.addClass('x-trigger-noedit');
+                this.mun(this.el, 'click', this.onTriggerClick, this);
+                this.trigger.setDisplayed(false);
+            } else {
+                if (!this.editable) {
+                    this.el.dom.readOnly = true;
+                    this.el.addClass('x-trigger-noedit');
+                    this.mon(this.el, 'click', this.onTriggerClick, this);
+                } else {
+                    this.el.dom.readOnly = false;
+                    this.el.removeClass('x-trigger-noedit');
+                    this.mun(this.el, 'click', this.onTriggerClick, this);
+                }
+                this.trigger.setDisplayed(!this.hideTrigger);
+            }
+            this.onResize(this.width || this.wrap.getWidth());
+        }
+    },
+
+    setHideTrigger: function(hideTrigger){
+        if(hideTrigger != this.hideTrigger){
+            this.hideTrigger = hideTrigger;
+            this.updateEditState();
+        }
+    },
+
+    /**
+     * @param {Boolean} value True to allow the user to directly edit the field text
+     * Allow or prevent the user from directly editing the field text.  If false is passed,
+     * the user will only be able to modify the field using the trigger.  Will also add
+     * a click event to the text field which will call the trigger. This method
+     * is the runtime equivalent of setting the 'editable' config option at config time.
+     */
+    setEditable: function(editable){
+        if(editable != this.editable){
+            this.editable = editable;
+            this.updateEditState();
+        }
+    },
+
+    /**
+     * @param {Boolean} value True to prevent the user changing the field and explicitly
+     * hide the trigger.
+     * Setting this to true will superceed settings editable and hideTrigger.
+     * Setting this to false will defer back to editable and hideTrigger. This method
+     * is the runtime equivalent of setting the 'readOnly' config option at config time.
+     */
+    setReadOnly: function(readOnly){
+        if(readOnly != this.readOnly){
+            this.readOnly = readOnly;
+            this.updateEditState();
+        }
     },
 
     afterRender : function(){
         Ext.form.TriggerField.superclass.afterRender.call(this);
+        this.updateEditState();
     },
 
     // private
@@ -1307,6 +1480,7 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         if (this.mimicing){
             this.doc.un('mousedown', this.mimicBlur, this);
         }
+        delete this.doc;
         Ext.form.TriggerField.superclass.onDestroy.call(this);
     },
 
@@ -1353,25 +1527,7 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         }
     },
 
-    beforeBlur : Ext.emptyFn, 
-    
-    /**
-     * Allow or prevent the user from directly editing the field text.  If false is passed,
-     * the user will only be able to modify the field using the trigger.  This method
-     * is the runtime equivalent of setting the 'editable' config option at config time.
-     * @param {Boolean} value True to allow the user to directly edit the field text
-     */
-    setEditable : function(value){
-        if(value == this.editable){
-            return;
-        }
-        this.editable = value;
-        if(!value){
-            this.el.addClass('x-trigger-noedit').on('click', this.onTriggerClick, this).dom.setAttribute('readOnly', true);
-        }else{
-            this.el.removeClass('x-trigger-noedit').un('click', this.onTriggerClick,  this).dom.removeAttribute('readOnly');
-        }
-    },
+    beforeBlur : Ext.emptyFn,
 
     // private
     // This should be overriden by any subclass that needs to check whether or not the field can be blurred.
@@ -1460,7 +1616,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
                 triggerField.el.setWidth(w-triggerField.trigger.getWidth());
                 this['hidden' + triggerIndex] = false;
             };
-            
+
             if(this['hide'+triggerIndex]){
                 t.dom.style.display = 'none';
                 this['hidden' + triggerIndex] = true;
@@ -1471,7 +1627,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
         }, this);
         this.triggers = ts.elements;
     },
-    
+
     getTriggerWidth: function(){
         var tw = 0;
         Ext.each(this.triggers, function(t, index){
@@ -1485,7 +1641,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
         }, this);
         return tw;
     },
-    
+
     // private
     onDestroy : function() {
         Ext.destroy(this.triggers);
@@ -1495,7 +1651,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
     /**
      * The function that should handle the trigger's click event.  This method does nothing by default
      * until overridden by an implementing function. See {@link Ext.form.TriggerField#onTriggerClick}
-     * for additional information.  
+     * for additional information.
      * @method
      * @param {EventObject} e
      */
@@ -1503,13 +1659,14 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
     /**
      * The function that should handle the trigger's click event.  This method does nothing by default
      * until overridden by an implementing function. See {@link Ext.form.TriggerField#onTriggerClick}
-     * for additional information.  
+     * for additional information.
      * @method
      * @param {EventObject} e
      */
     onTrigger2Click : Ext.emptyFn
 });
-Ext.reg('trigger', Ext.form.TriggerField);/**
+Ext.reg('trigger', Ext.form.TriggerField);
+/**
  * @class Ext.form.TextArea
  * @extends Ext.form.TextField
  * Multiline text field.  Can be used as a direct replacement for traditional textarea fields, plus adds
@@ -1531,7 +1688,6 @@ Ext.form.TextArea = Ext.extend(Ext.form.TextField,  {
      */
     growMax: 1000,
     growAppend : '&#160;\n&#160;',
-    growPad : Ext.isWebKit ? -6 : 0,
 
     enterIsSpecial : false,
 
@@ -1570,7 +1726,7 @@ Ext.form.TextArea = Ext.extend(Ext.form.TextField,  {
     },
 
     onDestroy : function(){
-        Ext.destroy(this.textSizeEl);
+        Ext.removeNode(this.textSizeEl);
         Ext.form.TextArea.superclass.onDestroy.call(this);
     },
 
@@ -1579,13 +1735,10 @@ Ext.form.TextArea = Ext.extend(Ext.form.TextField,  {
             this.fireEvent("specialkey", this, e);
         }
     },
-
+    
     // private
-    onKeyUp : function(e){
-        if(!e.isNavKeyPress() || e.getKey() == e.ENTER){
-            this.autoSize();
-        }
-        Ext.form.TextArea.superclass.onKeyUp.call(this, e);
+    doAutoSize : function(e){
+        return !e.isNavKeyPress() || e.getKey() == e.ENTER;
     },
 
     /**
@@ -1596,23 +1749,22 @@ Ext.form.TextArea = Ext.extend(Ext.form.TextField,  {
         if(!this.grow || !this.textSizeEl){
             return;
         }
-        var el = this.el;
-        var v = el.dom.value;
-        var ts = this.textSizeEl;
-        ts.innerHTML = '';
-        ts.appendChild(document.createTextNode(v));
-        v = ts.innerHTML;
+        var el = this.el,
+            v = Ext.util.Format.htmlEncode(el.dom.value),
+            ts = this.textSizeEl,
+            h;
+            
         Ext.fly(ts).setWidth(this.el.getWidth());
         if(v.length < 1){
             v = "&#160;&#160;";
         }else{
             v += this.growAppend;
             if(Ext.isIE){
-                v = v.replace(/\n/g, '<br />');
+                v = v.replace(/\n/g, '&#160;<br />');
             }
         }
         ts.innerHTML = v;
-        var h = Math.min(this.growMax, Math.max(ts.offsetHeight, this.growMin) + this.growPad);
+        h = Math.min(this.growMax, Math.max(ts.offsetHeight, this.growMin));
         if(h != this.lastHeight){
             this.lastHeight = h;
             this.el.setHeight(h);
@@ -1694,30 +1846,41 @@ Ext.form.NumberField = Ext.extend(Ext.form.TextField,  {
         this.maskRe = new RegExp('[' + Ext.escapeRe(allowed) + ']');
         Ext.form.NumberField.superclass.initEvents.call(this);
     },
-
-    // private
-    validateValue : function(value){
-        if(!Ext.form.NumberField.superclass.validateValue.call(this, value)){
-            return false;
+    
+    /**
+     * Runs all of NumberFields validations and returns an array of any errors. Note that this first
+     * runs TextField's validations, so the returned array is an amalgamation of all field errors.
+     * The additional validations run test that the value is a number, and that it is within the
+     * configured min and max values.
+     * @param {Mixed} value The value to get errors for (defaults to the current field value)
+     * @return {Array} All validation errors for this field
+     */
+    getErrors: function(value) {
+        var errors = Ext.form.NumberField.superclass.getErrors.apply(this, arguments);
+        
+        value = value || this.processValue(this.getRawValue());
+        
+        if (value.length < 1) { // if it's blank and textfield didn't flag it then it's valid
+             return errors;
         }
-        if(value.length < 1){ // if it's blank and textfield didn't flag it then it's valid
-             return true;
-        }
+        
         value = String(value).replace(this.decimalSeparator, ".");
+        
         if(isNaN(value)){
-            this.markInvalid(String.format(this.nanText, value));
-            return false;
+            errors.push(String.format(this.nanText, value));
         }
+        
         var num = this.parseValue(value);
+        
         if(num < this.minValue){
-            this.markInvalid(String.format(this.minText, this.minValue));
-            return false;
+            errors.push(String.format(this.minText, this.minValue));
         }
+        
         if(num > this.maxValue){
-            this.markInvalid(String.format(this.maxText, this.maxValue));
-            return false;
+            errors.push(String.format(this.maxText, this.maxValue));
         }
-        return true;
+        
+        return errors;
     },
 
     getValue : function(){
@@ -1725,9 +1888,25 @@ Ext.form.NumberField = Ext.extend(Ext.form.TextField,  {
     },
 
     setValue : function(v){
-    	v = typeof v == 'number' ? v : parseFloat(String(v).replace(this.decimalSeparator, "."));
+    	v = Ext.isNumber(v) ? v : parseFloat(String(v).replace(this.decimalSeparator, "."));
         v = isNaN(v) ? '' : String(v).replace(".", this.decimalSeparator);
         return Ext.form.NumberField.superclass.setValue.call(this, v);
+    },
+    
+    /**
+     * Replaces any existing {@link #minValue} with the new value.
+     * @param {Number} value The minimum value
+     */
+    setMinValue : function(value){
+        this.minValue = Ext.num(value, Number.NEGATIVE_INFINITY);
+    },
+    
+    /**
+     * Replaces any existing {@link #maxValue} with the new value.
+     * @param {Number} value The maximum value
+     */
+    setMaxValue : function(value){
+        this.maxValue = Ext.num(value, Number.MAX_VALUE);    
     },
 
     // private
@@ -1865,6 +2044,25 @@ disabledDates: ["^03"]
     // private
     defaultAutoCreate : {tag: "input", type: "text", size: "10", autocomplete: "off"},
 
+    // in the absence of a time value, a default value of 12 noon will be used
+    // (note: 12 noon was chosen because it steers well clear of all DST timezone changes)
+    initTime: '12', // 24 hour format
+
+    initTimeFormat: 'H',
+
+    // PUBLIC -- to be documented
+    safeParse : function(value, format) {
+        if (/[gGhH]/.test(format.replace(/(\\.)/g, ''))) {
+            // if parse format contains hour information, no DST adjustment is necessary
+            return Date.parseDate(value, format);
+        } else {
+            // set time to 12 noon, then clear the time
+            var parsedDate = Date.parseDate(value + ' ' + this.initTime, format + ' ' + this.initTimeFormat);
+            
+            if (parsedDate) return parsedDate.clearTime();
+        }
+    },
+
     initComponent : function(){
         Ext.form.DateField.superclass.initComponent.call(this);
 
@@ -1888,13 +2086,25 @@ disabledDates: ["^03"]
         this.initDisabledDays();
     },
 
+    initEvents: function() {
+        Ext.form.DateField.superclass.initEvents.call(this);
+        this.keyNav = new Ext.KeyNav(this.el, {
+            "down": function(e) {
+                this.onTriggerClick();
+            },
+            scope: this,
+            forceKeyDown: true
+        });
+    },
+
+
     // private
     initDisabledDays : function(){
         if(this.disabledDates){
             var dd = this.disabledDates,
-                len = dd.length - 1, 
+                len = dd.length - 1,
                 re = "(?:";
-                
+
             Ext.each(dd, function(d, i){
                 re += Ext.isDate(d) ? '^' + Ext.escapeRe(d.dateFormat(this.format)) + '$' : dd[i];
                 if(i != len){
@@ -1951,46 +2161,58 @@ disabledDates: ["^03"]
             this.menu.picker.setMaxDate(this.maxValue);
         }
     },
-
-    // private
-    validateValue : function(value){
-        value = this.formatDate(value);
-        if(!Ext.form.DateField.superclass.validateValue.call(this, value)){
-            return false;
+    
+    /**
+     * Runs all of NumberFields validations and returns an array of any errors. Note that this first
+     * runs TextField's validations, so the returned array is an amalgamation of all field errors.
+     * The additional validation checks are testing that the date format is valid, that the chosen
+     * date is within the min and max date constraints set, that the date chosen is not in the disabledDates
+     * regex and that the day chosed is not one of the disabledDays.
+     * @param {Mixed} value The value to get errors for (defaults to the current field value)
+     * @return {Array} All validation errors for this field
+     */
+    getErrors: function(value) {
+        var errors = Ext.form.DateField.superclass.getErrors.apply(this, arguments);
+        
+        value = this.formatDate(value || this.processValue(this.getRawValue()));
+        
+        if (value.length < 1) { // if it's blank and textfield didn't flag it then it's valid
+             return errors;
         }
-        if(value.length < 1){ // if it's blank and textfield didn't flag it then it's valid
-             return true;
-        }
+        
         var svalue = value;
         value = this.parseDate(value);
-        if(!value){
-            this.markInvalid(String.format(this.invalidText, svalue, this.format));
-            return false;
+        if (!value) {
+            errors.push(String.format(this.invalidText, svalue, this.format));
+            return errors;
         }
+        
         var time = value.getTime();
-        if(this.minValue && time < this.minValue.getTime()){
-            this.markInvalid(String.format(this.minText, this.formatDate(this.minValue)));
-            return false;
+        if (this.minValue && time < this.minValue.getTime()) {
+            errors.push(String.format(this.minText, this.formatDate(this.minValue)));
         }
-        if(this.maxValue && time > this.maxValue.getTime()){
-            this.markInvalid(String.format(this.maxText, this.formatDate(this.maxValue)));
-            return false;
+        
+        if (this.maxValue && time > this.maxValue.getTime()) {
+            errors.push(String.format(this.maxText, this.formatDate(this.maxValue)));
         }
-        if(this.disabledDays){
+        
+        if (this.disabledDays) {
             var day = value.getDay();
+            
             for(var i = 0; i < this.disabledDays.length; i++) {
-                if(day === this.disabledDays[i]){
-                    this.markInvalid(this.disabledDaysText);
-                    return false;
+                if (day === this.disabledDays[i]) {
+                    errors.push(this.disabledDaysText);
+                    break;
                 }
             }
         }
+        
         var fvalue = this.formatDate(value);
-        if(this.disabledDatesRE && this.disabledDatesRE.test(fvalue)){
-            this.markInvalid(String.format(this.disabledDatesText, fvalue));
-            return false;
+        if (this.disabledDatesRE && this.disabledDatesRE.test(fvalue)) {
+            errors.push(String.format(this.disabledDatesText, fvalue));
         }
-        return true;
+        
+        return errors;
     },
 
     // private
@@ -2034,17 +2256,20 @@ dateField.setValue('2006-05-04');
     },
 
     // private
-    parseDate : function(value){
+    parseDate : function(value) {
         if(!value || Ext.isDate(value)){
             return value;
         }
-        var v = Date.parseDate(value, this.format);
-        if(!v && this.altFormats){
-            if(!this.altFormatsArray){
-                this.altFormatsArray = this.altFormats.split("|");
-            }
-            for(var i = 0, len = this.altFormatsArray.length; i < len && !v; i++){
-                v = Date.parseDate(value, this.altFormatsArray[i]);
+
+        var v = this.safeParse(value, this.format),
+            af = this.altFormats,
+            afa = this.altFormatsArray;
+
+        if (!v && af) {
+            afa = afa || af.split("|");
+
+            for (var i = 0, len = afa.length; i < len && !v; i++) {
+                v = this.safeParse(value, afa[i]);
             }
         }
         return v;
@@ -2052,7 +2277,7 @@ dateField.setValue('2006-05-04');
 
     // private
     onDestroy : function(){
-		Ext.destroy(this.menu);
+        Ext.destroy(this.menu, this.keyNav);
         Ext.form.DateField.superclass.onDestroy.call(this);
     },
 
@@ -2073,7 +2298,8 @@ dateField.setValue('2006-05-04');
         }
         if(this.menu == null){
             this.menu = new Ext.menu.DateMenu({
-                hideOnClick: false
+                hideOnClick: false,
+                focusOnSelect: false
             });
         }
         this.onFocus();
@@ -2093,20 +2319,20 @@ dateField.setValue('2006-05-04');
         this.menu.show(this.el, "tl-bl?");
         this.menuEvents('on');
     },
-    
+
     //private
     menuEvents: function(method){
         this.menu[method]('select', this.onSelect, this);
         this.menu[method]('hide', this.onMenuHide, this);
         this.menu[method]('show', this.onFocus, this);
     },
-    
+
     onSelect: function(m, d){
         this.setValue(d);
         this.fireEvent('select', this, d);
         this.menu.hide();
     },
-    
+
     onMenuHide: function(){
         this.focus(false, 60);
         this.menuEvents('un');
@@ -2411,8 +2637,10 @@ Ext.form.ComboBox = Ext.extend(Ext.form.TriggerField, {
      */
     shadow : 'sides',
     /**
-     * @cfg {String} listAlign A valid anchor position value. See <tt>{@link Ext.Element#alignTo}</tt> for details
-     * on supported anchor positions (defaults to <tt>'tl-bl?'</tt>)
+     * @cfg {String/Array} listAlign A valid anchor position value. See <tt>{@link Ext.Element#alignTo}</tt> for details
+     * on supported anchor positions and offsets. To specify x/y offsets as well, this value
+     * may be specified as an Array of <tt>{@link Ext.Element#alignTo}</tt> method arguments.</p>
+     * <pre><code>[ 'tl-bl?', [6,0] ]</code></pre>(defaults to <tt>'tl-bl?'</tt>)
      */
     listAlign : 'tl-bl?',
     /**
@@ -2443,6 +2671,12 @@ Ext.form.ComboBox = Ext.extend(Ext.form.TriggerField, {
      * <tt>{@link Ext.form.TriggerField#editable editable} = false</tt>).
      */
     minChars : 4,
+    /**
+     * @cfg {Boolean} autoSelect <tt>true</tt> to select the first result gathered by the data store (defaults
+     * to <tt>true</tt>).  A false value would require a manual selection from the dropdown list to set the components value
+     * unless the value of ({@link #typeAheadDelay}) were true.
+     */
+    autoSelect : true,
     /**
      * @cfg {Boolean} typeAhead <tt>true</tt> to populate and autoselect the remainder of the text being
      * typed after a configurable delay ({@link #typeAheadDelay}) if it matches a known value (defaults
@@ -2552,6 +2786,19 @@ var combo = new Ext.form.ComboBox({
     lazyInit : true,
 
     /**
+     * @cfg {Boolean} clearFilterOnReset <tt>true</tt> to clear any filters on the store (when in local mode) when reset is called
+     * (defaults to <tt>true</tt>)
+     */
+    clearFilterOnReset : true,
+
+    /**
+     * @cfg {Boolean} submitValue False to clear the name attribute on the field so that it is not submitted during a form post.
+     * If a hiddenName is specified, setting this to true will cause both the hidden field and the element to be submitted.
+     * Defaults to <tt>undefined</tt>.
+     */
+    submitValue: undefined,
+
+    /**
      * The value of the match string used to filter the store. Delete this property to force a requery.
      * Example use:
      * <pre><code>
@@ -2598,6 +2845,7 @@ var combo = new Ext.form.ComboBox({
              * @param {Ext.form.ComboBox} combo This combo box
              */
             'collapse',
+
             /**
              * @event beforeselect
              * Fires before a list item is selected. Return false to cancel the selection.
@@ -2657,10 +2905,8 @@ var combo = new Ext.form.ComboBox({
                 this.target = true;
                 this.el = Ext.DomHelper.insertBefore(s, this.autoCreate || this.defaultAutoCreate);
                 this.render(this.el.parentNode, s);
-                Ext.removeNode(s); // remove it
-            }else{
-                Ext.removeNode(s); // remove it
             }
+            Ext.removeNode(s);
         }
         //auto-configure store from local array data
         else if(this.store){
@@ -2687,13 +2933,14 @@ var combo = new Ext.form.ComboBox({
 
     // private
     onRender : function(ct, position){
+        if(this.hiddenName && !Ext.isDefined(this.submitValue)){
+            this.submitValue = false;
+        }
         Ext.form.ComboBox.superclass.onRender.call(this, ct, position);
         if(this.hiddenName){
             this.hiddenField = this.el.insertSibling({tag:'input', type:'hidden', name: this.hiddenName,
                     id: (this.hiddenId||this.hiddenName)}, 'before', true);
 
-            // prevent input submission
-            this.el.dom.removeAttribute('name');
         }
         if(Ext.isGecko){
             this.el.dom.setAttribute('autocomplete', 'off');
@@ -2711,21 +2958,38 @@ var combo = new Ext.form.ComboBox({
         Ext.form.ComboBox.superclass.initValue.call(this);
         if(this.hiddenField){
             this.hiddenField.value =
-                Ext.isDefined(this.hiddenValue) ? this.hiddenValue :
-                Ext.isDefined(this.value) ? this.value : '';
+                Ext.value(Ext.isDefined(this.hiddenValue) ? this.hiddenValue : this.value, '');
         }
+    },
+
+    getParentZIndex : function(){
+        var zindex;
+        if (this.ownerCt){
+            this.findParentBy(function(ct){
+                zindex = parseInt(ct.getPositionEl().getStyle('z-index'), 10);
+                return !!zindex;
+            });
+        }
+        return zindex;
     },
 
     // private
     initList : function(){
         if(!this.list){
-            var cls = 'x-combo-list';
+            var cls = 'x-combo-list',
+                listParent = Ext.getDom(this.getListParent() || Ext.getBody()),
+                zindex = parseInt(Ext.fly(listParent).getStyle('z-index'), 10);
+
+            if (!zindex) {
+                zindex = this.getParentZIndex();
+            }
 
             this.list = new Ext.Layer({
-                parentEl: this.getListParent(),
+                parentEl: listParent,
                 shadow: this.shadow,
                 cls: [cls, this.listClass].join(' '),
-                constrain:false
+                constrain:false,
+                zindex: (zindex || 12000) + 5
             });
 
             var lw = this.listWidth || Math.max(this.wrap.getWidth(), this.minListWidth);
@@ -2796,10 +3060,15 @@ var combo = new Ext.form.ComboBox({
                 singleSelect: true,
                 selectedClass: this.selectedClass,
                 itemSelector: this.itemSelector || '.' + cls + '-item',
-                emptyText: this.listEmptyText
+                emptyText: this.listEmptyText,
+                deferEmptyText: false
             });
 
-            this.mon(this.view, 'click', this.onViewClick, this);
+            this.mon(this.view, {
+                containerclick : this.onViewClick,
+                click : this.onViewClick,
+                scope :this
+            });
 
             this.bindStore(this.store, true);
 
@@ -2911,9 +3180,17 @@ var menu = new Ext.menu.Menu({
         }
     },
 
+    reset : function(){
+        Ext.form.ComboBox.superclass.reset.call(this);
+        if(this.clearFilterOnReset && this.mode == 'local'){
+            this.store.clearFilter();
+        }
+    },
+
     // private
     initEvents : function(){
         Ext.form.ComboBox.superclass.initEvents.call(this);
+
 
         this.keyNav = new Ext.KeyNav(this.el, {
             "up" : function(e){
@@ -2939,7 +3216,11 @@ var menu = new Ext.menu.Menu({
             },
 
             "tab" : function(e){
-                this.onViewClick(false);
+                if (this.forceSelection === true) {
+                    this.collapse();
+                } else {
+                    this.onViewClick(false);
+                }
                 return true;
             },
 
@@ -2967,10 +3248,11 @@ var menu = new Ext.menu.Menu({
         if(this.typeAhead){
             this.taTask = new Ext.util.DelayedTask(this.onTypeAhead, this);
         }
-        if(this.editable !== false && !this.enableKeyEvents){
+        if(!this.enableKeyEvents){
             this.mon(this.el, 'keyup', this.onKeyUp, this);
         }
     },
+
 
     // private
     onDestroy : function(){
@@ -2985,6 +3267,7 @@ var menu = new Ext.menu.Menu({
             this.pageTb,
             this.list
         );
+        Ext.destroyMembers(this, 'hiddenField');
         Ext.form.ComboBox.superclass.onDestroy.call(this);
     },
 
@@ -2998,19 +3281,19 @@ var menu = new Ext.menu.Menu({
     // private
     onResize : function(w, h){
         Ext.form.ComboBox.superclass.onResize.apply(this, arguments);
-        if(this.isVisible() && this.list){
+        if(!isNaN(w) && this.isVisible() && this.list){
             this.doResize(w);
         }else{
             this.bufferSize = w;
         }
     },
-    
+
     doResize: function(w){
         if(!Ext.isDefined(this.listWidth)){
             var lw = Math.max(w, this.minListWidth);
             this.list.setWidth(lw);
             this.innerList.setWidth(lw - this.list.getFrameWidth('lr'));
-        }    
+        }
     },
 
     // private
@@ -3052,19 +3335,22 @@ var menu = new Ext.menu.Menu({
                 if(this.editable){
                     this.el.dom.select();
                 }
-                if(!this.selectByValue(this.value, true)){
+
+                if(this.autoSelect !== false && !this.selectByValue(this.value, true)){
                     this.select(0, true);
                 }
             }else{
-                this.selectNext();
+                if(this.autoSelect !== false){
+                    this.selectNext();
+                }
                 if(this.typeAhead && this.lastKey != Ext.EventObject.BACKSPACE && this.lastKey != Ext.EventObject.DELETE){
                     this.taTask.delay(this.typeAheadDelay);
                 }
             }
         }else{
-            this.onEmptyResults();
+            this.collapse();
         }
-        //this.el.focus();
+
     },
 
     // private
@@ -3078,6 +3364,32 @@ var menu = new Ext.menu.Menu({
                 this.setRawValue(newValue);
                 this.selectText(selStart, newValue.length);
             }
+        }
+    },
+
+    // private
+    assertValue  : function(){
+        var val = this.getRawValue(),
+            rec = this.findRecord(this.displayField, val);
+
+        if(!rec && this.forceSelection){
+            if(val.length > 0 && val != this.emptyText){
+                this.el.dom.value = Ext.value(this.lastSelectionText, '');
+                this.applyEmptyText();
+            }else{
+                this.clearValue();
+            }
+        }else{
+            if(rec){
+                // onSelect may have already set the value and by doing so
+                // set the display field properly.  Let's not wipe out the
+                // valueField here by just sending the displayField.
+                if (val == rec.get(this.displayField) && this.value == rec.get(this.valueField)){
+                    return;
+                }
+                val = rec.get(this.valueField || this.displayField);
+            }
+            this.setValue(val);
         }
     },
 
@@ -3141,7 +3453,7 @@ var menu = new Ext.menu.Menu({
         }
         this.lastSelectionText = text;
         if(this.hiddenField){
-            this.hiddenField.value = v;
+            this.hiddenField.value = Ext.value(v, '');
         }
         Ext.form.ComboBox.superclass.setValue.call(this, text);
         this.value = v;
@@ -3186,13 +3498,14 @@ var menu = new Ext.menu.Menu({
             r = s.getAt(index);
         if(r){
             this.onSelect(r, index);
-        }else if(s.getCount() === 0){
-            this.onEmptyResults();
+        }else {
+            this.collapse();
         }
         if(doFocus !== false){
             this.el.focus();
         }
     },
+
 
     // private
     restrictHeight : function(){
@@ -3203,19 +3516,14 @@ var menu = new Ext.menu.Menu({
             ha = this.getPosition()[1]-Ext.getBody().getScroll().top,
             hb = Ext.lib.Dom.getViewHeight()-ha-this.getSize().height,
             space = Math.max(ha, hb, this.minHeight || 0)-this.list.shadowOffset-pad-5;
-            
+
         h = Math.min(h, space, this.maxHeight);
 
         this.innerList.setHeight(h);
         this.list.beginUpdate();
         this.list.setHeight(h+pad);
-        this.list.alignTo(this.wrap, this.listAlign);
+        this.list.alignTo.apply(this.list, [this.el].concat(this.listAlign));
         this.list.endUpdate();
-    },
-
-    // private
-    onEmptyResults : function(){
-        this.collapse();
     },
 
     /**
@@ -3260,6 +3568,7 @@ var menu = new Ext.menu.Menu({
                 this.innerList.scrollChildIntoView(el, false);
             }
         }
+
     },
 
     // private
@@ -3289,7 +3598,8 @@ var menu = new Ext.menu.Menu({
     // private
     onKeyUp : function(e){
         var k = e.getKey();
-        if(this.editable !== false && (k == e.BACKSPACE || !e.isSpecialKey())){
+        if(this.editable !== false && this.readOnly !== true && (k == e.BACKSPACE || !e.isSpecialKey())){
+
             this.lastKey = k;
             this.dqTask.delay(this.queryDelay);
         }
@@ -3308,21 +3618,14 @@ var menu = new Ext.menu.Menu({
 
     // private
     beforeBlur : function(){
-        var val = this.getRawValue(),
-            rec = this.findRecord(this.displayField, val);
-        if(!rec && this.forceSelection){
-            if(val.length > 0 && val != this.emptyText){
-                this.el.dom.value = Ext.isDefined(this.lastSelectionText) ? this.lastSelectionText : '';
-                this.applyEmptyText();
-            }else{
-                this.clearValue();
-            }
-        }else{
-            if(rec){
-                val = rec.get(this.valueField || this.displayField);
-            }
-            this.setValue(val);
-        }
+        this.assertValue();
+    },
+
+    // private
+    postBlur  : function(){
+        Ext.form.ComboBox.superclass.postBlur.call(this);
+        this.collapse();
+        this.inKeyMode = false;
     },
 
     /**
@@ -3397,7 +3700,7 @@ var menu = new Ext.menu.Menu({
 
     // private
     collapseIf : function(e){
-        if(!e.within(this.wrap) && !e.within(this.list)){
+        if(!this.isDestroyed && !e.within(this.wrap) && !e.within(this.list)){
             this.collapse();
         }
     },
@@ -3409,16 +3712,37 @@ var menu = new Ext.menu.Menu({
         if(this.isExpanded() || !this.hasFocus){
             return;
         }
+
+        if(this.title || this.pageSize){
+            this.assetHeight = 0;
+            if(this.title){
+                this.assetHeight += this.header.getHeight();
+            }
+            if(this.pageSize){
+                this.assetHeight += this.footer.getHeight();
+            }
+        }
+
         if(this.bufferSize){
             this.doResize(this.bufferSize);
             delete this.bufferSize;
         }
-        this.list.alignTo(this.wrap, this.listAlign);
+        this.list.alignTo.apply(this.list, [this.el].concat(this.listAlign));
+
+        // zindex can change, re-check it and set it if necessary
+        var listParent = Ext.getDom(this.getListParent() || Ext.getBody()),
+            zindex = parseInt(Ext.fly(listParent).getStyle('z-index') ,10);
+        if (!zindex){
+            zindex = this.getParentZIndex();
+        }
+        if (zindex) {
+            this.list.setZIndex(zindex + 5);
+        }
         this.list.show();
         if(Ext.isGecko2){
             this.innerList.setOverflow('auto'); // necessary for FF 2.0/Mac
         }
-        Ext.getDoc().on({
+        this.mon(Ext.getDoc(), {
             scope: this,
             mousewheel: this.collapseIf,
             mousedown: this.collapseIf
@@ -3433,7 +3757,7 @@ var menu = new Ext.menu.Menu({
     // private
     // Implements the default empty TriggerField.onTriggerClick function
     onTriggerClick : function(){
-        if(this.disabled){
+        if(this.readOnly || this.disabled){
             return;
         }
         if(this.isExpanded()){
@@ -3465,7 +3789,8 @@ var menu = new Ext.menu.Menu({
      */
 
 });
-Ext.reg('combo', Ext.form.ComboBox);/**
+Ext.reg('combo', Ext.form.ComboBox);
+/**
  * @class Ext.form.Checkbox
  * @extends Ext.form.Field
  * Single checkbox field.  Can be used as a direct replacement for traditional checkbox fields.
@@ -3488,6 +3813,10 @@ Ext.form.Checkbox = Ext.extend(Ext.form.Field,  {
      */
     checked : false,
     /**
+     * @cfg {String} boxLabel The text that appears beside the checkbox
+     */
+    boxLabel: '&#160;',
+    /**
      * @cfg {String/Object} autoCreate A DomHelper element spec, or true for a default element spec (defaults to
      * {tag: 'input', type: 'checkbox', autocomplete: 'off'})
      */
@@ -3499,7 +3828,7 @@ Ext.form.Checkbox = Ext.extend(Ext.form.Field,  {
      * @cfg {String} inputValue The value that should go into the generated input element's value attribute
      */
     /**
-     * @cfg {Function} handler A function called when the {@link #checked} value changes (can be used instead of 
+     * @cfg {Function} handler A function called when the {@link #checked} value changes (can be used instead of
      * handling the check event). The handler is passed the following parameters:
      * <div class="mdetail-params"><ul>
      * <li><b>checkbox</b> : Ext.form.Checkbox<div class="sub-desc">The Checkbox being toggled.</div></li>
@@ -3513,7 +3842,7 @@ Ext.form.Checkbox = Ext.extend(Ext.form.Field,  {
 
     // private
     actionMode : 'wrap',
-    
+
 	// private
     initComponent : function(){
         Ext.form.Checkbox.superclass.initComponent.call(this);
@@ -3669,7 +3998,7 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
      * checkbox/radio controls using automatic layout.  This config can take several types of values:
      * <ul><li><b>'auto'</b> : <p class="sub-desc">The controls will be rendered one per column on one row and the width
      * of each column will be evenly distributed based on the width of the overall field container. This is the default.</p></li>
-     * <li><b>Number</b> : <p class="sub-desc">If you specific a number (e.g., 3) that number of columns will be 
+     * <li><b>Number</b> : <p class="sub-desc">If you specific a number (e.g., 3) that number of columns will be
      * created and the contained controls will be automatically distributed based on the value of {@link #vertical}.</p></li>
      * <li><b>Array</b> : Object<p class="sub-desc">You can also specify an array of column widths, mixing integer
      * (fixed width) and float (percentage width) values as needed (e.g., [100, .25, .75]). Any integer values will
@@ -3679,7 +4008,7 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
      */
     columns : 'auto',
     /**
-     * @cfg {Boolean} vertical True to distribute contained controls across columns, completely filling each column 
+     * @cfg {Boolean} vertical True to distribute contained controls across columns, completely filling each column
      * top to bottom before starting on the next column.  The number of controls in each column will be automatically
      * calculated to keep columns as even as possible.  The default value is false, so that controls will be added
      * to columns one at a time, completely filling each row left to right before starting on the next row.
@@ -3691,17 +4020,17 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
      */
     allowBlank : true,
     /**
-     * @cfg {String} blankText Error text to display if the {@link #allowBlank} validation fails (defaults to "You must 
+     * @cfg {String} blankText Error text to display if the {@link #allowBlank} validation fails (defaults to "You must
      * select at least one item in this group")
      */
     blankText : "You must select at least one item in this group",
-    
+
     // private
     defaultType : 'checkbox',
-    
+
     // private
     groupCls : 'x-form-check-group',
-    
+
     // private
     initComponent: function(){
         this.addEvents(
@@ -3712,35 +4041,37 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
              * @param {Array} checked An array containing the checked boxes.
              */
             'change'
-        );   
+        );
+        this.on('change', this.validate, this);
         Ext.form.CheckboxGroup.superclass.initComponent.call(this);
     },
-    
+
     // private
     onRender : function(ct, position){
         if(!this.el){
             var panelCfg = {
-                id: this.id,
+                autoEl: {
+                    id: this.id
+                },
                 cls: this.groupCls,
                 layout: 'column',
-                border: false,
                 renderTo: ct,
                 bufferResize: false // Default this to false, since it doesn't really have a proper ownerCt.
             };
             var colCfg = {
+                xtype: 'container',
                 defaultType: this.defaultType,
                 layout: 'form',
-                border: false,
                 defaults: {
                     hideLabel: true,
                     anchor: '100%'
                 }
             };
-            
+
             if(this.items[0].items){
-                
+
                 // The container has standard ColumnLayout configs, so pass them in directly
-                
+
                 Ext.apply(panelCfg, {
                     layoutConfig: {columns: this.items.length},
                     defaults: this.defaults,
@@ -3749,14 +4080,14 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
                 for(var i=0, len=this.items.length; i<len; i++){
                     Ext.applyIf(this.items[i], colCfg);
                 }
-                
+
             }else{
-                
+
                 // The container has field item configs, so we have to generate the column
                 // panels first then move the items into the columns as needed.
-                
+
                 var numCols, cols = [];
-                
+
                 if(typeof this.columns == 'string'){ // 'auto' so create a col per item
                     this.columns = this.items.length;
                 }
@@ -3767,19 +4098,19 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
                     }
                     this.columns = cs;
                 }
-                
+
                 numCols = this.columns.length;
-                
+
                 // Generate the column configs with the correct width setting
                 for(var i=0; i<numCols; i++){
                     var cc = Ext.apply({items:[]}, colCfg);
                     cc[this.columns[i] <= 1 ? 'columnWidth' : 'width'] = this.columns[i];
                     if(this.defaults){
-                        cc.defaults = Ext.apply(cc.defaults || {}, this.defaults)
+                        cc.defaults = Ext.apply(cc.defaults || {}, this.defaults);
                     }
                     cols.push(cc);
                 };
-                
+
                 // Distribute the original items into the columns
                 if(this.vertical){
                     var rows = Math.ceil(this.items.length / numCols), ri = 0;
@@ -3801,34 +4132,34 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
                         cols[ci].items.push(this.items[i]);
                     };
                 }
-                
+
                 Ext.apply(panelCfg, {
                     layoutConfig: {columns: numCols},
                     items: cols
                 });
             }
-            
-            this.panel = new Ext.Panel(panelCfg);
+
+            this.panel = new Ext.Container(panelCfg);
             this.panel.ownerCt = this;
             this.el = this.panel.getEl();
-            
+
             if(this.forId && this.itemCls){
                 var l = this.el.up(this.itemCls).child('label', true);
                 if(l){
                     l.setAttribute('htmlFor', this.forId);
                 }
             }
-            
+
             var fields = this.panel.findBy(function(c){
                 return c.isFormField;
             }, this);
-            
+
             this.items = new Ext.util.MixedCollection();
             this.items.addAll(fields);
         }
         Ext.form.CheckboxGroup.superclass.onRender.call(this, ct, position);
     },
-    
+
     initValue : function(){
         if(this.value){
             this.setValue.apply(this, this.buffered ? this.value : [this.value]);
@@ -3836,7 +4167,7 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
             delete this.value;
         }
     },
-    
+
     afterRender : function(){
         Ext.form.CheckboxGroup.superclass.afterRender.call(this);
         this.eachItem(function(item){
@@ -3844,7 +4175,7 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
             item.inGroup = true;
         });
     },
-    
+
     // private
     doLayout: function(){
         //ugly method required to layout hidden items
@@ -3853,7 +4184,7 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
             this.panel.doLayout();
         }
     },
-    
+
     // private
     fireChecked: function(){
         var arr = [];
@@ -3865,23 +4196,29 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
         this.fireEvent('change', this, arr);
     },
     
-    // private
-    validateValue : function(value){
-        if(!this.allowBlank){
+    /**
+     * Runs CheckboxGroup's validations and returns an array of any errors. The only error by default
+     * is if allowBlank is set to true and no items are checked.
+     * @return {Array} Array of all validation errors
+     */
+    getErrors: function() {
+        var errors = Ext.form.CheckboxGroup.superclass.getErrors.apply(this, arguments);
+        
+        if (!this.allowBlank) {
             var blank = true;
+            
             this.eachItem(function(f){
-                if(f.checked){
+                if (f.checked) {
                     return (blank = false);
                 }
             });
-            if(blank){
-                this.markInvalid(this.blankText);
-                return false;
-            }
+            
+            if (blank) errors.push(this.blankText);
         }
-        return true;
+        
+        return errors;
     },
-    
+
     // private
     isDirty: function(){
         //override the behaviour to check sub items.
@@ -3890,15 +4227,27 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
         }
 
         var dirty = false;
+        
         this.eachItem(function(item){
             if(item.isDirty()){
                 dirty = true;
                 return false;
             }
         });
+        
         return dirty;
     },
-    
+
+    // private
+    setReadOnly : function(readOnly){
+        if(this.rendered){
+            this.eachItem(function(item){
+                item.setReadOnly(readOnly);
+            });
+        }
+        this.readOnly = readOnly;
+    },
+
     // private
     onDisable : function(){
         this.eachItem(function(item){
@@ -3912,38 +4261,49 @@ Ext.form.CheckboxGroup = Ext.extend(Ext.form.Field, {
             item.enable();
         });
     },
-    
-    // private
-    doLayout: function(){
-        if(this.rendered){
-            this.panel.forceLayout = this.ownerCt.forceLayout;
-            this.panel.doLayout();
-        }
-    },
-    
+
     // private
     onResize : function(w, h){
         this.panel.setSize(w, h);
         this.panel.doLayout();
     },
-    
+
     // inherit docs from Field
     reset : function(){
-        Ext.form.CheckboxGroup.superclass.reset.call(this);
-        this.eachItem(function(c){
-            if(c.reset){
-                c.reset();
-            }
-        });
+        if (this.originalValue) {
+            // Clear all items
+            this.eachItem(function(c){
+                if(c.setValue){
+                    c.setValue(false);
+                    c.originalValue = c.getValue();
+                }
+            });
+            // Set items stored in originalValue, ugly - set a flag to reset the originalValue
+            // during the horrible onSetValue.  This will allow trackResetOnLoad to function.
+            this.resetOriginal = true;
+            this.setValue(this.originalValue);
+            delete this.resetOriginal;
+        } else {
+            this.eachItem(function(c){
+                if(c.reset){
+                    c.reset();
+                }
+            });
+        }
+        // Defer the clearInvalid so if BaseForm's collection is being iterated it will be called AFTER it is complete.
+        // Important because reset is being called on both the group and the individual items.
+        (function() {
+            this.clearInvalid();
+        }).defer(50, this);
     },
-    
+
     /**
      * {@link Ext.form.Checkbox#setValue Set the value(s)} of an item or items
      * in the group. Examples illustrating how this method may be called:
      * <pre><code>
 // call with name and value
 myCheckboxGroup.setValue('cb-col-1', true);
-// call with an array of boolean values 
+// call with an array of boolean values
 myCheckboxGroup.setValue([true, false, false]);
 // call with an object literal specifying item:value pairs
 myCheckboxGroup.setValue({
@@ -3967,15 +4327,34 @@ myCheckboxGroup.setValue('cb-col-1,cb-col-3');
         }
         return this;
     },
-    
+
+    /**
+     * @private
+     * Sets the values of one or more of the items within the CheckboxGroup
+     * @param {String|Array|Object} id Can take multiple forms. Can be optionally:
+     * <ul>
+     *   <li>An ID string to be used with a second argument</li>
+     *   <li>An array of the form ['some', 'list', 'of', 'ids', 'to', 'mark', 'checked']</li>
+     *   <li>An array in the form [true, true, false, true, false] etc, where each item relates to the check status of
+     *       the checkbox at the same index</li>
+     *   <li>An object containing ids of the checkboxes as keys and check values as properties</li>
+     * </ul>
+     * @param {String} value The value to set the field to if the first argument was a string
+     */
     onSetValue: function(id, value){
         if(arguments.length == 1){
             if(Ext.isArray(id)){
-                // an array of boolean values
                 Ext.each(id, function(val, idx){
-                    var item = this.items.itemAt(idx);
-                    if(item){
-                        item.setValue(val);
+                    if (Ext.isObject(val) && val.setValue){ // array of checkbox components to be checked
+                        val.setValue(true);
+                        if (this.resetOriginal === true) {
+                            val.originalValue = val.getValue();
+                        }
+                    } else { // an array of boolean values
+                        var item = this.items.itemAt(idx);
+                        if(item){
+                            item.setValue(val);
+                        }
                     }
                 }, this);
             }else if(Ext.isObject(id)){
@@ -3996,14 +4375,14 @@ myCheckboxGroup.setValue('cb-col-1,cb-col-3');
             }
         }
     },
-    
+
     // private
-    onDestroy: function(){
+    beforeDestroy: function(){
         Ext.destroy(this.panel);
-        Ext.form.CheckboxGroup.superclass.onDestroy.call(this);
+        Ext.form.CheckboxGroup.superclass.beforeDestroy.call(this);
 
     },
-    
+
     setValueForItem : function(val){
         val = String(val).split(',');
         this.eachItem(function(item){
@@ -4012,7 +4391,7 @@ myCheckboxGroup.setValue('cb-col-1,cb-col-3');
             }
         });
     },
-    
+
     // private
     getBox : function(id){
         var box = null;
@@ -4024,7 +4403,7 @@ myCheckboxGroup.setValue('cb-col-1,cb-col-3');
         });
         return box;
     },
-    
+
     /**
      * Gets an array of the selected {@link Ext.form.Checkbox} in the group.
      * @return {Array} An array of the selected checkboxes.
@@ -4038,14 +4417,19 @@ myCheckboxGroup.setValue('cb-col-1,cb-col-3');
         });
         return out;
     },
-    
-    // private
-    eachItem: function(fn){
+
+    /**
+     * @private
+     * Convenience function which passes the given function to every item in the composite
+     * @param {Function} fn The function to call
+     * @param {Object} scope Optional scope object
+     */
+    eachItem: function(fn, scope) {
         if(this.items && this.items.each){
-            this.items.each(fn, this);
+            this.items.each(fn, scope || this);
         }
     },
-    
+
     /**
      * @cfg {String} name
      * @hide
@@ -4056,16 +4440,430 @@ myCheckboxGroup.setValue('cb-col-1,cb-col-3');
      * @hide
      */
     getRawValue : Ext.emptyFn,
-    
+
     /**
      * @method setRawValue
      * @hide
      */
     setRawValue : Ext.emptyFn
-    
+
 });
 
 Ext.reg('checkboxgroup', Ext.form.CheckboxGroup);
+/**
+ * @class Ext.form.CompositeField
+ * @extends Ext.form.Field
+ * Composite field allowing a number of form Fields to be rendered on the same row. The fields are rendered
+ * using an hbox layout internally, so all of the normal HBox layout config items are available. Example usage:
+ * <pre>
+{
+    xtype: 'compositefield',
+    labelWidth: 120
+    items: [
+        {
+            xtype     : 'textfield',
+            fieldLabel: 'Title',
+            width     : 20
+        },
+        {
+            xtype     : 'textfield',
+            fieldLabel: 'First',
+            flex      : 1
+        },
+        {
+            xtype     : 'textfield',
+            fieldLabel: 'Last',
+            flex      : 1
+        }
+    ]
+}
+ * </pre>
+ * In the example above the composite's fieldLabel will be set to 'Title, First, Last' as it groups the fieldLabels
+ * of each of its children. This can be overridden by setting a fieldLabel on the compositefield itself:
+ * <pre>
+{
+    xtype: 'compositefield',
+    fieldLabel: 'Custom label',
+    items: [...]
+}
+ * </pre>
+ * Any Ext.form.* component can be placed inside a composite field.
+ */
+Ext.form.CompositeField = Ext.extend(Ext.form.Field, {
+
+    /**
+     * @property defaultMargins
+     * @type String
+     * The margins to apply by default to each field in the composite
+     */
+    defaultMargins: '0 5 0 0',
+
+    /**
+     * @property skipLastItemMargin
+     * @type Boolean
+     * If true, the defaultMargins are not applied to the last item in the composite field set (defaults to true)
+     */
+    skipLastItemMargin: true,
+
+    /**
+     * @property isComposite
+     * @type Boolean
+     * Signifies that this is a Composite field
+     */
+    isComposite: true,
+
+    /**
+     * @property combineErrors
+     * @type Boolean
+     * True to combine errors from the individual fields into a single error message at the CompositeField level (defaults to true)
+     */
+    combineErrors: true,
+
+    //inherit docs
+    //Builds the composite field label
+    initComponent: function() {
+        var labels = [],
+            items  = this.items,
+            item;
+
+        for (var i=0, j = items.length; i < j; i++) {
+            item = items[i];
+
+            labels.push(item.fieldLabel);
+
+            //apply any defaults
+            Ext.apply(item, this.defaults);
+
+            //apply default margins to each item except the last
+            if (!(i == j - 1 && this.skipLastItemMargin)) {
+                Ext.applyIf(item, {margins: this.defaultMargins});
+            }
+        }
+
+        this.fieldLabel = this.fieldLabel || this.buildLabel(labels);
+
+        /**
+         * @property fieldErrors
+         * @type Ext.util.MixedCollection
+         * MixedCollection of current errors on the Composite's subfields. This is used internally to track when
+         * to show and hide error messages at the Composite level. Listeners are attached to the MixedCollection's
+         * add, remove and replace events to update the error icon in the UI as errors are added or removed.
+         */
+        this.fieldErrors = new Ext.util.MixedCollection(true, function(item) {
+            return item.field;
+        });
+
+        this.fieldErrors.on({
+            scope  : this,
+            add    : this.updateInvalidMark,
+            remove : this.updateInvalidMark,
+            replace: this.updateInvalidMark
+        });
+
+        Ext.form.CompositeField.superclass.initComponent.apply(this, arguments);
+    },
+
+    /**
+     * @private
+     * Creates an internal container using hbox and renders the fields to it
+     */
+    onRender: function(ct, position) {
+        if (!this.el) {
+            /**
+             * @property innerCt
+             * @type Ext.Container
+             * A container configured with hbox layout which is responsible for laying out the subfields
+             */
+            var innerCt = this.innerCt = new Ext.Container({
+                layout  : 'hbox',
+                renderTo: ct,
+                items   : this.items,
+                cls     : 'x-form-composite',
+                defaultMargins: '0 3 0 0'
+            });
+
+            this.el = innerCt.getEl();
+
+            var fields = innerCt.findBy(function(c) {
+                return c.isFormField;
+            }, this);
+
+            /**
+             * @property items
+             * @type Ext.util.MixedCollection
+             * Internal collection of all of the subfields in this Composite
+             */
+            this.items = new Ext.util.MixedCollection();
+            this.items.addAll(fields);
+
+            //if we're combining subfield errors into a single message, override the markInvalid and clearInvalid
+            //methods of each subfield and show them at the Composite level instead
+            if (this.combineErrors) {
+                this.eachItem(function(field) {
+                    Ext.apply(field, {
+                        markInvalid : this.onFieldMarkInvalid.createDelegate(this, [field], 0),
+                        clearInvalid: this.onFieldClearInvalid.createDelegate(this, [field], 0)
+                    });
+                });
+            }
+
+            //set the label 'for' to the first item
+            var l = this.el.parent().parent().child('label', true);
+            if (l) {
+                l.setAttribute('for', this.items.items[0].id);
+            }
+        }
+
+        Ext.form.CompositeField.superclass.onRender.apply(this, arguments);
+    },
+
+    /**
+     * Called if combineErrors is true and a subfield's markInvalid method is called.
+     * By default this just adds the subfield's error to the internal fieldErrors MixedCollection
+     * @param {Ext.form.Field} field The field that was marked invalid
+     * @param {String} message The error message
+     */
+    onFieldMarkInvalid: function(field, message) {
+        var name  = field.getName(),
+            error = {field: name, error: message};
+
+        this.fieldErrors.replace(name, error);
+
+        field.el.addClass(field.invalidClass);
+    },
+
+    /**
+     * Called if combineErrors is true and a subfield's clearInvalid method is called.
+     * By default this just updates the internal fieldErrors MixedCollection.
+     * @param {Ext.form.Field} field The field that was marked invalid
+     */
+    onFieldClearInvalid: function(field) {
+        this.fieldErrors.removeKey(field.getName());
+
+        field.el.removeClass(field.invalidClass);
+    },
+
+    /**
+     * @private
+     * Called after a subfield is marked valid or invalid, this checks to see if any of the subfields are
+     * currently invalid. If any subfields are invalid it builds a combined error message marks the composite
+     * invalid, otherwise clearInvalid is called
+     */
+    updateInvalidMark: function() {
+        var ieStrict = Ext.isIE6 && Ext.isStrict;
+
+        if (this.fieldErrors.length == 0) {
+            this.clearInvalid();
+
+            //IE6 in strict mode has a layout bug when using 'under' as the error message target. This fixes it
+            if (ieStrict) {
+                this.clearInvalid.defer(50, this);
+            }
+        } else {
+            var message = this.buildCombinedErrorMessage(this.fieldErrors.items);
+
+            this.sortErrors();
+            this.markInvalid(message);
+
+            //IE6 in strict mode has a layout bug when using 'under' as the error message target. This fixes it
+            if (ieStrict) {
+                this.markInvalid(message);
+            }
+        }
+    },
+
+    /**
+     * Performs validation checks on each subfield and returns false if any of them fail validation.
+     * @return {Boolean} False if any subfield failed validation
+     */
+    validateValue: function() {
+        var valid = true;
+
+        this.eachItem(function(field) {
+            if (!field.isValid()) valid = false;
+        });
+
+        return valid;
+    },
+
+    /**
+     * Takes an object containing error messages for contained fields, returning a combined error
+     * string (defaults to just placing each item on a new line). This can be overridden to provide
+     * custom combined error message handling.
+     * @param {Array} errors Array of errors in format: [{field: 'title', error: 'some error'}]
+     * @return {String} The combined error message
+     */
+    buildCombinedErrorMessage: function(errors) {
+        var combined = [],
+            error;
+
+        for (var i = 0, j = errors.length; i < j; i++) {
+            error = errors[i];
+
+            combined.push(String.format("{0}: {1}", error.field, error.error));
+        }
+
+        return combined.join("<br />");
+    },
+
+    /**
+     * Sorts the internal fieldErrors MixedCollection by the order in which the fields are defined.
+     * This is called before displaying errors to ensure that the errors are presented in the expected order.
+     * This function can be overridden to provide a custom sorting order if needed.
+     */
+    sortErrors: function() {
+        var fields = this.items;
+
+        this.fieldErrors.sort("ASC", function(a, b) {
+            var findByName = function(key) {
+                return function(field) {
+                    return field.getName() == key;
+                };
+            };
+
+            var aIndex = fields.findIndexBy(findByName(a.field)),
+                bIndex = fields.findIndexBy(findByName(b.field));
+
+            return aIndex < bIndex ? -1 : 1;
+        });
+    },
+
+    /**
+     * Resets each field in the composite to their previous value
+     */
+    reset: function() {
+        this.eachItem(function(item) {
+            item.reset();
+        });
+
+        // Defer the clearInvalid so if BaseForm's collection is being iterated it will be called AFTER it is complete.
+        // Important because reset is being called on both the group and the individual items.
+        (function() {
+            this.clearInvalid();
+        }).defer(50, this);
+    },
+    
+    /**
+     * Calls clearInvalid on all child fields. This is a convenience function and should not often need to be called
+     * as fields usually take care of clearing themselves
+     */
+    clearInvalidChildren: function() {
+        this.eachItem(function(item) {
+            item.clearInvalid();
+        });
+    },
+
+    /**
+     * Builds a label string from an array of subfield labels.
+     * By default this just joins the labels together with a comma
+     * @param {Array} segments Array of each of the labels in the composite field's subfields
+     * @return {String} The built label
+     */
+    buildLabel: function(segments) {
+        return segments.join(", ");
+    },
+
+    /**
+     * Checks each field in the composite and returns true if any is dirty
+     * @return {Boolean} True if any field is dirty
+     */
+    isDirty: function(){
+        //override the behaviour to check sub items.
+        if (this.disabled || !this.rendered) {
+            return false;
+        }
+
+        var dirty = false;
+        this.eachItem(function(item){
+            if(item.isDirty()){
+                dirty = true;
+                return false;
+            }
+        });
+        return dirty;
+    },
+
+    /**
+     * @private
+     * Convenience function which passes the given function to every item in the composite
+     * @param {Function} fn The function to call
+     * @param {Object} scope Optional scope object
+     */
+    eachItem: function(fn, scope) {
+        if(this.items && this.items.each){
+            this.items.each(fn, scope || this);
+        }
+    },
+
+    /**
+     * @private
+     * Passes the resize call through to the inner panel
+     */
+    onResize: function(adjWidth, adjHeight, rawWidth, rawHeight) {
+        var innerCt = this.innerCt;
+
+        if (this.rendered && innerCt.rendered) {
+            innerCt.setSize(adjWidth, adjHeight);
+        }
+
+        Ext.form.CompositeField.superclass.onResize.apply(this, arguments);
+    },
+
+    /**
+     * @private
+     * Forces the internal container to be laid out again
+     */
+    doLayout: function(shallow, force) {
+        if (this.rendered) {
+            var innerCt = this.innerCt;
+
+            innerCt.forceLayout = this.ownerCt.forceLayout;
+            innerCt.doLayout(shallow, force);
+        }
+    },
+
+    /**
+     * @private
+     */
+    beforeDestroy: function(){
+        Ext.destroy(this.innerCt);
+
+        Ext.form.CompositeField.superclass.beforeDestroy.call(this);
+    },
+
+    //override the behaviour to check sub items.
+    setReadOnly : function(readOnly) {
+        readOnly = readOnly || true;
+
+        if(this.rendered){
+            this.eachItem(function(item){
+                item.setReadOnly(readOnly);
+            });
+        }
+        this.readOnly = readOnly;
+    },
+
+    onShow : function() {
+        Ext.form.CompositeField.superclass.onShow.call(this);
+        this.doLayout();
+    },
+
+    //override the behaviour to check sub items.
+    onDisable : function(){
+        this.eachItem(function(item){
+            item.disable();
+        });
+    },
+
+    //override the behaviour to check sub items.
+    onEnable : function(){
+        this.eachItem(function(item){
+            item.enable();
+        });
+    }
+});
+
+Ext.reg('compositefield', Ext.form.CompositeField);
 /**
  * @class Ext.form.Radio
  * @extends Ext.form.Checkbox
@@ -4123,7 +4921,7 @@ Ext.form.Radio = Ext.extend(Ext.form.Checkbox, {
     setValue : function(v){
     	if (typeof v == 'boolean') {
             Ext.form.Radio.superclass.setValue.call(this, v);
-        } else {
+        } else if (this.rendered) {
             var r = this.getCheckEl().child('input[name=' + this.el.dom.name + '][value=' + v + ']', true);
             if(r){
                 Ext.getCmp(r.id).setValue(true);
@@ -4131,7 +4929,7 @@ Ext.form.Radio = Ext.extend(Ext.form.Checkbox, {
         }
         return this;
     },
-    
+
     // private
     getCheckEl: function(){
         if(this.inGroup){
@@ -4151,6 +4949,10 @@ Ext.reg('radio', Ext.form.Radio);
  * @xtype radiogroup
  */
 Ext.form.RadioGroup = Ext.extend(Ext.form.CheckboxGroup, {
+    /**
+     * @cfg {Array} items An Array of {@link Ext.form.Radio Radio}s or Radio config objects
+     * to arrange in the group.
+     */
     /**
      * @cfg {Boolean} allowBlank True to allow every item in the group to be blank (defaults to true).
      * If allowBlank = false and no items are selected at validation time, {@link @blankText} will
@@ -4315,50 +5117,51 @@ Ext.reg('hidden', Ext.form.Hidden);/**
  * @param {Mixed} el The form element or its id
  * @param {Object} config Configuration options
  */
-Ext.form.BasicForm = function(el, config){
-    Ext.apply(this, config);
-    if(Ext.isString(this.paramOrder)){
-        this.paramOrder = this.paramOrder.split(/[\s,|]/);
-    }
-    /**
-     * @property items
-     * A {@link Ext.util.MixedCollection MixedCollection) containing all the Ext.form.Fields in this form.
-     * @type MixedCollection
-     */
-    this.items = new Ext.util.MixedCollection(false, function(o){
-        return o.getItemId();
-    });
-    this.addEvents(
-        /**
-         * @event beforeaction
-         * Fires before any action is performed. Return false to cancel the action.
-         * @param {Form} this
-         * @param {Action} action The {@link Ext.form.Action} to be performed
-         */
-        'beforeaction',
-        /**
-         * @event actionfailed
-         * Fires when an action fails.
-         * @param {Form} this
-         * @param {Action} action The {@link Ext.form.Action} that failed
-         */
-        'actionfailed',
-        /**
-         * @event actioncomplete
-         * Fires when an action is completed.
-         * @param {Form} this
-         * @param {Action} action The {@link Ext.form.Action} that completed
-         */
-        'actioncomplete'
-    );
+Ext.form.BasicForm = Ext.extend(Ext.util.Observable, {
 
-    if(el){
-        this.initEl(el);
-    }
-    Ext.form.BasicForm.superclass.constructor.call(this);
-};
+    constructor: function(el, config){
+        Ext.apply(this, config);
+        if(Ext.isString(this.paramOrder)){
+            this.paramOrder = this.paramOrder.split(/[\s,|]/);
+        }
+        /**
+         * A {@link Ext.util.MixedCollection MixedCollection} containing all the Ext.form.Fields in this form.
+         * @type MixedCollection
+         * @property items
+         */
+        this.items = new Ext.util.MixedCollection(false, function(o){
+            return o.getItemId();
+        });
+        this.addEvents(
+            /**
+             * @event beforeaction
+             * Fires before any action is performed. Return false to cancel the action.
+             * @param {Form} this
+             * @param {Action} action The {@link Ext.form.Action} to be performed
+             */
+            'beforeaction',
+            /**
+             * @event actionfailed
+             * Fires when an action fails.
+             * @param {Form} this
+             * @param {Action} action The {@link Ext.form.Action} that failed
+             */
+            'actionfailed',
+            /**
+             * @event actioncomplete
+             * Fires when an action is completed.
+             * @param {Form} this
+             * @param {Action} action The {@link Ext.form.Action} that completed
+             */
+            'actioncomplete'
+        );
 
-Ext.extend(Ext.form.BasicForm, Ext.util.Observable, {
+        if(el){
+            this.initEl(el);
+        }
+        Ext.form.BasicForm.superclass.constructor.call(this);
+    },
+
     /**
      * @cfg {String} method
      * The request method to use (GET or POST) for form actions if one isn't supplied in the action options.
@@ -4558,15 +5361,20 @@ new Ext.FormPanel({
         e.stopEvent();
     },
 
-    // private
-    destroy: function() {
-        this.items.each(function(f){
-            Ext.destroy(f);
-        });
-        if(this.el){
-            this.el.removeAllListeners();
-            this.el.remove();
+    /**
+     * Destroys this object.
+     * @private
+     * @param {Boolean} bound true if the object is bound to a form panel. If this is the case
+     * the FormPanel will take care of destroying certain things, so we're just doubling up.
+     */
+    destroy: function(bound){
+        if(bound !== true){
+            this.items.each(function(f){
+                Ext.destroy(f);
+            });
+            Ext.destroy(this.el);
         }
+        this.items.clear();
         this.purgeListeners();
     },
 
@@ -4715,8 +5523,9 @@ myFormPanel.getForm().submit({
      * @return {BasicForm} this
      */
     submit : function(options){
+        options = options || {};
         if(this.standardSubmit){
-            var v = this.isValid();
+            var v = options.clientValidation === false || this.isValid();
             if(v){
                 var el = this.el.dom;
                 if(this.url && Ext.isEmpty(el.action)){
@@ -4774,6 +5583,12 @@ myFormPanel.getForm().submit({
 
     // private
     beforeAction : function(action){
+        // Call HtmlEditor's syncValue before actions
+        this.items.each(function(f){
+            if(f.isFormField && f.syncValue){
+                f.syncValue();
+            }
+        });
         var o = action.options;
         if(o.waitMsg){
             if(this.waitMsgTarget === true){
@@ -4819,15 +5634,23 @@ myFormPanel.getForm().submit({
      * {@link Ext.grid.Column#dataIndex dataIndex}, {@link Ext.form.Field#getName name or hiddenName}).
      * @return Field
      */
-    findField : function(id){
+    findField : function(id) {
         var field = this.items.get(id);
-        if(!Ext.isObject(field)){
-            this.items.each(function(f){
-                if(f.isFormField && (f.dataIndex == id || f.id == id || f.getName() == id)){
-                    field = f;
-                    return false;
+
+        if (!Ext.isObject(field)) {
+            //searches for the field corresponding to the given id. Used recursively for composite fields
+            var findMatchingField = function(f) {
+                if (f.isFormField) {
+                    if (f.dataIndex == id || f.id == id || f.getName() == id) {
+                        field = f;
+                        return false;
+                    } else if (f.isComposite) {
+                        return f.items.each(findMatchingField);
+                    }
                 }
-            });
+            };
+
+            this.items.each(findMatchingField);
         }
         return field || null;
     },
@@ -4839,7 +5662,7 @@ myFormPanel.getForm().submit({
      * @return {BasicForm} this
      */
     markInvalid : function(errors){
-        if(Ext.isArray(errors)){
+        if (Ext.isArray(errors)) {
             for(var i = 0, len = errors.length; i < len; i++){
                 var fieldError = errors[i];
                 var f = this.findField(fieldError.id);
@@ -4847,7 +5670,7 @@ myFormPanel.getForm().submit({
                     f.markInvalid(fieldError.msg);
                 }
             }
-        }else{
+        } else {
             var field, id;
             for(id in errors){
                 if(!Ext.isFunction(errors[id]) && (field = this.findField(id))){
@@ -4855,6 +5678,7 @@ myFormPanel.getForm().submit({
                 }
             }
         }
+
         return this;
     },
 
@@ -4915,10 +5739,33 @@ myFormPanel.getForm().submit({
         return Ext.urlDecode(fs);
     },
 
-    getFieldValues : function(){
-        var o = {};
-        this.items.each(function(f){
-           o[f.getName()] = f.getValue();
+    /**
+     * Retrieves the fields in the form as a set of key/value pairs, using the {@link Ext.form.Field#getValue getValue()} method.
+     * If multiple fields exist with the same name they are returned as an array.
+     * @param {Boolean} dirtyOnly (optional) True to return only fields that are dirty.
+     * @return {Object} The values in the form
+     */
+    getFieldValues : function(dirtyOnly){
+        var o = {},
+            n,
+            key,
+            val;
+        this.items.each(function(f) {
+            if (dirtyOnly !== true || f.isDirty()) {
+                n = f.getName();
+                key = o[n];
+                val = f.getValue();
+
+                if(Ext.isDefined(key)){
+                    if(Ext.isArray(key)){
+                        o[n].push(val);
+                    }else{
+                        o[n] = [key, val];
+                    }
+                }else{
+                    o[n] = val;
+                }
+            }
         });
         return o;
     },
@@ -4962,7 +5809,6 @@ myFormPanel.getForm().submit({
         this.items.addAll(Array.prototype.slice.call(arguments, 0));
         return this;
     },
-
 
     /**
      * Removes a field from the items collection (does NOT remove its markup).
@@ -5024,17 +5870,18 @@ myFormPanel.getForm().submit({
 });
 
 // back compat
-Ext.BasicForm = Ext.form.BasicForm;/**
+Ext.BasicForm = Ext.form.BasicForm;
+/**
  * @class Ext.form.FormPanel
  * @extends Ext.Panel
  * <p>Standard form container.</p>
- * 
+ *
  * <p><b><u>Layout</u></b></p>
  * <p>By default, FormPanel is configured with <tt>layout:'form'</tt> to use an {@link Ext.layout.FormLayout}
  * layout manager, which styles and renders fields and labels correctly. When nesting additional Containers
  * within a FormPanel, you should ensure that any descendant Containers which host input Fields use the
  * {@link Ext.layout.FormLayout} layout manager.</p>
- * 
+ *
  * <p><b><u>BasicForm</u></b></p>
  * <p>Although <b>not listed</b> as configuration options of FormPanel, the FormPanel class accepts all
  * of the config options required to configure its internal {@link Ext.form.BasicForm} for:
@@ -5042,11 +5889,11 @@ Ext.BasicForm = Ext.form.BasicForm;/**
  * <li>{@link Ext.form.BasicForm#fileUpload file uploads}</li>
  * <li>functionality for {@link Ext.form.BasicForm#doAction loading, validating and submitting} the form</li>
  * </ul></div>
- *  
+ *
  * <p><b>Note</b>: If subclassing FormPanel, any configuration options for the BasicForm must be applied to
  * the <tt><b>initialConfig</b></tt> property of the FormPanel. Applying {@link Ext.form.BasicForm BasicForm}
  * configuration settings to <b><tt>this</tt></b> will <b>not</b> affect the BasicForm's configuration.</p>
- * 
+ *
  * <p><b><u>Form Validation</u></b></p>
  * <p>For information on form validation see the following:</p>
  * <div class="mdetail-params"><ul>
@@ -5055,20 +5902,20 @@ Ext.BasicForm = Ext.form.BasicForm;/**
  * <li>{@link Ext.form.BasicForm#doAction BasicForm.doAction <b>clientValidation</b> notes}</li>
  * <li><tt>{@link Ext.form.FormPanel#monitorValid monitorValid}</tt></li>
  * </ul></div>
- * 
+ *
  * <p><b><u>Form Submission</u></b></p>
  * <p>By default, Ext Forms are submitted through Ajax, using {@link Ext.form.Action}. To enable normal browser
  * submission of the {@link Ext.form.BasicForm BasicForm} contained in this FormPanel, see the
  * <tt><b>{@link Ext.form.BasicForm#standardSubmit standardSubmit}</b></tt> option.</p>
- * 
+ *
  * @constructor
  * @param {Object} config Configuration options
  * @xtype form
  */
 Ext.FormPanel = Ext.extend(Ext.Panel, {
-	/**
-	 * @cfg {String} formId (optional) The id of the FORM tag (defaults to an auto-generated id).
-	 */
+    /**
+     * @cfg {String} formId (optional) The id of the FORM tag (defaults to an auto-generated id).
+     */
     /**
      * @cfg {Boolean} hideLabels
      * <p><tt>true</tt> to hide field labels by default (sets <tt>display:none</tt>). Defaults to
@@ -5130,7 +5977,7 @@ Ext.FormPanel = Ext.extend(Ext.Panel, {
     monitorPoll : 200,
 
     /**
-     * @cfg {String} layout Defaults to <tt>'form'</tt>.  Normally this configuration property should not be altered. 
+     * @cfg {String} layout Defaults to <tt>'form'</tt>.  Normally this configuration property should not be altered.
      * For additional details see {@link Ext.layout.FormLayout} and {@link Ext.Container#layout Ext.Container.layout}.
      */
     layout : 'form',
@@ -5150,7 +5997,7 @@ Ext.FormPanel = Ext.extend(Ext.Panel, {
             this.bodyCfg.enctype = 'multipart/form-data';
         }
         this.initItems();
-        
+
         this.addEvents(
             /**
              * @event clientvalidation
@@ -5187,7 +6034,7 @@ Ext.FormPanel = Ext.extend(Ext.Panel, {
         };
         this.items.each(fn, this);
     },
-    
+
     // private
     applySettings: function(c){
         var ct = c.ownerCt;
@@ -5217,21 +6064,15 @@ Ext.FormPanel = Ext.extend(Ext.Panel, {
         Ext.FormPanel.superclass.onRender.call(this, ct, position);
         this.form.initEl(this.body);
     },
-    
+
     // private
     beforeDestroy : function(){
         this.stopMonitoring();
+        this.form.destroy(true);
         Ext.FormPanel.superclass.beforeDestroy.call(this);
-        /*
-         * Clear the items here to prevent them being destroyed again.
-         * Don't move this behaviour to BasicForm because it can be used
-         * on it's own.
-         */
-        this.form.items.clear();
-        Ext.destroy(this.form);
     },
 
-	// Determine if a Component is usable as a form Field.
+    // Determine if a Component is usable as a form Field.
     isField : function(c) {
         return !!c.setValue && !!c.getValue && !!c.markInvalid && !!c.clearInvalid;
     },
@@ -5249,52 +6090,54 @@ Ext.FormPanel = Ext.extend(Ext.Panel, {
             this.startMonitoring();
         }
     },
-    
+
     // private
     onAdd: function(c){
-        Ext.FormPanel.superclass.onAdd.call(this, c);  
+        Ext.FormPanel.superclass.onAdd.call(this, c);
         this.processAdd(c);
     },
-    
+
     // private
     onAddEvent: function(ct, c){
         if(ct !== this){
             this.processAdd(c);
         }
     },
-    
+
     // private
     processAdd : function(c){
-		// If a single form Field, add it
+        // If a single form Field, add it
         if(this.isField(c)){
             this.form.add(c);
-		// If a Container, add any Fields it might contain
+        // If a Container, add any Fields it might contain
         }else if(c.findBy){
             this.applySettings(c);
             this.form.add.apply(this.form, c.findBy(this.isField));
         }
     },
-    
+
     // private
     onRemove: function(c){
         Ext.FormPanel.superclass.onRemove.call(this, c);
         this.processRemove(c);
     },
-    
+
     onRemoveEvent: function(ct, c){
         if(ct !== this){
             this.processRemove(c);
         }
     },
-	
+
     // private
-    processRemove : function(c){
-		// If a single form Field, remove it
-        if(this.isField(c)){
-        	this.form.remove(c);
-		// If a Container, remove any Fields it might contain
-        }else if(c.findBy){
-            Ext.each(c.findBy(this.isField), this.form.remove, this.form);
+    processRemove: function(c){
+        if(!this.destroying){
+            // If a single form Field, remove it
+            if(this.isField(c)){
+                this.form.remove(c);
+            // If a Container, its already destroyed by the time it gets here.  Remove any references to destroyed fields.
+            }else if (c.findBy){
+                Ext.each(c.findBy(this.isField), this.form.remove, this.form);
+            }
         }
     },
 
@@ -5328,7 +6171,7 @@ Ext.FormPanel = Ext.extend(Ext.Panel, {
      * @param {Object} options The options to pass to the action (see {@link Ext.form.BasicForm#doAction} for details)
      */
     load : function(){
-        this.form.load.apply(this.form, arguments);  
+        this.form.load.apply(this.form, arguments);
     },
 
     // private
@@ -5374,9 +6217,7 @@ Ext.FormPanel = Ext.extend(Ext.Panel, {
 });
 Ext.reg('form', Ext.FormPanel);
 
-Ext.form.FormPanel = Ext.FormPanel;
-
-/**
+Ext.form.FormPanel = Ext.FormPanel;/**
  * @class Ext.form.FieldSet
  * @extends Ext.Panel
  * Standard container used for grouping items within a {@link Ext.form.FormPanel form}.
@@ -5446,7 +6287,7 @@ Ext.form.FieldSet = Ext.extend(Ext.Panel, {
      * If <tt>true</tt> is specified, the default DomHelper config object used to create the element
      * is:</p><pre><code>
      * {tag: 'input', type: 'checkbox', name: this.checkboxName || this.id+'-checkbox'}
-     * </code></pre>   
+     * </code></pre>
      */
     /**
      * @cfg {String} checkboxName The name to assign to the fieldset's checkbox if <tt>{@link #checkboxToggle} = true</tt>
@@ -5462,7 +6303,7 @@ Ext.form.FieldSet = Ext.extend(Ext.Panel, {
      * @cfg {Number} labelWidth The width of labels. This property cascades to child containers.
      */
     /**
-     * @cfg {String} itemCls A css class to apply to the <tt>x-form-item</tt> of fields (see 
+     * @cfg {String} itemCls A css class to apply to the <tt>x-form-item</tt> of fields (see
      * {@link Ext.layout.FormLayout}.{@link Ext.layout.FormLayout#fieldTpl fieldTpl} for details).
      * This property cascades to child containers.
      */
@@ -5487,7 +6328,7 @@ Ext.form.FieldSet = Ext.extend(Ext.Panel, {
             this.el = document.createElement('fieldset');
             this.el.id = this.id;
             if (this.title || this.header || this.checkboxToggle) {
-                this.el.appendChild(document.createElement('legend')).className = 'x-fieldset-header';
+                this.el.appendChild(document.createElement('legend')).className = this.baseCls + '-header';
             }
         }
 
@@ -5666,13 +6507,12 @@ Ext.form.FieldSet = Ext.extend(Ext.Panel, {
      * @hide
      */
 });
-Ext.reg('fieldset', Ext.form.FieldSet);
-/**
+Ext.reg('fieldset', Ext.form.FieldSet);/**
  * @class Ext.form.HtmlEditor
  * @extends Ext.form.Field
- * Provides a lightweight HTML Editor component. Some toolbar features are not supported by Safari and will be 
+ * Provides a lightweight HTML Editor component. Some toolbar features are not supported by Safari and will be
  * automatically hidden when needed.  These are noted in the config options where appropriate.
- * <br><br>The editor's toolbar buttons have tooltips defined in the {@link #buttonTips} property, but they are not 
+ * <br><br>The editor's toolbar buttons have tooltips defined in the {@link #buttonTips} property, but they are not
  * enabled by default unless the global {@link Ext.QuickTips} singleton is {@link Ext.QuickTips#init initialized}.
  * <br><br><b>Note: The focus/blur and validation marking functionality inherited from Ext.form.Field is NOT
  * supported by this editor.</b>
@@ -5763,7 +6603,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
     ],
     defaultFont: 'tahoma',
     /**
-     * @cfg {String} defaultValue A default value to be put into the editor to resolve focus issues (defaults to &#8203; (Zero-width space), &nbsp; (Non-breaking space) in Opera and IE6).
+     * @cfg {String} defaultValue A default value to be put into the editor to resolve focus issues (defaults to &#160; (Non-breaking space) in Opera and IE6, &#8203; (Zero-width space) in all other browsers).
      */
     defaultValue: (Ext.isOpera || Ext.isIE6) ? '&#160;' : '&#8203;',
 
@@ -5836,7 +6676,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
              * @param {Boolean} sourceEdit True if source edit, false if standard editing.
              */
             'editmodechange'
-        )
+        );
     },
 
     // private
@@ -5854,7 +6694,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         }
         return buf.join('');
     },
-    
+
     /*
      * Protected method that will not generally be called directly. It
      * is called when the editor creates its toolbar. Override this method if you need to
@@ -5862,9 +6702,10 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
      * @param {HtmlEditor} editor
      */
     createToolbar : function(editor){
-        
+        var items = [];
         var tipsEnabled = Ext.QuickTips && Ext.QuickTips.isEnabled();
-        
+
+
         function btn(id, toggle, handler){
             return {
                 itemId : id,
@@ -5880,36 +6721,24 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
             };
         }
 
-        // build the toolbar
-        var tb = new Ext.Toolbar({
-            renderTo:this.wrap.dom.firstChild
-        });
-
-        // stop form submits
-        this.mon(tb.el, 'click', function(e){
-            e.preventDefault();
-        });
 
         if(this.enableFont && !Ext.isSafari2){
-            this.fontSelect = tb.el.createChild({
-                tag:'select',
-                cls:'x-font-select',
-                html: this.createFontOptions()
+            var fontSelectItem = new Ext.Toolbar.Item({
+               autoEl: {
+                    tag:'select',
+                    cls:'x-font-select',
+                    html: this.createFontOptions()
+               }
             });
-            this.mon(this.fontSelect, 'change', function(){
-                var font = this.fontSelect.dom.value;
-                this.relayCmd('fontname', font);
-                this.deferFocus();
-            }, this);
 
-            tb.add(
-                this.fontSelect.dom,
+            items.push(
+                fontSelectItem,
                 '-'
             );
         }
 
         if(this.enableFormat){
-            tb.add(
+            items.push(
                 btn('bold'),
                 btn('italic'),
                 btn('underline')
@@ -5917,7 +6746,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         }
 
         if(this.enableFontSize){
-            tb.add(
+            items.push(
                 '-',
                 btn('increasefontsize', false, this.adjustFont),
                 btn('decreasefontsize', false, this.adjustFont)
@@ -5925,7 +6754,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         }
 
         if(this.enableColors){
-            tb.add(
+            items.push(
                 '-', {
                     itemId:'forecolor',
                     cls:'x-btn-icon',
@@ -5980,7 +6809,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         }
 
         if(this.enableAlignments){
-            tb.add(
+            items.push(
                 '-',
                 btn('justifyleft'),
                 btn('justifycenter'),
@@ -5990,21 +6819,21 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
 
         if(!Ext.isSafari2){
             if(this.enableLinks){
-                tb.add(
+                items.push(
                     '-',
                     btn('createlink', false, this.createLink)
                 );
             }
 
             if(this.enableLists){
-                tb.add(
+                items.push(
                     '-',
                     btn('insertorderedlist'),
                     btn('insertunorderedlist')
                 );
             }
             if(this.enableSourceEdit){
-                tb.add(
+                items.push(
                     '-',
                     btn('sourceedit', true, function(btn){
                         this.toggleSourceEdit(!this.sourceEditMode);
@@ -6013,21 +6842,70 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
             }
         }
 
+        // build the toolbar
+        var tb = new Ext.Toolbar({
+            renderTo: this.wrap.dom.firstChild,
+            items: items
+        });
+
+        if (fontSelectItem) {
+            this.fontSelect = fontSelectItem.el;
+
+            this.mon(this.fontSelect, 'change', function(){
+                var font = this.fontSelect.dom.value;
+                this.relayCmd('fontname', font);
+                this.deferFocus();
+            }, this);
+        }
+
+        // stop form submits
+        this.mon(tb.el, 'click', function(e){
+            e.preventDefault();
+        });
+
         this.tb = tb;
+        this.tb.doLayout();
+    },
+
+    onDisable: function(){
+        this.wrap.mask();
+        Ext.form.HtmlEditor.superclass.onDisable.call(this);
+    },
+
+    onEnable: function(){
+        this.wrap.unmask();
+        Ext.form.HtmlEditor.superclass.onEnable.call(this);
+    },
+
+    setReadOnly: function(readOnly){
+
+        Ext.form.HtmlEditor.superclass.setReadOnly.call(this, readOnly);
+        if(this.initialized){
+            this.setDesignMode(!readOnly);
+            var bd = this.getEditorBody();
+            if(bd){
+                bd.style.cursor = this.readOnly ? 'default' : 'text';
+            }
+            this.disableItems(readOnly);
+        }
     },
 
     /**
      * Protected method that will not generally be called directly. It
      * is called when the editor initializes the iframe with HTML contents. Override this method if you
      * want to change the initialization markup of the iframe (e.g. to add stylesheets).
+     *
+     * Note: IE8-Standards has unwanted scroller behavior, so the default meta tag forces IE7 compatibility
      */
     getDocMarkup : function(){
-        return '<html><head><style type="text/css">body{border:0;margin:0;padding:3px;height:98%;cursor:text;}</style></head><body></body></html>';
+        var h = Ext.fly(this.iframe).getHeight() - this.iframePad * 2;
+        return String.format('<html><head><style type="text/css">body{border: 0; margin: 0; padding: {0}px; height: {1}px; cursor: text}</style></head><body></body></html>', this.iframePad, h);
     },
 
     // private
     getEditorBody : function(){
-        return this.doc.body || this.doc.documentElement;
+        var doc = this.getDoc();
+        return doc.body || doc.documentElement;
     },
 
     // private
@@ -6047,7 +6925,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         this.el.dom.setAttribute('tabIndex', -1);
         this.el.addClass('x-hidden');
         if(Ext.isIE){ // fix IE 1px bogus margin
-            this.el.applyStyles('margin-top:-1px;margin-bottom:-1px;')
+            this.el.applyStyles('margin-top:-1px;margin-bottom:-1px;');
         }
         this.wrap = this.el.wrap({
             cls:'x-html-editor-wrap', cn:{cls:'x-html-editor-tb'}
@@ -6056,8 +6934,8 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         this.createToolbar(this);
 
         this.disableItems(true);
-        // is this needed?
-        // this.tb.doLayout();
+
+        this.tb.doLayout();
 
         this.createIFrame();
 
@@ -6072,9 +6950,9 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         var iframe = document.createElement('iframe');
         iframe.name = Ext.id();
         iframe.frameBorder = '0';
-        iframe.src = Ext.SSL_SECURE_URL;
-        this.wrap.dom.appendChild(iframe);
+        iframe.style.overflow = 'auto';
 
+        this.wrap.dom.appendChild(iframe);
         this.iframe = iframe;
 
         this.monitorTask = Ext.TaskMgr.start({
@@ -6086,18 +6964,19 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
 
     initFrame : function(){
         Ext.TaskMgr.stop(this.monitorTask);
-        this.doc = this.getDoc();
+        var doc = this.getDoc();
         this.win = this.getWin();
 
-        this.doc.open();
-        this.doc.write(this.getDocMarkup());
-        this.doc.close();
+        doc.open();
+        doc.write(this.getDocMarkup());
+        doc.close();
 
         var task = { // must defer to wait for browser to be ready
             run : function(){
-                if(this.doc.body || this.doc.readyState == 'complete'){
+                var doc = this.getDoc();
+                if(doc.body || doc.readyState == 'complete'){
                     Ext.TaskMgr.stop(task);
-                    this.doc.designMode="on";
+                    this.setDesignMode(true);
                     this.initEditor.defer(10, this);
                 }
             },
@@ -6115,12 +6994,34 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
             if(!doc){
                 return;
             }
-            if(!doc.editorInitialized || String(doc.designMode).toLowerCase() != 'on'){
+            if(!doc.editorInitialized || this.getDesignMode() != 'on'){
                 this.initFrame();
             }
         }
     },
-    
+
+    /* private
+     * set current design mode. To enable, mode can be true or 'on', off otherwise
+     */
+    setDesignMode : function(mode){
+        var doc ;
+        if(doc = this.getDoc()){
+            if(this.readOnly){
+                mode = false;
+            }
+            doc.designMode = (/on|true/i).test(String(mode).toLowerCase()) ?'on':'off';
+        }
+
+    },
+
+    // private
+    getDesignMode : function(){
+        var doc = this.getDoc();
+        if(!doc){ return ''; }
+        return String(doc.designMode).toLowerCase();
+
+    },
+
     disableItems: function(disabled){
         if(this.fontSelect){
             this.fontSelect.dom.disabled = disabled;
@@ -6146,8 +7047,9 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
                 var ah = h - this.wrap.getFrameWidth('tb') - this.tb.el.getHeight();
                 this.el.setHeight(ah);
                 this.iframe.style.height = Math.max(ah, 0) + 'px';
-                if(this.doc){
-                    this.getEditorBody().style.height = Math.max((ah - (this.iframePad*2)), 0) + 'px';
+                var bd = this.getEditorBody();
+                if(bd){
+                    bd.style.height = Math.max((ah - (this.iframePad*2)), 0) + 'px';
                 }
             }
         }
@@ -6158,11 +7060,13 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
      * @param {Boolean} sourceEdit (optional) True for source edit, false for standard
      */
     toggleSourceEdit : function(sourceEditMode){
+        var iframeHeight, elHeight;
         if(sourceEditMode === undefined){
             sourceEditMode = !this.sourceEditMode;
         }
         this.sourceEditMode = sourceEditMode === true;
-        var btn = this.tb.items.get('sourceedit');
+        var btn = this.tb.getComponent('sourceedit');
+
         if(btn.pressed !== this.sourceEditMode){
             btn.toggle(this.sourceEditMode);
             if(!btn.xtbHidden){
@@ -6170,26 +7074,31 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
             }
         }
         if(this.sourceEditMode){
+            // grab the height of the containing panel before we hide the iframe
+            ls = this.getSize();
+
+            iframeHeight = Ext.get(this.iframe).getHeight();
+
             this.disableItems(true);
             this.syncValue();
             this.iframe.className = 'x-hidden';
             this.el.removeClass('x-hidden');
             this.el.dom.removeAttribute('tabIndex');
             this.el.focus();
+            this.el.dom.style.height = iframeHeight + 'px';
         }else{
+            elHeight = parseInt(this.el.dom.style.height, 10);
             if(this.initialized){
-                this.disableItems(false);
+                this.disableItems(this.readOnly);
             }
             this.pushValue();
             this.iframe.className = '';
             this.el.addClass('x-hidden');
             this.el.dom.setAttribute('tabIndex', -1);
             this.deferFocus();
-        }
-        var lastSize = this.lastSize;
-        if(lastSize){
-            delete this.lastSize;
-            this.setSize(lastSize);
+
+            this.setSize(ls);
+            this.iframe.style.height = elHeight + 'px';
         }
         this.fireEvent('editmodechange', this, this.sourceEditMode);
     },
@@ -6212,7 +7121,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
      * @method
      */
     markInvalid : Ext.emptyFn,
-    
+
     /**
      * Overridden and disabled. The editor element does not support standard valid/invalid marking. @hide
      * @method
@@ -6237,7 +7146,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         if(Ext.isWebKit){ // strip safari nonsense
             html = html.replace(/\sclass="(?:Apple-style-span|khtml-block-placeholder)"/gi, '');
         }
-        
+
         /*
          * Neat little hack. Strips out all the non-digit characters from the default
          * value and compares it to the character code of the first character in the string
@@ -6271,7 +7180,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
             }
         }
     },
-    
+
     //docs inherit from Field
     getValue : function() {
         this[this.sourceEditMode ? 'pushValue' : 'syncValue']();
@@ -6292,14 +7201,13 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
                 this.getEditorBody().innerHTML = v;
                 if(Ext.isGecko){
                     // Gecko hack, see: https://bugzilla.mozilla.org/show_bug.cgi?id=232791#c8
-                    var d = this.doc,
-                        mode = d.designMode.toLowerCase();
-                    
-                    d.designMode = mode.toggle('on', 'off');
-                    d.designMode = mode;
+                    this.setDesignMode(false);  //toggle off first
+
                 }
+                this.setDesignMode(true);
                 this.fireEvent('push', this, v);
             }
+
         }
     },
 
@@ -6321,40 +7229,50 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
     initEditor : function(){
         //Destroying the component during/before initEditor can cause issues.
         try{
-            var dbody = this.getEditorBody();
-            var ss = this.el.getStyles('font-size', 'font-family', 'background-image', 'background-repeat');
+            var dbody = this.getEditorBody(),
+                ss = this.el.getStyles('font-size', 'font-family', 'background-image', 'background-repeat', 'background-color', 'color'),
+                doc,
+                fn;
+
             ss['background-attachment'] = 'fixed'; // w3c
             dbody.bgProperties = 'fixed'; // ie
 
             Ext.DomHelper.applyStyles(dbody, ss);
 
-            if(this.doc){
+            doc = this.getDoc();
+
+            if(doc){
                 try{
-                    Ext.EventManager.removeAll(this.doc);
+                    Ext.EventManager.removeAll(doc);
                 }catch(e){}
             }
 
-            this.doc = this.getDoc();
-
-            Ext.EventManager.on(this.doc, {
-                'mousedown': this.onEditorEvent,
-                'dblclick': this.onEditorEvent,
-                'click': this.onEditorEvent,
-                'keyup': this.onEditorEvent,
-                buffer:100,
-                scope: this
+            /*
+             * We need to use createDelegate here, because when using buffer, the delayed task is added
+             * as a property to the function. When the listener is removed, the task is deleted from the function.
+             * Since onEditorEvent is shared on the prototype, if we have multiple html editors, the first time one of the editors
+             * is destroyed, it causes the fn to be deleted from the prototype, which causes errors. Essentially, we're just anonymizing the function.
+             */
+            fn = this.onEditorEvent.createDelegate(this);
+            Ext.EventManager.on(doc, {
+                mousedown: fn,
+                dblclick: fn,
+                click: fn,
+                keyup: fn,
+                buffer:100
             });
 
             if(Ext.isGecko){
-                Ext.EventManager.on(this.doc, 'keypress', this.applyCommand, this);
+                Ext.EventManager.on(doc, 'keypress', this.applyCommand, this);
             }
             if(Ext.isIE || Ext.isWebKit || Ext.isOpera){
-                Ext.EventManager.on(this.doc, 'keydown', this.fixKeys, this);
+                Ext.EventManager.on(doc, 'keydown', this.fixKeys, this);
             }
+            doc.editorInitialized = true;
             this.initialized = true;
-            this.fireEvent('initialize', this);
-            this.doc.editorInitialized = true;
             this.pushValue();
+            this.setReadOnly(this.readOnly);
+            this.fireEvent('initialize', this);
         }catch(e){}
     },
 
@@ -6365,23 +7283,24 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         }
         if(this.rendered){
             Ext.destroy(this.tb);
+            var doc = this.getDoc();
+            if(doc){
+                try{
+                    Ext.EventManager.removeAll(doc);
+                    for (var prop in doc){
+                        delete doc[prop];
+                    }
+                }catch(e){}
+            }
             if(this.wrap){
                 this.wrap.dom.innerHTML = '';
                 this.wrap.remove();
             }
         }
+
         if(this.el){
             this.el.removeAllListeners();
             this.el.remove();
-        }
- 
-        if(this.doc){
-            try{
-                Ext.EventManager.removeAll(this.doc);
-                for (var prop in this.doc){
-                   delete this.doc[prop];
-                }
-            }catch(e){}
         }
         this.purgeListeners();
     },
@@ -6389,7 +7308,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
     // private
     onFirstFocus : function(){
         this.activated = true;
-        this.disableItems(false);
+        this.disableItems(this.readOnly);
         if(Ext.isGecko){ // prevent silly gecko errors
             this.win.focus();
             var s = this.win.getSelection();
@@ -6409,9 +7328,9 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
 
     // private
     adjustFont: function(btn){
-        var adjust = btn.getItemId() == 'increasefontsize' ? 1 : -1;
-
-        var v = parseInt(this.doc.queryCommandValue('FontSize') || 2, 10);
+        var adjust = btn.getItemId() == 'increasefontsize' ? 1 : -1,
+            doc = this.getDoc(),
+            v = parseInt(doc.queryCommandValue('FontSize') || 2, 10);
         if((Ext.isSafari && !Ext.isSafari2) || Ext.isChrome || Ext.isAir){
             // Safari 3 values
             // 1 = 10px, 2 = 13px, 3 = 16px, 4 = 18px, 5 = 24px, 6 = 32px
@@ -6450,15 +7369,20 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
      */
     updateToolbar: function(){
 
+        if(this.readOnly){
+            return;
+        }
+
         if(!this.activated){
             this.onFirstFocus();
             return;
         }
 
-        var btns = this.tb.items.map, doc = this.doc;
+        var btns = this.tb.items.map,
+            doc = this.getDoc();
 
         if(this.enableFont && !Ext.isSafari2){
-            var name = (this.doc.queryCommandValue('FontName')||this.defaultFont).toLowerCase();
+            var name = (doc.queryCommandValue('FontName')||this.defaultFont).toLowerCase();
             if(name != this.fontSelect.dom.value){
                 this.fontSelect.dom.value = name;
             }
@@ -6477,7 +7401,7 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
             btns.insertorderedlist.toggle(doc.queryCommandState('insertorderedlist'));
             btns.insertunorderedlist.toggle(doc.queryCommandState('insertunorderedlist'));
         }
-        
+
         Ext.menu.MenuMgr.hideAll();
 
         this.syncValue();
@@ -6510,7 +7434,8 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
      * @param {String/Boolean} value (optional) The value to pass to the command (defaults to null)
      */
     execCmd : function(cmd, value){
-        this.doc.execCommand(cmd, false, value === undefined ? null : value);
+        var doc = this.getDoc();
+        doc.execCommand(cmd, false, value === undefined ? null : value);
         this.syncValue();
     },
 
@@ -6552,9 +7477,9 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
         }
         if(Ext.isIE){
             this.win.focus();
-            var r = this.doc.selection.createRange();
+            var doc = this.getDoc(),
+                r = doc.selection.createRange();
             if(r){
-                r.collapse(true);
                 r.pasteHTML(text);
                 this.syncValue();
                 this.deferFocus();
@@ -6570,17 +7495,19 @@ Ext.form.HtmlEditor = Ext.extend(Ext.form.Field, {
     fixKeys : function(){ // load time branching for fastest keydown performance
         if(Ext.isIE){
             return function(e){
-                var k = e.getKey(), r;
+                var k = e.getKey(),
+                    doc = this.getDoc(),
+                        r;
                 if(k == e.TAB){
                     e.stopEvent();
-                    r = this.doc.selection.createRange();
+                    r = doc.selection.createRange();
                     if(r){
                         r.collapse(true);
                         r.pasteHTML('&nbsp;&nbsp;&nbsp;&nbsp;');
                         this.deferFocus();
                     }
                 }else if(k == e.ENTER){
-                    r = this.doc.selection.createRange();
+                    r = doc.selection.createRange();
                     if(r){
                         var target = r.parentElement();
                         if(!target || target.tagName.toLowerCase() != 'li'){
@@ -6851,16 +7778,16 @@ new Ext.form.TimeField({
 Ext.form.TimeField = Ext.extend(Ext.form.ComboBox, {
     /**
      * @cfg {Date/String} minValue
-     * The minimum allowed time. Can be either a Javascript date object with a valid time value or a string 
-     * time in a valid format -- see {@link #format} and {@link #altFormats} (defaults to null).
+     * The minimum allowed time. Can be either a Javascript date object with a valid time value or a string
+     * time in a valid format -- see {@link #format} and {@link #altFormats} (defaults to undefined).
      */
-    minValue : null,
+    minValue : undefined,
     /**
      * @cfg {Date/String} maxValue
-     * The maximum allowed time. Can be either a Javascript date object with a valid time value or a string 
-     * time in a valid format -- see {@link #format} and {@link #altFormats} (defaults to null).
+     * The maximum allowed time. Can be either a Javascript date object with a valid time value or a string
+     * time in a valid format -- see {@link #format} and {@link #altFormats} (defaults to undefined).
      */
-    maxValue : null,
+    maxValue : undefined,
     /**
      * @cfg {String} minText
      * The error text to display when the date in the cell is before minValue (defaults to
@@ -6889,9 +7816,9 @@ Ext.form.TimeField = Ext.extend(Ext.form.ComboBox, {
     /**
      * @cfg {String} altFormats
      * Multiple date formats separated by "|" to try when parsing a user input value and it doesn't match the defined
-     * format (defaults to 'g:ia|g:iA|g:i a|g:i A|h:i|g:i|H:i|ga|ha|gA|h a|g a|g A|gi|hi|gia|hia|g|H').
+     * format (defaults to 'g:ia|g:iA|g:i a|g:i A|h:i|g:i|H:i|ga|ha|gA|h a|g a|g A|gi|hi|gia|hia|g|H|gi a|hi a|giA|hiA|gi A|hi A').
      */
-    altFormats : "g:ia|g:iA|g:i a|g:i A|h:i|g:i|H:i|ga|ha|gA|h a|g a|g A|gi|hi|gia|hia|g|H",
+    altFormats : "g:ia|g:iA|g:i a|g:i A|h:i|g:i|H:i|ga|ha|gA|h a|g a|g A|gi|hi|gia|hia|g|H|gi a|hi a|giA|hiA|gi A|hi A",
     /**
      * @cfg {Number} increment
      * The number of minutes between each time value in the list (defaults to 15).
@@ -6904,32 +7831,75 @@ Ext.form.TimeField = Ext.extend(Ext.form.ComboBox, {
     triggerAction: 'all',
     // private override
     typeAhead: false,
-    
+
     // private - This is the date to use when generating time values in the absence of either minValue
-    // or maxValue.  Using the current date causes DST issues on DST boundary dates, so this is an 
+    // or maxValue.  Using the current date causes DST issues on DST boundary dates, so this is an
     // arbitrary "safe" date that can be any date aside from DST boundary dates.
     initDate: '1/1/2008',
 
+    initDateFormat: 'j/n/Y',
+
     // private
     initComponent : function(){
-        if(typeof this.minValue == "string"){
-            this.minValue = this.parseDate(this.minValue);
+        if(Ext.isDefined(this.minValue)){
+            this.setMinValue(this.minValue, true);
         }
-        if(typeof this.maxValue == "string"){
-            this.maxValue = this.parseDate(this.maxValue);
+        if(Ext.isDefined(this.maxValue)){
+            this.setMaxValue(this.maxValue, true);
         }
-
         if(!this.store){
-            var min = this.parseDate(this.minValue) || new Date(this.initDate).clearTime();
-            var max = this.parseDate(this.maxValue) || new Date(this.initDate).clearTime().add('mi', (24 * 60) - 1);
-            var times = [];
-            while(min <= max){
-                times.push(min.dateFormat(this.format));
-                min = min.add('mi', this.increment);
-            }
-            this.store = times;
+            this.generateStore(true);
         }
         Ext.form.TimeField.superclass.initComponent.call(this);
+    },
+
+    /**
+     * Replaces any existing {@link #minValue} with the new time and refreshes the store.
+     * @param {Date/String} value The minimum time that can be selected
+     */
+    setMinValue: function(value, /* private */ initial){
+        this.setLimit(value, true, initial);
+        return this;
+    },
+
+    /**
+     * Replaces any existing {@link #maxValue} with the new time and refreshes the store.
+     * @param {Date/String} value The maximum time that can be selected
+     */
+    setMaxValue: function(value, /* private */ initial){
+        this.setLimit(value, false, initial);
+        return this;
+    },
+
+    // private
+    generateStore: function(initial){
+        var min = this.minValue || new Date(this.initDate).clearTime(),
+            max = this.maxValue || new Date(this.initDate).clearTime().add('mi', (24 * 60) - 1),
+            times = [];
+
+        while(min <= max){
+            times.push(min.dateFormat(this.format));
+            min = min.add('mi', this.increment);
+        }
+        this.bindStore(times, initial);
+    },
+
+    // private
+    setLimit: function(value, isMin, initial){
+        var d;
+        if(Ext.isString(value)){
+            d = this.parseDate(value);
+        }else if(Ext.isDate(value)){
+            d = value;
+        }
+        if(d){
+            var val = new Date(this.initDate).clearTime();
+            val.setHours(d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+            this[isMin ? 'minValue' : 'maxValue'] = val;
+            if(!initial){
+                this.generateStore();
+            }
+        }
     },
 
     // inherited docs
@@ -6945,33 +7915,207 @@ Ext.form.TimeField = Ext.extend(Ext.form.ComboBox, {
 
     // private overrides
     validateValue : Ext.form.DateField.prototype.validateValue,
-    parseDate : Ext.form.DateField.prototype.parseDate,
+
     formatDate : Ext.form.DateField.prototype.formatDate,
 
-    // private
-    beforeBlur : function(){
-        var v = this.parseDate(this.getRawValue());
-        if(v){
-            this.setValue(v.dateFormat(this.format));
+    parseDate: function(value) {
+        if (!value || Ext.isDate(value)) {
+            return value;
         }
-        Ext.form.TimeField.superclass.beforeBlur.call(this);
-    }
 
-    /**
-     * @cfg {Boolean} grow @hide
-     */
-    /**
-     * @cfg {Number} growMin @hide
-     */
-    /**
-     * @cfg {Number} growMax @hide
-     */
-    /**
-     * @hide
-     * @method autoSize
-     */
+        var id = this.initDate + ' ',
+            idf = this.initDateFormat + ' ',
+            v = Date.parseDate(id + value, idf + this.format), // *** handle DST. note: this.format is a TIME-only format
+            af = this.altFormats;
+
+        if (!v && af) {
+            if (!this.altFormatsArray) {
+                this.altFormatsArray = af.split("|");
+            }
+            for (var i = 0, afa = this.altFormatsArray, len = afa.length; i < len && !v; i++) {
+                v = Date.parseDate(id + value, idf + afa[i]);
+            }
+        }
+
+        return v;
+    }
 });
 Ext.reg('timefield', Ext.form.TimeField);/**
+ * @class Ext.form.SliderField
+ * @extends Ext.form.Field
+ * Wraps a {@link Ext.Slider Slider} so it can be used as a form field.
+ * @constructor
+ * Creates a new SliderField
+ * @param {Object} config Configuration options. Note that you can pass in any slider configuration options, as well as
+ * as any field configuration options.
+ * @xtype sliderfield
+ */
+Ext.form.SliderField = Ext.extend(Ext.form.Field, {
+    
+    /**
+     * @cfg {Boolean} useTips
+     * True to use an Ext.slider.Tip to display tips for the value. Defaults to <tt>true</tt>.
+     */
+    useTips : true,
+    
+    /**
+     * @cfg {Function} tipText
+     * A function used to display custom text for the slider tip. Defaults to <tt>null</tt>, which will
+     * use the default on the plugin.
+     */
+    tipText : null,
+    
+    // private override
+    actionMode: 'wrap',
+    
+    /**
+     * Initialize the component.
+     * @private
+     */
+    initComponent : function() {
+        var cfg = Ext.copyTo({
+            id: this.id + '-slider'
+        }, this.initialConfig, ['vertical', 'minValue', 'maxValue', 'decimalPrecision', 'keyIncrement', 'increment', 'clickToChange', 'animate']);
+        
+        // only can use it if it exists.
+        if (this.useTips) {
+            var plug = this.tipText ? {getText: this.tipText} : {};
+            cfg.plugins = [new Ext.slider.Tip(plug)];
+        }
+        this.slider = new Ext.Slider(cfg);
+        Ext.form.SliderField.superclass.initComponent.call(this);
+    },    
+    
+    /**
+     * Set up the hidden field
+     * @param {Object} ct The container to render to.
+     * @param {Object} position The position in the container to render to.
+     * @private
+     */
+    onRender : function(ct, position){
+        this.autoCreate = {
+            id: this.id,
+            name: this.name,
+            type: 'hidden',
+            tag: 'input'    
+        };
+        Ext.form.SliderField.superclass.onRender.call(this, ct, position);
+        this.wrap = this.el.wrap({cls: 'x-form-field-wrap'});
+        this.slider.render(this.wrap);
+    },
+    
+    /**
+     * Ensure that the slider size is set automatically when the field resizes.
+     * @param {Object} w The width
+     * @param {Object} h The height
+     * @param {Object} aw The adjusted width
+     * @param {Object} ah The adjusted height
+     * @private
+     */
+    onResize : function(w, h, aw, ah){
+        Ext.form.SliderField.superclass.onResize.call(this, w, h, aw, ah);
+        this.slider.setSize(w, h);    
+    },
+    
+    /**
+     * Initialize any events for this class.
+     * @private
+     */
+    initEvents : function(){
+        Ext.form.SliderField.superclass.initEvents.call(this);
+        this.slider.on('change', this.onChange, this);   
+    },
+    
+    /**
+     * Utility method to set the value of the field when the slider changes.
+     * @param {Object} slider The slider object.
+     * @param {Object} v The new value.
+     * @private
+     */
+    onChange : function(slider, v){
+        this.setValue(v, undefined, true);
+    },
+    
+    /**
+     * Enable the slider when the field is enabled.
+     * @private
+     */
+    onEnable : function(){
+        Ext.form.SliderField.superclass.onEnable.call(this);
+        this.slider.enable();
+    },
+    
+    /**
+     * Disable the slider when the field is disabled.
+     * @private
+     */
+    onDisable : function(){
+        Ext.form.SliderField.superclass.onDisable.call(this);
+        this.slider.disable();    
+    },
+    
+    /**
+     * Ensure the slider is destroyed when the field is destroyed.
+     * @private
+     */
+    beforeDestroy : function(){
+        Ext.destroy(this.slider);
+        Ext.form.SliderField.superclass.beforeDestroy.call(this);
+    },
+    
+    /**
+     * If a side icon is shown, do alignment to the slider
+     * @private
+     */
+    alignErrorIcon : function(){
+        this.errorIcon.alignTo(this.slider.el, 'tl-tr', [2, 0]);
+    },
+    
+    /**
+     * Sets the minimum field value.
+     * @param {Number} v The new minimum value.
+     * @return {Ext.form.SliderField} this
+     */
+    setMinValue : function(v){
+        this.slider.setMinValue(v);
+        return this;    
+    },
+    
+    /**
+     * Sets the maximum field value.
+     * @param {Number} v The new maximum value.
+     * @return {Ext.form.SliderField} this
+     */
+    setMaxValue : function(v){
+        this.slider.setMaxValue(v);
+        return this;    
+    },
+    
+    /**
+     * Sets the value for this field.
+     * @param {Number} v The new value.
+     * @param {Boolean} animate (optional) Whether to animate the transition. If not specified, it will default to the animate config.
+     * @return {Ext.form.SliderField} this
+     */
+    setValue : function(v, animate, /* private */ silent){
+        // silent is used if the setValue method is invoked by the slider
+        // which means we don't need to set the value on the slider.
+        if(!silent){
+            this.slider.setValue(v, animate);
+        }
+        return Ext.form.SliderField.superclass.setValue.call(this, this.slider.getValue());
+    },
+    
+    /**
+     * Gets the current value for this field.
+     * @return {Number} The current value.
+     */
+    getValue : function(){
+        return this.slider.getValue();    
+    }
+});
+
+Ext.reg('sliderfield', Ext.form.SliderField);/**
  * @class Ext.form.Label
  * @extends Ext.BoxComponent
  * Basic Label field.
@@ -7135,6 +8279,11 @@ Ext.form.Action.prototype = {
 /**
  * @cfg {String} waitTitle The title to be displayed by a call to {@link Ext.MessageBox#wait}
  * during the time the action is being processed.
+ */
+
+/**
+ * @cfg {Boolean} submitEmptyText If set to <tt>true</tt>, the emptyText value will be sent with the form
+ * when it is submitted.  Defaults to <tt>true</tt>.
  */
 
 /**
@@ -7355,10 +8504,20 @@ Ext.extend(Ext.form.Action.Submit, Ext.form.Action, {
 
     // private
     run : function(){
-        var o = this.options;
-        var method = this.getMethod();
-        var isGet = method == 'GET';
+        var o = this.options,
+            method = this.getMethod(),
+            isGet = method == 'GET';
         if(o.clientValidation === false || this.form.isValid()){
+            if (o.submitEmptyText === false) {
+                var fields = this.form.items,
+                    emptyFields = [];
+                fields.each(function(f) {
+                    if (f.el.getValue() == f.emptyText) {
+                        emptyFields.push(f);
+                        f.el.dom.value = "";
+                    }
+                });
+            }
             Ext.Ajax.request(Ext.apply(this.createCallback(o), {
                 form:this.form.el.dom,
                 url:this.getUrl(isGet),
@@ -7367,6 +8526,13 @@ Ext.extend(Ext.form.Action.Submit, Ext.form.Action, {
                 params:!isGet ? this.getParams() : null,
                 isUpload: this.form.fileUpload
             }));
+            if (o.submitEmptyText === false) {
+                Ext.each(emptyFields, function(f) {
+                    if (f.applyEmptyText) {
+                        f.applyEmptyText();
+                    }
+                });
+            }
         }else if (o.clientValidation !== false){ // client validation failed
             this.failureType = Ext.form.Action.CLIENT_INVALID;
             this.form.afterAction(this, false);
@@ -7626,7 +8792,7 @@ Ext.form.Action.DirectLoad = Ext.extend(Ext.form.Action.Load, {
         this.result = result;
         return result;
     },
-    
+
     success : function(response, trans){
         if(trans.type == Ext.Direct.exceptions.SERVER){
             response = {};
@@ -7758,7 +8924,7 @@ Ext.form.Action.DirectSubmit = Ext.extend(Ext.form.Action.Submit, {
         this.result = result;
         return result;
     },
-    
+
     success : function(response, trans){
         if(trans.type == Ext.Direct.exceptions.SERVER){
             response = {};
@@ -7811,7 +8977,7 @@ Ext.form.VTypes = function(){
     // closure these in so they are only created once.
     var alpha = /^[a-zA-Z_]+$/,
         alphanum = /^[a-zA-Z0-9_]+$/,
-        email = /^(\w+)([\-+.][\w]+)*@(\w[\-\w]*\.){1,5}([A-Za-z]){2,4}$/,
+        email = /^(\w+)([\-+.][\w]+)*@(\w[\-\w]*\.){1,5}([A-Za-z]){2,6}$/,
         url = /(((^https?)|(^ftp)):\/\/([\-\w]+\.)+\w{2,3}(\/[%\-\w]+(\.\w{2,})?)*(([\w\-\.\?\\\/+@&#;`~=%!]*)(\.\w{2,})?)*\/?)/i;
 
     // All these messages and functions are configurable

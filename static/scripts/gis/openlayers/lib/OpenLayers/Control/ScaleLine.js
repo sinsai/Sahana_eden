@@ -61,6 +61,12 @@ OpenLayers.Control.ScaleLine = OpenLayers.Class(OpenLayers.Control, {
      * {DOMElement}
      */
     eBottom:null,
+    
+    /**
+     * APIProperty: geodesic
+     * {Boolean} Use geodesic measurement. Default is false.
+     */
+    geodesic: false,
 
     /**
      * Constructor: OpenLayers.Control.ScaleLine
@@ -83,9 +89,6 @@ OpenLayers.Control.ScaleLine = OpenLayers.Class(OpenLayers.Control, {
     draw: function() {
         OpenLayers.Control.prototype.draw.apply(this, arguments);
         if (!this.eTop) {
-            this.div.style.display = "block";
-            this.div.style.position = "absolute";
-            
             // stick in the top bar
             this.eTop = document.createElement("div");
             this.eTop.className = this.displayClass + "Top";
@@ -159,7 +162,14 @@ OpenLayers.Control.ScaleLine = OpenLayers.Class(OpenLayers.Control, {
         var inches = OpenLayers.INCHES_PER_UNIT;
 
         // convert maxWidth to map units
-        var maxSizeData = this.maxWidth * res * inches[curMapUnits];  
+        var maxSizeData = this.maxWidth * res * inches[curMapUnits];
+        var geodesicRatio = 1;
+        if(this.geodesic === true) {
+            var maxSizeGeodesic = this.getGeodesicLength(this.maxWidth);
+            var maxSizeKilometers = maxSizeData / inches["km"];
+            geodesicRatio = maxSizeGeodesic / maxSizeKilometers;
+            maxSizeData *= geodesicRatio;
+        }
 
         // decide whether to use large or small scale units     
         var topUnits;
@@ -185,8 +195,8 @@ OpenLayers.Control.ScaleLine = OpenLayers.Class(OpenLayers.Control, {
         bottomMax = bottomRounded / inches[curMapUnits] * inches[bottomUnits];
 
         // and to pixel units
-        var topPx = topMax / res;
-        var bottomPx = bottomMax / res;
+        var topPx = topMax / res / geodesicRatio;
+        var bottomPx = bottomMax / res / geodesicRatio;
         
         // now set the pixel widths
         // and the values inside them
@@ -202,6 +212,26 @@ OpenLayers.Control.ScaleLine = OpenLayers.Class(OpenLayers.Control, {
         }
         
     }, 
+
+    /**
+     * Method: getGeodesicLength
+     * 
+     * Parameters:
+     * pixels - {Number} the pixels to get the geodesic length in meters for.
+     */
+    getGeodesicLength: function(pixels) {
+        var map = this.map;
+        var centerPx = map.getPixelFromLonLat(map.getCenter());
+        var bottom = map.getLonLatFromPixel(centerPx.add(0, -pixels / 2));
+        var top = map.getLonLatFromPixel(centerPx.add(0, pixels / 2));
+        var source = map.getProjectionObject();
+        var dest = new OpenLayers.Projection("EPSG:4326");
+        if(!source.equals(dest)) {
+            bottom.transform(source, dest);
+            top.transform(source, dest);
+        }
+        return OpenLayers.Util.distVincenty(bottom, top);
+    },
 
     CLASS_NAME: "OpenLayers.Control.ScaleLine"
 });

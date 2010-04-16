@@ -11,11 +11,12 @@
  * @requires OpenLayers/Geometry/Collection.js
  * @requires OpenLayers/Request/XMLHttpRequest.js
  * @requires OpenLayers/Console.js
+ * @requires OpenLayers/Projection.js
  */
 
 /**
  * Class: OpenLayers.Format.KML
- * Read/Wite KML. Create a new instance with the <OpenLayers.Format.KML>
+ * Read/Write KML. Create a new instance with the <OpenLayers.Format.KML>
  *     constructor. 
  * 
  * Inherits from:
@@ -31,19 +32,21 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
     
     /** 
      * APIProperty: placemarksDesc
-     * {String} Name of the placemarks.  Default is "No description available."
+     * {String} Name of the placemarks.  Default is "No description available".
      */
     placemarksDesc: "No description available",
     
     /** 
      * APIProperty: foldersName
-     * {String} Name of the folders.  Default is "OpenLayers export."
+     * {String} Name of the folders.  Default is "OpenLayers export".
+     *          If set to null, no name element will be created.
      */
     foldersName: "OpenLayers export",
     
     /** 
      * APIProperty: foldersDesc
      * {String} Description of the folders. Default is "Exported on [date]."
+     *          If set to null, no description element will be created.
      */
     foldersDesc: "Exported on " + new Date(),
     
@@ -122,6 +125,9 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
             kmlIconPalette: (/root:\/\/icons\/palette-(\d+)(\.\w+)/),
             straightBracket: (/\$\[(.*?)\]/g)
         };
+        // KML coordinates are always in longlat WGS84
+        this.externalProjection = new OpenLayers.Projection("EPSG:4326");
+
         OpenLayers.Format.XML.prototype.initialize.apply(this, [options]);
     },
 
@@ -271,11 +277,36 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
         for(var i=0, len=nodes.length; i<len; i++) {
             var style = this.parseStyle(nodes[i]);
             if(style) {
-                styleName = (options.styleBaseUrl || "") + "#" + style.id;
+                var styleName = (options.styleBaseUrl || "") + "#" + style.id;
                 
                 this.styles[styleName] = style;
             }
         }
+    },
+
+    /**
+     * Method: parseKmlColor
+     * Parses a kml color (in 'aabbggrr' format) and returns the corresponding 
+     * color and opacity or null if the color is invalid.
+     *
+     * Parameters: 
+     * kmlColor - {String} a kml formated color
+     *
+     * Returns:
+     * {Object}
+     */
+    parseKmlColor: function(kmlColor) {
+        var color = null;
+        if (kmlColor) {
+            var matches = kmlColor.match(this.regExes.kmlColor);
+            if (matches) {
+                color = {
+                    color: '#' + matches[4] + matches[3] + matches[2],
+                    opacity: parseInt(matches[1], 16) / 255
+                };
+            }
+        }
+        return color;
     },
 
     /**
@@ -290,7 +321,8 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
     parseStyle: function(node) {
         var style = {};
         
-        var types = ["LineStyle", "PolyStyle", "IconStyle", "BalloonStyle"];
+        var types = ["LineStyle", "PolyStyle", "IconStyle", "BalloonStyle", 
+                     "LabelStyle"];
         var type, nodeList, geometry, parser;
         for(var i=0, len=types.length; i<len; ++i) {
             type = types[i];
@@ -303,50 +335,39 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
             // only deal with first geometry of this type
             switch (type.toLowerCase()) {
                 case "linestyle":
-                    var color = this.parseProperty(styleTypeNode, "*", "color");
+                    var kmlColor = this.parseProperty(styleTypeNode, "*", "color");
+                    var color = this.parseKmlColor(kmlColor);
                     if (color) {
-                        var matches = (color.toString()).match(
-                                                         this.regExes.kmlColor);
-
-                        // transparency
-                        var alpha = matches[1];
-                        style["strokeOpacity"] = parseInt(alpha, 16) / 255;
-
-                        // rgb colors (google uses bgr)
-                        var b = matches[2]; 
-                        var g = matches[3]; 
-                        var r = matches[4]; 
-                        style["strokeColor"] = "#" + r + g + b;
+                        style["strokeColor"] = color.color;
+                        style["strokeOpacity"] = color.opacity;
                     }
                     
                     var width = this.parseProperty(styleTypeNode, "*", "width");
                     if (width) {
                         style["strokeWidth"] = width;
                     }
+                    break;
 
                 case "polystyle":
-                    var color = this.parseProperty(styleTypeNode, "*", "color");
+                    var kmlColor = this.parseProperty(styleTypeNode, "*", "color");
+                    var color = this.parseKmlColor(kmlColor);
                     if (color) {
-                        var matches = (color.toString()).match(
-                                                         this.regExes.kmlColor);
-
-                        // transparency
-                        var alpha = matches[1];
-                        style["fillOpacity"] = parseInt(alpha, 16) / 255;
-
-                        // rgb colors (google uses bgr)
-                        var b = matches[2]; 
-                        var g = matches[3]; 
-                        var r = matches[4]; 
-                        style["fillColor"] = "#" + r + g + b;
+                        style["fillOpacity"] = color.opacity;
+                        style["fillColor"] = color.color;
                     }
-                     // Check is fill is disabled
+                    // Check if fill is disabled
                     var fill = this.parseProperty(styleTypeNode, "*", "fill");
                     if (fill == "0") {
                         style["fillColor"] = "none";
                     }
+                    // Check if outline is disabled
+                    var outline = this.parseProperty(styleTypeNode, "*", "outline");
+                    if (outline == "0") {
+                        style["strokeWidth"] = "0";
+                    }
                    
                     break;
+
                 case "iconstyle":
                     // set scale
                     var scale = parseFloat(this.parseProperty(styleTypeNode, 
@@ -464,6 +485,15 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
                                        this.regExes.straightBracket, "${$1}");
                     }
                     break;
+                case "labelstyle":
+                    var kmlColor = this.parseProperty(styleTypeNode, "*", "color");
+                    var color = this.parseKmlColor(kmlColor);
+                    if (color) {
+                        style["fontColor"] = color.color;
+                        style["fontOpacity"] = color.opacity;
+                    }
+                    break;
+
                 default:
             }
         }
@@ -855,11 +885,17 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
             child = children[i];
             if(child.nodeType == 1) {
                 grandchildren = child.childNodes;
-                if(grandchildren.length == 1 || grandchildren.length == 3) {
+                if(grandchildren.length >= 1 && grandchildren.length <= 3) {
                     var grandchild;
                     switch (grandchildren.length) {
                         case 1:
                             grandchild = grandchildren[0];
+                            break;
+                        case 2:
+                            var c1 = grandchildren[0];
+                            var c2 = grandchildren[1];
+                            grandchild = (c1.nodeType == 3 || c1.nodeType == 4) ?
+                                c1 : c2;
                             break;
                         case 3:
                         default:
@@ -884,16 +920,17 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
 
     /**
      * Method: parseExtendedData
-     * Parse ExtendedData from KML. No support for schemas/datatypes.
+     * Parse ExtendedData from KML. Limited support for schemas/datatypes.
      *     See http://code.google.com/apis/kml/documentation/kmlreference.html#extendeddata
      *     for more information on extendeddata.
      */
     parseExtendedData: function(node) {
         var attributes = {};
+        var i, len, data, key;
         var dataNodes = node.getElementsByTagName("Data");
-        for (var i = 0, len = dataNodes.length; i < len; i++) {
-            var data = dataNodes[i];
-            var key = data.getAttribute("name");
+        for (i = 0, len = dataNodes.length; i < len; i++) {
+            data = dataNodes[i];
+            key = data.getAttribute("name");
             var ed = {};
             var valueNode = data.getElementsByTagName("value");
             if (valueNode.length) {
@@ -905,6 +942,16 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
             }
             attributes[key] = ed;
         }
+        var simpleDataNodes = node.getElementsByTagName("SimpleData");
+        for (i = 0, len = simpleDataNodes.length; i < len; i++) {
+            var ed = {};
+            data = simpleDataNodes[i];
+            key = data.getAttribute("name");
+            ed['value'] = this.getChildValue(data);
+            ed['displayName'] = key;
+            attributes[key] = ed;
+        }
+        
         return attributes;    
     },
     
@@ -963,21 +1010,25 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
      * {DOMElement}
      */
     createFolderXML: function() {
-        // Folder name
-        var folderName = this.createElementNS(this.kmlns, "name");
-        var folderNameText = this.createTextNode(this.foldersName); 
-        folderName.appendChild(folderNameText);
-
-        // Folder description
-        var folderDesc = this.createElementNS(this.kmlns, "description");        
-        var folderDescText = this.createTextNode(this.foldersDesc); 
-        folderDesc.appendChild(folderDescText);
-
         // Folder
         var folder = this.createElementNS(this.kmlns, "Folder");
-        folder.appendChild(folderName);
-        folder.appendChild(folderDesc);
-        
+
+        // Folder name
+        if (this.foldersName) {
+            var folderName = this.createElementNS(this.kmlns, "name");
+            var folderNameText = this.createTextNode(this.foldersName); 
+            folderName.appendChild(folderNameText);
+            folder.appendChild(folderName);
+        }
+
+        // Folder description
+        if (this.foldersDesc) {
+            var folderDesc = this.createElementNS(this.kmlns, "description");        
+            var folderDescText = this.createTextNode(this.foldersDesc); 
+            folderDesc.appendChild(folderDescText);
+            folder.appendChild(folderDesc);
+        }
+
         return folder;
     },
 
@@ -994,14 +1045,13 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
     createPlacemarkXML: function(feature) {        
         // Placemark name
         var placemarkName = this.createElementNS(this.kmlns, "name");
-        var name = (feature.attributes.name) ?
-                    feature.attributes.name : feature.id;
+        var name = feature.style && feature.style.label ? feature.style.label :
+                   feature.attributes.name || feature.id;
         placemarkName.appendChild(this.createTextNode(name));
 
         // Placemark description
         var placemarkDesc = this.createElementNS(this.kmlns, "description");
-        var desc = (feature.attributes.description) ?
-                    feature.attributes.description : this.placemarksDesc;
+        var desc = feature.attributes.description || this.placemarksDesc;
         placemarkDesc.appendChild(this.createTextNode(desc));
         
         // Placemark

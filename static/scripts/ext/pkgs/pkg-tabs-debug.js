@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -33,6 +33,9 @@
  * the active tab.</li>
  * <li><tt><b>{@link Ext.Panel#deactivate deactivate}</b></tt> : Fires when the Component that
  * was the active tab becomes deactivated.</li>
+ * <li><tt><b>{@link Ext.Panel#beforeclose beforeclose}</b></tt> : Fires when the user clicks on the close tool of a closeable tab.
+ * May be vetoed by returning <code>false</code> from a handler.</li>
+ * <li><tt><b>{@link Ext.Panel#close close}</b></tt> : Fires a closeable tab has been closed by the user.</li>
  * </ul></div>
  * <p><b><u>Creating TabPanels from Code</u></b></p>
  * <p>TabPanels can be created and rendered completely in code, as in this example:</p>
@@ -102,11 +105,6 @@ Ext.TabPanel = Ext.extend(Ext.Panel,  {
      * class name applied to the tab strip item representing the child Component, allowing special
      * styling to be applied.
      */
-    /**
-     * @cfg {Boolean} monitorResize True to automatically monitor window resize events and rerender the layout on
-     * browser resize (defaults to true).
-     */
-    monitorResize : true,
     /**
      * @cfg {Boolean} deferredRender
      * <p><tt>true</tt> by default to defer the rendering of child <tt>{@link Ext.Container#items items}</tt>
@@ -219,9 +217,9 @@ var tabs = new Ext.TabPanel({
     autoTabSelector : 'div.x-tab',
     /**
      * @cfg {String/Number} activeTab A string id or the numeric index of the tab that should be initially
-     * activated on render (defaults to none).
+     * activated on render (defaults to undefined).
      */
-    activeTab : null,
+    activeTab : undefined,
     /**
      * @cfg {Number} tabMargin The number of pixels of space to calculate into the sizing and scrolling of
      * tabs. If you change the margin in CSS, you will need to update this value so calculations are correct
@@ -324,10 +322,11 @@ var tabs = new Ext.TabPanel({
             tag:'ul', cls:'x-tab-strip x-tab-strip-'+this.tabPosition}});
 
         var beforeEl = (this.tabPosition=='bottom' ? this.stripWrap : null);
-        this.stripSpacer = st.createChild({cls:'x-tab-strip-spacer'}, beforeEl);
+        st.createChild({cls:'x-tab-strip-spacer'}, beforeEl);
         this.strip = new Ext.Element(this.stripWrap.dom.firstChild);
 
-        this.edge = this.strip.createChild({tag:'li', cls:'x-tab-edge'});
+        // create an empty span with class x-tab-strip-text to force the height of the header element when there's no tabs.
+        this.edge = this.strip.createChild({tag:'li', cls:'x-tab-edge', cn: [{tag: 'span', cls: 'x-tab-strip-text', cn: '&#160;'}]});
         this.strip.createChild({cls:'x-clear'});
 
         this.body.addClass('x-tab-panel-body-'+this.tabPosition);
@@ -357,9 +356,9 @@ new Ext.TabPanel({
     itemTpl: new Ext.XTemplate(
     '&lt;li class="{cls}" id="{id}" style="overflow:hidden">',
          '&lt;tpl if="closable">',
-            '&lt;a class="x-tab-strip-close" onclick="return false;">&lt;/a>',
+            '&lt;a class="x-tab-strip-close">&lt;/a>',
          '&lt;/tpl>',
-         '&lt;a class="x-tab-right" href="#" onclick="return false;" style="padding-left:6px">',
+         '&lt;a class="x-tab-right" href="#" style="padding-left:6px">',
             '&lt;em class="x-tab-left">',
                 '&lt;span class="x-tab-strip-inner">',
                     '&lt;img src="{src}" style="float:left;margin:3px 3px 0 0">',
@@ -396,8 +395,8 @@ new Ext.TabPanel({
          */
         if(!this.itemTpl){
             var tt = new Ext.Template(
-                 '<li class="{cls}" id="{id}"><a class="x-tab-strip-close" onclick="return false;"></a>',
-                 '<a class="x-tab-right" href="#" onclick="return false;"><em class="x-tab-left">',
+                 '<li class="{cls}" id="{id}"><a class="x-tab-strip-close"></a>',
+                 '<a class="x-tab-right" href="#"><em class="x-tab-left">',
                  '<span class="x-tab-strip-inner"><span class="x-tab-strip-text {iconCls}">{text}</span></span>',
                  '</em></a></li>'
             );
@@ -437,8 +436,9 @@ new Ext.TabPanel({
 
     // private
     findTargets : function(e){
-        var item = null;
-        var itemEl = e.getTarget('li', this.strip);
+        var item = null,
+            itemEl = e.getTarget('li:not(.x-tab-edge)', this.strip);
+
         if(itemEl){
             item = this.getComponent(itemEl.id.split(this.idDelimiter)[1]);
             if(item.disabled){
@@ -466,7 +466,6 @@ new Ext.TabPanel({
         if(t.close){
             if (t.item.fireEvent('beforeclose', t.item) !== false) {
                 t.item.fireEvent('close', t.item);
-                delete t.item.tabEl;
                 this.remove(t.item);
             }
             return;
@@ -498,8 +497,8 @@ new Ext.TabPanel({
         }
         var tabs = this.el.query(this.autoTabSelector);
         for(var i = 0, len = tabs.length; i < len; i++){
-            var tab = tabs[i];
-            var title = tab.getAttribute('title');
+            var tab = tabs[i],
+                title = tab.getAttribute('title');
             tab.removeAttribute('title');
             this.add({
                 title: title,
@@ -510,25 +509,45 @@ new Ext.TabPanel({
 
     // private
     initTab : function(item, index){
-        var before = this.strip.dom.childNodes[index];
-        var p = this.getTemplateArgs(item);
-        var el = before ?
+        var before = this.strip.dom.childNodes[index],
+            p = this.getTemplateArgs(item),
+            el = before ?
                  this.itemTpl.insertBefore(before, p) :
-                 this.itemTpl.append(this.strip, p);
+                 this.itemTpl.append(this.strip, p),
+            cls = 'x-tab-strip-over',
+            tabEl = Ext.get(el);
 
-        Ext.fly(el).addClassOnOver('x-tab-strip-over');
+        tabEl.hover(function(){
+            if(!item.disabled){
+                tabEl.addClass(cls);
+            }
+        }, function(){
+            tabEl.removeClass(cls);
+        });
 
         if(item.tabTip){
-            Ext.fly(el).child('span.x-tab-strip-text', true).qtip = item.tabTip;
+            tabEl.child('span.x-tab-strip-text', true).qtip = item.tabTip;
         }
         item.tabEl = el;
 
-        item.on('disable', this.onItemDisabled, this);
-        item.on('enable', this.onItemEnabled, this);
-        item.on('titlechange', this.onItemTitleChanged, this);
-        item.on('iconchange', this.onItemIconChanged, this);
-        item.on('beforeshow', this.onBeforeShowItem, this);
+        // Route *keyboard triggered* click events to the tab strip mouse handler.
+        tabEl.select('a').on('click', function(e){
+            if(!e.getPageX()){
+                this.onStripMouseDown(e);
+            }
+        }, this, {preventDefault: true});
+
+        item.on({
+            scope: this,
+            disable: this.onItemDisabled,
+            enable: this.onItemEnabled,
+            titlechange: this.onItemTitleChanged,
+            iconchange: this.onItemIconChanged,
+            beforeshow: this.onBeforeShowItem
+        });
     },
+
+
 
     /**
      * <p>Provides template arguments for rendering a tab selector item in the tab strip.</p>
@@ -540,7 +559,7 @@ new Ext.TabPanel({
      * <li><b>cls</b> : String<div class="sub-desc">The CSS class name</div></li>
      * <li><b>iconCls</b> : String<div class="sub-desc">A CSS class to provide appearance for an icon.</div></li>
      * </ul></div>
-     * @param {BoxComponent} item The {@link Ext.BoxComponent BoxComponent} for which to create a selector element in the tab strip.
+     * @param {Ext.BoxComponent} item The {@link Ext.BoxComponent BoxComponent} for which to create a selector element in the tab strip.
      * @return {Object} An object hash containing the properties required to render the selector element.
      */
     getTemplateArgs : function(item) {
@@ -569,7 +588,7 @@ new Ext.TabPanel({
         if(this.rendered){
             var items = this.items;
             this.initTab(c, items.indexOf(c));
-            if(items.getCount() == 1){
+            if(items.getCount() == 1 && !this.collapsed){
                 this.syncSize();
             }
             this.delegateUpdates();
@@ -591,9 +610,15 @@ new Ext.TabPanel({
 
     // private
     onRemove : function(c){
+        var te = Ext.get(c.tabEl);
+        // check if the tabEl exists, it won't if the tab isn't rendered
+        if(te){
+            te.select('a').removeAllListeners();
+            Ext.destroy(te);
+        }
         Ext.TabPanel.superclass.onRemove.call(this, c);
-        Ext.destroy(Ext.get(this.getTabEl(c)));
         this.stack.remove(c);
+        delete c.tabEl;
         c.un('disable', this.onItemDisabled, this);
         c.un('enable', this.onItemEnabled, this);
         c.un('titlechange', this.onItemTitleChanged, this);
@@ -606,10 +631,12 @@ new Ext.TabPanel({
             }else if(this.items.getCount() > 0){
                 this.setActiveTab(0);
             }else{
-                this.activeTab = null;
+                this.setActiveTab(null);
             }
         }
-        this.delegateUpdates();
+        if(!this.destroying){
+            this.delegateUpdates();
+        }
     },
 
     // private
@@ -662,7 +689,8 @@ new Ext.TabPanel({
      * @return {HTMLElement} The DOM node
      */
     getTabEl : function(item){
-        return document.getElementById(this.id + this.idDelimiter + this.getComponent(item).getItemId());
+        var c = this.getComponent(item);
+        return c ? c.tabEl : null;
     },
 
     // private
@@ -728,10 +756,10 @@ new Ext.TabPanel({
 
     // private
     autoSizeTabs : function(){
-        var count = this.items.length;
-        var ce = this.tabPosition != 'bottom' ? 'header' : 'footer';
-        var ow = this[ce].dom.offsetWidth;
-        var aw = this[ce].dom.clientWidth;
+        var count = this.items.length,
+            ce = this.tabPosition != 'bottom' ? 'header' : 'footer',
+            ow = this[ce].dom.offsetWidth,
+            aw = this[ce].dom.clientWidth;
 
         if(!this.resizeTabs || count < 1 || !aw){ // !aw for display:none
             return;
@@ -739,12 +767,12 @@ new Ext.TabPanel({
 
         var each = Math.max(Math.min(Math.floor((aw-4) / count) - this.tabMargin, this.tabWidth), this.minTabWidth); // -4 for float errors in IE
         this.lastTabWidth = each;
-        var lis = this.strip.query("li:not([className^=x-tab-edge])");
+        var lis = this.strip.query('li:not(.x-tab-edge)');
         for(var i = 0, len = lis.length; i < len; i++) {
-            var li = lis[i];
-            var inner = Ext.fly(li).child('.x-tab-strip-inner', true);
-            var tw = li.offsetWidth;
-            var iw = inner.offsetWidth;
+            var li = lis[i],
+                inner = Ext.fly(li).child('.x-tab-strip-inner', true),
+                tw = li.offsetWidth,
+                iw = inner.offsetWidth;
             inner.style.width = (each - (tw-iw)) + 'px';
         }
     },
@@ -775,7 +803,7 @@ new Ext.TabPanel({
      */
     setActiveTab : function(item){
         item = this.getComponent(item);
-        if(!item || this.fireEvent('beforetabchange', this, item, this.activeTab) === false){
+        if(this.fireEvent('beforetabchange', this, item, this.activeTab) === false){
             return;
         }
         if(!this.rendered){
@@ -788,26 +816,27 @@ new Ext.TabPanel({
                 if(oldEl){
                     Ext.fly(oldEl).removeClass('x-tab-strip-active');
                 }
-                this.activeTab.fireEvent('deactivate', this.activeTab);
             }
-            var el = this.getTabEl(item);
-            Ext.fly(el).addClass('x-tab-strip-active');
-            this.activeTab = item;
-            this.stack.add(item);
+            if(item){
+                var el = this.getTabEl(item);
+                Ext.fly(el).addClass('x-tab-strip-active');
+                this.activeTab = item;
+                this.stack.add(item);
 
-            this.layout.setActiveItem(item);
-            if(this.scrolling){
-                this.scrollToTab(item, this.animScroll);
+                this.layout.setActiveItem(item);
+                if(this.scrolling){
+                    this.scrollToTab(item, this.animScroll);
+                }
             }
-
-            item.fireEvent('activate', item);
             this.fireEvent('tabchange', this, item);
         }
     },
 
     /**
-     * Gets the currently active tab.
-     * @return {Panel} The active tab
+     * Returns the Component which is the currently active tab. <b>Note that before the TabPanel
+     * first activates a child Component, this method will return whatever was configured in the
+     * {@link #activeTab} config option.</b>
+     * @return {BoxComponent} The currently active child Component if one <i>is</i> active, or the {@link #activeTab} config value.
      */
     getActiveTab : function(){
         return this.activeTab || null;
@@ -825,15 +854,14 @@ new Ext.TabPanel({
     // private
     autoScrollTabs : function(){
         this.pos = this.tabPosition=='bottom' ? this.footer : this.header;
-        var count = this.items.length;
-        var ow = this.pos.dom.offsetWidth;
-        var tw = this.pos.dom.clientWidth;
-
-        var wrap = this.stripWrap;
-        var wd = wrap.dom;
-        var cw = wd.offsetWidth;
-        var pos = this.getScrollPos();
-        var l = this.edge.getOffsetsTo(this.stripWrap)[0] + pos;
+        var count = this.items.length,
+            ow = this.pos.dom.offsetWidth,
+            tw = this.pos.dom.clientWidth,
+            wrap = this.stripWrap,
+            wd = wrap.dom,
+            cw = wd.offsetWidth,
+            pos = this.getScrollPos(),
+            l = this.edge.getOffsetsTo(this.stripWrap)[0] + pos;
 
         if(!this.enableTabScroll || count < 1 || cw < 20){ // 20 to prevent display:none issues
             return;
@@ -945,11 +973,14 @@ new Ext.TabPanel({
      */
 
     scrollToTab : function(item, animate){
-        if(!item){ return; }
-        var el = this.getTabEl(item);
-        var pos = this.getScrollPos(), area = this.getScrollArea();
-        var left = Ext.fly(el).getOffsetsTo(this.stripWrap)[0] + pos;
-        var right = left + el.offsetWidth;
+        if(!item){
+            return;
+        }
+        var el = this.getTabEl(item),
+            pos = this.getScrollPos(),
+            area = this.getScrollArea(),
+            left = Ext.fly(el).getOffsetsTo(this.stripWrap)[0] + pos,
+            right = left + el.offsetWidth;
         if(left < pos){
             this.scrollTo(left, animate);
         }else if(right > (pos + area)){
@@ -969,9 +1000,9 @@ new Ext.TabPanel({
         var d = e.getWheelDelta()*this.wheelIncrement*-1;
         e.stopEvent();
 
-        var pos = this.getScrollPos();
-        var newpos = pos + d;
-        var sw = this.getScrollWidth()-this.getScrollArea();
+        var pos = this.getScrollPos(),
+            newpos = pos + d,
+            sw = this.getScrollWidth()-this.getScrollArea();
 
         var s = Math.max(0, Math.min(sw, newpos));
         if(s != pos){
@@ -981,9 +1012,9 @@ new Ext.TabPanel({
 
     // private
     onScrollRight : function(){
-        var sw = this.getScrollWidth()-this.getScrollArea();
-        var pos = this.getScrollPos();
-        var s = Math.min(sw, pos + this.getScrollIncrement());
+        var sw = this.getScrollWidth()-this.getScrollArea(),
+            pos = this.getScrollPos(),
+            s = Math.min(sw, pos + this.getScrollIncrement());
         if(s != pos){
             this.scrollTo(s, this.animScroll);
         }
@@ -991,8 +1022,8 @@ new Ext.TabPanel({
 
     // private
     onScrollLeft : function(){
-        var pos = this.getScrollPos();
-        var s = Math.max(0, pos - this.getScrollIncrement());
+        var pos = this.getScrollPos(),
+            s = Math.max(0, pos - this.getScrollIncrement());
         if(s != pos){
             this.scrollTo(s, this.animScroll);
         }
@@ -1007,17 +1038,9 @@ new Ext.TabPanel({
 
     // private
     beforeDestroy : function() {
-        if(this.items){
-            this.items.each(function(item){
-                if(item && item.tabEl){
-                    Ext.get(item.tabEl).removeAllListeners();
-                    item.tabEl = null;
-                }
-            }, this);
-        }
-        if(this.strip){
-            this.strip.removeAllListeners();
-        }
+        Ext.destroy(this.leftRepeater, this.rightRepeater);
+        this.deleteMembers('strip', 'edge', 'scrollLeft', 'scrollRight', 'stripWrap');
+        this.activeTab = null;
         Ext.TabPanel.superclass.beforeDestroy.apply(this);
     }
 

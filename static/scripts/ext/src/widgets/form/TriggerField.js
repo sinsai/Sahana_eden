@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -19,7 +19,7 @@ trigger.applyToMarkup('my-field');
  *
  * However, in general you will most likely want to use TriggerField as the base class for a reusable component.
  * {@link Ext.form.DateField} and {@link Ext.form.ComboBox} are perfect examples of this.
- * 
+ *
  * @constructor
  * Create a new TriggerField.
  * @param {Object} config Configuration options (valid {@Ext.form.TextField} config options will also be applied
@@ -55,16 +55,22 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
     hideTrigger:false,
     /**
      * @cfg {Boolean} editable <tt>false</tt> to prevent the user from typing text directly into the field,
-     * the field will only respond to a click on the trigger to set the value. (defaults to <tt>true</tt>)
+     * the field will only respond to a click on the trigger to set the value. (defaults to <tt>true</tt>).
      */
     editable: true,
+    /**
+     * @cfg {Boolean} readOnly <tt>true</tt> to prevent the user from changing the field, and
+     * hides the trigger.  Superceeds the editable and hideTrigger options if the value is true.
+     * (defaults to <tt>false</tt>)
+     */
+    readOnly: false,
     /**
      * @cfg {String} wrapFocusClass The class added to the to the wrap of the trigger element. Defaults to
      * <tt>x-trigger-wrap-focus</tt>.
      */
     wrapFocusClass: 'x-trigger-wrap-focus',
     /**
-     * @hide 
+     * @hide
      * @method autoSize
      */
     autoSize: Ext.emptyFn,
@@ -74,9 +80,9 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
     deferHeight : true,
     // private
     mimicing : false,
-    
+
     actionMode: 'wrap',
-    
+
     defaultTriggerWidth: 17,
 
     // private
@@ -88,10 +94,10 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         }
         this.wrap.setWidth(this.el.getWidth() + tw);
     },
-    
+
     getTriggerWidth: function(){
         var tw = this.trigger.getWidth();
-        if(!this.hideTrigger && tw === 0){
+        if(!this.hideTrigger && !this.readOnly && tw === 0){
             tw = this.defaultTriggerWidth;
         }
         return tw;
@@ -112,22 +118,78 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         this.wrap = this.el.wrap({cls: 'x-form-field-wrap x-form-field-trigger-wrap'});
         this.trigger = this.wrap.createChild(this.triggerConfig ||
                 {tag: "img", src: Ext.BLANK_IMAGE_URL, cls: "x-form-trigger " + this.triggerClass});
-        if(this.hideTrigger){
-            this.trigger.setDisplayed(false);
-        }
         this.initTrigger();
         if(!this.width){
             this.wrap.setWidth(this.el.getWidth()+this.trigger.getWidth());
         }
-        if(!this.editable){
-            this.editable = true;
-            this.setEditable(false);
-        }
         this.resizeEl = this.positionEl = this.wrap;
+    },
+
+    getWidth: function() {
+        return(this.el.getWidth() + this.trigger.getWidth());
+    },
+
+    updateEditState: function(){
+        if(this.rendered){
+            if (this.readOnly) {
+                this.el.dom.readOnly = true;
+                this.el.addClass('x-trigger-noedit');
+                this.mun(this.el, 'click', this.onTriggerClick, this);
+                this.trigger.setDisplayed(false);
+            } else {
+                if (!this.editable) {
+                    this.el.dom.readOnly = true;
+                    this.el.addClass('x-trigger-noedit');
+                    this.mon(this.el, 'click', this.onTriggerClick, this);
+                } else {
+                    this.el.dom.readOnly = false;
+                    this.el.removeClass('x-trigger-noedit');
+                    this.mun(this.el, 'click', this.onTriggerClick, this);
+                }
+                this.trigger.setDisplayed(!this.hideTrigger);
+            }
+            this.onResize(this.width || this.wrap.getWidth());
+        }
+    },
+
+    setHideTrigger: function(hideTrigger){
+        if(hideTrigger != this.hideTrigger){
+            this.hideTrigger = hideTrigger;
+            this.updateEditState();
+        }
+    },
+
+    /**
+     * @param {Boolean} value True to allow the user to directly edit the field text
+     * Allow or prevent the user from directly editing the field text.  If false is passed,
+     * the user will only be able to modify the field using the trigger.  Will also add
+     * a click event to the text field which will call the trigger. This method
+     * is the runtime equivalent of setting the 'editable' config option at config time.
+     */
+    setEditable: function(editable){
+        if(editable != this.editable){
+            this.editable = editable;
+            this.updateEditState();
+        }
+    },
+
+    /**
+     * @param {Boolean} value True to prevent the user changing the field and explicitly
+     * hide the trigger.
+     * Setting this to true will superceed settings editable and hideTrigger.
+     * Setting this to false will defer back to editable and hideTrigger. This method
+     * is the runtime equivalent of setting the 'readOnly' config option at config time.
+     */
+    setReadOnly: function(readOnly){
+        if(readOnly != this.readOnly){
+            this.readOnly = readOnly;
+            this.updateEditState();
+        }
     },
 
     afterRender : function(){
         Ext.form.TriggerField.superclass.afterRender.call(this);
+        this.updateEditState();
     },
 
     // private
@@ -143,6 +205,7 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         if (this.mimicing){
             this.doc.un('mousedown', this.mimicBlur, this);
         }
+        delete this.doc;
         Ext.form.TriggerField.superclass.onDestroy.call(this);
     },
 
@@ -189,25 +252,7 @@ Ext.form.TriggerField = Ext.extend(Ext.form.TextField,  {
         }
     },
 
-    beforeBlur : Ext.emptyFn, 
-    
-    /**
-     * Allow or prevent the user from directly editing the field text.  If false is passed,
-     * the user will only be able to modify the field using the trigger.  This method
-     * is the runtime equivalent of setting the 'editable' config option at config time.
-     * @param {Boolean} value True to allow the user to directly edit the field text
-     */
-    setEditable : function(value){
-        if(value == this.editable){
-            return;
-        }
-        this.editable = value;
-        if(!value){
-            this.el.addClass('x-trigger-noedit').on('click', this.onTriggerClick, this).dom.setAttribute('readOnly', true);
-        }else{
-            this.el.removeClass('x-trigger-noedit').un('click', this.onTriggerClick,  this).dom.removeAttribute('readOnly');
-        }
-    },
+    beforeBlur : Ext.emptyFn,
 
     // private
     // This should be overriden by any subclass that needs to check whether or not the field can be blurred.
@@ -296,7 +341,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
                 triggerField.el.setWidth(w-triggerField.trigger.getWidth());
                 this['hidden' + triggerIndex] = false;
             };
-            
+
             if(this['hide'+triggerIndex]){
                 t.dom.style.display = 'none';
                 this['hidden' + triggerIndex] = true;
@@ -307,7 +352,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
         }, this);
         this.triggers = ts.elements;
     },
-    
+
     getTriggerWidth: function(){
         var tw = 0;
         Ext.each(this.triggers, function(t, index){
@@ -321,7 +366,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
         }, this);
         return tw;
     },
-    
+
     // private
     onDestroy : function() {
         Ext.destroy(this.triggers);
@@ -331,7 +376,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
     /**
      * The function that should handle the trigger's click event.  This method does nothing by default
      * until overridden by an implementing function. See {@link Ext.form.TriggerField#onTriggerClick}
-     * for additional information.  
+     * for additional information.
      * @method
      * @param {EventObject} e
      */
@@ -339,7 +384,7 @@ Ext.form.TwinTriggerField = Ext.extend(Ext.form.TriggerField, {
     /**
      * The function that should handle the trigger's click event.  This method does nothing by default
      * until overridden by an implementing function. See {@link Ext.form.TriggerField#onTriggerClick}
-     * for additional information.  
+     * for additional information.
      * @method
      * @param {EventObject} e
      */

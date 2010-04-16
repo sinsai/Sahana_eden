@@ -7,6 +7,7 @@ uploads/*
 .raw/*
 static/scripts/ext/.docs/*
 static/scripts/ext/.examples/*
+static/scripts/ext/.test/*
 static/scripts/gis/openlayers/.apidoc_config/*
 static/scripts/gis/openlayers/.build/*
 static/scripts/gis/openlayers/.doc/*

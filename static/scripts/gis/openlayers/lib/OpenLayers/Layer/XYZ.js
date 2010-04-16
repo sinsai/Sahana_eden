@@ -72,7 +72,7 @@ OpenLayers.Layer.XYZ = OpenLayers.Class(OpenLayers.Layer.Grid, {
         if (obj == null) {
             obj = new OpenLayers.Layer.XYZ(this.name,
                                             this.url,
-                                            this.options);
+                                            this.getOptions());
         }
 
         //get all additions from superclasses
@@ -107,7 +107,6 @@ OpenLayers.Layer.XYZ = OpenLayers.Class(OpenLayers.Layer.Grid, {
         var y = Math.round((this.maxExtent.top - bounds.top) 
             / (res * this.tileSize.h));
         var z = this.map.getZoom();
-        var limit = Math.pow(2, z);
 
         var url = this.url;
         var s = '' + x + y + z;

@@ -3,6 +3,7 @@
  * full text of the license. */
 
 /* Translators (2009 onwards):
+ *  - Damouns
  *  - IAlex
  */
 
@@ -53,6 +54,14 @@ OpenLayers.Lang["fr"] = OpenLayers.Util.applyDefaults({
     'getLayerWarning': "La couche ${layerType} n\'est pas en mesure de se charger correctement.\x3cbr\x3e\x3cbr\x3ePour supprimer ce message, choisissez une nouvelle BaseLayer dans le sélecteur de couche en haut à droite.\x3cbr\x3e\x3cbr\x3eCela est possiblement causé par la non-inclusion de la librairie ${layerLib}.\x3cbr\x3e\x3cbr\x3eDéveloppeurs : pour savoir comment corriger ceci, \x3ca href=\'http://trac.openlayers.org/wiki/${layerLib}\' target=\'_blank\'\x3ecliquez ici\x3c/a\x3e",
 
     'scale': "Echelle ~ 1 : ${scaleDenom}",
+
+    'W': "O",
+
+    'E': "E",
+
+    'N': "N",
+
+    'S': "S",
 
     'layerAlreadyAdded': "Vous avez essayé d\'ajouter à la carte le calque : ${layerName}, mais il est déjà présent",
 

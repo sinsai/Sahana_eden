@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -92,6 +92,8 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.FitLayout, {
      */
     activeOnTop : false,
 
+    type: 'accordion',
+
     renderItem : function(c){
         if(this.animate === false){
             c.animCollapse = false;
@@ -110,7 +112,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.FitLayout, {
             c.collapseFirst = this.collapseFirst;
         }
         if(!this.activeItem && !c.collapsed){
-            this.activeItem = c;
+            this.setActiveItem(c, true);
         }else if(this.activeItem && this.activeItem != c){
             c.collapsed = true;
         }
@@ -118,7 +120,7 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.FitLayout, {
         c.header.addClass('x-accordion-hd');
         c.on('beforeexpand', this.beforeExpand, this);
     },
-    
+
     onRemove: function(c){
         Ext.layout.AccordionLayout.superclass.onRemove.call(this, c);
         if(c.rendered){
@@ -143,23 +145,28 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.FitLayout, {
                 ai.collapse(this.animate);
             }
         }
-        this.activeItem = p;
+        this.setActive(p);
         if(this.activeOnTop){
             p.el.dom.parentNode.insertBefore(p.el.dom, p.el.dom.parentNode.firstChild);
         }
+        // Items have been hidden an possibly rearranged, we need to get the container size again.
         this.layout();
     },
 
     // private
     setItemSize : function(item, size){
         if(this.fill && item){
-            var hh = 0;
-            this.container.items.each(function(p){
-                if(p != item){
+            var hh = 0, i, ct = this.getRenderedItems(this.container), len = ct.length, p;
+            // Add up all the header heights
+            for (i = 0; i < len; i++) {
+                if((p = ct[i]) != item){
                     hh += p.header.getHeight();
-                }    
-            });
+                }
+            };
+            // Subtract the header heights from the container size
             size.height -= hh;
+            // Call setSize on the container to set the correct height.  For Panels, deferedHeight
+            // will simply store this size for when the expansion is done.
             item.setSize(size);
         }
     },
@@ -169,15 +176,24 @@ Ext.layout.AccordionLayout = Ext.extend(Ext.layout.FitLayout, {
      * @param {String/Number} item The string component id or numeric index of the item to activate
      */
     setActiveItem : function(item){
+        this.setActive(item, true);
+    },
+
+    // private
+    setActive : function(item, expand){
+        var ai = this.activeItem;
         item = this.container.getComponent(item);
-        if(this.activeItem != item){
-            if(item.rendered && item.collapsed){
+        if(ai != item){
+            if(item.rendered && item.collapsed && expand){
                 item.expand();
             }else{
+                if(ai){
+                   ai.fireEvent('deactivate', ai);
+                }
                 this.activeItem = item;
+                item.fireEvent('activate', item);
             }
         }
-
     }
 });
 Ext.Container.LAYOUTS.accordion = Ext.layout.AccordionLayout;

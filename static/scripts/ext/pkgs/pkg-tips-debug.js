@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -94,12 +94,13 @@ tip.showAt([50,100]);
     },
 
     // protected
-    doAutoWidth : function(){
+    doAutoWidth : function(adjust){
+        adjust = adjust || 0;
         var bw = this.body.getTextWidth();
         if(this.title){
             bw = Math.max(bw, this.header.child('span').getTextWidth(this.title));
         }
-        bw += this.getFrameWidth() + (this.closable ? 20 : 0) + this.body.getPadding("lr");
+        bw += this.getFrameWidth() + (this.closable ? 20 : 0) + this.body.getPadding("lr") + adjust;
         this.setWidth(bw.constrain(this.minWidth, this.maxWidth));
         
         // IE7 repaint bug on initial show
@@ -342,18 +343,17 @@ myGrid.on('render', function(grid) {
         }
         if(this.anchor){
             this.targetCounter++;
-            var offsets = this.getOffsets();
-            var xy = (this.anchorToTarget && !this.trackMouse) ?
-                this.el.getAlignToXY(this.anchorTarget, this.getAnchorAlign()) :
-                this.targetXY;
-
-            var dw = Ext.lib.Dom.getViewWidth()-5;
-            var dh = Ext.lib.Dom.getViewHeight()-5;
-            var scrollX = (document.documentElement.scrollLeft || document.body.scrollLeft || 0)+5;
-            var scrollY = (document.documentElement.scrollTop || document.body.scrollTop || 0)+5;
-
-            var axy = [xy[0] + offsets[0], xy[1] + offsets[1]];
-            var sz = this.getSize();
+            var offsets = this.getOffsets(),
+                xy = (this.anchorToTarget && !this.trackMouse) ? this.el.getAlignToXY(this.anchorTarget, this.getAnchorAlign()) : this.targetXY,
+                dw = Ext.lib.Dom.getViewWidth() - 5,
+                dh = Ext.lib.Dom.getViewHeight() - 5,
+                de = document.documentElement,
+                bd = document.body,
+                scrollX = (de.scrollLeft || bd.scrollLeft || 0) + 5,
+                scrollY = (de.scrollTop || bd.scrollTop || 0) + 5,
+                axy = [xy[0] + offsets[0], xy[1] + offsets[1]],
+                sz = this.getSize();
+                
             this.anchorEl.removeClass(this.anchorCls);
 
             if(this.targetCounter < 2){
@@ -442,7 +442,8 @@ myGrid.on('render', function(grid) {
 
     // private
     getOffsets : function(){
-        var offsets, ap = this.getAnchorPosition().charAt(0);
+        var offsets, 
+            ap = this.getAnchorPosition().charAt(0);
         if(this.anchorToTarget && !this.trackMouse){
             switch(ap){
                 case 't':
@@ -642,7 +643,14 @@ myGrid.on('render', function(grid) {
     onDocMouseDown : function(e){
         if(this.autoHide !== true && !this.closable && !e.within(this.el.dom)){
             this.disable();
-            this.enable.defer(100, this);
+            this.doEnable.defer(100, this);
+        }
+    },
+    
+    // private
+    doEnable : function(){
+        if(!this.isDestroyed){
+            this.enable();
         }
     },
 
@@ -661,6 +669,16 @@ myGrid.on('render', function(grid) {
             }
         }
         return {x : x, y: y};
+    },
+    
+    beforeDestroy : function(){
+        this.clearTimers();
+        Ext.destroy(this.anchorEl);
+        delete this.anchorEl;
+        delete this.target;
+        delete this.anchorTarget;
+        delete this.triggerElement;
+        Ext.ToolTip.superclass.beforeDestroy.call(this);    
     },
 
     // private
@@ -762,13 +780,12 @@ Ext.QuickTip = Ext.extend(Ext.ToolTip, {
             this.clearTimer('show');
         }
     },
-
-    // private
+    
     getTipCfg: function(e) {
         var t = e.getTarget(), 
             ttp, 
             cfg;
-        if(this.interceptTitles && t.title){
+        if(this.interceptTitles && t.title && Ext.isString(t.title)){
             ttp = t.title;
             t.qtip = ttp;
             t.removeAttribute("title");
@@ -1037,4 +1054,71 @@ Ext.QuickTips = function(){
             tip.register.apply(tip, arguments);
         }
     }
-}();
+}();/**
+ * @class Ext.slider.Tip
+ * @extends Ext.Tip
+ * Simple plugin for using an Ext.Tip with a slider to show the slider value. Example usage:
+<pre>
+new Ext.Slider({
+    width: 214,
+    minValue: 0,
+    maxValue: 100,
+    plugins: new Ext.slider.Tip()
+});
+</pre>
+ * Optionally provide your own tip text by overriding getText:
+ <pre>
+ new Ext.Slider({
+     width: 214,
+     minValue: 0,
+     maxValue: 100,
+     plugins: new Ext.slider.Tip({
+         getText: function(thumb){
+             return String.format('<b>{0}% complete</b>', thumb.value);
+         }
+     })
+ });
+ </pre>
+ */
+Ext.slider.Tip = Ext.extend(Ext.Tip, {
+    minWidth: 10,
+    offsets : [0, -10],
+    
+    init: function(slider) {
+        slider.on({
+            scope    : this,
+            dragstart: this.onSlide,
+            drag     : this.onSlide,
+            dragend  : this.hide,
+            destroy  : this.destroy
+        });
+    },
+    
+    /**
+     * @private
+     * Called whenever a dragstart or drag event is received on the associated Thumb. 
+     * Aligns the Tip with the Thumb's new position.
+     * @param {Ext.slider.MultiSlider} slider The slider
+     * @param {Ext.EventObject} e The Event object
+     * @param {Ext.slider.Thumb} thumb The thumb that the Tip is attached to
+     */
+    onSlide : function(slider, e, thumb) {
+        this.show();
+        this.body.update(this.getText(thumb));
+        this.doAutoWidth();
+        this.el.alignTo(thumb.el, 'b-t?', this.offsets);
+    },
+
+    /**
+     * Used to create the text that appears in the Tip's body. By default this just returns
+     * the value of the Slider Thumb that the Tip is attached to. Override to customize.
+     * @param {Ext.slider.Thumb} thumb The Thumb that the Tip is attached to
+     * @return {String} The text to display in the tip
+     */
+    getText : function(thumb) {
+        return String(thumb.value);
+    }
+});
+
+//backwards compatibility - SliderTip used to be a ux before 3.2
+Ext.ux.SliderTip = Ext.slider.Tip;

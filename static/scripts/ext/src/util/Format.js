@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -10,7 +10,11 @@
  * @singleton
  */
 Ext.util.Format = function(){
-    var trimRe = /^\s+|\s+$/g;
+    var trimRe = /^\s+|\s+$/g,
+        stripTagsRE = /<\/?[^>]+>/gi,
+        stripScriptsRe = /(?:<script.*?>)((\n|\r|.)*?)(?:<\/script>)/ig,
+        nl2brRe = /\r?\n/g;
+
     return {
         /**
          * Truncate a string and add an ellipsis ('...') to the end if it exceeds the specified length
@@ -22,8 +26,8 @@ Ext.util.Format = function(){
         ellipsis : function(value, len, word){
             if(value && value.length > len){
                 if(word){
-                    var vs = value.substr(0, len - 2);
-                    var index = Math.max(vs.lastIndexOf(' '), vs.lastIndexOf('.'), vs.lastIndexOf('!'), vs.lastIndexOf('?'));
+                    var vs = value.substr(0, len - 2),
+                        index = Math.max(vs.lastIndexOf(' '), vs.lastIndexOf('.'), vs.lastIndexOf('!'), vs.lastIndexOf('?'));
                     if(index == -1 || index < (len - 15)){
                         return value.substr(0, len - 3) + "...";
                     }else{
@@ -140,10 +144,10 @@ Ext.util.Format = function(){
             v = (Math.round((v-0)*100))/100;
             v = (v == Math.floor(v)) ? v + ".00" : ((v*10 == Math.floor(v*10)) ? v + "0" : v);
             v = String(v);
-            var ps = v.split('.');
-            var whole = ps[0];
-            var sub = ps[1] ? '.'+ ps[1] : '.00';
-            var r = /(\d+)(\d{3})/;
+            var ps = v.split('.'),
+                whole = ps[0],
+                sub = ps[1] ? '.'+ ps[1] : '.00',
+                r = /(\d+)(\d{3})/;
             while (r.test(whole)) {
                 whole = whole.replace(r, '$1' + ',' + '$2');
             }
@@ -181,19 +185,14 @@ Ext.util.Format = function(){
             };
         },
 
-        // private
-        stripTagsRE : /<\/?[^>]+>/gi,
-        
         /**
          * Strips all HTML tags
          * @param {Mixed} value The text from which to strip tags
          * @return {String} The stripped text
          */
         stripTags : function(v){
-            return !v ? v : String(v).replace(this.stripTagsRE, "");
+            return !v ? v : String(v).replace(stripTagsRE, "");
         },
-
-        stripScriptsRe : /(?:<script.*?>)((\n|\r|.)*?)(?:<\/script>)/ig,
 
         /**
          * Strips all script tags
@@ -201,7 +200,7 @@ Ext.util.Format = function(){
          * @return {String} The stripped text
          */
         stripScripts : function(v){
-            return !v ? v : String(v).replace(this.stripScriptsRe, "");
+            return !v ? v : String(v).replace(stripScriptsRe, "");
         },
 
         /**
@@ -269,56 +268,61 @@ Ext.util.Format = function(){
          */
         number: function(v, format) {
             if(!format){
-		        return v;
-		    }
-		    v = Ext.num(v, NaN);
+                return v;
+            }
+            v = Ext.num(v, NaN);
             if (isNaN(v)){
                 return '';
             }
-		    var comma = ',',
-		        dec = '.',
-		        i18n = false,
-		        neg = v < 0;
-		
-		    v = Math.abs(v);
-		    if(format.substr(format.length - 2) == '/i'){
-		        format = format.substr(0, format.length - 2);
-		        i18n = true;
-		        comma = '.';
-		        dec = ',';
-		    }
-		
-		    var hasComma = format.indexOf(comma) != -1, 
-		        psplit = (i18n ? format.replace(/[^\d\,]/g, '') : format.replace(/[^\d\.]/g, '')).split(dec);
-		
-		    if(1 < psplit.length){
-		        v = v.toFixed(psplit[1].length);
-		    }else if(2 < psplit.length){
-		        throw ('NumberFormatException: invalid format, formats should have no more than 1 period: ' + format);
-		    }else{
-		        v = v.toFixed(0);
-		    }
-		
-		    var fnum = v.toString();
-		    if(hasComma){
-		        psplit = fnum.split('.');
-		
-		        var cnum = psplit[0], parr = [], j = cnum.length, m = Math.floor(j / 3), n = cnum.length % 3 || 3;
-		
-		        for(var i = 0; i < j; i += n){
-		            if(i != 0){
-		                n = 3;
-		            }
-		            parr[parr.length] = cnum.substr(i, n);
-		            m -= 1;
-		        }
-		        fnum = parr.join(comma);
-		        if(psplit[1]){
-		            fnum += dec + psplit[1];
-		        }
-		    }
-		
-		    return (neg ? '-' : '') + format.replace(/[\d,?\.?]+/, fnum);
+            var comma = ',',
+                dec = '.',
+                i18n = false,
+                neg = v < 0;
+
+            v = Math.abs(v);
+            if(format.substr(format.length - 2) == '/i'){
+                format = format.substr(0, format.length - 2);
+                i18n = true;
+                comma = '.';
+                dec = ',';
+            }
+
+            var hasComma = format.indexOf(comma) != -1,
+                psplit = (i18n ? format.replace(/[^\d\,]/g, '') : format.replace(/[^\d\.]/g, '')).split(dec);
+
+            if(1 < psplit.length){
+                v = v.toFixed(psplit[1].length);
+            }else if(2 < psplit.length){
+                throw ('NumberFormatException: invalid format, formats should have no more than 1 period: ' + format);
+            }else{
+                v = v.toFixed(0);
+            }
+
+            var fnum = v.toString();
+
+            psplit = fnum.split('.');
+
+            if (hasComma) {
+                var cnum = psplit[0], parr = [], j = cnum.length, m = Math.floor(j / 3), n = cnum.length % 3 || 3;
+
+                for (var i = 0; i < j; i += n) {
+                    if (i != 0) {
+                        n = 3;
+                    }
+                    parr[parr.length] = cnum.substr(i, n);
+                    m -= 1;
+                }
+                fnum = parr.join(comma);
+                if (psplit[1]) {
+                    fnum += dec + psplit[1];
+                }
+            } else {
+                if (psplit[1]) {
+                    fnum = psplit[0] + dec + psplit[1];
+                }
+            }
+
+            return (neg ? '-' : '') + format.replace(/[\d,?\.?]+/, fnum);
         },
 
         /**
@@ -343,14 +347,14 @@ Ext.util.Format = function(){
         plural : function(v, s, p){
             return v +' ' + (v == 1 ? s : (p ? p : s+'s'));
         },
-        
+
         /**
          * Converts newline characters to the HTML tag &lt;br/>
          * @param {String} The string value to format.
          * @return {String} The string with embedded &lt;br/> tags in place of newlines.
          */
         nl2br : function(v){
-            return v === undefined || v === null ? '' : v.replace(/\n/g, '<br/>');
+            return Ext.isEmpty(v) ? '' : v.replace(nl2brRe, '<br/>');
         }
     }
 }();

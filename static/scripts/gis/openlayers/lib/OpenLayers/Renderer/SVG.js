@@ -41,16 +41,26 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
     translationParameters: null,
     
     /**
-     * Property: symbolSize
-     * {Object} Cache for symbol sizes according to their svg coordinate space
+     * Property: symbolMetrics
+     * {Object} Cache for symbol metrics according to their svg coordinate
+     *     space. This is an object keyed by the symbol's id, and values are
+     *     an array of [width, centerX, centerY].
      */
-    symbolSize: {},
+    symbolMetrics: null,
     
     /**
      * Property: isGecko
      * {Boolean}
      */
     isGecko: null,
+
+    /**
+     * Property: supportUse
+     * {Boolean} true if defs/use is supported - known to not work as expected
+     * at least in some applewebkit/5* builds.
+     * See https://bugs.webkit.org/show_bug.cgi?id=33322
+     */
+    supportUse: null,
 
     /**
      * Constructor: OpenLayers.Renderer.SVG
@@ -65,7 +75,10 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
         OpenLayers.Renderer.Elements.prototype.initialize.apply(this, 
                                                                 arguments);
         this.translationParameters = {x: 0, y: 0};
+        this.supportUse = (navigator.userAgent.toLowerCase().indexOf("applewebkit/5") == -1);
         this.isGecko = (navigator.userAgent.toLowerCase().indexOf("gecko/") != -1);
+        
+        this.symbolMetrics = {};
     },
 
     /**
@@ -208,7 +221,7 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
                 if (style.externalGraphic) {
                     nodeType = "image";
                 } else if (this.isComplexSymbol(style.graphicName)) {
-                    nodeType = "use";
+                    nodeType = this.supportUse === false ? "svg" : "use";
                 } else {
                     nodeType = "circle";
                 }
@@ -288,9 +301,8 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
                 var offset = style.pointRadius * 3;
                 var size = offset * 2;
                 var id = this.importSymbol(style.graphicName);
-                var href = "#" + id;
                 pos = this.getPosition(node);
-                widthFactor = this.symbolSize[id] / size;
+                widthFactor = this.symbolMetrics[id][0] * 3 / size;
                 
                 // remove the node from the dom before we modify it. This
                 // prevents various rendering issues in Safari and FF
@@ -300,7 +312,17 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
                     parent.removeChild(node);
                 }
                 
-                node.setAttributeNS(this.xlinkns, "href", href);
+                if(this.supportUse === false) {
+                    // workaround for webkit versions that cannot do defs/use
+                    // (see https://bugs.webkit.org/show_bug.cgi?id=33322):
+                    // copy the symbol instead of referencing it
+                    var src = document.getElementById(id);
+                    node.firstChild && node.removeChild(node.firstChild);
+                    node.appendChild(src.firstChild.cloneNode(true));
+                    node.setAttributeNS(null, "viewBox", src.getAttributeNS(null, "viewBox"));
+                } else {
+                    node.setAttributeNS(this.xlinkns, "href", "#" + id);
+                }
                 node.setAttributeNS(null, "width", size);
                 node.setAttributeNS(null, "height", size);
                 node.setAttributeNS(null, "x", pos.x - offset);
@@ -317,10 +339,20 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
                 node.setAttributeNS(null, "r", style.pointRadius);
             }
 
-            if (typeof style.rotation != "undefined" && pos) {
-                var rotation = OpenLayers.String.format(
-                    "rotate(${0} ${1} ${2})", [style.rotation, pos.x, pos.y]);
-                node.setAttributeNS(null, "transform", rotation);
+            var rotation = style.rotation;
+            if (node._rotation !== rotation && pos) {
+                node._rotation = rotation;
+                rotation |= 0;
+                if(node.nodeName !== "svg") {
+                    node.setAttributeNS(null, "transform",
+                        "rotate(" + rotation + " " + pos.x + " " +
+                        pos.y + ")");
+                } else {
+                     var metrics = this.symbolMetrics[id]
+                     node.firstChild.setAttributeNS(null, "transform",
+                     "rotate(" + style.rotation + " " + metrics[1] +
+                         " " +  metrics[2] + ")");
+                }
             }
         }
         
@@ -677,6 +709,9 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
         if (style.fontColor) {
             label.setAttributeNS(null, "fill", style.fontColor);
         }
+        if (style.fontOpacity) {
+            label.setAttributeNS(null, "opacity", style.fontOpacity);
+        }
         if (style.fontFamily) {
             label.setAttributeNS(null, "font-family", style.fontFamily);
         }
@@ -901,10 +936,34 @@ OpenLayers.Renderer.SVG = OpenLayers.Class(OpenLayers.Renderer.Elements, {
         var viewBox = [symbolExtent.left - width,
                         symbolExtent.bottom - height, width * 3, height * 3];
         symbolNode.setAttributeNS(null, "viewBox", viewBox.join(" "));
-        this.symbolSize[id] = Math.max(width, height) * 3;
+        this.symbolMetrics[id] = [
+            Math.max(width, height),
+            symbolExtent.getCenterLonLat().lon,
+            symbolExtent.getCenterLonLat().lat
+        ];
         
         this.defs.appendChild(symbolNode);
         return symbolNode.id;
+    },
+    
+    /**
+     * Method: getFeatureIdFromEvent
+     * 
+     * Parameters:
+     * evt - {Object} An <OpenLayers.Event> object
+     *
+     * Returns:
+     * {<OpenLayers.Geometry>} A geometry from an event that 
+     *     happened on a layer.
+     */
+    getFeatureIdFromEvent: function(evt) {
+        var featureId = OpenLayers.Renderer.Elements.prototype.getFeatureIdFromEvent.apply(this, arguments);
+        if(this.supportUse === false && !featureId) {
+            var target = evt.target;
+            featureId = target.parentNode && target != this.rendererRoot &&
+                target.parentNode._featureId;
+        }
+        return featureId;
     },
 
     CLASS_NAME: "OpenLayers.Renderer.SVG"

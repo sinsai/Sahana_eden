@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -11,23 +11,7 @@
  * <p>While subclasses are provided to render data in different ways, this class renders a passed
  * data field unchanged and is usually used for textual columns.</p>
  */
-Ext.grid.Column = function(config){
-    Ext.apply(this, config);
-
-    if(Ext.isString(this.renderer)){
-        this.renderer = Ext.util.Format[this.renderer];
-    } else if(Ext.isObject(this.renderer)){
-        this.scope = this.renderer.scope;
-        this.renderer = this.renderer.fn;
-    }
-    this.renderer = this.renderer.createDelegate(this.scope || config);
-
-    if(this.editor){
-        this.editor = Ext.create(this.editor, 'textfield');
-    }
-};
-
-Ext.grid.Column.prototype = {
+Ext.grid.Column = Ext.extend(Object, {
     /**
      * @cfg {Boolean} editable Optional. Defaults to <tt>true</tt>, enabling the configured
      * <tt>{@link #editor}</tt>.  Set to <tt>false</tt> to initially disable editing on this column.
@@ -127,7 +111,7 @@ Ext.grid.Column.prototype = {
      * @cfg {Boolean} hidden
      * Optional. <tt>true</tt> to initially hide this column. Defaults to <tt>false</tt>.
      * A hidden column {@link Ext.grid.GridPanel#enableColumnHide may be shown via the header row menu}.
-     * If a column is never to be shown, simply do not include this column in the Column Model at all. 
+     * If a column is never to be shown, simply do not include this column in the Column Model at all.
      */
     /**
      * @cfg {String} tooltip Optional. A text string to use as the column header's tooltip.  If Quicktips
@@ -233,6 +217,24 @@ var grid = new Ext.grid.GridPanel({
      */
     isColumn : true,
 
+    constructor : function(config){
+        Ext.apply(this, config);
+
+        if(Ext.isString(this.renderer)){
+            this.renderer = Ext.util.Format[this.renderer];
+        }else if(Ext.isObject(this.renderer)){
+            this.scope = this.renderer.scope;
+            this.renderer = this.renderer.fn;
+        }
+        if(!this.scope){
+            this.scope = this;
+        }
+
+        var ed = this.editor;
+        delete this.editor;
+        this.setEditor(ed);
+    },
+
     /**
      * Optional. A function which returns displayable data when passed the following parameters:
      * <div class="mdetail-params"><ul>
@@ -264,26 +266,48 @@ var grid = new Ext.grid.GridPanel({
     },
 
     /**
+     * Sets a new editor for this column.
+     * @param {Ext.Editor/Ext.form.Field} editor The editor to set
+     */
+    setEditor : function(editor){
+        var ed = this.editor;
+        if(ed){
+            if(ed.gridEditor){
+                ed.gridEditor.destroy();
+                delete ed.gridEditor;
+            }else{
+                ed.destroy();
+            }
+        }
+        this.editor = null;
+        if(editor){
+            //not an instance, create it
+            if(!editor.isXType){
+                editor = Ext.create(editor, 'textfield');
+            }
+            this.editor = editor;
+        }
+    },
+
+    /**
      * Returns the {@link Ext.Editor editor} defined for this column that was created to wrap the {@link Ext.form.Field Field}
      * used to edit the cell.
      * @param {Number} rowIndex The row index
      * @return {Ext.Editor}
      */
     getCellEditor: function(rowIndex){
-        var editor = this.getEditor(rowIndex);
-        if(editor){
-            if(!editor.startEdit){
-                if(!editor.gridEditor){
-                    editor.gridEditor = new Ext.grid.GridEditor(editor);
+        var ed = this.getEditor(rowIndex);
+        if(ed){
+            if(!ed.startEdit){
+                if(!ed.gridEditor){
+                    ed.gridEditor = new Ext.grid.GridEditor(ed);
                 }
-                return editor.gridEditor;
-            }else if(editor.startEdit){
-                return editor;
+                ed = ed.gridEditor;
             }
         }
-        return null;
+        return ed;
     }
-};
+});
 
 /**
  * @class Ext.grid.BooleanColumn
@@ -379,7 +403,7 @@ Ext.grid.TemplateColumn = Ext.extend(Ext.grid.Column, {
      */
     constructor: function(cfg){
         Ext.grid.TemplateColumn.superclass.constructor.call(this, cfg);
-        var tpl = Ext.isObject(this.tpl) ? this.tpl : new Ext.XTemplate(this.tpl);
+        var tpl = (!Ext.isPrimitive(this.tpl) && this.tpl.compile) ? this.tpl : new Ext.XTemplate(this.tpl);
         this.renderer = function(value, p, r){
             return tpl.apply(r.data);
         };

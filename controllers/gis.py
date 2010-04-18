@@ -1699,21 +1699,12 @@ def display_features():
     #retrieve the location_id's from xml_tree using XPath
 
     # Calculate an appropriate BBox
-    # ToDo: Move to modules/s3gis
-    lon_max = -180
-    lon_min = 180
-    lat_max = -90
-    lat_min = 90
-    for feature in features:
-        if feature.lon > lon_max:
-            lon_max = feature.lon
-        if feature.lon < lon_min:
-            lon_min = feature.lon
-        if feature.lat > lat_max:
-            lat_max = feature.lat
-        if feature.lat < lat_min:
-            lat_min = feature.lat
-
+    bounds = gis.get_bounds(features=features)
+    lon_max = bounds['max_lon']
+    lon_min = bounds['min_lon']
+    lat_max = bounds['max_lat']
+    lat_min = bounds['min_lat']
+    
     #bbox = str(lon_min) + ',' + str(lat_min) + ',' + str(lon_max) + ',' + str(lat_max)
     #We now project these client-side, so pass raw info (client-side projection means less server-side dependencies)
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)

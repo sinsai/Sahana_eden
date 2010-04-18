@@ -19,6 +19,7 @@
 	
     addLayers(map);
     
+    var strategy = new OpenLayers.Strategy.Cluster({distance: {{=cluster_distance}}, threshold: {{=cluster_threshold}}});
     {{include 'gis/ol_layers_features.js'}}
     
 	{{include 'gis/ol_controls.js'}}

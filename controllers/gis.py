@@ -1646,7 +1646,7 @@ def display_feature():
     # Add the Base Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
     # Don't want confusing overlays
-    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[]))
+    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[], mgrs=[]))
 
     return output
 
@@ -1801,8 +1801,10 @@ def display_features():
 
     # Layers
     baselayers = layers()
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+    # Add the Base Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    # Don't want confusing overlays
+    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[], mgrs=[]))
 
     return output
 

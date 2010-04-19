@@ -304,11 +304,9 @@ s3xrc.model.add_component(module, resource,
         "time",
         "location_id",
         "location_details",
-        "lat",
-        "lon",
         "opt_pr_presence_condition",
-        "origin",
-        "destination"])
+        "orig_id",
+        "dest_id"])
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)

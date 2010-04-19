@@ -151,8 +151,7 @@ class RESTController(object):
             if jr.representation == 'html':
                 search_simple = self.rc.model.get_method(jr.prefix, jr.name, method="search_simple")
                 if search_simple:
-                    jr.method = "search_simple"
-                    jr.custom_action = search_simple
+                    redirect(URL(r=request, f=jr.name, args='search_simple', vars={"_next": jr.same()}))
                 else:
                     session.error = self.BADRECORD
                     redirect(URL(r=jr.request, c=jr.prefix, f=jr.name))

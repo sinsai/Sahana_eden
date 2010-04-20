@@ -304,8 +304,6 @@ s3xrc.model.add_component(module, resource,
         "time",
         "location_id",
         "location_details",
-        #"lat",
-        #"lon",
         "opt_pr_presence_condition",
         "orig_id",
         "dest_id"])

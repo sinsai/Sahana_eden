@@ -74,6 +74,16 @@ symbology_id = SQLTable(None, 'symbology_id',
                 ))
 
 # GIS Config
+gis_config_layout_opts = {
+    1:T("window"),
+    2:T("embedded")
+    }
+opt_gis_layout = SQLTable(None, "opt_gis_layout",
+                    Field("opt_gis_layout", "integer",
+                        requires = IS_IN_SET(gis_config_layout_opts),
+                        default = 1,
+                        label = T("Layout"),
+                        represent = lambda opt: gis_config_layout_opts.get(opt, T("Unknown"))))
 # id=1 = Default settings
 # separated from Framework settings above
 # ToDo Extend for per-user Profiles - this is the WMC
@@ -95,6 +105,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 Field('zoom_levels', 'integer', default=16, notnull=True),
                 Field('cluster_distance', 'integer', default=5, notnull=True),
                 Field('cluster_threshold', 'integer', default=2, notnull=True),
+                opt_gis_layout,
                 migrate=migrate)
 
 # GIS Feature Classes

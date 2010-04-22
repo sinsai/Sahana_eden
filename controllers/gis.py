@@ -1467,9 +1467,10 @@ def map_viewing_client():
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
-
+    layout = config.opt_gis_layout
+    
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
 
     # Layers
     baselayers = layers()
@@ -1589,9 +1590,10 @@ def display_feature():
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
-
+    layout = config.opt_gis_layout
+    
     # Add the config to the Return
-    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold)
+    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout)
 
     # Feature details
     try:
@@ -1736,9 +1738,10 @@ def display_features():
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
-
+    layout = config.opt_gis_layout
+    
     # Add the config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
 
     # Feature details
     for feature in features:

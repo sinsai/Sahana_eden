@@ -78,13 +78,14 @@ Ext.onReady(function() {
     });
     
     var win = new Ext.Window({
+	//var win = new Ext.Viewport({
 		//title    : 'Sahana Map Viewing Client',
 		collapsible: true,
 		maximizable: true,
 		titleCollapse: true,
 		width: {{=width}},
 		height: {{=height}},
-		layout: 'border',
+        layout: 'border',
 		items:  [{
                     region: "west",
                     id: "tools",

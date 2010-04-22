@@ -18,6 +18,7 @@ static/scripts/gis/openlayers/.tools/*
 static/scripts/gis/geoext/.build/*
 static/scripts/gis/geoext/.examples/*
 static/scripts/gis/geoext/.tests/*
+static/scripts/gis/mapfish/.tests/*
 static/selenium/results/*
 static/*/.svn/*
 static/*test*

@@ -19,5 +19,10 @@
     style_marker.externalGraphic = iconURL;
     var gpxLayer{{=name}} = new OpenLayers.Layer.GML( "{{=layer}}", "{{=URL(r=request, c='default', f='download', args=gpx_layers[layer].url)}}", {
         format: OpenLayers.Format.GPX, style: style_marker, projection: proj4326});
+    {{if gpx_layers[layer].visibility:}}
+      gpxLayer{{=name}}.setVisibility(true);
+    {{else:}}
+      gpxLayer{{=name}}.setVisibility(false);
+    {{pass}}
     map.addLayer(gpxLayer{{=name}});
 {{pass}}

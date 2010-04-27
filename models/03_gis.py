@@ -169,7 +169,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('lat_min', 'double', writable=False, readable=False), # bounding-box
                 Field('lon_max', 'double', writable=False, readable=False), # bounding-box
                 Field('lat_max', 'double', writable=False, readable=False), # bounding-box
-                Field('elevation', 'integer', writable=False, readable=False),   # m in height above sea-level. not displayed currently
+                Field('elevation', 'integer', writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
+                Field('ce', 'integer', writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
+                Field('le', 'integer', writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                 admin_id,
                 migrate=migrate)
 
@@ -324,7 +326,7 @@ gis_layer = SQLTable(db, 'gis_layer', timestamp,
             Field('name', notnull=True, label=T('Name'), requires=IS_NOT_EMPTY(), comment=SPAN("*", _class="req")),
             Field('description', label=T('Description')),
             #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
-            Field('enabled', 'boolean', default=True, label=T('Enabled?')))
+            Field('enabled', 'boolean', default=True, label=T('Available in Viewer?')))
 for layertype in gis_layer_types:
     resource = 'layer_' + layertype
     tablename = "%s_%s" % (module, resource)
@@ -337,6 +339,7 @@ for layertype in gis_layer_types:
     elif layertype == "georss":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             Field('url', label=T('Location')),
             projection_id,
             marker_id)
@@ -349,6 +352,7 @@ for layertype in gis_layer_types:
     elif layertype == "gpx":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             #Field('url', label=T('Location')),
             track_id,
             marker_id)
@@ -356,6 +360,7 @@ for layertype in gis_layer_types:
     elif layertype == "kml":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             Field('url', label=T('Location')))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "js":
@@ -378,6 +383,7 @@ for layertype in gis_layer_types:
     elif layertype == "wms":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             Field('url', label=T('Location')),
             Field('base', 'boolean', default=True, label=T('Base Layer?')),
             Field('map', label=T('Map')),

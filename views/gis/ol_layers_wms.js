@@ -19,7 +19,12 @@
       {{pass}}  
       {{if wms_layers[layer].base:}}
       {{else:}}
-        , { isBaseLayer: false }
+        , { isBaseLayer: false
+          {{if wms_layers[layer].visibility:}}
+          {{else:}}
+            , visibility: false
+          {{pass}}
+        }
       {{pass}}
         );
     map.addLayer(wmsLayer{{=name}});

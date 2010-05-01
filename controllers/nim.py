@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-#
-# NIM Nursing Information Manager
-#
-# created 2009-12-01 by nursix
-#
+"""
+    Nursing Information Manager - Controllers
+
+    @author: nursix
+"""
 
 module = 'nim'
 

@@ -1,4 +1,4 @@
-﻿<link href="/{{=request.application}}/static/styles/S3/colorbox.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+<link href="/{{=request.application}}/static/styles/S3/colorbox.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 {{if session.s3.debug:}}
  <script src="/{{=request.application}}/static/scripts/S3/jquery.colorbox.js" type="text/javascript" charset="utf-8"></script>
 {{else:}}
@@ -6,7 +6,7 @@
 {{pass}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function(){
-        $(".thickbox").click(function(){
+        $(".colorbox").click(function(){
        $.fn.colorbox({iframe:true,width:"80%",height:"80%",href:this.href,title:this.title});
        });
         });

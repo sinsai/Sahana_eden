@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -9,20 +9,7 @@
  * @extends Ext.data.DataWriter
  * DataWriter extension for writing an array or single {@link Ext.data.Record} object(s) in preparation for executing a remote CRUD action.
  */
-Ext.data.JsonWriter = function(config) {
-    Ext.data.JsonWriter.superclass.constructor.call(this, config);
-
-    // careful to respect "returnJson", renamed to "encode"
-    // TODO: remove after v3 final release
-    if (this.returnJson != undefined) {
-        this.encode = this.returnJson;
-    }
-}
-Ext.extend(Ext.data.JsonWriter, Ext.data.DataWriter, {
-    /**
-     * @cfg {Boolean} returnJson <b>Deprecated</b>.  Use {@link Ext.data.JsonWriter#encode} instead.
-     */
-    returnJson : undefined,
+Ext.data.JsonWriter = Ext.extend(Ext.data.DataWriter, {
     /**
      * @cfg {Boolean} encode <tt>true</tt> to {@link Ext.util.JSON#encode encode} the
      * {@link Ext.data.DataWriter#toHash hashed data}. Defaults to <tt>true</tt>.  When using
@@ -34,20 +21,34 @@ Ext.extend(Ext.data.JsonWriter, Ext.data.DataWriter, {
      * let the lower-level connection object (eg: Ext.Ajax) do the encoding.
      */
     encode : true,
+    /**
+     * @cfg {Boolean} encodeDelete False to send only the id to the server on delete, true to encode it in an object
+     * literal, eg: <pre><code>
+{id: 1}
+ * </code></pre> Defaults to <tt>false</tt>
+     */
+    encodeDelete: false,
+    
+    constructor : function(config){
+        Ext.data.JsonWriter.superclass.constructor.call(this, config);    
+    },
 
     /**
      * Final action of a write event.  Apply the written data-object to params.
-     * @param {String} action [Ext.data.Api.actions.create|read|update|destroy]
-     * @param {Record[]} rs
-     * @param {Object} http params
-     * @param {Object} data object populated according to DataReader meta-data "root" and "idProperty"
+     * @param {Object} http params-object to write-to.
+     * @param {Object} baseParams as defined by {@link Ext.data.Store#baseParams}.  The baseParms must be encoded by the extending class, eg: {@link Ext.data.JsonWriter}, {@link Ext.data.XmlWriter}.
+     * @param {Object/Object[]} data Data-object representing compiled Store-recordset.
      */
-    render : function(action, rs, params, data) {
+    render : function(params, baseParams, data) {
         if (this.encode === true) {
+            // Encode here now.
+            Ext.apply(params, baseParams);
             params[this.meta.root] = Ext.encode(data);
         } else {
-            params.jsonData = {};
-            params.jsonData[this.meta.root] = data;
+            // defer encoding for some other layer, probably in {@link Ext.Ajax#request}.  Place everything into "jsonData" key.
+            var jdata = Ext.apply({}, baseParams);
+            jdata[this.meta.root] = data;
+            params.jsonData = jdata;
         }
     },
     /**
@@ -75,8 +76,14 @@ Ext.extend(Ext.data.JsonWriter, Ext.data.DataWriter, {
      * @param {Ext.data.Record} rec
      * @return {Object}
      */
-    destroyRecord : function(rec) {
-        return rec.id;
+    destroyRecord : function(rec){
+        if(this.encodeDelete){
+            var data = {};
+            data[this.meta.idProperty] = rec.id;
+            return data;
+        }else{
+            return rec.id;
+        }
     }
 });/**
  * @class Ext.data.JsonReader
@@ -239,12 +246,15 @@ Ext.extend(Ext.data.JsonReader, Ext.data.DataReader, {
         return this.readRecords(o);
     },
 
-    /**
-     * Decode a json response from server.
-     * @param {String} action [Ext.data.Api.actions.create|read|update|destroy]
-     * @param {Object} response
+    /*
      * TODO: refactor code between JsonReader#readRecords, #readResponse into 1 method.
      * there's ugly duplication going on due to maintaining backwards compat. with 2.0.  It's time to do this.
+     */
+    /**
+     * Decode a JSON response from server.
+     * @param {String} action [Ext.data.Api.actions.create|read|update|destroy]
+     * @param {Object} response The XHR object returned through an Ajax server request.
+     * @return {Response} A {@link Ext.data.Response Response} object containing the data response, and also status information.
      */
     readResponse : function(action, response) {
         var o = (response.responseText !== undefined) ? Ext.decode(response.responseText) : response;
@@ -267,7 +277,7 @@ Ext.extend(Ext.data.JsonReader, Ext.data.DataReader, {
         var res = new Ext.data.Response({
             action: action,
             success: this.getSuccess(o),
-            data: this.extractData(root),
+            data: (root) ? this.extractData(root, false) : [],
             message: this.getMessage(o),
             raw: o
         });
@@ -372,50 +382,22 @@ Ext.extend(Ext.data.JsonReader, Ext.data.DataReader, {
     createAccessor : function(){
         var re = /[\[\.]/;
         return function(expr) {
-            try {
-                return(re.test(expr)) ?
-                new Function('obj', 'return obj.' + expr) :
-                function(obj){
-                    return obj[expr];
-                };
-            } catch(e){}
-            return Ext.emptyFn;
+            if(Ext.isEmpty(expr)){
+                return Ext.emptyFn;
+            }
+            if(Ext.isFunction(expr)){
+                return expr;
+            }
+            var i = String(expr).search(re);
+            if(i >= 0){
+                return new Function('obj', 'return obj' + (i > 0 ? '.' : '') + expr);
+            }
+            return function(obj){
+                return obj[expr];
+            };
+
         };
     }(),
-
-    /**
-     * returns extracted, type-cast rows of data.  Iterates to call #extractValues for each row
-     * @param {Object[]/Object} data-root from server response
-     * @param {Boolean} returnRecords [false] Set true to return instances of Ext.data.Record
-     * @private
-     */
-    extractData : function(root, returnRecords) {
-        var rs = undefined;
-        if (this.isData(root)) {
-            root = [root];
-        }
-        if (Ext.isArray(root)) {
-            var f       = this.recordType.prototype.fields,
-                fi      = f.items,
-                fl      = f.length,
-                rs      = [];
-            if (returnRecords === true) {
-                var Record = this.recordType;
-                for (var i = 0; i < root.length; i++) {
-                    var n = root[i];
-                    var record = new Record(this.extractValues(n, fi, fl), this.getId(n));
-                    record.json = n;
-                    rs.push(record);
-                }
-            }
-            else {
-                for (var i = 0; i < root.length; i++) {
-                    rs.push(this.extractValues(root[i], fi, fl));
-                }
-            }
-        }
-        return rs;
-    },
 
     /**
      * type-casts a single row of raw-data from server
@@ -506,17 +488,11 @@ Ext.data.ArrayReader = Ext.extend(Ext.data.JsonReader, {
         this.arrayData = o;
         var s = this.meta,
             sid = s ? Ext.num(s.idIndex, s.id) : null,
-            recordType = this.recordType, 
+            recordType = this.recordType,
             fields = recordType.prototype.fields,
             records = [],
+            success = true,
             v;
-
-        if(!this.getRoot) {
-            this.getRoot = s.root ? this.getJsonAccessor(s.root) : function(p) {return p;};
-            if(s.totalProperty) {
-                this.getTotal = this.getJsonAccessor(s.totalProperty);
-            }
-        }
 
         var root = this.getRoot(o);
 
@@ -544,8 +520,15 @@ Ext.data.ArrayReader = Ext.extend(Ext.data.JsonReader, {
                 totalRecords = v;
             }
         }
+        if(s.successProperty){
+            v = this.getSuccess(o);
+            if(v === false || v === 'false'){
+                success = false;
+            }
+        }
 
         return {
+            success : success,
             records : records,
             totalRecords : totalRecords
         };

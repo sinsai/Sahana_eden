@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    GIS
+"""
+
 module = 'gis'
 
 # Settings
@@ -29,7 +33,7 @@ marker_id = SQLTable(None, 'marker_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_marker.id', '%(name)s')),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c='default', f='download', args=db(db.gis_marker.id==id).select().first().image), _height=40))] or [''])[0],
                 label = T('Marker'),
-                comment = DIV(A(ADD_MARKER, _class='thickbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
+                comment = DIV(A(ADD_MARKER, _class='colorbox', _href=URL(r=request, c='gis', f='marker', args='create', vars=dict(format='popup')), _target='top', _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -70,6 +74,16 @@ symbology_id = SQLTable(None, 'symbology_id',
                 ))
 
 # GIS Config
+gis_config_layout_opts = {
+    1:T("window"),
+    2:T("embedded")
+    }
+opt_gis_layout = SQLTable(None, "opt_gis_layout",
+                    Field("opt_gis_layout", "integer",
+                        requires = IS_IN_SET(gis_config_layout_opts),
+                        default = 1,
+                        label = T("Layout"),
+                        represent = lambda opt: gis_config_layout_opts.get(opt, T("Unknown"))))
 # id=1 = Default settings
 # separated from Framework settings above
 # ToDo Extend for per-user Profiles - this is the WMC
@@ -91,6 +105,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 Field('zoom_levels', 'integer', default=16, notnull=True),
                 Field('cluster_distance', 'integer', default=5, notnull=True),
                 Field('cluster_threshold', 'integer', default=2, notnull=True),
+                opt_gis_layout,
                 migrate=migrate)
 
 # GIS Feature Classes
@@ -111,7 +126,7 @@ feature_class_id = SQLTable(None, 'feature_class_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_class.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_class.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Class'),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class='thickbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
+                comment = DIV(A(ADD_FEATURE_CLASS, _class='colorbox', _href=URL(r=request, c='gis', f='feature_class', args='create', vars=dict(format='popup')), _target='top', _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -154,7 +169,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('lat_min', 'double', writable=False, readable=False), # bounding-box
                 Field('lon_max', 'double', writable=False, readable=False), # bounding-box
                 Field('lat_max', 'double', writable=False, readable=False), # bounding-box
-                Field('elevation', 'integer', writable=False, readable=False),   # m in height above sea-level. not displayed currently
+                Field('elevation', 'integer', writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
+                Field('ce', 'integer', writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
+                Field('le', 'integer', writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                 admin_id,
                 migrate=migrate)
 
@@ -165,7 +182,7 @@ location_id = SQLTable(None, 'location_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s')),
                 represent = lambda id: shn_gis_location_represent(id),
                 label = T('Location'),
-                comment = DIV(A(ADD_LOCATION, _class='thickbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                comment = DIV(A(ADD_LOCATION, _class='colorbox', _href=URL(r=request, c='gis', f='location', args='create', vars=dict(format='popup')), _target='top', _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -223,7 +240,7 @@ feature_group_id = SQLTable(None, 'feature_group_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Group'),
-                comment = DIV(A(ADD_FEATURE_GROUP, _class='thickbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
+                comment = DIV(A(ADD_FEATURE_GROUP, _class='colorbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup')), _target='top', _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -291,7 +308,7 @@ track_id = SQLTable(None, 'track_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_track.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_track.id==id).select().first().name] or ["None"])[0],
                 label = T('Track'),
-                comment = DIV(A(ADD_TRACK, _class='thickbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup', KeepThis='true'))+"&TB_iframe=true", _target='top', _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                comment = DIV(A(ADD_TRACK, _class='colorbox', _href=URL(r=request, c='gis', f='track', args='create', vars=dict(format='popup')), _target='top', _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
                 ondelete = 'RESTRICT'
                 ))
 
@@ -309,7 +326,7 @@ gis_layer = SQLTable(db, 'gis_layer', timestamp,
             Field('name', notnull=True, label=T('Name'), requires=IS_NOT_EMPTY(), comment=SPAN("*", _class="req")),
             Field('description', label=T('Description')),
             #Field('priority', 'integer', label=T('Priority')),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
-            Field('enabled', 'boolean', default=True, label=T('Enabled?')))
+            Field('enabled', 'boolean', default=True, label=T('Available in Viewer?')))
 for layertype in gis_layer_types:
     resource = 'layer_' + layertype
     tablename = "%s_%s" % (module, resource)
@@ -322,6 +339,7 @@ for layertype in gis_layer_types:
     elif layertype == "georss":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             Field('url', label=T('Location')),
             projection_id,
             marker_id)
@@ -334,6 +352,7 @@ for layertype in gis_layer_types:
     elif layertype == "gpx":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             #Field('url', label=T('Location')),
             track_id,
             marker_id)
@@ -341,6 +360,7 @@ for layertype in gis_layer_types:
     elif layertype == "kml":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             Field('url', label=T('Location')))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "js":
@@ -363,6 +383,7 @@ for layertype in gis_layer_types:
     elif layertype == "wms":
         t = SQLTable(db, table,
             gis_layer,
+            Field('visible', 'boolean', default=False, label=T('On by default?')),
             Field('url', label=T('Location')),
             Field('base', 'boolean', default=True, label=T('Base Layer?')),
             Field('map', label=T('Map')),

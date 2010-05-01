@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    DB configuration
+"""
+
 import os, traceback, datetime
 import re
 # All dates should be stored in UTC for Sync to work reliably
@@ -18,7 +22,7 @@ migrate = True
     # session.connect(request, response, db=MEMDB(Client())
 #else:                                         # else use a normal relational database
 db = DAL('sqlite://storage.db')       # if not, use SQLite or other DB
-#db = DAL('mysql://sahanapy:password@localhost/sahanapy', pool_size=10) # or other DB
+#db = DAL('mysql://sahanapy:password@localhost/sahanapy', pool_size=30) # or other DB
 #db = DAL('postgres://postgres:password@localhost/db', pool_size=10)
 
 # Custom classes which extend default Gluon & T2

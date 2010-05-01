@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -8,7 +8,7 @@
  * @class Ext
  */
 
-Ext.ns("Ext.grid", "Ext.dd", "Ext.tree", "Ext.form", "Ext.menu",
+Ext.ns("Ext.grid", "Ext.list", "Ext.dd", "Ext.tree", "Ext.form", "Ext.menu",
        "Ext.state", "Ext.layout", "Ext.app", "Ext.ux", "Ext.chart", "Ext.direct");
     /**
      * Namespace alloted for extensions to the framework.
@@ -58,8 +58,8 @@ Ext.apply(Ext, function(){
          * @return {Number} Value, if numeric, else defaultValue
          */
         num : function(v, defaultValue){
-            v = Number(Ext.isEmpty(v) || Ext.isBoolean(v) ? NaN : v);
-            return isNaN(v)? defaultValue : v;
+            v = Number(Ext.isEmpty(v) || Ext.isArray(v) || Ext.isBoolean(v) || (Ext.isString(v) && v.trim().length == 0) ? NaN : v);
+            return isNaN(v) ? defaultValue : v;
         },
 
         /**
@@ -186,9 +186,9 @@ ImageComponent = Ext.extend(Ext.BoxComponent, {
     }
 });
          * </code></pre> 
-         * @param {Object} The destination object.
-         * @param {Object} The source object.
-         * @param {Array/String} Either an Array of property names, or a comma-delimited list
+         * @param {Object} dest The destination object.
+         * @param {Object} source The source object.
+         * @param {Array/String} names Either an Array of property names, or a comma-delimited list
          * of property names to copy.
          * @return {Object} The modified object.
         */
@@ -332,7 +332,7 @@ ImageComponent = Ext.extend(Ext.BoxComponent, {
          * @return {Number} The mean.
          */
         mean : function(arr){
-           return Ext.sum(arr) / arr.length;
+           return arr.length > 0 ? Ext.sum(arr) / arr.length : undefined;
         },
 
         /**
@@ -388,7 +388,7 @@ Ext.invoke(Ext.query("p"), "getAttribute", "id");
          * </code></pre>
          * @param {Array|NodeList} arr The Array of items to invoke the method on.
          * @param {String} methodName The method name to invoke.
-         * @param {Anything} ... Arguments to send into the method invocation.
+         * @param {...*} args Arguments to send into the method invocation.
          * @return {Array} The results of invoking the method on each item in the array.
          */
         invoke : function(arr, methodName){

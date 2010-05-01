@@ -1,54 +1,69 @@
-/*
-Mapfish Template for GIS module
-*/
-
-.float-left { float: left; }
-.clear-left { clear: left; }
-.x-toolbar td { padding:0 0 0 0; border: none; }
+/* Mapfish Template for GIS module */
+.mf-print-action {
+    background-image:url(../../img/gis/mapfish/printer.png) !important;
+}
 .zoomin {
-  background-image:url(../../mfbase/mapfish/img/icon_zoomin.png) !important;
-  height:20px !important;
-  width:20px !important;
+    background-image:url(../../img/gis/mapfish/icon_zoomin.png) !important;
+    height:20px !important;
+    width:20px !important;
 }
 .zoomout {
-  background-image:url(../../mfbase/mapfish/img/icon_zoomout.png) !important;
-  height:20px !important;
-  width:20px !important;
+    background-image:url(../../img/gis/mapfish/icon_zoomout.png) !important;
+    height:20px !important;
+    width:20px !important;
 }
 .zoomfull {
-  background-image:url(../../mfbase/mapfish/img/icon_zoomfull.png) !important;
-  height:20px !important;
-  width:20px !important;
+    background-image:url(../../img/gis/mapfish/icon_zoomfull.png) !important;
+    height:20px !important;
+    width:20px !important;
 }
 .pan {
-  background-image:url(../../mfbase/mapfish/img/icon_pan.png) !important;
-  height:20px !important;
-  width:20px !important;
-}
-.drawpoint {
-  background-image:url(../../mfbase/mapfish/img/draw_point_off.png) !important;
-  height:20px !important;
-  width:20px !important;
-}
-.drawline {
-  background-image:url(../../mfbase/mapfish/img/draw_line_off.png) !important;
-  height:20px !important;
-  width:20px !important;
-}
-.drawpolygon {
-  background-image:url(../../mfbase/mapfish/img/draw_polygon_off.png) !important;
-  height:20px !important;
-  width:20px !important;
-}
-.next {
-    background-image:url(../../mfbase/mapfish/img/resultset_next.png) !important;
+    background-image:url(../../img/gis/mapfish/icon_pan.png) !important;
     height:20px !important;
     width:20px !important;
 }
 .back {
-    background-image:url(../../mfbase/mapfish/img/resultset_previous.png) !important;
+    background-image:url(../../img/gis/mapfish/resultset_previous.png) !important;
     height:20px !important;
     width:20px !important;
+}
+.next {
+    background-image:url(../../img/gis/mapfish/resultset_next.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
+.modifyfeature {
+    background-image:url(../../img/gis/mapfish/move_vertex_off.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
+.drawpoint {
+  background-image:url(../../img/gis/mapfish/draw_point_off.png) !important;
+  height:20px !important;
+  width:20px !important;
+}
+.drawline {
+  background-image:url(../../img/gis/mapfish/draw_line_off.png) !important;
+  height:20px !important;
+  width:20px !important;
+}
+.drawpolygon {
+  background-image:url(../../img/gis/mapfish/draw_polygon_off.png) !important;
+  height:20px !important;
+  width:20px !important;
+}
+.info {
+  background-image:url(../../img/gis/mapfish/info.png) !important;
+  height:20px !important;
+  width:20px !important;
+}
+.float-left { float: left; }
+.clear-left { clear: left; }
+.x-toolbar td { padding:0 0 0 0; border: none; }
+.x-tree-node .x-tree-node-inline-icon {
+    background:transparent none repeat scroll 0 0;
+    height:23px;
+    width:84px;
 }
 .searchclick {
     background-image:url(../../img/ext/information.png) !important;
@@ -64,12 +79,4 @@ Mapfish Template for GIS module
     background-image:url(../../img/ext/save.gif) !important;
     height:20px !important;
     width:20px !important;
-}
-.mf-print-action {
-  background-image:url(../../mfbase/mapfish/img/printer.png) !important;
-}
-.x-tree-node .x-tree-node-inline-icon {
-    background:transparent none repeat scroll 0 0;
-    height:23px;
-    width:84px;
 }

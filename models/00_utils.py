@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Utilities
+"""
+
 def shn_sessions():
     """
     Extend session to support:

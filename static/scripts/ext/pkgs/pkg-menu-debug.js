@@ -1,101 +1,9 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
-/**
- * @class Ext.layout.MenuLayout
- * @extends Ext.layout.ContainerLayout
- * <p>Layout manager used by {@link Ext.menu.Menu}. Generally this class should not need to be used directly.</p>
- */
- Ext.layout.MenuLayout = Ext.extend(Ext.layout.ContainerLayout, {
-    monitorResize : true,
-
-    setContainer : function(ct){
-        this.monitorResize = !ct.floating;
-        // This event is only fired by the menu in IE, used so we don't couple
-        // the menu with the layout.
-        ct.on('autosize', this.doAutoSize, this);
-        Ext.layout.MenuLayout.superclass.setContainer.call(this, ct);
-    },
-
-    renderItem : function(c, position, target){
-        if (!this.itemTpl) {
-            this.itemTpl = Ext.layout.MenuLayout.prototype.itemTpl = new Ext.XTemplate(
-                '<li id="{itemId}" class="{itemCls}">',
-                    '<tpl if="needsIcon">',
-                        '<img src="{icon}" class="{iconCls}"/>',
-                    '</tpl>',
-                '</li>'
-            );
-        }
-
-        if(c && !c.rendered){
-            if(Ext.isNumber(position)){
-                position = target.dom.childNodes[position];
-            }
-            var a = this.getItemArgs(c);
-
-//          The Component's positionEl is the <li> it is rendered into
-            c.render(c.positionEl = position ?
-                this.itemTpl.insertBefore(position, a, true) :
-                this.itemTpl.append(target, a, true));
-
-//          Link the containing <li> to the item.
-            c.positionEl.menuItemId = c.getItemId();
-
-//          If rendering a regular Component, and it needs an icon,
-//          move the Component rightwards.
-            if (!a.isMenuItem && a.needsIcon) {
-                c.positionEl.addClass('x-menu-list-item-indent');
-            }
-            this.configureItem(c, position);
-        }else if(c && !this.isValidParent(c, target)){
-            if(Ext.isNumber(position)){
-                position = target.dom.childNodes[position];
-            }
-            target.dom.insertBefore(c.getActionEl().dom, position || null);
-        }
-    },
-
-    getItemArgs : function(c) {
-        var isMenuItem = c instanceof Ext.menu.Item;
-        return {
-            isMenuItem: isMenuItem,
-            needsIcon: !isMenuItem && (c.icon || c.iconCls),
-            icon: c.icon || Ext.BLANK_IMAGE_URL,
-            iconCls: 'x-menu-item-icon ' + (c.iconCls || ''),
-            itemId: 'x-menu-el-' + c.id,
-            itemCls: 'x-menu-list-item '
-        };
-    },
-
-//  Valid if the Component is in a <li> which is part of our target <ul>
-    isValidParent : function(c, target) {
-        return c.el.up('li.x-menu-list-item', 5).dom.parentNode === (target.dom || target);
-    },
-
-    onLayout : function(ct, target){
-        this.renderAll(ct, target);
-        this.doAutoSize();
-    },
-
-    doAutoSize : function(){
-        var ct = this.container, w = ct.width;
-        if(ct.floating){
-            if(w){
-                ct.setWidth(w);
-            }else if(Ext.isIE){
-                ct.setWidth(Ext.isStrict && (Ext.isIE7 || Ext.isIE8) ? 'auto' : ct.minWidth);
-                var el = ct.getEl(), t = el.dom.offsetWidth; // force recalc
-                ct.setWidth(ct.getLayoutTarget().getWidth() + el.getFrameWidth('lr'));
-            }
-        }
-    }
-});
-Ext.Container.LAYOUTS['menu'] = Ext.layout.MenuLayout;
-
 /**
  * @class Ext.menu.Menu
  * @extends Ext.Container
@@ -174,7 +82,7 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
      * configuration. Defaults to <tt>[0, 0]</tt>.
      */
     defaultOffsets : [0, 0],
-    
+
     /**
      * @cfg {Boolean} plain
      * True to remove the incised line down the left side of the menu. Defaults to <tt>false</tt>.
@@ -192,6 +100,13 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
      */
     floating : true,
 
+
+    /**
+     * @cfg {Number} zIndex
+     * zIndex to use when the menu is floating.
+     */
+    zIndex: 15000,
+
     // private
     hidden : true,
 
@@ -206,6 +121,7 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
     scrollerHeight : 8,
     autoLayout : true,       // Provided for backwards compat
     defaultType : 'menuitem',
+    bufferResize : false,
 
     initComponent : function(){
         if(Ext.isArray(this.initialConfig)){
@@ -255,10 +171,10 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
         }
         Ext.menu.Menu.superclass.initComponent.call(this);
         if(this.autoLayout){
+            var fn = this.doLayout.createDelegate(this, []);
             this.on({
-                add: this.doLayout,
-                remove: this.doLayout,
-                scope: this
+                add: fn,
+                remove: fn
             });
         }
     },
@@ -289,7 +205,7 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
                 dh: dh,
                 constrain: false,
                 parentEl: ct,
-                zindex:15000
+                zindex: this.zIndex
             });
         }else{
             this.el = ct.createChild(dh);
@@ -473,7 +389,7 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
                 // set the position so we can figure out the constrain value.
                 this.el.setXY(xy);
                 //constrain the value, keep the y coordinate the same
-                this.constrainScroll(xy[1]);
+                xy[1] = this.constrainScroll(xy[1]);
                 xy = [this.el.adjustForConstraints(xy)[0], xy[1]];
             }else{
                 //constrain to the viewport.
@@ -496,11 +412,30 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
     },
 
     constrainScroll : function(y){
-        var max, full = this.ul.setHeight('auto').getHeight();
+        var max, full = this.ul.setHeight('auto').getHeight(),
+            returnY = y, normalY, parentEl, scrollTop, viewHeight;
         if(this.floating){
-            max = this.maxHeight ? this.maxHeight : Ext.fly(this.el.dom.parentNode).getViewSize().height - y;
+            parentEl = Ext.fly(this.el.dom.parentNode);
+            scrollTop = parentEl.getScroll().top;
+            viewHeight = parentEl.getViewSize().height;
+            //Normalize y by the scroll position for the parent element.  Need to move it into the coordinate space
+            //of the view.
+            normalY = y - scrollTop;
+            max = this.maxHeight ? this.maxHeight : viewHeight - normalY;
+            if(full > viewHeight) {
+                max = viewHeight;
+                //Set returnY equal to (0,0) in view space by reducing y by the value of normalY
+                returnY = y - normalY;
+            } else if(max < full) {
+                returnY = y - (full - max);
+                max = full;
+            }
         }else{
             max = this.getHeight();
+        }
+        // Always respect maxHeight 
+        if (this.maxHeight){
+            max = Math.min(this.maxHeight, max);
         }
         if(full > max && max > 0){
             this.activeMax = max - this.scrollerHeight * 2 - this.el.getFrameWidth('tb') - Ext.num(this.el.shadowOffset, 0);
@@ -512,6 +447,7 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
             this.el.select('.x-menu-scroller').setDisplayed('none');
         }
         this.ul.dom.scrollTop = 0;
+        return returnY;
     },
 
     createScrollers : function(){
@@ -572,9 +508,11 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
      * @param {Boolean} deep (optional) True to hide all parent menus recursively, if any (defaults to false)
      */
     hide : function(deep){
-        this.deepHide = deep;
-        Ext.menu.Menu.superclass.hide.call(this);
-        delete this.deepHide;
+        if (!this.isDestroyed) {
+            this.deepHide = deep;
+            Ext.menu.Menu.superclass.hide.call(this);
+            delete this.deepHide;
+        }
     },
 
     // private
@@ -652,7 +590,9 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
      * @return {Ext.menu.Item} The menu item that was added
      */
     addElement : function(el){
-        return this.add(new Ext.menu.BaseItem(el));
+        return this.add(new Ext.menu.BaseItem({
+            el: el
+        }));
     },
 
     /**
@@ -684,9 +624,14 @@ Ext.menu.Menu = Ext.extend(Ext.Container, {
 
     //private
     onDestroy : function(){
+        Ext.EventManager.removeResizeListener(this.hide, this);
+        var pm = this.parentMenu;
+        if(pm && pm.activeChild == this){
+            delete pm.activeChild;
+        }
+        delete this.parentMenu;
         Ext.menu.Menu.superclass.onDestroy.call(this);
         Ext.menu.MenuMgr.unregister(this);
-        Ext.EventManager.removeResizeListener(this.hide, this);
         if(this.keyNav) {
             this.keyNav.disable();
         }
@@ -797,7 +742,9 @@ Ext.menu.MenuMgr = function(){
            c.each(function(m){
                m.hide();
            });
+           return true;
        }
+       return false;
    }
 
    // private
@@ -821,7 +768,7 @@ Ext.menu.MenuMgr = function(){
        if(m.parentMenu){
           m.getEl().setZIndex(parseInt(m.parentMenu.getEl().getStyle("z-index"), 10) + 3);
           m.parentMenu.activeChild = m;
-       }else if(last && last.isVisible()){
+       }else if(last && !last.isDestroyed && last.isVisible()){
           m.getEl().setZIndex(parseInt(last.getEl().getStyle("z-index"), 10) + 3);
        }
    }
@@ -870,9 +817,10 @@ Ext.menu.MenuMgr = function(){
 
        /**
         * Hides all menus that are currently visible
+        * @return {Boolean} success True if any active menus were hidden.
         */
        hideAll : function(){
-            hideAll();  
+            return hideAll();
        },
 
        // private
@@ -881,18 +829,12 @@ Ext.menu.MenuMgr = function(){
                init();
            }
            menus[menu.id] = menu;
-           menu.on("beforehide", onBeforeHide);
-           menu.on("hide", onHide);
-           menu.on("beforeshow", onBeforeShow);
-           menu.on("show", onShow);
-           var g = menu.group;
-           if(g && menu.events["checkchange"]){
-               if(!groups[g]){
-                   groups[g] = [];
-               }
-               groups[g].push(menu);
-               menu.on("checkchange", onCheck);
-           }
+           menu.on({
+               beforehide: onBeforeHide,
+               hide: onHide,
+               beforeshow: onBeforeShow,
+               show: onShow
+           });
        },
 
         /**
@@ -923,11 +865,6 @@ Ext.menu.MenuMgr = function(){
            menu.un("hide", onHide);
            menu.un("beforeshow", onBeforeShow);
            menu.un("show", onShow);
-           var g = menu.group;
-           if(g && menu.events["checkchange"]){
-               groups[g].remove(menu);
-               menu.un("checkchange", onCheck);
-           }
        },
 
        // private
@@ -986,37 +923,7 @@ Ext.menu.MenuMgr = function(){
  * @param {Object} config Configuration options
  * @xtype menubaseitem
  */
-Ext.menu.BaseItem = function(config){
-    Ext.menu.BaseItem.superclass.constructor.call(this, config);
-
-    this.addEvents(
-        /**
-         * @event click
-         * Fires when this item is clicked
-         * @param {Ext.menu.BaseItem} this
-         * @param {Ext.EventObject} e
-         */
-        'click',
-        /**
-         * @event activate
-         * Fires when this item is activated
-         * @param {Ext.menu.BaseItem} this
-         */
-        'activate',
-        /**
-         * @event deactivate
-         * Fires when this item is deactivated
-         * @param {Ext.menu.BaseItem} this
-         */
-        'deactivate'
-    );
-
-    if(this.handler){
-        this.on("click", this.handler, this.scope);
-    }
-};
-
-Ext.extend(Ext.menu.BaseItem, Ext.Component, {
+Ext.menu.BaseItem = Ext.extend(Ext.Component, {
     /**
      * @property parentMenu
      * @type Ext.menu.Menu
@@ -1047,7 +954,7 @@ Ext.extend(Ext.menu.BaseItem, Ext.Component, {
      */
     hideOnClick : true,
     /**
-     * @cfg {Number} clickHideDelay Length of time in milliseconds to wait before hiding after a click (defaults to 100)
+     * @cfg {Number} clickHideDelay Length of time in milliseconds to wait before hiding after a click (defaults to 1)
      */
     clickHideDelay : 1,
 
@@ -1057,6 +964,34 @@ Ext.extend(Ext.menu.BaseItem, Ext.Component, {
     // private
     actionMode : "container",
 
+    initComponent : function(){
+        Ext.menu.BaseItem.superclass.initComponent.call(this);
+        this.addEvents(
+            /**
+             * @event click
+             * Fires when this item is clicked
+             * @param {Ext.menu.BaseItem} this
+             * @param {Ext.EventObject} e
+             */
+            'click',
+            /**
+             * @event activate
+             * Fires when this item is activated
+             * @param {Ext.menu.BaseItem} this
+             */
+            'activate',
+            /**
+             * @event deactivate
+             * Fires when this item is deactivated
+             * @param {Ext.menu.BaseItem} this
+             */
+            'deactivate'
+        );
+        if(this.handler){
+            this.on("click", this.handler, this.scope);
+        }
+    },
+
     // private
     onRender : function(container, position){
         Ext.menu.BaseItem.superclass.onRender.apply(this, arguments);
@@ -1064,9 +999,12 @@ Ext.extend(Ext.menu.BaseItem, Ext.Component, {
             this.parentMenu = this.ownerCt;
         }else{
             this.container.addClass('x-menu-list-item');
-            this.mon(this.el, 'click', this.onClick, this);
-            this.mon(this.el, 'mouseenter', this.activate, this);
-            this.mon(this.el, 'mouseleave', this.deactivate, this);
+            this.mon(this.el, {
+                scope: this,
+                click: this.onClick,
+                mouseenter: this.activate,
+                mouseleave: this.deactivate
+            });
         }
     },
 
@@ -1074,7 +1012,7 @@ Ext.extend(Ext.menu.BaseItem, Ext.Component, {
      * Sets the function that will handle click events for this item (equivalent to passing in the {@link #handler}
      * config property).  If an existing handler is already registered, it will be unregistered for you.
      * @param {Function} handler The function that should be called on click
-     * @param {Object} scope The scope that should be passed to the handler
+     * @param {Object} scope The scope (<code>this</code> reference) in which the handler function is executed. Defaults to this menu item.
      */
     setHandler : function(handler, scope){
         if(this.handler){
@@ -1144,14 +1082,7 @@ Ext.reg('menubaseitem', Ext.menu.BaseItem);/**
  * is applied as a config object (and should contain a <tt>text</tt> property).
  * @xtype menutextitem
  */
-Ext.menu.TextItem = function(cfg){
-    if(typeof cfg == 'string'){
-        cfg = {text: cfg}
-    }
-    Ext.menu.TextItem.superclass.constructor.call(this, cfg);
-};
-
-Ext.extend(Ext.menu.TextItem, Ext.menu.BaseItem, {
+Ext.menu.TextItem = Ext.extend(Ext.menu.BaseItem, {
     /**
      * @cfg {String} text The text to display for this item (defaults to '')
      */
@@ -1163,6 +1094,13 @@ Ext.extend(Ext.menu.TextItem, Ext.menu.BaseItem, {
      * @cfg {String} itemCls The default CSS class to use for text items (defaults to "x-menu-text")
      */
     itemCls : "x-menu-text",
+    
+    constructor : function(config){
+        if(typeof config == 'string'){
+            config = {text: config}
+        }
+        Ext.menu.TextItem.superclass.constructor.call(this, config);
+    },
 
     // private
     onRender : function(){
@@ -1182,11 +1120,7 @@ Ext.reg('menutextitem', Ext.menu.TextItem);/**
  * @param {Object} config Configuration options
  * @xtype menuseparator
  */
-Ext.menu.Separator = function(config){
-    Ext.menu.Separator.superclass.constructor.call(this, config);
-};
-
-Ext.extend(Ext.menu.Separator, Ext.menu.BaseItem, {
+Ext.menu.Separator = Ext.extend(Ext.menu.BaseItem, {
     /**
      * @cfg {String} itemCls The default CSS class to use for separators (defaults to "x-menu-sep")
      */
@@ -1223,13 +1157,7 @@ Ext.reg('menuseparator', Ext.menu.Separator);/**
  * @param {Object} config Configuration options
  * @xtype menuitem
  */
-Ext.menu.Item = function(config){
-    Ext.menu.Item.superclass.constructor.call(this, config);
-    if(this.menu){
-        this.menu = Ext.menu.MenuMgr.get(this.menu);
-    }
-};
-Ext.extend(Ext.menu.Item, Ext.menu.BaseItem, {
+Ext.menu.Item = Ext.extend(Ext.menu.BaseItem, {
     /**
      * @property menu
      * @type Ext.menu.Menu
@@ -1274,6 +1202,14 @@ Ext.extend(Ext.menu.Item, Ext.menu.BaseItem, {
     // private
     ctype: 'Ext.menu.Item',
 
+    initComponent : function(){
+        Ext.menu.Item.superclass.initComponent.call(this);
+        if(this.menu){
+            this.menu = Ext.menu.MenuMgr.get(this.menu);
+            this.menu.ownerCt = this;
+        }
+    },
+
     // private
     onRender : function(container, position){
         if (!this.itemTpl) {
@@ -1292,6 +1228,9 @@ Ext.extend(Ext.menu.Item, Ext.menu.BaseItem, {
         this.el = position ? this.itemTpl.insertBefore(position, a, true) : this.itemTpl.append(container, a, true);
         this.iconEl = this.el.child('img.x-menu-item-icon');
         this.textEl = this.el.child('.x-menu-item-text');
+        if(!this.href) { // if no link defined, prevent the default anchor event
+            this.mon(this.el, 'click', Ext.emptyFn, null, { preventDefault: true });
+        }
         Ext.menu.Item.superclass.onRender.call(this, container, position);
     },
 
@@ -1330,10 +1269,11 @@ Ext.extend(Ext.menu.Item, Ext.menu.BaseItem, {
             this.iconEl.replaceClass(oldCls, this.iconCls);
         }
     },
-    
+
     //private
     beforeDestroy: function(){
         if (this.menu){
+            delete this.menu.ownerCt;
             this.menu.destroy();
         }
         Ext.menu.Item.superclass.beforeDestroy.call(this);
@@ -1425,37 +1365,7 @@ Ext.reg('menuitem', Ext.menu.Item);/**
  * @param {Object} config Configuration options
  * @xtype menucheckitem
  */
-Ext.menu.CheckItem = function(config){
-    Ext.menu.CheckItem.superclass.constructor.call(this, config);
-    this.addEvents(
-        /**
-         * @event beforecheckchange
-         * Fires before the checked value is set, providing an opportunity to cancel if needed
-         * @param {Ext.menu.CheckItem} this
-         * @param {Boolean} checked The new checked value that will be set
-         */
-        "beforecheckchange" ,
-        /**
-         * @event checkchange
-         * Fires after the checked value has been set
-         * @param {Ext.menu.CheckItem} this
-         * @param {Boolean} checked The checked value that was set
-         */
-        "checkchange"
-    );
-    /**
-     * A function that handles the checkchange event.  The function is undefined by default, but if an implementation
-     * is provided, it will be called automatically when the checkchange event fires.
-     * @param {Ext.menu.CheckItem} this
-     * @param {Boolean} checked The checked value that was set
-     * @method checkHandler
-     */
-    if(this.checkHandler){
-        this.on('checkchange', this.checkHandler, this.scope);
-    }
-    Ext.menu.MenuMgr.registerCheckable(this);
-};
-Ext.extend(Ext.menu.CheckItem, Ext.menu.Item, {
+Ext.menu.CheckItem = Ext.extend(Ext.menu.Item, {
     /**
      * @cfg {String} group
      * All check items with the same group name will automatically be grouped into a single-select
@@ -1479,6 +1389,37 @@ Ext.extend(Ext.menu.CheckItem, Ext.menu.Item, {
 
     // private
     ctype: "Ext.menu.CheckItem",
+    
+    initComponent : function(){
+        Ext.menu.CheckItem.superclass.initComponent.call(this);
+	    this.addEvents(
+	        /**
+	         * @event beforecheckchange
+	         * Fires before the checked value is set, providing an opportunity to cancel if needed
+	         * @param {Ext.menu.CheckItem} this
+	         * @param {Boolean} checked The new checked value that will be set
+	         */
+	        "beforecheckchange" ,
+	        /**
+	         * @event checkchange
+	         * Fires after the checked value has been set
+	         * @param {Ext.menu.CheckItem} this
+	         * @param {Boolean} checked The checked value that was set
+	         */
+	        "checkchange"
+	    );
+	    /**
+	     * A function that handles the checkchange event.  The function is undefined by default, but if an implementation
+	     * is provided, it will be called automatically when the checkchange event fires.
+	     * @param {Ext.menu.CheckItem} this
+	     * @param {Boolean} checked The checked value that was set
+	     * @method checkHandler
+	     */
+	    if(this.checkHandler){
+	        this.on('checkchange', this.checkHandler, this.scope);
+	    }
+	    Ext.menu.MenuMgr.registerCheckable(this);
+    },
 
     // private
     onRender : function(c){
@@ -1504,12 +1445,13 @@ Ext.extend(Ext.menu.CheckItem, Ext.menu.Item, {
      * @param {Boolean} suppressEvent (optional) True to prevent the checkchange event from firing (defaults to false)
      */
     setChecked : function(state, suppressEvent){
-        if(this.checked != state && this.fireEvent("beforecheckchange", this, state) !== false){
+        var suppress = suppressEvent === true;
+        if(this.checked != state && (suppress || this.fireEvent("beforecheckchange", this, state) !== false)){
             if(this.container){
                 this.container[state ? "addClass" : "removeClass"]("x-menu-item-checked");
             }
             this.checked = state;
-            if(suppressEvent !== true){
+            if(!suppress){
                 this.fireEvent("checkchange", this, state);
             }
         }
@@ -1616,6 +1558,7 @@ Ext.reg('menucheckitem', Ext.menu.CheckItem);/**
          * @param {Date} date The selected date
          */
         this.relayEvents(this.picker, ['select']);
+        this.on('show', this.picker.focus, this.picker);
         this.on('select', this.menuHide, this);
         if(this.handler){
             this.on('select', this.handler, this.scope || this);
@@ -1727,7 +1670,7 @@ Ext.reg('menucheckitem', Ext.menu.CheckItem);/**
          * @event select
          * Fires when a color is selected from the {@link #palette Ext.ColorPalette}
          * @param {Ext.ColorPalette} palette The {@link #palette Ext.ColorPalette}
-         * @param {String} color The 6-digit color hex code (without the # symbol)
+	     * @param {String} color The 6-digit color hex code (without the # symbol)
          */
         this.relayEvents(this.palette, ['select']);
         this.on('select', this.menuHide, this);

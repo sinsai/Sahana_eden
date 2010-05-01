@@ -1,18 +1,18 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
 Ext.tree.TreeEventModel = function(tree){
     this.tree = tree;
     this.tree.on('render', this.initEvents, this);
-}
+};
 
 Ext.tree.TreeEventModel.prototype = {
     initEvents : function(){
         var t = this.tree;
-            
+
         if(t.trackMouseOver !== false){
             t.mon(t.innerCt, {
                 scope: this,
@@ -85,40 +85,61 @@ Ext.tree.TreeEventModel.prototype = {
     },
 
     trackExit : function(e){
-        if(this.lastOverNode && !e.within(this.lastOverNode.ui.getEl())){
-            this.onNodeOut(e, this.lastOverNode);
+        if(this.lastOverNode){
+            if(this.lastOverNode.ui && !e.within(this.lastOverNode.ui.getEl())){
+                this.onNodeOut(e, this.lastOverNode);
+            }
             delete this.lastOverNode;
             Ext.getBody().un('mouseover', this.trackExit, this);
             this.trackingDoc = false;
         }
+
     },
 
     delegateClick : function(e, t){
-        if(!this.beforeEvent(e)){
-            return;
-        }
-
-        if(e.getTarget('input[type=checkbox]', 1)){
-            this.onCheckboxClick(e, this.getNode(e));
-        }
-        else if(e.getTarget('.x-tree-ec-icon', 1)){
-            this.onIconClick(e, this.getNode(e));
-        }
-        else if(this.getNodeTarget(e)){
-            this.onNodeClick(e, this.getNode(e));
+        if(this.beforeEvent(e)){
+            if(e.getTarget('input[type=checkbox]', 1)){
+                this.onCheckboxClick(e, this.getNode(e));
+            }else if(e.getTarget('.x-tree-ec-icon', 1)){
+                this.onIconClick(e, this.getNode(e));
+            }else if(this.getNodeTarget(e)){
+                this.onNodeClick(e, this.getNode(e));
+            }
+        }else{
+            this.checkContainerEvent(e, 'click');
         }
     },
 
     delegateDblClick : function(e, t){
-        if(this.beforeEvent(e) && this.getNodeTarget(e)){
-            this.onNodeDblClick(e, this.getNode(e));
+        if(this.beforeEvent(e)){
+            if(this.getNodeTarget(e)){
+                this.onNodeDblClick(e, this.getNode(e));
+            }
+        }else{
+            this.checkContainerEvent(e, 'dblclick');
         }
     },
 
     delegateContextMenu : function(e, t){
-        if(this.beforeEvent(e) && this.getNodeTarget(e)){
-            this.onNodeContextMenu(e, this.getNode(e));
+        if(this.beforeEvent(e)){
+            if(this.getNodeTarget(e)){
+                this.onNodeContextMenu(e, this.getNode(e));
+            }
+        }else{
+            this.checkContainerEvent(e, 'contextmenu');
         }
+    },
+    
+    checkContainerEvent: function(e, type){
+        if(this.disabled){
+            e.stopEvent();
+            return false;
+        }
+        this.onContainerEvent(e, type);    
+    },
+
+    onContainerEvent: function(e, type){
+        this.tree.fireEvent('container' + type, this.tree, e);
     },
 
     onNodeClick : function(e, node){
@@ -159,7 +180,8 @@ Ext.tree.TreeEventModel.prototype = {
     },
 
     beforeEvent : function(e){
-        if(this.disabled){
+        var node = this.getNode(e);
+        if(this.disabled || !node || !node.ui){
             e.stopEvent();
             return false;
         }

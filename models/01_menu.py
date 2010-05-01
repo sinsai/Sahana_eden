@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+    Global menus
+"""
+
 # Help Menu (available in all screens)
 s3.menu_help = [
         T('Contact us'), True, URL(request.application, 'default', 'contact')

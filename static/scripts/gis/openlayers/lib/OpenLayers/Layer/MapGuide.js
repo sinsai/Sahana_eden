@@ -224,7 +224,7 @@ OpenLayers.Layer.MapGuide = OpenLayers.Class(OpenLayers.Layer.Grid, {
             obj = new OpenLayers.Layer.MapGuide(this.name,
                                            this.url,
                                            this.params,
-                                           this.options);
+                                           this.getOptions());
       }
       //get all additions from superclasses
       obj = OpenLayers.Layer.Grid.prototype.clone.apply(this, [obj]);
@@ -264,7 +264,7 @@ OpenLayers.Layer.MapGuide = OpenLayers.Class(OpenLayers.Layer.Grid, {
     getURL: function (bounds) {
         var url;
         var center = bounds.getCenterLonLat();
-        var mapSize = this.map.getCurrentSize();
+        var mapSize = this.map.getSize();
 
         if (this.singleTile) {
           //set up the call for GETMAPIMAGE or GETDYNAMICMAPOVERLAY with

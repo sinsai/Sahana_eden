@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
+
+"""
+    GIS Controllers
+
+    @author: Fran Boon
+"""
+
 from operator import __and__
 
 module = 'gis'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
@@ -16,6 +24,7 @@ table = db.gis_location
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 table.parent.label = T('Parent')
@@ -28,7 +37,7 @@ table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lat.label = T('Latitude')
 #table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 CONVERSION_TOOL = T("Conversion Tool")
-#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='thickbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='colorbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.lon.label = T('Longitude')
@@ -1264,7 +1273,7 @@ def layers():
     layers_kml = db(db.gis_layer_kml.enabled==True).select()
     if layers_kml and not cache:
         response.warning += cachepath + ' ' + str(T('not writable - unable to cache KML layers!')) + '\n'
-    
+
     # Append dynamic feed:
     # /gis/map_viewing_client?kml_feed=<url>&kml_name=<feed_name>
     layers_kml = [Storage(name=l.name, url=l.url) for l in layers_kml]
@@ -1458,9 +1467,10 @@ def map_viewing_client():
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
-
+    layout = config.opt_gis_layout
+    
     # Add the Config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
 
     # Layers
     baselayers = layers()
@@ -1580,9 +1590,10 @@ def display_feature():
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
-
+    layout = config.opt_gis_layout
+    
     # Add the config to the Return
-    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold)
+    output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout)
 
     # Feature details
     try:
@@ -1637,7 +1648,7 @@ def display_feature():
     # Add the Base Layers to the Return
     output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
     # Don't want confusing overlays
-    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[]))
+    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[], mgrs=[]))
 
     return output
 
@@ -1690,21 +1701,12 @@ def display_features():
     #retrieve the location_id's from xml_tree using XPath
 
     # Calculate an appropriate BBox
-    # ToDo: Move to modules/s3gis
-    lon_max = -180
-    lon_min = 180
-    lat_max = -90
-    lat_min = 90
-    for feature in features:
-        if feature.lon > lon_max:
-            lon_max = feature.lon
-        if feature.lon < lon_min:
-            lon_min = feature.lon
-        if feature.lat > lat_max:
-            lat_max = feature.lat
-        if feature.lat < lat_min:
-            lat_min = feature.lat
-
+    bounds = gis.get_bounds(features=features)
+    lon_max = bounds['max_lon']
+    lon_min = bounds['min_lon']
+    lat_max = bounds['max_lat']
+    lat_min = bounds['min_lat']
+    
     #bbox = str(lon_min) + ',' + str(lat_min) + ',' + str(lon_max) + ',' + str(lat_max)
     #We now project these client-side, so pass raw info (client-side projection means less server-side dependencies)
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
@@ -1736,9 +1738,10 @@ def display_features():
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
-
+    layout = config.opt_gis_layout
+    
     # Add the config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold))
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
 
     # Feature details
     for feature in features:
@@ -1792,11 +1795,13 @@ def display_features():
 
     # Layers
     baselayers = layers()
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing))
+    # Add the Base Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    # Don't want confusing overlays
+    output.update(dict(georss_layers=[], gpx_layers=[], kml_layers=[], js_layers=[], mgrs=[]))
 
     return output
-    
+
 def geolocate():
     " Call a Geocoder service "
     if 'location' in request.vars:
@@ -1810,7 +1815,7 @@ def geolocate():
     else:
         # ToDo service=all should be default
         service = "google"
-        
+
     if service == "google":
         return s3gis.GoogleGeocoder(location, db).get_kml()
 

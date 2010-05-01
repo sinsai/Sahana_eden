@@ -28,6 +28,8 @@ Ext.onReady(function() {
     
     var mapPanel = new GeoExt.MapPanel({
         region: "center",
+        width: {{=width}},
+		height: {{=height}},
         id: "mappanel",
         xtype: "gx_mappanel",
         map: map,
@@ -70,21 +72,26 @@ Ext.onReady(function() {
         }),
         rootVisible: false,
         split: true,
+        autoScroll: true,
         collapsible: true,
         collapseMode: "mini",
-        autoScroll: true,
         lines: false,
         enableDD: true
     });
     
-    var win = new Ext.Window({
+    {{if layout == 1:}}
+      var win = new Ext.Window({
+    	collapsible: true,
+	{{elif layout == 2:}}
+      var panel = new Ext.Panel({
+	    renderTo: "map_panel",
+    {{pass}}
 		//title    : 'Sahana Map Viewing Client',
-		collapsible: true,
 		maximizable: true,
 		titleCollapse: true,
 		width: {{=width}},
 		height: {{=height}},
-		layout: 'border',
+        layout: 'border',
 		items:  [{
                     region: "west",
                     id: "tools",
@@ -99,7 +106,9 @@ Ext.onReady(function() {
                 ]
     });
 
-	win.show();
+  {{if layout == 1:}}
+    win.show();
+  {{pass}}
     Ext.QuickTips.init();
     
 });
@@ -107,5 +116,7 @@ Ext.onReady(function() {
 //]]></script>
 
 {{include 'gis/catalogue_toolbar.html'}}
-
+{{if layout == 2:}}
+  <div id="map_panel"></div>
+{{pass}}
 {{include 'gis/ol_status.html'}}

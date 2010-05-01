@@ -1,4 +1,4 @@
-﻿var popupWin = null;
+var popupWin = null;
 function openPopup(url) {
 	if ( !popupWin || popupWin.closed ) {
 		popupWin = window.open( url, "popupWin", "width=640,height=480" );
@@ -14,21 +14,20 @@ $(document).ready(function() {
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
     $("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
-    $('a.thickbox').click(function(){
+    var togglecallerappend;
+    window.togglecallerappend = "True";
+    $('a.colorbox').click(function(){
         $(this).attr('href', function() {
             // Add the caller to the URL vars so that the popup knows which field to refresh/set
             var url_in = $(this).attr('href');
             var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
-	    // try-catch drive the firebug crazy
-            if('undefined' != typeof(set_parent_id))
-	        url_in = set_parent_id(url_in, caller);
-            if (url_in.match(/caller=/)) {
-                return url_in.replace(/caller=.*?&/, 'caller=' + caller + '&');
-            } else {
-                // This has to be the last var: &TB_iframe=true
-                return url_in.replace(/&TB_iframe=true/, '&caller=' + caller + '&TB_iframe=true');
+            var url_out = url_in;
+            if (window.togglecallerappend == "True"){
+                url_out = url_out + '&caller=' + caller;
+                window.togglecallerappend = "False";
             }
-        });	    
+            return url_out;
+        });
         return false;
     });
     // IE6 non anchor hover hack
@@ -58,12 +57,12 @@ $(document).ready(function() {
         function() { $('ul', this).css('display', 'none');  }
     );
 });
-/* 
+/*
   ajaxS3 ------------------------------------------------------------
   added by sunneach 2010-feb-14
 */
 
-/* 
+/*
   these set in the ajaxS3messages.js :
 _ajaxS3_wht_ = {{=T('We have tried')}};
 _ajaxS3_gvn_ = {{=T('times and it is still not working. We give in. Sorry.')}};
@@ -105,7 +104,7 @@ _ajaxS3_rtr_ = {{=T('retry')}};
 	};
         jQuery.ajax(options);
     };
-	
+
     jQuery.postS3 = function(url, data, callback, type) {
         return jQuery.ajaxS3({
             type: "POST",
@@ -153,13 +152,13 @@ _ajaxS3_rtr_ = {{=T('retry')}};
     jQuery.ajaxS3Setup = function(settings) {
         jQuery.extend(jQuery.ajaxS3Settings, settings);
     };
-    
+
 })(jQuery);
 
 // status bar for ajaxS3 operation
 // taken from http://www.west-wind.com/WebLog/posts/388213.aspx
 // added and fixed by sunneach on Feb 16, 2010
-//   
+//
 //  to use make a call:
 //  showStatus(message, timeout, additive, isError)
 //     1. message  - string - message to display
@@ -167,24 +166,24 @@ _ajaxS3_rtr_ = {{=T('retry')}};
 //     3. additive - boolean - default false - to accumulate messages in the bar
 //     4. isError  - boolean - default false - show in the statusbarerror class
 //
-//  to remove bar, use 
+//  to remove bar, use
 //  hideStatus()
 //
 function StatusBar(sel,options)
 {
-    var _I = this;       
+    var _I = this;
     var _sb = null;
-    // options    
+    // options
     this.elementId = "_showstatus";
-    this.prependMultiline = true;   
-    this.showCloseButton = false; 
+    this.prependMultiline = true;
+    this.showCloseButton = false;
     this.afterTimeoutText = null;
 
     this.cssClass = "statusbar";
     this.highlightClass = "statusbarhighlight";
     this.errorClass = "statusbarerror";
     this.closeButtonClass = "statusbarclose";
-    this.additive = false;   
+    this.additive = false;
     $.extend(this, options);
     if (sel)
       _sb = $(sel);
@@ -194,54 +193,54 @@ function StatusBar(sel,options)
         _sb = $("<div id='_statusbar' class='" + _I.cssClass + "'>" +
                 "<div class='" + _I.closeButtonClass +  "'>" +
                 (_I.showCloseButton ? " X </div></div>" : "") )
-                .appendTo(document.body)                   
+                .appendTo(document.body)
                 .show();
     }
     //if (_I.showCloseButton)
         $("." + _I.cssClass).click(function(e) { $(_sb).hide(); });
     this.show = function(message, timeout, additive, isError)
-    {            
-        if (additive || ((additive == undefined) && _I.additive))       
+    {
+        if (additive || ((additive == undefined) && _I.additive))
         {
             var html = "<div style='margin-bottom: 2px;' >" + message + "</div>";
             if (_I.prependMultiline)
                 _sb.prepend(html);
             else
-                _sb.append(html);            
+                _sb.append(html);
         }
         else
         {
-            if (!_I.showCloseButton)    
+            if (!_I.showCloseButton)
                 _sb.text(message);
             else
-            {            
-                var t = _sb.find("div.statusbarclose");                
+            {
+                var t = _sb.find("div.statusbarclose");
                 _sb.text(message).prepend(t);
             }
-        }               
-        _sb.show();        
+        }
+        _sb.show();
         if (timeout)
         {
             if (isError)
                 _sb.addClass(_I.errorClass);
             else
                 _sb.addClass(_I.highlightClass);
-            setTimeout( 
+            setTimeout(
                 function() {
-                    _sb.removeClass(_I.highlightClass); 
+                    _sb.removeClass(_I.highlightClass);
                     if (_I.afterTimeoutText)
                        _I.show(_I.afterTimeoutText);
                 },
                 timeout);
-        }                
-    }  
+        }
+    }
     this.release = function()
     {
         if(_statusbar){
             $('#_statusbar').remove();
 	    _statusbar = undefined;
 	}
-    }       
+    }
 }
 // use this as a global instance to customize constructor
 // or do nothing and get a default status bar

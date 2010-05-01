@@ -322,7 +322,9 @@ class AuthS3(Auth):
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Auth.__init__(self, environment, db)
+        self.settings.lock_keys = False
         self.settings.username_field = False
+        self.settings.lock_keys = True
         self.messages.lock_keys = False
         self.messages.registration_disabled = 'Registration Disabled!'
         self.messages.lock_keys = True

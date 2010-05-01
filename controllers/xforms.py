@@ -1,4 +1,8 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+    XForms - Controllers
+"""
 
 import StringIO
 import xml.dom.minidom
@@ -64,7 +68,7 @@ def create():
                 pass
             elif 'IS_IN_SET' in str(table[field].requires):
                 pass
-#                items_list=[] 
+#                items_list=[]
 #               for option in table[field].requires.theset:
 #                    items_list.append(TAG['item'](TAG['label'](option), TAG['value'](option)))
 #                controllers_list.append(TAG['select1'](items_list, _ref=field))

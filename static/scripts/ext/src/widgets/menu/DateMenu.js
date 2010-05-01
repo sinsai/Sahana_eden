@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -97,6 +97,7 @@
          * @param {Date} date The selected date
          */
         this.relayEvents(this.picker, ['select']);
+        this.on('show', this.picker.focus, this.picker);
         this.on('select', this.menuHide, this);
         if(this.handler){
             this.on('select', this.handler, this.scope || this);

@@ -1,6 +1,11 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+"""
+    Messaging Module - Controllers
+"""
 
 module = 'msg'
+
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
@@ -39,7 +44,7 @@ def admin():
         redirect(URL(r=request, f='setting', args=['update', 1]))
     else:
         redirect(URL(r=request, f='setting', args=['read', 1]))
-    
+
 def setting():
     " RESTlike CRUD controller "
     if request.args(0) == 'update' or request.args(0) == 'delete':
@@ -47,7 +52,7 @@ def setting():
             session.error = UNAUTHORISED
             redirect(URL(r=request, f='index'))
     return shn_rest_controller(module, 'setting', listadd=False, deletable=False)
-    
+
 # SMS
 def sms():
     " Simple page for showing links "
@@ -100,12 +105,12 @@ def email_send():
     """ Send Pending emails from OutBox.
     If succesful then move from OutBox to Sent.
     Designed to be called from Cron """
-    
+
     # Check database for pending mails
     table = db.msg_email_outbox
     query = table.id > 0
     rows = db(query).select()
-    
+
     for row in rows:
         subject = row.subject
         message = row.body
@@ -138,7 +143,7 @@ def group():
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='group_user', args=request.args(1))
     return shn_rest_controller(module, 'group')
-  
+
 def group_user():
     "Many to Many CRUD Controller"
     if len(request.args) == 0:
@@ -147,7 +152,7 @@ def group_user():
     group = request.args(0)
     table = db.msg_group_user
     authorised = shn_has_permission('update', table)
-    
+
     title = db.msg_group[group].name
     group_description = db.msg_group[group].comments
     _group_type = db.msg_group[group].group_type
@@ -177,12 +182,12 @@ def group_user():
             id_link = A(id, _href=URL(r=request, c='pr', f='person', args=['read', id]))
             checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(preferred, _align='left'), TD(checkbox, _align='center'), _class=theclass, _align='right'))
-            
+
         table_header = THEAD(TR(TH('ID'), TH(table.person_id.label), TH(T('Preferred Name')), TH(T('Remove'))))
         table_footer = TFOOT(TR(TD('', _colspan=3), TD(INPUT(_id='submit_button', _type='submit', _value=T('Update')))), _align='right')
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name='custom', _method='post', _enctype='multipart/form-data', _action=URL(r=request, f='group_update_users', args=[group])))
         subtitle = T("Contents")
-        
+
         crud.messages.submit_button=T('Add')
         # Do Checks before User is added to Group: Duplicates & Email/SMS fields available
         crud.settings.create_onvalidation = lambda form: group_validation(form)
@@ -205,7 +210,7 @@ def group_user():
             preferred = db.pr_person[id].preferred_name
             id_link = A(id, _href=URL(r=request, c='pr', f='person', args=['read', id]))
             item_list.append(TR(TD(id_link), TD(name, _align='left'), TD(preferred, _align='left'), _class=theclass, _align='right'))
-            
+
         table_header = THEAD(TR(TH('ID'), TH(table.person_id.label), TH(T('Preferred Name'))))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
         add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
@@ -249,7 +254,7 @@ def group_validation(form):
             if not sms:
                 session.warning += str(T("User has no SMS address!"))
         return
-    
+
 def group_update_users():
     "Update a Group's members (Delete)"
     if len(request.args) == 0:
@@ -293,6 +298,6 @@ def group_search():
         # JOIN bad for GAE
         query = (table[field].like('%' + value + '%')) & (table['group_type'].belongs(belongs))
         item = db(query).select().json()
-        
+
     response.view = 'plain.html'
     return dict(item=item)

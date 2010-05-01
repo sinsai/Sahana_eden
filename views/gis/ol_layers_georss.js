@@ -1,6 +1,6 @@
 ﻿var georssLayers = new Array();
 {{for layer in georss_layers:}}
-  {{name = layer.replace(' ', '_').replace(':', '_')}}
+  {{name = re.sub('\W', '_', layer)}}
     iconURL = "{{=URL(r=request, c='default', f='download', args=georss_layers[layer].marker)}}";
     icon_img.src = iconURL;
     width = icon_img.width;
@@ -36,6 +36,11 @@
       {{else:}}
         projection: new OpenLayers.Projection('EPSG:{{=georss_layers[layer].projection}}')});
       {{pass}} 
+    {{if georss_layers[layer].visibility:}}
+      georssLayer{{=name}}.setVisibility(true);
+    {{else:}}
+      georssLayer{{=name}}.setVisibility(false);
+    {{pass}}
     map.addLayer(georssLayer{{=name}});
     georssLayers.push(georssLayer{{=name}});
     georssLayer{{=name}}.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });

@@ -3,7 +3,8 @@
  * full text of the license. */
 
 /* Translators (2009 onwards):
- *  - Eduardo.mps
+ *  - Luckas Blade
+ *  - Rodrigo Avila
  */
 
 /**
@@ -42,7 +43,7 @@ OpenLayers.Lang["pt-br"] = OpenLayers.Util.applyDefaults({
 
     'getFeatureError': "getFeatureFromEvent foi executado mas nenhum renderizador foi encontrado. Isso pode indicar que você destruiu uma camana, mas não o handler associado a ela.",
 
-    'minZoomLevelError': "A propriedade minZoomLevel é de uso restrito das camadas \"+\n        \"descendentes de FixedZoomLevels. A verificação dessa propriedade pelas camadas wfs é um resíduo do passado. Não podemos, entretanto não é possível removê-la sem possívelmente quebrar o funcionamento de aplicações OL que possuem depência com ela. Portanto estamos tornando seu uso obsoleto -- a verificação desse atributo será removida na versão 3.0. Ao invés, use as opções de resolução min/max como descrito em: http://trac.openlayers.org/wiki/SettingZoomLevels",
+    'minZoomLevelError': "A propriedade minZoomLevel é de uso restrito das camadas descendentes de FixedZoomLevels. A verificação dessa propriedade pelas camadas wfs é um resíduo do passado. Não podemos, entretanto não é possível removê-la sem possívelmente quebrar o funcionamento de aplicações OL que possuem depência com ela. Portanto estamos tornando seu uso obsoleto -- a verificação desse atributo será removida na versão 3.0. Ao invés, use as opções de resolução min/max como descrito em: http://trac.openlayers.org/wiki/SettingZoomLevels",
 
     'commitSuccess': "Transação WFS : SUCESSO ${response}",
 
@@ -53,6 +54,14 @@ OpenLayers.Lang["pt-br"] = OpenLayers.Util.applyDefaults({
     'getLayerWarning': "Não foi possível carregar a camada ${layerType} corretamente.\x3cbr\x3e\x3cbr\x3ePara se livrar dessa mensagem, selecione uma nova Camada Base, na ferramenta de alternação de camadas localização do canto superior direito.\x3cbr\x3e\x3cbr\x3eMuito provavelmente, isso foi causado porque o script da biblioteca ${layerLib} não foi incluído corretamente.\x3cbr\x3e\x3cbr\x3eDesenvolvedores: Para obter ajuda em solucionar esse problema \x3ca href=\'http://trac.openlayers.org/wiki/${layerLib}\' target=\'_blank\'\x3ecliquem aqui\x3c/a\x3e",
 
     'scale': "Escala = 1 : ${scaleDenom}",
+
+    'W': "O",
+
+    'E': "L",
+
+    'N': "N",
+
+    'S': "S",
 
     'layerAlreadyAdded': "Você tentou adicionar a camada: ${layerName} ao mapa, mas ela já foi adicionada",
 

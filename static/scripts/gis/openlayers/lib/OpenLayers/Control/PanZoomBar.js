@@ -41,10 +41,10 @@ OpenLayers.Control.PanZoomBar = OpenLayers.Class(OpenLayers.Control.PanZoom, {
     sliderEvents: null,
 
     /** 
-     * Property: zoomBarDiv
+     * Property: zoombarDiv
      * {DOMElement}
      */
-    zoomBarDiv: null,
+    zoombarDiv: null,
 
     /** 
      * Property: divEvents
@@ -57,6 +57,25 @@ OpenLayers.Control.PanZoomBar = OpenLayers.Class(OpenLayers.Control.PanZoom, {
      * {Boolean}
      */
     zoomWorldIcon: false,
+
+    /**
+     * APIProperty: forceFixedZoomLevel
+     * {Boolean} Force a fixed zoom level even though the map has 
+     *     fractionalZoom
+     */
+    forceFixedZoomLevel: false,
+
+    /**
+     * Property: mouseDragStart
+     * {<OpenLayers.Pixel>}
+     */
+    mouseDragStart: null,
+
+    /**
+     * Property: zoomStart
+     * {<OpenLayers.Pixel>}
+     */
+    zoomStart: null,
 
     /**
      * Constructor: OpenLayers.Control.PanZoomBar
@@ -78,6 +97,9 @@ OpenLayers.Control.PanZoomBar = OpenLayers.Class(OpenLayers.Control.PanZoom, {
         });
 
         OpenLayers.Control.PanZoom.prototype.destroy.apply(this, arguments);
+
+        delete this.mouseDragStart;
+        delete this.zoomStart;
     },
     
     /**
@@ -266,7 +288,7 @@ OpenLayers.Control.PanZoomBar = OpenLayers.Class(OpenLayers.Control.PanZoom, {
         var y = evt.xy.y;
         var top = OpenLayers.Util.pagePosition(evt.object)[1];
         var levels = (y - top)/this.zoomStopHeight;
-        if(!this.map.fractionalZoom) {
+        if(this.forceFixedZoomLevel || !this.map.fractionalZoom) {
             levels = Math.floor(levels);
         }    
         var zoom = (this.map.getNumZoomLevels() - 1) - levels; 
@@ -335,7 +357,7 @@ OpenLayers.Control.PanZoomBar = OpenLayers.Class(OpenLayers.Control.PanZoom, {
         if (!OpenLayers.Event.isLeftClick(evt)) {
             return;
         }
-        if (this.zoomStart) {
+        if (this.mouseDragStart) {
             this.div.style.cursor="";
             this.map.events.un({
                 "mouseup": this.passEventToSlider,
@@ -344,7 +366,7 @@ OpenLayers.Control.PanZoomBar = OpenLayers.Class(OpenLayers.Control.PanZoom, {
             });
             var deltaY = this.zoomStart.y - evt.xy.y;
             var zoomLevel = this.map.zoom;
-            if (this.map.fractionalZoom) {
+            if (!this.forceFixedZoomLevel && this.map.fractionalZoom) {
                 zoomLevel += deltaY/this.zoomStopHeight;
                 zoomLevel = Math.min(Math.max(zoomLevel, 0), 
                                      this.map.getNumZoomLevels() - 1);
@@ -352,8 +374,8 @@ OpenLayers.Control.PanZoomBar = OpenLayers.Class(OpenLayers.Control.PanZoom, {
                 zoomLevel += Math.round(deltaY/this.zoomStopHeight);
             }
             this.map.zoomTo(zoomLevel);
-            this.moveZoomBar();
             this.mouseDragStart = null;
+            this.zoomStart = null;
             OpenLayers.Event.stop(evt);
         }
     },

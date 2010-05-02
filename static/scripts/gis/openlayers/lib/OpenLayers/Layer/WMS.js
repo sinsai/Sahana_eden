@@ -62,7 +62,15 @@ OpenLayers.Layer.WMS = OpenLayers.Class(OpenLayers.Layer.Grid, {
      *     TRANSPARENT=TRUE. Also isBaseLayer will not changed by the  
      *     constructor. Default false. 
      */ 
-    noMagic: false,  
+    noMagic: false,
+    
+    /**
+     * Property: yx
+     * {Array} Array of strings with the EPSG codes for which the axis order
+     *     is to be reversed (yx instead of xy, LatLon instead of LonLat). This
+     *     is only relevant for WMS versions >= 1.3.0.
+     */
+    yx: ['EPSG:4326'],
     
     /**
      * Constructor: OpenLayers.Layer.WMS
@@ -137,7 +145,7 @@ OpenLayers.Layer.WMS = OpenLayers.Class(OpenLayers.Layer.Grid, {
             obj = new OpenLayers.Layer.WMS(this.name,
                                            this.url,
                                            this.params,
-                                           this.options);
+                                           this.getOptions());
         }
 
         //get all additions from superclasses
@@ -147,6 +155,20 @@ OpenLayers.Layer.WMS = OpenLayers.Class(OpenLayers.Layer.Grid, {
 
         return obj;
     },    
+    
+    /**
+     * APIMethod: reverseAxisOrder
+     * Returns true if the axis order is reversed for the WMS version and
+     * projection of the layer.
+     * 
+     * Returns:
+     * {Boolean} true if the axis order is reversed, false otherwise.
+     */
+    reverseAxisOrder: function() {
+        return (parseFloat(this.params.VERSION) >= 1.3 && 
+            OpenLayers.Util.indexOf(this.yx, 
+            this.map.getProjectionObject().getCode()) !== -1)
+    },
     
     /**
      * Method: getURL
@@ -164,12 +186,15 @@ OpenLayers.Layer.WMS = OpenLayers.Class(OpenLayers.Layer.Grid, {
     getURL: function (bounds) {
         bounds = this.adjustBounds(bounds);
         
-        var imageSize = this.getImageSize(); 
-        var newParams = {
-            'BBOX': this.encodeBBOX ?  bounds.toBBOX() : bounds.toArray(),
-            'WIDTH': imageSize.w,
-            'HEIGHT': imageSize.h
-        };
+        var imageSize = this.getImageSize();
+        var newParams = {};
+        // WMS 1.3 introduced axis order
+        var reverseAxisOrder = this.reverseAxisOrder();
+        newParams.BBOX = this.encodeBBOX ?
+            bounds.toBBOX(null, reverseAxisOrder) :
+            bounds.toArray(reverseAxisOrder);
+        newParams.WIDTH = imageSize.w;
+        newParams.HEIGHT = imageSize.h;
         var requestString = this.getFullRequestString(newParams);
         return requestString;
     },
@@ -225,7 +250,12 @@ OpenLayers.Layer.WMS = OpenLayers.Class(OpenLayers.Layer.Grid, {
      */
     getFullRequestString:function(newParams, altUrl) {
         var projectionCode = this.map.getProjection();
-        this.params.SRS = (projectionCode == "none") ? null : projectionCode;
+        var value = (projectionCode == "none") ? null : projectionCode
+        if (parseFloat(this.params.VERSION) >= 1.3) {
+            this.params.CRS = value;
+        } else {
+            this.params.SRS = value;
+        }
 
         return OpenLayers.Layer.Grid.prototype.getFullRequestString.apply(
                                                     this, arguments);

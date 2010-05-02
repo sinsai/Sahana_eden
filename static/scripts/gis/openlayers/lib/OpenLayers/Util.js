@@ -31,6 +31,20 @@ OpenLayers.Util.getElement = function() {
     return elements;
 };
 
+/**
+ * Function: isElement
+ * A cross-browser implementation of "e instanceof Element".
+ *
+ * Parameters:
+ * o - {Object} The object to test.
+ *
+ * Returns:
+ * {Boolean}
+ */
+OpenLayers.Util.isElement = function(o) {
+    return !!(o && o.nodeType === 1);
+};
+
 /** 
  * Maintain existing definition of $.
  */
@@ -133,17 +147,21 @@ OpenLayers.Util.clearArray = function(array) {
  * obj - {Object}
  * 
  * Returns:
- * {Integer} The index at, which the object was found in the array.
+ * {Integer} The index at, which the first object was found in the array.
  *           If not found, returns -1.
  */
 OpenLayers.Util.indexOf = function(array, obj) {
-
-    for(var i=0, len=array.length; i<len; i++) {
-        if (array[i] == obj) {
-            return i;
+    // use the build-in function if available.
+    if (typeof array.indexOf == "function") {
+        return array.indexOf(obj);
+    } else {
+        for (var i = 0, len = array.length; i < len; i++) {
+            if (array[i] == obj) {
+                return i;
+            }
         }
+        return -1;   
     }
-    return -1;   
 };
 
 
@@ -342,17 +360,10 @@ OpenLayers.Util.onImageLoad = function() {
     //
     if (!this.viewRequestID ||
         (this.map && this.viewRequestID == this.map.viewRequestID)) { 
-        this.style.backgroundColor ="transparent";
         this.style.display = "";  
     }
+    OpenLayers.Element.removeClass(this, "olImageLoadError");
 };
-
-/**
- * Property: onImageLoadErrorColor
- * {String} The color tiles with load errors will turn.
- *          Default is "pink"
- */
-OpenLayers.Util.onImageLoadErrorColor = "pink";
 
 /**
  * Property: IMAGE_RELOAD_ATTEMPTS
@@ -388,7 +399,7 @@ OpenLayers.Util.onImageLoadError = function() {
             this.src = this.src;
         }
     } else {
-        this.style.backgroundColor = OpenLayers.Util.onImageLoadErrorColor;
+        OpenLayers.Element.addClass(this, "olImageLoadError");
     }
     this.style.display = "";
 };
@@ -959,7 +970,7 @@ OpenLayers.Util.getParameters = function(url) {
                     url.indexOf('#') : url.length;
         paramsString = url.substring(start, end);
     }
-        
+
     var parameters = {};
     var pairs = paramsString.split(/[&;]/);
     for(var i=0, len=pairs.length; i<len; ++i) {
@@ -968,11 +979,8 @@ OpenLayers.Util.getParameters = function(url) {
             var key = decodeURIComponent(keyValue[0]);
             var value = keyValue[1] || ''; //empty string if no value
 
-            //decode individual values
-            value = value.split(",");
-            for(var j=0, jlen=value.length; j<jlen; j++) {
-                value[j] = decodeURIComponent(value[j]);
-            }
+            //decode individual values (being liberal by replacing "+" with " ")
+            value = decodeURIComponent(value.replace(/\+/g, " ")).split(",");
 
             //if there's only one value, do not return as array                    
             if (value.length == 1) {
@@ -1171,18 +1179,19 @@ OpenLayers.Util.normalizeScale = function (scale) {
  * 
  * Returns:
  * {Float} The corresponding resolution given passed-in scale and unit 
- *         parameters.
+ *     parameters.  If the given scale is falsey, the returned resolution will
+ *     be undefined.
  */
 OpenLayers.Util.getResolutionFromScale = function (scale, units) {
-
-    if (units == null) {
-        units = "degrees";
+    var resolution;
+    if (scale) {
+        if (units == null) {
+            units = "degrees";
+        }
+        var normScale = OpenLayers.Util.normalizeScale(scale);
+        resolution = 1 / (normScale * OpenLayers.INCHES_PER_UNIT[units]
+                                        * OpenLayers.DOTS_PER_INCH);        
     }
-
-    var normScale = OpenLayers.Util.normalizeScale(scale);
-
-    var resolution = 1 / (normScale * OpenLayers.INCHES_PER_UNIT[units]
-                                    * OpenLayers.DOTS_PER_INCH);
     return resolution;
 };
 
@@ -1642,3 +1651,61 @@ OpenLayers.Util.getScrollbarWidth = function() {
 
     return scrollbarWidth;
 };
+
+/**
+ * APIFunction: getFormattedLonLat
+ * This function will return latitude or longitude value formatted as 
+ *
+ * Parameters:
+ * coordinate - {Float} the coordinate value to be formatted
+ * axis - {String} value of either 'lat' or 'lon' to indicate which axis is to
+ *          to be formatted (default = lat)
+ * dmsOption - {String} specify the precision of the output can be one of:
+ *           'dms' show degrees minutes and seconds
+ *           'dm' show only degrees and minutes
+ *           'd' show only degrees
+ * 
+ * Returns:
+ * {String} the coordinate value formatted as a string
+ */
+OpenLayers.Util.getFormattedLonLat = function(coordinate, axis, dmsOption) {
+    if (!dmsOption) {
+        dmsOption = 'dms';    //default to show degree, minutes, seconds
+    }
+    var abscoordinate = Math.abs(coordinate)
+    var coordinatedegrees = Math.floor(abscoordinate);
+
+    var coordinateminutes = (abscoordinate - coordinatedegrees)/(1/60);
+    var tempcoordinateminutes = coordinateminutes;
+    coordinateminutes = Math.floor(coordinateminutes);
+    var coordinateseconds = (tempcoordinateminutes - coordinateminutes)/(1/60);
+    coordinateseconds =  Math.round(coordinateseconds*10);
+    coordinateseconds /= 10;
+
+    if( coordinatedegrees < 10 ) {
+        coordinatedegrees = "0" + coordinatedegrees;
+    }
+    var str = coordinatedegrees + " ";  //get degree symbol here somehow for SVG/VML labelling
+
+    if (dmsOption.indexOf('dm') >= 0) {
+        if( coordinateminutes < 10 ) {
+            coordinateminutes = "0" + coordinateminutes;
+        }
+        str += coordinateminutes + "'";
+  
+        if (dmsOption.indexOf('dms') >= 0) {
+            if( coordinateseconds < 10 ) {
+                coordinateseconds = "0" + coordinateseconds;
+            }
+            str += coordinateseconds + '"';
+        }
+    }
+    
+    if (axis == "lon") {
+        str += coordinate < 0 ? OpenLayers.i18n("W") : OpenLayers.i18n("E");
+    } else {
+        str += coordinate < 0 ? OpenLayers.i18n("S") : OpenLayers.i18n("N");
+    }
+    return str;
+};
+

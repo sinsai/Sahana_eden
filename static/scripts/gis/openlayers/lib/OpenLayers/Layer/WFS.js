@@ -12,6 +12,8 @@
 
 /**
  * Class: OpenLayers.Layer.WFS
+ * *Deprecated*.  To be removed in 3.0.  Instead use OpenLayers.Layer.Vector
+ *     with a Protocol.WFS and one or more Strategies.
  * 
  * Inherits from:
  *  - <OpenLayers.Layer.Vector>
@@ -124,6 +126,9 @@ OpenLayers.Layer.WFS = OpenLayers.Class(
             !OpenLayers.Feature.Vector) {
             this.vectorMode = false;
         }    
+
+        // Uppercase params
+        params = OpenLayers.Util.upperCaseObject(params);
         
         // Turn off error reporting, browsers like Safari may work
         // depending on the setup, and we don't want an unneccesary alert.
@@ -440,7 +445,7 @@ OpenLayers.Layer.WFS = OpenLayers.Class(
             obj = new OpenLayers.Layer.WFS(this.name,
                                            this.url,
                                            this.params,
-                                           this.options);
+                                           this.getOptions());
         }
 
         //get all additions from superclasses

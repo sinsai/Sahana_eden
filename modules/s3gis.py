@@ -137,17 +137,44 @@ class GIS(object):
         
         return marker
     
-    def get_bounds(self):
+    def get_bounds(self, features=[]):
         """
-        Calculate the bounds of a set of features
+        Calculate the bounds
         e.g. to use in GPX export for correct zooming
         """
-        # Quick fix is to read from config
-        config = self.read_config()
-        min_lon = config.min_lon
-        min_lat = config.min_lat
-        max_lon = config.max_lon
-        max_lat = config.max_lat
+        # If we have a list of features, then use this to build the bounds
+        if features:
+            min_lon = 180
+            min_lat = 90
+            max_lon = -180
+            max_lat = -90
+            for feature in features:
+                if feature.lon > max_lon:
+                    max_lon = feature.lon
+                if feature.lon < min_lon:
+                    min_lon = feature.lon
+                if feature.lat > max_lat:
+                    max_lat = feature.lat
+                if feature.lat < min_lat:
+                    min_lat = feature.lat
+            # Check that we're still within overall bounds
+            config = self.read_config()
+            if min_lon < config.min_lon:
+                min_lon = config.min_lon
+            if min_lat < config.min_lat:
+                min_lat = config.min_lat
+            if max_lon > config.max_lon:
+                max_lon = config.max_lon
+            if max_lat > config.max_lat:
+                max_lat = config.max_lat
+        
+        else:
+            # Read from config
+            config = self.read_config()
+            min_lon = config.min_lon
+            min_lat = config.min_lat
+            max_lon = config.max_lon
+            max_lat = config.max_lat
         
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 

@@ -36,6 +36,11 @@
       {{else:}}
         projection: new OpenLayers.Projection('EPSG:{{=georss_layers[layer].projection}}')});
       {{pass}} 
+    {{if georss_layers[layer].visibility:}}
+      georssLayer{{=name}}.setVisibility(true);
+    {{else:}}
+      georssLayer{{=name}}.setVisibility(false);
+    {{pass}}
     map.addLayer(georssLayer{{=name}});
     georssLayers.push(georssLayer{{=name}});
     georssLayer{{=name}}.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });

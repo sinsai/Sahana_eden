@@ -253,14 +253,14 @@ OpenLayers.Renderer.Canvas = OpenLayers.Class(OpenLayers.Renderer, {
                 if(style.fill !== false) {
                     this.setCanvasStyle("fill", style);
                     this.canvas.beginPath();
-                    this.canvas.arc(pt[0], pt[1], 6, 0, Math.PI*2, true);
+                    this.canvas.arc(pt[0], pt[1], style.pointRadius, 0, Math.PI*2, true);
                     this.canvas.fill();
                 }
                 
                 if(style.stroke !== false) {
                     this.setCanvasStyle("stroke", style);
                     this.canvas.beginPath();
-                    this.canvas.arc(pt[0], pt[1], 6, 0, Math.PI*2, true);
+                    this.canvas.arc(pt[0], pt[1], style.pointRadius, 0, Math.PI*2, true);
                     this.canvas.stroke();
                     this.setCanvasStyle("reset");
                 }
@@ -365,13 +365,13 @@ OpenLayers.Renderer.Canvas = OpenLayers.Class(OpenLayers.Renderer, {
         
         this.setCanvasStyle("reset");
         this.canvas.fillStyle = style.fontColor;
-        this.canvas.globalAlpha = 1;
+        this.canvas.globalAlpha = style.fontOpacity || 1.0;
         var fontStyle = style.fontWeight + " " + style.fontSize + " " + style.fontFamily;
         if (this.canvas.fillText) {
             // HTML5
             var labelAlign =
                 OpenLayers.Renderer.Canvas.LABEL_ALIGN[style.labelAlign[0]] ||
-                "middle";
+                "center";
             this.canvas.font = fontStyle;
             this.canvas.textAlign = labelAlign;
             this.canvas.fillText(style.label, pt[0], pt[1]);

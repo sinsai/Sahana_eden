@@ -380,8 +380,8 @@ OpenLayers.Layer = OpenLayers.Class({
     clone: function (obj) {
         
         if (obj == null) {
-            obj = new OpenLayers.Layer(this.name, this.options);
-        } 
+            obj = new OpenLayers.Layer(this.name, this.getOptions());
+        }
         
         // catch any randomly tagged-on properties
         OpenLayers.Util.applyDefaults(obj, this);
@@ -391,6 +391,23 @@ OpenLayers.Layer = OpenLayers.Class({
         obj.map = null;
         
         return obj;
+    },
+    
+    /**
+     * Method: getOptions
+     * Extracts an object from the layer with the properties that were set as
+     *     options, but updates them with the values currently set on the
+     *     instance.
+     * 
+     * Returns:
+     * {Object} the <options> of the layer, representing the current state.
+     */
+    getOptions: function() {
+        var options = {};
+        for(var o in this.options) {
+            options[o] = this[o];
+        }
+        return options;
     },
     
     /** 
@@ -555,12 +572,17 @@ OpenLayers.Layer = OpenLayers.Class({
     
     /**
      * APIMethod: getImageSize
+     *
+     * Parameters:
+     * bounds - {<OpenLayers.Bounds>} optional tile bounds, can be used
+     *     by subclasses that have to deal with different tile sizes at the
+     *     layer extent edges (e.g. Zoomify)
      * 
      * Returns:
      * {<OpenLayers.Size>} The size that the image should be, taking into 
      *     account gutters.
      */ 
-    getImageSize: function() { 
+    getImageSize: function(bounds) { 
         return (this.imageSize || this.tileSize); 
     },    
   
@@ -639,9 +661,8 @@ OpenLayers.Layer = OpenLayers.Class({
      * display - {Boolean}
      */
     display: function(display) {
-        var inRange = this.calculateInRange();
         if (display != (this.div.style.display != "none")) {
-            this.div.style.display = (display && inRange) ? "block" : "none";
+            this.div.style.display = (display && this.calculateInRange()) ? "block" : "none";
         }
     },
 

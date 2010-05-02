@@ -126,16 +126,9 @@ OpenLayers.Control.NavigationHistory = OpenLayers.Class(OpenLayers.Control, {
         OpenLayers.Control.prototype.initialize.apply(this, [options]);
         
         this.registry = OpenLayers.Util.extend({
-            "moveend": function() {
-                return {
-                    center: this.map.getCenter(),
-                    resolution: this.map.getResolution()                
-                };
-            }
+            "moveend": this.getState
         }, this.registry);
         
-        this.clear();
-
         var previousOptions = {
             trigger: OpenLayers.Function.bind(this.previousTrigger, this),
             displayClass: this.displayClass + " " + this.displayClass + "Previous"
@@ -150,6 +143,7 @@ OpenLayers.Control.NavigationHistory = OpenLayers.Class(OpenLayers.Control, {
         OpenLayers.Util.extend(nextOptions, this.nextOptions);
         this.next = new OpenLayers.Control.Button(nextOptions);
 
+        this.clear();
     },
     
     /**
@@ -285,7 +279,23 @@ OpenLayers.Control.NavigationHistory = OpenLayers.Class(OpenLayers.Control, {
      */
     clear: function() {
         this.previousStack = [];
+        this.previous.deactivate();
         this.nextStack = [];
+        this.next.deactivate();
+    },
+
+    /**
+     * Method: getState
+     * Get the current state and return it.
+     *
+     * Returns:
+     * {Object} An object representing the current state.
+     */
+    getState: function() {
+        return {
+            center: this.map.getCenter(),
+            resolution: this.map.getResolution()
+        };
     },
 
     /**

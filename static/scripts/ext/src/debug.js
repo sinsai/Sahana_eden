@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -92,7 +92,7 @@ function createConsole(){
 //     handleResize();
 
     function handleResize(){
-        var b = Ext.getBody()
+        var b = Ext.getBody();
         var size = b.getViewSize();
         if(size.height < b.dom.scrollHeight) {
             size.width -= 18;
@@ -236,10 +236,11 @@ Ext.debug.LogPanel = Ext.extend(Ext.Panel, {
     log : function(){
         var markup = [  '<div style="padding:5px !important;border-bottom:1px solid #ccc;">',
                     Ext.util.Format.htmlEncode(Array.prototype.join.call(arguments, ', ')).replace(/\n/g, '<br/>').replace(/\s/g, '&#160;'),
-                    '</div>'].join('');
+                    '</div>'].join(''),
+            bd = this.body.dom;
 
         this.body.insertHtml('beforeend', markup);
-        this.body.scrollTo('top', 100000);
+        bd.scrollTop = bd.scrollHeight;
     },
 
     clear : function(){
@@ -641,7 +642,7 @@ Ext.debug.ObjectInspector = Ext.extend(Ext.tree.TreePanel, {
         this.toggleFunc = function() {
             this.showFunc = !this.showFunc;
             this.refreshNodes(this.currentObject);
-        }
+        };
         this.bbar = new Ext.Toolbar([{
             text: 'Show Functions',
             enableToggle: true,

@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -55,17 +55,11 @@ Ext.data.ArrayReader = Ext.extend(Ext.data.JsonReader, {
         this.arrayData = o;
         var s = this.meta,
             sid = s ? Ext.num(s.idIndex, s.id) : null,
-            recordType = this.recordType, 
+            recordType = this.recordType,
             fields = recordType.prototype.fields,
             records = [],
+            success = true,
             v;
-
-        if(!this.getRoot) {
-            this.getRoot = s.root ? this.getJsonAccessor(s.root) : function(p) {return p;};
-            if(s.totalProperty) {
-                this.getTotal = this.getJsonAccessor(s.totalProperty);
-            }
-        }
 
         var root = this.getRoot(o);
 
@@ -93,8 +87,15 @@ Ext.data.ArrayReader = Ext.extend(Ext.data.JsonReader, {
                 totalRecords = v;
             }
         }
+        if(s.successProperty){
+            v = this.getSuccess(o);
+            if(v === false || v === 'false'){
+                success = false;
+            }
+        }
 
         return {
+            success : success,
             records : records,
             totalRecords : totalRecords
         };

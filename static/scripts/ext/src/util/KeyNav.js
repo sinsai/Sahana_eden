@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -113,6 +113,13 @@ Ext.KeyNav.prototype = {
             // *** (note: this bugfix sacrifices the "keyup" event originating from keyNav elements in Safari 2)
             e.stopEvent();
         }
+    },
+    
+    /**
+     * Destroy this KeyNav (this is the same as calling disable).
+     */
+    destroy: function(){
+        this.disable();    
     },
 
 	/**

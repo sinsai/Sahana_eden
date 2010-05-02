@@ -6,6 +6,11 @@
         format: OpenLayers.Format.KML,
         formatOptions: { extractStyles: true, extractAttributes: true, maxDepth: 2 },
         projection: proj4326});
+    {{if kml_layers[layer].visibility:}}
+      kmlLayer{{=name}}.setVisibility(true);
+    {{else:}}
+      kmlLayer{{=name}}.setVisibility(false);
+    {{pass}}
     map.addLayer(kmlLayer{{=name}});
     kmlLayers.push(kmlLayer{{=name}});
     kmlLayer{{=name}}.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });

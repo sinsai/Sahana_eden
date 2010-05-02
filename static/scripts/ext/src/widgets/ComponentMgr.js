@@ -1,6 +1,6 @@
 /*!
- * Ext JS Library 3.0.3
- * Copyright(c) 2006-2009 Ext JS, LLC
+ * Ext JS Library 3.2.0
+ * Copyright(c) 2006-2010 Ext JS, Inc.
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
@@ -53,10 +53,10 @@ Ext.ComponentMgr = function(){
         },
 
         /**
-         * Registers a function that will be called when a specified component is added to ComponentMgr
+         * Registers a function that will be called when a Component with the specified id is added to ComponentMgr. This will happen on instantiation.
          * @param {String} id The component {@link Ext.Component#id id}
          * @param {Function} fn The callback function
-         * @param {Object} scope The scope of the callback
+         * @param {Object} scope The scope (<code>this</code> reference) in which the callback is executed. Defaults to the Component.
          */
         onAvailable : function(id, fn, scope){
             all.on("add", function(index, o){
@@ -75,6 +75,18 @@ Ext.ComponentMgr = function(){
         all : all,
         
         /**
+         * The xtypes that have been registered with the component manager.
+         * @type {Object}
+         */
+        types : types,
+        
+        /**
+         * The ptypes that have been registered with the component manager.
+         * @type {Object}
+         */
+        ptypes: ptypes,
+        
+        /**
          * Checks if a Component type is registered.
          * @param {Ext.Component} xtype The mnemonic string by which the Component class may be looked up
          * @return {Boolean} Whether the type is registered.
@@ -82,6 +94,15 @@ Ext.ComponentMgr = function(){
         isRegistered : function(xtype){
             return types[xtype] !== undefined;    
         },
+        
+        /**
+         * Checks if a Plugin type is registered.
+         * @param {Ext.Component} ptype The mnemonic string by which the Plugin class may be looked up
+         * @return {Boolean} Whether the type is registered.
+         */
+        isPluginRegistered : function(ptype){
+            return ptypes[ptype] !== undefined;    
+        },        
 
         /**
          * <p>Registers a new Component constructor, keyed by a new
@@ -133,7 +154,12 @@ Ext.ComponentMgr = function(){
          * @return {Ext.Component} The newly instantiated Plugin.
          */
         createPlugin : function(config, defaultType){
-            return new ptypes[config.ptype || defaultType](config);
+            var PluginCls = ptypes[config.ptype || defaultType];
+            if (PluginCls.init) {
+                return PluginCls;                
+            } else {
+                return new PluginCls(config);
+            }            
         }
     };
 }();

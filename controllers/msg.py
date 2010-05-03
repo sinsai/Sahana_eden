@@ -115,9 +115,9 @@ def email_send():
         subject = row.subject
         message = row.body
         # Determine list of users
-        group = row.group_id
+        group = row.msg_group_id
         table2 = db.msg_group_user
-        query = table2.group_id == group
+        query = table2.msg_group_id == group
         recipients = db(query).select()
         for recipient in recipients:
             to = db(db.pr_person.id==recipient.person_id).select().first().email
@@ -157,11 +157,11 @@ def group_user():
     group_description = db.msg_group[group].comments
     _group_type = db.msg_group[group].group_type
     group_type = msg_group_type_opts[_group_type]
-    query = table.group_id==group
+    query = table.msg_group_id==group
     # Start building the Return with the common items
     output = dict(module_name=module_name, title=title, description=group_description, group_type=group_type)
     # Audit
-    shn_audit_read(operation='list', resource='group_user', record=group, representation='html')
+    shn_audit_read(operation='list', module="msg" ,resource='group_user', record=group, representation='html')
     item_list = []
     sqlrows = db(query).select()
     even = True
@@ -223,11 +223,11 @@ def group_validation(form):
     * Not a duplicate
     * User has Email &/or SMS fields available
     """
-    group = form.vars.group_id
+    group = form.vars.msg_group_id
     user = form.vars.person_id
     # Check for Duplicates
     table = db.msg_group_user
-    query = (table.group_id==group) & (table.person_id==user)
+    query = (table.msg_group_id==group) & (table.person_id==user)
     items = db(query).select()
     if items:
         session.error = T("User already in Group!")
@@ -266,10 +266,10 @@ def group_update_users():
     if authorised:
         for var in request.vars:
             user = var
-            query = (table.group_id==group) & (table.person_id==user)
+            query = (table.msg_group_id==group) & (table.person_id==user)
             db(query).delete()
         # Audit
-        shn_audit_update_m2m(resource='group_user', record=group, representation='html')
+        shn_audit_update_m2m(resource='group_user', module = 'msg', record=group, representation='html')
         session.flash = T("Group updated")
     else:
         session.error = T("Not authorised!")

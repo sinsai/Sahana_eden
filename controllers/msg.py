@@ -67,7 +67,7 @@ def sms_outbox():
     db.msg_sms_outbox.msg_group_id.widget = lambda f, v: StringWidget.widget(f, v)
     # Restrict list to just those of type 'sms'
     # tbc
-    return shn_rest_controller(module, 'sms_outbox')
+    return shn_rest_controller(module, 'sms_outbox', listadd = False)
 def sms_sent():
     " RESTlike CRUD controller "
     return shn_rest_controller(module, 'sms_sent', listadd=False)

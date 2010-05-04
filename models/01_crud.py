@@ -20,7 +20,7 @@ XSLT_IMPORT_TEMPLATES = 'static/xslt/import' #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = 'static/xslt/export' #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml", "lmx","pfif"] #: Supported XML import formats
+shn_xml_import_formats = ["xml", "lmx", "pfif"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
     gpx = "application/xml",
@@ -33,7 +33,8 @@ shn_xml_export_formats = dict(
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
 shn_json_export_formats = dict(
-    json = "text/x-json"
+    json = "text/x-json",
+    geojson = "text/x-json"
 ) #: Supported JSON output formats and corresponding response headers
 
 # Error messages

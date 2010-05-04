@@ -4,6 +4,7 @@
 import pygsm
 import threading
 import time
+from pygsm.autogsmmodem import GsmModemNotFound
 
 '''
   Module to spawn modem connectivity

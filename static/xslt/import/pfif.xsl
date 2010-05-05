@@ -6,7 +6,7 @@
     <xsl:output method="xml"/>
     <xsl:param name="domain"/>
 
-    <!-- SahanaPy PFIF Import Template -->
+    <!-- Sahana Eden PFIF Import Template -->
     <!-- Version 0.1 / 2009-10-05 / by nursix -->
 
     <!-- work in progress: this template is still incomplete (and therefore deactivated) -->

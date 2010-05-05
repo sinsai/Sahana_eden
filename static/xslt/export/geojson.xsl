@@ -2,7 +2,7 @@
 <xsl:stylesheet
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     
-    <!-- SahanaPy XSLT Export Template
+    <!-- Sahana Eden XSLT Export Template
 
         Transformation of
             Sahana Eden GIS Location

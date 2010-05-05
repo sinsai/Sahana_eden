@@ -3,7 +3,7 @@
 """
     S3XCR SahanaPy XML+JSON Resource Controller
 
-    @version: 1.5.1
+    @version: 1.6.0
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -1050,6 +1050,8 @@ class S3XML(object):
         self.domain = domain
         self.base_url = base_url
 
+        self.domain_mapping = True
+
         self.gis = gis
 
 
@@ -1125,6 +1127,35 @@ class S3XML(object):
 
 
     #--------------------------------------------------------------------------
+    def export_uid(self, uid):
+
+        if self.domain is None or not len(self.domain):
+            return uid
+
+        x = uid.find("/")
+        if x < 1 or x == len(uid)-1:
+            return "%s/%s" % (self.domain, uid)
+        else:
+            return uid
+
+
+    #--------------------------------------------------------------------------
+    def import_uid(self, uid):
+
+        if self.domain is None or not len(self.domain):
+            return uid
+
+        x = uid.find("/")
+        if x < 1 or x == len(uid)-1:
+            return uid
+        else:
+            (_domain, _uid) = uid.split("/", 1)
+            if _domain == self.domain:
+                return _uid
+            else:
+                return uid
+
+    #--------------------------------------------------------------------------
     def element(self, table, record, skip=[], url=None, download_url=None):
 
         """ Creates an element from a Storage() record """
@@ -1137,6 +1168,8 @@ class S3XML(object):
 
         if self.UUID in table.fields and self.UUID in record:
             value = str(table[self.UUID].formatter(record[self.UUID]))
+            if self.domain_mapping:
+                value = self.export_uid(value)
             resource.set(self.UUID, self.xml_encode(value))
 
         readable = filter( lambda key: \
@@ -1177,7 +1210,10 @@ class S3XML(object):
                 if self.UUID in ktable.fields:
                     uuid = self.db(ktable.id==value).select(ktable[self.UUID], limitby=(0, 1))
                     if uuid:
-                        uuid = uuid[0].uuid
+                        if self.domain_mapping:
+                            uuid = self.export_uid(uuid[0].uuid)
+                        else:
+                            uuid = uuid[0].uuid
                         reference = etree.SubElement(resource, self.TAG["reference"])
                         reference.set(self.ATTRIBUTE["field"], f)
                         reference.set(self.ATTRIBUTE["resource"], _ktable)
@@ -1365,7 +1401,10 @@ class S3XML(object):
         if self.UUID in table.fields and self.UUID not in skip:
             uuid = element.get(self.UUID, None)
             if uuid:
-                record[self.UUID] = uuid
+                if self.domain_mapping:
+                    record[self.UUID] = self.import_uid(uuid)
+                else:
+                    record[self.UUID] = uuid
                 original = self.db(table.uuid==uuid).select(table.ALL, limitby=(0,1))
                 if original:
                     original = original[0]
@@ -1428,6 +1467,8 @@ class S3XML(object):
                     continue
                 ktablename =  child.get(self.ATTRIBUTE["resource"], None)
                 uuid = child.get(self.UUID, None)
+                if self.domain_mapping:
+                    uuid = self.import_uid(uuid)
                 if not (ktablename and uuid):
                     continue
                 if ktablename in self.db and self.UUID in self.db[ktablename]:

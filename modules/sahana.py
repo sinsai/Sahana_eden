@@ -369,7 +369,9 @@ class AuthS3(Auth):
                             label=self.messages.label_last_name),
                     Field('person_uuid', length=64, default='',
                              readable=False, writable=False),
-
+                    # TODO:
+                    #   - Needs Validation if possible
+                    Field('mobile_phone', length=32,default=''),
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help
@@ -399,7 +401,7 @@ class AuthS3(Auth):
                             label=self.messages.label_last_name),
                     Field('person_uuid', length=64, default='',
                              readable=False, writable=False),
-
+                    Field('mobile_phone', length=32,default=''),
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help

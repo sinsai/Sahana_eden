@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <xsl:stylesheet
-            xmlns="http://www.sahanapy.org/wiki/S3XRC"
             xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
             xmlns:osm="http://openstreetmap.org/osm/0.6">
 
@@ -30,22 +29,22 @@
                         <xsl:attribute name="created_on">
                             <xsl:value-of select="@timestamp"/>
                         </xsl:attribute>
-                        
+
                         <data field="gis_feature_type" value="1">Point</data>
-                        
+
                         <data field="lat">
                             <xsl:value-of select="@lat"/>
                         </data>
                         <data field="lon">
                             <xsl:value-of select="@lon"/>
                         </data>
-                        
+
                         <xsl:if test="./tag[@k='name']">
                             <data field="name">
                                 <xsl:value-of select="./tag[@k='name']/@v"/>
                             </data>
                         </xsl:if>
-                        
+
                         <xsl:choose>
 
                             <xsl:when test="./tag[@k='aeroway'] and ./tag[@v='aerodrome']">

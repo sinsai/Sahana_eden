@@ -41,10 +41,11 @@ if shn_module_enable.get(module, False):
     resource = 'log'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+        Field("subject"),
         Field("message", "text"),
         Field("attachment", 'upload', autodelete = True),
         Field("priority", "integer"),
-        Field("source"),
+        Field("source", default='local'),
         Field("source_id", "integer"),
         Field("source_time", "datetime", default=request.utcnow),
         location_id,
@@ -63,3 +64,7 @@ if shn_module_enable.get(module, False):
     table.priority.represent = lambda id: (id and [DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12))] or [DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)])
     table.priority.label = T('Priority')
     table.categories.requires = IS_NULL_OR(IS_IN_DB(db, db.ticket_category.id, '%(name)s', multiple=True))
+    table.source.label = T('Source')
+    table.source_id.label = T('Source ID')
+    table.source_time.label = T('Source Time')
+    

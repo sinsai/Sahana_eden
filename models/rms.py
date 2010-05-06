@@ -50,8 +50,8 @@ if shn_module_enable.get(module, False):
         return  A(T('Make Pledge'), _href=URL(r=request, f='req', args=[id, 'pledge']))
 
     resource = 'req'
-    table = module + '_' + resource
-    db.define_table(table, timestamp, uuidstamp, deletion_status,
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         Field("message", "text"),
         Field("timestamp", "datetime"),
         location_id,
@@ -66,45 +66,45 @@ if shn_module_enable.get(module, False):
         Field("actioned_details"),
         migrate=migrate)
 
-    db.rms_req.id.represent = lambda id: shn_req_aid_represent(id)
+    table.id.represent = lambda id: shn_req_aid_represent(id)
 
     # Label the fields for the view
-    db[table].timestamp.label = T('Date & Time')
+    table.timestamp.label = T('Date & Time')
 
     # Hide fields from user:
-    db[table].source_type.readable = db[table].source_type.writable = False
-    db[table].source_id.readable = db[table].source_id.writable = False
-    db[table].verified.readable = db[table].verified.writable = False
-    db[table].verified_details.readable = db[table].verified_details.writable = False
-    db[table].actionable.readable = db[table].actionable.writable = False
-    db[table].actioned.readable = db[table].actioned.writable = False
-    db[table].actioned_details.readable = db[table].actioned_details.writable = False
+    table.source_type.readable = table.source_type.writable = False
+    table.source_id.readable = table.source_id.writable = False
+    table.verified.readable = table.verified.writable = False
+    table.verified_details.readable = table.verified_details.writable = False
+    table.actionable.readable = table.actionable.writable = False
+    table.actioned.readable = table.actioned.writable = False
+    table.actioned_details.readable = table.actioned_details.writable = False
     
     # Set default values
-    db[table].actionable.default = 1
-    db[table].source_type.default = 1
+    table.actionable.default = 1
+    table.source_type.default = 1
 
-    db[table].message.requires = IS_NOT_EMPTY()
-    db[table].message.comment = SPAN("*", _class="req")
+    table.message.requires = IS_NOT_EMPTY()
+    table.message.comment = SPAN("*", _class="req")
 
-    db[table].timestamp.requires = IS_NOT_EMPTY()
-    db[table].timestamp.comment = SPAN("*", _class="req")
+    table.timestamp.requires = IS_NOT_EMPTY()
+    table.timestamp.comment = SPAN("*", _class="req")
 
-    db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
-    db[table].priority.represent = lambda id: (id and [DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12))] or [DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)])
-    db[table].priority.label = T('Priority Level')
+    table.priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
+    table.priority.represent = lambda id: (id and [DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12))] or [DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)])
+    table.priority.label = T('Priority Level')
 
-    db[table].type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
-    db[table].type.represent = lambda type: type and rms_type_opts[type]
-    db[table].type.label = T('Request Type')
+    table.type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
+    table.type.represent = lambda type: type and rms_type_opts[type]
+    table.type.label = T('Request Type')
 
-    db[table].source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
-    db[table].source_type.represent = lambda stype: stype and rms_req_source_type[stype]
-    db[table].source_type.label = T('Source Type')
+    table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
+    table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
+    table.source_type.label = T('Source Type')
 
     ADD_AID_REQUEST = T('Add Aid Request')
 
-    s3.crud_strings[table] = Storage(title_create        = ADD_AID_REQUEST,
+    s3.crud_strings[tablename] = Storage(title_create        = ADD_AID_REQUEST,
                                     title_display       = "Aid Request Details",
                                     title_list          = "List Aid Requests",
                                     title_update        = "Edit Aid Request",
@@ -287,33 +287,33 @@ if shn_module_enable.get(module, False):
 
 
     resource = 'pledge'
-    table = module + '_' + resource
-    db.define_table(table, timestamp, authorstamp, uuidstamp, deletion_status,
-    Field('submitted_on', 'datetime'),
-    Field("req_id", db.rms_req),
-    Field("status", "integer"),
-    organisation_id,
-    person_id,
-    #   Field('submitted_by', db.auth_user), # replaced by authorstamp
-    #   location_id,
-    #   Field('comment_id', db.comment),
-    migrate=migrate)
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_status,
+        Field('submitted_on', 'datetime'),
+        Field("req_id", db.rms_req),
+        Field("status", "integer"),
+        organisation_id,
+        person_id,
+        #   Field('submitted_by', db.auth_user), # replaced by authorstamp
+        #   location_id,
+        #   Field('comment_id', db.comment),
+        migrate=migrate)
 
-    db.rms_pledge.id.represent = lambda id: shn_req_pledge_represent(id)
+    table.id.represent = lambda id: shn_req_pledge_represent(id)
 
     # hide unnecessary fields
-    db[table].req_id.writable = db[table].req_id.readable = False
+    table.req_id.readable = table.req_id.writable = False
 
     # set pledge default
-    db[table].status.default = 1
+    table.status.default = 1
 
     # auto fill posted_on field and make it readonly
-    db[table].submitted_on.default = request.now
-    db[table].submitted_on.writable = False
+    table.submitted_on.default = request.now
+    table.submitted_on.writable = False
 
-    db[table].status.requires = IS_IN_SET(rms_status_opts)
-    db[table].status.represent = lambda status: status and rms_status_opts[status]
-    db[table].status.label = T('Pledge Status')
+    table.status.requires = IS_IN_SET(rms_status_opts)
+    table.status.represent = lambda status: status and rms_status_opts[status]
+    table.status.label = T('Pledge Status')
 
     # Pledges as a component of requests
     s3xrc.model.add_component(module, resource,
@@ -323,7 +323,7 @@ if shn_module_enable.get(module, False):
         editable=True,
         list_fields = ['id', 'organisation_id', 'person_id', 'submitted_on', 'status'])
 
-    s3.crud_strings[table] = Storage(title_create        = "Add Pledge",
+    s3.crud_strings[tablename] = Storage(title_create        = "Add Pledge",
                                     title_display       = "Pledge Details",
                                     title_list          = "List Pledges",
                                     title_update        = "Edit Pledge",
@@ -342,8 +342,8 @@ if shn_module_enable.get(module, False):
     # ------------------
     # Create the table for request_detail for requests with arbitrary keys
     resource = 'req_detail'
-    table = module + '_' + resource
-    db.define_table(table, timestamp, uuidstamp, deletion_status,
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         request_id,
         Field("request_key", "string"),
         Field("value", "string"),
@@ -358,15 +358,15 @@ if shn_module_enable.get(module, False):
         list_fields = ['id', 'req_id', 'request_key', 'value'])
 
     # Make some fields invisible:
-    db[table].req_id.writable = db[table].req_id.readable = False
+    table.req_id.readable = table.req_id.writable = False
 
     # make all fields read only
-    #db[table].tweet_request_id.writable = db[table].tweet_request_id.readable = False
-    #db[table].request_key.writable = False
-    #db[table].value.writable = False
+    #table.tweet_request_id.readable = table.tweet_request_id.writable = False
+    #table.request_key.writable = False
+    #table.value.writable = False
 
     ADD_REQUEST_DETAIL = T('Add Request Detail')
-    s3.crud_strings[table] = Storage( title_create        = ADD_REQUEST_DETAIL,
+    s3.crud_strings[tablename] = Storage( title_create        = ADD_REQUEST_DETAIL,
                                     title_display       = "Request Detail",
                                     title_list          = "List Request Details",
                                     title_update        = "Edit Request Details",

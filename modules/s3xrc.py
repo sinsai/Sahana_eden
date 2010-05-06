@@ -907,6 +907,7 @@ class XVector(object):
 
                 if self.method == self.ACTION["update"]:
                     try:
+                        self.record.update(deleted=False) # Undelete re-imported records!
                         success = self.db(self.table.id==self.id).update(**dict(self.record))
                         if len(self.components):
                             db_record = self.db(self.table.id==self.id).select(self.table.ALL)[0]
@@ -1467,7 +1468,7 @@ class S3XML(object):
                     continue
                 ktablename =  child.get(self.ATTRIBUTE["resource"], None)
                 uuid = child.get(self.UUID, None)
-                if self.domain_mapping:
+                if uuid is not None and self.domain_mapping:
                     uuid = self.import_uid(uuid)
                 if not (ktablename and uuid):
                     continue

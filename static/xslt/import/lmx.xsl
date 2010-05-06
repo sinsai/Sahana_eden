@@ -3,12 +3,12 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
     xmlns:lm="http://www.nokia.com/schemas/location/landmarks/1/0">
 
-    <!-- SahanaPy XSLT Import Template
+    <!-- Sahana Eden XSLT Import Template
 
         Transformation of
             NOKIA Landmark Location
         into
-            SahanaPy GIS Location
+            Sahana Eden GIS Location
     -->
 
     <xsl:output method="xml"/>

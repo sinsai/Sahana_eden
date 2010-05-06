@@ -7,7 +7,7 @@
 
     <xsl:template match="/s3xrc">
         <feed xmlns="http://www.w3.org/2005/Atom" xmlns:georss="http://www.georss.org/georss">
-            <title>SahanaPy GIS Features</title>
+            <title>Sahana Eden GIS Features</title>
             <link href="{@url}"/>
             <xsl:apply-templates select="resource"/>
         </feed>

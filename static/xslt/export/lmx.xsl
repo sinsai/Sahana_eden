@@ -3,10 +3,10 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
     xmlns:lm="http://www.nokia.com/schemas/location/landmarks/1/0">
 
-    <!-- SahanaPy XSLT Export Template
+    <!-- Sahana Eden XSLT Export Template
 
         Transformation of
-            SahanaPy GIS Location
+            Sahana Eden GIS Location
         into
             NOKIA Landmark Location
     -->
@@ -25,10 +25,10 @@
         <lm:name>
             <xsl:choose>
                 <xsl:when test="./@domain">
-                    <xsl:value-of select="concat('SahanaPy GIS Locations / ', ./@domain)"/>
+                    <xsl:value-of select="concat('Sahana Eden GIS Locations / ', ./@domain)"/>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:text>SahanaPy GIS Locations</xsl:text>
+                    <xsl:text>Sahana Eden GIS Locations</xsl:text>
                 </xsl:otherwise>
             </xsl:choose>
         </lm:name>

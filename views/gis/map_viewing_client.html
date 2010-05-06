@@ -19,17 +19,17 @@
 Ext.onReady(function() {
     
     map = new OpenLayers.Map('center', options);
-	
+
     addLayers(map);
     
     {{include 'gis/ol_layers_features_all.js'}}
     
-	{{include 'gis/ol_controls.js'}}
+    {{include 'gis/ol_controls.js'}}
     
     var mapPanel = new GeoExt.MapPanel({
         region: "center",
         width: {{=width}},
-		height: {{=height}},
+        height: {{=height}},
         id: "mappanel",
         xtype: "gx_mappanel",
         map: map,
@@ -78,21 +78,42 @@ Ext.onReady(function() {
         lines: false,
         enableDD: true
     });
-    
+
+    var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+        map: map,
+        zoom: 8
+     });
+
+     var searchCombo = new Ext.Panel({
+        title: "{{=T("Search Geonames")}}",
+        layout: 'border',
+        rootVisible: false,
+        split: true,
+        autoScroll: true,
+        collapsible: true,
+        collapseMode: "mini",
+        lines: false,
+        html: "{{=T("Geonames.org search requires Internet connectivity!")}}",
+        items: [{
+                region: "center",
+                items: [ mapSearch ]
+            }]    
+     });
+ 
     {{if layout == 1:}}
       var win = new Ext.Window({
-    	collapsible: true,
-	{{elif layout == 2:}}
+        collapsible: true,
+    {{elif layout == 2:}}
       var panel = new Ext.Panel({
-	    renderTo: "map_panel",
+        renderTo: "map_panel",
     {{pass}}
-		//title    : 'Sahana Map Viewing Client',
-		maximizable: true,
-		titleCollapse: true,
-		width: {{=width}},
-		height: {{=height}},
+        //title    : 'Sahana Map Viewing Client',
+        maximizable: true,
+        titleCollapse: true,
+        width: {{=width}},
+        height: {{=height}},
         layout: 'border',
-		items:  [{
+        items:  [{
                     region: "west",
                     id: "tools",
                     title: "{{=T("Tools")}}",
@@ -100,7 +121,10 @@ Ext.onReady(function() {
                     width: 250,
                     collapsible: true,
                     split: true,
-                    items: [ layerTree ]
+                    items: [
+                        layerTree,
+                        searchCombo
+                        ]
                 },
                 mapPanel
                 ]

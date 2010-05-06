@@ -78,7 +78,31 @@ Ext.onReady(function() {
         lines: false,
         enableDD: true
     });
-    
+
+
+     var geoNameSearchBox = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+        map: map, zoom: 12
+     });
+
+     var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+        map: map,
+        zoom: 8
+     });
+
+     var searchCombo = new Ext.Panel({
+ 	title: "{{=T("Search Geonames")}}",
+	layout: 'border',
+	rootVisible: false,
+        split: true,
+        autoScroll: true,
+        collapsible: true,
+        collapseMode: "mini",
+        lines: false,
+	html: "{{=T("Geonames.org connectivity required!")}}",
+	tbar: [mapSearch],
+	items: [mapSearch]    
+     });	
+ 
     {{if layout == 1:}}
       var win = new Ext.Window({
     	collapsible: true,
@@ -100,7 +124,7 @@ Ext.onReady(function() {
                     width: 250,
                     collapsible: true,
                     split: true,
-                    items: [ layerTree ]
+                    items: [ layerTree,searchCombo,mapSearch ]
                 },
                 mapPanel
                 ]

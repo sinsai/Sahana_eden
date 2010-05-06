@@ -52,32 +52,35 @@ if shn_module_enable.get(module, False):
     resource = 'req'
     table = module + '_' + resource
     db.define_table(table, timestamp, uuidstamp, deletion_status,
-    Field("message", "text"),
-    location_id,
-    Field("timestamp", "datetime"),
-    Field("type", "integer"),
-    Field("priority", "integer"),
-    Field("verified", "boolean"),
-    Field("city", "string"),
-    Field("completion_status", "boolean"),
-    Field("source_type", "integer"),
-    Field("source_id", "integer"),
-    Field("actionable", "boolean"),
+        Field("message", "text"),
+        Field("timestamp", "datetime"),
+        location_id,
+        Field("type", "integer"),
+        Field("priority", "integer"),
+        Field("source_type", "integer"),
+        Field("source_id", "integer"),
+        Field("verified", "boolean"),
+        Field("verified_details"),
+        Field("actionable", "boolean"),
+        Field("actioned", "boolean"),
+        Field("actioned_details"),
         migrate=migrate)
 
     db.rms_req.id.represent = lambda id: shn_req_aid_represent(id)
 
-    #label the fields for the view
+    # Label the fields for the view
     db[table].timestamp.label = T('Date & Time')
 
-    #Hide fields from user:
+    # Hide fields from user:
+    db[table].source_type.readable = db[table].source_type.writable = False
+    db[table].source_id.readable = db[table].source_id.writable = False
     db[table].verified.readable = db[table].verified.writable = False
-    db[table].source_id.writable = db[table].source_id.readable = False
-    db[table].completion_status.writable = db[table].completion_status.readable = False
-    db[table].actionable.writable = db[table].actionable.readable = False
-    db[table].source_type.writable = db[table].source_type.readable = False
-
-    #set default values
+    db[table].verified_details.readable = db[table].verified_details.writable = False
+    db[table].actionable.readable = db[table].actionable.writable = False
+    db[table].actioned.readable = db[table].actioned.writable = False
+    db[table].actioned_details.readable = db[table].actioned_details.writable = False
+    
+    # Set default values
     db[table].actionable.default = 1
     db[table].source_type.default = 1
 
@@ -87,9 +90,7 @@ if shn_module_enable.get(module, False):
     db[table].timestamp.requires = IS_NOT_EMPTY()
     db[table].timestamp.comment = SPAN("*", _class="req")
 
-
     db[table].priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
-    #db[table].priority.represent = lambda prior: prior and rms_priority_opts[prior]
     db[table].priority.represent = lambda id: (id and [DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12))] or [DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)])
     db[table].priority.label = T('Priority Level')
 
@@ -99,7 +100,7 @@ if shn_module_enable.get(module, False):
 
     db[table].source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
     db[table].source_type.represent = lambda stype: stype and rms_req_source_type[stype]
-    db[table].source_type.label = T(' Source Type')
+    db[table].source_type.label = T('Source Type')
 
     ADD_AID_REQUEST = T('Add Aid Request')
 
@@ -123,7 +124,7 @@ if shn_module_enable.get(module, False):
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req.id', '%(message)s')),
                     represent = lambda id: (id and [db(db.rms_req.id==id).select().first().updated] or ["None"])[0],
                     label = T('Aid Request'),
-                    comment = DIV(A(ADD_AID_REQUEST, _class='colorbox', _href=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup')), _target='top', _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
+                    comment = DIV(A(ADD_AID_REQUEST, _class='colorbox', _href=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup')), _target='top', _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
                     ondelete = 'RESTRICT'
                     ))
 
@@ -386,6 +387,6 @@ if shn_module_enable.get(module, False):
                     requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req_detail.id', '%( request_key)s')),
                     represent = lambda id: (id and [db(db.rms_req_detail.id==id).select().first().updated] or ["None"])[0],
                     label = T('Request Detail'),
-                    comment = DIV(A(ADD_REQUEST_DETAIL, _class='colorbox', _href=URL(r=request, c='rms', f='req_detail', args='create', vars=dict(format='popup')), _target='top', _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("ADD Request|The Request this record is associated with."))),
+                    comment = DIV(A(ADD_REQUEST_DETAIL, _class='colorbox', _href=URL(r=request, c='rms', f='req_detail', args='create', vars=dict(format='popup')), _target='top', _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
                     ondelete = 'RESTRICT'
                     ))

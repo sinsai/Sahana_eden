@@ -29,7 +29,7 @@ shn_module_enable = {
     "msg" : True,               # Messaging
     "nim" : False,              # Nursing Information Manager
     "rms" : False,              # Request Management
-    "ticket" : False,           # Ticketing
+    "ticket" : True,            # Ticketing
     "vol" : True                # Volunteer Management
 }
 

@@ -34,7 +34,7 @@ if shn_module_enable.get(module, False):
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    
+
     # -----------------
     # Tickets table (All sources get entered here : either manually or via S3XRC or Messaging)
 
@@ -67,4 +67,3 @@ if shn_module_enable.get(module, False):
     table.source.label = T('Source')
     table.source_id.label = T('Source ID')
     table.source_time.label = T('Source Time')
-    

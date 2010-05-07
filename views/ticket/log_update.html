@@ -1,6 +1,6 @@
 {{extend 'layout.html'}}
 {{include '_update.html'}}
 <p>&nbsp;</p>
-<a id='contents-btn' href="{{=URL(r=request, c='msg', f='sms_outbox', args='create', vars=dict(format='popup'))}}" class='colorbox'>{{=T('Create Alert')}}</a>
-<a id='contents-btn' href="{{=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup'))}}" class='colorbox'>{{=T('Create Request')}}</a>
-<a id='contents-btn' href="{{=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup'))}}" class='colorbox'>{{=T('Create Volunteer Project')}}</a>
+<a id='add-btn' href="{{=URL(r=request, c='msg', f='sms_outbox', args='create', vars=dict(format='popup'))}}" class='colorbox' target='top'>{{=T('Create Alert')}}</a>
+<a id='contents-btn' href="{{=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup'))}}" class='colorbox' target='top'>{{=T('Create Request')}}</a>
+<a id='edit-btn' href="{{=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup'))}}" class='colorbox' target='top'>{{=T('Create Volunteer Project')}}</a>

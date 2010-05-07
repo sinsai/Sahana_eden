@@ -46,3 +46,4 @@ if shn_module_enable.get(module, False):
         Field("actioned", "boolean"),
         Field("actioned_details", "text"),
         migrate=migrate)
+

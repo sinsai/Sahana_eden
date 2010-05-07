@@ -26,9 +26,10 @@ shn_module_enable = {
     "hms" : True,               # Hospital Management
     "hrm" : True,               # Human Resources Management
     "mpr" : True,               # Missing Person Registry
-    "msg" : False,              # Messaging
+    "msg" : True,               # Messaging
     "nim" : False,              # Nursing Information Manager
     "rms" : False,              # Request Management
+    "ticket" : False,           # Ticketing
     "vol" : True                # Volunteer Management
 }
 
@@ -241,6 +242,15 @@ if empty:
             access='',
             description="Helps to monitor status of hospitals",
             enabled=shn_module_enable.get('hms', False)
+        )
+        table.insert(
+            name="ticket",
+            name_nice="Ticketing Module",
+            priority=19,
+            module_type=4,
+            access='',
+            description="Master Message Log to process incoming reports & requests",
+            enabled=shn_module_enable.get('ticket', False)
         )
 
 # Modules Menu (available in all Controllers)

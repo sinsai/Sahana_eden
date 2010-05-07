@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <xsl:stylesheet
-            xmlns="http://www.sahanapy.org/wiki/S3XRC"
             xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
             xmlns:have="urn:oasis:names:tc:emergency:EDXL:HAVE:1.0"
             xmlns:gml="http://www.opengis.net/gml"

@@ -258,6 +258,24 @@ if empty:
                 audit_write = False
             )
 
+    # Ticketing System
+    if shn_module_enable.get('ticket', False):
+        table = 'ticket_setting'
+        if not db(db[table].id).count():
+            db[table].insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+        table = 'ticket_category'
+        if not db(db[table].id).count():
+            db[table].insert( name = 'Report Missing Person' )
+            db[table].insert( name = 'Report Security Incident' )
+            db[table].insert( name = 'Report Information' )
+            db[table].insert( name = 'Request for Assistance' )
+            db[table].insert( name = 'Offer of Help' )
+            
+
     # Volunteer Management
     if shn_module_enable.get('vol', False):
         table = 'vol_setting'

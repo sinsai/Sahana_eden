@@ -17,6 +17,7 @@ $(document).ready(function() {
     var togglecallerappend;
     window.togglecallerappend = "True";
     $('a.colorbox').click(function(){
+        // Function to Add a Resource from within a form
         $(this).attr('href', function() {
             // Add the caller to the URL vars so that the popup knows which field to refresh/set
             var url_in = $(this).attr('href');

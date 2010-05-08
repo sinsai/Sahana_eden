@@ -43,6 +43,11 @@
                         <xsl:value-of select="description"/>
                     </data>
 
+                    <data field="source">
+                        <!-- Should be replaced by domain when Ushahidi API supports this -->
+                        <xsl:text>ushahidi</xsl:text>
+                    </data>
+
                     <data field="source_id">
                         <xsl:value-of select="id"/>
                     </data>

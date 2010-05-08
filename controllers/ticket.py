@@ -92,6 +92,8 @@ def log():
 
     if len(request.args) == 0:
         # List View - reduce fields to declutter
+        table.message.readable = False
+        table.categories.readable = False
         table.verified_details.readable = False
         table.actioned_details.readable = False
     

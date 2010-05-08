@@ -1,10 +1,10 @@
 <div id="list_formats">
-  <a href="{{=response.s3.pdf or URL(r=request, args=request.args, vars={'format':'pdf'})}}" title="{{=T('Export in PDF format')}}"><img src="/{{=request.application}}/static/img/pdficon_small.gif"/></a>
-  <a href="{{=response.s3.xls or URL(r=request, args=request.args, vars={'format':'xls'})}}" title="{{=T('Export in XLS format')}}"><img src="/{{=request.application}}/static/img/icon-xls.png"/></a>
-  <a href="{{=response.s3.rss or URL(r=request, args=request.args, vars={'format':'rss'})}}" title="{{=T('Export in RSS format')}}"><img src="/{{=request.application}}/static/img/RSS_16.png"/></a>
+  <a href="{{=response.s3.pdf or URL(r=request, args=request.args)}}.pdf" title="{{=T('Export in PDF format')}}"><img src="/{{=request.application}}/static/img/pdficon_small.gif"/></a>
+  <a href="{{=response.s3.xls or URL(r=request, args=request.args)}}.xls" title="{{=T('Export in XLS format')}}"><img src="/{{=request.application}}/static/img/icon-xls.png"/></a>
+  <a href="{{=response.s3.rss or URL(r=request, args=request.args)}}.rss" title="{{=T('Export in RSS format')}}"><img src="/{{=request.application}}/static/img/RSS_16.png"/></a>
 {{try:}}
 {{test = db['%s_%s' % (request.controller, request.function)].location_id}}
-  <a href="{{=response.s3.kml or URL(r=request, args=request.args, vars={'format':'kml'})}}" title="{{=T('Export in KML format')}}"><img src="/{{=request.application}}/static/img/kml_icon.png"/></a>
+  <a href="{{=response.s3.kml or URL(r=request, args=request.args)}}.kml" title="{{=T('Export in KML format')}}"><img src="/{{=request.application}}/static/img/kml_icon.png"/></a>
 {{except:}}
 {{pass}}
 {{if 'map' in response.s3:}}

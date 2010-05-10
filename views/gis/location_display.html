@@ -1,0 +1,7 @@
+{{extend 'layout.html'}}
+<div id="list_formats">
+    <a href="{{=URL(r=request, args=request.args)}}.gpx" title="{{=T('Export in GPX format')}}"><img src="/{{=request.application}}/static/img/gpx_icon.png"/></a>
+    <a href="{{=URL(r=request, args=request.args)}}.kml" title="{{=T('Export in KML format')}}"><img src="/{{=request.application}}/static/img/kml_icon.png"/></a>
+    <a href="{{=URL(r=request, args=request.args)}}.osm" title="{{=T('Export in OSM format')}}"><img src="/{{=request.application}}/static/img/osm_icon.png"/></a>
+</div>
+{{include '_display.html'}}

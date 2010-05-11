@@ -1,0 +1,19 @@
+{{extend 'layout.html'}}
+<p>Copy Ticket to new:</p>
+<a id='add-btn' href="{{=URL(r=request, c='msg', f='sms_outbox', args='create', vars=dict(format='popup'))}}" title='Create Alert' class='colorboxrt' target='top'>{{=T('Alert')}}</a>
+<a id='contents-btn' href="{{=URL(r=request, c='mpr', f='person', args='create', vars=dict(format='popup'))}}" title='Create Missing Person Report' class='colorboxrt' target='top'>{{=T('Missing Persons Report')}}</a>
+<a id='edit-btn' href="{{=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup'))}}" title='Create Request' class='colorboxrt' target='top'>{{=T('Request')}}</a>
+<a id='register-btn' href="{{=URL(r=request, c='sitrep', f='report', args='create', vars=dict(format='popup'))}}" title='Create Situation Report' class='colorboxrt' target='top'>{{=T('Situation Report')}}</a>
+<a id='retrieve-btn' href="{{=URL(r=request, c='vol', f='project', args='create', vars=dict(format='popup'))}}" title='Create Volunteer Project' class='colorboxrt' target='top'>{{=T('Volunteer Project')}}</a>
+<p>&nbsp;</p>
+{{include '_update.html'}}
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function(){
+    $(".colorboxrt").click(function(){
+        // Open New windows as popup Colorboxes
+        $.fn.colorbox({iframe:true, width:"80%", height:"80%", href:this.href, title:this.title});
+        // Prevent normal window from opening
+        return false;
+    });
+});
+//]]></script>    

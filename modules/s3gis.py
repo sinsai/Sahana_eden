@@ -3,7 +3,7 @@
 """
     SahanaPy GIS Module
 
-    @version: 0.0.3
+    @version: 0.0.4
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
@@ -85,7 +85,9 @@ class GIS(object):
         self.messages.lock_keys = True
         
     def read_config(self):
-        """ Reads the current GIS Config from the DB """
+        """
+            Reads the current GIS Config from the DB 
+        """
         
         db = self.db
                 
@@ -94,7 +96,9 @@ class GIS(object):
         return config
         
     def get_feature_class_id_from_name(self, name):
-        """ Returns the Feature Class ID from it's name"""
+        """
+            Returns the Feature Class ID from it's name
+        """
 
         db = self.db
         
@@ -105,7 +109,9 @@ class GIS(object):
             return None
     
     def get_marker(self, feature_id):
-        """ Returns the Marker URL for a Feature"""
+        """
+            Returns the Marker URL for a Feature
+        """
 
         db = self.db
         
@@ -139,8 +145,8 @@ class GIS(object):
     
     def get_bounds(self, features=[]):
         """
-        Calculate the bounds
-        e.g. to use in GPX export for correct zooming
+            Calculate the Bounds of a list of Features
+            e.g. to use in GPX export for correct zooming
         """
         # If we have a list of features, then use this to build the bounds
         if features:
@@ -181,7 +187,7 @@ class GIS(object):
     def update_location_tree(self):
         """
             Update the Tree for GIS Locations:
-            http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
         db = self.db
@@ -196,7 +202,7 @@ class GIS(object):
         db = self.db
         
         # Switch to modified preorder tree traversal:
-        # http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
+        # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         children = db(db.gis_location.parent == parent_id).select()
         for child in children:
             children = children & self.get_children(child.id)
@@ -211,7 +217,10 @@ class GIS(object):
             (db.gis_location.lon_max >= lon_min))
     
     def _intersects(self, shape):
-        "Returns Rows of locations whose shape intersects the given shape"
+        """
+            Returns Rows of locations whose shape intersects the given shape
+        """
+        
         db = self.db
         for loc in self.bbox_intersects(*shape.bounds).select():
             location_shape = wkt_loads(loc.wkt)
@@ -219,7 +228,10 @@ class GIS(object):
                 yield loc
     
     def _intersects_latlon(self, lat, lon):
-        "Returns a generator of locations whose shape intersects the given lat,lon"    
+        """
+            Returns a generator of locations whose shape intersects the given LatLon
+        """    
+        
         point = shapely.geometry.point.Point(lon, lat)
         return self.intersects(point)
     
@@ -234,6 +246,7 @@ class GIS(object):
             For lines and polygons, the lat, lon returned represent the shape's centroid.
             Centroid and bounding box will be None if shapely is not available.
         """
+        
         if not wkt:
             assert lon is not None and lat is not None, "Need wkt or lon+lat to parse a location"
             wkt = 'POINT(%f %f)' % (lon, lat)
@@ -256,6 +269,7 @@ class GIS(object):
         res = {'wkt': wkt, 'lat': lat, 'lon': lon, 'gis_feature_type': geom_type}
         if bbox:
             res['lon_min'], res['lat_min'], res['lon_max'], res['lat_max'] = bbox
+        
         return res
 
     def abbreviate_wkt(self, wkt, max_length=30):
@@ -264,21 +278,24 @@ class GIS(object):
         return wkt
         
     def latlon_to_wkt(self, lat, lon):
-        """Convert a LatLon to a WKT string
-        >>> s3gis.latlon_to_wkt(6, 80)
-        'POINT(80 6)'
+        """
+            Convert a LatLon to a WKT string
+        
+            >>> s3gis.latlon_to_wkt(6, 80)
+            'POINT(80 6)'
         """
         WKT = 'POINT(%f %f)' % (lon, lat)
         return WKT
 
     def wkt_centroid(self, form):
         """
-        OnValidation callback:
-        If a Point has LonLat defined: calculate the WKT.
-        If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
-        Centroid calculation is done using Shapely, which wraps Geos.
-        A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+            OnValidation callback:
+            If a Point has LonLat defined: calculate the WKT.
+            If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
+            Centroid calculation is done using Shapely, which wraps Geos.
+            A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
         """
+        
         if form.vars.gis_feature_type == '1':
             # Point
             if form.vars.lon == None and form.vars.lat == None:
@@ -328,6 +345,59 @@ class GIS(object):
         
         return
 
+    def bearing(lat_start, lon_start, lat_end, lon_end):
+        """
+            Given a Start & End set of Coordinates, return a Bearing
+            Formula from: http://www.movable-type.co.uk/scripts/latlong.html
+        """
+        
+        import math
+        
+        delta_lon = lon_start - lon_end
+        bearing = math.atan2( math.sin(delta_lon)*math.cos(lat_end) , (math.cos(lat_start)*math.sin(lat_end)) - (math.sin(lat_start)*math.cos(lat_end)*math.cos(delta_lon)) )
+        # Convert to a compass bearing
+        bearing = (bearing + 360) % 360
+        
+        return bearing
+
+    def get_features_in_radius(lat, lon, radius):
+        """
+            Returns Features within a Radius (in km) of a LatLon Location
+            Calling function has the job of filtering features by the type they are interested in
+            Formula from: http://blog.peoplesdns.com/archives/24
+            Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
+            
+            IF PROJECTION CHANGES THIS WILL NOT WORK
+        """
+        
+        import math
+        
+        # km
+        radius_earth = 6378.137
+        pi = math.pi
+
+        # ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
+        lat_max = 90
+        lat_min = -90
+        lon_max = 180
+        lon_min = -180
+        table = db.gis_location
+        query = (table.lat > lat_min) & (table.lat < lat_max) & (table.lon < lon_max) & (table.lon > lon_min)
+        deleted = ((table.deleted==False) | (table.deleted==None))
+        query = deleted & query
+        
+        # ToDo: complete port from PHP to Eden
+        pilat180 = pi * lat /180
+        #calc = "radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180)))"
+        #query2 = "SELECT DISTINCT table.lon, table.lat, calc AS distance FROM table WHERE calc <= radius ORDER BY distance"
+        #query2 = (radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180))) < radius)
+        # TypeError: unsupported operand type(s) for *: 'float' and 'Field'
+        query2 = (radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180))) < radius)
+        #query = query & query2
+        features = db(query).select()
+        #features = db(query).select(orderby=distance)
+      
+        return features
 
 class Geocoder(object):
     " Base class for all geocoders "

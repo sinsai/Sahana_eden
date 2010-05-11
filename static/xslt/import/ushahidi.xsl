@@ -29,12 +29,23 @@
 
                 <resource name="ticket_log">
 
+                    <xsl:attribute name="uuid">
+                        <!-- Should be replaced by domain when Ushahidi API supports this -->
+                        <xsl:text>ushahidi/</xsl:text>
+                        <xsl:value-of select="id"/>
+                    </xsl:attribute>
+            
                     <data field="subject">
                         <xsl:value-of select="title"/>
                     </data>
 
                     <data field="message">
                         <xsl:value-of select="description"/>
+                    </data>
+
+                    <data field="source">
+                        <!-- Should be replaced by domain when Ushahidi API supports this -->
+                        <xsl:text>ushahidi</xsl:text>
                     </data>
 
                     <data field="source_id">
@@ -60,7 +71,7 @@
                     <reference field="location_id" resource="gis_location">
                         <xsl:attribute name="uuid">
                             <xsl:text>ushahidi/</xsl:text>
-                            <xsl:value-of select="id"/>
+                            <xsl:value-of select="location/id"/>
                         </xsl:attribute>
                     </reference>
 
@@ -87,6 +98,7 @@
         <resource name="gis_location">
 
             <xsl:attribute name="uuid">
+                <!-- Should be replaced by domain when Ushahidi API supports this -->
                 <xsl:text>ushahidi/</xsl:text>
                 <xsl:value-of select="id"/>
             </xsl:attribute>

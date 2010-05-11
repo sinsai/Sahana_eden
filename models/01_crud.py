@@ -1033,7 +1033,7 @@ def import_xml(jr, **attr):
         source = jr.request.body
 
     tree = s3xrc.xml.parse(source)
-
+    
     # XSLT Transformation
     if not jr.representation=="xml":
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)

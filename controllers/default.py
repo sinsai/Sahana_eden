@@ -108,10 +108,49 @@ def apath(path=''):
 def about():
     "About Sahana page provides details on component versions."
     import sys
+    import subprocess
+    import string
     python_version = sys.version
     web2py_version = open(apath('../VERSION'), 'r').read()[8:]
     sahana_version = open(os.path.join(request.folder, 'VERSION'), 'r').read()
-    return dict(module_name=module_name, python_version=python_version, sahana_version=sahana_version, web2py_version=web2py_version)
+    try:
+        sqlite_version = (subprocess.Popen(["sqlite3", "-version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()
+    except:
+        sqlite_version = "Not installed or available"
+    try:
+        mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]    
+    except:
+        mysql_version = "Not installed or available"
+    try:    
+        pgsql_reply = (subprocess.Popen(["psql", "--version"], stdout=subprocess.PIPE).communicate()[0]) 
+        pgsql_version = string.split(pgsql_reply)[2]
+    except:
+        pgsql_version = "Not installed or available"
+    try:
+        import MySQLdb
+        pymysql_version = MySQLdb.__revision__
+    except:
+        pymysql_version = "Not installed or available"
+    try:
+        import reportlab
+        reportlab_version = reportlab.Version
+    except:
+        reportlab_version = "Not installed or available"
+    try:
+        import xlwt
+        xlwt_version = xlwt.__VERSION__
+    except:
+        xlwt_version = "Not installed or available"
+    return dict(module_name=module_name,
+                python_version=python_version, 
+                sahana_version=sahana_version, 
+                web2py_version=web2py_version, 
+                sqlite_version=sqlite_version,
+                mysql_version=mysql_version,
+                pgsql_version=pgsql_version,
+                pymysql_version=pymysql_version,
+                reportlab_version=reportlab_version, 
+                xlwt_version=xlwt_version)
 
 def help():
     "Custom View"

@@ -1,14 +1,14 @@
 {{extend 'layout.html'}}
-<h2>{{=T("About Sahana")}}</h2>
+<h2>{{=T("About Sahana Eden")}}</h2>
 <div class='item-container'>
 <table>
 <tr><td>
-<strong>Component</strong>
+<strong>Key Components</strong>
 </td><td>
-<strong>Details</strong>
+<strong>Version</strong>
 </td></tr>
 <tr><td>
-Sahana
+Sahana Eden
 </td><td>
 {{=sahana_version}}
 </td></tr>
@@ -26,6 +26,44 @@ Web2Py
 Python
 </td><td>
 {{=python_version}}
+</td></tr>
+<tr><td>
+<strong>Available Database Engines</strong>
+</td><td>
+</td></tr>
+<tr><td>
+SQLite
+</td><td>
+{{=sqlite_version}}
+</td></tr>
+<tr><td>
+MySQL
+</td><td>
+{{=mysql_version}}
+</td></tr>
+<tr><td>
+PostgreSQL
+</td><td>
+{{=pgsql_version}}
+</td></tr>
+<tr><td>
+<strong>Other Components</strong>
+</td><td>
+</td></tr>
+<tr><td>
+Python MySQLdb
+</td><td>
+Revision {{=pymysql_version}}
+</td></tr>
+<tr><td>
+ReportLab
+</td><td>
+{{=reportlab_version}}
+</td></tr>
+<tr><td>
+xlwt
+</td><td>
+{{=xlwt_version}}
 </td></tr>
 </table>
 </div>

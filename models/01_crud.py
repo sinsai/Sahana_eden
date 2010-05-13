@@ -1033,7 +1033,7 @@ def import_xml(jr, **attr):
         source = jr.request.body
 
     tree = s3xrc.xml.parse(source)
-    
+
     # XSLT Transformation
     if not jr.representation=="xml":
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
@@ -1219,7 +1219,7 @@ def shn_linkto(jr):
             authorised = shn_has_permission('update', jr.component.table)
             if authorised:
                 return jr.component.attr.linkto_update or \
-                       URL(r=request, args=[jr.id, jr.component_name, 'update', field],
+                       URL(r=request, args=[jr.id, jr.component_name, field, 'update'],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
             else:
                 return jr.component.attr.linkto or \
@@ -1229,7 +1229,7 @@ def shn_linkto(jr):
             authorised = shn_has_permission('update', jr.table)
             if authorised:
                 return response.s3.linkto_update or \
-                       URL(r=request, args=['update', field],
+                       URL(r=request, args=[field, 'update'],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
             else:
                 return response.s3.linkto or \

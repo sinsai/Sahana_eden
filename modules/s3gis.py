@@ -328,9 +328,9 @@ class GIS(object):
         ######
         # Catalogue Toolbar
         if auth.has_membership(1):
-            config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["update", "1"])), _class="btn-panel" )
+            config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="btn-panel" )
         else:
-            config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["display", "1"])), _class="btn-panel" )
+            config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="btn-panel" )
         catalogue_toolbar = TABLE(TR(
             config_button,
             TD( A(T("Locations"), _id="features-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="location")), _class="btn-panel" ),

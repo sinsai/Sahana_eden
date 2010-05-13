@@ -58,17 +58,17 @@ exec('from applications.%s.modules.s3rest import *' % request.application)
 #from applications.sahana.modules.s3xrc import *
 #from applications.sahana.modules.s3rest import *
 
-s3xrc = ResourceController(db,
-                           domain=request.env.server_name,
-                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
-                           rpp=ROWSPERPAGE,
-                           gis=gis)
+s3xrc = S3ResourceController(db,
+            domain=request.env.server_name,
+            base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+            rpp=ROWSPERPAGE,
+            gis=gis)
 
-s3rest = RESTController(rc=s3xrc, auth=auth,
-    xml_import_formats = shn_xml_import_formats,
-    xml_export_formats = shn_xml_export_formats,
-    json_import_formats = shn_json_import_formats,
-    json_export_formats = shn_json_export_formats)
+s3rest = S3RESTController(rc=s3xrc, auth=auth,
+            xml_import_formats = shn_xml_import_formats,
+            xml_export_formats = shn_xml_export_formats,
+            json_import_formats = shn_json_import_formats,
+            json_export_formats = shn_json_export_formats)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):
@@ -1033,7 +1033,7 @@ def import_xml(jr, **attr):
         source = jr.request.body
 
     tree = s3xrc.xml.parse(source)
-    
+
     # XSLT Transformation
     if not jr.representation=="xml":
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
@@ -1219,7 +1219,7 @@ def shn_linkto(jr):
             authorised = shn_has_permission('update', jr.component.table)
             if authorised:
                 return jr.component.attr.linkto_update or \
-                       URL(r=request, args=[jr.id, jr.component_name, 'update', field],
+                       URL(r=request, args=[jr.id, jr.component_name, field, 'update'],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
             else:
                 return jr.component.attr.linkto or \
@@ -1229,7 +1229,7 @@ def shn_linkto(jr):
             authorised = shn_has_permission('update', jr.table)
             if authorised:
                 return response.s3.linkto_update or \
-                       URL(r=request, args=['update', field],
+                       URL(r=request, args=[field, 'update'],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
             else:
                 return response.s3.linkto or \

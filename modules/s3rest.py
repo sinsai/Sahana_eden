@@ -3,7 +3,7 @@
 """
     S3REST SahanaPy REST Controller
 
-    @version: 1.0.0
+    @version: 1.1
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation
@@ -34,7 +34,7 @@
 
 __name__ = "S3REST"
 
-__all__ = ['RESTController', 'XRequest']
+__all__ = ['S3RESTController', 'S3RESTRequest']
 
 import sys, uuid
 
@@ -46,7 +46,7 @@ from xml.etree.cElementTree import ElementTree
 from lxml import etree
 
 # *****************************************************************************
-class RESTController(object):
+class S3RESTController(object):
 
     # Error messages
     INVALIDREQUEST = 'Invalid request.'
@@ -125,7 +125,13 @@ class RESTController(object):
     #--------------------------------------------------------------------------
     def __call__(self, session, request, response, module, resource, **attr):
 
-        jr = XRequest(self.rc, module, resource, request, session=session)
+        jr = S3RESTRequest(self.rc, module, resource, request, session=session)
+
+        # Test
+        #print "Here: %s" % jr.here()
+        #print "There: %s" % jr.there()
+        #print "Other: %s" % jr.other(method="other", record_id="9999")
+        #print "Same: %s" % jr.same()
 
         if jr.invalid:
             if jr.badmethod:
@@ -473,7 +479,9 @@ class RESTController(object):
         return output
 
 # *****************************************************************************
-class XRequest(object):
+class S3RESTRequest(object):
+
+    """ S3 REST Request """
 
     DEFAULT_REPRESENTATION = "html"
 
@@ -506,6 +514,8 @@ class XRequest(object):
         self.table = self.rc.db[self.tablename]
 
         self.method = None
+        self.uids = None
+
         self.id = None
         self.record = None
 
@@ -515,7 +525,7 @@ class XRequest(object):
         self.component_id = None
         self.multiple = True
 
-        if not self.__parse():
+        if not self.__parse2():
             return None
 
         if not self.__record():
@@ -562,7 +572,7 @@ class XRequest(object):
     #--------------------------------------------------------------------------
     def __parse(self):
 
-        """ Parses a web2py request for the REST interface """
+        """ Parses a web2py request for the REST interface (old syntax only) """
 
         self.args = []
 
@@ -615,6 +625,94 @@ class XRequest(object):
         # Representation fallback
         if not self.representation:
             self.representation = self.DEFAULT_REPRESENTATION
+
+        return True
+
+
+    #--------------------------------------------------------------------------
+    def __parse2(self):
+
+        """ Parses a web2py request for the REST interface """
+
+        self.args = []
+
+        components = self.rc.model.components
+
+        if len(self.request.args)>0:
+
+            # Check for extensions, turn all arguments lowercase
+            for i in xrange(0, len(self.request.args)):
+                arg = self.request.args[i]
+                if '.' in arg:
+                    arg, ext = arg.rsplit('.', 1)
+                    if ext and len(ext) > 0:
+                        self.representation = str.lower(ext)
+                        self.extension = True
+                self.args.append(str.lower(arg))
+
+            # Parse arguments after /application/prefix/name...
+            if self.args[0].isdigit():
+                # .../id...
+                self.id = self.args[0]
+                if len(self.args)>1:
+                    if self.args[1] in components:
+                        # .../component...
+                        self.component_name = self.args[1]
+                        if len(self.args)>2:
+                            if self.args[2].isdigit():
+                                # ../id...
+                                self.component_id = self.args[2]
+                                if len(self.args>3):
+                                    # .../method
+                                    self.method = self.args[3]
+                            else:
+                                # .../method
+                                self.method = self.args[2]
+                                if len(self.args)>3 and self.args[3].isdigit():
+                                    # for backward compatibility: .../id
+                                    self.component_id = self.args[3]
+                    else:
+                        # .../method
+                        self.method = self.args[1]
+            else:
+                if self.args[0] in components:
+                    # .../component...
+                    self.component_name = self.args[0]
+                    if len(self.args)>1:
+                        if self.args[1].isdigit():
+                            # .../id...
+                            self.component_id = self.args[1]
+                            if len(self.args)>2:
+                                # .../method
+                                self.method = self.args[2]
+                        else:
+                            # .../method
+                            self.method = self.args[1]
+                            if len(self.args)>2 and self.args[2].isdigit():
+                                # for backward compatibility: .../id
+                                self.component_id = self.args[2]
+                else:
+                    # .../method
+                    self.method = self.args[0]
+                    if len(self.args)>1 and self.args[1].isdigit():
+                        # for backward compatibility: .../id
+                        self.id = self.args[1]
+
+        # Check format option
+        if 'format' in self.request.get_vars:
+            self.representation = str.lower(self.request.get_vars.format)
+
+        # Representation fallback
+        if not self.representation:
+            self.representation = self.DEFAULT_REPRESENTATION
+
+        # Test
+        #print "Resource: %s" % self.tablename
+        #print "ID: %s" % self.id
+        #print "Component: %s" % self.component_name
+        #print "Component ID: %s" % self.component_id
+        #print "Method: %s" % self.method
+        #print "Representation: %s" % self.representation
 
         return True
 
@@ -679,139 +777,90 @@ class XRequest(object):
 
 
     #--------------------------------------------------------------------------
-    def here(self, representation=None):
+    def __next(self, id=None, method=None, representation=None):
 
-        """ Backlink producing the same request """
-
-        args = []
-        vars = {}
-
-        if not representation:
-            representation = self.representation
-
-        if self.component:
-            args = [self.id]
-            if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.component_name, representation))
-            else:
-                args.append(self.component_name)
-            if self.method:
-                args.append(self.method)
-                if self.component_id:
-                    args.append(self.component_id)
-        else:
-            if self.method:
-                args.append(self.method)
-            if self.id:
-                if not representation==self.DEFAULT_REPRESENTATION:
-                    args.append('%s.%s' % (self.id, representation))
-                else:
-                    args.append(self.id)
-            else:
-                if not representation==self.DEFAULT_REPRESENTATION:
-                    vars = {'format': representation}
-
-        return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
-
-
-    #--------------------------------------------------------------------------
-    def other(self, method=None, record_id=None, representation=None):
-
-        """ Backlink to another method+record_id of the same resource """
+        """ Returns a URL of the current resource """
 
         args = []
         vars = {}
 
+        component_id = self.component_id
+
         if not representation:
             representation = self.representation
 
-        if not record_id:
-            record_id = self.id
-            component_id = self.component_id
+        if method is None:
+            method = self.method
+        elif method=="":
+            method = None
+            if self.component:
+                component_id = None
+            else:
+                id = None
         else:
-            component_id = None
+            if id is None:
+                id = self.id
+            else:
+                id = str(id)
+                if len(id)==0:
+                    id = "[id]"
+                if self.component:
+                    component_id = None
+                    method = None
 
         if self.component:
-            args = [record_id]
-            if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.component_name, representation))
-            else:
-                args.append(self.component_name)
+            if id:
+                args.append(id)
+            args.append(self.component_name)
+            if component_id:
+                args.append(component_id)
             if method:
                 args.append(method)
-                if component_id:
-                    args.append(component_id)
         else:
+            if id:
+                args.append(id)
             if method:
                 args.append(method)
-            if record_id:
-                if not representation==self.DEFAULT_REPRESENTATION:
-                    args.append('%s.%s' % (record_id, representation))
-                else:
-                    args.append(record_id)
+
+        if not representation==self.DEFAULT_REPRESENTATION:
+            if len(args)>0:
+                args[-1] = '%s.%s' % (args[-1], representation)
             else:
-                if not representation==self.DEFAULT_REPRESENTATION:
-                    vars = {'format': representation}
-
-        return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
-
-
-    #--------------------------------------------------------------------------
-    def there(self, representation=None):
-
-        """ Backlink producing a HTTP/list request to the same resource """
-
-        args = []
-        vars = {}
-
-        if not representation:
-            representation = self.representation
-
-        if self.component:
-            args = [self.id]
-            if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.component_name, representation))
-            else:
-                args.append(self.component_name)
-        else:
-            if not representation==self.DEFAULT_REPRESENTATION:
                 vars = {'format': representation}
 
         return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
 
 
     #--------------------------------------------------------------------------
+    def here(self, representation=None):
+
+        """ URL of the current request """
+
+        return self.__next(representation=representation)
+
+
+    #--------------------------------------------------------------------------
+    def other(self, method=None, record_id=None, representation=None):
+
+        """ URL of a request with different method and/or record_id of the same resource """
+
+        return self.__next(method=method, id=record_id, representation=representation)
+
+
+    #--------------------------------------------------------------------------
+    def there(self, representation=None):
+
+        """ URL of a HTTP/list request on the same resource """
+
+        return self.__next(method="", representation=representation)
+
+
+    #--------------------------------------------------------------------------
     def same(self, representation=None):
 
-        """ Backlink producing the same request with neutralized primary record ID """
+        """ URL of the same request with neutralized primary record ID """
 
-        args = []
-        vars = {}
-
-        if not representation:
-            representation = self.representation
-
-        if self.component:
-            args = ['[id]']
-            if not representation==self.DEFAULT_REPRESENTATION:
-                args.append('%s.%s' % (self.component_name, representation))
-            else:
-                args.append(self.component_name)
-            if self.method:
-                args.append(self.method)
-        else:
-            if self.method:
-                args.append(self.method)
-            if self.id or self.method=="read":
-                if not representation==self.DEFAULT_REPRESENTATION:
-                    args.append('[id].%s' % representation)
-                else:
-                    args.append('[id]')
-            else:
-                if not representation==self.DEFAULT_REPRESENTATION:
-                    vars = {'format': representation}
-
-        return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
+        return self.__next(id="[id]", representation=representation)
 
 
     #--------------------------------------------------------------------------

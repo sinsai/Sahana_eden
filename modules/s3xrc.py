@@ -35,7 +35,7 @@
 
 __name__ = "S3XRC"
 
-__all__ = ['ResourceController', 'json_message']
+__all__ = ['S3ResourceController', 'json_message']
 
 
 # *****************************************************************************
@@ -56,7 +56,7 @@ S3XRC_BAD_RESOURCE = "Invalid Resource"
 S3XRC_PARSE_ERROR = "XML Parse Error"
 S3XRC_TRANSFORMATION_ERROR = "XSLT Transformation Error"
 S3XRC_BAD_SOURCE = "Invalid XML Source"
-S3XRC_BAD_RECORD = "Invalid Record ID"
+S3XRC_BAD_RECORD = "Record Not Found"
 S3XRC_NO_MATCH = "No Matching Element"
 S3XRC_VALIDATION_ERROR = "Validation Error"
 S3XRC_DATA_IMPORT_ERROR = "Data Import Error"
@@ -104,7 +104,7 @@ def json_message(success=True, status_code="200", message=None, tree=None):
                    (status, status_code)
 
 # *****************************************************************************
-class ObjectComponent(object):
+class S3ObjectComponent(object):
 
     """
         Class to represent component relations between resources.
@@ -183,7 +183,7 @@ class ObjectComponent(object):
 
 
 # *****************************************************************************
-class ObjectModel(object):
+class S3ObjectModel(object):
 
 
     """
@@ -212,7 +212,7 @@ class ObjectModel(object):
 
         assert "joinby" in attr, "Join key(s) must be defined."
 
-        component = ObjectComponent(self.db, prefix, name, **attr)
+        component = S3ObjectComponent(self.db, prefix, name, **attr)
         self.components[name] = component
         return component
 
@@ -360,7 +360,7 @@ class ObjectModel(object):
 
 
 # *****************************************************************************
-class ResourceController(object):
+class S3ResourceController(object):
 
     """
         Controller class for joined resources
@@ -407,7 +407,7 @@ class ResourceController(object):
         if rpp:
             self.ROWSPERPAGE = rpp
 
-        self.model = ObjectModel(self.db)
+        self.model = S3ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis)
 
 
@@ -723,7 +723,7 @@ class ResourceController(object):
                 self.error = S3XRC_VALIDATION_ERROR
                 continue
 
-            vector = XVector(self.db, prefix, name, id,
+            vector = S3Vector(self.db, prefix, name, id,
                              record=record,
                              permit=permit,
                              audit=audit,
@@ -749,7 +749,7 @@ class ResourceController(object):
                                 self.error = S3XRC_VALIDATION_ERROR
                                 continue
 
-                            cvector = XVector(self.db, component.prefix, component.name, None,
+                            cvector = S3Vector(self.db, component.prefix, component.name, None,
                                               record=crecord,
                                               permit=permit,
                                               audit=audit,
@@ -784,7 +784,7 @@ class ResourceController(object):
                             self.error = S3XRC_VALIDATION_ERROR
                             continue
 
-                        cvector = XVector(self.db, component.prefix, component.name, c_id,
+                        cvector = S3Vector(self.db, component.prefix, component.name, c_id,
                                           record=crecord,
                                           permit=permit,
                                           audit=audit,
@@ -826,7 +826,7 @@ class ResourceController(object):
 
 
 # *****************************************************************************
-class XVector(object):
+class S3Vector(object):
 
     """ Helper class for database commits """
 

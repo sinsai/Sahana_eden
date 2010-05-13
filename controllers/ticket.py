@@ -38,7 +38,7 @@ def log():
         2:T('Medium'),
         1:T('Low')
     }
-    
+
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.message.requires = IS_NOT_EMPTY()
@@ -52,7 +52,7 @@ def log():
     table.source.label = T('Source')
     table.source_id.label = T('Source ID')
     table.source_time.label = T('Source Time')
-    
+
     # Only people with the TicketAdmin or Administrator role should be able to access some fields
     try:
         ticket_group = db(db[auth.settings.table_group_name].role == 'TicketAdmin').select().first().id
@@ -71,7 +71,7 @@ def log():
         table.verified_details.writable = False
         table.actioned.writable = False
         table.actioned_details.writable = False
-    
+
     # CRUD Strings
     ADD_TICKET = T('Add Ticket')
     LIST_TICKETS = T('List Tickets')
@@ -90,11 +90,24 @@ def log():
         msg_record_deleted = T('Ticket deleted'),
         msg_list_empty = T('No Tickets currently registered'))
 
-    if len(request.args) == 0:
-        # List View - reduce fields to declutter
-        table.message.readable = False
-        table.categories.readable = False
-        table.verified_details.readable = False
-        table.actioned_details.readable = False
-    
+    #if len(request.args) == 0:
+        ## List View - reduce fields to declutter
+        #table.message.readable = False
+        #table.categories.readable = False
+        #table.verified_details.readable = False
+        #table.actioned_details.readable = False
+
+    # This is the better way to do it:
+    def log_prep(jr):
+        if jr.method is None and jr.component is None:
+            # Log listing - reduce fields to declutter
+            table.message.readable = False
+            table.categories.readable = False
+            table.verified_details.readable = False
+            table.actioned_details.readable = False
+        return True
+
+    response.s3.prep = log_prep
+    response.s3.pagination = True #enable SSPag here!
+
     return shn_rest_controller(module, resource, listadd=False)

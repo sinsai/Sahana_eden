@@ -1,20 +1,33 @@
 /**
-* Copyright (c) 2009 Chris Leonello
-* This software is licensed under the GPL version 2.0 and MIT licenses.
-*/
+ * Copyright (c) 2009 Chris Leonello
+ * jqPlot is currently available for use in all personal or commercial projects 
+ * under both the MIT and GPL version 2.0 licenses. This means that you can 
+ * choose the license that best suits your project and use it accordingly. 
+ *
+ * The author would appreciate an email letting him know of any substantial
+ * use of jqPlot.  You can reach the author at: chris dot leonello at gmail 
+ * dot com or see http://www.jqplot.com/info.php .  This is, of course, 
+ * not required.
+ *
+ * If you are feeling kind and generous, consider supporting the project by
+ * making a donation at: http://www.jqplot.com/donate.php .
+ *
+ * Thanks for using jqPlot!
+ * 
+ */
 (function($) {
     /**
     *  Class: $.jqplot.CanvasAxisTickRenderer
     * Renderer to draw axis ticks with a canvas element to support advanced
     * featrues such as rotated text.  This renderer uses a separate rendering engine
-    * to draw the text on the canvas.  Two modes of rendering the text are used.
-    * If the browser has native font support for canvs fonts (currently Mozila 3.5
-    * and Safari 4), Text will be rendered with the canvas fillText method.
-    * In these browsers, you supply a css spec for the font family.
+    * to draw the text on the canvas.  Two modes of rendering the text are available.
+    * If the browser has native font support for canvas fonts (currently Mozila 3.5
+    * and Safari 4), you can enable text rendering with the canvas fillText method.
+    * You do so by setting the "enableFontSupport" option to true. 
     * 
     * Browsers lacking native font support will have the text drawn on the canvas
-    * using the Hershey font metrics.  This behaviour can be forced for all browsers
-    * by setting the "disableFontSupport" option to true.
+    * using the Hershey font metrics.  Even if the "enableFontSupport" option is true
+    * non-supporting browsers will still render with the Hershey font.
     */
     $.jqplot.CanvasAxisTickRenderer = function(options) {
         // Group: Properties
@@ -105,13 +118,14 @@
         if (this.enableFontSupport) {
             if ($.browser.safari) {
                 var p = $.browser.version.split('.');
-                if (p[0] >= 528 && p[1] >= 16) {
+                for (var i=0; i<p.length; i++) { p[i] = Number(p[i]); }
+                if (p[0] > 528 || (p[0] == 528 && p[1] >= 16)) {
                     this._textRenderer = new $.jqplot.CanvasFontRenderer(ropts); 
                 }
             }
             else if ($.browser.mozilla) {
                 var p = $.browser.version.split(".");
-                if (p[0] > 1 || p[0] == 1 &&  p[1] >= 9 && p[2] > 0 ) {
+                if (p[0] > 1 || (p[0] == 1 &&  p[1] >= 9 && p[2] > 0) ) {
                     this._textRenderer = new $.jqplot.CanvasFontRenderer(ropts);
                 }
                 else {
@@ -145,13 +159,13 @@
         if (this._elem) {
          return this._elem.outerWidth(true);
         }
-     	else {
-     	    var tr = this._textRenderer;
-	        var l = tr.getWidth(ctx);
-	        var h = tr.getHeight(ctx);
-	        var w = Math.abs(Math.sin(tr.angle)*h) + Math.abs(Math.cos(tr.angle)*l);
-	        return w;
-     	}
+        else {
+            var tr = this._textRenderer;
+            var l = tr.getWidth(ctx);
+            var h = tr.getHeight(ctx);
+            var w = Math.abs(Math.sin(tr.angle)*h) + Math.abs(Math.cos(tr.angle)*l);
+            return w;
+        }
     };
     
     // return height along the y axis.
@@ -159,10 +173,10 @@
         if (this._elem) {
          return this._elem.outerHeight(true);
         }
-     	else {
-     	    var tr = this._textRenderer;
-	        var l = tr.getWidth(ctx);
-	        var h = tr.getHeight(ctx);
+        else {
+            var tr = this._textRenderer;
+            var l = tr.getWidth(ctx);
+            var h = tr.getHeight(ctx);
             var w = Math.abs(Math.cos(tr.angle)*h) + Math.abs(Math.sin(tr.angle)*l);
             return w;
         }
@@ -177,14 +191,14 @@
     $.jqplot.CanvasAxisTickRenderer.prototype.setTick = function(value, axisName, isMinor) {
         this.value = value;
         if (isMinor) {
-        	this.isMinorTick = true;
+            this.isMinorTick = true;
         }
         return this;
     };
     
     $.jqplot.CanvasAxisTickRenderer.prototype.draw = function(ctx) {
         if (!this.label) {
-        	this.label = this.formatter(this.formatString, this.value);
+            this.label = this.formatter(this.formatString, this.value);
         }
         // create a canvas here, but can't draw on it untill it is appended
         // to dom for IE compatability.
@@ -198,7 +212,7 @@
         domelem.style.height = h;
         domelem.style.textAlign = 'left';
         domelem.style.position = 'absolute';
-		this._domelem = domelem;
+        this._domelem = domelem;
         this._elem = $(domelem);
         this._elem.css(this._styles);
         this._elem.addClass('jqplot-'+this.axis+'-tick');
@@ -211,8 +225,8 @@
             window.G_vmlCanvasManager.init_(document);
             this._domelem = window.G_vmlCanvasManager.initElement(this._domelem);
         }
-    	var ctx = this._elem.get(0).getContext("2d");
-    	this._textRenderer.draw(ctx, this.label);
+        var ctx = this._elem.get(0).getContext("2d");
+        this._textRenderer.draw(ctx, this.label);
     };
     
 })(jQuery);

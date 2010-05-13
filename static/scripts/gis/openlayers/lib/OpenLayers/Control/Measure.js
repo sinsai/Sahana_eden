@@ -205,7 +205,7 @@ OpenLayers.Control.Measure = OpenLayers.Class(OpenLayers.Control, {
         }
         this.events.triggerEvent(eventType, {
             measure: stat[0],
-            units: stat[1] + stat[2] + stat[3],
+            units: stat[1],
             order: order,
             geometry: geometry
         });
@@ -232,7 +232,7 @@ OpenLayers.Control.Measure = OpenLayers.Class(OpenLayers.Control, {
                 break;
             }
         }
-        return [area, ' ', unit, 2];
+        return [area, unit];
     },
     
     /**
@@ -283,7 +283,7 @@ OpenLayers.Control.Measure = OpenLayers.Class(OpenLayers.Control, {
                 break;
             }
         }
-        return [length, ' ', unit, ''];
+        return [length, unit];
     },
 
     /**

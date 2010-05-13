@@ -1,7 +1,20 @@
 /**
-* Copyright (c) 2009 Chris Leonello
-* This software is licensed under the GPL version 2.0 and MIT licenses.
-*/
+ * Copyright (c) 2009 Chris Leonello
+ * jqPlot is currently available for use in all personal or commercial projects 
+ * under both the MIT and GPL version 2.0 licenses. This means that you can 
+ * choose the license that best suits your project and use it accordingly. 
+ *
+ * The author would appreciate an email letting him know of any substantial
+ * use of jqPlot.  You can reach the author at: chris dot leonello at gmail 
+ * dot com or see http://www.jqplot.com/info.php .  This is, of course, 
+ * not required.
+ *
+ * If you are feeling kind and generous, consider supporting the project by
+ * making a donation at: http://www.jqplot.com/donate.php .
+ *
+ * Thanks for using jqPlot!
+ * 
+ */
 (function($) {
     
     /**
@@ -13,7 +26,7 @@
         
         // prop: show
         // Wether or not to show the trend line.
-        this.show = true;
+        this.show = $.jqplot.config.enablePlugins;
         // prop: color
         // CSS color spec for the trend line.
         // By default this wil be the same color as the primary line.
@@ -68,7 +81,7 @@
     function addTrendlineLegend(series) {
         var lt = series.trendline.label.toString();
         var ret = null;
-        if (series.trendline.show && lt) {
+        if (this.renderer.constructor != $.jqplot.PieRenderer && series.trendline.show && lt) {
             ret = {label:lt, color:series.trendline.color};
         }
         return ret;
@@ -76,25 +89,20 @@
 
     // called within scope of a series
     function parseTrendLineOptions (seriesDefaults, options) {
-        this.trendline = new $.jqplot.Trendline();
-        options = options || {};
-        $.extend(true, this.trendline, {color:this.color}, seriesDefaults.trendline, options.trendline);
-        this.trendline.renderer.init.call(this.trendline, null);
+        if (this.renderer.constructor != $.jqplot.PieRenderer) {
+            this.trendline = new $.jqplot.Trendline();
+            options = options || {};
+            $.extend(true, this.trendline, {color:this.color}, seriesDefaults.trendline, options.trendline);
+            this.trendline.renderer.init.call(this.trendline, null);
+        }
     }
     
     // called within scope of series object
     function drawTrendline(sctx, options) {
         // if we have options, merge trendline options in with precedence
-        if (options) {
-            $.extend(true, options, options.trendline);
-        }
-        else {
-            options = {};
-        }
-        if (options.show == null) {
-            options.show = this.trendline.show;
-        }
-        if (options.show) {
+        options = $.extend(true, {}, this.trendline, options);
+
+        if (options.show && this.renderer.constructor != $.jqplot.PieRenderer) {
             var fit;
             // this.renderer.setGridData.call(this);
             var data = options.data || this.data;
@@ -104,97 +112,97 @@
             this.trendline.renderer.draw.call(this.trendline, sctx, gridData, {showLine:true, shadow:this.trendline.shadow});
         }
     }
-	
-	function regression(x, y, typ)  {
-		var type = (typ == null) ? 'linear' : typ;
-	    var N = x.length;
-	    var slope;
-	    var intercept;	
-		var SX = 0;
-		var SY = 0;
-		var SXX = 0;
-		var SXY = 0;
-		var SYY = 0;
-		var Y = [];
-		var X = [];
-	
-		if (type == 'linear') {
-			X = x;
-			Y = y;
-		}
-		else if (type == 'exp' || type == 'exponential') {
-			for ( var i=0; i<y.length; i++) {
-				// ignore points <= 0, log undefined.
-				if (y[i] <= 0) {
-					N--;
-				}
-				else {
-					X.push(x[i]);
-			    	Y.push(Math.log(y[i]));
-				}
-			}
-		}
+    
+    function regression(x, y, typ)  {
+        var type = (typ == null) ? 'linear' : typ;
+        var N = x.length;
+        var slope;
+        var intercept;  
+        var SX = 0;
+        var SY = 0;
+        var SXX = 0;
+        var SXY = 0;
+        var SYY = 0;
+        var Y = [];
+        var X = [];
+    
+        if (type == 'linear') {
+            X = x;
+            Y = y;
+        }
+        else if (type == 'exp' || type == 'exponential') {
+            for ( var i=0; i<y.length; i++) {
+                // ignore points <= 0, log undefined.
+                if (y[i] <= 0) {
+                    N--;
+                }
+                else {
+                    X.push(x[i]);
+                    Y.push(Math.log(y[i]));
+                }
+            }
+        }
 
-		for ( var i = 0; i < N; i++) {
-		    SX = SX + X[i];
-		    SY = SY + Y[i];
-		    SXY = SXY + X[i]* Y[i];
-		    SXX = SXX + X[i]* X[i];
-		    SYY = SYY + Y[i]* Y[i];
-		}
+        for ( var i = 0; i < N; i++) {
+            SX = SX + X[i];
+            SY = SY + Y[i];
+            SXY = SXY + X[i]* Y[i];
+            SXX = SXX + X[i]* X[i];
+            SYY = SYY + Y[i]* Y[i];
+        }
 
-		slope = (N*SXY - SX*SY)/(N*SXX - SX*SX);
-		intercept = (SY - slope*SX)/N;
+        slope = (N*SXY - SX*SY)/(N*SXX - SX*SX);
+        intercept = (SY - slope*SX)/N;
 
-	    return [slope, intercept];
-	}
+        return [slope, intercept];
+    }
 
-	function linearRegression(X,Y) {
-		var ret;
-		ret = regression(X,Y,'linear');
-		return [ret[0],ret[1]];
-	}
+    function linearRegression(X,Y) {
+        var ret;
+        ret = regression(X,Y,'linear');
+        return [ret[0],ret[1]];
+    }
 
-	function expRegression(X,Y) {
-		var ret;
-		var x = X;
-		var y = Y;
-		ret = regression(x, y,'exp');
-		var base = Math.exp(ret[0]);
-		var coeff = Math.exp(ret[1]);
-		return [base, coeff];
-	}
+    function expRegression(X,Y) {
+        var ret;
+        var x = X;
+        var y = Y;
+        ret = regression(x, y,'exp');
+        var base = Math.exp(ret[0]);
+        var coeff = Math.exp(ret[1]);
+        return [base, coeff];
+    }
 
-	function fitData(data, typ) {
-		var type = (typ == null) ?  'linear' : typ;
-		var ret;
-		var res;
-		var x = [];
-		var y = [];
-		var ypred = [];
-		
-		for (i=0; i<data.length; i++){
-			if (data[i] != null && data[i][0] != null && data[i][1] != null) {
-				x.push(data[i][0]);
-				y.push(data[i][1]);
-			}
-		}
-		
-		if (type == 'linear') {
-			ret = linearRegression(x,y);
-			for ( var i=0; i<x.length; i++){
-			    res = ret[0]*x[i] + ret[1];
-			    ypred.push([x[i], res]);
-			}
-		}
-		else if (type == 'exp' || type == 'exponential') {
-			ret = expRegression(x,y);
-			for ( var i=0; i<x.length; i++){
-			    res = ret[1]*Math.pow(ret[0],x[i]);
-			    ypred.push([x[i], res]);
-			}
-		}
-		return {data: ypred, slope: ret[0], intercept: ret[1]};
-	} 
+    function fitData(data, typ) {
+        var type = (typ == null) ?  'linear' : typ;
+        var ret;
+        var res;
+        var x = [];
+        var y = [];
+        var ypred = [];
+        
+        for (i=0; i<data.length; i++){
+            if (data[i] != null && data[i][0] != null && data[i][1] != null) {
+                x.push(data[i][0]);
+                y.push(data[i][1]);
+            }
+        }
+        
+        if (type == 'linear') {
+            ret = linearRegression(x,y);
+            for ( var i=0; i<x.length; i++){
+                res = ret[0]*x[i] + ret[1];
+                ypred.push([x[i], res]);
+            }
+        }
+        else if (type == 'exp' || type == 'exponential') {
+            ret = expRegression(x,y);
+            for ( var i=0; i<x.length; i++){
+                res = ret[1]*Math.pow(ret[0],x[i]);
+                ypred.push([x[i], res]);
+            }
+        }
+        return {data: ypred, slope: ret[0], intercept: ret[1]};
+    } 
 
 })(jQuery);

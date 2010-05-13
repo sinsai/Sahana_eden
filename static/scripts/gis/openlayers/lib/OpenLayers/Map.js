@@ -1403,6 +1403,10 @@ OpenLayers.Map = OpenLayers.Class({
                                        this.div.clientHeight);
 
         if (size.w == 0 && size.h == 0 || isNaN(size.w) && isNaN(size.h)) {
+            size.w = this.div.offsetWidth;
+            size.h = this.div.offsetHeight;
+        }
+        if (size.w == 0 && size.h == 0 || isNaN(size.w) && isNaN(size.h)) {
             size.w = parseInt(this.div.style.width);
             size.h = parseInt(this.div.style.height);
         }

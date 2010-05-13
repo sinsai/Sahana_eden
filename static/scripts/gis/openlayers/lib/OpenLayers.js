@@ -325,4 +325,4 @@
 /**
  * Constant: VERSION_NUMBER
  */
-OpenLayers.VERSION_NUMBER="$Revision: 10129 $";
+OpenLayers.VERSION_NUMBER="OpenLayers 2.9.1 -- $Revision: 10129 $";

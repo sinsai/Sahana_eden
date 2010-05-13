@@ -1,19 +1,32 @@
 /**
-* Copyright (c) 2009 Chris Leonello
-* This software is licensed under the GPL version 2.0 and MIT licenses.
-*/
+ * Copyright (c) 2009 Chris Leonello
+ * jqPlot is currently available for use in all personal or commercial projects 
+ * under both the MIT and GPL version 2.0 licenses. This means that you can 
+ * choose the license that best suits your project and use it accordingly. 
+ *
+ * The author would appreciate an email letting him know of any substantial
+ * use of jqPlot.  You can reach the author at: chris dot leonello at gmail 
+ * dot com or see http://www.jqplot.com/info.php .  This is, of course, 
+ * not required.
+ *
+ * If you are feeling kind and generous, consider supporting the project by
+ * making a donation at: http://www.jqplot.com/donate.php .
+ *
+ * Thanks for using jqPlot!
+ * 
+ */ 
 (function($) {
     /**
-	*  class: $.jqplot.LogAxisRenderer
-	*  A plugin for a jqPlot to render a logarithmic axis.
-	* 
-	*  To use this renderer, include the plugin in your source
-	*  > <script type="text/javascript" language="javascript" src="plugins/jqplot.logAxisRenderer.js"></script>
-	*  
-	*  and supply the appropriate options to your plot
-	*  
-	*  > {axes:{xaxis:{renderer:$.jqplot.LogAxisRenderer}}}
-	**/	
+    *  class: $.jqplot.LogAxisRenderer
+    *  A plugin for a jqPlot to render a logarithmic axis.
+    * 
+    *  To use this renderer, include the plugin in your source
+    *  > <script type="text/javascript" language="javascript" src="plugins/jqplot.logAxisRenderer.js"></script>
+    *  
+    *  and supply the appropriate options to your plot
+    *  
+    *  > {axes:{xaxis:{renderer:$.jqplot.LogAxisRenderer}}}
+    **/ 
     $.jqplot.LogAxisRenderer = function() {
         $.jqplot.LinearAxisRenderer.call(this);
         // prop: axisDefaults
@@ -102,7 +115,7 @@
                         t.showMark = false;
                     }
                     else if (!this.showTickMarks) {
-                    	t.showMark = false;
+                        t.showMark = false;
                     }
                     t.setTick(ut[0], this.name);
                     this._ticks.push(t);
@@ -115,7 +128,7 @@
                         t.showMark = false;
                     }
                     else if (!this.showTickMarks) {
-                    	t.showMark = false;
+                        t.showMark = false;
                     }
                     t.setTick(ut, this.name);
                     this._ticks.push(t);

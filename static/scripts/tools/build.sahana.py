@@ -174,6 +174,7 @@ def docss(dogis = True):
         '../../styles/S3/jquery.autocomplete.css',
         '../../styles/S3/jquery.cluetip.css',
         '../../styles/S3/jquery.dataTables.css',
+        '../../styles/S3/jquery.jqplot.css',
         '../../styles/S3/ui.core.css',
         '../../styles/S3/ui.datepicker.css',
         '../../styles/S3/ui.theme.css',

@@ -58,17 +58,17 @@ exec('from applications.%s.modules.s3rest import *' % request.application)
 #from applications.sahana.modules.s3xrc import *
 #from applications.sahana.modules.s3rest import *
 
-s3xrc = ResourceController(db,
-                           domain=request.env.server_name,
-                           base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
-                           rpp=ROWSPERPAGE,
-                           gis=gis)
+s3xrc = S3ResourceController(db,
+            domain=request.env.server_name,
+            base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+            rpp=ROWSPERPAGE,
+            gis=gis)
 
-s3rest = RESTController(rc=s3xrc, auth=auth,
-    xml_import_formats = shn_xml_import_formats,
-    xml_export_formats = shn_xml_export_formats,
-    json_import_formats = shn_json_import_formats,
-    json_export_formats = shn_json_export_formats)
+s3rest = S3RESTController(rc=s3xrc, auth=auth,
+            xml_import_formats = shn_xml_import_formats,
+            xml_export_formats = shn_xml_export_formats,
+            json_import_formats = shn_json_import_formats,
+            json_export_formats = shn_json_export_formats)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):

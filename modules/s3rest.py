@@ -3,7 +3,7 @@
 """
     S3REST SahanaPy REST Controller
 
-    @version: 1.0.0
+    @version: 1.1
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation
@@ -34,7 +34,7 @@
 
 __name__ = "S3REST"
 
-__all__ = ['RESTController', 'XRequest']
+__all__ = ['S3RESTController', 'S3RESTRequest']
 
 import sys, uuid
 
@@ -46,7 +46,7 @@ from xml.etree.cElementTree import ElementTree
 from lxml import etree
 
 # *****************************************************************************
-class RESTController(object):
+class S3RESTController(object):
 
     # Error messages
     INVALIDREQUEST = 'Invalid request.'
@@ -125,12 +125,12 @@ class RESTController(object):
     #--------------------------------------------------------------------------
     def __call__(self, session, request, response, module, resource, **attr):
 
-        jr = XRequest(self.rc, module, resource, request, session=session)
+        jr = S3RESTRequest(self.rc, module, resource, request, session=session)
 
         # Test
         #print "Here: %s" % jr.here()
         #print "There: %s" % jr.there()
-        #print "Other: %s" % jr.other(method="other", record_id="[test]")
+        #print "Other: %s" % jr.other(method="other", record_id="9999")
         #print "Same: %s" % jr.same()
 
         if jr.invalid:
@@ -479,7 +479,9 @@ class RESTController(object):
         return output
 
 # *****************************************************************************
-class XRequest(object):
+class S3RESTRequest(object):
+
+    """ S3 REST Request """
 
     DEFAULT_REPRESENTATION = "html"
 
@@ -570,7 +572,7 @@ class XRequest(object):
     #--------------------------------------------------------------------------
     def __parse(self):
 
-        """ Parses a web2py request for the REST interface """
+        """ Parses a web2py request for the REST interface (old syntax only) """
 
         self.args = []
 

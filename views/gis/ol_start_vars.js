@@ -43,10 +43,10 @@ var projection_current = new OpenLayers.Projection('EPSG:{{=projection}}');
 
 // Map Options
 var options = {
-	displayProjection: proj4326,
-	projection: projection_current,
-	units: "{{=units}}",
-	maxResolution: {{=maxResolution}},
-	maxExtent: new OpenLayers.Bounds({{=maxExtent}}),
+    displayProjection: proj4326,
+    projection: projection_current,
+    units: "{{=units}}",
+    maxResolution: {{=maxResolution}},
+    maxExtent: new OpenLayers.Bounds({{=maxExtent}}),
     numZoomLevels: {{=numZoomLevels}}
 };

@@ -1441,7 +1441,7 @@ def map_viewing_client():
 
     # Config
     # ToDo return all of these to the view via a single 'config' var
-    config = gis.read_config()
+    config = gis.config_read()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1564,7 +1564,7 @@ def display_feature():
         raise HTTP(401, body=json_message(False, 401, session.error))
 
     # Config
-    config = gis.read_config()
+    config = gis.config_read()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1712,7 +1712,7 @@ def display_features():
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
 
     # Config
-    config = gis.read_config()
+    config = gis.config_read()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels

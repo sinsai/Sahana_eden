@@ -9,7 +9,7 @@ var featuresLayer, currentFeature;
 var popupControl;
 var allLayers = new Array();
 
-OpenLayers.ImgPath='/{{=request.application}}/static/img/gis/openlayers/'
+OpenLayers.ImgPath = '/{{=request.application}}/static/img/gis/openlayers/';
 // avoid pink tiles
 OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
 OpenLayers.Util.onImageLoadErrorColor = "transparent";

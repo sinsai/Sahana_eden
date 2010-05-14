@@ -272,7 +272,7 @@ class GIS(object):
         WKT = 'POINT(%f %f)' % (lon, lat)
         return WKT
 
-    def show_map(self, height=None, width=None, lat=None, lon=None, zoom=None, toolbar=False, window=False):
+    def show_map(self, height=None, width=None, lat=None, lon=None, zoom=None, catalogue=False, toolbar=False, mgrs=False, window=False):
         """
             Returns the HTML to display a map
             
@@ -281,7 +281,9 @@ class GIS(object):
             @param lat: default Latitude of viewport
             @param lon: default Longitude of viewport
             @param zoom: default Zoom level of viewport
+            @param catalogue: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
+            @param mgrs: Use the MGRS Control to select PDFs
             @param window: Have viewport pop out of page into a resizable window
             
             @ToDo: Rewrite these to use the API:
@@ -333,32 +335,39 @@ class GIS(object):
         # CSS
         #####
         if session.s3.debug:
-            pass
-        else:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/google.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
+        else:
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
 
         ######
         # HTML
         ######
         # Catalogue Toolbar
-        # @ToDo: Make optional via argument
-        if auth.has_membership(1):
-            config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="btn-panel" )
-        else:
-            config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="btn-panel" )
-        catalogue_toolbar = TABLE(TR(
-            config_button,
-            TD( A(T("Locations"), _id="features-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="location")), _class="btn-panel" ),
-            TD( A(T("Feature Groups"), _id="feature_groups-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_group")), _class="btn-panel" ),
-            TD( A(T("Feature Classes"), _id="feature_classes-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_class")), _class="btn-panel" ),
-            TD( A(T("Keys"), _id="keys-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="apikey")), _class="btn-panel" ),
-            TD( A(T("Layers"), _id="layers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="btn-panel" ),
-            TD( A(T("Markers"), _id="markers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="marker")), _class="btn-panel" ),
-            TD( A(T("Projections"), _id="projections-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="projection")), _class="btn-panel" ),
-        ))
-        html.append(catalogue_toolbar)
+        if catalogue:
+            if auth.has_membership(1):
+                config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="btn-panel" )
+            else:
+                config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="btn-panel" )
+            catalogue_toolbar = TABLE(TR(
+                config_button,
+                TD( A(T("Locations"), _id="features-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="location")), _class="btn-panel" ),
+                TD( A(T("Feature Groups"), _id="feature_groups-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_group")), _class="btn-panel" ),
+                TD( A(T("Feature Classes"), _id="feature_classes-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_class")), _class="btn-panel" ),
+                TD( A(T("Keys"), _id="keys-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="apikey")), _class="btn-panel" ),
+                TD( A(T("Layers"), _id="layers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="btn-panel" ),
+                TD( A(T("Markers"), _id="markers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="marker")), _class="btn-panel" ),
+                TD( A(T("Projections"), _id="projections-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="projection")), _class="btn-panel" ),
+            ))
+            html.append(catalogue_toolbar)
 
+        # Map (Embedded not Window)
+        html.append(DIV(_id="map_panel"))
+        
         # Status Reports
         html.append(TABLE(TR(
             TD(
@@ -381,7 +390,15 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
-            pass
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all-debug.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/lib/GeoExt.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.js")))
         else:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
@@ -536,7 +553,9 @@ class GIS(object):
     """ + functions_openstreetmap + """
     
     // ol_vector_registerEvents.js
+    
     // ol_controls_features.js
+    
     // ol_functions.js
     
     Ext.onReady(function() {
@@ -544,8 +563,16 @@ class GIS(object):
         addLayers(map);
         
         // ol_layers_features_all.js
-        // ol_controls.js
-
+        map.addControl(new OpenLayers.Control.ScaleLine());
+        map.addControl(new OpenLayers.Control.MGRSMousePosition());
+        map.addControl(new OpenLayers.Control.Permalink());
+        map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+        //popupControl = new OpenLayers.Control.SelectFeature(allLayers);
+        //map.addControl(popupControl);
+        //popupControl.activate();
+        
+        // MGRS from ol_controls.js
+    
         var mapPanel = new GeoExt.MapPanel({
             region: 'center',
             height: """ + str(height) + """,

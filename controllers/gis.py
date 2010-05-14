@@ -69,7 +69,8 @@ def index():
 
 def test():
     "Test server-parsed GIS functions"
-    return dict()
+    html = gis.show_map()
+    return dict(map=html)
 
 def apikey():
     "RESTlike CRUD controller"

@@ -99,7 +99,9 @@ def log():
 
     # This is the better way to do it:
     def log_prep(jr):
-        if jr.method is None and jr.component is None:
+        if jr.representation=="html" and \
+           jr.method is None and \
+           jr.component is None:
             # Log listing - reduce fields to declutter
             table.message.readable = False
             table.categories.readable = False

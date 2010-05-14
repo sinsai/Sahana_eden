@@ -170,7 +170,7 @@ class S3RESTController(object):
             if prep and isinstance(prep, dict):
                 bypass = prep.get('bypass', False)
                 output = prep.get('output', None)
-                if bypass and output:
+                if bypass and output is not None:
                     if isinstance(output, dict):
                         output.update(jr=jr)
                     return output

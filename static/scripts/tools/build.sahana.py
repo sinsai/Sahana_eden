@@ -27,47 +27,47 @@ def mergeCSS(inputFilenames, outputFilename):
     return outputFilename
 
 def cleanline(theLine):
-	# Kills line breaks, tabs, and double spaces
-	p = re.compile('(\n|\r|\t|\f|\v)+')
-	m = p.sub('',theLine)
+    # Kills line breaks, tabs, and double spaces
+    p = re.compile('(\n|\r|\t|\f|\v)+')
+    m = p.sub('',theLine)
 
-	# Kills double spaces
-	p = re.compile('(  )+')
-	m = p.sub(' ',m)
+    # Kills double spaces
+    p = re.compile('(  )+')
+    m = p.sub(' ',m)
 
-	# Removes last semicolon before }
-	p = re.compile('(; }|;})+')
-	m = p.sub('}',m)
+    # Removes last semicolon before }
+    p = re.compile('(; }|;})+')
+    m = p.sub('}',m)
 
-	# Removes space before {
-	p = re.compile('({ )+')
-	m = p.sub('{',m)
+    # Removes space before {
+    p = re.compile('({ )+')
+    m = p.sub('{',m)
 
-	# Removes all comments
-	p = re.compile('/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/')
-	m = p.sub('',m)
+    # Removes all comments
+    p = re.compile('/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/')
+    m = p.sub('',m)
 
-	# Strip off the Charset
-	p = re.compile('@CHARSET .*;')
-	m = p.sub('',m)
+    # Strip off the Charset
+    p = re.compile('@CHARSET .*;')
+    m = p.sub('',m)
 
-	# Strip spaces before the {
-	p = re.compile(' {')
-	m = p.sub('{',m)
+    # Strip spaces before the {
+    p = re.compile(' {')
+    m = p.sub('{',m)
 
-	# Strip space after :
-	p = re.compile(': ')
-	m = p.sub(':',m)
+    # Strip space after :
+    p = re.compile(': ')
+    m = p.sub(':',m)
 
-	# Strip space after ,
-	p = re.compile(', ')
-	m = p.sub(',',m)
+    # Strip space after ,
+    p = re.compile(', ')
+    m = p.sub(',',m)
 
-	# Strip space after ;
-	p = re.compile('; ')
-	m = p.sub(';',m)
+    # Strip space after ;
+    p = re.compile('; ')
+    m = p.sub(';',m)
 
-	return m
+    return m
 
 def compressCSS(inputFilename, outputFilename):
     theFile = file(inputFilename, "r").read()
@@ -175,9 +175,9 @@ def docss(dogis = True):
         '../../styles/S3/jquery.cluetip.css',
         '../../styles/S3/jquery.dataTables.css',
         '../../styles/S3/jquery.jqplot.css',
-        '../../styles/S3/ui.core.css',
-        '../../styles/S3/ui.datepicker.css',
-        '../../styles/S3/ui.theme.css',
+        '../../styles/S3/jquery.ui.core.css',
+        '../../styles/S3/jquery.ui.datepicker.css',
+        '../../styles/S3/jquery.ui.theme.css',
         '../../styles/S3/ajaxS3.css',
         '../../styles/T2/t2.css',
         '../../styles/web2py/calendar.css'

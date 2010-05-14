@@ -121,7 +121,8 @@ class Vita(object):
 
             query = (table.deleted==False)
 
-            if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
+            if isinstance(entity, (int, long)) or \
+               (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
 
             elif isinstance(entity, str):
@@ -157,7 +158,8 @@ class Vita(object):
 
             query = (table.deleted==False)
 
-            if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
+            if isinstance(entity, (int, long)) or \
+               (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
 
             elif isinstance(entity, dict):
@@ -194,7 +196,8 @@ class Vita(object):
 
             query = (table.deleted==False)
 
-            if isinstance(entity, int) or (isinstance(entity, str) and entity.strip().isdigit()):
+            if isinstance(entity, (int,long)) or \
+               (isinstance(entity, str) and entity.strip().isdigit()):
                 query = (table.id==entity) & query
 
             elif isinstance(entity, dict):

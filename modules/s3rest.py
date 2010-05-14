@@ -3,7 +3,7 @@
 """
     S3REST SahanaPy REST Controller
 
-    @version: 1.1
+    @version: 1.1.1
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation
@@ -72,6 +72,8 @@ class S3RESTController(object):
         self.json_import_formats = attr.get('json_import_formats', ['json'])
         self.json_export_formats = attr.get('json_export_formats', dict(json="text/x-json"))
 
+        self.debug = attr.get('debug', False)
+
         self.__handler = Storage()
 
     #--------------------------------------------------------------------------
@@ -125,13 +127,11 @@ class S3RESTController(object):
     #--------------------------------------------------------------------------
     def __call__(self, session, request, response, module, resource, **attr):
 
-        jr = S3RESTRequest(self.rc, module, resource, request, session=session)
+        if self.debug:
+            print >> sys.stderr, "\nS3RESTController: Call\n"
 
-        # Test
-        #print "Here: %s" % jr.here()
-        #print "There: %s" % jr.there()
-        #print "Other: %s" % jr.other(method="other", record_id="9999")
-        #print "Same: %s" % jr.same()
+        jr = S3RESTRequest(self.rc, module, resource, request,
+                           session=session, debug=self.debug)
 
         if jr.invalid:
             if jr.badmethod:
@@ -140,6 +140,9 @@ class S3RESTController(object):
                 raise HTTP(404, body=self.BADRECORD)
             else:
                 raise HTTP(400, body=self.INVALIDREQUEST)
+
+        if self.debug:
+            print >> sys.stderr, "S3RESTController: processing %s" % jr.here()
 
         # Initialise
         output = {}
@@ -171,6 +174,8 @@ class S3RESTController(object):
                 bypass = prep.get('bypass', False)
                 output = prep.get('output', None)
                 if bypass and output is not None:
+                    if self.debug:
+                        print >> sys.stderr, "S3RESTController: got bypass directive - aborting"
                     if isinstance(output, dict):
                         output.update(jr=jr)
                     return output
@@ -179,6 +184,8 @@ class S3RESTController(object):
                     if jr.representation=='html' and output:
                         if isinstance(output, dict):
                             output.update(jr=jr)
+                        if self.debug:
+                            print >> sys.stderr, "S3RESTController: preprocess failure - aborting"
                         return output
                     status = prep.get('status', 400)
                     message = prep.get('message', self.INVALIDREQUEST)
@@ -459,10 +466,16 @@ class S3RESTController(object):
 
             # Get handler
             if method is not None:
+                if self.debug:
+                    print >> sys.stderr, "S3RESTController: method=%s" % method
                 handler = self.get_handler(method)
 
         if handler is not None:
+            if self.debug:
+                print >> sys.stderr, "S3RESTController: method handler found - executing request"
             output = handler(jr, **attr)
+        elif self.debug:
+            print >> sys.stderr, "S3RESTController: no method handler - finalizing request"
 
         # Post-process
         if 's3' in response and response.s3.postp is not None:
@@ -486,7 +499,7 @@ class S3RESTRequest(object):
     DEFAULT_REPRESENTATION = "html"
 
     #--------------------------------------------------------------------------
-    def __init__(self, rc, prefix, name, request, session=None):
+    def __init__(self, rc, prefix, name, request, session=None, debug=False):
 
         assert rc is not None, "Resource controller must not be None."
         self.rc = rc
@@ -505,6 +518,7 @@ class S3RESTRequest(object):
         self.badmethod = False
         self.badrecord = False
         self.badrequest = False
+        self.debug = debug
 
         self.representation = request.extension
         self.http = request.env.request_method
@@ -514,7 +528,6 @@ class S3RESTRequest(object):
         self.table = self.rc.db[self.tablename]
 
         self.method = None
-        self.uids = None
 
         self.id = None
         self.record = None
@@ -525,10 +538,11 @@ class S3RESTRequest(object):
         self.component_id = None
         self.multiple = True
 
-        if not self.__parse2():
-            return None
-
-        if not self.__record():
+        # Parse request
+        if not self.__parse():
+            if self.debug:
+                print >> sys.stderr, \
+                    "S3RESTRequest: Parsing of request failed."
             return None
 
         # Check for component
@@ -537,15 +551,22 @@ class S3RESTRequest(object):
                 self.rc.model.get_component(self.prefix, self.name, self.component_name)
 
             if not self.component:
+                if self.debug:
+                    print >> sys.stderr, \
+                        "S3RESTRequest: %s not a component of %s" % \
+                        self.component_name, self.tablename
                 self.invalid = self.badrequest = True
                 return None
 
             if "multiple" in self.component.attr:
                 self.multiple = self.component.attr.multiple
 
-            if not self.component_id:
-                if self.args[len(self.args)-1].isdigit():
-                    self.component_id = self.args[len(self.args)-1]
+        # Find primary record
+        if not self.__record():
+            if self.debug:
+                print >> sys.stderr, \
+                    "S3RESTRequest: Primary record identification failed."
+            return None
 
         # Check for custom action
         self.custom_action = self.rc.model.get_method(self.prefix, self.name,
@@ -568,69 +589,19 @@ class S3RESTRequest(object):
                     else:
                         self.request.args.append('%s.%s' % (self.id, self.representation))
 
+        if self.debug:
+            print >> sys.stderr, "S3RESTRequest: *** Init complete ***"
+            print >> sys.stderr, "S3RESTRequest: Resource=%s" % self.tablename
+            print >> sys.stderr, "S3RESTRequest: ID=%s" % self.id
+            print >> sys.stderr, "S3RESTRequest: Component=%s" % self.component_name
+            print >> sys.stderr, "S3RESTRequest: ComponentID=%s" % self.component_id
+            print >> sys.stderr, "S3RESTRequest: Method=%s" % self.method
+            print >> sys.stderr, "S3RESTRequest: Representation=%s" % self.representation
+
+        return
 
     #--------------------------------------------------------------------------
     def __parse(self):
-
-        """ Parses a web2py request for the REST interface (old syntax only) """
-
-        self.args = []
-
-        components = self.rc.model.components
-
-        if len(self.request.args)>0:
-
-            # Check for extensions
-
-            for i in range(0, len(self.request.args)):
-                arg = self.request.args[i]
-                if '.' in arg:
-                    arg, ext = arg.rsplit('.',1)
-                    if ext and len(ext)>0:
-                        self.representation = str.lower(ext)
-                        self.extension = True
-                self.args.append(str.lower(arg))
-
-            # Parse arguments
-            if self.args[0].isdigit():
-                self.id = self.args[0]
-                if len(self.args)>1:
-                    self.component_name = self.args[1]
-                    if self.component_name in components:
-                        if len(self.args)>2:
-                            if self.args[2].isdigit():
-                                self.component_id = self.args[2]
-                            else:
-                                self.method = self.args[2]
-                    else:
-                        self.invalid = self.badrequest = True
-                        return False
-            else:
-                if self.args[0] in components:
-                    self.component_name = self.args[0]
-                    if len(self.args)>1:
-                        if self.args[1].isdigit():
-                            self.component_id = self.args[1]
-                        else:
-                            self.method = self.args[1]
-                else:
-                    self.method = self.args[0]
-                    if len(self.args)>1 and self.args[1].isdigit():
-                        self.id = self.args[1]
-
-        # Check format option
-        if 'format' in self.request.get_vars:
-            self.representation = str.lower(self.request.get_vars.format)
-
-        # Representation fallback
-        if not self.representation:
-            self.representation = self.DEFAULT_REPRESENTATION
-
-        return True
-
-
-    #--------------------------------------------------------------------------
-    def __parse2(self):
 
         """ Parses a web2py request for the REST interface """
 
@@ -662,7 +633,7 @@ class S3RESTRequest(object):
                             if self.args[2].isdigit():
                                 # ../id...
                                 self.component_id = self.args[2]
-                                if len(self.args>3):
+                                if len(self.args)>3:
                                     # .../method
                                     self.method = self.args[3]
                             else:
@@ -706,34 +677,107 @@ class S3RESTRequest(object):
         if not self.representation:
             self.representation = self.DEFAULT_REPRESENTATION
 
-        # Test
-        #print "Resource: %s" % self.tablename
-        #print "ID: %s" % self.id
-        #print "Component: %s" % self.component_name
-        #print "Component ID: %s" % self.component_id
-        #print "Method: %s" % self.method
-        #print "Representation: %s" % self.representation
-
         return True
 
 
     #--------------------------------------------------------------------------
     def __record(self):
 
-        """ Tries to find the primary resource record in a request """
+        """
+            Tries to identify and load the primary record of the resource
+        """
 
-        # Check record ID passed in the request
+        uids = None
+        if 'uid' in self.request.vars:
+            uids = self.request.vars.uid.split(",")
+            if len(uids)<2:
+                uids.append(None)
+            uids = map(lambda uid: \
+                       uid and self.rc.xml.import_uid(uid) or None, uids)
+
         if self.id:
+            # Primary record ID is specified
             query = (self.table.id==self.id)
             if 'deleted' in self.table:
                 query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
             records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
             if not records:
+                if self.debug:
+                    print >> sys.stderr, "Invalid resource record ID"
                 self.id = None
                 self.invalid = self.badrecord = True
                 return False
             else:
                 self.record = records[0]
+
+        elif uids and uids[0] is not None and "uuid" in self.table:
+            # Primary record UUID is specified
+            query = (self.table.uuid==uids[0])
+            if 'deleted' in self.table:
+                query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+            if not records:
+                if self.debug:
+                    print >> sys.stderr, "Invalid resource record UUID"
+                self.id = None
+                self.invalid = self.badrecord = True
+                return False
+            else:
+                self.record = records[0]
+                self.id = self.record.id
+
+        if self.component and self.component_id:
+            # Component record ID is specified
+            query = ((self.component.table.id==self.component_id) &
+                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            if self.id:
+                # Must match if a primary record has been found
+                query = (self.table.id==self.id) & query
+            if 'deleted' in self.table:
+                query = ((self.table.deleted==False) |
+                         (self.table.deleted==None)) & query
+            if 'deleted' in self.component.table:
+                query = ((self.component.table.deleted==False) |
+                         (self.component.table.deleted==None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+            if not records:
+                if self.debug:
+                    print >> sys.stderr, \
+                        "Invalid component record ID or component not matching primary record."
+                self.id = None
+                self.invalid = self.badrecord = True
+                return False
+            else:
+                self.record = records[0]
+                self.id = self.record.id
+
+        elif self.component and \
+             uids and uids[1] is not None and "uuid" in self.component.table:
+            # Component record ID is specified
+            query = ((self.component.table.uuid==uids[1]) &
+                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            if self.id:
+                # Must match if a primary record has been found
+                query = (self.table.id==self.id) & query
+            if 'deleted' in self.table:
+                query = ((self.table.deleted==False) |
+                         (self.table.deleted==None)) & query
+            if 'deleted' in self.component.table:
+                query = ((self.component.table.deleted==False) |
+                         (self.component.table.deleted==None)) & query
+            records = self.rc.db(query).select(
+                        self.table.ALL, self.component.table.id, limitby=(0,1))
+            if not records:
+                if self.debug:
+                    print >> sys.stderr, \
+                        "Invalid component record UUID or component not matching primary record."
+                self.id = None
+                self.invalid = self.badrecord = True
+                return False
+            else:
+                self.record = records[0][self.tablename]
+                self.id = self.record.id
+                self.component_id = records[0][self.component.tablename].id
 
         # Check for ?select=
         if not self.id and 'select' in self.request.vars:
@@ -749,6 +793,8 @@ class S3RESTRequest(object):
                     self.record = records[0]
                     self.id = self.record.id
                 else:
+                    if self.debug:
+                        print >> sys.stderr, "No record with ID label %s" % id_label
                     self.id = 0
                     self.invalid = self.badrecord = True
                     return False
@@ -836,7 +882,7 @@ class S3RESTRequest(object):
 
         """ URL of the current request """
 
-        return self.__next(representation=representation)
+        return self.__next(id=self.id, representation=representation)
 
 
     #--------------------------------------------------------------------------

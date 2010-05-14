@@ -622,7 +622,6 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
     """
 
     if resource == "person":
-
         if representation == "html":
 
             if next:

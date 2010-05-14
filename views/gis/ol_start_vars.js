@@ -9,7 +9,7 @@ var featuresLayer, currentFeature;
 var popupControl;
 var allLayers = new Array();
 
-OpenLayers.ImgPath='/{{=request.application}}/static/img/gis/openlayers/'
+OpenLayers.ImgPath = '/{{=request.application}}/static/img/gis/openlayers/';
 // avoid pink tiles
 OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
 OpenLayers.Util.onImageLoadErrorColor = "transparent";
@@ -43,10 +43,10 @@ var projection_current = new OpenLayers.Projection('EPSG:{{=projection}}');
 
 // Map Options
 var options = {
-	displayProjection: proj4326,
-	projection: projection_current,
-	units: "{{=units}}",
-	maxResolution: {{=maxResolution}},
-	maxExtent: new OpenLayers.Bounds({{=maxExtent}}),
+    displayProjection: proj4326,
+    projection: projection_current,
+    units: "{{=units}}",
+    maxResolution: {{=maxResolution}},
+    maxExtent: new OpenLayers.Bounds({{=maxExtent}}),
     numZoomLevels: {{=numZoomLevels}}
 };

@@ -2,6 +2,7 @@
 
 """
     Global settings
+    @ToDo: Use a global "deployment_settings" variable
 """
 
 S3_PUBLIC_URL = 'http://127.0.0.1:8000'
@@ -21,7 +22,10 @@ T.current_languages = ['en', 'en-us']
 #    T.force(T.http_accept_language)
 
 
-mail = Mail()
+######
+# Mail
+######
+
 # These settings could be made configurable as part of the Messaging Module
 # - however also need to be used by Auth (order issues), DB calls are overheads
 # - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
@@ -30,9 +34,12 @@ mail.settings.server = '127.0.0.1:25'
 #mail.settings.login = 'username:password'
 mail.settings.sender = 'sahana@your.org'
 
-auth = AuthS3(globals(), db)
+######
+# Auth
+######
+
 #auth.settings.username_field = True
-auth.settings.hmac_key = 'akeytochange'
+auth.settings.hmac_key = 'akeytochange' # Change *before* registering 1st user!
 auth.define_tables()
 auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
@@ -50,6 +57,7 @@ auth.settings.registration_requires_approval = False # CHANGEME for Deployment!
 auth.messages.registration_pending = 'Email address verified, however registration is still pending approval - please wait until confirmation received.'
 # Notify UserAdmin of new pending user registration to action
 auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to='useradmin@your.org', subject='Sahana Login Approval Pending', message='Your action is required. Please approve user %s asap: ' % form.email + S3_PUBLIC_URL + '/' + request.application + '/admin/user')
+
 # Allow use of LDAP accounts for login
 # NB Currently this means that change password should be disabled:
 #auth.settings.actions_disabled.append('change_password')
@@ -71,26 +79,6 @@ auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to=
 auth.settings.create_user_groups = False
 # We need to allow basic logins for Webservices
 auth.settings.allow_basic_login = True
-# Logout session clearing
-# shn_on_login ----------------------------------------------------------------
-# added 2009-08-27 by nursix
-def shn_auth_on_login(form):
-    """
-        Actions that need to be performed on successful login (Do not redirect from here!)
-    """
-
-    # S3XRC
-    s3xrc.clear_session(session)
-
-# shn_on_logout ---------------------------------------------------------------
-# added 2009-08-27 by nursix
-def shn_auth_on_logout(user):
-    """
-        Actions that need to be performed on logout (Do not redirect from here!)
-    """
-
-    # S3XRC
-    s3xrc.clear_session(session)
 
 auth.settings.lock_keys = False
 auth.settings.logout_onlogout = shn_auth_on_logout
@@ -102,7 +90,10 @@ auth.settings.admin_startup_roles = [
 ]
 auth.settings.lock_keys = True
 
-crud = CrudS3(globals(), db)
+######
+# Crud
+######
+
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
 #crud.settings.keepvalues = True
 crud.messages.submit_button = T('Save')
@@ -111,6 +102,10 @@ from gluon.storage import Storage
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
 s3 = Storage()
+
+##########
+# Messages
+##########
 
 from gluon.storage import Messages
 s3.messages = Messages(T)

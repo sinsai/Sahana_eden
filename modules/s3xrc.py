@@ -3,7 +3,7 @@
 """
     S3XCR SahanaPy XML+JSON Resource Controller
 
-    @version: 1.6.0
+    @version: 1.6.1
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -35,7 +35,7 @@
 
 __name__ = "S3XRC"
 
-__all__ = ['S3ResourceController', 'json_message']
+__all__ = ['S3ResourceController']
 
 
 # *****************************************************************************
@@ -62,46 +62,6 @@ S3XRC_VALIDATION_ERROR = "Validation Error"
 S3XRC_DATA_IMPORT_ERROR = "Data Import Error"
 S3XRC_NOT_PERMITTED = "Operation Not Permitted"
 S3XRC_NOT_IMPLEMENTED = "Not Implemented"
-
-# *****************************************************************************
-#exec('from applications.%s.modules.s3xrc import json_message' % request.application)
-#from applications.sahana.modules.s3xrc import json_message
-#
-def json_message(success=True, status_code="200", message=None, tree=None):
-
-    """
-        Provide a nicely-formatted JSON Message.
-
-        @param success: whether the request was successful
-        @type success: boolean
-        @param status_code: the HTTP status code
-        @type status_code: string
-        @param message: the message to send
-        @type message: string
-        @param tree: the element tree of the request in JSON containing error annotations
-        @type tree: string
-
-    """
-
-    if success:
-        status="success"
-    else:
-        status="failed"
-
-    if not success:
-        if message:
-            return '{"status": "%s", "statuscode": "%s", "message": "%s", "tree": %s }' % \
-                   (status, status_code, message, tree)
-        else:
-            return '{"status": "%s", "statuscode": "%s", "tree": %s }' % \
-                   (status, status_code, tree)
-    else:
-        if message:
-            return '{"status": "%s", "statuscode": "%s", "message": "%s"}' % \
-                   (status, status_code, message)
-        else:
-            return '{"status": "%s", "statuscode": "%s"}' % \
-                   (status, status_code)
 
 # *****************************************************************************
 class S3ObjectComponent(object):
@@ -1108,6 +1068,43 @@ class S3XML(object):
                                 encoding="utf-8",
                                 pretty_print=pretty_print)
 
+
+    #--------------------------------------------------------------------------
+    def json_message(self, success=True, status_code="200", message=None, tree=None):
+
+        """
+            Provide a nicely-formatted JSON Message.
+
+            @param success: whether the request was successful
+            @type success: boolean
+            @param status_code: the HTTP status code
+            @type status_code: string
+            @param message: the message to send
+            @type message: string
+            @param tree: the element tree of the request in JSON containing error annotations
+            @type tree: string
+
+        """
+
+        if success:
+            status="success"
+        else:
+            status="failed"
+
+        if not success:
+            if message:
+                return '{"status": "%s", "statuscode": "%s", "message": "%s", "tree": %s }' % \
+                    (status, status_code, message, tree)
+            else:
+                return '{"status": "%s", "statuscode": "%s", "tree": %s }' % \
+                    (status, status_code, tree)
+        else:
+            if message:
+                return '{"status": "%s", "statuscode": "%s", "message": "%s"}' % \
+                    (status, status_code, message)
+            else:
+                return '{"status": "%s", "statuscode": "%s"}' % \
+                    (status, status_code)
 
     #--------------------------------------------------------------------------
     def xml_encode(self, obj):

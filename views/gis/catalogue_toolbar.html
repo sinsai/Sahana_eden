@@ -1,9 +1,9 @@
 <table>
 <tr><td class='btn-panel'>
 {{if auth.has_membership(1):}}
- <a id="configs-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='config', args=['update', '1'])}}">
+ <a id="configs-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='config', args=['1', 'update'])}}">
 {{else:}}
- <a id="configs-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='config', args=['display', '1'])}}">
+ <a id="configs-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='config', args=['1', 'display'])}}">
 {{pass}}
 {{=T("Defaults")}}
 </a></td>

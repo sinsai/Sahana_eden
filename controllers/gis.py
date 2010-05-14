@@ -834,7 +834,7 @@ content type. It supports GET and POST requests."""
             url = request.vars.url
         else:
             session.error = str(T("Need a 'url' argument!"))
-            raise HTTP(400, body=json_message(False, 400, session.error))
+            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
 
     try:
         host = url.split("/")[2]
@@ -1441,7 +1441,7 @@ def map_viewing_client():
 
     # Config
     # ToDo return all of these to the view via a single 'config' var
-    config = gis.read_config()
+    config = gis.config_read()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1468,7 +1468,7 @@ def map_viewing_client():
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
     layout = config.opt_gis_layout
-    
+
     # Add the Config to the Return
     output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
 
@@ -1561,10 +1561,10 @@ def display_feature():
     # Check user is authorised to access record
     if not shn_has_permission('read', db.gis_location, feature.id):
         session.error = str(T("No access to this record!"))
-        raise HTTP(401, body=json_message(False, 401, session.error))
+        raise HTTP(401, body=s3xrc.xml.json_message(False, 401, session.error))
 
     # Config
-    config = gis.read_config()
+    config = gis.config_read()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1591,7 +1591,7 @@ def display_feature():
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
     layout = config.opt_gis_layout
-    
+
     # Add the config to the Return
     output = dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout)
 
@@ -1678,7 +1678,7 @@ def display_features():
         ok +=1
     if ok != 4:
         session.error = str(T("Insufficient vars: Need module, resource, jresource, instance"))
-        raise HTTP(400, body=json_message(False, 400, session.error))
+        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
 
     component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
     table = db['%s_%s' % (res_module, resource)]
@@ -1706,13 +1706,13 @@ def display_features():
     lon_min = bounds['min_lon']
     lat_max = bounds['max_lat']
     lat_min = bounds['min_lat']
-    
+
     #bbox = str(lon_min) + ',' + str(lat_min) + ',' + str(lon_max) + ',' + str(lat_max)
     #We now project these client-side, so pass raw info (client-side projection means less server-side dependencies)
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
 
     # Config
-    config = gis.read_config()
+    config = gis.config_read()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
@@ -1739,7 +1739,7 @@ def display_features():
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
     layout = config.opt_gis_layout
-    
+
     # Add the config to the Return
     output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
 

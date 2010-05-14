@@ -4,10 +4,6 @@
     Global tables and re-usable fields
 """
 
-from gluon.tools import Service
-
-service = Service(globals())
-
 # Reusable timestamp fields
 timestamp = db.Table(None, 'timestamp',
             Field('created_on', 'datetime',

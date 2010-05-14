@@ -90,14 +90,14 @@ opt_gis_layout = SQLTable(None, "opt_gis_layout",
 resource = 'config'
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-				Field('lat', 'double'),
-				Field('lon', 'double'),
-				Field('zoom', 'integer'),
-				projection_id,
-				symbology_id,
-				marker_id,
-				Field('map_height', 'integer', notnull=True),
-				Field('map_width', 'integer', notnull=True),
+                Field('lat', 'double'),
+                Field('lon', 'double'),
+                Field('zoom', 'integer'),
+                projection_id,
+                symbology_id,
+                marker_id,
+                Field('map_height', 'integer', notnull=True),
+                Field('map_width', 'integer', notnull=True),
                 Field('min_lon', 'double', default=-180),
                 Field('min_lat', 'double', default=-90),
                 Field('max_lon', 'double', default=180),
@@ -265,7 +265,7 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp,
                 Field('name', notnull=True),
                 Field('apikey', length=128, notnull=True),
-				Field('description'),
+                Field('description'),
                 migrate=migrate)
 
 # GPS Tracks (files in GPX format)

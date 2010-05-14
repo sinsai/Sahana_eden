@@ -76,7 +76,14 @@ def project():
 
     """ Project Controller """
 
-    output = shn_rest_controller( module , 'project', pheader=shn_vol_project_pheader)
+    resource = 'project'
+    tablename = module + '_' + resource
+    table = db[tablename]
+    table.name.comment = SPAN("*", _class="req")
+    table.description.comment = SPAN("*", _class="req")
+    table.status.comment = SPAN("*", _class="req")
+    
+    output = shn_rest_controller( module , resource, pheader=shn_vol_project_pheader)
     shn_vol_menu_ext()
     return output
 

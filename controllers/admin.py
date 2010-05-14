@@ -665,7 +665,7 @@ def _import_job_update(jr):
     query = jr.table.id==id
     job = db(query).select()
     if not job:
-        raise HTTP(404, body=json_message(False, 404, session.error))
+        raise HTTP(404, body=s3xrc.xml.json_message(False, 404, session.error))
     job = job[0]
 
     if jr.http == 'GET':

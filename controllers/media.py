@@ -149,7 +149,7 @@ def upload_bulk():
     # Add image to database
     image_id = db.media_image.insert()
 
-    return json_message(True, '200', "Files Processed.")
+    return s3xrc.xml.json_message(True, '200', "Files Processed.")
 
 def upload(module, resource, table, tablename, onvalidation=None, onaccept=None):
     # Receive file ( from import_url() )
@@ -198,7 +198,7 @@ def upload(module, resource, table, tablename, onvalidation=None, onaccept=None)
             # del record[var]
             error = "Invalid field name."
         if error:
-            raise HTTP(400, body=json_message(False, 400, var + " invalid: " + error))
+            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, var + " invalid: " + error))
         else:
             record[var] = value
 
@@ -218,31 +218,31 @@ def upload(module, resource, table, tablename, onvalidation=None, onaccept=None)
             id = table.insert(**dict(record))
             if id:
                 error = 201
-                item = json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
+                item = s3xrc.xml.json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
                 form.vars.id = id
                 if onaccept:
                     onaccept(form)
             else:
                 error = 403
-                item = json_message(False, error, "Could not create record!")
+                item = s3xrc.xml.json_message(False, error, "Could not create record!")
 
         elif method == 'update':
             result = db(table.uuid==uuid).update(**dict(record))
             if result:
                 error = 200
-                item = json_message(True, error, "Record updated.")
+                item = s3xrc.xml.json_message(True, error, "Record updated.")
                 form.vars.id = original.id
                 if onaccept:
                     onaccept(form)
             else:
                 error = 403
-                item = json_message(False, error, "Could not update record!")
+                item = s3xrc.xml.json_message(False, error, "Could not update record!")
 
         else:
             error = 501
-            item = json_message(False, error, "Unsupported Method!")
+            item = s3xrc.xml.json_message(False, error, "Unsupported Method!")
     except:
         error = 400
-        item = json_message(False, error, "Invalid request!")
+        item = s3xrc.xml.json_message(False, error, "Invalid request!")
 
     raise HTTP(error, body=item)

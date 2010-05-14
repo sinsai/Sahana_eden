@@ -52,8 +52,8 @@ PRETTY_PRINT = True
 # *****************************************************************************
 # Load Controllers
 
-exec('from applications.%s.modules.s3xrc import *' % request.application)
-exec('from applications.%s.modules.s3rest import *' % request.application)
+exec('from applications.%s.modules.s3xrc import S3ResourceController' % request.application)
+exec('from applications.%s.modules.s3rest import S3RESTController' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.s3xrc import *
 #from applications.sahana.modules.s3rest import *
@@ -373,7 +373,7 @@ def export_json(jr):
         if not os.path.exists(template):
             session.error = str(T("XSLT Template Not Found: ")) + \
                             XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=json_message(False, 501, session.error))
+            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
     output = jr.export_json(permit=shn_has_permission,
@@ -384,7 +384,7 @@ def export_json(jr):
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + jr.error
-        raise HTTP(400, body=json_message(False, 400, session.error))
+        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
         #redirect(URL(r=request, f="index"))
 
     return output
@@ -409,7 +409,7 @@ def export_xml(jr):
         if not os.path.exists(template):
             session.error = str(T("XSLT Template Not Found: ")) + \
                             XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=json_message(False, 501, session.error))
+            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
     output = jr.export_xml(permit=shn_has_permission,
@@ -420,7 +420,7 @@ def export_xml(jr):
 
     if not output:
         session.error = str(T("XSLT Transformation Error: ")) + (jr.error or '')
-        raise HTTP(400, body=json_message(False, 400, session.error))
+        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
         #redirect(URL(r=request, f="index"))
 
     return output
@@ -503,12 +503,12 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
             try:
                 original = db(table.uuid==uuid).select(table.ALL)[0]
             except:
-                raise HTTP(404, body=json_message(False, 404, "Record not found!"))
+                raise HTTP(404, body=s3xrc.xml.json_message(False, 404, "Record not found!"))
         else:
             # You will never come to that point without having specified a
             # record ID in the request. Nevertheless, we require a UUID to
             # identify the record
-            raise HTTP(400, body=json_message(False, 400, "UUID required!"))
+            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, "UUID required!"))
 
     # Validate record
     for var in record:
@@ -520,7 +520,7 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
             # del record[var]
             error = "Invalid field name."
         if error:
-            raise HTTP(400, body=json_message(False, 400, var + " invalid: " + error))
+            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, var + " invalid: " + error))
         else:
             record[var] = value
 
@@ -540,32 +540,32 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
             id = table.insert(**dict(record))
             if id:
                 error = 201
-                item = json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
+                item = s3xrc.xml.json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
                 form.vars.id = id
                 if onaccept:
                     onaccept(form)
             else:
                 error = 403
-                item = json_message(False, error, "Could not create record!")
+                item = s3xrc.xml.json_message(False, error, "Could not create record!")
 
         elif method == 'update':
             result = db(table.uuid==uuid).update(**dict(record))
             if result:
                 error = 200
-                item = json_message(True, error, "Record updated.")
+                item = s3xrc.xml.json_message(True, error, "Record updated.")
                 form.vars.id = original.id
                 if onaccept:
                     onaccept(form)
             else:
                 error = 403
-                item = json_message(False, error, "Could not update record!")
+                item = s3xrc.xml.json_message(False, error, "Could not update record!")
 
         else:
             error = 501
-            item = json_message(False, error, "Unsupported Method!")
+            item = s3xrc.xml.json_message(False, error, "Unsupported Method!")
     except:
         error = 400
-        item = json_message(False, error, "Invalid request!")
+        item = s3xrc.xml.json_message(False, error, "Invalid request!")
 
     raise HTTP(error, body=item)
 
@@ -992,7 +992,7 @@ def import_json(jr, **attr):
             session.error = str(T("XSL Template Not Found: ")) + \
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
             #redirect(URL(r=request, f="index"))
-            item = json_message(False, 501, session.error)
+            item = s3xrc.xml.json_message(False, 501, session.error)
             raise HTTP(501)
 
     # For testing:
@@ -1006,11 +1006,11 @@ def import_json(jr, **attr):
                             onaccept=onaccept)
 
     if success:
-        item = json_message()
+        item = s3xrc.xml.json_message()
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
+        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)
@@ -1047,7 +1047,7 @@ def import_xml(jr, **attr):
             session.error = str(T("XSLT Template Not Found: ")) + \
                             XSLT_IMPORT_TEMPLATES + "/" + template_name
             #redirect(URL(r=request, f="index"))
-            item = json_message(False, 501, session.error)
+            item = s3xrc.xml.json_message(False, 501, session.error)
             raise HTTP(501)
 
     success = jr.import_xml(tree,
@@ -1057,11 +1057,11 @@ def import_xml(jr, **attr):
                             onaccept=onaccept)
 
     if success:
-        item = json_message()
+        item = s3xrc.xml.json_message()
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = json_message(False, 400, s3xrc.xml.error, tree=tree)
+        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)
@@ -2111,7 +2111,7 @@ def shn_delete(jr, **attr):
     if jr.component and delete_next: # but redirect here!
         redirect(delete_next)
 
-    item = json_message()
+    item = s3xrc.xml.json_message()
     response.view = 'plain.html'
     output = dict(item=item)
 
@@ -2259,10 +2259,10 @@ def shn_search(jr, **attr):
                 item = db(query).select().json()
 
             else:
-                item = json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                 raise HTTP(400, body=item)
         else:
-            item = json_message(False, 400, "Search requires specifying Field, Filter & Value!")
+            item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
             raise HTTP(400, body=item)
 
         response.view = 'plain.html'

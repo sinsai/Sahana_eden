@@ -272,9 +272,22 @@ class GIS(object):
         WKT = 'POINT(%f %f)' % (lon, lat)
         return WKT
 
-    def show_map(self):
+    def show_map(self, height=None, width=None, lat=None, lon=None, zoom=None, toolbar=False, window=False):
         """
             Returns the HTML to display a map
+            
+            @param height: Height of viewport
+            @param width: Width of viewport
+            @param lat: default Latitude of viewport
+            @param lon: default Longitude of viewport
+            @param zoom: default Zoom level of viewport
+            @param toolbar: Show the Icon Toolbar of Controls
+            @param window: Have viewport pop out of page into a resizable window
+            
+            @ToDo: Rewrite these to use the API:
+                map_viewing_client()
+                display_feature()
+                display_features()
         """
 
         request = self.request
@@ -285,32 +298,34 @@ class GIS(object):
 
         # Read configuration
         config = self.config_read()
-        width = config.map_width
-        height = config.map_height
-        numZoomLevels = config.zoom_levels
-        _projection = config.projection_id
-        projection = db(db.gis_projection.id==_projection).select().first().epsg
+        if not height:
+            height = config.map_height
+        if not width:
+            width = config.map_width
         # Support bookmarks (such as from the control)
+        # - these over-ride the arguments
         if 'lat' in request.vars:
             lat = request.vars.lat
-        else:
+        elif not lat:
             lat = config.lat
         if 'lon' in request.vars:
             lon = request.vars.lon
-        else:
+        elif not lon:
             lon = config.lon
         if 'zoom' in request.vars:
             zoom = request.vars.zoom
-        else:
+        elif not zoom:
             zoom = config.zoom
+        _projection = config.projection_id
+        projection = db(db.gis_projection.id==_projection).select().first().epsg
         epsg = db(db.gis_projection.epsg==projection).select().first()
         units = epsg.units
         maxResolution = epsg.maxResolution
         maxExtent = epsg.maxExtent
+        numZoomLevels = config.zoom_levels
         marker_default = config.marker_id
         cluster_distance = config.cluster_distance
         cluster_threshold = config.cluster_threshold
-        layout = config.opt_gis_layout
 
         html = DIV(_id="map_wrapper")
 
@@ -327,6 +342,7 @@ class GIS(object):
         # HTML
         ######
         # Catalogue Toolbar
+        # @ToDo: Make optional via argument
         if auth.has_membership(1):
             config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="btn-panel" )
         else:
@@ -351,8 +367,11 @@ class GIS(object):
                 _style="border: 0px none ;", _valign="top",
             ),
             TD( 
+                # Somewhere to report whether GeoRSS feed is using cached copy or completely inaccessible
                 DIV(_id="status_georss"),
+                # Somewhere to report whether KML feed is using cached copy or completely inaccessible
                 DIV(_id="status_kml"),
+                # Somewhere to report if Files are not found
                 DIV(_id="status_files"),
                 _style="border: 0px none ;", _valign="top",
             )
@@ -365,30 +384,268 @@ class GIS(object):
             pass
         else:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/jquery/ext-all.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/script/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.min.js")))
         
+        # Toolbar
+        if toolbar:
+            toolbar = """
+    toolbar = mapPanel.getTopToolbar();
+    """     
+            toolbar2 = "Ext.QuickTips.init();"
+        else:
+            toolbar = ""
+            toolbar2 = ""
+        
+        # Layout
+        if window:
+            layout = """
+    var win = new Ext.Window({
+        collapsible: true,
+            """
+            layout2 = "win.show();"
+        else:
+            # Embedded
+            layout = """
+    var panel = new Ext.Panel({
+        renderTo: "map_panel",
+            """
+            layout2 = ""
+        
+        ########
+        # Layers
+        ########
+        # OpenStreetMap
+        gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender'] # Copied from Model - Need to DRY!
+        openstreetmap = Storage()
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled==True).select()
+        for layer in openstreetmap_enabled:
+            for subtype in gis_layer_openstreetmap_subtypes:
+                if layer.subtype == subtype:
+                    openstreetmap['%s' % subtype] = layer.name
+
+        functions_openstreetmap = ""
+        if openstreetmap:
+            functions_openstreetmap = """
+        function osm_getTileURL(bounds) {
+            var res = this.map.getResolution();
+            var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
+            var y = Math.round((this.maxExtent.top - bounds.top) / (res * this.tileSize.h));
+            var z = this.map.getZoom();
+            var limit = Math.pow(2, z);
+            if (y < 0 || y >= limit) {
+                return OpenLayers.Util.getImagesLocation() + '404.png';
+            } else {
+                x = ((x % limit) + limit) % limit;
+                return this.url + z + '/' + x + '/' + y + '.' + this.type;
+            }
+        }
+        """
+
+        layers_openstreetmap = ""
+        if projection==900913:
+            # Only enable commercial base layers if using a sphericalMercator projection
+            if openstreetmap:
+                if openstreetmap.Mapnik:
+                    layers_openstreetmap += """
+        var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        map.addLayer(mapnik);
+                    """
+                if openstreetmap.Osmarender:
+                    layers_openstreetmap += """
+        var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        map.addLayer(osmarender);
+                    """
+                if openstreetmap.Aerial:
+                    layers_openstreetmap += """
+        var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
+        map.addLayer(oam);
+                    """
+                
+            #if google:
+            #    layers_google = ""
+            #if yahoo:
+            #    layers_yahoo = ""
+            #if bing:
+            #    layers_bing = ""
+            pass
+        layers_tms = ""
+        layers_wms = ""
+        layers_xyz = ""
+        layers_georss = ""
+        layers_gpx = ""
+        layers_kml = ""
+        layers_js = ""
+        
         # Main script
         html.append(SCRIPT("""
-            var map;
-            var mapPanel, toolbar;
-            var featuresLayer, currentFeature;
-            var popupControl;
-            var allLayers = new Array();
-            OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
-            # avoid pink tiles
-            OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
-            OpenLayers.Util.onImageLoadErrorColor = "transparent";
-            # Set Proxy Host
-            OpenLayers.ProxyHost = '""" + str(URL(r=request, c="gis", f="proxy")) + """?url=';
-            # See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
-            var proj4326 = new OpenLayers.Projection('EPSG:4326');
-            var projection_current = new OpenLayers.Projection('EPSG:""" + str(projection) + """');
+    var map;
+    var mapPanel, toolbar;
+    var featuresLayer, currentFeature;
+    var popupControl;
+    var allLayers = new Array();
+    OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
+    // avoid pink tiles
+    OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
+    OpenLayers.Util.onImageLoadErrorColor = "transparent";
+    OpenLayers.ProxyHost = '""" + str(URL(r=request, c="gis", f="proxy")) + """?url=';
+    // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
+    var proj4326 = new OpenLayers.Projection('EPSG:4326');
+    var projection_current = new OpenLayers.Projection('EPSG:""" + str(projection) + """');
+    var lat = """ + str(lat) + """;
+    var lon = """ + str(lon) + """;
+    var center = new OpenLayers.LonLat(lon, lat);
+    center.transform(proj4326, projection_current);
+    var options = {
+        displayProjection: proj4326,
+        projection: projection_current,
+        units: '""" + units + """',
+        maxResolution: """ + str(maxResolution) + """,
+        maxExtent: new OpenLayers.Bounds(""" + maxExtent + """),
+        numZoomLevels: """ + str(numZoomLevels) + """
+    };
+    
+    function addLayers(map) {
+        // Base Layers
+        // OSM
+        """ + layers_openstreetmap + """
+        // Google
+        // Yahoo
+        // Bing
+        // TMS
+        // WMS
+        // XYZ
+        // Overlays
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        var icon_img = new Image();
+        var max_w = 25;
+        var max_h = 35;
+        var width, height;
+        var iconURL;
+        var strategy = new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """});
+        // GeoRSS
+        // GPX
+        // KML
+        // JS
+    }
 
-        """))
+    """ + functions_openstreetmap + """
+    
+    // ol_vector_registerEvents.js
+    // ol_controls_features.js
+    // ol_functions.js
+    
+    Ext.onReady(function() {
+        map = new OpenLayers.Map('center', options);
+        addLayers(map);
+        
+        // ol_layers_features_all.js
+        // ol_controls.js
+
+        var mapPanel = new GeoExt.MapPanel({
+            region: 'center',
+            height: """ + str(height) + """,
+            width: """ + str(width) + """,
+            id: 'mappanel',
+            xtype: 'gx_mappanel',
+            map: map,
+            center: center,
+            zoom: """ + str(zoom) + """,
+            tbar: new Ext.Toolbar()
+        });
+        
+        """ + toolbar + """
+        
+        var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
+            text: '""" + str(T("Base Layers")) + """',
+            layerStore: mapPanel.layers,
+            leaf: false,
+            expanded: true
+        });
+
+        var layerTreeFeaturesExternal = new GeoExt.tree.OverlayLayerContainer({
+            text: '""" + str(T("External Features")) + """',
+            layerStore: mapPanel.layers,
+            leaf: false,
+            expanded: true
+        });
+
+        var layerTreeFeaturesInternal = new GeoExt.tree.OverlayLayerContainer({
+            //text: '""" + str(T("Internal Features")) + """',
+            text: '""" + str(T("Overlays")) + """',
+            layerStore: mapPanel.layers,
+            leaf: false,
+            expanded: true
+        });
+
+        var layerTree = new Ext.tree.TreePanel({
+            id: 'treepanel',
+            title: '""" + str(T("Layers")) + """',
+            root: new Ext.tree.AsyncTreeNode({
+                expanded: true,
+                children: [layerTreeBase, layerTreeFeaturesInternal]
+                //children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+            }),
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            enableDD: true
+        });
+
+        var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+            map: map,
+            zoom: 8
+         });
+
+        var searchCombo = new Ext.Panel({
+            title: '""" + str(T("Search Geonames")) + """',
+            layout: 'border',
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            html: '""" + str(T("Geonames.org search requires Internet connectivity!")) + """',
+            items: [{
+                    region: 'center',
+                    items: [ mapSearch ]
+                }]    
+        });
+
+        """ + layout + """
+            maximizable: true,
+            titleCollapse: true,
+            height: """ + str(height) + """,
+            width: """ + str(width) + """,
+            layout: 'border',
+            items:  [{
+                        region: 'west',
+                        id: 'tools',
+                        title: '""" + str(T("Tools")) + """',
+                        border: true,
+                        width: 250,
+                        collapsible: true,
+                        split: true,
+                        items: [
+                            layerTree,
+                            searchCombo
+                            ]
+                    },
+                    mapPanel
+                    ]
+        });
+        """ + layout2 + """
+        """ + toolbar2 + """
+    });
+    """))
 
         return html.xml()
 

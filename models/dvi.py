@@ -154,6 +154,8 @@ if shn_module_enable.get(module, False):
         msg_record_deleted = T('Recovery report deleted'),
         msg_list_empty = T('No recovery reports available'))
 
+    s3xrc.model.configure(db.dvi_body,
+                          onaccept=lambda form: shn_pentity_onaccept(form, table=db.dvi_body, entity_type=3))
     #
     # Checklist of operations -----------------------------------------------------
     #
@@ -468,9 +470,6 @@ if shn_module_enable.get(module, False):
 
         if attr is None:
             attr = {}
-
-        onvalidation = attr.get('onvalidation', None)
-        onaccept = attr.get('onaccept', None)
 
         if not shn_has_permission('read', db.dvi_body):
             session.error = UNAUTHORISED

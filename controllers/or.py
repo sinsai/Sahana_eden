@@ -54,15 +54,7 @@ def organisation():
     "RESTlike CRUD controller"
     # ServerSidePagination
     response.s3.pagination = True
-    return shn_rest_controller(module, 'organisation', listadd=False, onaccept=lambda form: organisation_onaccept(form))
-
-def organisation_onaccept(form):
-    session.flash = T('Submission Succesful')
-    if request.vars.format == 'popup':
-        redirect(organisation_popup_url + '&caller=' + request.vars.caller)
-    else:
-        f='dashboard'
-        redirect(URL(r=request, f=f, args=form.vars.id))
+    return shn_rest_controller(module, 'organisation', listadd=False)
 
 @service.jsonrpc
 @service.xmlrpc

@@ -490,9 +490,6 @@ if shn_module_enable.get(module, False):
         if attr is None:
             attr = {}
 
-        onvalidation = attr.get('onvalidation', None)
-        onaccept = attr.get('onaccept', None)
-
         if not shn_has_permission('read', db.vol_project):
             session.error = UNAUTHORISED
             redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))

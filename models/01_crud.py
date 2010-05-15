@@ -445,7 +445,7 @@ def import_csv(file, table=None):
 #
 # import_url ------------------------------------------------------------------
 #
-def import_url(jr, table, method, onvalidation=None, onaccept=None):
+def import_url(jr, table, method):
 
     """
         Import GET/URL vars into Database & respond in JSON,
@@ -458,9 +458,8 @@ def import_url(jr, table, method, onvalidation=None, onaccept=None):
 
     module, resource, table, tablename = jr.target()
 
-    if jr.component:
-        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
-        onaccept = s3xrc.model.get_attr(resource, "onaccept")
+    onvalidation = s3xrc.model.get_config(table, "onvalidation")
+    onaccept = s3xrc.model.get_config(table, "onaccept")
 
     response.headers['Content-Type'] = 'text/x-json'
 
@@ -962,9 +961,6 @@ def import_json(jr, **attr):
 
     #return json_message(False, 501, "Not implemented!")
 
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
-
     if "filename" in jr.request.vars:
         source = open(jr.request.vars["filename"])
     elif "fetchurl" in jr.request.vars:
@@ -1000,11 +996,7 @@ def import_json(jr, **attr):
     #print s3xrc.xml.tostring(tree)
     #return s3xrc.xml.tree2json(tree)
 
-    success = jr.import_xml(tree,
-                            permit=shn_has_permission,
-                            audit=shn_audit,
-                            onvalidation=onvalidation,
-                            onaccept=onaccept)
+    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit)
 
     if success:
         item = s3xrc.xml.json_message()
@@ -1022,9 +1014,6 @@ def import_json(jr, **attr):
 def import_xml(jr, **attr):
 
     """ Import XML data """
-
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
 
     if "filename" in jr.request.vars:
         source = jr.request.vars["filename"]
@@ -1051,11 +1040,7 @@ def import_xml(jr, **attr):
             item = s3xrc.xml.json_message(False, 501, session.error)
             raise HTTP(501)
 
-    success = jr.import_xml(tree,
-                            permit=shn_has_permission,
-                            audit=shn_audit,
-                            onvalidation=onvalidation,
-                            onaccept=onaccept)
+    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit)
 
     if success:
         item = s3xrc.xml.json_message()
@@ -1074,8 +1059,6 @@ def shn_read(jr, **attr):
 
     """ Read a single record. """
 
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
     pheader = attr.get('pheader', None)
     editable = attr.get('editable', True)
     deletable = attr.get('deletable', True)
@@ -1084,6 +1067,9 @@ def shn_read(jr, **attr):
     # TODO: this function not filter-aware!
 
     module, resource, table, tablename = jr.target()
+
+    onvalidation = s3xrc.model.get_config(table, "onvalidation")
+    onaccept = s3xrc.model.get_config(table, "onaccept")
 
     if jr.component:
 
@@ -1249,12 +1235,13 @@ def shn_list(jr, **attr):
     # Get the target table
     module, resource, table, tablename = jr.target()
 
+    onvalidation = s3xrc.model.get_config(table, "onvalidation")
+    onaccept = s3xrc.model.get_config(table, "onaccept")
+
     # Get request arguments
     pheader = attr.get('pheader', None)
     _attr = jr.component and jr.component.attr or attr
 
-    onvalidation = _attr.get('onvalidation', None)
-    onaccept = _attr.get('onaccept', None)
     editable = _attr.get('editable', True)
     deletable = _attr.get('deletable', True)
     rss = _attr.get('rss', None)
@@ -1632,18 +1619,15 @@ def shn_create(jr, **attr):
 
     """ Create new records """
 
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
     pheader = attr.get('pheader', None)
     main = attr.get('main', None)
 
     module, resource, table, tablename = jr.target()
 
+    onvalidation = s3xrc.model.get_config(table, "onvalidation")
+    onaccept = s3xrc.model.get_config(table, "onaccept")
+
     if jr.component:
-
-        onvalidation = s3xrc.model.get_attr(resource, "onvalidation")
-        onaccept = s3xrc.model.get_attr(resource, "onaccept")
-
         main = s3xrc.model.get_attr(resource, "main")
         extra = s3xrc.model.get_attr(resource, "extra")
 
@@ -1785,7 +1769,7 @@ def shn_create(jr, **attr):
                     resource=resource, main=main, caller=request.vars.caller)
 
     elif jr.representation == "url":
-        return import_url(jr, table, method="create", onvalidation=onvalidation, onaccept=onaccept)
+        return import_url(jr, table, method="create")
 
     elif jr.representation == "csv":
         # Read in POST
@@ -1801,11 +1785,11 @@ def shn_create(jr, **attr):
 
     elif jr.representation in shn_json_import_formats:
         response.view = 'plain.html'
-        return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+        return import_json(jr)
 
     elif jr.representation in shn_xml_import_formats:
         response.view = 'plain.html'
-        return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+        return import_xml(jr)
 
     else:
         session.error = BADFORMAT
@@ -1818,13 +1802,14 @@ def shn_update(jr, **attr):
 
     """ Update an existing record """
 
-    onvalidation = attr.get('onvalidation', None)
-    onaccept = attr.get('onaccept', None)
     pheader = attr.get('pheader', None)
     editable = attr.get('editable', True)
     deletable = attr.get('deletable', True)
 
     module, resource, table, tablename = jr.target()
+
+    onvalidation = s3xrc.model.get_config(table, "onvalidation")
+    onaccept = s3xrc.model.get_config(table, "onaccept")
 
     if jr.component:
 
@@ -1846,8 +1831,6 @@ def shn_update(jr, **attr):
             session.error = BADRECORD
             redirect(jr.there())
 
-        onvalidation = s3xrc.model.get_attr(resource, 'onvalidation')
-        onaccept = s3xrc.model.get_attr(resource, 'onaccept')
         editable = s3xrc.model.get_attr(resource, 'editable')
         deletable = s3xrc.model.get_attr(resource, 'deletable')
 
@@ -1998,15 +1981,15 @@ def shn_update(jr, **attr):
             return dict()
 
         elif jr.representation == "url":
-            return import_url(jr, table, method="update", onvalidation=onvalidation, onaccept=onaccept)
+            return import_url(jr, table, method="update")
 
         elif jr.representation in shn_json_import_formats:
             response.view = 'plain.html'
-            return import_json(jr, onvalidation=onvalidation, onaccept=onaccept)
+            return import_json(jr)
 
         elif jr.representation in shn_xml_import_formats:
             response.view = 'plain.html'
-            return import_xml(jr, onvalidation=onvalidation, onaccept=onaccept)
+            return import_xml(jr)
 
         else:
             session.error = BADFORMAT
@@ -2024,9 +2007,10 @@ def shn_delete(jr, **attr):
 
     module, resource, table, tablename = jr.target()
 
+    onvalidation = s3xrc.model.get_config(table, "delete_onvalidation")
+    onaccept = s3xrc.model.get_config(table, "delete_onaccept")
+
     if jr.component:
-        onvalidation = s3xrc.model.get_attr(resource, "delete_onvalidation")
-        onaccept = s3xrc.model.get_attr(resource, "delete_onaccept")
 
         query = ((table[jr.fkey]==jr.table[jr.pkey]) & (table[jr.fkey]==jr.record[jr.pkey]))
         if jr.component_id:
@@ -2343,14 +2327,6 @@ def shn_rest_controller(module, resource, **attr):
                 [[1, "asc"], [2, "desc"]]
 
             see: U{http://datatables.net/examples/basic_init/table_sorting.html}
-
-        @param onvalidation: callback processed B{before} DB IO
-        @type onvalidation:
-            lambda form:, function(form)
-
-        @param onaccept: callback processed B{after} DB IO
-        @type onaccept:
-            lambda form:, function(form)
 
         @param pheader: function to produce a page header for the primary resource
         @type pheader:

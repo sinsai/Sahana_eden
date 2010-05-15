@@ -79,7 +79,7 @@ if shn_module_enable.get(module, False):
     table.actionable.readable = table.actionable.writable = False
     table.actioned.readable = table.actioned.writable = False
     table.actioned_details.readable = table.actioned_details.writable = False
-    
+
     # Set default values
     table.actionable.default = 1
     table.source_type.default = 1
@@ -194,9 +194,6 @@ if shn_module_enable.get(module, False):
 
         if attr is None:
             attr = {}
-
-        onvalidation = attr.get('onvalidation', None)
-        onaccept = attr.get('onaccept', None)
 
         if not shn_has_permission('read', db.rms_req):
             session.error = UNAUTHORISED

@@ -161,6 +161,16 @@ organisation_id = SQLTable(None, 'organisation_id',
                            ondelete = 'RESTRICT'
                           ))
 
+def organisation_onaccept(form):
+    session.flash = T('Submission Succesful')
+    if request.vars.format == 'popup':
+        redirect(organisation_popup_url + '&caller=' + request.vars.caller)
+    else:
+        f='dashboard'
+        redirect(URL(r=request, f=f, args=form.vars.id))
+
+s3xrc.model.configure(table, onaccept=lambda form: organisation_onaccept(form))
+
 # Orgs as component of Clusters
 s3xrc.model.add_component(module, resource,
     multiple=True,

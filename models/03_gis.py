@@ -186,6 +186,10 @@ location_id = SQLTable(None, 'location_id',
                 ondelete = 'RESTRICT'
                 ))
 
+s3xrc.model.configure(db.gis_location,
+                      onvalidation=lambda form: gis.wkt_centroid(form),
+                      onaccept=gis.update_location_tree())
+
 # -----------------------------------------------------------------------------
 #
 def shn_gis_location_represent(id):

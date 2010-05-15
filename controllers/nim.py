@@ -56,6 +56,5 @@ def person():
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
-        ),
-        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
+        ))
 

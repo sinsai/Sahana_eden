@@ -95,8 +95,7 @@ def person():
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
-        ),
-        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
+        ))
 
     shn_pr_module_menu_ext()
     return output
@@ -107,10 +106,11 @@ def group():
     response.s3.pagination = True
     crud.settings.delete_onaccept = shn_pentity_ondelete
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "group", main="group_name", extra="group_description",
-        pheader=shn_pr_pheader,
-        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_group, entity_type=2),
-        deletable=False)
+    return shn_rest_controller(module, "group",
+                               main="group_name",
+                               extra="group_description",
+                               pheader=shn_pr_pheader,
+                               deletable=False)
 
 # -----------------------------------------------------------------------------
 def image():

@@ -68,7 +68,8 @@ s3rest = S3RESTController(rc=s3xrc, auth=auth,
             xml_import_formats = shn_xml_import_formats,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,
-            json_export_formats = shn_json_export_formats)
+            json_export_formats = shn_json_export_formats,
+            debug=False)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):

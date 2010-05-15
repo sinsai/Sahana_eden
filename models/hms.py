@@ -308,13 +308,18 @@ if shn_module_enable.get(module, False):
             else:
                 form.vars.gov_uuid = None
 
-    # -----------------------------------------------------------------------------
+
     def shn_hms_hospital_onaccept(form):
 
         # Update requests
         hospital = db.hms_hospital[form.vars.id]
         if hospital:
             db(db.hms_hrequest.hospital_id==hospital.id).update(city=hospital.city)
+
+
+    s3xrc.model.configure(table,
+                          onvalidation=lambda form: shn_hms_hospital_onvalidation(form))
+                          #onaccept=lambda form:shn_hms_hospital_onaccept(form))
 
     # -----------------------------------------------------------------------------
     # Contacts
@@ -517,13 +522,14 @@ if shn_module_enable.get(module, False):
                 total_beds=t_beds,
                 available_beds=a_beds)
 
+    s3xrc.model.configure(table, onaccept=shn_hms_bedcount_update)
+
     # add as component
     s3xrc.model.add_component(module, resource,
         multiple=True,
         joinby=dict(hms_hospital='hospital_id'),
         deletable=True,
         editable=True,
-        onaccept=shn_hms_bedcount_update,
         main='hospital_id', extra='id',
         list_fields = ['id', 'unit_name', 'bed_type', 'date', 'beds_baseline', 'beds_available', 'beds_add24'])
 
@@ -784,9 +790,6 @@ if shn_module_enable.get(module, False):
         if attr is None:
             attr = {}
 
-        onvalidation = attr.get('onvalidation', None)
-        onaccept = attr.get('onaccept', None)
-
         if not shn_has_permission('read', db.hms_hospital):
             session.error = UNAUTHORISED
             redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
@@ -1022,6 +1025,9 @@ if shn_module_enable.get(module, False):
                 print "Found hospital %s in %s" % (hospital.name, hospital.city)
                 db(db.hms_hrequest.id==hrequest.id).update(city=hospital.city)
 
+    s3xrc.model.configure(db.hms_hrequest,
+                          onaccept=lambda form: shn_hms_hrequest_onaccept(form))
+
     # -----------------------------------------------------------------------------
     # Request Search by Message Text
     #
@@ -1086,9 +1092,6 @@ if shn_module_enable.get(module, False):
 
         if attr is None:
             attr = {}
-
-        onvalidation = attr.get('onvalidation', None)
-        onaccept = attr.get('onaccept', None)
 
         if not shn_has_permission('read', db.hms_hrequest):
             session.error = UNAUTHORISED

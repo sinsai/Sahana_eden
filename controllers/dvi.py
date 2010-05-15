@@ -98,7 +98,6 @@ def body():
     crud.settings.delete_onaccept = shn_pentity_ondelete
     output = shn_rest_controller(module, 'body', main='pr_pe_label', extra='opt_pr_gender',
         pheader=shn_dvi_pheader,
-        onaccept=lambda form: shn_pentity_onaccept(form, table=db.dvi_body, entity_type=3),
         list_fields=[
             'id',
             'pr_pe_label',

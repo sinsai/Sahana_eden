@@ -243,41 +243,11 @@ def item():
 
     response.s3.pdf = URL(r=request, f='item_export_pdf')
 
-    return shn_rest_controller(module, resource, main='code', extra='description', orderby=db.budget_item.category_type, sortby=[[1, "asc"]], onaccept=lambda form: item_cascade(form))
-    #return shn_rest_controller(module, resource, main='code', extra='description', orderby=db.budget_item.category_type, onaccept=lambda form: item_cascade(form))
-
-def item_cascade(form):
-    """
-    When an Item is updated, then also need to update all Kits, Bundles & Budgets which contain this item
-    Called as an onaccept from the RESTlike controller
-    """
-    # Check if we're an update form
-    if form.vars.id:
-        item = form.vars.id
-        # Update Kits containing this Item
-        table = db.budget_kit_item
-        query = table.item_id==item
-        rows = db(query).select()
-        for row in rows:
-            kit = row.kit_id
-            kit_totals(kit)
-            # Update Bundles containing this Kit
-            table = db.budget_bundle_kit
-            query = table.kit_id==kit
-            rows = db(query).select()
-            for row in rows:
-                bundle = row.bundle_id
-                bundle_totals(bundle)
-                # Update Budgets containing this Bundle (tbc)
-        # Update Bundles containing this Item
-        table = db.budget_bundle_item
-        query = table.item_id==item
-        rows = db(query).select()
-        for row in rows:
-            bundle = row.bundle_id
-            bundle_totals(bundle)
-            # Update Budgets containing this Bundle (tbc)
-    return
+    return shn_rest_controller(module, resource,
+                               main='code',
+                               extra='description',
+                               orderby=db.budget_item.category_type,
+                               sortby=[[1, "asc"]])
 
 def item_export_pdf():
     """
@@ -409,7 +379,7 @@ def kit():
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='kit_item', args=request.args[1])
 
-    return shn_rest_controller(module, resource, main='code', onaccept=lambda form: kit_total(form))
+    return shn_rest_controller(module, resource, main='code')
 
 def kit_item():
     "Many to Many CRUD Controller"
@@ -530,33 +500,6 @@ def kit_dupes(form):
         redirect(URL(r=request, args=kit))
     else:
         return
-
-def kit_total(form):
-    "Calculate Totals for the Kit specified by Form"
-    if 'kit_id' in form.vars:
-        # called by kit_item()
-        kit = form.vars.kit_id
-    else:
-        # called by kit()
-        kit = form.vars.id
-    kit_totals(kit)
-
-def kit_totals(kit):
-    "Calculate Totals for a Kit"
-    table = db.budget_kit_item
-    query = table.kit_id==kit
-    items = db(query).select()
-    total_unit_cost = 0
-    total_monthly_cost = 0
-    total_minute_cost = 0
-    total_megabyte_cost = 0
-    for item in items:
-        query = (table.kit_id==kit) & (table.item_id==item.item_id)
-        total_unit_cost += (db(db.budget_item.id==item.item_id).select().first().unit_cost) * (db(query).select().first().quantity)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().monthly_cost) * (db(query).select().first().quantity)
-        total_minute_cost += (db(db.budget_item.id==item.item_id).select().first().minute_cost) * (db(query).select().first().quantity)
-        total_megabyte_cost += (db(db.budget_item.id==item.item_id).select().first().megabyte_cost) * (db(query).select().first().quantity)
-    db(db.budget_kit.id==kit).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost, total_minute_cost=total_minute_cost, total_megabyte_cost=total_megabyte_cost)
 
 def kit_update_items():
     "Update a Kit's items (Quantity & Delete)"
@@ -854,7 +797,7 @@ def bundle():
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='bundle_kit_item', args=request.args[1])
 
-    return shn_rest_controller(module, resource, onaccept=lambda form: bundle_total(form))
+    return shn_rest_controller(module, resource)
 
 def bundle_kit_item():
     "Many to Many CRUD Controller"
@@ -1054,43 +997,6 @@ def bundle_dupes(form):
         redirect(URL(r=request, args=bundle))
     else:
         return
-
-def bundle_total(form):
-    "Calculate Totals for the Bundle specified by Form"
-    if 'bundle_id' in form.vars:
-        # called by bundle_kit_item()
-        bundle = form.vars.bundle_id
-    else:
-        # called by bundle()
-        bundle = form.vars.id
-    bundle_totals(bundle)
-
-def bundle_totals(bundle):
-    "Calculate Totals for a Bundle"
-    total_unit_cost = 0
-    total_monthly_cost = 0
-
-    table = db.budget_bundle_kit
-    query = table.bundle_id==bundle
-    kits = db(query).select()
-    for kit in kits:
-        query = (table.bundle_id==bundle) & (table.kit_id==kit.kit_id)
-        total_unit_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_unit_cost) * (db(query).select().first().quantity)
-        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_monthly_cost) * (db(query).select().first().quantity)
-        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
-        total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
-
-    table = db.budget_bundle_item
-    query = table.bundle_id==bundle
-    items = db(query).select()
-    for item in items:
-        query = (table.bundle_id==bundle) & (table.item_id==item.item_id)
-        total_unit_cost += (db(db.budget_item.id==item.item_id).select().first().unit_cost) * (db(query).select().first().quantity)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().monthly_cost) * (db(query).select().first().quantity)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
-        total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
-
-    db(db.budget_bundle.id==bundle).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost)
 
 def bundle_update_items():
     "Update a Bundle's items (Quantity, Minutes, Megabytes & Delete)"

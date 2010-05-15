@@ -82,7 +82,7 @@ def project():
     table.name.comment = SPAN("*", _class="req")
     table.description.comment = SPAN("*", _class="req")
     table.status.comment = SPAN("*", _class="req")
-    
+
     output = shn_rest_controller( module , resource, pheader=shn_vol_project_pheader)
     shn_vol_menu_ext()
     return output
@@ -101,8 +101,7 @@ def person():
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
-        ),
-        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
+        ))
 
     shn_vol_menu_ext()
     return output

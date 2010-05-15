@@ -95,7 +95,6 @@ def hospital():
             title="%(name)s",
             description=shn_hms_hospital_rss
         ),
-        onvalidation = shn_hms_hospital_onvalidation,
         listadd=False)
 
     shn_hms_menu_ext()
@@ -129,8 +128,7 @@ def hrequest():
         rss=dict(
             title="%(subject)s",
             description="%(message)s"
-        ),
-        onaccept = shn_hms_hrequest_onaccept)
+        ))
 
     shn_hms_menu_ext()
     return output

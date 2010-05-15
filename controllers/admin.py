@@ -29,7 +29,11 @@ def setting():
     s3.crud_strings.setting.msg_record_modified = T('Settings updated')
     s3.crud_strings.setting.label_list_button = None
     #crud.settings.update_next = URL(r=request, args=['update', 1])
-    return shn_rest_controller('s3', 'setting', deletable=False, listadd=False, onvalidation=lambda form: theme_check(form), onaccept=lambda form: theme_apply(form))
+    s3xrc.model.configure(db.s3_setting,
+                          onvalidation=theme_check,
+                          onaccept=theme_apply)
+    return shn_rest_controller('s3', 'setting', deletable=False, listadd=False)
+    s3xrc.model.clear_config(db.s3_setting, "onvalidation", "onaccept")
 
 @auth.requires_membership('Administrator')
 def theme():
@@ -91,7 +95,9 @@ def theme():
         msg_record_deleted = T('Theme deleted'),
         msg_list_empty = T('No Themes currently defined'))
 
-    return shn_rest_controller(module, resource, list_fields=['id', 'name', 'logo', 'footer', 'col_background'], onvalidation=lambda form: theme_check(form))
+    s3xrc.model.configure(db[table], onvalidation=theme_check)
+    return shn_rest_controller(module, resource, list_fields=['id', 'name', 'logo', 'footer', 'col_background'])
+    s3xrc.model.clear_config(db[table], "onvalidation")
 
 def theme_apply(form):
     "Apply the Theme specified by Form"
@@ -233,22 +239,31 @@ def user():
         msg_record_deleted = T('User deleted'),
         msg_list_empty = T('No Users currently registered'))
 
-    onvalidation = onaccept = None
     # Add users to Person Registry & 'Authenticated' role
     crud.settings.create_onaccept = lambda form: auth.shn_register(form)
-    # Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))
-    if len(request.args) and request.args[0] == 'update':
-        onvalidation = lambda form: user_approve(form)
+
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.readable = True
     db.auth_user.registration_key.label = T('Disabled?')
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(['disabled', 'pending']))
 
-    return shn_rest_controller(module, resource, main='first_name', onvalidation=onvalidation, onaccept=onaccept)
+    def user_prep(jr):
+        if jr.method == "update":
+            # Send an email to user if their account is approved
+            # (=moved from 'pending' to 'blank'(i.e. enabled))
+            s3xrc.model.configure(db[table],
+                                  onvalidation = lambda form: user_approve(form))
+        return True
+    response.s3.prep = user_prep
+
+    output = shn_rest_controller(module, resource, main='first_name')
+    s3xrc.model.clear_config(db[table], "onvalidation", "onaccept")
+    return output
 
 def user_approve(form):
     "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"
+    print "user_approve"
     if form.vars.registration_key:
         # Now non-blank
         return

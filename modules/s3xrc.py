@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    S3XCR SahanaPy XML+JSON Resource Controller
+    S3XRC SahanaPy XML+JSON Resource Controller
 
-    @version: 1.6.1
+    @version: 1.6.2
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -160,9 +160,46 @@ class S3ObjectModel(object):
         self.db = db
 
         self.components = {}
+        self.config = Storage()
 
         self.methods = {}
         self.cmethods = {}
+
+
+    #--------------------------------------------------------------------------
+    def configure(self, table, **attr):
+
+        """ Updates the configuration of a resource """
+
+        cfg = self.config.get(table._tablename, Storage())
+        cfg.update(attr)
+        self.config[table._tablename] = cfg
+
+
+    #--------------------------------------------------------------------------
+    def get_config(self, table, key):
+
+        """ Reads a configuration setting of a resource """
+
+        if table._tablename in self.config.keys():
+            return self.config[table._tablename].get(key, None)
+        else:
+            return None
+
+
+    #--------------------------------------------------------------------------
+    def clear_config(self, table, *keys):
+
+        """ Removes configuration settings of a resource """
+
+        if not len(keys):
+            if table._tablename in self.config.keys():
+                del self.config[table._tablename]
+        else:
+            if table._tablename in self.config.keys():
+                for k in keys:
+                    if k in self.config[table._tablename]:
+                        del self.config[table._tablename][k]
 
 
     #--------------------------------------------------------------------------
@@ -323,7 +360,7 @@ class S3ObjectModel(object):
 class S3ResourceController(object):
 
     """
-        Controller class for joined resources
+        Resource controller class for S3.
 
         @param db: the database abstraction layer
         @param domain:
@@ -627,8 +664,6 @@ class S3ResourceController(object):
                    skip_resource=False,
                    permit=None,
                    audit=None,
-                   onvalidation=None,
-                   onaccept=None,
                    ignore_errors=False):
 
         """ Imports data from an XML tree """
@@ -641,6 +676,9 @@ class S3ResourceController(object):
         else:
             self.error = S3XRC_BAD_RESOURCE
             return False
+
+        onvalidation = self.model.get_config(table, "onvalidation")
+        onaccept = self.model.get_config(table, "onaccept")
 
         elements = self.xml.select_resources(tree, tablename)
         if not elements: # nothing to import
@@ -713,8 +751,8 @@ class S3ResourceController(object):
                                               record=crecord,
                                               permit=permit,
                                               audit=audit,
-                                              onvalidation=component.get_attr("onvalidation"),
-                                              onaccept=component.get_attr("onaccept"))
+                                              onvalidation=self.model.get_config(component.table, "onvalidation"),
+                                              onaccept=self.model.get_config(component.table, "onaccept"))
 
                             cvector.pkey = pkey
                             cvector.fkey = fkey
@@ -748,8 +786,8 @@ class S3ResourceController(object):
                                           record=crecord,
                                           permit=permit,
                                           audit=audit,
-                                          onvalidation=component.get_attr("onvalidation"),
-                                          onaccept=component.get_attr("onaccept"))
+                                          onvalidation=self.model.get_config(component.table, "onvalidation"),
+                                          onaccept=self.model.get_config(component.table, "onaccept"))
 
                         cvector.pkey = pkey
                         cvector.fkey = fkey

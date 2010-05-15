@@ -144,7 +144,66 @@ pr_pe_fieldset = SQLTable(None, "pr_pe_fieldset",
                     Field("pr_pe_label", length=128,
                         label = T("ID Label"),
                         requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_pentity.label"))
-                    )) # Can"t be unique if we allow Null!
+                    )) # Can't be unique if we allow Null!
+
+# -----------------------------------------------------------------------------
+#
+def shn_pentity_ondelete(record):
+
+    """
+        Deletes pr_pentity entries, when a subentity is deleted, used as
+        delete_onaccept callback.
+
+        crud.settings.delete_onaccept = shn_pentity_ondelete
+    """
+
+    if "pr_pe_id" in record:
+        pr_pe_id = record.pr_pe_id
+
+        delete_onvalidation = crud.settings.delete_onvalidation
+        delete_onaccept = crud.settings.delete_onaccept
+
+        crud.settings.delete_onvalidation = None
+        crud.settings.delete_onaccept = None
+
+        if db(db.s3_setting.id==1).select()[0].archive_not_delete:
+            db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
+        else:
+            crud.delete(db.pr_pentity, pr_pe_id)
+
+        # TODO: delete joined resources!?
+
+        crud.settings.delete_onvalidation = delete_onvalidation
+        crud.settings.delete_onaccept = delete_onaccept
+
+    return True
+
+
+def shn_pentity_onaccept(form, table=None, entity_type=1):
+
+    """
+        Adds or updates a pr_pentity entries as necessary, used as
+        onaccept-callback for create/update of subentities.
+    """
+
+    if "pr_pe_id" in table.fields:
+        record = db(table.id==form.vars.id).select(table.pr_pe_id, table.pr_pe_label).first()
+        if record:
+            pr_pe_id = record.pr_pe_id
+            label = record.pr_pe_label
+            if pr_pe_id:
+                # update action
+                db(db.pr_pentity.id==pr_pe_id).update(label=label)
+            else:
+                # create action
+                pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_type,
+                                                label=label)
+                if pr_pe_id:
+                    db(table.id==form.vars.id).update(pr_pe_id=pr_pe_id)
+
+    return True
+
+s3xrc.model.configure(table, delete_onaccept=shn_pentity_ondelete)
 
 # *****************************************************************************
 # Person (person)
@@ -346,6 +405,8 @@ person_id = SQLTable(None, "person_id",
                     ondelete = "RESTRICT"
                 ))
 
+s3xrc.model.configure(table, onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
+
 # *****************************************************************************
 # Group (group)
 #
@@ -437,6 +498,8 @@ group_id = SQLTable(None, "group_id",
                     ondelete = "RESTRICT"
                 ))
 
+s3xrc.model.configure(table, onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=2))
+
 # *****************************************************************************
 # Functions:
 #
@@ -454,64 +517,6 @@ def shn_pr_person_list_fields():
 
 # -----------------------------------------------------------------------------
 #
-def shn_pentity_ondelete(record):
-
-    """
-        Deletes pr_pentity entries, when a subentity is deleted, used as
-        delete_onaccept callback.
-
-        crud.settings.delete_onaccept = shn_pentity_ondelete
-    """
-
-    if "pr_pe_id" in record:
-        pr_pe_id = record.pr_pe_id
-
-        delete_onvalidation = crud.settings.delete_onvalidation
-        delete_onaccept = crud.settings.delete_onaccept
-
-        crud.settings.delete_onvalidation = None
-        crud.settings.delete_onaccept = None
-
-        if db(db.s3_setting.id==1).select()[0].archive_not_delete:
-            db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
-        else:
-            crud.delete(db.pr_pentity, pr_pe_id)
-
-        # TODO: delete joined resources!?
-
-        crud.settings.delete_onvalidation = delete_onvalidation
-        crud.settings.delete_onaccept = delete_onaccept
-
-    return True
-
-# -----------------------------------------------------------------------------
-#
-def shn_pentity_onaccept(form, table=None, entity_type=1):
-
-    """
-        Adds or updates a pr_pentity entries as necessary, used as
-        onaccept-callback for create/update of subentities.
-    """
-
-    if "pr_pe_id" in table.fields:
-        record = db(table.id==form.vars.id).select(table.pr_pe_id, table.pr_pe_label).first()
-        if record:
-            pr_pe_id = record.pr_pe_id
-            label = record.pr_pe_label
-            if pr_pe_id:
-                # update action
-                db(db.pr_pentity.id==pr_pe_id).update(label=label)
-            else:
-                # create action
-                pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_type,
-                                                label=label)
-                if pr_pe_id:
-                    db(table.id==form.vars.id).update(pr_pe_id=pr_pe_id)
-
-    return True
-
-# -----------------------------------------------------------------------------
-#
 def shn_pr_person_search_simple(xrequest, **attr):
 
     """
@@ -520,9 +525,6 @@ def shn_pr_person_search_simple(xrequest, **attr):
 
     if attr is None:
         attr = {}
-
-    onvalidation = attr.get("onvalidation", None)
-    onaccept = attr.get("onaccept", None)
 
     table = db.pr_person
 
@@ -583,8 +585,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
             # Get report from HTML exporter
             report = shn_list(xrequest,
                               listadd=False,
-                              list_fields=shn_pr_person_list_fields(),
-                              onvalidation=onvalidation, onaccept=onaccept)
+                              list_fields=shn_pr_person_list_fields())
 
             output.update(dict(report))
 

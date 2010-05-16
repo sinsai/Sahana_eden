@@ -64,14 +64,14 @@ table.access.requires = IS_NULL_OR(IS_IN_DB(db, 'auth_group.id', '%(role)s', mul
 table.priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 's3_module.priority')]
 
 # Set to False in Production
-if db(db["s3_setting"].id).count():
+if db(db["s3_setting"].id>0).count():
     empty = False
 else:
     empty = True
 
 if empty:
     # Pre-populate database
-    if not db(table.id).count():
+    if not db(table.id>0).count():
         table.insert(
             name="default",
             name_nice="Sahana Home",

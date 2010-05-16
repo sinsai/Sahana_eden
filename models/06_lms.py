@@ -47,7 +47,7 @@ if shn_module_enable.get(module, False):
                     Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links
                     migrate=migrate)
 
-    if not db(table.id).count():
+    if not db(table.id>0).count():
         table.insert(
             opt_lms_unit_type=1,
             label="m",

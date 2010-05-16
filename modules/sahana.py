@@ -738,7 +738,7 @@ class AuthS3(Auth):
             if self.settings.create_user_groups:
                 group_id = self.add_group("user_%s" % form.vars.id, description)
                 self.add_membership(group_id, form.vars.id)
-            if self.settings.registration_requires_verification and self.db(self.settings.table_user.id).count()>1:
+            if self.settings.registration_requires_verification and self.db(self.settings.table_user.id>0).count()>1:
                 if not self.settings.mailer or \
                    not self.settings.mailer.send(to=form.vars.email,
                         subject=self.messages.verify_email_subject,
@@ -748,7 +748,7 @@ class AuthS3(Auth):
                     response.error = self.messages.invalid_email
                     return form
                 session.confirmation = self.messages.email_sent
-            elif self.settings.registration_requires_approval and self.db(self.settings.table_user.id).count()>1:
+            elif self.settings.registration_requires_approval and self.db(self.settings.table_user.id>0).count()>1:
                 user[form.vars.id] = dict(registration_key='pending')
                 session.warning = self.messages.registration_pending
             else:
@@ -766,7 +766,7 @@ class AuthS3(Auth):
 
                 # Add the first user to admin group
                 # Installers should create a default user with random password to make this safe
-                if self.db(table_user.id).count()==1:
+                if self.db(table_user.id>0).count()==1:
                     table_group = self.settings.table_group
                     admin_group = self.db(table_group.role=="Administrator").select(table_group.id).first()
                     if admin_group:

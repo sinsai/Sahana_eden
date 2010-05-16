@@ -888,6 +888,10 @@ class S3Vector(object):
            permit(permission, self.tablename, record_id=self.id):
             self.permitted=False
 
+        if self.prefix == "auth" or \
+           self.prefix == "admin" or \
+           self.prefix == "s3":
+            self.permitted=False
 
     #--------------------------------------------------------------------------
     def commit(self):
@@ -973,7 +977,7 @@ class S3XML(object):
     Marker = "marker_id"
     FeatureClass = "feature_class_id"
 
-    IGNORE_FIELDS = ["deleted", "id"]
+    IGNORE_FIELDS = ["deleted", "id", "password"]
 
     FIELDS_TO_ATTRIBUTES = [
             "created_on",

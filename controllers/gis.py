@@ -289,20 +289,28 @@ def location():
 
     if "feature_group" in request.vars:
         fgroup = request.vars["feature_group"]
-        # ToDo support direct Features in Feature Groups
-        #response.s3.filter = ((db.gis_location.feature_class_id == db.gis_feature_class.id) &
-        #                      (db.gis_feature_class_to_feature_group.feature_class_id == db.gis_feature_class.id) &
-        #                      (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
-        #                      (db.gis_feature_group.name.like(fgroup)))
-
-    response.s3.pagination = True
+        # Filter to those Features which are in Feature Groups through their Feature Class
+        filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
+           (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
+           (db.gis_feature_group.name.like(fgroup)))
+        # We no longer support direct Features in Feature Groups (we can't easily OR this filter with previous one)
+        #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
+        #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
 
     if "parent" in request.vars:
         parent = request.vars["parent"]
-        filters.append(db.gis_location.parent==parent)
+        # Can't do this using a JOIN in DAL syntax
+        # .belongs() not GAE-compatible!
+        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
+        # ToDo: Make this recursive - want ancestor not just direct parent!
 
+    # ToDo
+    # if "bbox" in request.vars:
+        
     if filters:
         response.s3.filter = reduce(__and__, filters)
+
+    response.s3.pagination = True
 
     return shn_rest_controller(module, resource)
 
@@ -1492,15 +1500,17 @@ def map_viewing_client():
         classes = db.gis_feature_class
         metadata = db.media_metadata
         # Which Features are added to the Group directly?
-        link = db.gis_location_to_feature_group
+        # ^^ No longer supported, for simplicity
+        #link = db.gis_location_to_feature_group
         # JOINs are efficient for RDBMS but not compatible with GAE
-        features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
+        #features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
         # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
         # Which Features are added to the Group via their FeatureClass?
         link = db.gis_feature_class_to_feature_group
         features2 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), classes.on(classes.id == link.feature_class_id), locations.on(locations.feature_class_id == link.feature_class_id)])
         # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
-        features[feature_group.id] = features1 | features2
+        #features[feature_group.id] = features1 | features2
+        features[feature_group.id] = features2
         for feature in features[feature_group.id]:
             try:
                 # Deprecated since we'll be using KML to populate Popups with Edit URLs, etc

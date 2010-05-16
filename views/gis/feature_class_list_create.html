@@ -1,4 +1,14 @@
 {{extend 'layout.html'}}
 {{include 'gis/catalogue_toolbar.html'}}
+{{pheader="""
+<p>Feature Classes are collections of Features of the same type.<br />
+They:</p>
+<ul>
+ <li>Share a comon Marker (unless over-ridden at the Feature level)</li>
+ <ul>
+  <li>If no marker defined then the system default marker is used</li>
+ </ul>
+ <li> Can be grouped together into Feature Groups </p>
+</ul>"""}}
 {{include '_list_create.html'}}
 {{include 'admin/resources.js'}}

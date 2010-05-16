@@ -91,9 +91,13 @@ class GIS(object):
         self.messages.lock_keys = True
         
     def abbreviate_wkt(self, wkt, max_length=30):
-        if len(wkt) > max_length:
+        if not wkt:
+            # Blank WKT field
+            return None
+        elif len(wkt) > max_length:
             return "%s(...)" % wkt[0:wkt.index('(')]
-        return wkt
+        else:
+            return wkt
         
     def config_read(self):
         """
@@ -272,7 +276,18 @@ class GIS(object):
         WKT = 'POINT(%f %f)' % (lon, lat)
         return WKT
 
-    def show_map(self, height=None, width=None, lat=None, lon=None, zoom=None, catalogue=False, toolbar=False, mgrs=False, window=False):
+    def show_map( self,
+                  height = None,
+                  width = None,
+                  lat = None,
+                  lon = None,
+                  zoom = None,
+                  feature_overlays = {},
+                  catalogue_overlays = False,
+                  catalogue_toolbar = False,
+                  toolbar = False,
+                  mgrs = False,
+                  window = False):
         """
             Returns the HTML to display a map
             
@@ -281,7 +296,16 @@ class GIS(object):
             @param lat: default Latitude of viewport
             @param lon: default Longitude of viewport
             @param zoom: default Zoom level of viewport
-            @param catalogue: Show the Catalogue Toolbar
+            @param feature_overlays: Which Feature Groups to overlay onto the map & their options:
+                {
+                 feature_group : db.gis_feature_group.name,
+                 filter : None,         # A query to limit which features from the feature group are loaded
+                 active : True,         # Is the feed displayed upon load or needs ticking to load afterwards?
+                 popup_url : <default>, # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
+                 marker : <default>     # The icon used to display the feature. Can be a lambda to vary icon (size/colour) based on attribute levels.
+                }
+            @param catalogue_overlays: Show the Overlays from the GIS Catalogue
+            @param catalogue_toolbar: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
             @param mgrs: Use the MGRS Control to select PDFs
             @param window: Have viewport pop out of page into a resizable window
@@ -348,7 +372,7 @@ class GIS(object):
         # HTML
         ######
         # Catalogue Toolbar
-        if catalogue:
+        if catalogue_toolbar:
             if auth.has_membership(1):
                 config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="btn-panel" )
             else:
@@ -356,8 +380,8 @@ class GIS(object):
             catalogue_toolbar = TABLE(TR(
                 config_button,
                 TD( A(T("Locations"), _id="features-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="location")), _class="btn-panel" ),
-                TD( A(T("Feature Groups"), _id="feature_groups-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_group")), _class="btn-panel" ),
                 TD( A(T("Feature Classes"), _id="feature_classes-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_class")), _class="btn-panel" ),
+                TD( A(T("Feature Groups"), _id="feature_groups-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_group")), _class="btn-panel" ),
                 TD( A(T("Keys"), _id="keys-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="apikey")), _class="btn-panel" ),
                 TD( A(T("Layers"), _id="layers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="btn-panel" ),
                 TD( A(T("Markers"), _id="markers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="marker")), _class="btn-panel" ),
@@ -435,6 +459,13 @@ class GIS(object):
         ########
         # Layers
         ########
+        # Features
+        if feature_overlays:
+            # @ToDo
+            layers_features = ""
+        else:
+            layers_features = ""
+        
         # OpenStreetMap
         gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender'] # Copied from Model - Need to DRY!
         openstreetmap = Storage()
@@ -482,20 +513,39 @@ class GIS(object):
         map.addLayer(oam);
                     """
                 
-            #if google:
-            #    layers_google = ""
-            #if yahoo:
-            #    layers_yahoo = ""
-            #if bing:
-            #    layers_bing = ""
-            pass
+            google = db(db.gis_layer_google.enabled==True).select()
+            if google:
+                # @ToDo
+                layers_google = ""
+            else:
+                layers_google = ""
+            yahoo = db(db.gis_layer_yahoo.enabled==True).select()
+            if yahoo:
+                # @ToDo
+                layers_yahoo = ""
+            else:
+                layers_yahoo = ""
+            #bing = db(db.gis_layer_bing.enabled==True).select()
+            bing = False
+            if bing:
+                # @ToDo
+                layers_bing = ""
+            else:
+                layers_bing = ""
         layers_tms = ""
         layers_wms = ""
         layers_xyz = ""
-        layers_georss = ""
-        layers_gpx = ""
-        layers_kml = ""
         layers_js = ""
+        if catalogue_overlays:
+            # @ToDo
+            layers_wms += ""
+            layers_georss = ""
+            layers_gpx = ""
+            layers_kml = ""
+        else:
+            layers_georss = ""
+            layers_gpx = ""
+            layers_kml = ""
         
         # Main script
         html.append(SCRIPT("""
@@ -530,11 +580,19 @@ class GIS(object):
         // OSM
         """ + layers_openstreetmap + """
         // Google
+        """ + layers_google + """
         // Yahoo
+        """ + layers_yahoo + """
         // Bing
+        """ + layers_bing + """
         // TMS
+        """ + layers_tms + """
         // WMS
+        """ + layers_wms + """
         // XYZ
+        """ + layers_xyz + """
+        // JS
+        """ + layers_js + """
         // Overlays
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         style_marker.graphicOpacity = 1;
@@ -544,10 +602,14 @@ class GIS(object):
         var width, height;
         var iconURL;
         var strategy = new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """});
+        // Features
+        """ + layers_features + """
         // GeoRSS
+        """ + layers_georss + """
         // GPX
+        """ + layers_gpx + """
         // KML
-        // JS
+        """ + layers_kml + """
     }
 
     """ + functions_openstreetmap + """

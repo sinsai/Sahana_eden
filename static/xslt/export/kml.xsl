@@ -14,7 +14,7 @@
 
     <xsl:template match="s3xrc">
         <Folder>
-            <name>Sahana Eden GIS Features</name>
+            <name>Sahana Eden Locations</name>
             <xsl:apply-templates select="./resource"/>
         </Folder>
     </xsl:template>
@@ -22,8 +22,16 @@
     <xsl:template match="resource">
         <xsl:choose>
             <xsl:when test="@name='gis_location'">
+                <Style><xsl:attribute name="id"><xsl:value-of select="@uuid"/></xsl:attribute>
+                        <IconStyle>
+                            <Icon>
+                                <href><xsl:value-of select="@marker"/></href>
+                            </Icon>
+                        </IconStyle>
+                    </Style>
                 <Placemark>
                     <name><xsl:value-of select="data[@field='name']"/></name>
+                    <styleUrl>#<xsl:value-of select="@uuid"/></styleUrl>
                     <description><xsl:value-of select="@url"/></description>
                     <Point>
                         <coordinates>
@@ -38,7 +46,7 @@
                 <Style id="hospital">
                     <IconStyle>
                         <Icon>
-                            <href>http://haiti.sahanafoundation.org/prod/default/download/gis_marker.image.E_Med_Hospital_S1.png</href>
+                            <href>http://demo.eden.sahanafoundation.org/eden/default/download/gis_marker.image.E_Med_Hospital_S1.png</href>
                         </Icon>
                     </IconStyle>
                 </Style>

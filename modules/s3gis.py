@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    SahanaPy GIS Module
+    Sahana Eden GIS Module
 
-    @version: 0.0.5
+    @version: 0.0.6
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
@@ -45,6 +45,7 @@ from urllib import urlencode
 
 from gluon.storage import Storage, Messages
 from gluon.html import *
+#from gluon.http import HTTP
 from gluon.tools import fetch
 
 SHAPELY = False
@@ -241,26 +242,39 @@ class GIS(object):
         config = self.config_read()
         symbology = config.symbology_id
         
-        feature = db(db.gis_location.id == feature_id).select().first()
-        #feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select().first().id
-        feature_class = feature.feature_class_id
+        marker = False
+        if type(feature_id) == int:
+            # ID passed
+            feature = db(db.gis_location.id == feature_id).select().first()
+        elif type(feature_id) == str:
+            # UUID passed
+            feature = db(db.gis_location.uuid == feature_id).select().first()
+        else:
+            # Unknown type - something wrong, so fallback to default!
+            marker = config.marker_id
+        try:
+            feature_class = feature.feature_class_id
+        except:
+            # Feature not found, so fallback to default!
+            marker = config.marker_id
         
-        # 1st choice for a Marker is the Feature's
-        marker = feature.marker_id
         if not marker:
-            # 2nd choice for a Marker is the Symbology for the Feature Class
-            query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-            try:
-                marker = db(query).select().first().marker_id
-            except:
-                if not marker:
-                    # 3rd choice for a Marker is the Feature Class's
-                    marker = db(db.gis_feature_class.id == feature_class).select().first()
-                    if marker:
-                        marker = marker.marker_id
-                if not marker:
-                    # 4th choice for a Marker is the default
-                    marker = config.marker_id
+            # 1st choice for a Marker is the Feature's
+            marker = feature.marker_id
+            if not marker:
+                # 2nd choice for a Marker is the Symbology for the Feature Class
+                query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
+                try:
+                    marker = db(query).select().first().marker_id
+                except:
+                    if not marker:
+                        # 3rd choice for a Marker is the Feature Class's
+                        marker = db(db.gis_feature_class.id == feature_class).select().first()
+                        if marker:
+                            marker = marker.marker_id
+                    if not marker:
+                        # 4th choice for a Marker is the default
+                        marker = config.marker_id
         
         marker = db(db.gis_marker.id == marker).select().first().image
         

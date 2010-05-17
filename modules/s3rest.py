@@ -957,13 +957,20 @@ class S3RESTRequest(object):
         else:
             limit = None
 
+        if "marker" in self.request.vars:
+            # Override marker for displaying KML feeds
+            marker = self.request.vars["marker"]
+        else:
+            marker = None
+            
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                   joins=joins,
                                   filterby=filterby,
                                   permit=permit,
                                   audit=audit,
                                   start=start,
-                                  limit=limit)
+                                  limit=limit,
+                                  marker=marker)
 
         if template is not None:
             args = dict(domain=self.rc.domain, base_url=self.rc.base_url)

@@ -34,10 +34,15 @@ function onKmlFeatureSelect(event) {
         "<h2>" + feature.attributes.name + "</h2>",
         null, true, onPopupClose);
     } else {
+        var content = "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description;
+        // Protect the description against JavaScript attacks
+        if (content.search("<script") != -1) {
+            content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
+        }
         var popup = new OpenLayers.Popup.FramedCloud("chicken",
         feature.geometry.getBounds().getCenterLonLat(),
         new OpenLayers.Size(200,200),
-        "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description,
+        content,
         null, true, onPopupClose);
     };
     feature.popup = popup;

@@ -529,6 +529,7 @@ class S3ResourceController(object):
                    audit=None,
                    start=None,  # starting record
                    limit=None,  # pagesize
+                   marker=None, # override marker to display KML feeds
                    show_urls=True):
 
         """ Exports data as XML tree """
@@ -616,7 +617,7 @@ class S3ResourceController(object):
                 resource_url = "%s/%s" % (url, record.id)
             else:
                 resource_url = None
-            resource = self.xml.element(table, record, skip=skip, url=resource_url, download_url=self.download_url)
+            resource = self.xml.element(table, record, skip=skip, url=resource_url, download_url=self.download_url, marker=marker)
 
             for j in xrange(0, len(joins)):
                 (c, pkey, fkey) = joins[j]
@@ -645,7 +646,7 @@ class S3ResourceController(object):
                         resource_url = None
 
                     cresource = self.xml.element(c.table, crecord,
-                                                 skip=_skip, url=resource_url, download_url=self.download_url)
+                                                 skip=_skip, url=resource_url, download_url=self.download_url, marker=marker)
                     resource.append(cresource)
 
             resources.append(resource)
@@ -967,7 +968,7 @@ class S3XML(object):
 
     """
 
-    S3XRC_NAMESPACE = "http://www.sahanapy.org/wiki/S3XRC" #: The S3XRC namespace URI
+    S3XRC_NAMESPACE = "http://eden.sahanafoundation.org/wiki/S3XRC" #: The S3XRC namespace URI
     S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
     NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
 
@@ -1196,7 +1197,7 @@ class S3XML(object):
                 return uid
 
     #--------------------------------------------------------------------------
-    def element(self, table, record, skip=[], url=None, download_url=None):
+    def element(self, table, record, skip=[], url=None, download_url=None, marker=None):
 
         """ Creates an element from a Storage() record """
 
@@ -1207,10 +1208,17 @@ class S3XML(object):
         resource.set(self.ATTRIBUTE["name"], table._tablename)
 
         if self.UUID in table.fields and self.UUID in record:
-            value = str(table[self.UUID].formatter(record[self.UUID]))
+            _value = str(table[self.UUID].formatter(record[self.UUID]))
             if self.domain_mapping:
-                value = self.export_uid(value)
+                value = self.export_uid(_value)
             resource.set(self.UUID, self.xml_encode(value))
+
+            if table._tablename == 'gis_location':
+                # Look up the marker to display
+                if self.gis is not None:
+                    marker = self.gis.get_marker(_value)
+                    marker_url = "%s/%s" % (download_url, marker)
+                    resource.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
 
         readable = filter( lambda key: \
                         key not in self.IGNORE_FIELDS and \
@@ -1260,18 +1268,23 @@ class S3XML(object):
                         reference.set(self.UUID, self.xml_encode(str(uuid)))
                         reference.text = text
 
-                        if self.Lat in ktable.fields and self.Lon in ktable.fields:
-                            LatLon = self.db(ktable.id == value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
-                            if LatLon:
-                                LatLon = LatLon[0]
-                                if LatLon[self.Lat] and LatLon[self.Lon]:
-                                    reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
-                                    reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
-                                    # Look up the marker to display
-                                    if self.gis is not None:
-                                        marker = self.gis.get_marker(value)
-                                        marker_url = "%s/%s" % (download_url, marker)
-                                        reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
+                if self.Lat in ktable.fields and self.Lon in ktable.fields:
+                    # Export GeoData for KML/GeoRSS/GPX
+                    LatLon = self.db(ktable.id == value).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
+                    if LatLon:
+                        LatLon = LatLon[0]
+                        if LatLon[self.Lat] and LatLon[self.Lon]:
+                            reference.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
+                            reference.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
+                            if self.gis is not None:
+                                if marker:
+                                    # Use provided over-ride marker
+                                    marker_url = "%s/gis_marker.image.%s.png" % (download_url, marker)
+                                else:
+                                    # Look up the marker
+                                    marker = self.gis.get_marker(value)
+                                    marker_url = "%s/%s" % (download_url, marker)
+                                reference.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
 
 
             elif isinstance(table[f].type, str) and \

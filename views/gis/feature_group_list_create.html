@@ -1,3 +1,14 @@
 {{extend 'layout.html'}}
 {{include 'gis/catalogue_toolbar.html'}}
+{{pheader="""
+<p>Feature Groups are used to provide Layers on the Map & Feeds for export/view by other systems.</p>
+<ul>
+ <li>They are collections of Feature Classes<!-- (&/or individual Features)--></li>
+ <li>The default settings start with a Feature Group being created for each Feature Class</li>
+</ul>"""}}
 {{include '_list_create.html'}}
+<p>&nbsp;</p>
+<a id='contents-btn' href="{{=URL(r=request, f='feature_class_to_feature_group')}}">{{=T('Feature Classes to Feature Groups')}}</a>
+<!--
+<a id='list-btn' href="{{=URL(r=request, f='location_to_feature_group')}}">{{=T('Features to Feature Groups')}}</a>
+-->

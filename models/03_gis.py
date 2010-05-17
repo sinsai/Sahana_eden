@@ -164,7 +164,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('lat', 'double'), # Points or Centroid for Polygons
                 Field('lon', 'double'), # Points or Centroid for Polygons
                 Field('wkt', 'text'),   # WKT is auto-calculated from lat/lon for Points
-                Field('osm_id'),
+                Field('osm_id'),        # OpenStreetMap ID. Should this be used in UUID field instead?
                 Field('lon_min', 'double', writable=False, readable=False), # bounding-box
                 Field('lat_min', 'double', writable=False, readable=False), # bounding-box
                 Field('lon_max', 'double', writable=False, readable=False), # bounding-box
@@ -229,7 +229,7 @@ def shn_gis_location_represent(id):
 
 
 # Feature Groups
-# Used to select a set of Features for either Display or Export
+# Used to select a set of Feature Classes for either Display or Export
 resource = 'feature_group'
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
@@ -244,17 +244,18 @@ feature_group_id = SQLTable(None, 'feature_group_id',
                 requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_feature_group.id', '%(name)s')),
                 represent = lambda id: (id and [db(db.gis_feature_group.id==id).select().first().name] or ["None"])[0],
                 label = T('Feature Group'),
-                comment = DIV(A(ADD_FEATURE_GROUP, _class='colorbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup')), _target='top', _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of GIS locations which can be displayed together on a map or exported together."))),
+                comment = DIV(A(ADD_FEATURE_GROUP, _class='colorbox', _href=URL(r=request, c='gis', f='feature_group', args='create', vars=dict(format='popup')), _target='top', _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of Feature Classes which can be displayed together on a map or exported together."))),
                 ondelete = 'RESTRICT'
                 ))
 
 # Many-to-Many tables
-resource = 'location_to_feature_group'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, deletion_status,
-                feature_group_id,
-                location_id,
-                migrate=migrate)
+# No longer supported
+#resource = 'location_to_feature_group'
+#tablename = "%s_%s" % (module, resource)
+#table = db.define_table(tablename, timestamp, deletion_status,
+#                feature_group_id,
+#                location_id,
+#                migrate=migrate)
 
 resource = 'feature_class_to_feature_group'
 tablename = "%s_%s" % (module, resource)

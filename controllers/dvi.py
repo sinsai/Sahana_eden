@@ -95,7 +95,6 @@ def find():
     return output
 
 def body():
-    crud.settings.delete_onaccept = shn_pentity_ondelete
     output = shn_rest_controller(module, 'body', main='pr_pe_label', extra='opt_pr_gender',
         pheader=shn_dvi_pheader,
         list_fields=[

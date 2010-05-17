@@ -94,7 +94,6 @@ def person():
 
     db.pr_person.missing.default = False
 
-    crud.settings.delete_onaccept = shn_pentity_ondelete
     output = shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],

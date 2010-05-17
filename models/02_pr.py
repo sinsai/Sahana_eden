@@ -203,8 +203,6 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
 
     return True
 
-s3xrc.model.configure(table, delete_onaccept=shn_pentity_ondelete)
-
 # *****************************************************************************
 # Person (person)
 #
@@ -405,7 +403,10 @@ person_id = SQLTable(None, "person_id",
                     ondelete = "RESTRICT"
                 ))
 
-s3xrc.model.configure(table, onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1))
+s3xrc.model.configure(table,
+    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1),
+    delete_onaccept=lambda form: shn_pentity_ondelete(form))
+
 
 # *****************************************************************************
 # Group (group)
@@ -498,7 +499,9 @@ group_id = SQLTable(None, "group_id",
                     ondelete = "RESTRICT"
                 ))
 
-s3xrc.model.configure(table, onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=2))
+s3xrc.model.configure(table,
+    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=2),
+    delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
 # *****************************************************************************
 # Functions:

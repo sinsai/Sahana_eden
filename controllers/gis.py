@@ -1150,6 +1150,72 @@ def map_service_catalogue():
     output.update(dict(items=items))
     return output
 
+def download_kml(url):
+    """
+    Download a KML file:
+        unzip it if-required
+        follow NetworkLinks recursively if-required
+    
+    Returns a file object
+    """
+    
+    import Cookie           # Needed for Sessions on Internal feeds
+    try:
+        from cStringIO import StringIO    # Faster, where available
+    except:
+        from StringIO import StringIO
+    import zipfile          # Needed to unzip KMZ files
+    from lxml import etree  # Needed to follow NetworkLinks
+    KML_NAMESPACE = "http://earth.google.com/kml/2.2"
+    
+    warning = ""
+    
+    if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
+        # Keep Session for local URLs
+        cookie = Cookie.SimpleCookie()
+        cookie[response.session_id_name] = response.session_id
+        session._unlock(response)
+        file = fetch(url, cookie=cookie)
+        
+    else:
+        file = fetch(url)
+
+        if file[:2] == 'PK':
+            # Unzip
+            fp = StringIO(file)
+            myfile = zipfile.ZipFile(fp)
+            try:
+                file = myfile.read('doc.kml')
+            except:
+                file = myfile.read(myfile.infolist()[0].filename)
+            myfile.close()
+
+        # Check for NetworkLink
+        if "<NetworkLink>" in file:
+            # Remove extraneous whitespace
+            #file = ' '.join(file.split())
+            try:
+                parser = etree.XMLParser(recover=True, remove_blank_text=True)
+                tree = etree.XML(file, parser)
+                # Find contents of href tag (must be a better way?)
+                url = ''
+                for element in tree.iter():
+                    if element.tag == '{%s}href' % KML_NAMESPACE:
+                        url = element.text
+                if url:
+                    file, warning2 = download_kml(url)
+                    warning += warning2
+            except etree.XMLSyntaxError as detail:
+                warning += "<ParseError>" + str(detail) + "</ParseError>"
+
+        # Check for Overlays
+        if "<GroundOverlay>" in file:
+            warning += "GroundOverlay"
+        if "<ScreenOverlay>" in file:
+            warning += "ScreenOverlay"
+
+    return file, warning
+
 def layers():
     "Provide the Enabled Layers"
 
@@ -1295,38 +1361,37 @@ def layers():
         if cache:
             filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
             filepath = os.path.join(cachepath, filename)
-            try:
-                # Download file to cache
-                if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
-                    # Keep Session for local URLs
-                    import Cookie
-                    cookie = Cookie.SimpleCookie()
-                    cookie[response.session_id_name] = response.session_id
-                    session._unlock(response)
-                    file = fetch(url, cookie=cookie)
-                else:
-                    file = fetch(url)
-                f = open(filepath, 'w')
-                f.write(file)
-                f.close()
-                records = db(db.gis_cache.name == name).select()
-                if records:
-                    records[0].update(modified_on=response.utcnow)
-                else:
-                    db.gis_cache.insert(name=name, file=filename)
-                url = URL(r=request, c='default', f='download', args=[filename])
-            except:
+            #try:
+            # Download file
+            file, warning = download_kml(url)
+            # Handle errors
+            if "ParseError" in warning:
+                # @ToDo Parse detail
+                response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
+            if "GroundOverlay" in warning or "ScreenOverlay" in warning:
+                response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
+            # Write file to cache
+            f = open(filepath, 'w')
+            f.write(file)
+            f.close()
+            records = db(db.gis_cache.name == name).select()
+            if records:
+                records[0].update(modified_on=response.utcnow)
+            else:
+                db.gis_cache.insert(name=name, file=filename)
+            url = URL(r=request, c="default", f="download", args=[filename])
+            #except:
                 # URL inaccessible
-                if os.access(filepath, os.R_OK):
+            #    if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select().first().modified_on
-                    response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
-                    url = URL(r=request, c='default', f='download', args=[filename])
-                else:
+            #        date = db(db.gis_cache.name == name).select().first().modified_on
+            #        response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+            #        url = URL(r=request, c="default", f="download", args=[filename])
+             #   else:
                     # No cached version available
-                    response.warning += url + ' ' + str(T('not accessible - no cached version available!')) + '\n'
+             #       response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
                     # skip layer
-                    continue
+             #       continue
         else:
             # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
             pass

@@ -685,13 +685,22 @@ class S3RESTRequest(object):
 
         """
             Tries to identify and load the primary record of the resource
+
+            @todo: allow a set of results (instead of one or all)
         """
 
-        uids = None
-        if 'uid' in self.request.vars:
-            uids = self.request.vars.uid.split(",")
-            if len(uids)<2:
-                uids.append(None)
+        uid = self.request.vars.get("%s.uid" % self.name, None)
+        if isinstance(uid, list):
+            uid = uid[0]
+
+        uids = [uid, None]
+        if self.component_name:
+            uid = self.request.vars.get("%s.uid" % self.component_name, None)
+            if isinstance(uid, list):
+                uid = uid[0]
+            uids[1] = uid
+
+        if self.rc.xml.domain_mapping:
             uids = map(lambda uid: \
                        uid and self.rc.xml.import_uid(uid) or None, uids)
 
@@ -962,7 +971,7 @@ class S3RESTRequest(object):
             marker = self.request.vars["marker"]
         else:
             marker = None
-            
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                   joins=joins,
                                   filterby=filterby,

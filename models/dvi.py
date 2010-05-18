@@ -154,8 +154,10 @@ if shn_module_enable.get(module, False):
         msg_record_deleted = T('Recovery report deleted'),
         msg_list_empty = T('No recovery reports available'))
 
-    s3xrc.model.configure(db.dvi_body,
-                          onaccept=lambda form: shn_pentity_onaccept(form, table=db.dvi_body, entity_type=3))
+    s3xrc.model.configure(db[table],
+        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=3),
+        delete_onaccept=lambda form: shn_pentity_ondelete(form))
+
     #
     # Checklist of operations -----------------------------------------------------
     #

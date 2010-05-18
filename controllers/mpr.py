@@ -45,7 +45,6 @@ def index():
 def person():
     db.pr_pd_general.est_age.readable=False
     db.pr_person.missing.default = True
-    crud.settings.delete_onaccept = shn_pentity_ondelete
     return shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
         pheader=shn_pr_pheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],

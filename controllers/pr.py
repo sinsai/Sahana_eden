@@ -83,8 +83,6 @@ def index():
 # -----------------------------------------------------------------------------
 def person():
 
-    crud.settings.delete_onaccept = shn_pentity_ondelete
-
     response.s3.pagination = True
 
     output = shn_rest_controller(module, "person",
@@ -104,7 +102,6 @@ def person():
 def group():
     response.s3.filter = (db.pr_group.system==False) # do not show system groups
     response.s3.pagination = True
-    crud.settings.delete_onaccept = shn_pentity_ondelete
     "RESTlike CRUD controller"
     return shn_rest_controller(module, "group",
                                main="group_name",

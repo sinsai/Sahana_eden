@@ -1159,6 +1159,7 @@ def download_kml(url):
     Returns a file object
     """
     
+    import urllib2          # Needed for error handling
     import Cookie           # Needed for Sessions on Internal feeds
     try:
         from cStringIO import StringIO    # Faster, where available
@@ -1168,6 +1169,7 @@ def download_kml(url):
     from lxml import etree  # Needed to follow NetworkLinks
     KML_NAMESPACE = "http://earth.google.com/kml/2.2"
     
+    file = ""
     warning = ""
     
     if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
@@ -1178,7 +1180,14 @@ def download_kml(url):
         file = fetch(url, cookie=cookie)
         
     else:
-        file = fetch(url)
+        try:
+            file = fetch(url)
+        except urllib2.URLError:
+            warning = "URLError"
+            return file, warning
+        except urllib2.HTTPError:
+            warning = "HTTPError"
+            return file, warning
 
         if file[:2] == 'PK':
             # Unzip
@@ -1361,37 +1370,38 @@ def layers():
         if cache:
             filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
             filepath = os.path.join(cachepath, filename)
-            #try:
             # Download file
             file, warning = download_kml(url)
             # Handle errors
-            if "ParseError" in warning:
-                # @ToDo Parse detail
-                response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
-            if "GroundOverlay" in warning or "ScreenOverlay" in warning:
-                response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
-            # Write file to cache
-            f = open(filepath, 'w')
-            f.write(file)
-            f.close()
-            records = db(db.gis_cache.name == name).select()
-            if records:
-                records[0].update(modified_on=response.utcnow)
-            else:
-                db.gis_cache.insert(name=name, file=filename)
-            url = URL(r=request, c="default", f="download", args=[filename])
-            #except:
+            if "URLError" in warning or "HTTPError" in warning:
                 # URL inaccessible
-            #    if os.access(filepath, os.R_OK):
+                if os.access(filepath, os.R_OK):
                     # Use cached version
-            #        date = db(db.gis_cache.name == name).select().first().modified_on
-            #        response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
-            #        url = URL(r=request, c="default", f="download", args=[filename])
-             #   else:
+                    date = db(db.gis_cache.name == name).select().first().modified_on
+                    response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                    url = URL(r=request, c="default", f="download", args=[filename])
+                else:
                     # No cached version available
-             #       response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                    response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
                     # skip layer
-             #       continue
+                    continue
+            else:
+                # Download was succesful
+                if "ParseError" in warning:
+                    # @ToDo Parse detail
+                    response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
+                if "GroundOverlay" in warning or "ScreenOverlay" in warning:
+                    response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
+                # Write file to cache
+                f = open(filepath, 'w')
+                f.write(file)
+                f.close()
+                records = db(db.gis_cache.name == name).select()
+                if records:
+                    records[0].update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c="default", f="download", args=[filename])
         else:
             # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
             pass

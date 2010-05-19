@@ -39,9 +39,21 @@ __name__ = "S3GIS"
 
 __all__ = ['GIS', 'GoogleGeocoder', 'YahooGeocoder']
 
-import sys, uuid
-import logging
-from urllib import urlencode
+#import logging
+import os
+import re
+import sys
+import urllib           # Needed for urlencoding
+import urllib2          # Needed for error handling on fetch
+#import uuid
+import Cookie           # Needed for Sessions on Internal KML feeds
+try:
+    from cStringIO import StringIO    # Faster, where available
+except:
+    from StringIO import StringIO
+import zipfile          # Needed to unzip KMZ files
+from lxml import etree  # Needed to follow NetworkLinks
+KML_NAMESPACE = "http://earth.google.com/kml/2.2"
 
 from gluon.storage import Storage, Messages
 from gluon.html import *
@@ -73,6 +85,7 @@ class GIS(object):
     def __init__(self, environment, db, auth=None):
         self.environment = Storage(environment)
         self.request = self.environment.request
+        self.response = self.environment.response
         self.session = self.environment.session
         self.T = self.environment.T
         assert db is not None, "Database must not be None."
@@ -90,7 +103,7 @@ class GIS(object):
         self.messages.unknown_parent = "Invalid: %(parent_id)s is not a known Location"
         self.messages['T'] = self.T
         self.messages.lock_keys = True
-        
+
     def abbreviate_wkt(self, wkt, max_length=30):
         if not wkt:
             # Blank WKT field
@@ -99,31 +112,106 @@ class GIS(object):
             return "%s(...)" % wkt[0:wkt.index('(')]
         else:
             return wkt
-        
+
     def config_read(self):
         """
             Reads the current GIS Config from the DB 
         """
-        
+
         db = self.db
-                
+
         config = db(db.gis_config.id == 1).select().first()
-        
+
         return config
-        
+
+    def download_kml(self, url, S3_PUBLIC_URL):
+        """
+        Download a KML file:
+            unzip it if-required
+            follow NetworkLinks recursively if-required
+
+        Returns a file object
+        """
+
+        response = self.response
+        session = self.session
+
+        file = ""
+        warning = ""
+
+        if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
+            # Keep Session for local URLs
+            cookie = Cookie.SimpleCookie()
+            cookie[response.session_id_name] = response.session_id
+            session._unlock(response)
+            try:
+                file = fetch(url, cookie=cookie)
+            except urllib2.URLError:
+                warning = "URLError"
+                return file, warning
+            except urllib2.HTTPError:
+                warning = "HTTPError"
+                return file, warning
+
+        else:
+            try:
+                file = fetch(url)
+            except urllib2.URLError:
+                warning = "URLError"
+                return file, warning
+            except urllib2.HTTPError:
+                warning = "HTTPError"
+                return file, warning
+
+            if file[:2] == 'PK':
+                # Unzip
+                fp = StringIO(file)
+                myfile = zipfile.ZipFile(fp)
+                try:
+                    file = myfile.read('doc.kml')
+                except:
+                    file = myfile.read(myfile.infolist()[0].filename)
+                myfile.close()
+
+            # Check for NetworkLink
+            if "<NetworkLink>" in file:
+                # Remove extraneous whitespace
+                #file = ' '.join(file.split())
+                try:
+                    parser = etree.XMLParser(recover=True, remove_blank_text=True)
+                    tree = etree.XML(file, parser)
+                    # Find contents of href tag (must be a better way?)
+                    url = ''
+                    for element in tree.iter():
+                        if element.tag == '{%s}href' % KML_NAMESPACE:
+                            url = element.text
+                    if url:
+                        file, warning2 = self.download_kml(url, S3_PUBLIC_URL)
+                        warning += warning2
+                except etree.XMLSyntaxError as detail:
+                    warning += "<ParseError>" + str(detail) + "</ParseError>"
+
+            # Check for Overlays
+            if "<GroundOverlay>" in file:
+                warning += "GroundOverlay"
+            if "<ScreenOverlay>" in file:
+                warning += "ScreenOverlay"
+
+        return file, warning
+
     def get_bearing(lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
             Formula from: http://www.movable-type.co.uk/scripts/latlong.html
         """
-        
+
         import math
-        
+
         delta_lon = lon_start - lon_end
         bearing = math.atan2( math.sin(delta_lon)*math.cos(lat_end) , (math.cos(lat_start)*math.sin(lat_end)) - (math.sin(lat_start)*math.cos(lat_end)*math.cos(delta_lon)) )
         # Convert to a compass bearing
         bearing = (bearing + 360) % 360
-        
+
         return bearing
 
     def get_bounds(self, features=[]):
@@ -156,7 +244,7 @@ class GIS(object):
                 max_lon = config.max_lon
             if max_lat > config.max_lat:
                 max_lat = config.max_lat
-        
+
         else:
             # Read from config
             config = self.config_read()
@@ -164,14 +252,14 @@ class GIS(object):
             min_lat = config.min_lat
             max_lon = config.max_lon
             max_lat = config.max_lat
-        
+
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
     def get_children(self, parent_id):
         "Return a list of all GIS Features which are children of the requested parent"
-        
+
         db = self.db
-        
+
         # Switch to modified preorder tree traversal:
         # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         children = db(db.gis_location.parent == parent_id).select()
@@ -186,25 +274,25 @@ class GIS(object):
         """
 
         db = self.db
-        
+
         feature = db(db.gis_feature_class.name == name).select()
         if feature:
             return feature[0].id
         else:
             return None
-    
+
     def get_features_in_radius(lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
             Calling function has the job of filtering features by the type they are interested in
             Formula from: http://blog.peoplesdns.com/archives/24
             Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
-            
+
             IF PROJECTION CHANGES THIS WILL NOT WORK
         """
-        
+
         import math
-        
+
         # km
         radius_earth = 6378.137
         pi = math.pi
@@ -218,7 +306,7 @@ class GIS(object):
         query = (table.lat > lat_min) & (table.lat < lat_max) & (table.lon < lon_max) & (table.lon > lon_min)
         deleted = ((table.deleted==False) | (table.deleted==None))
         query = deleted & query
-        
+
         # ToDo: complete port from PHP to Eden
         pilat180 = pi * lat /180
         #calc = "radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180)))"
@@ -229,7 +317,7 @@ class GIS(object):
         #query = query & query2
         features = db(query).select()
         #features = db(query).select(orderby=distance)
-      
+
         return features
 
     def get_marker(self, feature_id):
@@ -238,10 +326,10 @@ class GIS(object):
         """
 
         db = self.db
-        
+
         config = self.config_read()
         symbology = config.symbology_id
-        
+
         marker = False
         if type(feature_id) == int:
             # ID passed
@@ -257,7 +345,7 @@ class GIS(object):
         except:
             # Feature not found, so fallback to default!
             marker = config.marker_id
-        
+
         if not marker:
             # 1st choice for a Marker is the Feature's
             marker = feature.marker_id
@@ -275,15 +363,15 @@ class GIS(object):
                     if not marker:
                         # 4th choice for a Marker is the default
                         marker = config.marker_id
-        
+
         marker = db(db.gis_marker.id == marker).select().first().image
-        
+
         return marker
     
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
-        
+
             >>> s3gis.latlon_to_wkt(6, 80)
             'POINT(80 6)'
         """
@@ -296,34 +384,36 @@ class GIS(object):
                   lat = None,
                   lon = None,
                   zoom = None,
-                  feature_overlays = {},
+                  feature_overlays = [],
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
                   toolbar = False,
                   mgrs = False,
-                  window = False):
+                  window = False,
+                  S3_PUBLIC_URL = "http://127.0.0.1:8000"):
         """
             Returns the HTML to display a map
-            
+
             @param height: Height of viewport
             @param width: Width of viewport
             @param lat: default Latitude of viewport
             @param lon: default Longitude of viewport
             @param zoom: default Zoom level of viewport
-            @param feature_overlays: Which Feature Groups to overlay onto the map & their options:
-                {
+            @param feature_overlays: Which Feature Groups to overlay onto the map & their options (List of Dicts):
+                [{
                  feature_group : db.gis_feature_group.name,
                  filter : None,         # A query to limit which features from the feature group are loaded
-                 active : True,         # Is the feed displayed upon load or needs ticking to load afterwards?
-                 popup_url : <default>, # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : <default>     # The icon used to display the feature. Can be a lambda to vary icon (size/colour) based on attribute levels.
-                }
-            @param catalogue_overlays: Show the Overlays from the GIS Catalogue
+                 active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
+                 popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
+                 marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
+                }]
+            @param catalogue_overlays: Show the Overlays from the GIS Catalogue (@ToDo: make this a dict of which external overlays to allow)
             @param catalogue_toolbar: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
             @param mgrs: Use the MGRS Control to select PDFs
             @param window: Have viewport pop out of page into a resizable window
-            
+            @param S3_PUBLIC_URL: pass from model (not yet defined when Module instantiated
+
             @ToDo: Rewrite these to use the API:
                 map_viewing_client()
                 display_feature()
@@ -331,6 +421,7 @@ class GIS(object):
         """
 
         request = self.request
+        response = self.response
         session = self.session
         T = self.T
         db = self.db
@@ -405,7 +496,7 @@ class GIS(object):
 
         # Map (Embedded not Window)
         html.append(DIV(_id="map_panel"))
-        
+
         # Status Reports
         html.append(TABLE(TR(
             TD(
@@ -444,17 +535,17 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/script/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.min.js")))
-        
+
         # Toolbar
         if toolbar:
             toolbar = """
     toolbar = mapPanel.getTopToolbar();
-    """     
+    """
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""
             toolbar2 = ""
-        
+
         # Layout
         if window:
             layout = """
@@ -469,17 +560,130 @@ class GIS(object):
         renderTo: "map_panel",
             """
             layout2 = ""
-        
+
         ########
         # Layers
         ########
-        # Features
-        if feature_overlays:
-            # @ToDo
-            layers_features = ""
+
+        # Can we cache downloaded feeds?
+        # Needed for unzipping & filtering as well
+        cachepath = os.path.join(request.folder, 'uploads', 'gis_cache')
+        if os.access(cachepath, os.W_OK):
+            cache = True
         else:
-            layers_features = ""
-        
+            cache = False
+
+        #
+        # Features
+        #
+        layers_features = ""
+        if feature_overlays:
+            #    [{
+            #    feature_group : db.gis_feature_group.name,
+            #    filter : None,         # A query to limit which features from the feature group are loaded
+            #    active : True,         # Is the feed displayed upon load or needs ticking to load afterwards?
+            #    popup_url : <default>, # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
+            #    marker : <default>     # The icon used to display the feature. Can be a lambda to vary icon (size/colour) based on attribute levels.
+            #   }]
+
+            for layer in feature_overlays:
+                name = layer['feature_group']
+                url = S3_PUBLIC_URL + '/' + request.application + "/gis/location.kml?feature_group=" + urllib.quote(name)
+                if cache:
+                    # Download file
+                    file, warning = self.download_kml(url, S3_PUBLIC_URL)
+                    filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
+                    filepath = os.path.join(cachepath, filename)
+                    f = open(filepath, 'w')
+                    # Handle errors
+                    if "URLError" in warning or "HTTPError" in warning:
+                        # URL inaccessible
+                        if os.access(filepath, os.R_OK):
+                            # Use cached version
+                            date = db(db.gis_cache.name == name).select().first().modified_on
+                            response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                            url = URL(r=request, c="default", f="download", args=[filename])
+                        else:
+                            # No cached version available
+                            response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                            # skip layer
+                            continue
+                    else:
+                        # Download was succesful
+                        if "ParseError" in warning:
+                            # @ToDo Parse detail
+                            response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
+                        if "GroundOverlay" in warning or "ScreenOverlay" in warning:
+                            response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
+                        # Write file to cache
+                        f.write(file)
+                        f.close()
+                        records = db(db.gis_cache.name == name).select()
+                        if records:
+                            records[0].update(modified_on=response.utcnow)
+                        else:
+                            db.gis_cache.insert(name=name, file=filename)
+                        url = URL(r=request, c="default", f="download", args=[filename])
+                else:
+                    # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+                    pass
+
+                # Generate HTML snippet
+                name_safe = re.sub('\W', '_', name)
+                if 'active' in layer and layer['active']:
+                    visibility = "featureLayer" + name_safe +".setVisibility(true);"
+                else:
+                    visibility = "featureLayer" + name_safe +".setVisibility(false);"
+                layers_features += """
+        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.GML( '""" + name + """', '""" + url + """', {
+            strategies: [ strategy ],
+            format: OpenLayers.Format.KML,
+            formatOptions: { extractStyles: true, extractAttributes: true, maxDepth: 2 },
+            projection: proj4326});
+        """ + visibility + """
+        map.addLayer(featureLayer""" + name_safe + """);
+        featureLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect""" + name_safe + """, "featureunselected": onFeatureUnselect });
+        function onKmlFeatureSelect""" + name_safe + """(event) {
+            var feature = event.feature;
+            var selectedFeature = feature;
+            var type = typeof feature.attributes.name
+            if ('object' == type) {
+                var popup = new OpenLayers.Popup.FramedCloud("chicken",
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                "<h2>" + "</h2>",
+                null, true, onPopupClose);
+            } else if (undefined == feature.attributes.description) {
+                var popup = new OpenLayers.Popup.FramedCloud("chicken",
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                "<h2>" + feature.attributes.name + "</h2>",
+                null, true, onPopupClose);
+            } else {
+                var content = "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description;
+                // Protect the description against JavaScript attacks
+                if (content.search("<script") != -1) {
+                    content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
+                }
+                var popup = new OpenLayers.Popup.FramedCloud("chicken",
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                content,
+                null, true, onPopupClose);
+            };
+            feature.popup = popup;
+            map.addPopup(popup);
+            }
+                """
+
+        else:
+            # No Feature Layers requested
+            pass
+
+        #
+        # Base Layers
+        #
+
         # OpenStreetMap
         gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender'] # Copied from Model - Need to DRY!
         openstreetmap = Storage()
@@ -526,7 +730,7 @@ class GIS(object):
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
-                
+
             google = db(db.gis_layer_google.enabled==True).select()
             if google:
                 # @ToDo
@@ -560,8 +764,11 @@ class GIS(object):
             layers_georss = ""
             layers_gpx = ""
             layers_kml = ""
-        
+
+        #############
         # Main script
+        #############
+
         html.append(SCRIPT("""
     var map;
     var mapPanel, toolbar;
@@ -588,7 +795,7 @@ class GIS(object):
         maxExtent: new OpenLayers.Bounds(""" + maxExtent + """),
         numZoomLevels: """ + str(numZoomLevels) + """
     };
-    
+
     function addLayers(map) {
         // Base Layers
         // OSM
@@ -627,13 +834,27 @@ class GIS(object):
     }
 
     """ + functions_openstreetmap + """
-    
+
     // ol_vector_registerEvents.js
-    
+
     // ol_controls_features.js
-    
+
+    // Supports selectControl for All Feature Layers
+    function onFeatureUnselect(event) {
+        var feature = event.feature;
+        if (feature.popup) {
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            delete feature.popup;
+        }
+    }
+    function onPopupClose(evt) {
+        //currentFeature.popup.hide();
+        popupControl.unselectAll();
+    }
+
     // ol_functions.js
-    
+
     Ext.onReady(function() {
         map = new OpenLayers.Map('center', options);
         addLayers(map);
@@ -759,7 +980,7 @@ class GIS(object):
             For lines and polygons, the lat, lon returned represent the shape's centroid.
             Centroid and bounding box will be None if shapely is not available.
         """
-        
+
         if not wkt:
             assert lon is not None and lat is not None, "Need wkt or lon+lat to parse a location"
             wkt = 'POINT(%f %f)' % (lon, lat)
@@ -778,11 +999,11 @@ class GIS(object):
                 lon = None
                 geom_type = GEOM_TYPES[wkt.split('(')[0].lower()]
                 bbox = None
-                
+
         res = {'wkt': wkt, 'lat': lat, 'lon': lon, 'gis_feature_type': geom_type}
         if bbox:
             res['lon_min'], res['lat_min'], res['lon_max'], res['lat_max'] = bbox
-        
+
         return res
 
     def update_location_tree(self):
@@ -792,9 +1013,9 @@ class GIS(object):
         """
 
         db = self.db
-        
+
         # tbc
-        
+
         return
 
     def wkt_centroid(self, form):
@@ -805,7 +1026,7 @@ class GIS(object):
             Centroid calculation is done using Shapely, which wraps Geos.
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
         """
-        
+
         if form.vars.gis_feature_type == '1':
             # Point
             if form.vars.lon == None and form.vars.lat == None:
@@ -820,7 +1041,7 @@ class GIS(object):
             else:
                 form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
                 return
-            
+
         elif form.vars.gis_feature_type == '2':
             # Line
             try:
@@ -850,7 +1071,7 @@ class GIS(object):
 
         else:
             form.errors.gis_feature_type = self.messages.unknown_type
-        
+
         return
 
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
@@ -864,33 +1085,33 @@ class GIS(object):
         """
             Returns Rows of locations whose shape intersects the given shape
         """
-        
+
         db = self.db
         for loc in self.bbox_intersects(*shape.bounds).select():
             location_shape = wkt_loads(loc.wkt)
             if location_shape.intersects(shape):
                 yield loc
-    
+
     def _intersects_latlon(self, lat, lon):
         """
             Returns a generator of locations whose shape intersects the given LatLon
-        """    
-        
+        """
+
         point = shapely.geometry.point.Point(lon, lat)
         return self.intersects(point)
-    
+
     if SHAPELY:
         intersects = _intersects
         intersects_latlon = _intersects_latlon 
-    
-    
+
+
 class Geocoder(object):
     " Base class for all geocoders "
-    
+
     def __init__(self):
         " Initializes the page content object "
         self.page = ""
-        
+
     def read_details(self, url):
         self.page = fetch(url)
 
@@ -913,7 +1134,7 @@ class GoogleGeocoder(Geocoder):
 
     def construct_url(self):
         " Construct the URL based on the arguments passed "
-        self.url = self.url % urlencode(params)
+        self.url = self.url % urllib.urlencode(params)
 
     def get_kml(self):
         " Returns the output in KML format "
@@ -936,7 +1157,7 @@ class YahooGeocoder(Geocoder):
 
     def construct_url(self):
         " Construct the URL based on the arguments passed "
-        self.url = self.url % urlencode(params)
+        self.url = self.url % urllib.urlencode(params)
 
     def get_xml(self):
         " Return the output in XML format "

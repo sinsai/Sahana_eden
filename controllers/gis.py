@@ -69,7 +69,9 @@ def index():
 
 def test():
     "Test server-parsed GIS functions"
-    html = gis.show_map()
+    html = gis.show_map(
+                feature_overlays = [{'feature_group' : 'Towns'}]
+                )
     return dict(map=html)
 
 def apikey():
@@ -1150,81 +1152,6 @@ def map_service_catalogue():
     output.update(dict(items=items))
     return output
 
-def download_kml(url):
-    """
-    Download a KML file:
-        unzip it if-required
-        follow NetworkLinks recursively if-required
-    
-    Returns a file object
-    """
-    
-    import urllib2          # Needed for error handling
-    import Cookie           # Needed for Sessions on Internal feeds
-    try:
-        from cStringIO import StringIO    # Faster, where available
-    except:
-        from StringIO import StringIO
-    import zipfile          # Needed to unzip KMZ files
-    from lxml import etree  # Needed to follow NetworkLinks
-    KML_NAMESPACE = "http://earth.google.com/kml/2.2"
-    
-    file = ""
-    warning = ""
-    
-    if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
-        # Keep Session for local URLs
-        cookie = Cookie.SimpleCookie()
-        cookie[response.session_id_name] = response.session_id
-        session._unlock(response)
-        file = fetch(url, cookie=cookie)
-        
-    else:
-        try:
-            file = fetch(url)
-        except urllib2.URLError:
-            warning = "URLError"
-            return file, warning
-        except urllib2.HTTPError:
-            warning = "HTTPError"
-            return file, warning
-
-        if file[:2] == 'PK':
-            # Unzip
-            fp = StringIO(file)
-            myfile = zipfile.ZipFile(fp)
-            try:
-                file = myfile.read('doc.kml')
-            except:
-                file = myfile.read(myfile.infolist()[0].filename)
-            myfile.close()
-
-        # Check for NetworkLink
-        if "<NetworkLink>" in file:
-            # Remove extraneous whitespace
-            #file = ' '.join(file.split())
-            try:
-                parser = etree.XMLParser(recover=True, remove_blank_text=True)
-                tree = etree.XML(file, parser)
-                # Find contents of href tag (must be a better way?)
-                url = ''
-                for element in tree.iter():
-                    if element.tag == '{%s}href' % KML_NAMESPACE:
-                        url = element.text
-                if url:
-                    file, warning2 = download_kml(url)
-                    warning += warning2
-            except etree.XMLSyntaxError as detail:
-                warning += "<ParseError>" + str(detail) + "</ParseError>"
-
-        # Check for Overlays
-        if "<GroundOverlay>" in file:
-            warning += "GroundOverlay"
-        if "<ScreenOverlay>" in file:
-            warning += "ScreenOverlay"
-
-    return file, warning
-
 def layers():
     "Provide the Enabled Layers"
 
@@ -1312,7 +1239,7 @@ def layers():
         name = layer.name
         url = layer.url
         if cache:
-            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.xml'
+            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.rss'
             filepath = os.path.join(cachepath, filename)
             try:
                 # Download file to cache
@@ -1371,7 +1298,7 @@ def layers():
             filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
             filepath = os.path.join(cachepath, filename)
             # Download file
-            file, warning = download_kml(url)
+            file, warning = gis.download_kml(url, S3_PUBLIC_URL)
             # Handle errors
             if "URLError" in warning or "HTTPError" in warning:
                 # URL inaccessible

@@ -1046,7 +1046,7 @@ class S3RESTRequest(object):
 
 
     #--------------------------------------------------------------------------
-    def import_xml(self, tree, permit=None, audit=None, onvalidation=None, onaccept=None):
+    def import_xml(self, tree, permit=None, audit=None):
 
         """ import the requested resources from XML """
 
@@ -1078,8 +1078,6 @@ class S3RESTRequest(object):
                                   skip_resource=skip_resource,
                                   permit=permit,
                                   audit=audit,
-                                  onvalidation=onvalidation,
-                                  onaccept=onaccept,
                                   ignore_errors=ignore_errors)
 
 

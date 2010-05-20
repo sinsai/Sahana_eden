@@ -188,8 +188,9 @@ class GIS(object):
                     if url:
                         file, warning2 = self.download_kml(url, S3_PUBLIC_URL)
                         warning += warning2
-                except etree.XMLSyntaxError as detail:
-                    warning += "<ParseError>" + str(detail) + "</ParseError>"
+                except (etree.XMLSyntaxError,):
+                    e = sys.exc_info()[1]
+                    warning += "<ParseError>%s %s</ParseError>" % (e.line, e.errormsg)
 
             # Check for Overlays
             if "<GroundOverlay>" in file:

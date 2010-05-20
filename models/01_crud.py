@@ -91,6 +91,7 @@ def shn_field_represent(field, row, col):
             represent = "None"
         else:
             represent = row[col]
+
     return represent
 
 def shn_field_represent_sspage(field, row, col, linkto=None):

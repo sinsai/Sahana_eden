@@ -110,6 +110,7 @@ def log():
         return True
 
     response.s3.prep = log_prep
-    response.s3.pagination = True #enable SSPag here!
+    # Server-side Pagination currently gives an error: Added data does not match known number of columns
+    #response.s3.pagination = True
 
     return shn_rest_controller(module, resource, listadd=False)

@@ -99,7 +99,7 @@ def log():
 
     # This is the better way to do it:
     def log_prep(jr):
-        if jr.representation=="html" and \
+        if jr.representation in ("html", "aadata") and \
            jr.method is None and \
            jr.component is None:
             # Log listing - reduce fields to declutter

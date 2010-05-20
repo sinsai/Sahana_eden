@@ -44,7 +44,9 @@ def log():
     table.message.requires = IS_NOT_EMPTY()
     table.message.comment = SPAN("*", _class="req")
     table.priority.requires = IS_NULL_OR(IS_IN_SET(ticket_priority_opts))
-    table.priority.represent = lambda id: (id and [DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12))] or [DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)])
+    table.priority.represent = lambda id: (id and
+        [DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application, id), _height=12))][0].xml() or
+        [DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % (request.application), _height=12))][0].xml())
     table.priority.label = T('Priority')
     table.categories.requires = IS_NULL_OR(IS_IN_DB(db, db.ticket_category.id, '%(name)s', multiple=True))
     #FixMe: represent for multiple=True
@@ -90,19 +92,6 @@ def log():
         msg_record_deleted = T('Ticket deleted'),
         msg_list_empty = T('No Tickets currently registered'))
 
-    # This is the better way to do it:
-    def log_prep(jr):
-        if jr.representation in ("html", "aaData") and \
-           jr.method is None and \
-           jr.component is None:
-            # Log listing - reduce fields to declutter
-            table.message.readable = False
-            table.categories.readable = False
-            table.verified_details.readable = False
-            table.actioned_details.readable = False
-        return True
-
-    response.s3.prep = log_prep
     # Server-side Pagination
     response.s3.pagination = True
 

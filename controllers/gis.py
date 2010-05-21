@@ -77,22 +77,23 @@ def test():
 def apikey():
     "RESTlike CRUD controller"
     resource = 'apikey'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
     # FIXME
     # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
-    db[table].name.requires = IS_IN_SET(['google', 'multimap', 'yahoo'])
-    db[table].name.label = T("Service")
-    #db[table].apikey.requires = THIS_NOT_IN_DB(db(db[table].name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
-    db[table].apikey.requires = IS_NOT_EMPTY()
-    db[table].apikey.label = T("Key")
-    db[table].apikey.comment = SPAN("*", _class="req")
+    table.name.requires = IS_IN_SET(['google', 'multimap', 'yahoo'])
+    table.name.label = T("Service")
+    #table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
+    table.apikey.requires = IS_NOT_EMPTY()
+    table.apikey.label = T("Key")
+    table.apikey.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     ADD_KEY = T('Add Key')
     LIST_KEYS = T('List Keys')
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_KEY,
         title_display = T('Key Details'),
         title_list = LIST_KEYS,

@@ -4,7 +4,7 @@
     Delphi Decision Maker - Controllers
 """
 
-module = 'delphi'
+module = "delphi"
 
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
@@ -15,12 +15,12 @@ response.menu_options = [
 
 if auth.has_membership(1):
     response.menu_options.extend([
-        [T('Groups'), False, URL(r=request, f='grp')],
+        [T('Groups'), False, URL(r=request, f='group')],
     ])
 
 if auth.has_membership(1):
     response.menu_options.extend([
-        [T('Group Memberships'), False, URL(r=request, f='grp_m')],
+        [T('Group Memberships'), False, URL(r=request, f='user_to_group')],
     ])
 
 if auth.has_membership(1):
@@ -126,17 +126,17 @@ def __cal_votes(pr, i_ids):
         for i2 in i_ids:
             votes[(i1, i2)] = 0
 
-    users = db(db.auth_user.id>0).select()
+    users = db(db.auth_user.id > 0).select()
 
     for u in users:
-        query = (db.delphi_vote.problem == pr.id) & \
-                (db.delphi_vote.user == u.id) & \
+        query = (db.delphi_vote.problem_id == pr.id) & \
+                (db.delphi_vote.user_id == u.id) & \
                 (db.delphi_vote.rank < 9888)
 
-        u_votes = [v.solution_item for v in db(query).select(
-                                db.delphi_vote.solution_item,
+        u_votes = [v.solution_id for v in db(query).select(
+                                db.delphi_vote.solution_id,
                                 db.delphi_vote.rank,
-                                orderby=db.delphi_vote.rank)]
+                                orderby = db.delphi_vote.rank)]
 
         if len(u_votes) > 1: num_voted += 1
         for i1 in range(len(u_votes)):
@@ -158,8 +158,8 @@ class DU:
         if self.authorised:
             self.status = 'moderator'
         elif self.user_id != None and group_id != None:
-            self.membership = db((db.delphi_grp_m.grp==group_id) &
-                                 (db.delphi_grp_m.user==self.user_id)).select()
+            self.membership = db((db.delphi_user_to_group.group_id == group_id) &
+                                 (db.delphi_user_to_group.user_id == self.user_id)).select()
             if self.membership:
                 self.membership = self.membership[0]
                 self.status = self.membership.status
@@ -171,164 +171,183 @@ class DU:
         self.can_post = self.status != 'guest'
 
 
-def __get_commons(solution_item=None):
-    if solution_item:
-        problem_id = solution_item.problem
+def __get_commons(solution=None):
+    if solution:
+        problem_id = solution.problem_id
     else:
         problem_id = request.args(0)
 
     pr = db.delphi_problem[problem_id]
-    if not pr: raise HTTP(404)
+    if not pr:
+        raise HTTP(404)
 
-    user = DU(pr.grp)
+    user = DU(pr.group_id)
 
     response.menu_options.extend([
-        [pr.grp.title, False, URL(r=request, f='grp_summary', args=pr.grp.id)],
+        [pr.group_id.name, False, URL(r=request, f='group_summary', args=pr.group_id.id)],
     ])
 
     return (pr, user)
 
 
 def index():
-    groups = db(db.delphi_grp.active==True).select()
+    groups = db(db.delphi_group.active==True).select()
     result = []
     for group in groups:
         actions = []
         duser = DU(group)
         if duser.authorised:
-            actions.append(("grp/update/%d" % group.id, "Edit"))
-            actions.append(("new_problem/create/?grp=%s&next=%s" % \
+            actions.append(("group/%d/update" % group.id, "Edit"))
+            actions.append(("new_problem/create/?group=%s&next=%s" % \
                     (group.id,
-                    URL(r=request, f='grp_summary', args=group.id)),
+                    URL(r=request, f='group_summary', args=group.id)),
                     "Add New Problem"))
-            actions.append(("grp_summary/%s/#request" % group.id, "Review Requests"))
+            actions.append(("group_summary/%s/#request" % group.id, "Review Requests"))
         else:
-            actions.append(("grp_summary/%s/#request" % group.id,
+            actions.append(("group_summary/%s/#request" % group.id,
                     "Role: %s%s" % (duser.status,
                                     (duser.membership and duser.membership.req) and '*' or '')))
 
-        latest_problems = db((db.delphi_problem.grp == group.id) &
+        latest_problems = db((db.delphi_problem.group_id == group.id) &
                          (db.delphi_problem.active == True)). \
-                         select(orderby=~db.delphi_problem.last_modification)
+                         select(orderby =~ db.delphi_problem.last_modification)
         result.append((group, latest_problems, actions))
-    return dict(groups_problems=result, title="Active Problems",
+    return dict(groups_problems=result, name="Active Problems",
                 module_name=module_name)
 
-def grp_summary():
-    grp_id = request.args(0)
-    group = db.delphi_grp[grp_id]
-    if not group: raise HTTP(404)
+def group_summary():
+    group_id = request.args(0)
+    group = db.delphi_group[group_id]
+    if not group:
+        raise HTTP(404)
 
     duser = DU(group.id)
 
     forms = []
-    db.delphi_grp_m.req.default = True
-    db.delphi_grp_m.user.writable = False
-    db.delphi_grp_m.user.default = duser.user_id
-    db.delphi_grp_m.grp.default = grp_id
-    db.delphi_grp_m.grp.writable = False
-    fields = ['user', 'description', 'status']
+    table = db.delphi_user_to_group
+    table.req.default = True
+    table.user_id.writable = False
+    table.user_id.default = duser.user_id
+    table.group_id.default = group_id
+    table.group_id.writable = False
+    fields = ['user_id', 'description', 'status']
 
     if duser.authorised:
         fields.append('req')
-        membership_requests = db((db.delphi_grp_m.grp==group.id) &
-                                 (db.delphi_grp_m.req==True)).select()
+        membership_requests = db((table.group_id==group.id) &
+                                 (table.req==True)).select()
         for membership_req in membership_requests:
-            form = SQLFORM(db.delphi_grp_m, record=membership_req.id,
+            form = SQLFORM(table, record=membership_req.id,
                            fields=fields, labels={
                                    'req': 'Needs more review:'
                                    })
             ret = form.accepts(request.post_vars, session, dbio=True)
             if form.errors:
-                response.error = 'there are errors'
+                session.error = str(T('there are errors'))
 
             forms.append(form)
 
     elif duser.user_id:
-        db.delphi_grp_m.status.writable = False
+        table.status.writable = False
         if duser.membership: fields.append('req')
-        form = SQLFORM(db.delphi_grp_m, record=duser.membership,
+        form = SQLFORM(table, record=duser.membership,
                        fields=fields, labels={
                             'status': 'Current status:',
                             'req': 'Request for review:'
                             })
         ret = form.accepts(request.post_vars, session, dbio=True)
         if form.errors:
-            response.error = 'there are errors'
+            session.error = str(T('there are errors'))
 
         forms.append(form)
 
-    latest_problems = db((db.delphi_problem.grp == group.id) &
-                     (db.delphi_problem.active == True)). \
-                     select(orderby=~db.delphi_problem.last_modification)
+    table = db.delphi_problem
+    latest_problems = db((table.group_id == group.id) &
+                     (table.active == True)). \
+                     select(orderby =~ table.last_modification)
 
     return dict(latest_problems=latest_problems, group=group, duser=duser,
-                title="Active Problems in %s" % group.title, forms=forms)
+                name="Active Problems in %s" % group.name, forms=forms)
 
 
 def new_problem():
-    group = db(db.delphi_grp.id==request.get_vars['grp']).select()[0]
+    group = db(db.delphi_group.id == request.get_vars['group']).select()[0]
     duser = DU(group)
-    if not duser.authorised: raise HTTP(403)
+    if not duser.authorised:
+        raise HTTP(403)
 
     response.menu_options.extend([
-        [group.title, False, URL(r=request, f='grp_summary', args=group.id)],
+        [group.name, False, URL(r=request, f='group_summary', args=group.id)],
     ])
 
-    db[problem_table].grp.default = request.get_vars['grp']
-    db[problem_table].grp.writable = False
+    table = db.delphi_problem
+    table.group.default = request.get_vars['group']
+    table.group.writable = False
+    
     return problem()
 
-def grp():
-    if not auth.has_membership(1): raise HTTP(403)
-    return shn_rest_controller(module, 'grp', list_fields=['id', 'title', 'last_modification'])
+def group():
+    if not auth.has_membership(1):
+        raise HTTP(403)
+        
+    return shn_rest_controller(module, 'group', list_fields=['id', 'name', 'last_modification'])
 
-def grp_m():
-    if not auth.has_membership(1): raise HTTP(403)
-    return shn_rest_controller(module, 'grp_m', list_fields=['id', 'grp', 'user', 'status', 'req'])
+def user_to_group():
+    if not auth.has_membership(1):
+        raise HTTP(403)
+        
+    return shn_rest_controller(module, 'user_to_group', list_fields=['id', 'group_id', 'user_id', 'status', 'req'])
 
 def problem():
     # TODO: access check
-    return shn_rest_controller(module, 'problem', list_fields=['id', 'grp', 'title', 'created_by', 'last_modification'])
+    return shn_rest_controller(module, 'problem', list_fields=['id', 'group_id', 'name', 'created_by', 'last_modification'])
 
-def solution_item():
+def solution():
     # TODO: access check
-    return shn_rest_controller(module, 'solution_item', list_fields=['id', 'problem', 'title', 'suggested_by', 'last_modification'])
+    return shn_rest_controller(module, 'solution', list_fields=['id', 'problem_id', 'name', 'suggested_by', 'last_modification'])
 
 
 def summary():
     pr, duser = __get_commons()
     user = duser.user()
-    voted = user.delphi_vote.select() if user else False
+    if user:
+        voted = user.delphi_vote.select()
+    else:
+        voted = False
 
-    if duser.can_add_item and 'item_title' in request.post_vars:
-        db.delphi_solution_item.insert(problem=pr,
-                                       title=request.post_vars['item_title'],
+    if duser.can_add_item and 'item_name' in request.post_vars:
+        db.delphi_solution.insert(problem_id=pr,
+                                       name=request.post_vars['item_name'],
                                        description=request.post_vars['item_description'])
 
-    return dict(problem=pr, items=pr.delphi_solution_item.select(),
-                voted=voted, title="Options", duser=duser)
+    return dict(problem=pr, items=pr.delphi_solution.select(),
+                voted=voted, name="Options", duser=duser)
 
 
 def save_vote():
     pr, duser = __get_commons()
-    if not duser.can_vote: raise HTTP(403)
+    if not duser.can_vote:
+        raise HTTP(403)
 
-    items = [i.id for i in pr.delphi_solution_item.select()]
+    items = [i.id for i in pr.delphi_solution.select()]
     ranks = {}
     for item_id in items:
         if str(item_id) in request.post_vars:
             ranks[item_id] = request.post_vars[str(item_id)]
 
-    query = (db.delphi_vote.problem==pr.id) & (db.delphi_vote.user==duser.user_id)
-    voted = db(query).select(orderby=db.delphi_vote.rank) if duser.user_id else False
+    table = db.delphi_vote
+    query = ( table.problem_id == pr.id) & ( table.user_id == duser.user_id)
+    if duser.user_id:
+        voted = db(query).select(orderby = table.rank)
+    else:
+        voted = False
 
     if voted:
         for old in voted:
-            del db.delphi_vote[old.id]
+            del table[old.id]
 
     for item_id, rank in ranks.items():
-        db.delphi_vote.insert(problem=pr.id, solution_item=item_id, rank=rank)
+         table.insert(problem_id=pr.id, solution_id=item_id, rank=rank)
 
     return '"OK"'
 
@@ -336,20 +355,21 @@ def save_vote():
 def vote():
     pr, duser = __get_commons()
 
-    items = dict([(i.id, i.title) for i in pr.delphi_solution_item.select()])
+    items = dict([(i.id, i.name) for i in pr.delphi_solution.select()])
     n = len(items)
 
     if duser.user_id:
-        query = (db.delphi_vote.problem==pr.id) & (db.delphi_vote.user==duser.user_id)
-        voted = db(query).select(orderby=db.delphi_vote.rank)
+        table = db.delphi_vote
+        query = (table.problem_id == pr.id) & (table.user_id == duser.user_id)
+        voted = db(query).select(orderby = table.rank)
     else:
         voted = False
 
-    # v.rank == 9999 -> user has selected not to vote on v.solution_item
-    #   rank == 9998 -> the solution_item is new and the user hasn't votted on it yet
+    # v.rank == 9999 -> user has selected not to vote on v.solution
+    #   rank == 9998 -> the solution is new and the user hasn't votted on it yet
     if voted:
-        sorted_items = [v.solution_item for v in voted]
-        ranks = dict([(v.solution_item, v.rank) for v in voted])
+        sorted_items = [v.solution_id for v in voted]
+        ranks = dict([(v.solution_id, v.rank) for v in voted])
         n = len(sorted_items)
         last_enabled = -1
         while ((-last_enabled) <= n) and (ranks[sorted_items[last_enabled]] == 9999):
@@ -371,18 +391,18 @@ def vote():
         ranks = dict([(i, 9998) for i in sorted_items])
 
     return dict(problem=pr, items=items, sorted_items=sorted_items, ranks=ranks,
-                duser=duser, voted=voted, title="Vote")
+                duser=duser, voted=voted, name="Vote")
 
 
 def status():
     pr, duser = __get_commons()
 
-    items = dict([(i.id, i.title) for i in pr.delphi_solution_item.select()])
+    items = dict([(i.id, i.name) for i in pr.delphi_solution.select()])
     i_ids = items.keys()
     n = len(i_ids)
 
     empty = dict(problem=pr, items=items, beans=[], duser=duser,
-                votes={}, scale={}, title="Scale of Results", num_voted=0)
+                votes={}, scale={}, name="Scale of Results", num_voted=0)
 
     if n == 0:
         return empty
@@ -426,15 +446,16 @@ def status():
         beans.append((color, bean))
 
     return dict(problem=pr, duser=duser, items=items, beans=beans, scale=scale,
-                title="Scale of Results", votes=votes, num_voted=num_voted)
+                title=T("Scale of Results"), votes=votes, num_voted=num_voted)
 
 
 def discuss():
     item_id = request.args(0)
-    item = db.delphi_solution_item[item_id]
-    if not item: raise HTTP(404)
+    item = db.delphi_solution[item_id]
+    if not item:
+        raise HTTP(404)
 
-    pr, duser = __get_commons(solution_item=item)
+    pr, duser = __get_commons(solution=item)
     user = duser.user()
 
     if user and duser.can_post:
@@ -443,7 +464,7 @@ def discuss():
             labels=dict(post="%s %s:" % (user.first_name, user.last_name)))
     else:
         form = None
-    if form and form.accepts(request.post_vars,session):
+    if form and form.accepts(request.post_vars, session):
         post = request.post_vars['post']
         title = request.post_vars['title']
         post_html = ""
@@ -468,10 +489,10 @@ def discuss():
             post_html += l[k:]
         if k > 0:
             post_html += "</blockquote>"
-        db.delphi_forum_post.insert(title=title, solution_item=item, post=post, post_html=post_html)
-        response.flash='your post was added successfully.'
+        db.delphi_forum_post.insert(title=title, solution_id=item, post=post, post_html=post_html)
+        session.flash = str(T('your post was added successfully.'))
     elif form and form.errors:
-        response.error='there are errors'
+        session.error = str(T('there are errors'))
 
-    return dict(item=item, problem=item.problem, duser=duser,
-                form=form, title="Discussion Forum", authorised=False)
+    return dict(item=item, problem=item.problem_id, duser=duser,
+                form=form, title=T("Discussion Forum"), authorised=False)

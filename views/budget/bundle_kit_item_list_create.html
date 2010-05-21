@@ -1,6 +1,6 @@
 {{extend 'layout.html'}}
 {{include 'budget/bundle_kit_item_header.html'}}
-{{=P(A(T("Edit Description"), _href=URL(r=request, f='bundle', args=('update', bundle))))}}
+{{=P(A(T("Edit Description"), _href=URL(r=request, f='bundle', args=(bundle, 'update'))))}}
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}

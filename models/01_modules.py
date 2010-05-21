@@ -18,9 +18,9 @@ shn_module_enable = {
     "pr_ext" : True,            # Person Registry Extensions
     "or" : True,                # Organisation Registry
     "lms" : False,              # Logistics
-    "budget" : False,           # Budgetting
-    "cr" : False,               # Camp Registry
-    "delphi" : False,           # Delphi Decision Maker
+    "budget" : True,            # Budgetting
+    "cr" : True,                # Camp Registry
+    "delphi" : True,            # Delphi Decision Maker
     "dvi" : True,               # Disaster Victim Identification
     "dvr" : True,               # Disaster Victim Registry
     "hms" : True,               # Hospital Management
@@ -28,7 +28,7 @@ shn_module_enable = {
     "mpr" : True,               # Missing Person Registry
     "msg" : True,               # Messaging
     "nim" : False,              # Nursing Information Manager
-    "rms" : False,              # Request Management
+    "rms" : True,               # Request Management
     "ticket" : True,            # Ticketing
     "vol" : True                # Volunteer Management
 }

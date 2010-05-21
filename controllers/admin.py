@@ -285,7 +285,7 @@ def user_approve(form):
 def usergroup():
     """
     User update form with groups
-    - what uses this function? (No custom view for it!)
+    - NB This is currently unused & has no custom view
     """
     user = request.vars.user
 

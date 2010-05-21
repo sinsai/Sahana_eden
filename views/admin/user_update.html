@@ -2,8 +2,8 @@
 {{include '_update.html'}}
 <p>&nbsp;</p>
 {{try:}}
- {{id = int(request.args[0])}}
+ {{id = int(request.args(0))}}
 {{except ValueError:}}
- {{id = int(request.args[1])}}
+ {{id = int(request.args(1))}}
 {{pass}}
 <a id='contents-btn' href="{{=URL(r=request, f='groups', args=id)}}">{{=T('Roles')}}</a>

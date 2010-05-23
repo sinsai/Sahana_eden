@@ -151,6 +151,8 @@ resource = 'location'
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
+                Field('level', length=2),
+                Field('code'),
                 Field('description'),
                 feature_class_id,
                 #Field('resource_id', 'integer'), # ID in associated resource table. FIXME: Remove as link should be reversed?

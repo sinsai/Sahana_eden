@@ -67,7 +67,7 @@ if shn_module_enable.get(module, False):
     #table.user_id.requires = IS_IN_DB(db, 'auth_user.id', '%(first_name)s %(last_name)s [%(id)d]')
     table.user_id.requires = IS_IN_DB(db, 'auth_user.id', shn_user_represent)
     table.status.requires = IS_IN_SET(delphi_role_opts)
-    table.status.represent = lambda opt: delphi_role_opts.get(opt, T('Unknown'))
+    table.status.represent = lambda opt: delphi_role_opts.get(opt, UNKNOWN_OPT)
 
     # CRUD Strings
     ADD_MEMBERSHIP = T('Add Membership')

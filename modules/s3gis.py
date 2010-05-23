@@ -644,29 +644,30 @@ class GIS(object):
         """ + visibility + """
         map.addLayer(featureLayer""" + name_safe + """);
         featureLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect""" + name_safe + """, "featureunselected": onFeatureUnselect });
+        allLayers.push(featureLayer""" + name_safe + """);
         function onKmlFeatureSelect""" + name_safe + """(event) {
             var feature = event.feature;
             var selectedFeature = feature;
             var type = typeof feature.attributes.name
             if ('object' == type) {
-                var popup = new OpenLayers.Popup.FramedCloud("chicken",
+                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001),
                 feature.geometry.getBounds().getCenterLonLat(),
                 new OpenLayers.Size(200,200),
-                "<h2>" + "</h2>",
+                '<h3>' + '</h3>',
                 null, true, onPopupClose);
             } else if (undefined == feature.attributes.description) {
-                var popup = new OpenLayers.Popup.FramedCloud("chicken",
+                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + feature.attributes.name,
                 feature.geometry.getBounds().getCenterLonLat(),
                 new OpenLayers.Size(200,200),
-                "<h2>" + feature.attributes.name + "</h2>",
+                '<h3>' + feature.attributes.name + '</h3>',
                 null, true, onPopupClose);
             } else {
-                var content = "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description;
+                var content = '<h3>' + feature.attributes.name + '</h3>' + feature.attributes.description;
                 // Protect the description against JavaScript attacks
-                if (content.search("<script") != -1) {
-                    content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
+                if (content.search('<script') != -1) {
+                    content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
                 }
-                var popup = new OpenLayers.Popup.FramedCloud("chicken",
+                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + feature.attributes.name,
                 feature.geometry.getBounds().getCenterLonLat(),
                 new OpenLayers.Size(200,200),
                 content,
@@ -674,7 +675,7 @@ class GIS(object):
             };
             feature.popup = popup;
             map.addPopup(popup);
-            }
+        }
                 """
 
         else:
@@ -771,10 +772,8 @@ class GIS(object):
         #############
 
         html.append(SCRIPT("""
-    var map;
-    var mapPanel, toolbar;
-    var featuresLayer, currentFeature;
-    var popupControl;
+    var map, mapPanel, toolbar;
+    var currentFeature, popupControl;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -865,9 +864,9 @@ class GIS(object):
         map.addControl(new OpenLayers.Control.MGRSMousePosition());
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-        //popupControl = new OpenLayers.Control.SelectFeature(allLayers);
-        //map.addControl(popupControl);
-        //popupControl.activate();
+        popupControl = new OpenLayers.Control.SelectFeature(allLayers);
+        map.addControl(popupControl);
+        popupControl.activate();
         
         // MGRS from ol_controls.js
     

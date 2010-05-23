@@ -112,47 +112,47 @@ if shn_module_enable.get(module, False):
                     Field('ems_status', 'integer',              # Emergency Room Status
                         requires = IS_NULL_OR(IS_IN_SET(hms_ems_traffic_opts)),
                         label = T('EMS Traffic Status'),
-                        represent = lambda opt: hms_ems_traffic_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_ems_traffic_opts.get(opt, UNKNOWN_OPT)),
                     Field('ems_reason', length=128,             # Reason for EMS Status
                         label = T('EMS Status Reason')),
                     Field('or_status', 'integer',               # Operating Room Status
                         requires = IS_NULL_OR(IS_IN_SET(hms_or_status_opts)),
                         label = T('OR Status'),
-                        represent = lambda opt: hms_or_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_or_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('or_reason', length=128,              # Reason for OR Status
                         label = T('OR Status Reason')),
                     Field('facility_status', 'integer',         # Facility Status
                         requires = IS_NULL_OR(IS_IN_SET(hms_facility_status_opts)),
                         label = T('Facility Status'),
-                        represent = lambda opt: hms_facility_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_facility_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('clinical_status', 'integer',         # Clinical Status
                         requires = IS_NULL_OR(IS_IN_SET(hms_clinical_status_opts)),
                         label = T('Clinical Status'),
-                        represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_clinical_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('morgue_status', 'integer',           # Morgue Status
                         requires = IS_NULL_OR(IS_IN_SET(hms_morgue_status_opts)),
                         label = T('Morgue Status'),
-                        represent = lambda opt: hms_clinical_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_clinical_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('morgue_units', 'integer'),           # Number of available/vacant morgue units
                     Field('security_status', 'integer',         # Security status
                         requires = IS_NULL_OR(IS_IN_SET(hms_security_status_opts)),
                         label = T('Security Status'),
-                        represent = lambda opt: hms_security_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_security_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('doctors', 'integer'),                # Number of Doctors
                     Field('nurses', 'integer'),                 # Number of Nurses
                     Field('non_medical_staff', 'integer'),      # Number of Non-Medical Staff
                     Field('staffing', 'integer',                # Staffing status
                         requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                         label = T('Staffing'),
-                        represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('facility_operations', 'integer',     # Facility Operations Status
                         requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                         label = T('Facility Operations'),
-                        represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('clinical_operations', 'integer',     # Clinical Operations Status
                         requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
                         label = T('Clinical Operations'),
-                        represent = lambda opt: hms_resource_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('access_status'),                     # Access Status
                     Field('info_source'),                       # Source of Information
                     shn_comments_field,                         # Comments field
@@ -467,7 +467,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(hms_bed_type_opts),
                         default = 6,
                         label = T('Bed Type'),
-                        represent = lambda opt: hms_bed_type_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: hms_bed_type_opts.get(opt, UNKNOWN_OPT)),
                     Field('date', 'datetime'),
                     Field('beds_baseline', 'integer'),
                     Field('beds_available', 'integer'),

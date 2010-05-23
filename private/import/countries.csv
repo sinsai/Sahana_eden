@@ -1,0 +1,247 @@
+name,description,feature_class_id,lon,lat
+L0: Afghanistan,AF,2,65.216,33.677
+L0: Åland Islands,AX,2,19.952,60.198
+L0: Albania,AL,2,20.068,41.143
+L0: Algeria,DZ,2,2.632,28.163
+L0: American Samoa,AS,2,-170.73,-14.318
+L0: Andorra,AD,2,1.576,42.549
+L0: Angola,AO,2,17.544,-12.296
+L0: Anguilla,AI,2,-63.032,18.237
+L0: Antarctica,AQ,2,21.304,-80.446
+L0: Antigua and Barbuda,AG,2,-61.783,17.078
+L0: Argentina,AR,2,-65.167,-35.377
+L0: Armenia,AM,2,44.563,40.534
+L0: Aruba,AW,2,-69.977,12.517
+L0: Australia,AU,2,136.189,-24.973
+L0: Austria,AT,2,14.912,47.683
+L0: Azerbaijan,AZ,2,47.395,40.43
+L0: Bahamas,BS,2,-78.014,24.628
+L0: Bahrain,BH,2,50.562,26.019
+L0: Bangladesh,BD,2,89.941,24.218
+L0: Barbados,BB,2,-59.559,13.153
+L0: Belarus,BY,2,28.047,53.54
+L0: Belgium,BE,2,4.664,50.643
+L0: Belize,BZ,2,-88.602,17.219
+L0: Benin,BJ,2,2.469,10.541
+L0: Bermuda,BM,2,-64.709,32.336
+L0: Bhutan,BT,2,90.429,27.415
+L0: Bolivia,BO,2,-64.671,-16.715
+L0: Bosnia and Herzegovina,BA,2,17.786,44.169
+L0: Botswana,BW,2,23.815,-22.182
+L0: Bouvet Island,BV,2,3.412,-54.422
+L0: Brazil,BR,2,-53.089,-10.772
+L0: British Indian Ocean Territory,IO,2,72.416,-7.335
+L0: British Virgin Islands,VG,2,-64.39,18.483
+L0: Brunei Darussalam,BN,2,114.591,4.468
+L0: Bulgaria,BG,2,25.231,42.761
+L0: Burkina Faso,BF,2,-1.74,12.278
+L0: Burma,MM,2,96.041,21.718
+L0: Burundi,BI,2,29.887,-3.356
+L0: Cambodia,KH,2,104.564,12.714
+L0: Cameroon,CM,2,12.277,5.133
+L0: Canada,CA,2,-109.433,59.081
+L0: Cape Verde,CV,2,-23.634,15.071
+L0: Cayman Islands,KY,2,-81.198,19.314
+L0: Central African Republic,CF,2,20.483,6.571
+L0: Chad,TD,2,18.665,15.361
+L0: Chile,CL,2,-69.433,-23.389
+L0: China,CN,2,106.514,33.42
+L0: Christmas Island,CX,2,105.704,-10.444
+L0: Cocos (Keeling) Islands,CC,2,96.839,-12.173
+L0: Colombia,CO,2,-73.076,3.9
+L0: Comoros,KM,2,43.337,-11.758
+L0: Congo,CG,2,15.986,-0.055
+L0: Cook Islands,CK,2,-159.782,-21.219
+L0: Costa Rica,CR,2,-83.946,9.971
+L0: Cote d'Ivoire,CI,2,-5.556,7.632
+L0: Croatia,HR,2,16.693,45.723
+L0: Cuba,CU,2,-77.781,21.297
+L0: Cyprus,CY,2,33.219,35.043
+L0: Czech Republic,CZ,2,15.338,49.743
+L0: Democratic Republic of the Congo,CD,2,23.654,-2.876
+L0: Denmark,DK,2,9.264,56.058
+L0: Djibouti,DJ,2,42.516,11.9
+L0: Dominica,DM,2,-61.356,15.475
+L0: Dominican Republic,DO,2,-70.729,19.015
+L0: Ecuador,EC,2,-78.497,-1.385
+L0: Egypt,EG,2,29.872,26.494
+L0: El Salvador,SV,2,-88.866,13.736
+L0: Equatorial Guinea,GQ,2,10.488,1.607
+L0: Eritrea,ER,2,38.219,16.045
+L0: Estonia,EE,2,25.793,58.674
+L0: Ethiopia,ET,2,39.616,8.626
+L0: Falkland Islands (Malvinas),FK,2,-58.694,-51.665
+L0: Faroe Islands,FO,2,-6.864,62.05
+L0: Fiji,FJ,2,177.974,-17.819
+L0: Finland,FI,2,26.272,64.504
+L0: France,FR,2,2.55,46.565
+L0: French Guiana,GF,2,-53.241,3.924
+L0: French Polynesia,PF,2,-149.462,-17.626
+L0: French Southern and Antarctic Lands,TF,2,69.117,-49.302
+L0: Gabon,GA,2,11.797,-0.591
+L0: Gambia,GM,2,-15.386,13.453
+L0: Georgia,GE,2,43.518,42.176
+L0: Germany,DE,2,9.851,51.11
+L0: Ghana,GH,2,-1.207,7.96
+L0: Gibraltar,GI,2,-5.345,36.138
+L0: Greece,GR,2,21.766,39.666
+L0: Greenland,GL,2,-41.391,74.719
+L0: Grenada,GD,2,-61.678,12.118
+L0: Guadeloupe,GP,2,-61.441,16.286
+L0: Guam,GU,2,144.707,13.385
+L0: Guatemala,GT,2,-90.398,15.256
+L0: Guernsey,GG,2,-2.576,49.459
+L0: Guinea,GN,2,-10.942,10.439
+L0: Guinea-Bissau,GW,2,-14.651,12.125
+L0: Guyana,GY,2,-58.974,4.792
+L0: Haiti,HT,2,-72.278,19.142
+L0: Heard Island and McDonald Islands,HM,2,73.507,-53.111
+L0: Holy See (Vatican City),VA,2,12.451,41.904
+L0: Honduras,HN,2,-86.863,14.819
+L0: Hong Kong,HK,2,114.129,22.423
+L0: Hungary,HU,2,19.134,47.07
+L0: Iceland,IS,2,-18.48,64.764
+L0: India,IN,2,78.5,21
+L0: Indonesia,ID,2,114.252,-0.976
+L0: Iran (Islamic Republic of),IR,2,54.301,32.565
+L0: Iraq,IQ,2,43.772,33.048
+L0: Ireland,IE,2,-8.152,53.177
+L0: Isle of Man,IM,2,-4.527,54.229
+L0: Israel,IL,2,34.851,31.026
+L0: Italy,IT,2,12.8,42.7
+L0: Jamaica,JM,2,-77.32,18.151
+L0: Japan,JP,2,139.068,36.491
+L0: Jersey,JE,2,-2.129,49.219
+L0: Jordan,JO,2,36.319,30.703
+L0: Kazakhstan,KZ,2,67.301,48.16
+L0: Kenya,KE,2,37.858,0.53
+L0: Kiribati,KI,2,175.036,-1.508
+"L0: Korea, Democratic People's Republic of",KP,2,126.451,39.778
+"L0: Korea, Republic of",KR,2,128.103,36.504
+L0: Kuwait,KW,2,47.376,29.476
+L0: Kyrgyzstan,KG,2,74.555,41.465
+L0: Lao People's Democratic Republic,LA,2,102.471,19.905
+L0: Latvia,LV,2,25.641,56.858
+L0: Lebanon,LB,2,35.888,33.92
+L0: Lesotho,LS,2,28.243,-29.581
+L0: Liberia,LR,2,-9.657,6.682
+L0: Libyan Arab Jamahiriya,LY,2,18.023,27.044
+L0: Liechtenstein,LI,2,9.555,47.153
+L0: Lithuania,LT,2,23.897,55.336
+L0: Luxembourg,LU,2,6.088,49.771
+L0: Macau,MO,2,113.545,22.2
+L0: Madagascar,MG,2,46.706,-19.374
+L0: Malawi,MW,2,33.808,-13.4
+L0: Malaysia,MY,2,102.195,4.201
+L0: Maldives,MV,2,72.92,3.548
+L0: Mali,ML,2,-3.524,17.35
+L0: Malta,MT,2,14.442,35.89
+L0: Marshall Islands,MH,2,168.963,7.595
+L0: Martinique,MQ,2,-61.021,14.653
+L0: Mauritania,MR,2,-10.332,20.26
+L0: Mauritius,MU,2,57.583,-20.255
+L0: Mayotte,YT,2,45.155,-12.777
+L0: Mexico,MX,2,-102.535,23.951
+"L0: Micronesia, Federated States of",FM,2,158.235,6.883
+L0: Monaco,MC,2,7.412,43.75
+L0: Mongolia,MN,2,102.876,46.056
+L0: Montenegro,ME,2,19.254,42.792
+L0: Montserrat,MS,2,-62.187,16.736
+L0: Morocco,MA,2,-5.758,32.706
+L0: Mozambique,MZ,2,37.923,-14.422
+L0: Namibia,NA,2,17.218,-22.133
+L0: Nauru,NR,2,166.93,-0.522
+L0: Nepal,NP,2,83.939,28.253
+L0: Netherlands,NL,2,5.389,52.077
+L0: Netherlands Antilles,AN,2,-68.87,12.123
+L0: New Caledonia,NC,2,165.447,-21.359
+L0: New Zealand,NZ,2,172.235,-42.634
+L0: Nicaragua,NI,2,-85.034,12.84
+L0: Niger,NE,2,9.398,17.426
+L0: Nigeria,NG,2,8.105,9.594
+L0: Niue,NU,2,-169.869,-19.052
+L0: Norfolk Island,NF,2,167.953,-29.037
+L0: Northern Mariana Islands,MP,2,145.623,15.005
+L0: Norway,NO,2,8.74,61.152
+L0: Oman,OM,2,57.407,21.656
+L0: Pakistan,PK,2,69.386,29.967
+L0: Palau,PW,2,134.57,7.501
+L0: Palestine,PS,2,35.278,32.037
+L0: Panama,PA,2,-80.92,8.384
+L0: Papua New Guinea,PG,2,143.459,-5.949
+L0: Paraguay,PY,2,-58.391,-23.236
+L0: Peru,PE,2,-75.552,-9.326
+L0: Philippines,PH,2,122.466,11.118
+L0: Pitcairn Islands,PN,2,-128.316,-24.366
+L0: Poland,PL,2,19.401,52.125
+L0: Portugal,PT,2,-8.058,40.309
+L0: Puerto Rico,PR,2,-66.466,18.221
+L0: Qatar,QA,2,51.191,25.316
+L0: Republic of Moldova,MD,2,28.599,47.193
+L0: Reunion,RE,2,55.538,-21.122
+L0: Romania,RO,2,24.969,45.844
+L0: Russia,RU,2,96.689,61.988
+L0: Rwanda,RW,2,29.917,-1.998
+L0: Saint Barthelemy,BL,2,-63.043,18.04
+L0: Saint Helena,SH,2,-5.71,-15.953
+L0: Saint Kitts and Nevis,KN,2,-62.769,17.34
+L0: Saint Lucia,LC,2,-60.969,13.898
+L0: Saint Martin,MF,2,-63.041,18.094
+L0: Saint Pierre and Miquelon,PM,2,-56.325,47.042
+L0: Saint Vincent and the Grenadines,VC,2,-61.194,13.248
+L0: Samoa,WS,2,-172.414,-13.652
+L0: San Marino,SM,2,12.46,43.942
+L0: Sao Tome and Principe,ST,2,6.629,0.201
+L0: Saudi Arabia,SA,2,44.585,24.023
+L0: Senegal,SN,2,-14.881,15.013
+L0: Serbia,RS,2,20.806,44.032
+L0: Seychelles,SC,2,55.474,-4.647
+L0: Sierra Leone,SL,2,-11.792,8.56
+L0: Singapore,SG,2,103.808,1.351
+L0: Slovakia,SK,2,19.491,48.707
+L0: Slovenia,SI,2,14.827,46.124
+L0: Solomon Islands,SB,2,160.109,-9.611
+L0: Somalia,SO,2,48.316,9.774
+L0: South Africa,ZA,2,23.121,-30.558
+L0: South Georgia South Sandwich Islands,GS,2,-36.891,-54.209
+L0: Spain,ES,2,-3.649,40.227
+L0: Sri Lanka,LK,2,80.704,7.612
+L0: Sudan,SD,2,30.05,13.832
+L0: Suriname,SR,2,-55.912,4.127
+L0: Svalbard,SJ,2,18.374,78.83
+L0: Swaziland,SZ,2,31.497,-26.562
+L0: Sweden,SE,2,15.27,62.011
+L0: Switzerland,CH,2,7.908,46.861
+L0: Syrian Arab Republic,SY,2,38.506,35.013
+L0: Taiwan,TW,2,120.946,23.754
+L0: Tajikistan,TJ,2,69.42,38.665
+L0: Thailand,TH,2,100.844,15.7
+L0: The former Yugoslav Republic of Macedonia,MK,2,21.698,41.6
+L0: Timor-Leste,TL,2,125.878,-8.822
+L0: Togo,TG,2,1.081,8.799
+L0: Tokelau,TK,2,-171.853,-9.193
+L0: Tonga,TO,2,-175.185,-21.202
+L0: Trinidad and Tobago,TT,2,-61.253,10.468
+L0: Tunisia,TN,2,9.596,35.383
+L0: Turkey,TR,2,35.179,39.061
+L0: Turkmenistan,TM,2,59.384,39.122
+L0: Turks and Caicos Islands,TC,2,-71.95,21.902
+L0: Tuvalu,TV,2,179.219,-8.514
+L0: Uganda,UG,2,32.386,1.28
+L0: Ukraine,UA,2,31.388,49.016
+L0: United Arab Emirates,AE,2,54.163,23.549
+L0: United Kingdom,GB,2,-1.6,53
+L0: United Republic of Tanzania,TZ,2,34.823,-6.27
+L0: United States,US,2,-98.606,39.622
+L0: United States Minor Outlying Islands,UM,2,-160.027,-0.385
+L0: United States Virgin Islands,VI,2,-64.785,17.741
+L0: Uruguay,UY,2,-56.012,-32.8
+L0: Uzbekistan,UZ,2,63.17,41.75
+L0: Vanuatu,VU,2,166.899,-15.376
+L0: Venezuela,VE,2,-66.166,7.125
+L0: Viet Nam,VN,2,105.314,21.491
+L0: Wallis and Futuna Islands,WF,2,-178.131,-14.289
+L0: Western Sahara,EH,2,-13.706,24.554
+L0: Yemen,YE,2,48.355,15.807
+L0: Zambia,ZM,2,26.32,-14.614
+L0: Zimbabwe,ZW,2,29.872,-19

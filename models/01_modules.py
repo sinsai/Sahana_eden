@@ -45,7 +45,7 @@ opt_s3_module_type = db.Table(None, 'opt_s3_module_type',
                     Field('module_type', 'integer', notnull=True,
                     requires = IS_IN_SET(s3_module_type_opts),
                     # default = 1,
-                    represent = lambda opt: s3_module_type_opts.get(opt, T('Unknown'))))
+                    represent = lambda opt: s3_module_type_opts.get(opt, UNKNOWN_OPT)))
 
 resource = 'module'
 tablename = "%s_%s" % (module, resource)

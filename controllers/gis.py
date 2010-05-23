@@ -8,45 +8,46 @@
 
 from operator import __and__
 
-module = 'gis'
+module = "gis"
 
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
-    [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
-    [T('Bulk Uploader'), False, URL(r=request, c='media', f='bulk_upload')],
+    [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
+    [T("Map Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
 # Model options used in multiple Actions
 table = db.gis_location
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
-table.name.label = T('Name')
+table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+table.description.label = T("Description")
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
-table.parent.label = T('Parent')
+table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown'))
-table.gis_feature_type.label = T('Feature Type')
+table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
+table.gis_feature_type.label = T("Feature Type")
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
-table.lat.label = T('Latitude')
+table.lat.label = T("Latitude")
 #table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 CONVERSION_TOOL = T("Conversion Tool")
 #table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='colorbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lon.requires = IS_NULL_OR(IS_LON())
-table.lon.label = T('Longitude')
+table.lon.label = T("Longitude")
 table.lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 # WKT validation is done in the onvalidation callback
 #table.wkt.requires=IS_NULL_OR(IS_WKT())
-table.wkt.label = T('Well-Known Text')
+table.wkt.label = T("Well-Known Text")
 table.wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-table.osm_id.label = 'OpenStreetMap'
+table.osm_id.label = "OpenStreetMap"
 table.osm_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
 # Joined Resource

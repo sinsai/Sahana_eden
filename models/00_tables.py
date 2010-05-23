@@ -35,14 +35,14 @@ authorstamp = db.Table(None, 'authorstamp',
                           readable=False, # Enable when needed, not by default
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else None,
-                          represent = lambda id: id and shn_user_represent(id) or T("unknown"),
+                          represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                           ondelete='RESTRICT'),
             Field('modified_by', db.auth_user,
                           readable=False, # Enable when needed, not by default
                           writable=False,
                           default=session.auth.user.id if auth.is_logged_in() else None,
                           update=session.auth.user.id if auth.is_logged_in() else None,
-                          represent = lambda id: id and shn_user_represent(id) or T("unknown"),
+                          represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                           ondelete='RESTRICT')
             )
 
@@ -172,7 +172,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 Field('audit_write', 'boolean', default=False),
                 migrate=migrate)
 table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
-table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, T('Unknown'))
+table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
 table.security_policy.label = T('Security Policy')
 table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
 table.theme.label = T('Theme')

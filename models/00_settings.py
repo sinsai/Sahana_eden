@@ -5,13 +5,13 @@
     @ToDo: Use a global "deployment_settings" variable
 """
 
-S3_PUBLIC_URL = 'http://127.0.0.1:8000'
-S3_UTC_OFFSET = 'UTC +0000' # default UTC offset (timezone) of users
+S3_PUBLIC_URL = "http://127.0.0.1:8000"
+S3_UTC_OFFSET = "UTC +0000" # default UTC offset (timezone) of users
 BREADCRUMB = '>> '
-UNKNOWN_OPT = T('Unknown')
+UNKNOWN_OPT = T("Unknown")
 
 # Default strings are in English
-T.current_languages = ['en', 'en-us']
+T.current_languages = ["en", "en-us"]
 # Check if user has selected a specific language
 #if request.vars._language:
 #    session._language = request.vars._language
@@ -29,10 +29,10 @@ T.current_languages = ['en', 'en-us']
 # These settings could be made configurable as part of the Messaging Module
 # - however also need to be used by Auth (order issues), DB calls are overheads
 # - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
-mail.settings.server = '127.0.0.1:25'
-#mail.settings.server = 'smtp.gmail.com:587'
-#mail.settings.login = 'username:password'
-mail.settings.sender = 'sahana@your.org'
+mail.settings.server = "127.0.0.1:25"
+#mail.settings.server = "smtp.gmail.com:587"
+#mail.settings.login = "username:password"
+mail.settings.sender = "sahana@your.org"
 
 ######
 # Auth

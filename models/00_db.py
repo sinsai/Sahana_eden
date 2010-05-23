@@ -35,6 +35,7 @@ db = DAL('sqlite://storage.db')       # if not, use SQLite or other DB
 
 # Custom classes which extend default Gluon & T2
 exec('from applications.%s.modules.sahana import *' % request.application)
+
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.sahana import *
 # We should change this to use:
@@ -49,6 +50,13 @@ t2 = S3(request, response, session, cache, T, db)
 exec('from applications.%s.modules.validators import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.validators import *
+
+# Custom Utilities and Widgets
+exec('from applications.%s.modules.shn_utils import *' % request.application)
+exec('from applications.%s.modules.widgets import *' % request.application)
+# Faster for Production (where app-name won't change):
+#from applications.sahana.modules.shn_utils import *
+#from applications.sahana.modules.widgets import *
 
 mail = Mail()
 auth = AuthS3(globals(), db)

@@ -1340,7 +1340,7 @@ class S3XML(object):
             table = self.db[resource]
             for f in table.fields:
                 select = self.get_field_options(table, f)
-                if select:
+                if select is not None:
                     options.append(select)
             for j in joins:
                 component = j[0]
@@ -1348,7 +1348,7 @@ class S3XML(object):
                 coptions.set(self.ATTRIBUTE["resource"], component.tablename)
                 for f in component.table.fields:
                     select = self.get_field_options(component.table, f)
-                    if select:
+                    if select is not None:
                         coptions.append(select)
                 options.append(coptions)
 

@@ -35,7 +35,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(dvi_task_status_opts),
                         default = 1,
                         label = T('Task Status'),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T('Unknown'))))
+                        represent = lambda opt: dvi_task_status_opts.get(opt, UNKNOWN_OPT)))
 
     # -----------------------------------------------------------------------------
     # Find Report
@@ -293,7 +293,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(dvi_id_status_opts),
                         default = 1,
                         label = T('Identification Status'),
-                        represent = lambda opt: dvi_id_status_opts.get(opt, T('Unknown'))))
+                        represent = lambda opt: dvi_id_status_opts.get(opt, UNKNOWN_OPT)))
 
     dvi_id_method_opts = {
         1:T('Visual Recognition'),
@@ -310,7 +310,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(dvi_id_method_opts),
                         default = 99,
                         label = T('Method used'),
-                        represent = lambda opt: dvi_id_method_opts.get(opt, T('Unknown'))))
+                        represent = lambda opt: dvi_id_method_opts.get(opt, UNKNOWN_OPT)))
 
     resource = 'identification'
     table = module + '_' + resource

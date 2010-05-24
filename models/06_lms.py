@@ -35,7 +35,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(lms_unit_type_opts),
                         # default = 1,
                         label = T('Unit Set'),
-                        represent = lambda opt: lms_unit_type_opts.get(opt, T('Unknown'))))
+                        represent = lambda opt: lms_unit_type_opts.get(opt, UNKNOWN_OPT)))
 
     resource = 'unit'
     tablename = "%s_%s" % (module, resource)
@@ -112,7 +112,7 @@ if shn_module_enable.get(module, False):
                                 requires = IS_IN_SET(site_category_opts),
                                 # default = 1,
                                 label = T('Category'),
-                                represent = lambda opt: site_category_opts.get(opt, T('Unknown'))))
+                                represent = lambda opt: site_category_opts.get(opt, UNKNOWN_OPT)))
     resource = 'site'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,

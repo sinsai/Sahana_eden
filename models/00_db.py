@@ -35,6 +35,7 @@ db = DAL('mysql://sahanapy:password@localhost/sahanapy', pool_size=30) # or othe
 
 # Custom classes which extend default Gluon & T2
 exec('from applications.%s.modules.sahana import *' % request.application)
+
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.sahana import *
 # We should change this to use:
@@ -49,6 +50,13 @@ t2 = S3(request, response, session, cache, T, db)
 exec('from applications.%s.modules.validators import *' % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.sahana.modules.validators import *
+
+# Custom Utilities and Widgets
+exec('from applications.%s.modules.shn_utils import *' % request.application)
+exec('from applications.%s.modules.widgets import *' % request.application)
+# Faster for Production (where app-name won't change):
+#from applications.sahana.modules.shn_utils import *
+#from applications.sahana.modules.widgets import *
 
 mail = Mail()
 auth = AuthS3(globals(), db)
@@ -84,4 +92,9 @@ def shn_auth_on_logout(user):
 
     # S3XRC
     s3xrc.clear_session(session)
+
+from gluon.storage import Storage
+# Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
+# Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
+s3 = Storage()
 

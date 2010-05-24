@@ -38,7 +38,7 @@ if shn_module_enable.get(module, False):
                                 requires = IS_IN_SET(budget_cost_type_opts),
                                 # default = 1,
                                 label = T('Cost Type'),
-                                represent = lambda opt: budget_cost_type_opts.get(opt, T('Unknown'))))
+                                represent = lambda opt: budget_cost_type_opts.get(opt, UNKNOWN_OPT)))
     budget_category_type_opts = {
         1:T('Consumable'),
         2:T('Satellite'),
@@ -65,7 +65,7 @@ if shn_module_enable.get(module, False):
                                     requires = IS_IN_SET(budget_category_type_opts),
                                     # default = 1,
                                     label = T('Category'),
-                                    represent = lambda opt: budget_category_type_opts.get(opt, T('Unknown'))))
+                                    represent = lambda opt: budget_category_type_opts.get(opt, UNKNOWN_OPT)))
     resource = 'item'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -251,7 +251,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(budget_currency_type_opts),
                         # default = 1,
                         label = T('Currency'),
-                        represent = lambda opt: budget_currency_type_opts.get(opt, T('Unknown'))))
+                        represent = lambda opt: budget_currency_type_opts.get(opt, UNKNOWN_OPT)))
 
     resource = 'staff'
     tablename = "%s_%s" % (module, resource)

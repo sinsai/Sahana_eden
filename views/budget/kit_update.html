@@ -1,3 +1,8 @@
 {{extend 'layout.html'}}
 {{include '_update.html'}}
-<a id="contents-btn" href="{{=URL(r=request,f='kit_item',args=request.args[1])}}">{{=T('Kit Contents')}}</a>
+{{try:}}
+ {{id = int(request.args(0))}}
+{{except ValueError:}}
+ {{id = int(request.args(1))}}
+{{pass}}
+<a id="contents-btn" href="{{=URL(r=request,f='kit_item',args=id)}}">{{=T('Kit Contents')}}</a>

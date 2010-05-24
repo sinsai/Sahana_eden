@@ -8,46 +8,51 @@
 
 from operator import __and__
 
-module = 'gis'
+module = "gis"
 
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
-    [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
-    [T('Bulk Uploader'), False, URL(r=request, c='media', f='bulk_upload')],
+    [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
+    [T("Map Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
 # Model options used in multiple Actions
 table = db.gis_location
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
-table.name.label = T('Name')
+table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+table.level.label = T("Level")
+table.level.comment = DIV( _class="tooltip", _title=T("Level|The Level in the Hierarchy of this location: L0=Country, L1=State, L2=District, L3=Town."))
+table.code.label = T("Code")
+table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+table.description.label = T("Description")
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
-table.parent.label = T('Parent')
+table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown'))
-table.gis_feature_type.label = T('Feature Type')
+table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
+table.gis_feature_type.label = T("Feature Type")
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
-table.lat.label = T('Latitude')
-#table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lat.label = T("Latitude")
+#table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."))
 CONVERSION_TOOL = T("Conversion Tool")
-#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='colorbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='colorbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
+table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lon.requires = IS_NULL_OR(IS_LON())
-table.lon.label = T('Longitude')
-table.lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+table.lon.label = T("Longitude")
+table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 # WKT validation is done in the onvalidation callback
 #table.wkt.requires=IS_NULL_OR(IS_WKT())
-table.wkt.label = T('Well-Known Text')
-table.wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-table.osm_id.label = 'OpenStreetMap'
-table.osm_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+table.wkt.label = T("Well-Known Text")
+table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+table.osm_id.label = "OpenStreetMap"
+table.osm_id.comment = DIV( _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
 # Joined Resource
 #s3xrc.model.add_component('media', 'metadata',
@@ -69,28 +74,31 @@ def index():
 
 def test():
     "Test server-parsed GIS functions"
-    html = gis.show_map()
+    html = gis.show_map(
+                feature_overlays = [{'feature_group' : 'Towns'}]
+                )
     return dict(map=html)
 
 def apikey():
     "RESTlike CRUD controller"
     resource = 'apikey'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
     # FIXME
     # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
-    db[table].name.requires = IS_IN_SET(['google', 'multimap', 'yahoo'])
-    db[table].name.label = T("Service")
-    #db[table].apikey.requires = THIS_NOT_IN_DB(db(db[table].name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
-    db[table].apikey.requires = IS_NOT_EMPTY()
-    db[table].apikey.label = T("Key")
-    db[table].apikey.comment = SPAN("*", _class="req")
+    table.name.requires = IS_IN_SET(['google', 'multimap', 'yahoo'])
+    table.name.label = T("Service")
+    #table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), 'gis_apikey.name', request.vars.name,'Service already in use')
+    table.apikey.requires = IS_NOT_EMPTY()
+    table.apikey.label = T("Key")
+    table.apikey.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     ADD_KEY = T('Add Key')
     LIST_KEYS = T('List Keys')
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_KEY,
         title_display = T('Key Details'),
         title_list = LIST_KEYS,
@@ -117,13 +125,13 @@ def config():
     table.uuid.requires = IS_NOT_IN_DB(db, 'gis_config.uuid')
     table.lat.requires = IS_LAT()
     table.lat.label = T('Latitude')
-    table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+    table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
     table.lon.requires = IS_LON()
     table.lon.label = T('Longitude')
-    table.lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
     table.zoom.requires = IS_INT_IN_RANGE(0, 19)
     table.zoom.label = T('Zoom')
-    table.zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+    table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
     table.marker_id.label = T('Default Marker')
     table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
     table.map_height.label = T('Map Height')
@@ -211,8 +219,8 @@ def feature_group():
     db[table].name.label = T('Name')
     db[table].name.comment = SPAN("*", _class="req")
     db[table].description.label = T('Description')
-    #db[table].features.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-    #db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    #db[table].features.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    #db[table].feature_classes.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 
     # CRUD Strings
     LIST_FEATURE_GROUPS = T('List Feature Groups')
@@ -1237,7 +1245,7 @@ def layers():
         name = layer.name
         url = layer.url
         if cache:
-            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.xml'
+            filename = 'gis_cache.file.' + name.replace(' ', '_') + '.rss'
             filepath = os.path.join(cachepath, filename)
             try:
                 # Download file to cache
@@ -1295,17 +1303,29 @@ def layers():
         if cache:
             filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
             filepath = os.path.join(cachepath, filename)
-            try:
-                # Download file to cache
-                if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
-                    # Keep Session for local URLs
-                    import Cookie
-                    cookie = Cookie.SimpleCookie()
-                    cookie[response.session_id_name] = response.session_id
-                    session._unlock(response)
-                    file = fetch(url, cookie=cookie)
+            # Download file
+            file, warning = gis.download_kml(url, S3_PUBLIC_URL)
+            # Handle errors
+            if "URLError" in warning or "HTTPError" in warning:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    # Use cached version
+                    date = db(db.gis_cache.name == name).select().first().modified_on
+                    response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                    url = URL(r=request, c="default", f="download", args=[filename])
                 else:
-                    file = fetch(url)
+                    # No cached version available
+                    response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                    # skip layer
+                    continue
+            else:
+                # Download was succesful
+                if "ParseError" in warning:
+                    # @ToDo Parse detail
+                    response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
+                if "GroundOverlay" in warning or "ScreenOverlay" in warning:
+                    response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
+                # Write file to cache
                 f = open(filepath, 'w')
                 f.write(file)
                 f.close()
@@ -1314,19 +1334,7 @@ def layers():
                     records[0].update(modified_on=response.utcnow)
                 else:
                     db.gis_cache.insert(name=name, file=filename)
-                url = URL(r=request, c='default', f='download', args=[filename])
-            except:
-                # URL inaccessible
-                if os.access(filepath, os.R_OK):
-                    # Use cached version
-                    date = db(db.gis_cache.name == name).select().first().modified_on
-                    response.warning += url + ' ' + str(T('not accessible - using cached version from')) + ' ' + str(date) + '\n'
-                    url = URL(r=request, c='default', f='download', args=[filename])
-                else:
-                    # No cached version available
-                    response.warning += url + ' ' + str(T('not accessible - no cached version available!')) + '\n'
-                    # skip layer
-                    continue
+                url = URL(r=request, c="default", f="download", args=[filename])
         else:
             # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
             pass

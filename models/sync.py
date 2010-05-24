@@ -16,7 +16,7 @@ opt_sync_policy = db.Table(None, 'sync_policy',
                         Field('policy', 'integer', notnull=True,
                             requires = IS_IN_SET(sync_policy_opts),
                             default = 1,
-                            represent = lambda opt: sync_policy_opts.get(opt, T('Unknown'))))
+                            represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
 # Settings
 resource = 'setting'
 tablename = "%s_%s" % (module, resource)

@@ -40,7 +40,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(vol_project_status_opts),
                         # default = 99,
                         label = T('Project Status'),
-                        represent = lambda opt: vol_project_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_project_status_opts.get(opt, UNKNOWN_OPT)),
                     migrate=migrate)
 
     # Settings and Restrictions
@@ -101,7 +101,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(vol_position_type_opts),
                         # default = 99,
                         label = T('Position type'),
-                        represent = lambda opt: vol_position_type_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_position_type_opts.get(opt, UNKNOWN_OPT)),
                     Field('title', length=30),
                     Field('description', 'text'),
                     Field('slots', 'integer', default=1),
@@ -166,7 +166,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(vol_volunteer_status_opts),
                         # default = 1,
                         label = T('Status'),
-                        represent = lambda opt: vol_volunteer_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
                     Field('special_needs', 'text'),
                     migrate=migrate)
 
@@ -269,22 +269,22 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(vol_resource_type_opts),
                         # default = 99,
                         label = T('Resource'),
-                        represent = lambda opt: vol_resource_type_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_resource_type_opts.get(opt, UNKNOWN_OPT)),
                     Field('subject', 'integer',
                         requires = IS_IN_SET(vol_resource_subject_opts),
                         # default = 99,
                         label = T('Subject'),
-                        represent = lambda opt: vol_resource_subject_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_resource_subject_opts.get(opt, UNKNOWN_OPT)),
                     Field('deployment', 'integer',
                         requires = IS_IN_SET(vol_resource_deployment_opts),
                         # default = 99,
                         label = T('Deployment'),
-                        represent = lambda opt: vol_resource_deployment_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
                     Field('status', 'integer',
                         requires = IS_IN_SET(vol_resource_status_opts),
                         # default = 2,
                         label = T('Status'),
-                        represent = lambda opt: vol_resource_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
@@ -401,7 +401,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(vol_task_priority_opts),
                         # default = 4,
                         label = T('Priority'),
-                        represent = lambda opt: vol_task_priority_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_task_priority_opts.get(opt, UNKNOWN_OPT)),
                     Field('subject', length=80),
                     Field('description', 'text'),
                     person_id,
@@ -409,7 +409,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(vol_task_status_opts),
                         # default = 1,
                         label = T('Status'),
-                        represent = lambda opt: vol_task_status_opts.get(opt, T('Unknown'))),
+                        represent = lambda opt: vol_task_status_opts.get(opt, UNKNOWN_OPT)),
                     migrate=migrate)
 
     # Field labels

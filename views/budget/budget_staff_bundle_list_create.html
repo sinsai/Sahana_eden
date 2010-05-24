@@ -1,6 +1,6 @@
 {{extend 'layout.html'}}
 {{include 'budget/budget_staff_bundle_header.html'}}
-{{=P(A(T("Edit Description"), _href=URL(r=request, f='budget', args=('update', budget))))}}
+{{=P(A(T("Edit Description"), _href=URL(r=request, f='budget', args=(budget, 'update'))))}}
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}

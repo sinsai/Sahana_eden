@@ -283,7 +283,10 @@ def user_approve(form):
 
 @auth.requires_membership('Administrator')
 def usergroup():
-    "User update form with groups"
+    """
+    User update form with groups
+    - NB This is currently unused & has no custom view
+    """
     user = request.vars.user
 
     # redirect to the user list if user id is not given
@@ -291,7 +294,7 @@ def usergroup():
         redirect(URL(r=request, f='user'))
         return
 
-    # gathher common variables
+    # gather common variables
     data = {}
     data['user_id'] = user
     data['username'] = db.auth_user[user].first_name + " " + \
@@ -325,7 +328,6 @@ def usergroup():
         user_group_count = 0
 
         for row in user_membership:
-
 
             if (row.group_id == group.id):
                 records.append([group.role, 'on', group.id])
@@ -416,10 +418,13 @@ def membership():
 @auth.requires_membership('Administrator')
 def users():
     "List/amend which users are in a Group"
-    if len(request.args) == 0:
+
+    try:
+        group = int(request.args(0))
+    except TypeError, ValueError:
         session.error = T("Need to specify a role!")
         redirect(URL(r=request, f='group'))
-    group = request.args(0)
+    
     table = db.auth_membership
     query = table.group_id==group
     title = str(T('Role')) + ': ' + db.auth_group[group].role
@@ -489,10 +494,13 @@ def group_remove_users():
 @auth.requires_membership('Administrator')
 def groups():
     "List/amend which groups a User is in"
-    if len(request.args) == 0:
+    
+    try:
+        user = int(request.args(0))
+    except TypeError, ValueError:
         session.error = T("Need to specify a user!")
         redirect(URL(r=request, f='user'))
-    user = request.args(0)
+    
     table = db.auth_membership
     query = table.user_id==user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name

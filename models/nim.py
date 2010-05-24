@@ -72,7 +72,7 @@ if shn_module_enable.get(module, False):
                             requires = IS_IN_SET(nim_care_strategy_opts),
                             default = 99,
                             label = T('Care Strategy'),
-                            represent = lambda opt: nim_care_strategy_opts.get(opt, T('Unknown'))),
+                            represent = lambda opt: nim_care_strategy_opts.get(opt, UNKNOWN_OPT)),
                         Field('lang_spoken'),
                         Field('lang_understood'),
                         Field('lang_comment'),

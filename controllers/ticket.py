@@ -94,26 +94,20 @@ def log():
         msg_record_deleted = T('Ticket deleted'),
         msg_list_empty = T('No Tickets currently registered'))
 
-    #if len(request.args) == 0:
-        ## List View - reduce fields to declutter
-        #table.message.readable = False
-        #table.categories.readable = False
-        #table.verified_details.readable = False
-        #table.actioned_details.readable = False
+    # Server-side Pagination
+    response.s3.pagination = True
 
-    # This is the better way to do it:
-    def log_prep(jr):
-        if jr.representation in ("html", "aadata") and \
-           jr.method is None and \
-           jr.component is None:
-            # Log listing - reduce fields to declutter
-            table.message.readable = False
-            table.categories.readable = False
-            table.verified_details.readable = False
-            table.actioned_details.readable = False
-        return True
-
-    response.s3.prep = log_prep
-    response.s3.pagination = True #enable SSPag here!
-
-    return shn_rest_controller(module, resource, listadd=False)
+    return shn_rest_controller(module, resource,
+        listadd=False,
+        list_fields=['id',
+            'subject',
+            'attachment',
+            'priority',
+            'source',
+            'source_id',
+            'source_time',
+            'location_id',
+            'verified',
+            'actionable',
+            'actioned'
+        ],)

@@ -180,7 +180,8 @@ def docss(dogis = True):
         '../../styles/S3/jquery.ui.theme.css',
         '../../styles/S3/ajaxS3.css',
         '../../styles/T2/t2.css',
-        '../../styles/web2py/calendar.css'
+        '../../styles/web2py/calendar.css',
+        "../../styles/S3/s3.multiselect.widget.css"
     ]
     outputFilenameTmpCSS = "sahana.tmp.css"
     outputFilenameCSS = "sahana.min.css"

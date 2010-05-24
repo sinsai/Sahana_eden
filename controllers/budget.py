@@ -21,163 +21,163 @@ response.menu_options = [
 ]
 
 # Options used in multiple functions
-table = 'budget_item'
-db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
-db[table].code.label = T('Code')
-db[table].code.comment = SPAN("*", _class="req")
-db[table].description.requires = IS_NOT_EMPTY()
-db[table].description.label = T('Description')
-db[table].description.comment = SPAN("*", _class="req")
-db[table].unit_cost.label = T('Unit Cost')
-db[table].monthly_cost.label = T('Monthly Cost')
-db[table].minute_cost.label = T('Cost per Minute')
-db[table].megabyte_cost.label = T('Cost per Megabyte')
-db[table].comments.label = T('Comments')
+table = db.budget_item
+table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+table.code.label = T('Code')
+table.code.comment = SPAN("*", _class="req")
+table.description.requires = IS_NOT_EMPTY()
+table.description.label = T('Description')
+table.description.comment = SPAN("*", _class="req")
+table.unit_cost.label = T('Unit Cost')
+table.monthly_cost.label = T('Monthly Cost')
+table.minute_cost.label = T('Cost per Minute')
+table.megabyte_cost.label = T('Cost per Megabyte')
+table.comments.label = T('Comments')
 
-table = 'budget_kit'
-db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
-db[table].code.label = T('Code')
-db[table].code.comment = SPAN("*", _class="req")
-db[table].description.label = T('Description')
-db[table].total_unit_cost.label = T('Total Unit Cost')
-db[table].total_monthly_cost.label = T('Total Monthly Cost')
-db[table].total_minute_cost.label = T('Total Cost per Minute')
-db[table].total_megabyte_cost.label = T('Total Cost per Megabyte')
-db[table].comments.label = T('Comments')
+table = db.budget_kit
+table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+table.code.label = T('Code')
+table.code.comment = SPAN("*", _class="req")
+table.description.label = T('Description')
+table.total_unit_cost.label = T('Total Unit Cost')
+table.total_monthly_cost.label = T('Total Monthly Cost')
+table.total_minute_cost.label = T('Total Cost per Minute')
+table.total_megabyte_cost.label = T('Total Cost per Megabyte')
+table.comments.label = T('Comments')
 
-table = 'budget_kit_item'
-db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
-db[table].kit_id.label = T('Kit')
-db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select().first().code
-db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
-db[table].item_id.label = T('Item')
-db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select().first().description
-db[table].quantity.requires = IS_NOT_EMPTY()
-db[table].quantity.label = T('Quantity')
-db[table].quantity.comment = SPAN("*", _class="req")
+table = db.budget_kit_item
+table.kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
+table.kit_id.label = T('Kit')
+table.kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select().first().code
+table.item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
+table.item_id.label = T('Item')
+table.item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select().first().description
+table.quantity.requires = IS_NOT_EMPTY()
+table.quantity.label = T('Quantity')
+table.quantity.comment = SPAN("*", _class="req")
 
-table = 'budget_bundle'
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
-db[table].description.label = T('Description')
-db[table].total_unit_cost.label = T('One time cost')
-db[table].total_monthly_cost.label = T('Recurring cost')
-db[table].comments.label = T('Comments')
+table = db.budget_bundle
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
+table.description.label = T('Description')
+table.total_unit_cost.label = T('One time cost')
+table.total_monthly_cost.label = T('Recurring cost')
+table.comments.label = T('Comments')
 
-table = 'budget_bundle_kit'
-db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
-db[table].bundle_id.label = T('Bundle')
-db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().description
-db[table].kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
-db[table].kit_id.label = T('Kit')
-db[table].kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select().first().code
-db[table].quantity.requires = IS_NOT_EMPTY()
-db[table].quantity.label = T('Quantity')
-db[table].quantity.comment = SPAN("*", _class="req")
-db[table].minutes.requires = IS_NOT_EMPTY()
-db[table].minutes.label = T('Minutes per Month')
-db[table].minutes.comment = SPAN("*", _class="req")
-db[table].megabytes.requires = IS_NOT_EMPTY()
-db[table].megabytes.label = T('Megabytes per Month')
-db[table].megabytes.comment = SPAN("*", _class="req")
+table = db.budget_bundle_kit
+table.bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
+table.bundle_id.label = T('Bundle')
+table.bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().description
+table.kit_id.requires = IS_ONE_OF(db, 'budget_kit.id', '%(code)s')
+table.kit_id.label = T('Kit')
+table.kit_id.represent = lambda kit_id: db(db.budget_kit.id==kit_id).select().first().code
+table.quantity.requires = IS_NOT_EMPTY()
+table.quantity.label = T('Quantity')
+table.quantity.comment = SPAN("*", _class="req")
+table.minutes.requires = IS_NOT_EMPTY()
+table.minutes.label = T('Minutes per Month')
+table.minutes.comment = SPAN("*", _class="req")
+table.megabytes.requires = IS_NOT_EMPTY()
+table.megabytes.label = T('Megabytes per Month')
+table.megabytes.comment = SPAN("*", _class="req")
 
-table = 'budget_bundle_item'
-db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
-db[table].bundle_id.label = T('Bundle')
-db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().description
-db[table].item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
-db[table].item_id.label = T('Item')
-db[table].item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select().first().description
-db[table].quantity.requires = IS_NOT_EMPTY()
-db[table].quantity.label = T('Quantity')
-db[table].quantity.comment = SPAN("*", _class="req")
-db[table].minutes.requires = IS_NOT_EMPTY()
-db[table].minutes.label = T('Minutes per Month')
-db[table].minutes.comment = SPAN("*", _class="req")
-db[table].megabytes.requires = IS_NOT_EMPTY()
-db[table].megabytes.label = T('Megabytes per Month')
-db[table].megabytes.comment = SPAN("*", _class="req")
+table = db.budget_bundle_item
+table.bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(description)s')
+table.bundle_id.label = T('Bundle')
+table.bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().description
+table.item_id.requires = IS_ONE_OF(db, 'budget_item.id', '%(description)s')
+table.item_id.label = T('Item')
+table.item_id.represent = lambda item_id: db(db.budget_item.id==item_id).select().first().description
+table.quantity.requires = IS_NOT_EMPTY()
+table.quantity.label = T('Quantity')
+table.quantity.comment = SPAN("*", _class="req")
+table.minutes.requires = IS_NOT_EMPTY()
+table.minutes.label = T('Minutes per Month')
+table.minutes.comment = SPAN("*", _class="req")
+table.megabytes.requires = IS_NOT_EMPTY()
+table.megabytes.label = T('Megabytes per Month')
+table.megabytes.comment = SPAN("*", _class="req")
 
-table = 'budget_staff'
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
-db[table].grade.requires = IS_NOT_EMPTY()
-db[table].grade.label = T('Grade')
-db[table].grade.comment = SPAN("*", _class="req")
-db[table].salary.requires = IS_NOT_EMPTY()
-db[table].salary.label = T('Monthly Salary')
-db[table].salary.comment = SPAN("*", _class="req")
-db[table].travel.label = T('Travel Cost')
-db[table].comments.label = T('Comments')
+table = db.budget_staff
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
+table.grade.requires = IS_NOT_EMPTY()
+table.grade.label = T('Grade')
+table.grade.comment = SPAN("*", _class="req")
+table.salary.requires = IS_NOT_EMPTY()
+table.salary.label = T('Monthly Salary')
+table.salary.comment = SPAN("*", _class="req")
+table.travel.label = T('Travel Cost')
+table.comments.label = T('Comments')
 
-table = 'budget_location'
-db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
-db[table].code.label = T('Code')
-db[table].code.comment = SPAN("*", _class="req")
-db[table].description.label = T('Description')
-db[table].subsistence.label = T('Subsistence Cost')
+table = db.budget_location
+table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+table.code.label = T('Code')
+table.code.comment = SPAN("*", _class="req")
+table.description.label = T('Description')
+table.subsistence.label = T('Subsistence Cost')
 # UN terminology
-#db[table].subsistence.label = "DSA"
-db[table].hazard_pay.label = T('Hazard Pay')
-db[table].comments.label = T('Comments')
+#table.subsistence.label = "DSA"
+table.hazard_pay.label = T('Hazard Pay')
+table.comments.label = T('Comments')
 
-table = 'budget_project'
-db[table].code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
-db[table].code.label = T('Code')
-db[table].code.comment = SPAN("*", _class="req")
-db[table].title.label = T('Title')
-db[table].comments.label = T('Comments')
+table = db.budget_project
+table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
+table.code.label = T('Code')
+table.code.comment = SPAN("*", _class="req")
+table.title.label = T('Title')
+table.comments.label = T('Comments')
 
-table = 'budget_budget'
-db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-db[table].name.label = T('Name')
-db[table].name.comment = SPAN("*", _class="req")
-db[table].description.label = T('Description')
-db[table].total_onetime_costs.label = T('Total One-time Costs')
-db[table].total_recurring_costs.label = T('Total Recurring Costs')
-db[table].comments.label = T('Comments')
+table = db.budget_budget
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
+table.description.label = T('Description')
+table.total_onetime_costs.label = T('Total One-time Costs')
+table.total_recurring_costs.label = T('Total Recurring Costs')
+table.comments.label = T('Comments')
 
-table = 'budget_budget_bundle'
-db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
-db[table].budget_id.label = T('Budget')
-db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select().first().name
-db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
-db[table].project_id.label = T('Project')
-db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select().first().code
-db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
-db[table].location_id.label = T('Location')
-db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select().first().code
-db[table].bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(name)s')
-db[table].bundle_id.label = T('Bundle')
-db[table].bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().name
-db[table].quantity.requires = IS_NOT_EMPTY()
-db[table].quantity.label = T('Quantity')
-db[table].quantity.comment = SPAN("*", _class="req")
-db[table].months.requires = IS_NOT_EMPTY()
-db[table].months.label = T('Months')
-db[table].months.comment = SPAN("*", _class="req")
+table = db.budget_budget_bundle
+table.budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
+table.budget_id.label = T('Budget')
+table.budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select().first().name
+table.project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
+table.project_id.label = T('Project')
+table.project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select().first().code
+table.location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
+table.location_id.label = T('Location')
+table.location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select().first().code
+table.bundle_id.requires = IS_ONE_OF(db, 'budget_bundle.id', '%(name)s')
+table.bundle_id.label = T('Bundle')
+table.bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id==bundle_id).select().first().name
+table.quantity.requires = IS_NOT_EMPTY()
+table.quantity.label = T('Quantity')
+table.quantity.comment = SPAN("*", _class="req")
+table.months.requires = IS_NOT_EMPTY()
+table.months.label = T('Months')
+table.months.comment = SPAN("*", _class="req")
 
-table = 'budget_budget_staff'
-db[table].budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
-db[table].budget_id.label = T('Budget')
-db[table].budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select().first().name
-db[table].project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
-db[table].project_id.label = T('Project')
-db[table].project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select().first().code
-db[table].location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
-db[table].location_id.label = T('Location')
-db[table].location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select().first().code
-db[table].staff_id.requires = IS_ONE_OF(db, 'budget_staff.id', '%(name)s')
-db[table].staff_id.label = T('Staff')
-db[table].staff_id.represent = lambda bundle_id: db(db.budget_staff.id==staff_id).select().first().description
-db[table].quantity.requires = IS_NOT_EMPTY()
-db[table].quantity.label = T('Quantity')
-db[table].quantity.comment = SPAN("*", _class="req")
-db[table].months.requires = IS_NOT_EMPTY()
-db[table].months.label = T('Months')
-db[table].months.comment = SPAN("*", _class="req")
+table = db.budget_budget_staff
+table.budget_id.requires = IS_ONE_OF(db, 'budget_budget.id', '%(name)s')
+table.budget_id.label = T('Budget')
+table.budget_id.represent = lambda budget_id: db(db.budget_budget.id==budget_id).select().first().name
+table.project_id.requires = IS_ONE_OF(db,'budget_project.id', '%(code)s')
+table.project_id.label = T('Project')
+table.project_id.represent = lambda project_id: db(db.budget_project.id==project_id).select().first().code
+table.location_id.requires = IS_ONE_OF(db, 'budget_location.id', '%(code)s')
+table.location_id.label = T('Location')
+table.location_id.represent = lambda location_id: db(db.budget_location.id==location_id).select().first().code
+table.staff_id.requires = IS_ONE_OF(db, 'budget_staff.id', '%(name)s')
+table.staff_id.label = T('Staff')
+table.staff_id.represent = lambda bundle_id: db(db.budget_staff.id==staff_id).select().first().description
+table.quantity.requires = IS_NOT_EMPTY()
+table.quantity.label = T('Quantity')
+table.quantity.comment = SPAN("*", _class="req")
+table.months.requires = IS_NOT_EMPTY()
+table.months.label = T('Months')
+table.months.comment = SPAN("*", _class="req")
 
 # S3 framework functions
 def index():
@@ -196,20 +196,21 @@ def parameters():
 def parameter():
     "RESTlike CRUD controller"
     resource = 'parameter'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model Options
-    db[table].shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
-    db[table].shipping.label = "Shipping cost"
-    db[table].logistics.requires = IS_FLOAT_IN_RANGE(0, 100)
-    db[table].logistics.label = "Procurement & Logistics cost"
-    db[table].admin.requires = IS_FLOAT_IN_RANGE(0, 100)
-    db[table].admin.label = "Administrative support cost"
-    db[table].indirect.requires = IS_FLOAT_IN_RANGE(0, 100)
-    db[table].indirect.label = "Indirect support cost HQ"
+    table.shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
+    table.shipping.label = "Shipping cost"
+    table.logistics.requires = IS_FLOAT_IN_RANGE(0, 100)
+    table.logistics.label = "Procurement & Logistics cost"
+    table.admin.requires = IS_FLOAT_IN_RANGE(0, 100)
+    table.admin.label = "Administrative support cost"
+    table.indirect.requires = IS_FLOAT_IN_RANGE(0, 100)
+    table.indirect.label = "Indirect support cost HQ"
 
     # CRUD Strings
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_update = T('Edit Parameters'),
         title_display = T('Parameters'))
 
@@ -401,10 +402,13 @@ def kit_item():
         else:
             session.error = BADFORMAT
             redirect(URL(r=request))
-    if len(request.args) == 0:
-        session.error = T("Need to specify a kit!")
+    
+    try:
+        kit = int(request.args(0))
+    except TypeError, ValueError:
+        session.error = T("Need to specify a Kit!")
         redirect(URL(r=request, f='kit'))
-    kit = request.args(0)
+    
     table = db.budget_kit_item
     authorised = shn_has_permission('update', table)
 
@@ -503,10 +507,13 @@ def kit_dupes(form):
 
 def kit_update_items():
     "Update a Kit's items (Quantity & Delete)"
-    if len(request.args) == 0:
-        session.error = T("Need to specify a kit!")
+    
+    try:
+        kit = int(request.args(0))
+    except TypeError, ValueError:
+        session.error = T("Need to specify a Kit!")
         redirect(URL(r=request, f='kit'))
-    kit = request.args(0)
+    
     table = db.budget_kit_item
     authorised = shn_has_permission('update', table)
     if authorised:
@@ -801,10 +808,13 @@ def bundle():
 
 def bundle_kit_item():
     "Many to Many CRUD Controller"
-    if len(request.args) == 0:
+    
+    try:
+        bundle = int(request.args(0))
+    except TypeError, ValueError:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f='bundle'))
-    bundle = request.args(0)
+    
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
 
@@ -1000,10 +1010,13 @@ def bundle_dupes(form):
 
 def bundle_update_items():
     "Update a Bundle's items (Quantity, Minutes, Megabytes & Delete)"
-    if len(request.args) == 0:
+    
+    try:
+        bundle = int(request.args(0))
+    except TypeError, ValueError:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f='bundle'))
-    bundle = request.args(0)
+    
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:
@@ -1169,10 +1182,13 @@ def budget():
 
 def budget_staff_bundle():
     "Many to Many CRUD Controller"
-    if len(request.args) == 0:
+    
+    try:
+        budget = int(request.args(0))
+    except TypeError, ValueError:
         session.error = T("Need to specify a Budget!")
         redirect(URL(r=request, f='budget'))
-    budget = request.args(0)
+    
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
 
@@ -1385,10 +1401,13 @@ def budget_totals(budget):
 
 def budget_update_items():
     "Update a Budget's items (Quantity, Months & Delete)"
-    if len(request.args) == 0:
-        session.error = T("Need to specify a budget!")
+    
+    try:
+        budget = int(request.args(0))
+    except TypeError, ValueError:
+        session.error = T("Need to specify a Budget!")
         redirect(URL(r=request, f='budget'))
-    budget = request.args(0)
+    
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:

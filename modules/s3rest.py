@@ -3,7 +3,7 @@
 """
     S3REST SahanaPy REST Controller
 
-    @version: 1.1.1
+    @version: 1.6
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation
@@ -33,11 +33,9 @@
 """
 
 __name__ = "S3REST"
-
-__all__ = ['S3RESTController', 'S3RESTRequest']
+__all__ = ["S3RESTController", "S3RESTRequest"]
 
 import sys, uuid
-
 from gluon.storage import Storage
 from gluon.html import URL
 from gluon.http import HTTP, redirect
@@ -45,17 +43,20 @@ from gluon.http import HTTP, redirect
 from xml.etree.cElementTree import ElementTree
 from lxml import etree
 
-# *****************************************************************************
+
 class S3RESTController(object):
 
     # Error messages
-    INVALIDREQUEST = 'Invalid request.'
-    UNAUTHORISED = 'Not authorised.'
-    BADFORMAT = 'Unsupported data format.'
-    BADMETHOD = 'Unsupported method.'
-    BADRECORD = 'Record not found.'
+    INVALIDREQUEST = "Invalid request."
+    UNAUTHORISED = "Not authorised."
+    BADFORMAT = "Unsupported data format."
+    BADMETHOD = "Unsupported method."
+    BADRECORD = "Record not found."
+
 
     def __init__(self, rc=None, auth=None, **attr):
+
+        """ Constructor """
 
         assert rc is not None, "Undefined resource controller"
         self.rc = rc
@@ -66,35 +67,49 @@ class S3RESTController(object):
         if attr is None:
             attr = {}
 
-        self.xml_import_formats = attr.get('xml_import_formats', ['xml'])
-        self.xml_export_formats = attr.get('xml_export_formats', dict(xml="application/xml"))
+        self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
+        self.xml_export_formats = attr.get("xml_export_formats",
+                                           dict(xml="application/xml"))
 
-        self.json_import_formats = attr.get('json_import_formats', ['json'])
-        self.json_export_formats = attr.get('json_export_formats', dict(json="text/x-json"))
+        self.json_import_formats = attr.get("json_import_formats", ["json"])
+        self.json_export_formats = attr.get("json_export_formats",
+                                            dict(json="text/x-json"))
 
-        self.debug = attr.get('debug', False)
+        self.debug = attr.get("debug", False)
 
         self.__handler = Storage()
 
-    #--------------------------------------------------------------------------
+
+    def __dbg(self, msg):
+
+        """ Output debug messages """
+
+        if self.debug:
+            print >> sys.stderr, "S3RESTController: %s" % msg
+
+
     def set_handler(self, method, handler):
+
+        """ Set a method handler """
 
         self.__handler[method] = handler
 
 
-    #--------------------------------------------------------------------------
     def get_handler(self, method):
+
+        """ Get a method handler """
 
         return self.__handler.get(method, None)
 
 
-    #--------------------------------------------------------------------------
     def __has_permission(self, session, name, table_name, record_id = 0):
+
+        """ Check permissions of the current user for a table """
 
         if session.s3.security_policy == 1:
             # Simple policy
             # Anonymous users can Read.
-            if name == 'read':
+            if name == "read":
                 authorised = True
             else:
                 # Authentication required for Create/Update/Delete.
@@ -107,28 +122,33 @@ class S3RESTController(object):
                     authorised = True
                 else:
                     # Require records in auth_permission to specify access
-                    authorised = self.auth.has_permission(name, table_name, record_id)
+                    authorised = self.auth.has_permission(name, table_name,
+                                                          record_id)
             else:
                 # No access for anonymous
                 authorised = False
 
         return authorised
 
-    #--------------------------------------------------------------------------
+
     def __unauthorised(self, jr, session):
+
+        """ Action upon unauthorized access """
 
         if jr.representation == "html":
             session.error = self.UNAUTHORISED
-            login = URL(r=jr.request, c='default', f='user', args='login', vars={'_next': jr.here()})
+            login = URL(r=jr.request, c="default", f="user", args="login",
+                        vars={"_next": jr.here()})
             redirect(login)
         else:
             raise HTTP(401, body = self.UNAUTHORISED)
 
-    #--------------------------------------------------------------------------
+
     def __call__(self, session, request, response, module, resource, **attr):
 
-        if self.debug:
-            print >> sys.stderr, "\nS3RESTController: Call\n"
+        """ REST interface """
+
+        self.__dbg("\nS3RESTController: Call\n")
 
         jr = S3RESTRequest(self.rc, module, resource, request,
                            session=session, debug=self.debug)
@@ -141,26 +161,26 @@ class S3RESTController(object):
             else:
                 raise HTTP(400, body=self.INVALIDREQUEST)
 
-        if self.debug:
-            print >> sys.stderr, "S3RESTController: processing %s" % jr.here()
+        self.__dbg("S3RESTController: processing %s" % jr.here())
 
         # Initialise
         output = {}
         method = handler = next = None
 
         # Check read permission on primary table
-        if not self.__has_permission(session, 'read', jr.table):
+        if not self.__has_permission(session, "read", jr.table):
             self.__unauthorised(jr, session)
 
         # Record ID is required in joined-table operations and read action:
         if not jr.id and (jr.component or jr.method=="read") and \
            not jr.method=="options" and not "select" in jr.request.vars:
-
             # Check for search_simple
-            if jr.representation == 'html':
-                search_simple = self.rc.model.get_method(jr.prefix, jr.name, method="search_simple")
+            if jr.representation == "html":
+                search_simple = self.rc.model.get_method(jr.prefix, jr.name,
+                                                         method="search_simple")
                 if search_simple:
-                    redirect(URL(r=request, f=jr.name, args='search_simple', vars={"_next": jr.same()}))
+                    redirect(URL(r=request, f=jr.name, args="search_simple",
+                                 vars={"_next": jr.same()}))
                 else:
                     session.error = self.BADRECORD
                     redirect(URL(r=jr.request, c=jr.prefix, f=jr.name))
@@ -168,27 +188,25 @@ class S3RESTController(object):
                 raise HTTP(404, body=self.BADRECORD)
 
         # Pre-process
-        if 's3' in response and response.s3.prep is not None:
+        if "s3" in response and response.s3.prep is not None:
             prep = response.s3.prep(jr)
             if prep and isinstance(prep, dict):
-                bypass = prep.get('bypass', False)
-                output = prep.get('output', None)
+                bypass = prep.get("bypass", False)
+                output = prep.get("output", None)
                 if bypass and output is not None:
-                    if self.debug:
-                        print >> sys.stderr, "S3RESTController: got bypass directive - aborting"
+                    self.__dbg("S3RESTController: got bypass directive - aborting")
                     if isinstance(output, dict):
                         output.update(jr=jr)
                     return output
-                success = prep.get('success', True)
+                success = prep.get("success", True)
                 if not success:
-                    if jr.representation=='html' and output:
+                    if jr.representation=="html" and output:
                         if isinstance(output, dict):
                             output.update(jr=jr)
-                        if self.debug:
-                            print >> sys.stderr, "S3RESTController: preprocess failure - aborting"
+                        self.__dbg("S3RESTController: preprocess failure - aborting")
                         return output
-                    status = prep.get('status', 400)
-                    message = prep.get('message', self.INVALIDREQUEST)
+                    status = prep.get("status", 400)
+                    message = prep.get("message", self.INVALIDREQUEST)
                     raise HTTP(status, message)
                 else:
                     pass
@@ -199,7 +217,7 @@ class S3RESTController(object):
 
         # Set default view
         if jr.representation <> "html":
-            response.view = 'plain.html'
+            response.view = "plain.html"
 
         # Analyse request
         if jr.method and jr.custom_action:
@@ -207,281 +225,256 @@ class S3RESTController(object):
         else:
             # Joined Table Operation
             if jr.component:
-
                 # HTTP Multi-Record Operation
                 if jr.method==None and jr.multiple and not jr.component_id:
-
                     # HTTP List/List-add
-                    if jr.http=='GET':
-                        authorised = self.__has_permission(session, 'read', jr.component.table)
+                    if jr.http=="GET":
+                        authorised = self.__has_permission(session, "read",
+                                                           jr.component.table)
                         if authorised:
-                            method = 'list'
+                            method = "list"
                         else:
                             self.__unauthorised(jr, session)
-
                     # HTTP Create
-                    elif jr.http=='PUT' or jr.http=='POST':
+                    elif jr.http=="PUT" or jr.http=="POST":
                         if jr.representation in self.json_import_formats:
-                            method = 'import_json'
+                            method = "import_json"
                         elif jr.representation in self.xml_import_formats:
-                            method = 'import_xml'
+                            method = "import_xml"
                         elif jr.http == "POST":
-                            authorised = self.__has_permission(session, 'read', jr.component.table)
+                            authorised = self.__has_permission(session, "read",
+                                                               jr.component.table)
                             if authorised:
-                                method = 'list'
+                                method = "list"
                             else:
                                 self.__unauthorised(jr, session)
                         else:
                             raise HTTP(501, body=self.BADFORMAT)
-
                     # HTTP Delete
-                    elif jr.http=='DELETE':
+                    elif jr.http=="DELETE":
                         # Not implemented
                         raise HTTP(501)
-
                     # Unsupported HTTP method
                     else:
                         # Unsupported HTTP method for this context:
                         # HEAD, OPTIONS, TRACE, CONNECT
                         # Not implemented
                         raise HTTP(501)
-
                 # HTTP Single-Record Operation
                 elif jr.method==None and (jr.component_id or not jr.multiple):
-
                     # HTTP Read/Update
-                    if jr.http=='GET':
-                        authorised = self.__has_permission(session, 'read', jr.component.table)
+                    if jr.http=="GET":
+                        authorised = self.__has_permission(session, "read",
+                                                           jr.component.table)
                         if authorised:
-                            method = 'read'
+                            method = "read"
                         else:
                             self.__unauthorised(jr, session)
-
                     # HTTP Update
-                    elif jr.http=='PUT' or jr.http == "POST":
+                    elif jr.http=="PUT" or jr.http == "POST":
                         if jr.representation in self.json_import_formats:
-                            method = 'import_json'
+                            method = "import_json"
                         elif jr.representation in self.xml_import_formats:
-                            method = 'import_xml'
+                            method = "import_xml"
                         elif jr.http == "POST":
-                            authorised = self.__has_permission(session, 'read', jr.component.table)
+                            authorised = self.__has_permission(session, "read",
+                                                               jr.component.table)
                             if authorised:
-                                method = 'read'
+                                method = "read"
                             else:
                                 self.__unauthorised(jr, session)
                         else:
                             raise HTTP(501, body=self.BADFORMAT)
-
                     # HTTP Delete
-                    elif jr.http=='DELETE':
+                    elif jr.http=="DELETE":
                         # Not implemented
                         raise HTTP(501)
-
                     # Unsupported HTTP method
                     else:
                         # Unsupported HTTP method for this context:
                         # POST, HEAD, OPTIONS, TRACE, CONNECT
                         # Not implemented
                         raise HTTP(501)
-
                 # Read (joined table)
                 elif jr.method=="read" or jr.method=="display":
-                    authorised = self.__has_permission(session, 'read', jr.component.table)
+                    authorised = self.__has_permission(session, "read",
+                                                       jr.component.table)
                     if authorised:
                         if jr.multiple and not jr.component_id:
                             # This is a list action
-                            method = 'list'
+                            method = "list"
                         else:
                             # This is a read action
-                            method = 'read'
+                            method = "read"
                     else:
                         self.__unauthorised(jr, session)
-
                 # Create (joined table)
                 elif jr.method=="create":
-                    authorised = self.__has_permission(session, jr.method, jr.component.table)
+                    authorised = self.__has_permission(session, jr.method,
+                                                       jr.component.table)
                     if authorised:
-                        method = 'create'
+                        method = "create"
                     else:
                         self.__unauthorised(jr, session)
-
                 # Update (joined table)
                 elif jr.method=="update":
-                    authorised = self.__has_permission(session, jr.method, jr.component.table)
+                    authorised = self.__has_permission(session, jr.method,
+                                                       jr.component.table)
                     if authorised:
-                        method = 'update'
+                        method = "update"
                     else:
                         self.__unauthorised(jr, session)
-
                 # Delete (joined table)
                 elif jr.method=="delete":
-                    authorised = self.__has_permission(session, jr.method, jr.component.table)
+                    authorised = self.__has_permission(session, jr.method,
+                                                       jr.component.table)
                     if authorised:
-                        method = 'delete'
+                        method = "delete"
                         next = jr.there()
                     else:
                         self.__unauthorised(jr, session)
-
                 # Options (joined table)
                 elif jr.method=="options":
-                    method = 'options'
-
+                    method = "options"
                 # Unsupported Method
                 else:
                     raise HTTP(501, body=self.BADMETHOD)
-
             # Single Table Operation
             else:
-
                 # Clear Session
                 if jr.method=="clear":
-
                     # Clear session
                     self.rc.clear_session(session, jr.prefix, jr.name)
-
-                    if '_next' in request.vars:
+                    if "_next" in request.vars:
                         request_vars = dict(_next=request.vars._next)
                     else:
                         request_vars = {}
-
                     # Check for search_simple
-                    if jr.representation == 'html':
-                        search_simple = self.rc.model.get_method(jr.prefix, jr.name, method="search_simple")
+                    if jr.representation == "html":
+                        search_simple = \
+                            self.rc.model.get_method(jr.prefix, jr.name,
+                                                     method="search_simple")
                         if search_simple:
-                            next = URL(r=jr.request, f=jr.name, args='search_simple', vars=request_vars)
+                            next = URL(r=jr.request, f=jr.name,
+                                       args="search_simple", vars=request_vars)
                         else:
                             next = URL(r=jr.request, f=jr.name)
                     else:
                         next = URL(r=jr.request, f=jr.name)
-
                 # HTTP Multi-Record Operation
                 elif not jr.method and not jr.id:
-
                     # HTTP List or List-Add
-                    if jr.http == 'GET':
-                        method = 'list'
-
+                    if jr.http == "GET":
+                        method = "list"
                     # HTTP Create
-                    elif jr.http == 'PUT' or jr.http == "POST":
+                    elif jr.http == "PUT" or jr.http == "POST":
                         # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
                         if jr.representation in self.json_import_formats:
-                            method = 'import_json'
+                            method = "import_json"
                         elif jr.representation in self.xml_import_formats:
-                            method = 'import_xml'
+                            method = "import_xml"
                         elif jr.http == "POST":
-                            method = 'list'
+                            method = "list"
                         else:
                             raise HTTP(501, body=self.BADFORMAT)
-
                     # Unsupported HTTP method
                     else:
                         # Unsupported HTTP method for this context:
                         # DELETE, HEAD, OPTIONS, TRACE, CONNECT
                         # Not implemented
                         raise HTTP(501)
-
                 # HTTP Single Record Operation
                 elif jr.id and not jr.method:
-
                     # HTTP Read (single record)
-                    if jr.http == 'GET':
-                        method = 'read'
-
+                    if jr.http == "GET":
+                        method = "read"
                     # HTTP Create/Update (single record)
-                    elif jr.http == 'PUT' or jr.http == "POST":
+                    elif jr.http == "PUT" or jr.http == "POST":
                         # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
                         if jr.representation in self.json_import_formats:
-                            method = 'import_json'
+                            method = "import_json"
                         elif jr.representation in self.xml_import_formats:
-                            method = 'import_xml'
+                            method = "import_xml"
                         elif jr.http == "POST":
-                            method = 'read'
+                            method = "read"
                         else:
                             raise HTTP(501, body=self.BADFORMAT)
-
                     # HTTP Delete (single record)
-                    elif jr.http == 'DELETE':
+                    elif jr.http == "DELETE":
                         # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7
                         if db(db[jr.table].id == jr.id).select():
-                            authorised = self.__has_permission(session, 'delete', jr.table, jr.id)
+                            authorised = self.__has_permission(session, "delete",
+                                                               jr.table, jr.id)
                             if authorised:
-                                method = 'delete'
+                                method = "delete"
                             else:
                                 # Unauthorised
                                 raise HTTP(401)
                         else:
                             # Not found
                             raise HTTP(404)
-
                     # Unsupported HTTP method
                     else:
                         # Unsupported HTTP method for this context:
                         # POST, HEAD, OPTIONS, TRACE, CONNECT
                         # Not implemented
                         raise HTTP(501)
-
                 # Read (single table)
                 elif jr.method == "read" or jr.method == "display":
                     # do not redirect here: redirection takes up to 450ms!
-                    method = 'read'
+                    method = "read"
                     #request.args.remove(jr.method)
                     #next = URL(r=request, args=request.args, vars=request.vars)
-
                 # Create (single table)
                 elif jr.method == "create":
-                    authorised = self.__has_permission(session, jr.method, jr.table)
+                    authorised = self.__has_permission(session, jr.method,
+                                                       jr.table)
                     if authorised:
-                        method = 'create'
+                        method = "create"
                     else:
                         self.__unauthorised(jr, session)
-
                 # Update (single table)
                 elif jr.method == "update":
-                    authorised = self.__has_permission(session, jr.method, jr.table, jr.id)
+                    authorised = self.__has_permission(session, jr.method,
+                                                       jr.table, jr.id)
                     if authorised:
-                        method = 'update'
+                        method = "update"
                     else:
                         self.__unauthorised(jr, session)
-
                 # Delete (single table)
                 elif jr.method == "delete":
-                    authorised = self.__has_permission(session, jr.method, jr.table, jr.id)
+                    authorised = self.__has_permission(session, jr.method,
+                                                       jr.table, jr.id)
                     if authorised:
-                        method = 'delete'
+                        method = "delete"
                         next = jr.there()
                     else:
                         self.__unauthorised(jr, session)
-
                 # Search (single table)
                 elif jr.method == "search":
-                    method = 'search'
-
+                    method = "search"
                 # Options (single table)
                 elif jr.method=="options":
-                    method = 'options'
-
+                    method = "options"
                 # Unsupported Method
                 else:
                     raise HTTP(501, body=self.BADMETHOD)
-
             # Get handler
             if method is not None:
-                if self.debug:
-                    print >> sys.stderr, "S3RESTController: method=%s" % method
+                self.__dbg("S3RESTController: method=%s" % method)
                 handler = self.get_handler(method)
 
         if handler is not None:
-            if self.debug:
-                print >> sys.stderr, "S3RESTController: method handler found - executing request"
+            self.__dbg("S3RESTController: method handler found - executing request")
             output = handler(jr, **attr)
-        elif self.debug:
-            print >> sys.stderr, "S3RESTController: no method handler - finalizing request"
+        else:
+            self.__dbg("S3RESTController: no method handler - finalizing request")
 
         # Post-process
-        if 's3' in response and response.s3.postp is not None:
+        if "s3" in response and response.s3.postp is not None:
             output = response.s3.postp(jr, output)
 
-        # Add XRequest to output dict (if any)
+        # Add S3RESTRequest to output dict (if any)
         if output is not None and isinstance(output, dict):
             output.update(jr=jr)
 
@@ -491,15 +484,17 @@ class S3RESTController(object):
 
         return output
 
-# *****************************************************************************
+
 class S3RESTRequest(object):
 
     """ S3 REST Request """
 
     DEFAULT_REPRESENTATION = "html"
 
-    #--------------------------------------------------------------------------
+
     def __init__(self, rc, prefix, name, request, session=None, debug=False):
+
+        """ Constructor """
 
         assert rc is not None, "Resource controller must not be None."
         self.rc = rc
@@ -513,12 +508,12 @@ class S3RESTRequest(object):
         else:
             self.session = Storage()
 
+        self.debug = debug
         self.error = None
         self.invalid = False
         self.badmethod = False
         self.badrecord = False
         self.badrequest = False
-        self.debug = debug
 
         self.representation = request.extension
         self.http = request.env.request_method
@@ -526,9 +521,7 @@ class S3RESTRequest(object):
 
         self.tablename = "%s_%s" % (self.prefix, self.name)
         self.table = self.rc.db[self.tablename]
-
         self.method = None
-
         self.id = None
         self.record = None
 
@@ -540,67 +533,74 @@ class S3RESTRequest(object):
 
         # Parse request
         if not self.__parse():
-            if self.debug:
-                print >> sys.stderr, \
-                    "S3RESTRequest: Parsing of request failed."
+            self.__dbg("S3RESTRequest: Parsing of request failed.")
             return None
 
         # Check for component
         if self.component_name:
             self.component, self.pkey, self.fkey = \
-                self.rc.model.get_component(self.prefix, self.name, self.component_name)
-
+                self.rc.model.get_component(self.prefix, self.name,
+                                            self.component_name)
             if not self.component:
-                if self.debug:
-                    print >> sys.stderr, \
-                        "S3RESTRequest: %s not a component of %s" % \
-                        self.component_name, self.tablename
+                self.__dbg("S3RESTRequest: %s not a component of %s" %
+                           self.component_name, self.tablename)
                 self.invalid = self.badrequest = True
                 return None
-
             if "multiple" in self.component.attr:
                 self.multiple = self.component.attr.multiple
 
         # Find primary record
         if not self.__record():
-            if self.debug:
-                print >> sys.stderr, \
-                    "S3RESTRequest: Primary record identification failed."
+            self.__dbg("S3RESTRequest: Primary record identification failed.")
             return None
 
         # Check for custom action
-        self.custom_action = self.rc.model.get_method(self.prefix, self.name,
-                                                 component_name=self.component_name,
-                                                 method=self.method)
+        self.custom_action = \
+            self.rc.model.get_method(self.prefix, self.name,
+                                     component_name=self.component_name,
+                                     method=self.method)
 
         # Append record ID to request as necessary
         if self.id:
-            if len(self.args)>0 or len(self.args)==0 and ('select' in self.request.vars):
+            if len(self.args)>0 or \
+               len(self.args)==0 and \
+               ("select" in self.request.vars):
                 if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
-                    if self.representation==self.DEFAULT_REPRESENTATION or self.extension:
+                    if self.representation==self.DEFAULT_REPRESENTATION or \
+                       self.extension:
                         self.request.args.insert(0, str(self.id))
                     else:
-                        self.request.args.insert(0, '%s.%s' % (self.id, self.representation))
+                        self.request.args.insert(0, "%s.%s" %
+                                                 (self.id, self.representation))
                 elif not self.component and not (str(self.id) in self.args):
                     self.args.append(self.id)
-                    if self.representation==self.DEFAULT_REPRESENTATION or self.extension:
+                    if self.representation==self.DEFAULT_REPRESENTATION or \
+                       self.extension:
                         self.request.args.append(self.id)
                     else:
-                        self.request.args.append('%s.%s' % (self.id, self.representation))
+                        self.request.args.append("%s.%s" %
+                                                 (self.id, self.representation))
 
-        if self.debug:
-            print >> sys.stderr, "S3RESTRequest: *** Init complete ***"
-            print >> sys.stderr, "S3RESTRequest: Resource=%s" % self.tablename
-            print >> sys.stderr, "S3RESTRequest: ID=%s" % self.id
-            print >> sys.stderr, "S3RESTRequest: Component=%s" % self.component_name
-            print >> sys.stderr, "S3RESTRequest: ComponentID=%s" % self.component_id
-            print >> sys.stderr, "S3RESTRequest: Method=%s" % self.method
-            print >> sys.stderr, "S3RESTRequest: Representation=%s" % self.representation
+        self.__dbg("S3RESTRequest: *** Init complete ***")
+        self.__dbg("S3RESTRequest: Resource=%s" % self.tablename)
+        self.__dbg("S3RESTRequest: ID=%s" % self.id)
+        self.__dbg("S3RESTRequest: Component=%s" % self.component_name)
+        self.__dbg("S3RESTRequest: ComponentID=%s" % self.component_id)
+        self.__dbg("S3RESTRequest: Method=%s" % self.method)
+        self.__dbg("S3RESTRequest: Representation=%s" % self.representation)
 
         return
 
-    #--------------------------------------------------------------------------
+
+    def __dbg(self, msg):
+
+        """ Output debug messages """
+
+        if self.debug:
+            print >> sys.stderr, "S3RESTRequest: %s" % msg
+
+
     def __parse(self):
 
         """ Parses a web2py request for the REST interface """
@@ -614,8 +614,8 @@ class S3RESTRequest(object):
             # Check for extensions, turn all arguments lowercase
             for i in xrange(0, len(self.request.args)):
                 arg = self.request.args[i]
-                if '.' in arg:
-                    arg, ext = arg.rsplit('.', 1)
+                if "." in arg:
+                    arg, ext = arg.rsplit(".", 1)
                     if ext and len(ext) > 0:
                         self.representation = str.lower(ext)
                         self.extension = True
@@ -670,7 +670,7 @@ class S3RESTRequest(object):
                         self.id = self.args[1]
 
         # Check format option
-        if 'format' in self.request.get_vars:
+        if "format" in self.request.get_vars:
             self.representation = str.lower(self.request.get_vars.format)
 
         # Representation fallback
@@ -680,7 +680,6 @@ class S3RESTRequest(object):
         return True
 
 
-    #--------------------------------------------------------------------------
     def __record(self):
 
         """
@@ -692,14 +691,12 @@ class S3RESTRequest(object):
         uid = self.request.vars.get("%s.uid" % self.name, None)
         if isinstance(uid, list):
             uid = uid[0]
-
         uids = [uid, None]
         if self.component_name:
             uid = self.request.vars.get("%s.uid" % self.component_name, None)
             if isinstance(uid, list):
                 uid = uid[0]
             uids[1] = uid
-
         if self.rc.xml.domain_mapping:
             uids = map(lambda uid: \
                        uid and self.rc.xml.import_uid(uid) or None, uids)
@@ -707,12 +704,12 @@ class S3RESTRequest(object):
         if self.id:
             # Primary record ID is specified
             query = (self.table.id==self.id)
-            if 'deleted' in self.table:
-                query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+            if "deleted" in self.table:
+                query = ((self.table.deleted==False) |
+                         (self.table.deleted==None)) & query
             records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
             if not records:
-                if self.debug:
-                    print >> sys.stderr, "Invalid resource record ID"
+                self.__dbg("Invalid resource record ID")
                 self.id = None
                 self.invalid = self.badrecord = True
                 return False
@@ -722,12 +719,12 @@ class S3RESTRequest(object):
         elif uids and uids[0] is not None and "uuid" in self.table:
             # Primary record UUID is specified
             query = (self.table.uuid==uids[0])
-            if 'deleted' in self.table:
-                query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+            if "deleted" in self.table:
+                query = ((self.table.deleted==False) |
+                         (self.table.deleted==None)) & query
             records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
             if not records:
-                if self.debug:
-                    print >> sys.stderr, "Invalid resource record UUID"
+                self.__dbg("Invalid resource record UUID")
                 self.id = None
                 self.invalid = self.badrecord = True
                 return False
@@ -742,17 +739,15 @@ class S3RESTRequest(object):
             if self.id:
                 # Must match if a primary record has been found
                 query = (self.table.id==self.id) & query
-            if 'deleted' in self.table:
+            if "deleted" in self.table:
                 query = ((self.table.deleted==False) |
                          (self.table.deleted==None)) & query
-            if 'deleted' in self.component.table:
+            if "deleted" in self.component.table:
                 query = ((self.component.table.deleted==False) |
                          (self.component.table.deleted==None)) & query
             records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
             if not records:
-                if self.debug:
-                    print >> sys.stderr, \
-                        "Invalid component record ID or component not matching primary record."
+                self.__dbg("Invalid component record ID or component not matching primary record.")
                 self.id = None
                 self.invalid = self.badrecord = True
                 return False
@@ -768,18 +763,16 @@ class S3RESTRequest(object):
             if self.id:
                 # Must match if a primary record has been found
                 query = (self.table.id==self.id) & query
-            if 'deleted' in self.table:
+            if "deleted" in self.table:
                 query = ((self.table.deleted==False) |
                          (self.table.deleted==None)) & query
-            if 'deleted' in self.component.table:
+            if "deleted" in self.component.table:
                 query = ((self.component.table.deleted==False) |
                          (self.component.table.deleted==None)) & query
             records = self.rc.db(query).select(
                         self.table.ALL, self.component.table.id, limitby=(0,1))
             if not records:
-                if self.debug:
-                    print >> sys.stderr, \
-                        "Invalid component record UUID or component not matching primary record."
+                self.__dbg("Invalid component record UUID or component not matching primary record.")
                 self.id = None
                 self.invalid = self.badrecord = True
                 return False
@@ -789,34 +782,33 @@ class S3RESTRequest(object):
                 self.component_id = records[0][self.component.tablename].id
 
         # Check for ?select=
-        if not self.id and 'select' in self.request.vars:
+        if not self.id and "select" in self.request.vars:
             if self.request.vars["select"] == "ALL":
                 return True
             id_label = str.strip(self.request.vars.id_label)
-            if 'pr_pe_label' in self.table:
+            if "pr_pe_label" in self.table:
                 query = (self.table.pr_pe_label==id_label)
-                if 'deleted' in self.table:
-                    query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+                if "deleted" in self.table:
+                    query = ((self.table.deleted==False) |
+                             (self.table.deleted==None)) & query
                 records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
                 if records:
                     self.record = records[0]
                     self.id = self.record.id
                 else:
-                    if self.debug:
-                        print >> sys.stderr, "No record with ID label %s" % id_label
+                    self.__dbg("No record with ID label %s" % id_label)
                     self.id = 0
                     self.invalid = self.badrecord = True
                     return False
 
         # Retrieve prior selected ID, if any
         if not self.id and len(self.request.args)>0:
-
             self.id = self.rc.get_session(self.session, self.prefix, self.name)
-
             if self.id:
                 query = (self.table.id==self.id)
-                if 'deleted' in self.table:
-                    query = ((self.table.deleted==False) | (self.table.deleted==None)) & query
+                if "deleted" in self.table:
+                    query = ((self.table.deleted==False) |
+                             (self.table.deleted==None)) & query
                 records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
                 if not records:
                     self.id = None
@@ -831,7 +823,6 @@ class S3RESTRequest(object):
         return True
 
 
-    #--------------------------------------------------------------------------
     def __next(self, id=None, method=None, representation=None):
 
         """ Returns a URL of the current resource """
@@ -843,7 +834,6 @@ class S3RESTRequest(object):
 
         if not representation:
             representation = self.representation
-
         if method is None:
             method = self.method
         elif method=="":
@@ -879,14 +869,14 @@ class S3RESTRequest(object):
 
         if not representation==self.DEFAULT_REPRESENTATION:
             if len(args)>0:
-                args[-1] = '%s.%s' % (args[-1], representation)
+                args[-1] = "%s.%s" % (args[-1], representation)
             else:
-                vars = {'format': representation}
+                vars = {"format": representation}
 
-        return(URL(r=self.request, c=self.request.controller, f=self.name, args=args, vars=vars))
+        return(URL(r=self.request, c=self.request.controller,
+                   f=self.name, args=args, vars=vars))
 
 
-    #--------------------------------------------------------------------------
     def here(self, representation=None):
 
         """ URL of the current request """
@@ -894,15 +884,14 @@ class S3RESTRequest(object):
         return self.__next(id=self.id, representation=representation)
 
 
-    #--------------------------------------------------------------------------
     def other(self, method=None, record_id=None, representation=None):
 
         """ URL of a request with different method and/or record_id of the same resource """
 
-        return self.__next(method=method, id=record_id, representation=representation)
+        return self.__next(method=method, id=record_id,
+                           representation=representation)
 
 
-    #--------------------------------------------------------------------------
     def there(self, representation=None):
 
         """ URL of a HTTP/list request on the same resource """
@@ -910,7 +899,6 @@ class S3RESTRequest(object):
         return self.__next(method="", representation=representation)
 
 
-    #--------------------------------------------------------------------------
     def same(self, representation=None):
 
         """ URL of the same request with neutralized primary record ID """
@@ -918,27 +906,24 @@ class S3RESTRequest(object):
         return self.__next(id="[id]", representation=representation)
 
 
-    #--------------------------------------------------------------------------
     def target(self):
 
+        """ Get the target table of the current request """
+
         if self.component is not None:
-            return (
-                self.component.prefix,
-                self.component.name,
-                self.component.table,
-                self.component.tablename
-            )
+            return (self.component.prefix,
+                    self.component.name,
+                    self.component.table,
+                    self.component.tablename)
         else:
-            return (
-                self.prefix,
-                self.name,
-                self.table,
-                self.tablename
-            )
+            return (self.prefix,
+                    self.name,
+                    self.table,
+                    self.tablename)
 
 
-    #--------------------------------------------------------------------------
-    def export_xml(self, permit=None, audit=None, template=None, filterby=None, pretty_print=False):
+    def export_xml(self, permit=None, audit=None, template=None,
+                   filterby=None, pretty_print=False):
 
         """ Export the requested resources as XML """
 
@@ -950,7 +935,8 @@ class S3RESTRequest(object):
                 if not self.request.vars["components"]=="NONE":
                     components = self.request.vars["components"].split(",")
                     for c in components:
-                        component, pkey, fkey = self.rc.model.get_component(self.prefix, self.name, c)
+                        component, pkey, fkey = \
+                            self.rc.model.get_component(self.prefix, self.name, c)
                         if component is not None:
                             joins.append([component, pkey, fkey])
             else:
@@ -983,7 +969,7 @@ class S3RESTRequest(object):
 
         if template is not None:
             args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
-            mode = self.request.vars.get('mode', None)
+            mode = self.request.vars.get("mode", None)
             if mode is not None:
                 args.update(mode=mode)
             tree = self.rc.xml.transform(tree, template, **args)
@@ -994,8 +980,8 @@ class S3RESTRequest(object):
         return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
-    #--------------------------------------------------------------------------
-    def export_json(self, permit=None, audit=None, template=None, filterby=None, pretty_print=False):
+    def export_json(self, permit=None, audit=None, template=None,
+                    filterby=None, pretty_print=False):
 
         """ Export the requested resources as JSON """
 
@@ -1007,7 +993,8 @@ class S3RESTRequest(object):
                 if not components=="NONE":
                     components = self.request.vars["components"].split(",")
                     for c in components:
-                        component, pkey, fkey = self.model.get_component(self.prefix, self.name, c)
+                        component, pkey, fkey = \
+                            self.model.get_component(self.prefix, self.name, c)
                         if component is not None:
                             joins.append(component, pkey, fkey)
             else:
@@ -1034,7 +1021,7 @@ class S3RESTRequest(object):
 
         if template is not None:
             args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
-            mode = self.request.vars.get('mode', None)
+            mode = self.request.vars.get("mode", None)
             if mode is not None:
                 args.update(mode=mode)
             tree = self.rc.xml.transform(tree, template, **args)
@@ -1045,7 +1032,6 @@ class S3RESTRequest(object):
         return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
-    #--------------------------------------------------------------------------
     def import_xml(self, tree, permit=None, audit=None):
 
         """ import the requested resources from XML """
@@ -1081,62 +1067,41 @@ class S3RESTRequest(object):
                                   ignore_errors=ignore_errors)
 
 
-    #--------------------------------------------------------------------------
-    def options_xml(self, pretty_print=False):
+    def options_tree(self):
 
-        """ Export the options of a field in the resource as XML """
+        """ Export field options as element tree """
 
-        if "field" in self.request.vars:
-            field = self.request.vars["field"]
-        else:
-            field = None
+        field = self.request.vars.get("field", None)
 
-        if field is None:
+        if not field:
             if self.component:
                 tree = self.rc.options_xml(self.component.prefix, self.component.name)
             else:
                 joins = self.rc.model.get_components(self.prefix, self.name)
                 tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
-
-            return self.rc.xml.tostring(tree, pretty_print=pretty_print)
         else:
             if self.component:
                 tree = self.rc.xml.get_field_options(self.component.table, field)
             else:
                 tree = self.rc.xml.get_field_options(self.table, field)
-
             tree.set("id", "%s_%s_%s" % (self.prefix, self.name, field))
             tree.set("name", "%s" % field)
-
-            return self.rc.xml.tostring(tree, pretty_print=pretty_print)
-
-
-    #--------------------------------------------------------------------------
-    def options_json(self, pretty_print=False):
-
-        """ Export the options of a field in the resource as JSON """
-
-        if "field" in self.request.vars:
-            field = self.request.vars["field"]
-        else:
-            field = None
-
-        if field is None:
-            if self.component:
-                tree = self.rc.options_xml(self.component.prefix, self.component.name)
-            else:
-                joins = self.rc.model.get_components(self.prefix, self.name)
-                tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
-
-            return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
-        else:
-            if self.component:
-                tree = self.rc.xml.get_field_options(self.component.table, field)
-            else:
-                tree = self.rc.xml.get_field_options(self.table, field)
-
             tree = etree.ElementTree(tree)
 
-            return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
+        return tree
 
-# *****************************************************************************
+
+    def options_xml(self, pretty_print=False):
+
+        """ Export field options in XML """
+
+        tree = self.options_tree()
+        return self.rc.xml.tostring(tree, pretty_print=pretty_print)
+
+
+    def options_json(self, pretty_print=False):
+
+        """ Export field options in JSON """
+
+        tree = self.options_tree()
+        return self.rc.xml.tree2json(tree, pretty_print=pretty_print)

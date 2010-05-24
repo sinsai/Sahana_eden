@@ -108,6 +108,7 @@ def apikey():
         subtitle_list = T('Keys'),
         label_list_button = LIST_KEYS,
         label_create_button = ADD_KEY,
+        label_delete_button = T('Delete Key'),
         msg_record_created = T('Key added'),
         msg_record_modified = T('Key updated'),
         msg_record_deleted = T('Key deleted'),
@@ -159,6 +160,7 @@ def config():
         subtitle_list = T('Configs'),
         label_list_button = LIST_CONFIGS,
         label_create_button = ADD_CONFIG,
+        label_delete_button = T('Delete Config'),
         msg_record_created = T('Config added'),
         msg_record_modified = T('Config updated'),
         msg_record_deleted = T('Config deleted'),
@@ -200,6 +202,7 @@ def feature_class():
         subtitle_list = T('Feature Classes'),
         label_list_button = LIST_FEATURE_CLASS,
         label_create_button = ADD_FEATURE_CLASS,
+        label_delete_button = T('Delete Feature Class'),
         msg_record_created = T('Feature Class added'),
         msg_record_modified = T('Feature Class updated'),
         msg_record_deleted = T('Feature Class deleted'),
@@ -234,6 +237,7 @@ def feature_group():
         subtitle_list = T('Feature Groups'),
         label_list_button = LIST_FEATURE_GROUPS,
         label_create_button = ADD_FEATURE_GROUP,
+        label_delete_button = T('Delete Feature Group'),
         msg_record_created = T('Feature Group added'),
         msg_record_modified = T('Feature Group updated'),
         msg_record_deleted = T('Feature Group deleted'),
@@ -284,6 +288,7 @@ def location():
         subtitle_list = T('Locations'),
         label_list_button = LIST_LOCATIONS,
         label_create_button = ADD_LOCATION,
+        label_delete_button = T('Delete Location'),
         msg_record_created = T('Location added'),
         msg_record_modified = T('Location updated'),
         msg_record_deleted = T('Location deleted'),
@@ -345,6 +350,7 @@ def marker():
         subtitle_list = T('Markers'),
         label_list_button = LIST_MARKERS,
         label_create_button = ADD_MARKER,
+        label_delete_button = T('Delete Marker'),
         msg_record_created = T('Marker added'),
         msg_record_modified = T('Marker updated'),
         msg_record_deleted = T('Marker deleted'),
@@ -387,6 +393,7 @@ def projection():
         subtitle_list = T('Projections'),
         label_list_button = LIST_PROJECTIONS,
         label_create_button = ADD_PROJECTION,
+        label_delete_button = T('Delete Projection'),
         msg_record_created = T('Projection added'),
         msg_record_modified = T('Projection updated'),
         msg_record_deleted = T('Projection deleted'),
@@ -415,6 +422,7 @@ EDIT_LAYER = T('Edit Layer')
 SEARCH_LAYERS = T('Search Layers')
 ADD_NEW_LAYER = T('Add New Layer')
 LIST_LAYERS = T('List Layers')
+DELETE_LAYER = T('Delete Layer')
 LAYER_ADDED = T('Layer added')
 LAYER_UPDATED = T('Layer updated')
 LAYER_DELETED = T('Layer deleted')
@@ -446,6 +454,7 @@ def layer_openstreetmap():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_OSM_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -475,6 +484,7 @@ def layer_google():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_GOOGLE_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -504,6 +514,7 @@ def layer_yahoo():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_YAHOO_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -532,6 +543,7 @@ def layer_mgrs():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_MGRS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -561,6 +573,7 @@ def layer_bing():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_BING_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -596,6 +609,7 @@ def layer_georss():
         subtitle_list=LIST_GEORSS_LAYERS,
         label_list_button=LIST_GEORSS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -627,6 +641,7 @@ def layer_gpx():
         subtitle_list=LIST_GPX_LAYERS,
         label_list_button=LIST_GPX_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -660,6 +675,7 @@ def layer_kml():
         subtitle_list=LIST_KML_LAYERS,
         label_list_button=LIST_KML_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -695,6 +711,7 @@ def layer_tms():
         subtitle_list=LIST_TMS_LAYERS,
         label_list_button=LIST_TMS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -705,17 +722,18 @@ def layer_tms():
 def layer_wms():
     "RESTlike CRUD controller"
     resource = 'layer_wms'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
-    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
-    db[table].url.requires = IS_NOT_EMPTY()
-    db[table].url.comment = SPAN("*", _class="req")
-    db[table].layers.requires = IS_NOT_EMPTY()
-    db[table].layers.comment = SPAN("*", _class="req")
-    db[table].format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
-    db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
-    db[table].projection_id.default = 2
+    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
+    table.url.requires = IS_NOT_EMPTY()
+    table.url.comment = SPAN("*", _class="req")
+    table.layers.requires = IS_NOT_EMPTY()
+    table.layers.comment = SPAN("*", _class="req")
+    table.format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
+    table.projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
+    table.projection_id.default = 2
 
     # CRUD Strings
     type = 'WMS'
@@ -723,7 +741,7 @@ def layer_wms():
     ADD_NEW_WMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
     LIST_WMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_WMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=WMS_LAYERS,
@@ -733,6 +751,7 @@ def layer_wms():
         subtitle_list=LIST_WMS_LAYERS,
         label_list_button=LIST_WMS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -764,6 +783,7 @@ def layer_js():
         subtitle_list=LIST_JS_LAYERS,
         label_list_button=LIST_JS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -774,11 +794,12 @@ def layer_js():
 def layer_xyz():
     "RESTlike CRUD controller"
     resource = 'layer_xyz'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
-    db[table].url.requires = IS_NOT_EMPTY()
-    db[table].url.comment = SPAN("*", _class="req")
+    table.url.requires = IS_NOT_EMPTY()
+    table.url.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = 'XYZ'
@@ -786,7 +807,7 @@ def layer_xyz():
     ADD_NEW_XYZ_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
     LIST_XYZ_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_XYZ_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=XYZ_LAYERS,
@@ -796,6 +817,7 @@ def layer_xyz():
         subtitle_list=LIST_XYZ_LAYERS,
         label_list_button=LIST_XYZ_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,

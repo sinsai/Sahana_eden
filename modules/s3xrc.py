@@ -64,18 +64,7 @@ class S3ObjectComponent(object):
 
     """
         Class to represent component relations between resources.
-
-        @param db: the database abstraction layer
-        @type db: DAL
-        @param prefix: the module prefix of the component resource
-        @type prefix: string
-        @param name: the name of the component resource (without prefix)
-        @type name: string
-        @param attr: dictionary of attributes of the component relation
-        @type attr: **dict
-
     """
-
 
     def __init__(self, db, prefix, name, **attr):
 
@@ -774,7 +763,6 @@ class S3Vector(object):
     ACTION = dict(create="create", update="update")
     UUID = "uuid"
 
-
     def __init__(self, db, prefix, name, id,
                  record=None,
                  permit=None,
@@ -793,8 +781,12 @@ class S3Vector(object):
 
         self.record=record
         self.id=id
+
         self.components = []
+        self.references = []
+
         self.method=None
+        self.resolution=None
 
         self.onvalidation=onvalidation
         self.onaccept=onaccept

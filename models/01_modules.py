@@ -123,7 +123,7 @@ if empty:
             priority=8,
             module_type=4,
             access="",
-            description="Lists "who is doing what & where". Allows relief agencies to coordinate their activities",
+            description='Lists "who is doing what & where". Allows relief agencies to coordinate their activities',
             enabled=shn_module_enable.get("or", False)
         )
         table.insert(

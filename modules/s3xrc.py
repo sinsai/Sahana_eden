@@ -282,34 +282,6 @@ class S3ObjectModel(object):
         return self.components[component_name].get_attr(name)
 
 
-    def uuid2id(table, uuid):
-
-        """ Maps UUID's to record ID's for a table """
-
-        if uuid in table:
-            if not isinstance(uuid, (list, tuple)):
-                uuid = [uuid]
-            rs = self.db(table.uuid.belongs(uuid)).select(table.id, table.uuid)
-            result = [(r.id, r.uuid) for r in rs]
-            return result
-        else:
-            return []
-
-
-    def id2uuid(table, id):
-
-        """ Maps record ID's to UUID's for a table """
-
-        if uuid in table:
-            if not isinstance(id, (list, tuple)):
-                id = [id]
-            rs = self.db(table.id.belongs(id)).select(table.id, table.uuid)
-            result = [(r.id, r.uuid) for r in rs]
-            return result
-        else:
-            return []
-
-
 class S3ResourceController(object):
 
     """
@@ -641,10 +613,10 @@ class S3ResourceController(object):
         if id and len(elements) > 1:
             # ID given, but multiple elements of that type
             # => try to find UUID match
-            if self.xml.UUID in table:
-                uuid = db_record[self.xml.UUID]
+            if self.xml.UID in table:
+                uid = db_record[self.xml.UID]
                 for element in elements:
-                    if element.get(self.xml.UUID) == uuid:
+                    if element.get(self.xml.UID) == uid:
                         elements = [element]
                         break
             if len(elements) > 1:
@@ -664,6 +636,7 @@ class S3ResourceController(object):
                 continue
             vector = S3Vector(self.db, prefix, name, id,
                              record=record,
+                             element=element,
                              permit=permit,
                              audit=audit,
                              onvalidation=onvalidation,
@@ -685,6 +658,7 @@ class S3ResourceController(object):
                                                component.prefix,
                                                component.name, None,
                                                record=crecord,
+                                               element=celement,
                                                permit=permit,
                                                audit=audit,
                                                onvalidation=self.model.get_config(
@@ -695,24 +669,24 @@ class S3ResourceController(object):
                             cvector.fkey = fkey
                             vector.components.append(cvector)
                     else:
-                        c_id = c_uuid = None
+                        c_id = c_uid = None
                         if vector.id:
                             p = self.db(table.id == vector.id).select(table[pkey],
                                                                     limitby=(0,1))
                             if p:
                                 p = p[0][pkey]
                                 fields = [component.table.id]
-                                if self.xml.UUID in component.table:
-                                    fields.append(component.table[self.xml.UUID])
+                                if self.xml.UID in component.table:
+                                    fields.append(component.table[self.xml.UID])
                                 orig = self.db(component.table[fkey] == p).select(
                                         limitby=(0,1), *fields)
                                 if orig:
                                     c_id = orig[0].id
-                                    if self.xml.UUID in component.table:
-                                        c_uuid = orig[0].uuid
+                                    if self.xml.UID in component.table:
+                                        c_uid = orig[0][self.UID]
                         celement = celements[0]
-                        if c_uuid:
-                            celement.set(self.xml.UUID, c_uuid)
+                        if c_uid:
+                            celement.set(self.xml.UID, c_uid)
                         crecord = self.xml.record(component.table, celement)
                         if not crecord:
                             self.error = S3XRC_VALIDATION_ERROR
@@ -720,6 +694,7 @@ class S3ResourceController(object):
                         cvector = S3Vector(self.db,
                                            component.prefix,
                                            component.name, c_id,
+                                           element=celement,
                                            record=crecord,
                                            permit=permit,
                                            audit=audit,
@@ -730,10 +705,10 @@ class S3ResourceController(object):
                         cvector.pkey = pkey
                         cvector.fkey = fkey
                         vector.components.append(cvector)
-            if self.error:
+            if self.error is None:
                 imports.append(vector)
 
-        if not self.error or ignore_errors:
+        if self.error is None or ignore_errors:
             for i in xrange(0, len(imports)):
                 vector = imports[i]
                 success = vector.commit()
@@ -761,10 +736,11 @@ class S3Vector(object):
     """ Helper class for database commits """
 
     ACTION = dict(create="create", update="update")
-    UUID = "uuid"
+    UID = "uuid"
 
     def __init__(self, db, prefix, name, id,
                  record=None,
+                 element=None,
                  permit=None,
                  audit=None,
                  onvalidation=None,
@@ -779,6 +755,7 @@ class S3Vector(object):
         self.tablename = "%s_%s" % (self.prefix, self.name)
         self.table = self.db[self.tablename]
 
+        self.element=element
         self.record=record
         self.id=id
 
@@ -799,10 +776,10 @@ class S3Vector(object):
         if not self.id:
             self.id = 0
             self.method = permission = self.ACTION["create"]
-            if self.UUID in self.table:
-                uuid = self.record.get(self.UUID, None)
-                if uuid:
-                    orig = self.db(self.table[self.UUID] == uuid).select(self.table.id,
+            if self.UID in self.table:
+                uid = self.record.get(self.UID, None)
+                if uid:
+                    orig = self.db(self.table[self.UID] == uid).select(self.table.id,
                                                                        limitby=(0,1))
                     if orig:
                         self.id = orig[0].id
@@ -814,8 +791,8 @@ class S3Vector(object):
                 self.id = 0
                 self.method = permission = self.ACTION["create"]
             else:
-                if self.UUID in self.record:
-                    del self.record[self.UUID]
+                if self.UID in self.record:
+                    del self.record[self.UID]
 
         if permit and not \
            permit(permission, self.tablename, record_id=self.id):
@@ -839,6 +816,11 @@ class S3Vector(object):
                 form.vars.id = self.id
                 if self.onvalidation:
                     self.onvalidation(form)
+                if form.errors:
+                    if self.element:
+                        #TODO: propagate errors to element
+                        pass
+                    return False
                 if self.method == self.ACTION["update"]:
                     try:
                         self.record.update(deleted=False) # Undelete re-imported records!
@@ -904,7 +886,7 @@ class S3XML(object):
     S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
     NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
 
-    UUID = "uuid"
+    UID = "uuid"
     Lat = "lat"
     Lon = "lon"
     Marker = "marker_id"
@@ -1146,11 +1128,11 @@ class S3XML(object):
         resource= etree.Element(self.TAG["resource"])
         resource.set(self.ATTRIBUTE["name"], table._tablename)
 
-        if self.UUID in table.fields and self.UUID in record:
-            _value = str(table[self.UUID].formatter(record[self.UUID]))
+        if self.UID in table.fields and self.UID in record:
+            _value = str(table[self.UID].formatter(record[self.UID]))
             if self.domain_mapping:
                 value = self.export_uid(_value)
-            resource.set(self.UUID, self.xml_encode(value))
+            resource.set(self.UID, self.xml_encode(value))
             if table._tablename == "gis_location":
                 # Look up the marker to display
                 if self.gis:
@@ -1162,9 +1144,9 @@ class S3XML(object):
         readable = filter( lambda key: \
                         key not in self.IGNORE_FIELDS and \
                         key not in skip and \
-                        record[key] and \
+                        record[key] is not None and \
                         key in table.fields and \
-                        not(key == self.UUID),
+                        not(key == self.UID),
                         record.keys())
 
         for i in xrange(0, len(readable)):
@@ -1191,18 +1173,18 @@ class S3XML(object):
                 table[f].type[:9] == "reference":
                 _ktable = table[f].type[10:]
                 ktable = self.db[_ktable]
-                if self.UUID in ktable.fields:
-                    uuid = self.db(ktable.id == value).select(ktable[self.UUID],
+                if self.UID in ktable.fields:
+                    uid = self.db(ktable.id == value).select(ktable[self.UID],
                                                             limitby=(0, 1))
-                    if uuid:
+                    if uid:
                         if self.domain_mapping:
-                            uuid = self.export_uid(uuid[0].uuid)
+                            uid = self.export_uid(uid[0][self.UID])
                         else:
-                            uuid = uuid[0].uuid
+                            uid = uid[0][self.UID]
                         reference = etree.SubElement(resource, self.TAG["reference"])
                         reference.set(self.ATTRIBUTE["field"], f)
                         reference.set(self.ATTRIBUTE["resource"], _ktable)
-                        reference.set(self.UUID, self.xml_encode(str(uuid)))
+                        reference.set(self.UID, self.xml_encode(str(uid)))
                         reference.text = text
                 if self.Lat in ktable.fields and self.Lon in ktable.fields:
                     # Export GeoData for KML/GeoRSS/GPX
@@ -1357,9 +1339,10 @@ class S3XML(object):
             return (value, None)
         else:
             if record:
-                # Skip validation of unchanged values on update
-                if record[fieldname] and record[fieldname] == value:
-                    return (value, None)
+                v = record.get(fieldname, None)
+                if v:
+                    if v == value:
+                        return (value, None)
             if not isinstance(requires, (list, tuple)):
                 requires = [requires]
             for validator in requires:
@@ -1376,14 +1359,14 @@ class S3XML(object):
         valid = True
         record = Storage()
         original = None
-        if self.UUID in table.fields and self.UUID not in skip:
-            uuid = element.get(self.UUID, None)
-            if uuid:
+        if self.UID in table.fields and self.UID not in skip:
+            uid = element.get(self.UID, None)
+            if uid:
                 if self.domain_mapping:
-                    record[self.UUID] = self.import_uid(uuid)
+                    record[self.UID] = self.import_uid(uid)
                 else:
-                    record[self.UUID] = uuid
-                original = self.db(table.uuid == uuid).select(table.ALL,
+                    record[self.UID] = uid
+                original = self.db(table[self.UID] == uid).select(table.ALL,
                                                               limitby=(0,1))
                 if original:
                     original = original[0]
@@ -1414,30 +1397,57 @@ class S3XML(object):
                     continue
                 if f in self.IGNORE_FIELDS or f in skip:
                     continue
-                if table[f].type.startswith("reference"):
+
+                field_type = str(table[f].type)
+
+                if field_type == "id":
                     continue
+                elif field_type.startswith("reference"):
+                    continue
+                elif field_type in ("upload", "blob", "password"):
+                    continue
+
                 value = self.xml_decode(child.get(self.ATTRIBUTE["value"], None))
                 if value is None:
                     value = self.xml_decode(child.text)
-                if value is None:
+
+                if value == "" and not field_type == "string":
+                    value = None
+
+                if field_type == 'boolean':
+                    if value and value in ["True", "true"]:
+                        value = True
+                    else:
+                        value = False
+                elif value is not None:
+                    if field_type == "integer":
+                        try:
+                            value = int(value)
+                        except ValueError:
+                            continue
+                    elif field_type == "double":
+                        try:
+                            value = float(value)
+                        except ValueError:
+                            continue
+                else:
                     value = table[f].default
-                if value is None and table[f].type == "string":
+
+                if value is None and field_type == "string":
                     value = ""
-                if value == "" and not table[f].type == "string":
-                    value = table[f].default
+
                 if value is not None:
-                    v = value
-                    if not isinstance(value, (str, unicode)):
+                    if not isinstance(value, basestring):
                         v = str(value)
                     (value, error) = self.validate(table, original, f, v)
+                    child.set(self.ATTRIBUTE["value"], v)
                     if error:
-                        child.set(self.ATTRIBUTE["error"],
-                                  "%s: %s" % (f, error))
+                        child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
                         valid = False
                         continue
                     else:
-                        child.set(self.ATTRIBUTE["value"], v)
-                        record[f]=value
+                        record[f] = value
+
             elif child.tag == self.TAG["reference"]:
                 f = child.get(self.ATTRIBUTE["field"], None)
                 if not f or f not in table.fields:
@@ -1445,14 +1455,14 @@ class S3XML(object):
                 if f in self.IGNORE_FIELDS or f in skip:
                     continue
                 ktablename =  child.get(self.ATTRIBUTE["resource"], None)
-                uuid = child.get(self.UUID, None)
-                if uuid and self.domain_mapping:
-                    uuid = self.import_uid(uuid)
-                if not (ktablename and uuid):
+                uid = child.get(self.UID, None)
+                if uid and self.domain_mapping:
+                    uid = self.import_uid(uid)
+                if not (ktablename and uid):
                     continue
-                if ktablename in self.db and self.UUID in self.db[ktablename]:
+                if ktablename in self.db and self.UID in self.db[ktablename]:
                     ktable = self.db[ktablename]
-                    krecord = self.db(ktable.uuid == uuid).select(ktable.id,
+                    krecord = self.db(ktable[self.UID] == uid).select(ktable.id,
                                                                   limitby=(0,1))
                     if krecord:
                         record[f] = krecord[0].id

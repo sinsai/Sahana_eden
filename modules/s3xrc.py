@@ -333,6 +333,8 @@ class S3ResourceController(object):
         self.model = S3ObjectModel(self.db)
         self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis)
 
+        self.sync_resolve = None
+        self.sync_log = None
 
     def get_session(self, session, prefix, name):
 
@@ -639,6 +641,8 @@ class S3ResourceController(object):
                              element=element,
                              permit=permit,
                              audit=audit,
+                             sync=self.sync_resolve,
+                             log=self.sync_log,
                              onvalidation=onvalidation,
                              onaccept=onaccept)
             if skip_resource:
@@ -661,6 +665,8 @@ class S3ResourceController(object):
                                                element=celement,
                                                permit=permit,
                                                audit=audit,
+                                               sync=self.sync_resolve,
+                                               log=self.sync_log,
                                                onvalidation=self.model.get_config(
                                                     component.table, "onvalidation"),
                                                onaccept=self.model.get_config(
@@ -698,6 +704,8 @@ class S3ResourceController(object):
                                            record=crecord,
                                            permit=permit,
                                            audit=audit,
+                                           sync=self.sync_resolve,
+                                           log=self.sync_log,
                                            onvalidation=self.model.get_config(
                                                 component.table, "onvalidation"),
                                            onaccept=self.model.get_config(
@@ -743,6 +751,8 @@ class S3Vector(object):
                  element=None,
                  permit=None,
                  audit=None,
+                 sync=None,
+                 log=None,
                  onvalidation=None,
                  onaccept=None):
 
@@ -768,6 +778,8 @@ class S3Vector(object):
         self.onvalidation=onvalidation
         self.onaccept=onaccept
         self.audit=audit
+        self.sync=sync
+        self.log=log
 
         self.accepted=True
         self.permitted=True
@@ -821,6 +833,10 @@ class S3Vector(object):
                         #TODO: propagate errors to element
                         pass
                     return False
+                if self.sync:
+                    self.sync(self)
+                if self.log:
+                    self.log(self)
                 if self.method == self.ACTION["update"]:
                     try:
                         self.record.update(deleted=False) # Undelete re-imported records!
@@ -892,7 +908,7 @@ class S3XML(object):
     Marker = "marker_id"
     FeatureClass = "feature_class_id"
 
-    IGNORE_FIELDS = ["deleted", "id", "password"]
+    IGNORE_FIELDS = ["deleted", "id"]
 
     FIELDS_TO_ATTRIBUTES = [
             "created_on",
@@ -1166,12 +1182,13 @@ class S3XML(object):
                     pass
                 text = self.xml_encode(text)
 
+            fieldtype = str(table[f].type)
+
             if f in self.FIELDS_TO_ATTRIBUTES:
                 resource.set(f, text)
 
-            elif isinstance(table[f].type, str) and \
-                table[f].type[:9] == "reference":
-                _ktable = table[f].type[10:]
+            elif fieldtype.startswith("reference"):
+                _ktable = fieldtype[10:]
                 ktable = self.db[_ktable]
                 if self.UID in ktable.fields:
                     uid = self.db(ktable.id == value).select(ktable[self.UID],
@@ -1210,11 +1227,18 @@ class S3XML(object):
                                 reference.set(self.ATTRIBUTE["marker"],
                                               self.xml_encode(marker_url))
 
-            elif isinstance(table[f].type, str) and \
-                table[f].type[:6] == "upload":
+            elif fieldtype == "upload":
                 data = etree.SubElement(resource, self.TAG["data"])
                 data.set(self.ATTRIBUTE["field"], f)
                 data.text = "%s/%s" % (download_url, value)
+
+            elif fieldtype == "password":
+                # Do not export password fields
+                continue
+
+            elif fieldtype == "blob":
+                # Not implemented yet
+                continue
 
             else:
                 data = etree.SubElement(resource, self.TAG["data"])
@@ -1424,11 +1448,13 @@ class S3XML(object):
                         try:
                             value = int(value)
                         except ValueError:
+                            #TODO: propagate error to element?
                             continue
                     elif field_type == "double":
                         try:
                             value = float(value)
                         except ValueError:
+                            #TODO: propagate error to element?
                             continue
                 else:
                     value = table[f].default

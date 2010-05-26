@@ -47,7 +47,7 @@ if shn_module_enable.get(module, False):
                         requires = IS_IN_SET(msg_group_type_opts),
                         # default = 1,
                         label = T('Type'),
-                        represent = lambda opt: msg_group_type_opts.get(opt, T('Unknown'))))
+                        represent = lambda opt: msg_group_type_opts.get(opt, UNKNOWN_OPT)))
 
     resource = 'group'
     tablename = "%s_%s" % (module, resource)

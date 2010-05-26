@@ -1,6 +1,6 @@
 // S3.checkboxes.widget.js
 
-// JS function whcih is used by the S3CheckboxesWidget
+// JS function which is used by the S3CheckboxesWidget
 // @author: Michael Howden (michael@aidiq.com)
 // @date: 2010-05-18
 

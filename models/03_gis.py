@@ -83,7 +83,7 @@ opt_gis_layout = SQLTable(None, "opt_gis_layout",
                         requires = IS_IN_SET(gis_config_layout_opts),
                         default = 1,
                         label = T("Layout"),
-                        represent = lambda opt: gis_config_layout_opts.get(opt, T("Unknown"))))
+                        represent = lambda opt: gis_config_layout_opts.get(opt, UNKNOWN_OPT)))
 # id=1 = Default settings
 # separated from Framework settings above
 # ToDo Extend for per-user Profiles - this is the WMC
@@ -151,6 +151,9 @@ resource = 'location'
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field('name', notnull=True),
+                Field('level', length=2),
+                Field('code'),
+                Field('description'),
                 feature_class_id,
                 #Field('resource_id', 'integer'), # ID in associated resource table. FIXME: Remove as link should be reversed?
                 Field('parent', 'reference gis_location', ondelete = 'RESTRICT'),   # This form of hierarchy may not work on all Databases

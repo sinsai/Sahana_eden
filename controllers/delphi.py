@@ -243,7 +243,7 @@ def group_summary():
                                    })
             ret = form.accepts(request.post_vars, session, dbio=True)
             if form.errors:
-                session.error = str(T('there are errors'))
+                session.error = str(T('There are errors'))
 
             forms.append(form)
 
@@ -257,7 +257,7 @@ def group_summary():
                             })
         ret = form.accepts(request.post_vars, session, dbio=True)
         if form.errors:
-            session.error = str(T('there are errors'))
+            session.error = str(T('There are errors'))
 
         forms.append(form)
 
@@ -365,8 +365,8 @@ def vote():
     else:
         voted = False
 
-    # v.rank == 9999 -> user has selected not to vote on v.solution
-    #   rank == 9998 -> the solution is new and the user hasn't votted on it yet
+    # v.rank == 9999 -> user has selected not to vote on v.solution_id
+    #   rank == 9998 -> the solution is new and the user hasn't voted on it yet
     if voted:
         sorted_items = [v.solution_id for v in voted]
         ranks = dict([(v.solution_id, v.rank) for v in voted])
@@ -402,7 +402,7 @@ def status():
     n = len(i_ids)
 
     empty = dict(problem=pr, items=items, beans=[], duser=duser,
-                votes={}, scale={}, name="Scale of Results", num_voted=0)
+                votes={}, scale={}, title=T("Scale of Results"), num_voted=0)
 
     if n == 0:
         return empty
@@ -490,9 +490,9 @@ def discuss():
         if k > 0:
             post_html += "</blockquote>"
         db.delphi_forum_post.insert(title=title, solution_id=item, post=post, post_html=post_html)
-        session.flash = str(T('your post was added successfully.'))
+        session.flash = str(T('Your post was added successfully.'))
     elif form and form.errors:
-        session.error = str(T('there are errors'))
+        session.error = str(T('There are errors'))
 
     return dict(item=item, problem=item.problem_id, duser=duser,
                 form=form, title=T("Discussion Forum"), authorised=False)

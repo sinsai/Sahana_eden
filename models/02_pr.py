@@ -28,7 +28,7 @@ opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
                                     default = vita.DEFAULT_TRACKABLE,
                                     label = T("Entity Type"),
                                     represent = lambda opt:
-                                        vita.trackable_types.get(opt, T("Unknown"))))
+                                        vita.trackable_types.get(opt, UNKNOWN_OPT)))
 
 
 # -----------------------------------------------------------------------------
@@ -221,7 +221,7 @@ opt_pr_gender = SQLTable(None, "opt_pr_gender",
                         requires = IS_IN_SET(pr_person_gender_opts),
                         default = 1,
                         label = T("Gender"),
-                        represent = lambda opt: pr_person_gender_opts.get(opt, T("Unknown"))))
+                        represent = lambda opt: pr_person_gender_opts.get(opt, UNKNOWN_OPT)))
 
 # -----------------------------------------------------------------------------
 # Age Group
@@ -241,7 +241,7 @@ opt_pr_age_group = SQLTable(None, "opt_pr_age_group",
                         default = 1,
                         label = T("Age Group"),
                         represent = lambda opt:
-                            pr_person_age_group_opts.get(opt, T("Unknown"))))
+                            pr_person_age_group_opts.get(opt, UNKNOWN_OPT)))
 
 # -----------------------------------------------------------------------------
 # Marital Status
@@ -262,7 +262,7 @@ opt_pr_marital_status = SQLTable(None, "opt_pr_marital_status",
                             default = 1,
                             label = T("Marital Status"),
                             represent = lambda opt:
-                                opt and pr_marital_status_opts.get(opt, T("Unknown"))))
+                                opt and pr_marital_status_opts.get(opt, UNKNOWN_OPT)))
 
 # -----------------------------------------------------------------------------
 # Religion
@@ -282,7 +282,7 @@ opt_pr_religion = SQLTable(None, "opt_pr_religion",
                         requires = IS_NULL_OR(IS_IN_SET(pr_religion_opts)),
                         # default = 1,
                         label = T("Religion"),
-                        represent = lambda opt: pr_religion_opts.get(opt, T("Unknown"))))
+                        represent = lambda opt: pr_religion_opts.get(opt, UNKNOWN_OPT)))
 
 #
 # Nationality and Country of Residence ----------------------------------------
@@ -294,14 +294,14 @@ opt_pr_nationality = SQLTable(None, "opt_pr_nationality",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
                             label = T("Nationality"),
-                            represent = lambda opt: pr_nationality_opts.get(opt, T("Unknown"))))
+                            represent = lambda opt: pr_nationality_opts.get(opt, UNKNOWN_OPT)))
 
 opt_pr_country = SQLTable(None, "opt_pr_country",
                         Field("opt_pr_country", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
                             label = T("Country of Residence"),
-                            represent = lambda opt: pr_nationality_opts.get(opt, T("Unknown"))))
+                            represent = lambda opt: pr_nationality_opts.get(opt, UNKNOWN_OPT)))
 
 #
 # shn_pr_person_represent -----------------------------------------------------
@@ -427,7 +427,7 @@ opt_pr_group_type = SQLTable(None, "opt_pr_group_type",
                         requires = IS_IN_SET(pr_group_type_opts),
                         default = 4,
                         label = T("Group Type"),
-                        represent = lambda opt: pr_group_type_opts.get(opt, T("Unknown"))))
+                        represent = lambda opt: pr_group_type_opts.get(opt, UNKNOWN_OPT)))
 
 #
 # group table -----------------------------------------------------------------

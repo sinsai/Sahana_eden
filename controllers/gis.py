@@ -8,46 +8,51 @@
 
 from operator import __and__
 
-module = 'gis'
+module = "gis"
 
 # Current Module (for sidebar title)
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Map Viewing Client'), False, URL(r=request, f='map_viewing_client')],
-    [T('Map Service Catalogue'), False, URL(r=request, f='map_service_catalogue')],
-    [T('Bulk Uploader'), False, URL(r=request, c='media', f='bulk_upload')],
+    [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
+    [T("Map Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
 # Model options used in multiple Actions
 table = db.gis_location
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % table)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
-table.name.label = T('Name')
+table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, 'gis_location.id', '%(name)s'))
+table.level.label = T("Level")
+table.level.comment = DIV( _class="tooltip", _title=T("Level|The Level in the Hierarchy of this location: L0=Country, L1=State, L2=District, L3=Town."))
+table.code.label = T("Code")
+table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+table.description.label = T("Description")
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
-table.parent.label = T('Parent')
+table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, T('Unknown'))
-table.gis_feature_type.label = T('Feature Type')
+table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
+table.gis_feature_type.label = T("Feature Type")
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
-table.lat.label = T('Latitude')
-#table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lat.label = T("Latitude")
+#table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."))
 CONVERSION_TOOL = T("Conversion Tool")
-#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='colorbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class='colorbox', _href=URL(r=request, c='gis', f='convert_gps', vars=dict(KeepThis='true'))+"&TB_iframe=true", _target='top', _title=CONVERSION_TOOL), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
+table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style='cursor:pointer;', _title=CONVERSION_TOOL, _id='btnConvert'), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 table.lon.requires = IS_NULL_OR(IS_LON())
-table.lon.label = T('Longitude')
-table.lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+table.lon.label = T("Longitude")
+table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
 # WKT validation is done in the onvalidation callback
 #table.wkt.requires=IS_NULL_OR(IS_WKT())
-table.wkt.label = T('Well-Known Text')
-table.wkt.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-table.osm_id.label = 'OpenStreetMap'
-table.osm_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+table.wkt.label = T("Well-Known Text")
+table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+table.osm_id.label = "OpenStreetMap"
+table.osm_id.comment = DIV( _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
 # Joined Resource
 #s3xrc.model.add_component('media', 'metadata',
@@ -103,6 +108,7 @@ def apikey():
         subtitle_list = T('Keys'),
         label_list_button = LIST_KEYS,
         label_create_button = ADD_KEY,
+        label_delete_button = T('Delete Key'),
         msg_record_created = T('Key added'),
         msg_record_modified = T('Key updated'),
         msg_record_deleted = T('Key deleted'),
@@ -120,13 +126,13 @@ def config():
     table.uuid.requires = IS_NOT_IN_DB(db, 'gis_config.uuid')
     table.lat.requires = IS_LAT()
     table.lat.label = T('Latitude')
-    table.lat.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+    table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
     table.lon.requires = IS_LON()
     table.lon.label = T('Longitude')
-    table.lon.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
     table.zoom.requires = IS_INT_IN_RANGE(0, 19)
     table.zoom.label = T('Zoom')
-    table.zoom.comment = DIV(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+    table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
     table.marker_id.label = T('Default Marker')
     table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
     table.map_height.label = T('Map Height')
@@ -154,6 +160,7 @@ def config():
         subtitle_list = T('Configs'),
         label_list_button = LIST_CONFIGS,
         label_create_button = ADD_CONFIG,
+        label_delete_button = T('Delete Config'),
         msg_record_created = T('Config added'),
         msg_record_modified = T('Config updated'),
         msg_record_deleted = T('Config deleted'),
@@ -195,6 +202,7 @@ def feature_class():
         subtitle_list = T('Feature Classes'),
         label_list_button = LIST_FEATURE_CLASS,
         label_create_button = ADD_FEATURE_CLASS,
+        label_delete_button = T('Delete Feature Class'),
         msg_record_created = T('Feature Class added'),
         msg_record_modified = T('Feature Class updated'),
         msg_record_deleted = T('Feature Class deleted'),
@@ -214,8 +222,8 @@ def feature_group():
     db[table].name.label = T('Name')
     db[table].name.comment = SPAN("*", _class="req")
     db[table].description.label = T('Description')
-    #db[table].features.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-    #db[table].feature_classes.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    #db[table].features.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    #db[table].feature_classes.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 
     # CRUD Strings
     LIST_FEATURE_GROUPS = T('List Feature Groups')
@@ -229,6 +237,7 @@ def feature_group():
         subtitle_list = T('Feature Groups'),
         label_list_button = LIST_FEATURE_GROUPS,
         label_create_button = ADD_FEATURE_GROUP,
+        label_delete_button = T('Delete Feature Group'),
         msg_record_created = T('Feature Group added'),
         msg_record_modified = T('Feature Group updated'),
         msg_record_deleted = T('Feature Group deleted'),
@@ -279,6 +288,7 @@ def location():
         subtitle_list = T('Locations'),
         label_list_button = LIST_LOCATIONS,
         label_create_button = ADD_LOCATION,
+        label_delete_button = T('Delete Location'),
         msg_record_created = T('Location added'),
         msg_record_modified = T('Location updated'),
         msg_record_deleted = T('Location deleted'),
@@ -340,6 +350,7 @@ def marker():
         subtitle_list = T('Markers'),
         label_list_button = LIST_MARKERS,
         label_create_button = ADD_MARKER,
+        label_delete_button = T('Delete Marker'),
         msg_record_created = T('Marker added'),
         msg_record_modified = T('Marker updated'),
         msg_record_deleted = T('Marker deleted'),
@@ -382,6 +393,7 @@ def projection():
         subtitle_list = T('Projections'),
         label_list_button = LIST_PROJECTIONS,
         label_create_button = ADD_PROJECTION,
+        label_delete_button = T('Delete Projection'),
         msg_record_created = T('Projection added'),
         msg_record_modified = T('Projection updated'),
         msg_record_deleted = T('Projection deleted'),
@@ -410,6 +422,7 @@ EDIT_LAYER = T('Edit Layer')
 SEARCH_LAYERS = T('Search Layers')
 ADD_NEW_LAYER = T('Add New Layer')
 LIST_LAYERS = T('List Layers')
+DELETE_LAYER = T('Delete Layer')
 LAYER_ADDED = T('Layer added')
 LAYER_UPDATED = T('Layer updated')
 LAYER_DELETED = T('Layer deleted')
@@ -441,6 +454,7 @@ def layer_openstreetmap():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_OSM_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -470,6 +484,7 @@ def layer_google():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_GOOGLE_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -499,6 +514,7 @@ def layer_yahoo():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_YAHOO_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -527,6 +543,7 @@ def layer_mgrs():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_MGRS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -556,6 +573,7 @@ def layer_bing():
         subtitle_list=LIST_LAYERS,
         label_list_button=LIST_BING_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -591,6 +609,7 @@ def layer_georss():
         subtitle_list=LIST_GEORSS_LAYERS,
         label_list_button=LIST_GEORSS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -622,6 +641,7 @@ def layer_gpx():
         subtitle_list=LIST_GPX_LAYERS,
         label_list_button=LIST_GPX_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -655,6 +675,7 @@ def layer_kml():
         subtitle_list=LIST_KML_LAYERS,
         label_list_button=LIST_KML_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -690,6 +711,7 @@ def layer_tms():
         subtitle_list=LIST_TMS_LAYERS,
         label_list_button=LIST_TMS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -700,17 +722,18 @@ def layer_tms():
 def layer_wms():
     "RESTlike CRUD controller"
     resource = 'layer_wms'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
-    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
-    db[table].url.requires = IS_NOT_EMPTY()
-    db[table].url.comment = SPAN("*", _class="req")
-    db[table].layers.requires = IS_NOT_EMPTY()
-    db[table].layers.comment = SPAN("*", _class="req")
-    db[table].format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
-    db[table].projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
-    db[table].projection_id.default = 2
+    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
+    table.url.requires = IS_NOT_EMPTY()
+    table.url.comment = SPAN("*", _class="req")
+    table.layers.requires = IS_NOT_EMPTY()
+    table.layers.comment = SPAN("*", _class="req")
+    table.format.requires = IS_NULL_OR(IS_IN_SET(['image/jpeg', 'image/png']))
+    table.projection_id.requires = IS_ONE_OF(db, 'gis_projection.id', '%(name)s')
+    table.projection_id.default = 2
 
     # CRUD Strings
     type = 'WMS'
@@ -718,7 +741,7 @@ def layer_wms():
     ADD_NEW_WMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
     LIST_WMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_WMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=WMS_LAYERS,
@@ -728,6 +751,7 @@ def layer_wms():
         subtitle_list=LIST_WMS_LAYERS,
         label_list_button=LIST_WMS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -759,6 +783,7 @@ def layer_js():
         subtitle_list=LIST_JS_LAYERS,
         label_list_button=LIST_JS_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
@@ -769,11 +794,12 @@ def layer_js():
 def layer_xyz():
     "RESTlike CRUD controller"
     resource = 'layer_xyz'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
-    db[table].url.requires = IS_NOT_EMPTY()
-    db[table].url.comment = SPAN("*", _class="req")
+    table.url.requires = IS_NOT_EMPTY()
+    table.url.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = 'XYZ'
@@ -781,7 +807,7 @@ def layer_xyz():
     ADD_NEW_XYZ_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
     LIST_XYZ_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_XYZ_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=XYZ_LAYERS,
@@ -791,6 +817,7 @@ def layer_xyz():
         subtitle_list=LIST_XYZ_LAYERS,
         label_list_button=LIST_XYZ_LAYERS,
         label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,

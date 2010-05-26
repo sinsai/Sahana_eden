@@ -582,6 +582,7 @@ if empty:
             feature_group_id = db(db.gis_feature_group.name == 'SMS Alerts').select()[0].id,
             feature_class_id = db(db.gis_feature_class.name == 'SMS').select()[0].id,
         )
+
     tablename = 'gis_apikey'
     table = db[tablename]
     if not db(table.id>0).count():
@@ -600,7 +601,6 @@ if empty:
             apikey = "metacarta_04",
             description = "trial - replace for Production use"
         )
-
     tablename = 'gis_layer_openstreetmap'
     table = db[tablename]
     if not db(table.id>0).count():
@@ -610,7 +610,6 @@ if empty:
                     name = 'OSM ' + subtype,
                     subtype = subtype
                 )
-
     tablename = 'gis_layer_google'
     table = db[tablename]
     if not db(table.id>0).count():
@@ -621,7 +620,6 @@ if empty:
                     subtype = subtype,
                     enabled = False
                 )
-
     tablename = 'gis_layer_yahoo'
     table = db[tablename]
     if not db(table.id>0).count():
@@ -632,7 +630,6 @@ if empty:
                     subtype = subtype,
                     enabled = False
                 )
-
     #tablename = 'gis_layer_bing'
     #table = db[tablename]
     #if not db(table.id>0).count():
@@ -643,7 +640,6 @@ if empty:
     #                subtype = subtype,
     #                enabled = False
     #            )
-
     tablename = 'gis_layer_mgrs'
     table = db[tablename]
     if not db(table.id>0).count():
@@ -654,7 +650,6 @@ if empty:
                 url = 'http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps',
                 enabled = False
             )
-
     tablename = 'gis_layer_wms'
     table = db[tablename]
     if not db(table.id>0).count():
@@ -667,7 +662,6 @@ if empty:
                 layers = 'basic',
                 enabled = False
             )
-
     tablename = 'gis_layer_georss'
     table = db[tablename]
     if not db(table.id>0).count():
@@ -688,6 +682,15 @@ if empty:
                 marker_id = db(db.gis_marker.name == 'volcano').select()[0].id,
                 enabled = False
             )
+
+    tablename = 'gis_location'
+    table = db[tablename]
+    if not db(table.id>0).count():
+        # L0 Countries
+        import_file = os.path.join(request.folder,
+                                   "private", "import",
+                                   "countries.csv")
+        table.import_from_csv_file(open(import_file,"r"))
 
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)

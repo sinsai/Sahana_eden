@@ -52,13 +52,6 @@ def shn_sessions():
 
 s3_settings = shn_sessions()
 
-
-#
-# Widgets
-#
-
-# See test.py
-
 #
 # List of supported languages
 #
@@ -372,7 +365,7 @@ def shn_compose_message(data, template):
             return str(message)
         else:
             return s3xrc.xml.tostring(tree, pretty_print=True)
-        
+
 # *****************************************************************************
 # Table Helper Functions
 #
@@ -382,27 +375,27 @@ def shn_crud_strings(table_name,
                      table_name_plural = None):
     """
     @author: Michael Howden (michael@aidiq.com)
-    
+
     @description:
         Creates the strings for the title of/in the various CRUD Forms.
-        
-    @arguements: 
+
+    @arguments: 
         table_name - string - The User's name for the resource in the table - eg. "Person"
         table_name_plural - string - The User's name for the plural of the resource in the table - eg. "People"   
-        
+
     @returns:
         class 'gluon.storage.Storage' (Web2Py)    
-        
-    @example        
+
+    @example
         s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
-    """ 
+    """
     #This may need to be reviewed for Internationalization
     if not table_name_plural:
         table_name_plural = table_name + 's'
-        
+
     ADD = T('Add ' + table_name)
     LIST = T('List '+ table_name_plural) 
-       
+
     table_strings = Storage(
     title = T(table_name),
     title_plural = T(table_name_plural),
@@ -420,49 +413,50 @@ def shn_crud_strings(table_name,
     msg_record_modified =  T(table_name + ' updated'),
     msg_record_deleted = T( table_name + ' deleted'),
     msg_list_empty = T('No ' + table_name_plural + ' currently registered'))    
-    
+
     return table_strings  
 
 # shn_import_table -----------------------------------------------------------
 def shn_import_table(table_name,
-                     import_if_not_empty  = False):
+                     import_if_not_empty = False):
     """
     @author: Michael Howden (michael@aidiq.com)
-    
+
     @description:
         If a table is empty, it will import values into that table from:
         /private/import/tables/<table>.csv.
-        
-    @arguements: 
-        table_name - string - The name of the table  
-        import_if_not_empty - bool          
-    """     
-    
-    if not db(db[table_name].id).count() or import_if_not_empty:
+
+    @arguments: 
+        table_name - string - The name of the table
+        import_if_not_empty - bool
+    """
+
+    table = db[table_name]
+    if not db(table.id).count() or import_if_not_empty:
         import_file = os.path.join(request.folder,
-                                   "private","import","tables",
+                                   "private", "import", "tables",
                                    table_name + '.csv')
-        db[table_name].import_from_csv_file(open(import_file,"r"))
-        
+        table.import_from_csv_file(open(import_file,"r"))
+
 # shn_represent_file -----------------------------------------------------------    
 def shn_represent_file(file_name,
-                       table,                       
+                       table,
                        field = "file"):
     """
     @author: Michael Howden (michael@aidiq.com)
-    
+
     @description:
         Represents a file (stored in a table) as the filename with a link to that file  
-    """  
+    """
     import base64 
     url_file = crud.settings.download_url + "/" + file_name
-    
+
     if db[table][field].uploadfolder:
         path = db[table][field].uploadfolder
     else:
         path = os.path.join(db[table][field]._db._folder, '..', 'uploads')
-    pathfilename = os.path.join(path, file_name)    
-    
+    pathfilename = os.path.join(path, file_name)
+
     try:
         #f = open(pathfilename,'r')
         #filename = f.filename
@@ -474,5 +468,5 @@ def shn_represent_file(file_name,
         filename = regex_cleanup_fn.sub('_', filename) 
     except:
         filename = file_name
-    
+
     return A(filename, _href = url_file)          

@@ -194,7 +194,8 @@ class S3ObjectModel(object):
 
         """ Retrieves a component of a resource """
 
-        if component_name in self.components:
+        if component_name in self.components and \
+           not component_name == name:
             component = self.components[component_name]
             pkey, fkey = component.get_join_keys(prefix, name)
             if pkey:
@@ -287,21 +288,6 @@ class S3ResourceController(object):
     """
         Resource controller class for S3.
 
-        @param db: the database abstraction layer
-        @param domain:
-            the domain name of the instance, used to
-            identify the origin of data
-        @param base_url: the base URL of the instance
-        @param rpp:
-            default number of rows per page in server-side pagination
-        @param gis: the geospatial information handler
-
-        @type db: DAL
-        @type domain: string
-        @type base_url: string
-        @type rpp: int
-        @type gis: GIS
-
     """
 
     RCVARS = "rcvars"
@@ -312,6 +298,8 @@ class S3ResourceController(object):
         delete="delete"
     )
     ROWSPERPAGE = 10
+
+    MAX_DEPTH = 10
 
 
     def __init__(self, db, domain=None, base_url=None, rpp=None, gis=None):
@@ -449,7 +437,8 @@ class S3ResourceController(object):
                    start=None,  # starting record
                    limit=None,  # pagesize
                    marker=None, # override marker to display KML feeds
-                   show_urls=True):
+                   show_urls=True, # Show URL's in <resource> elements
+                   export_refs=False): # export referenced objects
 
         """ Exports data as XML tree """
 
@@ -503,18 +492,23 @@ class S3ResourceController(object):
         else:
             limitby = None
 
+        # Read records
         try:
             records = self.db(query).select(table.ALL, limitby=limitby) or []
         except:
             return None
 
+        # Filter out unpermitted records
         if records and permit:
             records = filter(lambda r: permit(self.ACTION["read"],
                                               _table, record_id=r.id), records)
+
+        # Filter out unpermitted joins
         if joins and permit:
             joins = filter(lambda j: permit(self.ACTION["read"],
                                             j[0].tablename), joins)
 
+        # Read component records
         cdata = {}
         if records:
             for i in xrange(0, len(joins)):
@@ -526,6 +520,9 @@ class S3ResourceController(object):
                     cquery = (c.table.deleted == False) & cquery
                 cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
 
+        # Export records
+        exp_map = Storage()
+        ref_map = []
         for i in xrange(0, len(records)):
             record = records[i]
             if audit:
@@ -536,12 +533,27 @@ class S3ResourceController(object):
             else:
                 resource_url = None
 
+            rmap = self.xml.rmap(table, record, skip=skip)
             resource = self.xml.element(table, record,
                                         skip=skip,
                                         url=resource_url,
                                         download_url=self.download_url,
                                         marker=marker)
 
+            self.xml.add_references(resource, rmap)
+            self.xml.gis_encode(rmap,
+                                download_url=self.download_url,
+                                marker=marker)
+
+            ref_map.extend(rmap)
+            resources.append(resource)
+
+            if exp_map.get(table._tablename, None):
+                exp_map[table._tablename].append(record.id)
+            else:
+                exp_map[table._tablename] = [record.id]
+
+            # Export components of this record
             for j in xrange(0, len(joins)):
                 (c, pkey, fkey) = joins[j]
                 pkey = record[pkey]
@@ -563,15 +575,93 @@ class S3ResourceController(object):
                                        (url, record.id, c.name, crecord.id)
                     else:
                         resource_url = None
+
+                    rmap = self.xml.rmap(c.table, crecord, skip=_skip)
                     cresource = self.xml.element(c.table, crecord,
                                                  skip=_skip,
                                                  url=resource_url,
                                                  download_url=self.download_url,
                                                  marker=marker)
+
+                    self.xml.add_references(cresource, rmap)
+                    self.xml.gis_encode(rmap,
+                                        download_url=self.download_url,
+                                        marker=marker)
+
                     resource.append(cresource)
+                    ref_map.extend(rmap)
 
-            resources.append(resource)
+                    if exp_map.get(c.tablename, None):
+                        exp_map[c.tablename].append(crecord.id)
+                    else:
+                        exp_map[c.tablename] = [crecord.id]
 
+        # Add referenced resources as required
+        # TODO: URL's!
+        depth = export_refs and self.MAX_DEPTH or 0
+        while ref_map and depth:
+            depth -= 1
+
+            # Re-order reference map
+            load_map = Storage()
+            for i in xrange(0, len(ref_map)):
+                r = ref_map[i]
+                if r.uid:
+                    exp_list = exp_map.get(r.table, None)
+                    if exp_list and r.id in exp_list:
+                        continue
+                    else:
+                        load_list = load_map.get(r.table, None)
+                        if not load_list:
+                            load_list = [r.id]
+                            load_map[r.table] = load_list
+                        else:
+                            load_list.append(r.id)
+
+            ref_map = []
+
+            # Load referenced records
+            for tablename in load_map.keys():
+                prefix, name = tablename.split("_", 1)
+                load_list = load_map[tablename]
+                if permit:
+                    if not permit(self.ACTION["read"], tablename):
+                        continue
+                    load_list = filter(lambda id:
+                                       permit(self.ACTION["read"],
+                                              tablename, id),
+                                       load_list)
+                    if not load_list:
+                        continue
+                table = self.db[tablename]
+                query = (table.id.belongs(load_list))
+                if "deleted" in table:
+                    query = (table.deleted == False) & query
+                records = self.db(query).select(table.ALL) or []
+                for record in records:
+                    if audit:
+                        audit(self.ACTION["read"], prefix, name,
+                              record=record.id, representation="xml")
+                    rmap = self.xml.rmap(table, record, skip=skip)
+                    resource = self.xml.element(table, record,
+                                                skip=skip,
+                                                #url=resource_url,
+                                                download_url=self.download_url,
+                                                marker=marker)
+
+                    self.xml.add_references(resource, rmap)
+                    self.xml.gis_encode(rmap,
+                                        download_url=self.download_url,
+                                        marker=marker)
+
+                    resources.append(resource)
+                    if exp_map.get(tablename, None):
+                        exp_map[tablename].append(record.id)
+                    else:
+                        exp_map[tablename] = [record.id]
+                    ref_map.extend(rmap)
+
+        # Complete the tree
         return self.xml.tree(resources,
                              domain=self.domain,
                              url=burl,
@@ -882,21 +972,7 @@ class S3Vector(object):
 
 class S3XML(object):
 
-    """
-        XML toolkit for S3
-
-        @param db: the database abstraction layer
-        @type db: DAL
-        @param domain:
-            the domain name of the application instance, used to
-            identify the origin of data
-        @type domain: string
-        @param base_url: the base URL of the instance
-        @type base_url: string
-        @param gis: the geospatial information handler of the application
-        @type gis: GIS
-
-    """
+    """ XML toolkit for S3 """
 
     S3XRC_NAMESPACE = "http://eden.sahanafoundation.org/wiki/S3XRC"
     S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
@@ -1133,6 +1209,147 @@ class S3XML(object):
                 return uid
 
 
+    def rmap_old(self, element):
+
+        """ Resolves references in an element (export) """
+
+        reference_map = []
+
+        references = element.xpath("./%s" % self.TAG["reference"])
+        for r in references:
+            id = r.get("id", None)
+            field = r.get(self.ATTRIBUTE["field"], None)
+            ktablename = r.get(self.ATTRIBUTE["resource"], None)
+            ktable = self.db[ktablename]
+
+            if id:
+                if self.UID in ktable.fields:
+                    query = (ktable.id == id)
+                    if "deleted" in ktable:
+                        query = (ktable.deleted == False) & query
+                    krecord = self.db(query).select(ktable[self.UID], limitby=(0, 1))
+                    if krecord:
+                        uid = krecord[0][self.UID]
+                        if self.domain_mapping:
+                            uid = self.export_uid(uid)
+                        r.set(self.UID, self.xml_encode(uid))
+                        del r.attrib["id"]
+                    else:
+                        element.remove(r)
+                        continue
+                else:
+                    query = (ktable.id == id)
+                    if "deleted" in ktable:
+                        query = (ktable.deleted == False) & query
+                    if not self.db(query).count():
+                        element.remove(r)
+                        continue
+            else:
+                element.remove(r)
+                continue
+
+            reference_map.append(dict(field = field,
+                                      table = ktablename,
+                                      id = id,
+                                      uid = uid,
+                                      element = r))
+
+        return reference_map
+
+
+    def rmap(self, table, record, skip=[]):
+
+        reference_map = []
+
+        fields = filter(lambda f: \
+                        f not in skip and \
+                        f not in self.IGNORE_FIELDS and \
+                        f not in self.FIELDS_TO_ATTRIBUTES and \
+                        str(table[f].type).startswith("reference") and \
+                        f in record.keys(),
+                        table.fields)
+
+        for f in fields:
+
+            id = record.get(f, None)
+            uid = None
+
+            ktablename = str(table[f].type)[10:]
+            ktable = self.db[ktablename]
+
+            if self.UID in ktable.fields:
+                query = (ktable.id == id)
+                if "deleted" in ktable:
+                    query = (ktable.deleted == False) & query
+                krecord = self.db(query).select(ktable[self.UID], limitby=(0, 1))
+                if krecord:
+                    uid = krecord[0][self.UID]
+                    if self.domain_mapping:
+                        uid = self.export_uid(uid)
+                else:
+                    continue
+            else:
+                query = (ktable.id == id)
+                if "deleted" in ktable:
+                    query = (ktable.deleted == False) & query
+                if not self.db(query).count():
+                    continue
+
+            value = record[f]
+            value = text = self.xml_encode(str(table[f].formatter(value)).decode("utf-8"))
+            if table[f].represent:
+                text = str(table[f].represent(value)).decode("utf-8")
+                # Filter out markup from text
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                except etree.XMLSyntaxError:
+                    pass
+                text = self.xml_encode(text)
+
+            reference_map.append(Storage(field=f, table=ktablename, id=id, uid=uid, text=text, value=value))
+
+        return reference_map
+
+
+    def add_references(self, element, rmap):
+
+        for r in rmap:
+            reference = etree.SubElement(element, self.TAG["reference"])
+            reference.set(self.ATTRIBUTE["field"], r.field)
+            reference.set(self.ATTRIBUTE["resource"], r.table)
+            if r.uid:
+                reference.set(self.UID, r.uid )
+                reference.text = r.text
+            else:
+                reference.set(self.ATTRIBUTE["value"], r.text)
+            r.element=reference
+
+
+    def gis_encode(self, rmap, download_url="", marker=None):
+
+        for r in rmap:
+            if r.element is None:
+                continue
+            ktable = self.db[r.table]
+            if self.Lat in ktable.fields and self.Lon in ktable.fields:
+                LatLon = self.db(ktable.id == r.id).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
+                if LatLon:
+                    LatLon = LatLon[0]
+                    if LatLon[self.Lat] and LatLon[self.Lon]:
+                        r.element.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
+                        r.element.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
+                        if self.gis:
+                            if marker:
+                                marker_url = "%s/gis_marker.image.%s.png" % (download_url, marker)
+                            else:
+                                marker = self.gis.get_marker(r.value)
+                                marker_url = "%s/%s" % (download_url, marker)
+                            r.element.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
+
+
     def element(self, table, record, skip=[],
                 url=None, download_url=None, marker=None):
 
@@ -1149,13 +1366,13 @@ class S3XML(object):
             if self.domain_mapping:
                 value = self.export_uid(_value)
             resource.set(self.UID, self.xml_encode(value))
-            if table._tablename == "gis_location":
-                # Look up the marker to display
-                if self.gis:
-                    marker = self.gis.get_marker(_value)
-                    marker_url = "%s/%s" % (download_url, marker)
-                    resource.set(self.ATTRIBUTE["marker"],
-                                 self.xml_encode(marker_url))
+            #if table._tablename == "gis_location":
+                ## Look up the marker to display
+                #if self.gis:
+                    #marker = self.gis.get_marker(_value)
+                    #marker_url = "%s/%s" % (download_url, marker)
+                    #resource.set(self.ATTRIBUTE["marker"],
+                                 #self.xml_encode(marker_url))
 
         readable = filter( lambda key: \
                         key not in self.IGNORE_FIELDS and \
@@ -1188,44 +1405,13 @@ class S3XML(object):
                 resource.set(f, text)
 
             elif fieldtype.startswith("reference"):
-                _ktable = fieldtype[10:]
-                ktable = self.db[_ktable]
-                if self.UID in ktable.fields:
-                    uid = self.db(ktable.id == value).select(ktable[self.UID],
-                                                            limitby=(0, 1))
-                    if uid:
-                        if self.domain_mapping:
-                            uid = self.export_uid(uid[0][self.UID])
-                        else:
-                            uid = uid[0][self.UID]
-                        reference = etree.SubElement(resource, self.TAG["reference"])
-                        reference.set(self.ATTRIBUTE["field"], f)
-                        reference.set(self.ATTRIBUTE["resource"], _ktable)
-                        reference.set(self.UID, self.xml_encode(str(uid)))
-                        reference.text = text
-                if self.Lat in ktable.fields and self.Lon in ktable.fields:
-                    # Export GeoData for KML/GeoRSS/GPX
-                    LatLon = self.db(ktable.id == value).select(ktable[self.Lat],
-                                                                ktable[self.Lon],
-                                                                limitby=(0, 1))
-                    if LatLon:
-                        LatLon = LatLon[0]
-                        if LatLon[self.Lat] and LatLon[self.Lon]:
-                            reference.set(self.ATTRIBUTE["lat"],
-                                          self.xml_encode("%.6f" % LatLon[self.Lat]))
-                            reference.set(self.ATTRIBUTE["lon"],
-                                          self.xml_encode("%.6f" % LatLon[self.Lon]))
-                            if self.gis:
-                                if marker:
-                                    # Use provided over-ride marker
-                                    marker_url = "%s/gis_marker.image.%s.png" % \
-                                                 (download_url, marker)
-                                else:
-                                    # Look up the marker
-                                    marker = self.gis.get_marker(value)
-                                    marker_url = "%s/%s" % (download_url, marker)
-                                reference.set(self.ATTRIBUTE["marker"],
-                                              self.xml_encode(marker_url))
+                continue
+                #ktable = fieldtype[10:]
+                #reference = etree.SubElement(resource, self.TAG["reference"])
+                #reference.set(self.ATTRIBUTE["field"], f)
+                #reference.set(self.ATTRIBUTE["resource"], ktable)
+                #reference.set("id", value )
+                #reference.text = text
 
             elif fieldtype == "upload":
                 data = etree.SubElement(resource, self.TAG["data"])

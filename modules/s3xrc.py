@@ -438,7 +438,7 @@ class S3ResourceController(object):
                    limit=None,  # pagesize
                    marker=None, # override marker to display KML feeds
                    show_urls=True, # Show URL's in <resource> elements
-                   export_refs=False): # export referenced objects
+                   export_refs=True): # export referenced objects
 
         """ Exports data as XML tree """
 

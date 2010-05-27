@@ -1,0 +1,105 @@
+{{extend 'layout.html'}}
+
+{{include 'ext.html'}}
+
+{{include 'gis/ol_js_loaders.html'}}
+
+<script type="text/javascript">//<![CDATA[
+
+// Set Proxy Host
+OpenLayers.ProxyHost = '{{=URL(r=request, c='gis', f='proxy?url=')}}';
+
+var tree, mapPanel;
+
+var lat = {{=config.lat}};
+var lon = {{=config.lon}};
+var center = new OpenLayers.LonLat(lon, lat);
+
+// See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
+var proj4326 = new OpenLayers.Projection('EPSG:4326');
+var projection_current = new OpenLayers.Projection('EPSG:{{=config.projection}}');
+
+var options = {
+    displayProjection: proj4326,
+    projection: projection_current,
+    units: "{{=config.units}}",
+    maxResolution: {{=config.maxResolution}},
+    maxExtent: new OpenLayers.Bounds({{=config.maxExtent}}),
+    numZoomLevels: {{=config.zoom_levels}}
+};
+
+var baselayer = new OpenLayers.Layer.WMS("Blue Marble",
+                "http://maps.opengeo.org/geowebcache/service/wms", 
+                {layers: "bluemarble"},
+                {buffer: 0}
+            )
+
+Ext.onReady(function() {
+
+    map = new OpenLayers.Map('center', options);
+    map.addLayer(baselayer);
+    
+    var root = new Ext.tree.AsyncTreeNode({
+        text: 'UNEP Risks',
+        loader: new GeoExt.tree.WMSCapabilitiesLoader({
+            url: OpenLayers.ProxyHost + 'http%3a%2f%2fpreview.grid.unep.ch%3a8080%2fgeoserver%2fows%3fservice%3dWMS%26request%3dGetCapabilities',
+            //url: '{{=URL(r=request, c="default", f="download", args="gis_cache.file.a3b4fba9b97ee630.776d735f636170732e786d6c.xml")}}',
+            layerOptions: {buffer: 0, singleTile: true, ratio: 1},
+            layerParams: {'TRANSPARENT': 'TRUE'},
+            // customize the createNode method to add a checkbox to nodes
+            createNode: function(attr) {
+                attr.checked = attr.leaf ? false : undefined;
+                return GeoExt.tree.WMSCapabilitiesLoader.prototype.createNode.apply(this, [attr]);
+            }
+        })
+    });
+
+    tree = new Ext.tree.TreePanel({
+        root: root,
+        region: 'west',
+        width: 250,
+        listeners: {
+            // Add layers to the map when checked, remove when unchecked.
+            // Note that this does not take care of maintaining the layer
+            // order on the map.
+            'checkchange': function(node, checked) { 
+                if (checked === true) {
+                    mapPanel.map.addLayer(node.attributes.layer); 
+                } else {
+                    mapPanel.map.removeLayer(node.attributes.layer);
+                }
+            }
+        }
+    });
+
+    mapPanel = new GeoExt.MapPanel({
+        //zoom: 2,
+        map: map,
+        center: center,
+        zoom: {{=config.zoom}},
+        region: 'center'
+    });
+
+    new Ext.Viewport({
+        layout: "fit",
+        hideBorders: true,
+        items: {
+            layout: "border",
+            deferredRender: false,
+            items: [ mapPanel, tree
+                //, {
+                //contentEl: "desc",
+                //region: "east",
+                //bodyStyle: {"padding": "5px"},
+                //collapsible: true,
+                //collapseMode: "mini",
+                //split: true,
+                //width: 200,
+                //title: "Description"
+                //}
+            ]
+        }
+    });
+
+});
+//]]></script>

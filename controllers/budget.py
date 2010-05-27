@@ -22,12 +22,14 @@ response.menu_options = [
 
 # Options used in multiple functions
 table = db.budget_item
+table.category_type.comment = SPAN("*", _class="req")
 table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 table.code.label = T('Code')
 table.code.comment = SPAN("*", _class="req")
 table.description.requires = IS_NOT_EMPTY()
 table.description.label = T('Description')
 table.description.comment = SPAN("*", _class="req")
+table.cost_type.comment = SPAN("*", _class="req")
 table.unit_cost.label = T('Unit Cost')
 table.monthly_cost.label = T('Monthly Cost')
 table.minute_cost.label = T('Cost per Minute')

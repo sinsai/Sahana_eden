@@ -24,7 +24,7 @@ shn_module_enable = {
     "dvi" : True,               # Disaster Victim Identification
     "dvr" : True,               # Disaster Victim Registry
     "hms" : True,               # Hospital Management
-    "hrm" : True,               # Human Resources Management
+    "hrm" : False,              # Human Resources Management
     "mpr" : True,               # Missing Person Registry
     "msg" : True,               # Messaging
     "nim" : False,              # Nursing Information Manager

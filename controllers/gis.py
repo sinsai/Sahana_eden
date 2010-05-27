@@ -1843,6 +1843,15 @@ def display_features():
 
     return output
 
+def wms_capabilities():
+    " Controller for custom view testing WMS Capabilities Browser "
+    google = Storage()
+    google.enabled = False
+    yahoo = Storage()
+    yahoo.enabled = False
+    
+    return dict(projection=900913, bing=False, google=google, yahoo=yahoo)
+
 def geolocate():
     " Call a Geocoder service "
     if 'location' in request.vars:

@@ -1,0 +1,65 @@
+{{extend 'layout.html'}}
+
+{{include 'ext.html'}}
+
+{{include 'gis/ol_js_loaders.html'}}
+
+<script type="text/javascript">//<![CDATA[
+
+// Set Proxy Host
+OpenLayers.ProxyHost = '{{=URL(r=request, c='gis', f='proxy?url=')}}';
+
+var store;
+
+Ext.onReady(function() {
+    
+    // create a new WMS capabilities store
+    store = new GeoExt.data.WMSCapabilitiesStore({
+        url: OpenLayers.ProxyHost + 'http%3a%2f%2fpreview.grid.unep.ch%3a8080%2fgeoserver%2fows%3fservice%3dWMS%26request%3dGetCapabilities'
+        //url: '{{=URL(r=request, c="default", f="download", args="gis_cache.file.a3b4fba9b97ee630.776d735f636170732e786d6c.xml")}}'
+    });
+    // load the store with records derived from the doc at the above url
+    store.load();
+
+    // create a grid to display records from the store
+    var grid = new Ext.grid.GridPanel({
+        title: "WMS Capabilities",
+        store: store,
+        columns: [
+            {header: "Title", dataIndex: "title", sortable: true},
+            {header: "Name", dataIndex: "name", sortable: true},
+            {header: "Queryable", dataIndex: "queryable", sortable: true, width: 70},
+            {id: "description", header: "Description", dataIndex: "abstract"}
+        ],
+        autoExpandColumn: "description",
+        renderTo: "capgrid",
+        height: 300,
+        width: 650,
+        listeners: {
+            rowdblclick: mapPreview
+        }
+    });
+    
+    function mapPreview(grid, index) {
+        var record = grid.getStore().getAt(index);
+        var layer = record.get("layer").clone();
+        
+        var win = new Ext.Window({
+            title: "Preview: " + record.get("title"),
+            width: 512,
+            height: 256,
+            layout: "fit",
+            items: [{
+                xtype: "gx_mappanel",
+                layers: [layer],
+                extent: record.get("llbbox")
+            }]
+        });
+        win.show();
+    }
+
+});
+
+//]]></script>
+
+<div id="capgrid"></div>

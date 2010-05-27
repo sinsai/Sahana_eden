@@ -428,6 +428,26 @@ class S3ResourceController(object):
             return None
 
 
+    def __fields(self, table, skip=[]):
+
+        fields = filter(lambda f:
+                        f != self.xml.UID and
+                        f not in skip and
+                        f not in self.xml.IGNORE_FIELDS,
+                        table.fields)
+
+        references = filter(lambda f:
+                            str(table[f].type).startswith("reference") and
+                            f not in self.xml.FIELDS_TO_ATTRIBUTES,
+                            fields)
+
+        readables = filter(lambda f:
+                           f not in references,
+                           fields)
+
+        return (references, readables)
+
+
     def export_xml(self, prefix, name, id,
                    joins=[],
                    filterby=None,
@@ -457,6 +477,7 @@ class S3ResourceController(object):
             return self.xml.root(resources, domain=self.domain, url=burl)
 
         table = self.db[_table]
+        (references, readables) = self.__fields(table, skip=skip)
 
         if id and isinstance(id, (list, tuple)):
             query = (table.id.belongs(id))
@@ -510,6 +531,8 @@ class S3ResourceController(object):
 
         # Read component records
         cdata = {}
+        creferences = {}
+        creadables = {}
         if records:
             for i in xrange(0, len(joins)):
                 (c, pkey, fkey) = joins[i]
@@ -519,6 +542,12 @@ class S3ResourceController(object):
                 if "deleted" in c.table:
                     cquery = (c.table.deleted == False) & cquery
                 cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
+                _skip = [fkey,]
+                if skip:
+                    _skip.extend(skip)
+                cfields = self.__fields(c.table, skip=_skip)
+                creferences[c.tablename] = cfields[0]
+                creadables[c.tablename] = cfields[1]
 
         # Export records
         exp_map = Storage()
@@ -533,9 +562,9 @@ class S3ResourceController(object):
             else:
                 resource_url = None
 
-            rmap = self.xml.rmap(table, record, skip=skip)
+            rmap = self.xml.rmap(table, record, references)
             resource = self.xml.element(table, record,
-                                        skip=skip,
+                                        fields=readables,
                                         url=resource_url,
                                         download_url=self.download_url,
                                         marker=marker)
@@ -559,9 +588,6 @@ class S3ResourceController(object):
                 pkey = record[pkey]
                 crecords = cdata[c.tablename]
                 crecords = filter(lambda r: r[fkey] == pkey, crecords)
-                _skip = [fkey,]
-                if skip:
-                    _skip.extend(skip)
                 for k in xrange(0, len(crecords)):
                     crecord = crecords[k]
                     if permit and not permit(self.ACTION["read"],
@@ -576,9 +602,9 @@ class S3ResourceController(object):
                     else:
                         resource_url = None
 
-                    rmap = self.xml.rmap(c.table, crecord, skip=_skip)
+                    rmap = self.xml.rmap(c.table, crecord, creferences[c.tablename])
                     cresource = self.xml.element(c.table, crecord,
-                                                 skip=_skip,
+                                                 fields=creadables[c.tablename],
                                                  url=resource_url,
                                                  download_url=self.download_url,
                                                  marker=marker)
@@ -634,6 +660,7 @@ class S3ResourceController(object):
                     if not load_list:
                         continue
                 table = self.db[tablename]
+                (references, readables) = self.__fields(table, skip=skip)
                 query = (table.id.belongs(load_list))
                 if "deleted" in table:
                     query = (table.deleted == False) & query
@@ -642,9 +669,9 @@ class S3ResourceController(object):
                     if audit:
                         audit(self.ACTION["read"], prefix, name,
                               record=record.id, representation="xml")
-                    rmap = self.xml.rmap(table, record, skip=skip)
+                    rmap = self.xml.rmap(table, record, references)
                     resource = self.xml.element(table, record,
-                                                skip=skip,
+                                                fields=readables,
                                                 #url=resource_url,
                                                 download_url=self.download_url,
                                                 marker=marker)
@@ -1209,69 +1236,14 @@ class S3XML(object):
                 return uid
 
 
-    def rmap_old(self, element):
-
-        """ Resolves references in an element (export) """
+    def rmap(self, table, record, fields):
 
         reference_map = []
-
-        references = element.xpath("./%s" % self.TAG["reference"])
-        for r in references:
-            id = r.get("id", None)
-            field = r.get(self.ATTRIBUTE["field"], None)
-            ktablename = r.get(self.ATTRIBUTE["resource"], None)
-            ktable = self.db[ktablename]
-
-            if id:
-                if self.UID in ktable.fields:
-                    query = (ktable.id == id)
-                    if "deleted" in ktable:
-                        query = (ktable.deleted == False) & query
-                    krecord = self.db(query).select(ktable[self.UID], limitby=(0, 1))
-                    if krecord:
-                        uid = krecord[0][self.UID]
-                        if self.domain_mapping:
-                            uid = self.export_uid(uid)
-                        r.set(self.UID, self.xml_encode(uid))
-                        del r.attrib["id"]
-                    else:
-                        element.remove(r)
-                        continue
-                else:
-                    query = (ktable.id == id)
-                    if "deleted" in ktable:
-                        query = (ktable.deleted == False) & query
-                    if not self.db(query).count():
-                        element.remove(r)
-                        continue
-            else:
-                element.remove(r)
-                continue
-
-            reference_map.append(dict(field = field,
-                                      table = ktablename,
-                                      id = id,
-                                      uid = uid,
-                                      element = r))
-
-        return reference_map
-
-
-    def rmap(self, table, record, skip=[]):
-
-        reference_map = []
-
-        fields = filter(lambda f: \
-                        f not in skip and \
-                        f not in self.IGNORE_FIELDS and \
-                        f not in self.FIELDS_TO_ATTRIBUTES and \
-                        str(table[f].type).startswith("reference") and \
-                        f in record.keys(),
-                        table.fields)
 
         for f in fields:
-
             id = record.get(f, None)
+            if not id:
+                continue
             uid = None
 
             ktablename = str(table[f].type)[10:]
@@ -1316,7 +1288,8 @@ class S3XML(object):
 
     def add_references(self, element, rmap):
 
-        for r in rmap:
+        for i in xrange(0, len(rmap)):
+            r = rmap[i]
             reference = etree.SubElement(element, self.TAG["reference"])
             reference.set(self.ATTRIBUTE["field"], r.field)
             reference.set(self.ATTRIBUTE["resource"], r.table)
@@ -1324,41 +1297,52 @@ class S3XML(object):
                 reference.set(self.UID, r.uid )
                 reference.text = r.text
             else:
-                reference.set(self.ATTRIBUTE["value"], r.text)
-            r.element=reference
+                reference.set(self.ATTRIBUTE["value"], r.value)
+                # TODO: add in-line resource
+            r.element = reference
 
 
     def gis_encode(self, rmap, download_url="", marker=None):
 
-        for r in rmap:
-            if r.element is None:
-                continue
+        if not self.gis:
+            return
+
+        references = filter(lambda r:
+                            r.element is not None and \
+                            self.Lat in self.db[r.table].fields and \
+                            self.Lon in self.db[r.table].fields,
+                            rmap)
+
+        for i in xrange(0, len(references)):
+            r = references[i]
             ktable = self.db[r.table]
-            if self.Lat in ktable.fields and self.Lon in ktable.fields:
-                LatLon = self.db(ktable.id == r.id).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
-                if LatLon:
-                    LatLon = LatLon[0]
-                    if LatLon[self.Lat] and LatLon[self.Lon]:
-                        r.element.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
-                        r.element.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
-                        if self.gis:
-                            if marker:
-                                marker_url = "%s/gis_marker.image.%s.png" % (download_url, marker)
-                            else:
-                                marker = self.gis.get_marker(r.value)
-                                marker_url = "%s/%s" % (download_url, marker)
-                            r.element.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
+            LatLon = self.db(ktable.id == r.id).select(ktable[self.Lat], ktable[self.Lon], limitby=(0, 1))
+            if LatLon:
+                LatLon = LatLon[0]
+                if LatLon[self.Lat] is not None and \
+                   LatLon[self.Lon] is not None:
+                    r.element.set(self.ATTRIBUTE["lat"], self.xml_encode("%.6f" % LatLon[self.Lat]))
+                    r.element.set(self.ATTRIBUTE["lon"], self.xml_encode("%.6f" % LatLon[self.Lon]))
+                    if marker:
+                        marker_url = "%s/gis_marker.image.%s.png" % (download_url, marker)
+                    else:
+                        marker = self.gis.get_marker(r.value)
+                        marker_url = "%s/%s" % (download_url, marker)
+                    r.element.set(self.ATTRIBUTE["marker"], self.xml_encode(marker_url))
 
 
-    def element(self, table, record, skip=[],
-                url=None, download_url=None, marker=None):
+    def element(self, table, record,
+                fields=[],
+                url=None,
+                download_url=None,
+                marker=None):
 
         """ Creates an element from a Storage() record """
 
         if not download_url:
             download_url = ""
 
-        resource= etree.Element(self.TAG["resource"])
+        resource = etree.Element(self.TAG["resource"])
         resource.set(self.ATTRIBUTE["name"], table._tablename)
 
         if self.UID in table.fields and self.UID in record:
@@ -1366,25 +1350,20 @@ class S3XML(object):
             if self.domain_mapping:
                 value = self.export_uid(_value)
             resource.set(self.UID, self.xml_encode(value))
-            #if table._tablename == "gis_location":
-                ## Look up the marker to display
-                #if self.gis:
-                    #marker = self.gis.get_marker(_value)
-                    #marker_url = "%s/%s" % (download_url, marker)
-                    #resource.set(self.ATTRIBUTE["marker"],
-                                 #self.xml_encode(marker_url))
+            if table._tablename == "gis_location":
+                # Look up the marker to display
+                if self.gis:
+                    marker = self.gis.get_marker(_value)
+                    marker_url = "%s/%s" % (download_url, marker)
+                    resource.set(self.ATTRIBUTE["marker"],
+                                 self.xml_encode(marker_url))
 
-        readable = filter( lambda key: \
-                        key not in self.IGNORE_FIELDS and \
-                        key not in skip and \
-                        record[key] is not None and \
-                        key in table.fields and \
-                        not(key == self.UID),
-                        record.keys())
+        for i in xrange(0, len(fields)):
+            f = fields[i]
+            v = record.get(f, None)
+            if f not in table.fields or v is None:
+                continue
 
-        for i in xrange(0, len(readable)):
-            f = readable[i]
-            v = record[f]
             text = value = self.xml_encode(str(table[f].formatter(v)).decode("utf-8"))
 
             if table[f].represent:
@@ -1403,15 +1382,6 @@ class S3XML(object):
 
             if f in self.FIELDS_TO_ATTRIBUTES:
                 resource.set(f, text)
-
-            elif fieldtype.startswith("reference"):
-                continue
-                #ktable = fieldtype[10:]
-                #reference = etree.SubElement(resource, self.TAG["reference"])
-                #reference.set(self.ATTRIBUTE["field"], f)
-                #reference.set(self.ATTRIBUTE["resource"], ktable)
-                #reference.set("id", value )
-                #reference.text = text
 
             elif fieldtype == "upload":
                 data = etree.SubElement(resource, self.TAG["data"])

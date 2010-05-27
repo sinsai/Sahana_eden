@@ -3,7 +3,7 @@
 """
     Sahana Eden GIS Module
 
-    @version: 0.0.6
+    @version: 0.0.7
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
@@ -37,7 +37,7 @@
 
 __name__ = "S3GIS"
 
-__all__ = ['GIS', 'GoogleGeocoder', 'YahooGeocoder']
+__all__ = ["GIS", "GoogleGeocoder", "YahooGeocoder"]
 
 #import logging
 import os
@@ -93,7 +93,7 @@ class GIS(object):
         assert auth is not None, "Undefined authentication controller"
         self.auth = auth
         self.messages = Messages(None)
-        #self.messages.centroid_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + " library not found, so can't find centroid!"
+        #self.messages.centroid_error = str(A("Shapely", _href="http://pypi.python.org/pypi/Shapely/", _target="_blank")) + " library not found, so can't find centroid!"
         self.messages.centroid_error = "Shapely library not functional, so can't find centroid! Install Geos & Shapely for Line/Polygon support"
         self.messages.unknown_type = "Unknown Type!"
         self.messages.invalid_wkt_linestring = "Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!"
@@ -101,7 +101,7 @@ class GIS(object):
         self.messages.lon_empty = "Invalid: Longitude can't be empty if Latitude specified!"
         self.messages.lat_empty = "Invalid: Latitude can't be empty if Longitude specified!"
         self.messages.unknown_parent = "Invalid: %(parent_id)s is not a known Location"
-        self.messages['T'] = self.T
+        self.messages["T"] = self.T
         self.messages.lock_keys = True
 
     def abbreviate_wkt(self, wkt, max_length=30):
@@ -109,7 +109,7 @@ class GIS(object):
             # Blank WKT field
             return None
         elif len(wkt) > max_length:
-            return "%s(...)" % wkt[0:wkt.index('(')]
+            return "%s(...)" % wkt[0:wkt.index("(")]
         else:
             return wkt
 
@@ -163,12 +163,12 @@ class GIS(object):
                 warning = "HTTPError"
                 return file, warning
 
-            if file[:2] == 'PK':
+            if file[:2] == "PK":
                 # Unzip
                 fp = StringIO(file)
                 myfile = zipfile.ZipFile(fp)
                 try:
-                    file = myfile.read('doc.kml')
+                    file = myfile.read("doc.kml")
                 except:
                     file = myfile.read(myfile.infolist()[0].filename)
                 myfile.close()
@@ -176,14 +176,14 @@ class GIS(object):
             # Check for NetworkLink
             if "<NetworkLink>" in file:
                 # Remove extraneous whitespace
-                #file = ' '.join(file.split())
+                #file = " ".join(file.split())
                 try:
                     parser = etree.XMLParser(recover=True, remove_blank_text=True)
                     tree = etree.XML(file, parser)
                     # Find contents of href tag (must be a better way?)
-                    url = ''
+                    url = ""
                     for element in tree.iter():
-                        if element.tag == '{%s}href' % KML_NAMESPACE:
+                        if element.tag == "{%s}href" % KML_NAMESPACE:
                             url = element.text
                     if url:
                         file, warning2 = self.download_kml(url, S3_PUBLIC_URL)
@@ -376,7 +376,7 @@ class GIS(object):
             >>> s3gis.latlon_to_wkt(6, 80)
             'POINT(80 6)'
         """
-        WKT = 'POINT(%f %f)' % (lon, lat)
+        WKT = "POINT(%f %f)" % (lon, lat)
         return WKT
 
     def show_map( self,
@@ -436,15 +436,15 @@ class GIS(object):
             width = config.map_width
         # Support bookmarks (such as from the control)
         # - these over-ride the arguments
-        if 'lat' in request.vars:
+        if "lat" in request.vars:
             lat = request.vars.lat
         elif not lat:
             lat = config.lat
-        if 'lon' in request.vars:
+        if "lon" in request.vars:
             lon = request.vars.lon
         elif not lon:
             lon = config.lon
-        if 'zoom' in request.vars:
+        if "zoom" in request.vars:
             zoom = request.vars.zoom
         elif not zoom:
             zoom = config.zoom
@@ -468,7 +468,7 @@ class GIS(object):
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/google.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
@@ -534,9 +534,8 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/script/GeoExt.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.min.js")))
-
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
+            
         # Toolbar
         if toolbar:
             toolbar = """
@@ -568,7 +567,7 @@ class GIS(object):
 
         # Can we cache downloaded feeds?
         # Needed for unzipping & filtering as well
-        cachepath = os.path.join(request.folder, 'uploads', 'gis_cache')
+        cachepath = os.path.join(request.folder, "uploads", "gis_cache")
         if os.access(cachepath, os.W_OK):
             cache = True
         else:
@@ -588,14 +587,18 @@ class GIS(object):
             #   }]
 
             for layer in feature_overlays:
-                name = layer['feature_group']
-                url = S3_PUBLIC_URL + '/' + request.application + "/gis/location.kml?feature_group=" + urllib.quote(name)
+                name = layer["feature_group"]
+                url = S3_PUBLIC_URL + "/" + request.application + "/gis/location.kml?feature_group=" + urllib.quote(name)
+                if "popup_url" in layer:
+                    popup_url = layer["popup_url"]
+                else:
+                    popup_url = str(URL(r=request, c="gis", f="location"))
                 if cache:
                     # Download file
                     file, warning = self.download_kml(url, S3_PUBLIC_URL)
-                    filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
+                    filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"
                     filepath = os.path.join(cachepath, filename)
-                    f = open(filepath, 'w')
+                    f = open(filepath, "w")
                     # Handle errors
                     if "URLError" in warning or "HTTPError" in warning:
                         # URL inaccessible
@@ -630,8 +633,8 @@ class GIS(object):
                     pass
 
                 # Generate HTML snippet
-                name_safe = re.sub('\W', '_', name)
-                if 'active' in layer and layer['active']:
+                name_safe = re.sub("\W", "_", name)
+                if "active" in layer and layer["active"]:
                     visibility = "featureLayer" + name_safe +".setVisibility(true);"
                 else:
                     visibility = "featureLayer" + name_safe +".setVisibility(false);"
@@ -645,36 +648,37 @@ class GIS(object):
         map.addLayer(featureLayer""" + name_safe + """);
         featureLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect""" + name_safe + """, "featureunselected": onFeatureUnselect });
         allLayers.push(featureLayer""" + name_safe + """);
+        
+        function loadDetails(url, id) {
+            $.getS3(
+                    url,
+                    function(data) {
+                        $('#' + id).html(data);
+                    },
+                    'html',
+                    'popup'
+                );
+        }
+
         function onKmlFeatureSelect""" + name_safe + """(event) {
+            // unselect any previous selections
+            //tooltipUnselect(event);
             var feature = event.feature;
             var selectedFeature = feature;
-            var type = typeof feature.attributes.name
-            if ('object' == type) {
-                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001),
+            var id = 'featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001)
+            var popup = new OpenLayers.Popup.FramedCloud(
+                id,
                 feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
-                '<h3>' + '</h3>',
-                null, true, onPopupClose);
-            } else if (undefined == feature.attributes.description) {
-                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + feature.attributes.name,
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
-                '<h3>' + feature.attributes.name + '</h3>',
-                null, true, onPopupClose);
-            } else {
-                var content = '<h3>' + feature.attributes.name + '</h3>' + feature.attributes.description;
-                // Protect the description against JavaScript attacks
-                if (content.search('<script') != -1) {
-                    content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
-                }
-                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + feature.attributes.name,
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
-                content,
-                null, true, onPopupClose);
-            };
+                new OpenLayers.Size(400, 400),
+                "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
+                null,
+                true,
+                onPopupClose
+            );
             feature.popup = popup;
             map.addPopup(popup);
+            // call AJAX to get the data
+            loadDetails('""" + popup_url + """' + '?location.uid=' + feature.attributes.styleUrl.replace(new RegExp('^[#"]+', 'g'), ''), id);
         }
                 """
 
@@ -687,13 +691,13 @@ class GIS(object):
         #
 
         # OpenStreetMap
-        gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender'] # Copied from Model - Need to DRY!
+        gis_layer_openstreetmap_subtypes = ["Mapnik", "Osmarender"] # Copied from Model - Need to DRY!
         openstreetmap = Storage()
         openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled==True).select()
         for layer in openstreetmap_enabled:
             for subtype in gis_layer_openstreetmap_subtypes:
                 if layer.subtype == subtype:
-                    openstreetmap['%s' % subtype] = layer.name
+                    openstreetmap["%s" % subtype] = layer.name
 
         functions_openstreetmap = ""
         if openstreetmap:
@@ -983,8 +987,8 @@ class GIS(object):
 
         if not wkt:
             assert lon is not None and lat is not None, "Need wkt or lon+lat to parse a location"
-            wkt = 'POINT(%f %f)' % (lon, lat)
-            geom_type = GEOM_TYPES['point']
+            wkt = "POINT(%f %f)" % (lon, lat)
+            geom_type = GEOM_TYPES["point"]
             bbox = (lon, lat, lon, lat)
         else:
             if SHAPELY:
@@ -997,12 +1001,12 @@ class GIS(object):
             else:
                 lat = None
                 lon = None
-                geom_type = GEOM_TYPES[wkt.split('(')[0].lower()]
+                geom_type = GEOM_TYPES[wkt.split("(")[0].lower()]
                 bbox = None
 
-        res = {'wkt': wkt, 'lat': lat, 'lon': lon, 'gis_feature_type': geom_type}
+        res = {"wkt": wkt, "lat": lat, "lon": lon, "gis_feature_type": geom_type}
         if bbox:
-            res['lon_min'], res['lat_min'], res['lon_max'], res['lat_max'] = bbox
+            res["lon_min"], res["lat_min"], res["lon_max"], res["lat_max"] = bbox
 
         return res
 
@@ -1027,45 +1031,45 @@ class GIS(object):
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
         """
 
-        if form.vars.gis_feature_type == '1':
+        if form.vars.gis_feature_type == "1":
             # Point
             if form.vars.lon == None and form.vars.lat == None:
                 # No geo to create WKT from, so skip
                 return
             elif form.vars.lat == None:
-                form.errors['lat'] = self.messages.lat_empty
+                form.errors["lat"] = self.messages.lat_empty
                 return
             elif form.vars.lon == None:
-                form.errors['lon'] = self.messages.lon_empty
+                form.errors["lon"] = self.messages.lon_empty
                 return
             else:
-                form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
+                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
                 return
 
-        elif form.vars.gis_feature_type == '2':
+        elif form.vars.gis_feature_type == "2":
             # Line
             try:
                 try:
                     line = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors['wkt'] = self.messages.invalid_wkt_linestring
+                    form.errors["wkt"] = self.messages.invalid_wkt_linestring
                     return
                 centroid_point = line.centroid
-                form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-                form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
+                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
             except:
                 form.errors.gis_feature_type = self.messages.centroid_error
-        elif form.vars.gis_feature_type == '3':
+        elif form.vars.gis_feature_type == "3":
             # Polygon
             try:
                 try:
                     polygon = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors['wkt'] = self.messages.invalid_wkt_polygon
+                    form.errors["wkt"] = self.messages.invalid_wkt_polygon
                     return
                 centroid_point = polygon.centroid
-                form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-                form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
+                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
             except:
                 form.errors.gis_feature_type = self.messages.centroid_error
 
@@ -1118,18 +1122,18 @@ class Geocoder(object):
 class GoogleGeocoder(Geocoder):
     " Google Geocoder module "
 
-    def __init__(self, location, db, domain='maps.google.com', resource='maps/geo', output_format='kml'):
+    def __init__(self, location, db, domain="maps.google.com", resource="maps/geo", output_format="kml"):
         " Initialize the values based on arguments or default settings "
         self.api_key = self.get_api_key()
         self.domain = domain
         self.resource = resource
-        self.params = {'q': location, 'key': self.api_key}
+        self.params = {"q": location, "key": self.api_key}
         self.url = "http://%(domain)s/%(resource)?%%s" % locals()
         self.db = db
 
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name=='google'
+        query = self.db.gis_apikey.name == "google"
         return self.db(query).select().first().apikey
 
     def construct_url(self):
@@ -1147,12 +1151,12 @@ class YahooGeocoder(Geocoder):
         " Initialize the values based on arguments or default settings "
         self.api_key = self.get_api_key()
         self.location = location
-        self.params = {'location': self.location, 'appid': self.app_key}
+        self.params = {"location": self.location, "appid": self.app_key}
         self.db = db
 
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name=='yahoo'
+        query = self.db.gis_apikey.name == "yahoo"
         return self.db(query).select().first().apikey
 
     def construct_url(self):

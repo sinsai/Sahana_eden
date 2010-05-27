@@ -242,7 +242,7 @@ def item():
         msg_record_deleted = T('Item deleted'),
         msg_list_empty = T('No Items currently registered'))
 
-    response.s3.pdf = URL(r=request, f='item_export_pdf')
+    response.s3.formats.pdf = URL(r=request, f='item_export_pdf')
 
     return shn_rest_controller(module, resource,
                                main='code',
@@ -375,8 +375,8 @@ def kit():
         msg_record_deleted = T('Kit deleted'),
         msg_list_empty = T('No Kits currently registered'))
 
-    response.s3.pdf = URL(r=request, f='kit_export_pdf')
-    response.s3.xls = URL(r=request, f='kit_export_xls')
+    response.s3.formats.pdf = URL(r=request, f='kit_export_pdf')
+    response.s3.formats.xls = URL(r=request, f='kit_export_xls')
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='kit_item', args=request.args[1])
 

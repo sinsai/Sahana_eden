@@ -27,6 +27,7 @@ def shn_sessions():
         session.s3 = Storage()
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
+    response.s3.formats = Storage()
     settings = db(db.s3_setting.id > 0).select().first()
     controller_settings_table = '%s_setting' % request.controller
     controller_settings = controller_settings_table in db.tables and \
@@ -408,6 +409,7 @@ def shn_crud_strings(table_name,
     subtitle_list = T(table_name_plural),
     label_list_button = LIST,
     label_create_button = ADD,
+    label_delete_button = T("Delete " + table_name),
     msg_record_created =  T(table_name +' added'),
     msg_record_modified =  T(table_name + ' updated'),
     msg_record_deleted = T( table_name + ' deleted'),

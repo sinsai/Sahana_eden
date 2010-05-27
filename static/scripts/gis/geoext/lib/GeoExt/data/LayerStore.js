@@ -44,12 +44,13 @@ GeoExt.data.LayerStoreMixin = function() {
     return {
         /** api: config[map]
          *  ``OpenLayers.Map``
-         *  Map that this store will be in sync with.
+         *  Map that this store will be in sync with. If not provided, the
+         *  store will not be bound to a map.
          */
         
         /** api: property[map]
          *  ``OpenLayers.Map``
-         *  Map that the store is synchronized with.
+         *  Map that the store is synchronized with, if any.
          */
         map: null,
         
@@ -377,6 +378,21 @@ GeoExt.data.LayerStoreMixin = function() {
          */
         onReplace: function(key, oldRecord, newRecord){
             this.removeMapLayer(oldRecord);
+        },
+        
+        /** public: method[getByLayer]
+         *  :param layer: ``OpenLayers.Layer``
+         *  :return: :class:`GeoExt.data.LayerRecord` or undefined if not found
+         *  
+         *  Get the record for the specified layer
+         */
+        getByLayer: function(layer) {
+            var index = this.findBy(function(r) {
+                return r.get("layer") === layer;
+            });
+            if(index > -1) {
+                return this.getAt(index);
+            }
         },
         
         /** private: method[destroy]

@@ -441,7 +441,7 @@ if empty:
     if not db(table.id>0).count():
         table.insert(
             name = 'Track',
-            #marker_id = db(db.gis_marker.name=='shelter').select()[0].id,
+            #marker_id = db(db.gis_marker.name=='shelter').select().first().id,
             module = 'gis',
             resource = 'track'
         )
@@ -462,13 +462,13 @@ if empty:
         )
         table.insert(
             name = 'Shelter',
-            marker_id = db(db.gis_marker.name=='shelter').select()[0].id,
+            marker_id = db(db.gis_marker.name=='shelter').select().first().id,
             module = 'cr',
             resource = 'shelter'
         )
         table.insert(
             name = 'Office',
-            marker_id = db(db.gis_marker.name=='office').select()[0].id,
+            marker_id = db(db.gis_marker.name=='office').select().first().id,
             module = 'or',
             resource = 'office'
         )
@@ -477,39 +477,39 @@ if empty:
         )
         table.insert(
             name = 'Airport',
-            marker_id = db(db.gis_marker.name=='airport').select()[0].id,
+            marker_id = db(db.gis_marker.name=='airport').select().first().id,
         )
         table.insert(
             name = 'Bridge',
-            marker_id = db(db.gis_marker.name=='bridge').select()[0].id,
+            marker_id = db(db.gis_marker.name=='bridge').select().first().id,
         )
         table.insert(
             name = 'Port',
-            marker_id = db(db.gis_marker.name=='port').select()[0].id,
+            marker_id = db(db.gis_marker.name=='port').select().first().id,
         )
         table.insert(
             name = 'Hospital',
-            marker_id = db(db.gis_marker.name=='hospital').select()[0].id,
+            marker_id = db(db.gis_marker.name=='hospital').select().first().id,
         )
         table.insert(
             name = 'Church',
-            marker_id = db(db.gis_marker.name=='church').select()[0].id,
+            marker_id = db(db.gis_marker.name=='church').select().first().id,
         )
         table.insert(
             name = 'School',
-            marker_id = db(db.gis_marker.name=='school').select()[0].id,
+            marker_id = db(db.gis_marker.name=='school').select().first().id,
         )
         table.insert(
             name = 'Food',
-            marker_id = db(db.gis_marker.name=='food').select()[0].id,
+            marker_id = db(db.gis_marker.name=='food').select().first().id,
         )
         table.insert(
             name = 'Water',
-            marker_id = db(db.gis_marker.name=='water').select()[0].id,
+            marker_id = db(db.gis_marker.name=='water').select().first().id,
         )
         table.insert(
             name = 'SMS',
-            marker_id = db(db.gis_marker.name=='phone').select()[0].id,
+            marker_id = db(db.gis_marker.name=='phone').select().first().id,
         )
     tablename = 'gis_feature_group'
     table = db[tablename]
@@ -539,48 +539,48 @@ if empty:
     table = db[tablename]
     if not db(table.id>0).count():
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Towns').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Town').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Towns').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Town').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Airport').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Transport').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Airport').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Bridge').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Transport').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Bridge').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Transport').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Port').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Transport').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Port').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Hospitals').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Hospital').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Hospitals').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Hospital').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Church').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Church').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'School').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'School').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Food').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Programme').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Food').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Programme').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Water').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Programme').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Water').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Offices').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'Office').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'Offices').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Office').select().first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'SMS Alerts').select()[0].id,
-            feature_class_id = db(db.gis_feature_class.name == 'SMS').select()[0].id,
+            feature_group_id = db(db.gis_feature_group.name == 'SMS Alerts').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'SMS').select().first().id,
         )
 
     tablename = 'gis_apikey'
@@ -658,8 +658,16 @@ if empty:
                 name = 'VMap0',
                 description = 'A Free low-resolution Vector Map of the whole world',
                 url = 'http://labs.metacarta.com/wms/vmap0',
-                projection_id = db(db.gis_projection.epsg == 4326).select()[0].id,
+                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
                 layers = 'basic',
+                enabled = False
+            )
+        table.insert(
+                name = 'Blue Marble',
+                description = 'A Free low-resolution Vector Map of the whole world',
+                url = 'http://maps.opengeo.org/geowebcache/service/wms',
+                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
+                layers = 'bluemarble',
                 enabled = False
             )
     tablename = 'gis_layer_georss'
@@ -670,16 +678,16 @@ if empty:
                 name = 'Earthquakes',
                 description = 'USGS: Global 7-day',
                 url = 'http://earthquake.usgs.gov/eqcenter/catalogs/eqs7day-M2.5.xml',
-                projection_id = db(db.gis_projection.epsg == 4326).select()[0].id,
-                marker_id = db(db.gis_marker.name == 'earthquake').select()[0].id,
+                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
+                marker_id = db(db.gis_marker.name == 'earthquake').select().first().id,
                 enabled = False
             )
         table.insert(
                 name = 'Volcanoes',
                 description = 'USGS: US recent',
                 url = 'http://volcano.wr.usgs.gov/rss/vhpcaprss.xml',
-                projection_id = db(db.gis_projection.epsg == 4326).select()[0].id,
-                marker_id = db(db.gis_marker.name == 'volcano').select()[0].id,
+                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
+                marker_id = db(db.gis_marker.name == 'volcano').select().first().id,
                 enabled = False
             )
 
@@ -720,27 +728,28 @@ if empty:
     if not db(db[table].id>0).count():
         authenticated = auth.id_group('Authenticated')
         editors = auth.id_group('Editor')
-        for table in db.tables:
+        for tablename in db.tables:
+            table = db[tablename]
             # allow all registered users the ability to Read all records
-            auth.add_permission(authenticated, 'read', db[table])
+            auth.add_permission(authenticated, 'read', table)
             # allow anonymous users the ability to Read all records
-            #auth.add_permission(anonymous, 'read', db[table])
+            #auth.add_permission(anonymous, 'read', table)
             # Editors can make changes
-            auth.add_permission(editors, 'create', db[table])
-            auth.add_permission(editors, 'update', db[table])
-            auth.add_permission(editors, 'delete', db[table])
+            auth.add_permission(editors, 'create', table)
+            auth.add_permission(editors, 'update', table)
+            auth.add_permission(editors, 'delete', table)
 
         # Module-specific defaults can be set here
         #table = pr_person
         # Clear out defaults
-        #auth.del_permission(authenticated, 'read', db[table])
-        #auth.del_permission(editors, 'create', db[table])
-        #auth.del_permission(editors, 'update', db[table])
-        #auth.del_permission(editors, 'delete', db[table])
+        #auth.del_permission(authenticated, 'read', table)
+        #auth.del_permission(editors, 'create', table)
+        #auth.del_permission(editors, 'update', table)
+        #auth.del_permission(editors, 'delete', table)
         # Add specific Role(s)
         #id = auth.id_group('myrole')
-        #auth.add_permission(id, 'read', db[table])
-        #auth.add_permission(id, 'create', db[table])
-        #auth.add_permission(id, 'update', db[table])
-        #auth.add_permission(id, 'delete', db[table])
+        #auth.add_permission(id, 'read', table)
+        #auth.add_permission(id, 'create', table)
+        #auth.add_permission(id, 'update', table)
+        #auth.add_permission(id, 'delete', table)
 

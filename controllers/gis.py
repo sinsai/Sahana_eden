@@ -1852,6 +1852,34 @@ def wms_capabilities():
     
     return dict(projection=900913, bing=False, google=google, yahoo=yahoo)
 
+def wms_tree():
+    " Controller for custom view testing WMSCapabilitiesLoader "
+    
+    # Dummies for the 'gis/ol_js_loaders.html'
+    google = Storage()
+    google.enabled = False
+    yahoo = Storage()
+    yahoo.enabled = False
+    
+    # Read the Config from Database
+    config = gis.config_read()
+    # Support bookmarks (such as from the control)
+    if 'lat' in request.vars:
+        config.lat = request.vars.lat
+    if 'lon' in request.vars:
+        config.lon = request.vars.lon
+    if 'zoom' in request.vars:
+        config.zoom = request.vars.zoom
+    _projection = config.projection_id
+    #config.projection = db(db.gis_projection.id == _projection).select().first().epsg
+    config.projection = 4326
+    epsg = db(db.gis_projection.epsg == config.projection).select().first()
+    config.units = epsg.units
+    config.maxResolution = epsg.maxResolution
+    config.maxExtent = epsg.maxExtent
+    
+    return dict(config=config, projection=config.projection, bing=False, google=google, yahoo=yahoo)
+
 def geolocate():
     " Call a Geocoder service "
     if 'location' in request.vars:

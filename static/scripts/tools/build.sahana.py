@@ -128,28 +128,43 @@ def dojs(dogis = False):
     if dogis:
 
         # also need to amend sahana.js.gis.cfg
+        configDictGIS = {
+            'gis':                          '..'
+        }
+        configDictGeoExt = {
+            'GeoExt.js':                '../gis/geoext/lib',
+            'GeoExt':                   '../gis/geoext/lib',
+            'ux':                       '../gis/geoext'
+        }
         configDictOpenLayers = {
             'OpenLayers.js':                '../gis/openlayers/lib',
             'OpenLayers':                   '../gis/openlayers/lib',
             'Rico':                         '../gis/openlayers/lib',
             'Gears':                        '../gis/openlayers/lib'
         }
-        configDictGIS = {
-            'gis':                          '..'
-        }
         configDictGlobalGIS = {}
         configDictGlobalGIS.update(configDictOpenLayers)
         configDictGlobalGIS.update(configDictGIS)
         configFilenameGIS = "sahana.js.gis.cfg"
+        configFilenameGeoExt = "geoext.js.gis.cfg"
         outputFilenameGIS = "OpenLayers.js"
+        outputFilenameGeoExt = "GeoExt.js"
+        
         # Merge GIS JS Files
         print "Merging GIS libraries."
         (files, order) = mergejs.getFiles(configDictGlobalGIS, configFilenameGIS)
         mergedGIS = mergejs.run(files, order)
 
+        print "Merging GeoExt libraries."
+        (files, order) = mergejs.getFiles(configDictGeoExt, configFilenameGeoExt)
+        mergedGeoExt = mergejs.run(files, order)
+
         # Compress JS files
         print "Compressing - GIS JS"
         minimizedGIS = jsmin.jsmin(mergedGIS)
+
+        print "Compressing - GeoExt JS"
+        minimizedGeoExt = jsmin.jsmin(mergedGeoExt)
 
         # Add license
         minimizedGIS = file("license.gis.txt").read() + minimizedGIS
@@ -157,6 +172,9 @@ def dojs(dogis = False):
         # Print to output files
         print "Writing to %s." % outputFilenameGIS
         file(outputFilenameGIS, "w").write(minimizedGIS)
+
+        print "Writing to %s." % outputFilenameGeoExt
+        file(outputFilenameGeoExt, "w").write(minimizedGeoExt)
 
         # Move new JS files
         print "Deleting %s." % outputFilenameGIS
@@ -166,6 +184,14 @@ def dojs(dogis = False):
             pass
         print "Moving new GIS JS files"
         shutil.move("OpenLayers.js", "../gis")
+        
+        print "Deleting %s." % outputFilenameGeoExt
+        try:
+            os.remove("../gis/%s" % outputFilenameGeoExt)
+        except:
+            pass
+        print "Moving new GeoExt JS files"
+        shutil.move("GeoExt.js", "../gis")
 
 def docss(dogis = True):
     """Compresses the  CSS files"""
@@ -206,7 +232,8 @@ def docss(dogis = True):
     if dogis:
         listCSSGIS = [
             '../../styles/gis/gis.css',
-            '../../styles/gis/geoext-all.css',
+            '../../styles/gis/popup.css',
+            '../../styles/gis/layerlegend.css',
             #mfbase+'/ext/resources/css/ext-all.css', # would need to copy images if included here
             '../../styles/gis/google.css',
             #'../../styles/gis/style.css',

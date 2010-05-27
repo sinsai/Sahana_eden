@@ -132,7 +132,7 @@ def dojs(dogis = False):
             'OpenLayers.js':                '../gis/openlayers/lib',
             'OpenLayers':                   '../gis/openlayers/lib',
             'Rico':                         '../gis/openlayers/lib',
-            'GoogleGears':                  '../gis/openlayers/lib'
+            'Gears':                        '../gis/openlayers/lib'
         }
         configDictGIS = {
             'gis':                          '..'
@@ -142,7 +142,7 @@ def dojs(dogis = False):
         configDictGlobalGIS.update(configDictGIS)
         configFilenameGIS = "sahana.js.gis.cfg"
         outputFilenameGIS = "OpenLayers.js"
-        #Merge GIS JS Files
+        # Merge GIS JS Files
         print "Merging GIS libraries."
         (files, order) = mergejs.getFiles(configDictGlobalGIS, configFilenameGIS)
         mergedGIS = mergejs.run(files, order)

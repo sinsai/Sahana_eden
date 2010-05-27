@@ -2,49 +2,42 @@
 <div id="home">
 
 {{=H2(T(module_name))}}
-    
-    <div id="question-container" style="width:50%; margin:60px auto;">
+
+    <div class="col2left">
+      <div class='question-container' style="float:right;">
         <a href="{{=URL(r=request, f='req', args='create')}}" style="text-decoration: none;">
-            <div style="text-align:center; float:left;width:10em; background-color:#F3F6FF; border: solid 3px #bbb; padding: 2em; font-size:large;">
                 {{=T('Make a request')}}
-            </div>
         </a>
-        {{if not auth.is_logged_in():}}
-        <a href="{{=URL(r=request, c='default', f='user', args='login')}}" style="text-decoration: none;">
-            <div style="text-align:center; margin-left:60%;width:10em; background-color:#F3F6FF; border: solid 3px #bbb; padding: 2em; font-size:large;">
-                {{=T('View Requests & Pledge Aid')}}
-                <div style="position:absolute; font-size:small; text-align:center; color:#bbb; margin-top:4px; width:inherit;">
-                    {{=T('Requires login')}}
-                </div>
-            </div>
-        </a>
-        {{else:}}
-            <a href="{{=URL(r=request, f='req')}}" style="text-decoration: none;">
-                <div style="text-align:center; margin-left:60%;width:10em; background-color:#F3F6FF; border: solid 3px #bbb; padding: 2em; font-size:large;">
-                    {{=T('View Requests & Pledge Aid')}}
-                </div>
-            </a>
-        {{pass}}
+      </div>
     </div>
-    
+    <div class="col2right">
+      <div class='question-container' style="float:left;">
+      {{if not auth.is_logged_in():}}
+          <a href="{{=URL(r=request, c='default', f='user', args='login')}}" style="text-decoration: none;">
+            {{=T('View Requests & Pledge Aid')}}<br />
+            <div style="font-size: 0.875em;">({{=T('Requires login')}})</div>
+          </a>
+      {{else:}}
+          <a href="{{=URL(r=request, f='req')}}" style="text-decoration: none;">
+            {{=T('View Requests & Pledge Aid')}}
+          </a>
+      {{pass}}
+      </div>
+    </div>
 
-
-
-
-    
     <div style="position:relative;">
-        <div class="column-body" id="left-column" style="width:25%; float:left;" >
+        <div class="col2left">
             <h4>{{=('ABOUT')}}</H4>
             {{=T("The")}} {{=T(module_name)}} {{=T("System is a central online repository where all relief organizations, relief workers, government agents and camp sites for displaced personnel can coordinate the supply of aid with their demand. It allows users to allocate the available resources to fulfill the demands effectively and efficiently.")}} 
         </div>
     
-        <div class="column-body" id="center-column" style="width:33%; float:right; padding:10px;">
+        <div class="col2right">
             <h3>
                 {{=T("Features Include")}}:
             </h3>
             <ul>
-                <li><a href="{{=URL(r=request, f='req')}}">
-                    View Requests for Aid</a>
+                <li>
+                    <a href="{{=URL(r=request, f='req')}}">View Requests for Aid</a>
                 </li>
             
                 <li>

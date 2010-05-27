@@ -122,20 +122,23 @@ table { border-collapse: collapse }
     -moz-border-radius: 5px; -webkit-border-radius: 5px;
     -moz-box-shadow: 1px 1px 5px #454545; -webkit-box-shadow: 1px 1px 5px #454545;
 }
-#subnav li>ul { top: auto;  left: auto; }
+#subnav li>ul { top: auto; left: auto; }
 #subnav li li { display: block; float: none; border: 0; }
 #subnav li:hover ul,
 #subnav li.over ul { display: block; }
 
 /* Column container */
 .colmask {
-    position: relative;	/* This fixes the IE7 overflow hidden bug */
+    position: relative;  /* This fixes the IE7 overflow hidden bug */
     clear: both; float: left;
-    width: 100%;			/* width of whole page */
+    width: 100%;         /* width of whole page */
     overflow: hidden;    /* This chops off any overhanging divs */
 }
 /* common column settings */
-.colright, .colmid, .colleft { float:left; width:100%; position:relative; }
+.col3left { float:left; width:33%; position:relative; }
+.col3mid, .col3right { float:right; width:33%; position:relative; }
+.col2left { float:left; width:49%; position:relative; }
+.col2right { float:right; width:49%; position:relative; }
 .col1, .col2, .col3 { float:left; position:relative; padding:0 0 1em 0; overflow:hidden; }
 /* Full page settings */
 .fullpage {
@@ -143,8 +146,8 @@ table { border-collapse: collapse }
     padding-top: 1px;
 }
 .fullpage .col1 {
-    width: 98%;			/* page width minus left and right padding */
-    left: 1%;			/* page left padding */
+    width: 98%;         /* page width minus left and right padding */
+    left: 1%;           /* page left padding */
 }
 
 /* common styles */
@@ -211,6 +214,9 @@ div#table-container tr.odd td { border: 1px solid #ccc; text-align: center; }
 div.item-container { width: 100%; overflow: auto; }
 div.item-container { margin: 5px 0 5px 0; }
 
+/* Big Buttons (e.g. RMS) */
+div.question-container { text-align:center; width:8em; background-color:#F3F6FF; border: solid 3px #bbb; padding:1.5em; font-size:large; overflow: auto; }
+
 /* Required Field indicator */
 .req { color: red; font-weight: bold;  }
 /* For Key - ugly! */
@@ -235,6 +241,7 @@ div.confirmation { color:#070; font-weight: bold; text-align: center; border: #0
 .warning p em { color:#c00;  }
 
 /* GIS module */
+div.toolbar-container { width: 100%; overflow: auto; }
 .btn-panel { padding: 2px; }
 .toolbar-link { padding: 2px 2px 2px 2px; font-size:106%; background-color: #e6ddd5; text-decoration: none; color: #000000 }
 
@@ -294,4 +301,4 @@ div#pheader td { text-align: left; padding: 1px 6px 1px 1px; width: 20%; }
 .modlist li strong a { text-decoration: none; font-size: 14px; }
 .modlist li strong { display: block; margin-bottom: 5px; }
 
-#list_formats {float: right;}
+#list_formats { float: right; }

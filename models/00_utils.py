@@ -27,6 +27,7 @@ def shn_sessions():
         session.s3 = Storage()
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
+    response.s3.formats = Storage()
     settings = db(db.s3_setting.id > 0).select().first()
     controller_settings_table = "%s_setting" % request.controller
     controller_settings = controller_settings_table in db.tables and \

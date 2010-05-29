@@ -591,6 +591,9 @@ class GIS(object):
                 url = S3_PUBLIC_URL + "/" + request.application + "/gis/location.kml?feature_group=" + urllib.quote(name)
                 if "popup_url" in layer:
                     popup_url = layer["popup_url"]
+                # We'd like to do something like this:
+                #elif feature_class is office:
+                #    popup_url = str(URL(r=request, c="or", f="office"))
                 else:
                     popup_url = str(URL(r=request, c="gis", f="location"))
                 if cache:
@@ -670,7 +673,7 @@ class GIS(object):
                 id,
                 feature.geometry.getBounds().getCenterLonLat(),
                 new OpenLayers.Size(400, 400),
-                "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
+                "<div style='height: 400px; width: 400px;'>Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0></div>",
                 null,
                 true,
                 onPopupClose

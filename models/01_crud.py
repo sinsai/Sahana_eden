@@ -6,7 +6,7 @@
     @author: Fran Boon
     @author: nursix
 
-    @see: U{http://trac.sahanapy.org/wiki/RESTController}
+    @see: U{http://eden.sahanafoundation.org/wiki/RESTController}
 
     HTTP Status Codes: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 """
@@ -55,8 +55,8 @@ PRETTY_PRINT = True
 exec("from applications.%s.modules.s3xrc import S3ResourceController" % request.application)
 exec("from applications.%s.modules.s3rest import S3RESTController" % request.application)
 # Faster for Production (where app-name won't change):
-#from applications.sahana.modules.s3xrc import *
-#from applications.sahana.modules.s3rest import *
+#from applications.eden.modules.s3xrc import *
+#from applications.eden.modules.s3rest import *
 
 s3xrc = S3ResourceController(db,
             domain=request.env.server_name,

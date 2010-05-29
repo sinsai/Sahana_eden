@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    S3REST SahanaPy REST Controller
+    S3REST Sahana Eden REST Controller
 
     @version: 1.6
 
@@ -172,8 +172,8 @@ class S3RESTController(object):
             self.__unauthorised(jr, session)
 
         # Record ID is required in joined-table operations and read action:
-        if not jr.id and (jr.component or jr.method=="read") and \
-           not jr.method=="options" and not "select" in jr.request.vars:
+        if not jr.id and (jr.component or jr.method == "read") and \
+           not jr.method == "options" and not "select" in jr.request.vars:
             # Check for search_simple
             if jr.representation == "html":
                 search_simple = self.rc.model.get_method(jr.prefix, jr.name,
@@ -200,7 +200,7 @@ class S3RESTController(object):
                     return output
                 success = prep.get("success", True)
                 if not success:
-                    if jr.representation=="html" and output:
+                    if jr.representation == "html" and output:
                         if isinstance(output, dict):
                             output.update(jr=jr)
                         self.__dbg("S3RESTController: preprocess failure - aborting")
@@ -228,7 +228,7 @@ class S3RESTController(object):
                 # HTTP Multi-Record Operation
                 if jr.method==None and jr.multiple and not jr.component_id:
                     # HTTP List/List-add
-                    if jr.http=="GET":
+                    if jr.http == "GET":
                         authorised = self.__has_permission(session, "read",
                                                            jr.component.table)
                         if authorised:
@@ -236,7 +236,7 @@ class S3RESTController(object):
                         else:
                             self.__unauthorised(jr, session)
                     # HTTP Create
-                    elif jr.http=="PUT" or jr.http=="POST":
+                    elif jr.http == "PUT" or jr.http == "POST":
                         if jr.representation in self.json_import_formats:
                             method = "import_json"
                         elif jr.representation in self.xml_import_formats:
@@ -251,7 +251,7 @@ class S3RESTController(object):
                         else:
                             raise HTTP(501, body=self.BADFORMAT)
                     # HTTP Delete
-                    elif jr.http=="DELETE":
+                    elif jr.http == "DELETE":
                         # Not implemented
                         raise HTTP(501)
                     # Unsupported HTTP method
@@ -261,9 +261,9 @@ class S3RESTController(object):
                         # Not implemented
                         raise HTTP(501)
                 # HTTP Single-Record Operation
-                elif jr.method==None and (jr.component_id or not jr.multiple):
+                elif jr.method == None and (jr.component_id or not jr.multiple):
                     # HTTP Read/Update
-                    if jr.http=="GET":
+                    if jr.http == "GET":
                         authorised = self.__has_permission(session, "read",
                                                            jr.component.table)
                         if authorised:
@@ -286,7 +286,7 @@ class S3RESTController(object):
                         else:
                             raise HTTP(501, body=self.BADFORMAT)
                     # HTTP Delete
-                    elif jr.http=="DELETE":
+                    elif jr.http == "DELETE":
                         # Not implemented
                         raise HTTP(501)
                     # Unsupported HTTP method
@@ -296,7 +296,7 @@ class S3RESTController(object):
                         # Not implemented
                         raise HTTP(501)
                 # Read (joined table)
-                elif jr.method=="read" or jr.method=="display":
+                elif jr.method == "read" or jr.method == "display":
                     authorised = self.__has_permission(session, "read",
                                                        jr.component.table)
                     if authorised:
@@ -309,7 +309,7 @@ class S3RESTController(object):
                     else:
                         self.__unauthorised(jr, session)
                 # Create (joined table)
-                elif jr.method=="create":
+                elif jr.method == "create":
                     authorised = self.__has_permission(session, jr.method,
                                                        jr.component.table)
                     if authorised:
@@ -317,7 +317,7 @@ class S3RESTController(object):
                     else:
                         self.__unauthorised(jr, session)
                 # Update (joined table)
-                elif jr.method=="update":
+                elif jr.method == "update":
                     authorised = self.__has_permission(session, jr.method,
                                                        jr.component.table)
                     if authorised:
@@ -325,7 +325,7 @@ class S3RESTController(object):
                     else:
                         self.__unauthorised(jr, session)
                 # Delete (joined table)
-                elif jr.method=="delete":
+                elif jr.method == "delete":
                     authorised = self.__has_permission(session, jr.method,
                                                        jr.component.table)
                     if authorised:
@@ -334,7 +334,7 @@ class S3RESTController(object):
                     else:
                         self.__unauthorised(jr, session)
                 # Options (joined table)
-                elif jr.method=="options":
+                elif jr.method == "options":
                     method = "options"
                 # Unsupported Method
                 else:
@@ -342,7 +342,7 @@ class S3RESTController(object):
             # Single Table Operation
             else:
                 # Clear Session
-                if jr.method=="clear":
+                if jr.method == "clear":
                     # Clear session
                     self.rc.clear_session(session, jr.prefix, jr.name)
                     if "_next" in request.vars:
@@ -454,7 +454,7 @@ class S3RESTController(object):
                 elif jr.method == "search":
                     method = "search"
                 # Options (single table)
-                elif jr.method=="options":
+                elif jr.method == "options":
                     method = "options"
                 # Unsupported Method
                 else:
@@ -562,8 +562,8 @@ class S3RESTRequest(object):
 
         # Append record ID to request as necessary
         if self.id:
-            if len(self.args)>0 or \
-               len(self.args)==0 and \
+            if len(self.args) > 0 or \
+               len(self.args) == 0 and \
                ("select" in self.request.vars):
                 if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
@@ -575,7 +575,7 @@ class S3RESTRequest(object):
                                                  (self.id, self.representation))
                 elif not self.component and not (str(self.id) in self.args):
                     self.args.append(self.id)
-                    if self.representation==self.DEFAULT_REPRESENTATION or \
+                    if self.representation == self.DEFAULT_REPRESENTATION or \
                        self.extension:
                         self.request.args.append(self.id)
                     else:
@@ -609,7 +609,7 @@ class S3RESTRequest(object):
 
         components = self.rc.model.components
 
-        if len(self.request.args)>0:
+        if len(self.request.args) > 0:
 
             # Check for extensions, turn all arguments lowercase
             for i in xrange(0, len(self.request.args)):
@@ -625,21 +625,21 @@ class S3RESTRequest(object):
             if self.args[0].isdigit():
                 # .../id...
                 self.id = self.args[0]
-                if len(self.args)>1:
+                if len(self.args) > 1:
                     if self.args[1] in components:
                         # .../component...
                         self.component_name = self.args[1]
-                        if len(self.args)>2:
+                        if len(self.args) > 2:
                             if self.args[2].isdigit():
                                 # ../id...
                                 self.component_id = self.args[2]
-                                if len(self.args)>3:
+                                if len(self.args) > 3:
                                     # .../method
                                     self.method = self.args[3]
                             else:
                                 # .../method
                                 self.method = self.args[2]
-                                if len(self.args)>3 and self.args[3].isdigit():
+                                if len(self.args) > 3 and self.args[3].isdigit():
                                     # for backward compatibility: .../id
                                     self.component_id = self.args[3]
                     else:
@@ -649,23 +649,23 @@ class S3RESTRequest(object):
                 if self.args[0] in components:
                     # .../component...
                     self.component_name = self.args[0]
-                    if len(self.args)>1:
+                    if len(self.args) > 1:
                         if self.args[1].isdigit():
                             # .../id...
                             self.component_id = self.args[1]
-                            if len(self.args)>2:
+                            if len(self.args) > 2:
                                 # .../method
                                 self.method = self.args[2]
                         else:
                             # .../method
                             self.method = self.args[1]
-                            if len(self.args)>2 and self.args[2].isdigit():
+                            if len(self.args) > 2 and self.args[2].isdigit():
                                 # for backward compatibility: .../id
                                 self.component_id = self.args[2]
                 else:
                     # .../method
                     self.method = self.args[0]
-                    if len(self.args)>1 and self.args[1].isdigit():
+                    if len(self.args) > 1 and self.args[1].isdigit():
                         # for backward compatibility: .../id
                         self.id = self.args[1]
 
@@ -791,7 +791,7 @@ class S3RESTRequest(object):
                 if "deleted" in self.table:
                     query = ((self.table.deleted==False) |
                              (self.table.deleted==None)) & query
-                records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
                 if records:
                     self.record = records[0]
                     self.id = self.record.id
@@ -802,14 +802,14 @@ class S3RESTRequest(object):
                     return False
 
         # Retrieve prior selected ID, if any
-        if not self.id and len(self.request.args)>0:
+        if not self.id and len(self.request.args) > 0:
             self.id = self.rc.get_session(self.session, self.prefix, self.name)
             if self.id:
-                query = (self.table.id==self.id)
+                query = (self.table.id == self.id)
                 if "deleted" in self.table:
                     query = ((self.table.deleted==False) |
                              (self.table.deleted==None)) & query
-                records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
                 if not records:
                     self.id = None
                     self.rc.clear_session(self.session, self.prefix, self.name)
@@ -847,7 +847,7 @@ class S3RESTRequest(object):
                 id = self.id
             else:
                 id = str(id)
-                if len(id)==0:
+                if len(id) == 0:
                     id = "[id]"
                 if self.component:
                     component_id = None
@@ -868,7 +868,7 @@ class S3RESTRequest(object):
                 args.append(method)
 
         if not representation==self.DEFAULT_REPRESENTATION:
-            if len(args)>0:
+            if len(args) > 0:
                 args[-1] = "%s.%s" % (args[-1], representation)
             else:
                 vars = {"format": representation}
@@ -932,7 +932,7 @@ class S3RESTRequest(object):
         else:
             if "components" in self.request.vars:
                 joins = []
-                if not self.request.vars["components"]=="NONE":
+                if not self.request.vars["components"] == "NONE":
                     components = self.request.vars["components"].split(",")
                     for c in components:
                         component, pkey, fkey = \
@@ -990,7 +990,7 @@ class S3RESTRequest(object):
         else:
             if "components" in self.request.vars:
                 joins = []
-                if not components=="NONE":
+                if not components == "NONE":
                     components = self.request.vars["components"].split(",")
                     for c in components:
                         component, pkey, fkey = \
@@ -1043,8 +1043,8 @@ class S3RESTRequest(object):
             skip_resource = False
             joins = self.rc.model.get_components(self.prefix, self.name)
 
-        if self.method=="create":
-            self.id=None
+        if self.method == "create":
+            self.id = None
 
         # Add "&ignore_errors=True" to the URL to override any import errors:
         # Unsuccessful commits simply get ignored, no error message is returned,

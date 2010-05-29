@@ -5,12 +5,12 @@
 
     TODO: add/replace the following to your routes.py in web2py directory
     routes_onerror = [
-        ('sahana/401', '/sahana/default/user/login'),
-        ('sahana/*', '/sahana/errors/index'),
-        ('*/*', '/sahana/errors/index'),
+        ('eden/401', '/eden/default/user/login'),
+        ('eden/*', '/eden/errors/index'),
+        ('*/*', '/eden/errors/index'),
     ]
 
-    NOTE: if sahana is installed elsewhere or exists under different name in applications folder,
+    NOTE: if eden is installed elsewhere or exists under different name in applications folder,
           just rename it in above list. Comment the last route to disable error
           catching for other apps in the same web2py environment
 """
@@ -64,7 +64,7 @@ def index():
         code='NA'
 
     details = " %s, %s " % (code, description)
-    app=request.application
+    app = request.application
     try:
         message, suggestions = error_messages[code]
     except KeyError:

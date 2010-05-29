@@ -389,6 +389,7 @@ class GIS(object):
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
                   toolbar = False,
+                  search = False,
                   mgrs = False,
                   window = False,
                   S3_PUBLIC_URL = "http://127.0.0.1:8000"):
@@ -411,6 +412,7 @@ class GIS(object):
             @param catalogue_overlays: Show the Overlays from the GIS Catalogue (@ToDo: make this a dict of which external overlays to allow)
             @param catalogue_toolbar: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
+            @param search: Show the Geonames search box
             @param mgrs: Use the MGRS Control to select PDFs
             @param window: Have viewport pop out of page into a resizable window
             @param S3_PUBLIC_URL: pass from model (not yet defined when Module instantiated
@@ -546,6 +548,93 @@ class GIS(object):
             toolbar = ""
             toolbar2 = ""
 
+        # Search
+        if search:
+            search = """
+        var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+            map: map,
+            zoom: 8
+         });
+
+        var searchCombo = new Ext.Panel({
+            title: '""" + str(T("Search Geonames")) + """',
+            layout: 'border',
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            html: '""" + str(T("Geonames.org search requires Internet connectivity!")) + """',
+            items: [{
+                    region: 'center',
+                    items: [ mapSearch ]
+                }]    
+        });
+        """
+            search2 = """,
+                            searchCombo
+        """
+        else:
+            search = ""
+            search2 = ""
+
+        # MGRS
+        if mgrs:
+            mgrs = """
+var selectPdfControl = new OpenLayers.Control();
+OpenLayers.Util.extend( selectPdfControl, {
+    draw: function () {
+        this.box = new OpenLayers.Handler.Box( this, {
+                "done": this.getPdf
+            });
+        this.box.activate();
+        },
+    response: function(req) {
+        this.w.destroy();
+        var gml = new OpenLayers.Format.GML();
+        var features = gml.read(req.responseText);
+        var html = features.length + " pdfs. <br /><ul>";
+        if (features.length) {
+            for (var i = 0; i < features.length; i++) {
+                var f = features[i];
+                var text = f.attributes.utm_zone + f.attributes.grid_zone + f.attributes.grid_square + f.attributes.easting + f.attributes.northing;
+                html += "<li><a href='" + features[i].attributes.url + "'>" + text + "</a></li>";
+            }
+        }
+        html += "</ul>";
+        //console.log(html);
+        this.w = new Ext.Window({
+            'html': html,
+            width: 300,
+            'title': 'Results',
+            height: 200
+        });
+        this.w.show();
+    },
+    getPdf: function (bounds) {
+        var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
+        //console.log(ll);
+        var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
+        var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
+        bbox = boundsgeog.toBBOX();
+        //console.log(bbox);
+        OpenLayers.Request.GET({
+            url: '{{=XML(mgrs.url)}}&bbox=' + bbox,
+            callback: OpenLayers.Function.bind(this.response, this)
+        });
+        this.w = new Ext.Window({
+            'html':"Searching {{=mgrs.name}}, please wait.",
+            width: 200,
+            'title': "Please Wait."
+            });
+        this.w.show();
+    }
+});
+"""
+        else:
+            mgrs = ""
+        
         # Layout
         if window:
             layout = """
@@ -591,6 +680,9 @@ class GIS(object):
                 url = S3_PUBLIC_URL + "/" + request.application + "/gis/location.kml?feature_group=" + urllib.quote(name)
                 if "popup_url" in layer:
                     popup_url = layer["popup_url"]
+                # We'd like to do something like this:
+                #elif feature_class is office:
+                #    popup_url = str(URL(r=request, c="or", f="office"))
                 else:
                     popup_url = str(URL(r=request, c="gis", f="location"))
                 if cache:
@@ -639,14 +731,26 @@ class GIS(object):
                 else:
                     visibility = "featureLayer" + name_safe +".setVisibility(false);"
                 layers_features += """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.GML( '""" + name + """', '""" + url + """', {
-            strategies: [ strategy ],
-            format: OpenLayers.Format.KML,
-            formatOptions: { extractStyles: true, extractAttributes: true, maxDepth: 2 },
-            projection: proj4326});
+        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.GML(
+            '""" + name + """',
+            '""" + url + """',
+            {
+                strategies: [ strategy ],
+                format: OpenLayers.Format.KML,
+                formatOptions: {
+                    extractStyles: true,
+                    extractAttributes: true,
+                    maxDepth: 2
+                },
+                projection: proj4326
+            }
+        );
         """ + visibility + """
         map.addLayer(featureLayer""" + name_safe + """);
-        featureLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect""" + name_safe + """, "featureunselected": onFeatureUnselect });
+        featureLayer""" + name_safe + """.events.on({
+            "featureselected": onKmlFeatureSelect""" + name_safe + """,
+            "featureunselected": onFeatureUnselect
+        });
         allLayers.push(featureLayer""" + name_safe + """);
         
         function loadDetails(url, id) {
@@ -670,7 +774,7 @@ class GIS(object):
                 id,
                 feature.geometry.getBounds().getCenterLonLat(),
                 new OpenLayers.Size(400, 400),
-                "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
+                "<div style='height: 400px; width: 400px; overflow: auto;'>Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0></div>",
                 null,
                 true,
                 onPopupClose
@@ -678,7 +782,8 @@ class GIS(object):
             feature.popup = popup;
             map.addPopup(popup);
             // call AJAX to get the data
-            loadDetails('""" + popup_url + """' + '?location.uid=' + feature.attributes.styleUrl.replace(new RegExp('^[#"]+', 'g'), ''), id);
+            var uuid = feature.attributes.styleUrl.replace(new RegExp('^[#"]+', 'g'), '');
+            loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id);
         }
                 """
 
@@ -777,7 +882,7 @@ class GIS(object):
 
         html.append(SCRIPT("""
     var map, mapPanel, toolbar;
-    var currentFeature, popupControl;
+    var currentFeature, popupControl, highlightControl;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -857,6 +962,54 @@ class GIS(object):
         popupControl.unselectAll();
     }
 
+    // Supports highlightControl for All Feature Layers
+    var lastFeature = null;
+    var tooltipPopup = null;
+    function tooltipSelect(event){
+        var feature = event.feature;
+        var selectedFeature = feature;
+        // if there is already an opened details window, don\'t draw the tooltip
+        if(feature.popup != null){
+            return;
+        }
+        // if there are other tooltips active, destroy them
+        if(tooltipPopup != null){
+            map.removePopup(tooltipPopup);
+            tooltipPopup.destroy();
+            if(lastFeature != null){
+                delete lastFeature.popup;
+                tooltipPopup = null;
+            }
+        }
+        lastFeature = feature;
+        tooltipPopup = new OpenLayers.Popup("activetooltip",
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(80, 12),
+                    feature.attributes.name,
+                    true
+        );
+        // should be moved to CSS
+        tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+        tooltipPopup.closeDiv.style.backgroundColor='ffffcb';
+        tooltipPopup.contentDiv.style.overflow='hidden';
+        tooltipPopup.contentDiv.style.padding='3px';
+        tooltipPopup.contentDiv.style.margin='0';
+        tooltipPopup.closeOnMove = true;
+        tooltipPopup.autoSize = true;
+        feature.popup = tooltipPopup;
+        map.addPopup(tooltipPopup);
+    }
+    function tooltipUnselect(event){
+        var feature = event.feature;
+        if(feature != null && feature.popup != null){
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            delete feature.popup;
+            tooltipPopup = null;
+            lastFeature = null;
+        }
+    }
+
     // ol_functions.js
 
     Ext.onReady(function() {
@@ -868,12 +1021,34 @@ class GIS(object):
         map.addControl(new OpenLayers.Control.MGRSMousePosition());
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-        popupControl = new OpenLayers.Control.SelectFeature(allLayers);
+        
+        // Popups
+        // onClick Popup
+        popupControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                toggle:true,
+                clickout: true
+            }
+        );
+        // onHover Tooltip
+        highlightControl = new OpenLayers.Control.SelectFeature(
+            allLayers, { 
+                hover: true,
+                highlightOnly: true,
+                renderIntent: "temporary",
+                eventListeners: {
+                    featurehighlighted: tooltipSelect, 
+                    featureunhighlighted: tooltipUnselect
+                }
+            }
+        );
+        //map.addControl(highlightControl);
         map.addControl(popupControl);
+        //highlightControl.activate();
         popupControl.activate();
         
-        // MGRS from ol_controls.js
-    
+        """ + mgrs + """
+
         var mapPanel = new GeoExt.MapPanel({
             region: 'center',
             height: """ + str(height) + """,
@@ -887,6 +1062,8 @@ class GIS(object):
         });
         
         """ + toolbar + """
+        
+        """ + search + """
         
         var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
             text: '""" + str(T("Base Layers")) + """',
@@ -927,27 +1104,6 @@ class GIS(object):
             enableDD: true
         });
 
-        var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
-            map: map,
-            zoom: 8
-         });
-
-        var searchCombo = new Ext.Panel({
-            title: '""" + str(T("Search Geonames")) + """',
-            layout: 'border',
-            rootVisible: false,
-            split: true,
-            autoScroll: true,
-            collapsible: true,
-            collapseMode: 'mini',
-            lines: false,
-            html: '""" + str(T("Geonames.org search requires Internet connectivity!")) + """',
-            items: [{
-                    region: 'center',
-                    items: [ mapSearch ]
-                }]    
-        });
-
         """ + layout + """
             maximizable: true,
             titleCollapse: true,
@@ -963,8 +1119,7 @@ class GIS(object):
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree,
-                            searchCombo
+                            layerTree""" + search2 + """
                             ]
                     },
                     mapPanel

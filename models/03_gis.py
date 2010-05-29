@@ -160,7 +160,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 # Street Address (other address fields come from hierarchy)
                 Field("addr_street"),
                 #Field("addr_postcode"),
-                Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://trac.sahanapy.org/wiki/HaitiGISToDo#HierarchicalTrees
+                Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
                 Field("rght", "integer", readable=False, writable=False),# Right currently unused
                 marker_id,
                 Field("gis_feature_type", "integer", default=1, notnull=True),

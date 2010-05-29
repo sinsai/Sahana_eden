@@ -12,11 +12,10 @@ if shn_module_enable.get(module, False):
     ########
     resource = 'group'
     tablename = module + '_' + resource
-    table = db.define_table(tablename,
+    table = db.define_table(tablename, timestamp,
         Field('name', notnull=True),
         Field('description', 'text'),
         Field('active', 'boolean', default=True),
-        Field('last_modification','datetime', default=request.now, writable=False),
         migrate=migrate)
 
     table.name.label = T("Group Title")

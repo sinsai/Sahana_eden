@@ -1561,7 +1561,7 @@ def map_viewing_client():
                     # Metadata is M->1 to Features
                     # We use the most recent one
                     query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
-                    metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+                    metadata = db(query).select(orderby=~db.media_metadata.event_time).first()
 
                     # Person .represent is too complex to put into JOIN
                     contact = shn_pr_person_represent(metadata.person_id)
@@ -1576,7 +1576,7 @@ def map_viewing_client():
                     # Images are M->1 to Features
                     # We use the most recently uploaded one
                     query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
-                    image = db(query).select(orderby=~db.media_image.created_on)[0].image
+                    image = db(query).select(orderby=~db.media_image.created_on).first().image
                 except:
                     image = None
                 feature.image = image
@@ -1661,7 +1661,7 @@ def display_feature():
         # Metadata is M->1 to Features
         # We use the most recent one
         query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
-        metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+        metadata = db(query).select(orderby=~db.media_metadata.event_time).first()
 
         # Person .represent is too complex to put into JOIN
         contact = shn_pr_person_represent(metadata.person_id)
@@ -1676,7 +1676,7 @@ def display_feature():
         # Images are M->1 to Features
         # We use the most recently uploaded one
         query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
-        image = db(query).select(orderby=~db.media_image.created_on)[0].image
+        image = db(query).select(orderby=~db.media_image.created_on).first().image
     except:
         image = None
     feature.image = image

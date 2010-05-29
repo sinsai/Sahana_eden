@@ -5,7 +5,7 @@
 
     @author: nursix
 
-    @see: U{http://trac.sahanapy.org/wiki/BluePrintVITA}
+    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
 """
 
 module = "pr"
@@ -90,6 +90,8 @@ pr_contact_method_opts = {
     2:T("Telephone"),
     3:T("Mobile Phone"),
     4:T("Fax"),
+    5:T("Twitter"),
+    6:T("XMPP"),
     99:T("other")
     }
 

@@ -324,6 +324,7 @@ class S3ResourceController(object):
         self.sync_resolve = None
         self.sync_log = None
 
+
     def get_session(self, session, prefix, name):
 
         """
@@ -428,7 +429,33 @@ class S3ResourceController(object):
             return None
 
 
+    def __lod2dol(self, d, l, k, v, exclude={}):
+
+        """ Converts a list of dicts into a dict of lists """
+
+        if not d:
+            d = {}
+
+        for i in l:
+            if k in i and v in i:
+                c = exclude.get(i[k], None)
+                if c and i[k] in c:
+                    continue
+                if i[k] in d:
+                    if not i[v] in d[i[k]]:
+                        d[i[k]].append(i[v])
+                else:
+                    d[i[k]] = [i[v]]
+
+        return d
+
+
     def __fields(self, table, skip=[]):
+
+        """
+            Finds all readable fields in a table and splits
+            them into reference and non-reference fields
+        """
 
         fields = filter(lambda f:
                         f != self.xml.UID and
@@ -629,20 +656,7 @@ class S3ResourceController(object):
             depth -= 1
 
             # Re-order reference map
-            load_map = Storage()
-            for i in xrange(0, len(ref_map)):
-                r = ref_map[i]
-                if r.uid:
-                    exp_list = exp_map.get(r.table, None)
-                    if exp_list and r.id in exp_list:
-                        continue
-                    else:
-                        load_list = load_map.get(r.table, None)
-                        if not load_list:
-                            load_list = [r.id]
-                            load_map[r.table] = load_list
-                        else:
-                            load_list.append(r.id)
+            load_map = self.__lod2dol(None, ref_map, "table", "id", exclude=exp_map)
 
             ref_map = []
 
@@ -706,8 +720,10 @@ class S3ResourceController(object):
 
         """ Imports data from an XML tree """
 
+        # Reset all prior errors
         self.error = None
 
+        # Get the target table
         tablename = "%s_%s" % (prefix, name)
         if tablename in self.db:
             table = self.db[tablename]
@@ -715,12 +731,17 @@ class S3ResourceController(object):
             self.error = S3XRC_BAD_RESOURCE
             return False
 
+        # Read the hooks of the target table
         onvalidation = self.model.get_config(table, "onvalidation")
         onaccept = self.model.get_config(table, "onaccept")
 
+        # Get the matching resources from the XML tree
         elements = self.xml.select_resources(tree, tablename)
+
         if not elements: # nothing to import
             return True
+
+        # Check for target record
         if id:
             try:
                 db_record = self.db(table.id == id).select(table.ALL)[0]
@@ -729,6 +750,9 @@ class S3ResourceController(object):
                 return False
         else:
             db_record = None
+
+        # Try to find the matching resource, if target record is given
+        # TODO: Check UUID of the given resource in any case
         if id and len(elements) > 1:
             # ID given, but multiple elements of that type
             # => try to find UUID match
@@ -743,16 +767,31 @@ class S3ResourceController(object):
                 self.error = S3XRC_NO_MATCH
                 return False
 
+
         if joins is None:
             joins = []
 
+        # Import all matching elements
         imports = []
+        dmap = {}
         for i in xrange(0, len(elements)):
+
+            # Select element
             element = elements[i]
+            (references, readables) = self.__fields(table)
+
+            # Create a record
             record = self.xml.record(table, element)
+
+            # Error if invalid, skip this element
             if not record:
                 self.error = S3XRC_VALIDATION_ERROR
                 continue
+
+            # Look ahead
+            rmap = self.xml.lookahead(table, element, references, tree=tree, dmap=dmap)
+
+            # Create a vector
             vector = S3Vector(self.db, prefix, name, id,
                              record=record,
                              element=element,
@@ -762,37 +801,26 @@ class S3ResourceController(object):
                              log=self.sync_log,
                              onvalidation=onvalidation,
                              onaccept=onaccept)
+
+            # Mark as committed if requested
+            # TODO: do not create new components if skip_resource
             if skip_resource:
                 vector.committed = True
+
+            # Import components
             for j in xrange(0, len(joins)):
+
+                # Check component join
                 component, pkey, fkey = joins[j]
+
+                # Select all components of that type within the current element
                 celements = self.xml.select_resources(element, component.tablename)
+
                 if celements:
-                    if component.attr.multiple:
-                        for k in xrange(0, len(celements)):
-                            celement = celements[k]
-                            crecord = self.xml.record(component.table, celement)
-                            if not crecord:
-                                self.error = S3XRC_VALIDATION_ERROR
-                                continue
-                            cvector = S3Vector(self.db,
-                                               component.prefix,
-                                               component.name, None,
-                                               record=crecord,
-                                               element=celement,
-                                               permit=permit,
-                                               audit=audit,
-                                               sync=self.sync_resolve,
-                                               log=self.sync_log,
-                                               onvalidation=self.model.get_config(
-                                                    component.table, "onvalidation"),
-                                               onaccept=self.model.get_config(
-                                                    component.table, "onaccept"))
-                            cvector.pkey = pkey
-                            cvector.fkey = fkey
-                            vector.components.append(cvector)
-                    else:
-                        c_id = c_uid = None
+                    c_id = c_uid = None
+                    if not component.attr.multiple:
+                        # Get id (and, if present, UUID) of the existing component
+                        # record and overwrite the element data with it
                         if vector.id:
                             p = self.db(table.id == vector.id).select(table[pkey],
                                                                     limitby=(0,1))
@@ -807,32 +835,45 @@ class S3ResourceController(object):
                                     c_id = orig[0].id
                                     if self.xml.UID in component.table:
                                         c_uid = orig[0][self.UID]
-                        celement = celements[0]
+
+                        celements = [celements[0]]
                         if c_uid:
-                            celement.set(self.xml.UID, c_uid)
+                            celements[0].set(self.xml.UID, c_uid)
+
+                    for k in xrange(0, len(celements)):
+                        celement = celements[k]
+                        (references, readables) = self.__fields(component.table)
                         crecord = self.xml.record(component.table, celement)
                         if not crecord:
                             self.error = S3XRC_VALIDATION_ERROR
                             continue
+                        # Look ahead
+                        rmap = self.xml.lookahead(component.table, celement, references, tree=tree, dmap=dmap)
                         cvector = S3Vector(self.db,
-                                           component.prefix,
-                                           component.name, c_id,
-                                           element=celement,
-                                           record=crecord,
-                                           permit=permit,
-                                           audit=audit,
-                                           sync=self.sync_resolve,
-                                           log=self.sync_log,
-                                           onvalidation=self.model.get_config(
+                                            component.prefix,
+                                            component.name, c_id,
+                                            record=crecord,
+                                            element=celement,
+                                            permit=permit,
+                                            audit=audit,
+                                            sync=self.sync_resolve,
+                                            log=self.sync_log,
+                                            onvalidation=self.model.get_config(
                                                 component.table, "onvalidation"),
-                                           onaccept=self.model.get_config(
+                                            onaccept=self.model.get_config(
                                                 component.table, "onaccept"))
                         cvector.pkey = pkey
                         cvector.fkey = fkey
                         vector.components.append(cvector)
+
+            # If no error until here, append the main vector to the
+            # import list
             if self.error is None:
                 imports.append(vector)
 
+            print dmap
+
+        # If no errors or ignore_errors: commit the vectors
         if self.error is None or ignore_errors:
             for i in xrange(0, len(imports)):
                 vector = imports[i]
@@ -1409,6 +1450,257 @@ class S3XML(object):
         return resource
 
 
+    def validate(self, table, record, fieldname, value):
+
+        """ Validates a single value """
+
+        requires = table[fieldname].requires
+
+        if not requires:
+            return (value, None)
+        else:
+            if record:
+                v = record.get(fieldname, None)
+                if v:
+                    if v == value:
+                        return (value, None)
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            for validator in requires:
+                (value, error) = validator(value)
+                if error:
+                    return (value, error)
+            return(value, None)
+
+
+    def lookahead(self, table, element, fields, tree=None, dmap=None):
+
+        """
+            Performs a look-ahead for referenced resources in both
+            the database and the given tree. Entries are added to
+            the given dmap (demand map), and are returned as list.
+
+            Each entry consists of:
+                - resource (the resource name)
+                - element (the referenced <resource> element in the tree)
+                - id (the DB record ID)
+                - uid (the UUID of the tree resource)
+        """
+
+        reference_map = []
+
+        references = element.xpath("./reference")
+        for r in references:
+            field = r.get(self.ATTRIBUTE["field"], None)
+            if field and field in fields:
+                resource = r.get(self.ATTRIBUTE["resource"], None)
+                uid = xuid = r.get(self.UID, None)
+                if resource and uid:
+                    table = self.db[resource]
+                    if not self.UID in table.fields:
+                        continue
+
+                    entry = None
+
+                    if dmap is not None and resource in dmap:
+                        entry = dmap[resource].get(uid, None)
+
+                    if not entry:
+                        # Try to find the referenced element in the tree
+                        relement = None
+                        if tree:
+                            expr = './/%s[@%s="%s" and @%s="%s"]' % (
+                                self.TAG["resource"],
+                                self.ATTRIBUTE["name"], resource,
+                                self.UID, uid)
+                            relements = tree.getroot().xpath(expr)
+
+                            if relements is not None and len(relements):
+                                relement = relements[0]
+
+                        # Try to find the referenced record in the database
+                        id = None
+                        if self.domain_mapping:
+                            xuid = self.import_uid(uid)
+                        record = self.db(table[self.UID] == xuid).select(table.id, limitby=(0, 1))
+                        if record:
+                            id = record[0].id
+
+                        # Create the entry
+                        entry = dict(resource=resource,
+                                     element=relement,
+                                     uid=uid,
+                                     id=id)
+
+                        # Add the entry to the demand map
+                        if dmap is not None:
+                            if resource not in dmap:
+                                dmap[resource] = {}
+                            if uid not in dmap[resource]:
+                                dmap[resource][uid] = entry
+
+                    # Add the entry to the reference map
+                    reference_map.append(Storage(field=field, entry=entry))
+
+        return reference_map
+
+    def record(self, table, element, skip=[]):
+
+        """ Creates a Storage() record from an element and validates it """
+
+        valid = True
+        record = Storage()
+        original = None
+
+        # Get the original record, if any
+        if self.UID in table.fields and self.UID not in skip:
+            uid = element.get(self.UID, None)
+            if uid:
+                if self.domain_mapping:
+                    record[self.UID] = self.import_uid(uid)
+                else:
+                    record[self.UID] = uid
+                original = self.db(table[self.UID] == uid).select(table.ALL,
+                                                              limitby=(0,1))
+                if original:
+                    original = original[0]
+                else:
+                    original = None
+
+        # Transform attributes into fields
+        for f in self.ATTRIBUTES_TO_FIELDS:
+            if f in self.IGNORE_FIELDS or f in skip:
+                continue
+            if f in table.fields:
+                v= value = self.xml_decode(element.get(f, None))
+                if value is not None:
+                    if not isinstance(value, (str, unicode)):
+                        v = str(value)
+                    (value, error) = self.validate(table, original, f, v)
+                    if error:
+                        element.set(self.ATTRIBUTE["error"],
+                                    "%s: %s" % (f, error))
+                        valid = False
+                        continue
+                    else:
+                        record[f]=value
+
+        # Resolve the child elements
+        for child in element:
+
+            # Import data
+            if child.tag == self.TAG["data"]:
+                f = child.get(self.ATTRIBUTE["field"], None)
+                if not f or f not in table.fields:
+                    continue
+                if f in self.IGNORE_FIELDS or f in skip:
+                    continue
+
+                field_type = str(table[f].type)
+
+                if field_type == "id":
+                    continue
+                elif field_type.startswith("reference"):
+                    continue
+                elif field_type in ("upload", "blob", "password"):
+                    continue
+
+                value = self.xml_decode(child.get(self.ATTRIBUTE["value"], None))
+                if value is None:
+                    value = self.xml_decode(child.text)
+
+                if value == "" and not field_type == "string":
+                    value = None
+
+                if field_type == 'boolean':
+                    if value and value in ["True", "true"]:
+                        value = True
+                    else:
+                        value = False
+                elif value is not None:
+                    if field_type == "integer":
+                        try:
+                            value = int(value)
+                        except ValueError:
+                            #TODO: propagate error to element?
+                            continue
+                    elif field_type == "double":
+                        try:
+                            value = float(value)
+                        except ValueError:
+                            #TODO: propagate error to element?
+                            continue
+                else:
+                    value = table[f].default
+
+                if value is None and field_type == "string":
+                    value = ""
+
+                if value is not None:
+                    if not isinstance(value, basestring):
+                        v = str(value)
+                    else:
+                        v = value
+                    (value, error) = self.validate(table, original, f, v)
+                    child.set(self.ATTRIBUTE["value"], v)
+                    if error:
+                        child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
+                        valid = False
+                        continue
+                    else:
+                        record[f] = value
+
+            # Import references
+            elif child.tag == self.TAG["reference"]:
+                f = child.get(self.ATTRIBUTE["field"], None)
+                if not f or f not in table.fields:
+                    continue
+                if f in self.IGNORE_FIELDS or f in skip:
+                    continue
+                ktablename =  child.get(self.ATTRIBUTE["resource"], None)
+                uid = child.get(self.UID, None)
+                if uid and self.domain_mapping:
+                    uid = self.import_uid(uid)
+                if not (ktablename and uid):
+                    continue
+                if ktablename in self.db and self.UID in self.db[ktablename]:
+                    ktable = self.db[ktablename]
+                    krecord = self.db(ktable[self.UID] == uid).select(ktable.id,
+                                                                  limitby=(0,1))
+                    if krecord:
+                        record[f] = krecord[0].id
+                else:
+                    continue
+
+        if valid:
+            return record
+        else:
+            return None
+
+
+    def select_resources(self, tree, tablename):
+
+        """ Selects resources from an element tree """
+
+        resources = []
+
+        if tree is None:
+            return resources
+
+        if isinstance(tree, ElementTree):
+            root = tree.getroot()
+            if not root.tag == self.TAG["root"]:
+                return resources
+        else:
+            root = tree
+
+        expr = './%s[@%s="%s"]' % \
+               (self.TAG["resource"], self.ATTRIBUTE["name"], tablename)
+        resources = root.xpath(expr)
+
+        return resources
+
+
     def tree(self, resources, domain=None, url=None,
              start=None, limit=None, results=None):
 
@@ -1507,177 +1799,6 @@ class S3XML(object):
                 options.append(coptions)
 
         return options
-
-
-    def validate(self, table, record, fieldname, value):
-
-        """ Validates a single value """
-
-        requires = table[fieldname].requires
-
-        if not requires:
-            return (value, None)
-        else:
-            if record:
-                v = record.get(fieldname, None)
-                if v:
-                    if v == value:
-                        return (value, None)
-            if not isinstance(requires, (list, tuple)):
-                requires = [requires]
-            for validator in requires:
-                (value, error) = validator(value)
-                if error:
-                    return (value, error)
-            return(value, None)
-
-
-    def record(self, table, element, skip=[]):
-
-        """ Creates a Storage() record from an element and validates it """
-
-        valid = True
-        record = Storage()
-        original = None
-        if self.UID in table.fields and self.UID not in skip:
-            uid = element.get(self.UID, None)
-            if uid:
-                if self.domain_mapping:
-                    record[self.UID] = self.import_uid(uid)
-                else:
-                    record[self.UID] = uid
-                original = self.db(table[self.UID] == uid).select(table.ALL,
-                                                              limitby=(0,1))
-                if original:
-                    original = original[0]
-                else:
-                    original = None
-
-        for f in self.ATTRIBUTES_TO_FIELDS:
-            if f in self.IGNORE_FIELDS or f in skip:
-                continue
-            if f in table.fields:
-                v= value = self.xml_decode(element.get(f, None))
-                if value is not None:
-                    if not isinstance(value, (str, unicode)):
-                        v = str(value)
-                    (value, error) = self.validate(table, original, f, v)
-                    if error:
-                        element.set(self.ATTRIBUTE["error"],
-                                    "%s: %s" % (f, error))
-                        valid = False
-                        continue
-                    else:
-                        record[f]=value
-
-        for child in element:
-            if child.tag == self.TAG["data"]:
-                f = child.get(self.ATTRIBUTE["field"], None)
-                if not f or f not in table.fields:
-                    continue
-                if f in self.IGNORE_FIELDS or f in skip:
-                    continue
-
-                field_type = str(table[f].type)
-
-                if field_type == "id":
-                    continue
-                elif field_type.startswith("reference"):
-                    continue
-                elif field_type in ("upload", "blob", "password"):
-                    continue
-
-                value = self.xml_decode(child.get(self.ATTRIBUTE["value"], None))
-                if value is None:
-                    value = self.xml_decode(child.text)
-
-                if value == "" and not field_type == "string":
-                    value = None
-
-                if field_type == 'boolean':
-                    if value and value in ["True", "true"]:
-                        value = True
-                    else:
-                        value = False
-                elif value is not None:
-                    if field_type == "integer":
-                        try:
-                            value = int(value)
-                        except ValueError:
-                            #TODO: propagate error to element?
-                            continue
-                    elif field_type == "double":
-                        try:
-                            value = float(value)
-                        except ValueError:
-                            #TODO: propagate error to element?
-                            continue
-                else:
-                    value = table[f].default
-
-                if value is None and field_type == "string":
-                    value = ""
-
-                if value is not None:
-                    if not isinstance(value, basestring):
-                        v = str(value)
-                    (value, error) = self.validate(table, original, f, v)
-                    child.set(self.ATTRIBUTE["value"], v)
-                    if error:
-                        child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
-                        valid = False
-                        continue
-                    else:
-                        record[f] = value
-
-            elif child.tag == self.TAG["reference"]:
-                f = child.get(self.ATTRIBUTE["field"], None)
-                if not f or f not in table.fields:
-                    continue
-                if f in self.IGNORE_FIELDS or f in skip:
-                    continue
-                ktablename =  child.get(self.ATTRIBUTE["resource"], None)
-                uid = child.get(self.UID, None)
-                if uid and self.domain_mapping:
-                    uid = self.import_uid(uid)
-                if not (ktablename and uid):
-                    continue
-                if ktablename in self.db and self.UID in self.db[ktablename]:
-                    ktable = self.db[ktablename]
-                    krecord = self.db(ktable[self.UID] == uid).select(ktable.id,
-                                                                  limitby=(0,1))
-                    if krecord:
-                        record[f] = krecord[0].id
-                else:
-                    continue
-
-        if valid:
-            return record
-        else:
-            return None
-
-
-    def select_resources(self, tree, tablename):
-
-        """ Selects resources from an element tree """
-
-        resources = []
-
-        if not tree:
-            return resources
-
-        if isinstance(tree, ElementTree):
-            root = tree.getroot()
-            if not root.tag == self.TAG["root"]:
-                return resources
-        else:
-            root = tree
-
-        expr = './%s[@%s="%s"]' % \
-               (self.TAG["resource"], self.ATTRIBUTE["name"], tablename)
-        resources = root.xpath(expr)
-
-        return resources
 
 
     def __json2element(self, key, value, native=False):

@@ -543,7 +543,7 @@ class S3RESTRequest(object):
                                             self.component_name)
             if not self.component:
                 self.__dbg("S3RESTRequest: %s not a component of %s" %
-                           self.component_name, self.tablename)
+                           (self.component_name, self.tablename))
                 self.invalid = self.badrequest = True
                 return None
             if "multiple" in self.component.attr:

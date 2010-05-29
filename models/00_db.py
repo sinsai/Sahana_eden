@@ -15,7 +15,7 @@ request.utcnow = datetime.datetime.utcnow()
 
 # Switch to "False" in Production for a Performance gain
 # (need to set to "True" again when amending Table definitions)
-migrate = True
+migrate = False
 
 #if request.env.web2py_runtime_gae:            # if running on Google App Engine
 #    db = DAL("gae")                           # connect to Google BigTable

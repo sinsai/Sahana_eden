@@ -386,6 +386,7 @@ class GIS(object):
                   lon = None,
                   zoom = None,
                   feature_overlays = [],
+                  wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
                   toolbar = False,
@@ -409,6 +410,11 @@ class GIS(object):
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
                 }]
+            @param wms_browser: WMS Server's GetCapabilities & options (dict)
+                {
+                name: string,           # Name for the Folder in LayerTree
+                url: string             # URL of GetCapabilities
+                }
             @param catalogue_overlays: Show the Overlays from the GIS Catalogue (@ToDo: make this a dict of which external overlays to allow)
             @param catalogue_toolbar: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
@@ -573,8 +579,7 @@ class GIS(object):
         });
         """
             search2 = """,
-                            searchCombo
-        """
+                            searchCombo"""
         else:
             search = ""
             search2 = ""
@@ -766,7 +771,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         function onKmlFeatureSelect""" + name_safe + """(event) {
             // unselect any previous selections
-            //tooltipUnselect(event);
+            tooltipUnselect(event);
             var feature = event.feature;
             var selectedFeature = feature;
             var id = 'featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001)
@@ -790,6 +795,54 @@ OpenLayers.Util.extend( selectPdfControl, {
         else:
             # No Feature Layers requested
             pass
+
+        if wms_browser:
+            name = wms_browser["name"]
+            # urlencode the URL
+            url = urllib.quote(wms_browser["url"])
+            layers_wms_browser = """
+        var root = new Ext.tree.AsyncTreeNode({
+            expanded: true,
+            loader: new GeoExt.tree.WMSCapabilitiesLoader({
+                url: OpenLayers.ProxyHost + '""" + url + """',
+                layerOptions: {buffer: 0, singleTile: true, ratio: 1},
+                layerParams: {'TRANSPARENT': 'TRUE'},
+                // customize the createNode method to add a checkbox to nodes
+                createNode: function(attr) {
+                    attr.checked = attr.leaf ? false : undefined;
+                    return GeoExt.tree.WMSCapabilitiesLoader.prototype.createNode.apply(this, [attr]);
+                }
+            })
+        });
+        wmsBrowser = new Ext.tree.TreePanel({
+            id: 'wmsbrowser',
+            title: '""" + name + """',
+            root: root,
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            listeners: {
+                // Add layers to the map when checked, remove when unchecked.
+                // Note that this does not take care of maintaining the layer
+                // order on the map.
+                'checkchange': function(node, checked) { 
+                    if (checked === true) {
+                        mapPanel.map.addLayer(node.attributes.layer); 
+                    } else {
+                        mapPanel.map.removeLayer(node.attributes.layer);
+                    }
+                }
+            }
+        });
+        """
+            layers_wms_browser2 = """,
+                            wmsBrowser"""
+        else:
+            layers_wms_browser = ""
+            layers_wms_browser2 = ""
 
         #
         # Base Layers
@@ -883,6 +936,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         html.append(SCRIPT("""
     var map, mapPanel, toolbar;
     var currentFeature, popupControl, highlightControl;
+    var wmsBrowser;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -1026,7 +1080,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         // onClick Popup
         popupControl = new OpenLayers.Control.SelectFeature(
             allLayers, {
-                toggle:true,
+                toggle: true,
                 clickout: true
             }
         );
@@ -1042,9 +1096,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             }
         );
-        //map.addControl(highlightControl);
+        map.addControl(highlightControl);
         map.addControl(popupControl);
-        //highlightControl.activate();
+        highlightControl.activate();
         popupControl.activate();
         
         """ + mgrs + """
@@ -1087,13 +1141,18 @@ OpenLayers.Util.extend( selectPdfControl, {
             expanded: true
         });
 
+        """ + layers_wms_browser + """
+        
         var layerTree = new Ext.tree.TreePanel({
             id: 'treepanel',
             title: '""" + str(T("Layers")) + """',
             root: new Ext.tree.AsyncTreeNode({
                 expanded: true,
-                children: [layerTreeBase, layerTreeFeaturesInternal]
-                //children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+                children: [
+                    layerTreeBase,
+                    //layerTreeFeaturesExternal,
+                    layerTreeFeaturesInternal
+                ],
             }),
             rootVisible: false,
             split: true,
@@ -1119,7 +1178,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree""" + search2 + """
+                            layerTree""" + layers_wms_browser2 + search2 + """
                             ]
                     },
                     mapPanel

@@ -17,34 +17,22 @@ except:
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions" Views)
-response.menu_options = [
-    [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
-    [T("Persons"), False, URL(r=request, f="person"), [
-        [T("List"), False, URL(r=request, f="person")],
-        [T("Add"), False, URL(r=request, f="person", args="create")],
-    ]],
-    [T("Groups"), False, URL(r=request, f="group"), [
-        [T("List"), False, URL(r=request, f="group")],
-        [T("Add"), False, URL(r=request, f="group", args="create")],
-    ]]
-]
-
-# -----------------------------------------------------------------------------
-def shn_pr_module_menu_ext():
+def shn_menu():
+    response.menu_options = [
+        [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
+        [T("Persons"), False, URL(r=request, f="person"), [
+            [T("List"), False, URL(r=request, f="person")],
+            [T("Add"), False, URL(r=request, f="person", args="create")],
+        ]],
+        [T("Groups"), False, URL(r=request, f="group"), [
+            [T("List"), False, URL(r=request, f="group")],
+            [T("Add"), False, URL(r=request, f="group", args="create")],
+        ]]]
     if session.rcvars and "pr_person" in session.rcvars:
         selection = db.pr_person[session.rcvars["pr_person"]]
         if selection:
             selection = shn_pr_person_represent(selection.id)
-            response.menu_options = [
-                [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
-                [T("Persons"), False, URL(r=request, f="person"), [
-                    [T("List"), False, URL(r=request, f="person")],
-                    [T("Add"), False, URL(r=request, f="person", args="create")],
-                ]],
-                [T("Groups"), False, URL(r=request, f="group"), [
-                    [T("List"), False, URL(r=request, f="group")],
-                    [T("Add"), False, URL(r=request, f="group", args="create")],
-                ]],
+            menu_person = [
                 [str(T("Person:")) + " " + selection, False, URL(r=request, f="person", args="read"),[
                     [T("Basic Details"), False, URL(r=request, f="person", args="read")],
                     [T("Images"), False, URL(r=request, f="person", args="image")],
@@ -57,8 +45,9 @@ def shn_pr_module_menu_ext():
             #        [T("Group Memberships"), False, URL(r=request, f="person", args="group_membership")],
                 ]]
             ]
+            response.menu_options.extend(menu_person)
 
-shn_pr_module_menu_ext()
+shn_menu()
 
 # -----------------------------------------------------------------------------
 def index():
@@ -95,7 +84,7 @@ def person():
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ))
 
-    shn_pr_module_menu_ext()
+    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------

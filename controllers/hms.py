@@ -14,27 +14,14 @@ module_name = db(db.s3_module.name==module).select()[0].name_nice
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
-    [T('Hospitals'), False, URL(r=request, f='hospital'), [
-        [T('List All'), False, URL(r=request, f='hospital')],
-        [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-        [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')],
-    ]],
-    [T('Add Request'), False, URL(r=request, f='hrequest', args='create')],
-    [T('Requests'), False, URL(r=request, f='hrequest')],
-    [T('Pledges'), False, URL(r=request, f='hpledge')],
-]
-
-# -----------------------------------------------------------------------------
-def shn_hms_menu_ext():
+def shn_menu():
     menu = [
         [T('Home'), False, URL(r=request, f='index')],
-            [T('Hospitals'), False, URL(r=request, f='hospital'), [
-                [T('List All'), False, URL(r=request, f='hospital')],
-                [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-                [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')]
-            ]],
+        [T('Hospitals'), False, URL(r=request, f='hospital'), [
+            [T('List All'), False, URL(r=request, f='hospital')],
+            [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
+            [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')]
+        ]],
     ]
     if session.rcvars and 'hms_hospital' in session.rcvars:
         selection = db.hms_hospital[session.rcvars['hms_hospital']]
@@ -60,7 +47,7 @@ def shn_hms_menu_ext():
     menu.extend(menu2)
     response.menu_options = menu
 
-shn_hms_menu_ext()
+shn_menu()
 
 # -----------------------------------------------------------------------------
 def index():
@@ -97,7 +84,7 @@ def hospital():
         ),
         listadd=False)
 
-    shn_hms_menu_ext()
+    shn_menu()
 
     return output
 
@@ -130,7 +117,7 @@ def hrequest():
             description="%(message)s"
         ))
 
-    shn_hms_menu_ext()
+    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -156,7 +143,7 @@ def hpledge():
 
     output = shn_rest_controller(module, resource, editable = True, listadd=False)
 
-    shn_hms_menu_ext()
+    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------

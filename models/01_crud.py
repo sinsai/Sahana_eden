@@ -51,20 +51,15 @@ PRETTY_PRINT = True
 
 # *****************************************************************************
 # Load Controllers
+_s3xrc = local_import("s3xrc")
 
-exec("from applications.%s.modules.s3xrc import S3ResourceController" % request.application)
-exec("from applications.%s.modules.s3rest import S3RESTController" % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.eden.modules.s3xrc import *
-#from applications.eden.modules.s3rest import *
-
-s3xrc = S3ResourceController(db,
+s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
             base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
             rpp=ROWSPERPAGE,
             gis=gis)
 
-s3rest = S3RESTController(rc=s3xrc, auth=auth,
+s3rest = _s3xrc.S3RESTController(rc=s3xrc, auth=auth,
             xml_import_formats = shn_xml_import_formats,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,

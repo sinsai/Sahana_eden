@@ -4,6 +4,7 @@ errors/*
 sessions/*
 static/scripts/tools/httpserver.log
 uploads/*
+docs/*
 .raw/*
 static/scripts/ext/.docs/*
 static/scripts/ext/.examples/*

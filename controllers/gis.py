@@ -63,11 +63,22 @@ def index():
 
 def test():
     "Test Mapping API"
+
+    # Will use default popup_url
+    hospitals = {"feature_group" : "Hospitals"}
+
+    if auth.is_logged_in():
+        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="update.popup")}
+    else:
+        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
+    
     html = gis.show_map(
                 catalogue_overlays = True,
-                feature_overlays = [{"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location")}],
+                feature_overlays = [offices, hospitals],
+                search = True,
                 wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"}
                 )
+
     return dict(map=html)
 
 def test2():

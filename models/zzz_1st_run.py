@@ -233,7 +233,7 @@ if empty:
             )
 
     # Messaging
-    tablename = 'mobile_setting'
+    tablename = 'mobile_settings'
     table = db[tablename]
     if not db(table.id>0).count():
         table.insert(baud=115200)

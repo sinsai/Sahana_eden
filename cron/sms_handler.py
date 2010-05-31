@@ -56,7 +56,7 @@ class ModemThread( threading.Thread ):
 		#self.modem.send_sms("9935648569","Hey!")
 
 
-modem_configs = db(db.mobile_setting.port != "").select()
+modem_configs = db(db.mobile_settings.port != "").select()
 
 # PyGSM GsmModem class instances
 modems=[]

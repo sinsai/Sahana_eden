@@ -24,36 +24,29 @@ def index():
     return dict(module_name=module_name)
 
 @auth.requires_membership('Administrator')
-def setting():
+def settings():
     "Modem and Mobile related settings"
-    try:
-        import serial
-    except:
-        session.error = T('pyserial module not available within the running Python - this needs installing for SMS!')
-        redirect(URL(r=request, c='mobile', f='index' ))
     module = 'mobile'
-    resource = 'setting'
+    resource = 'settings'
     table = module + '_' + resource
 
     # Model options
     db[table].port.comment = A(SPAN("[Help]"), _class="tooltip",
-        _title=T("Port|The serial port where your modem is connected."))
+        _title=T('Port|The serial port where your modem is connected.'))
     db[table].baud.comment = A(SPAN("[Help]"), _class="tooltip",
-        _title=T("Baud|The Baud rate of your modem - Usually listed in your modem manual."))
+        _title=T('Baud|The Baud rate of your modem - Usually listed in your modem manual.'))
     db[table].account_name.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("Account Name|Convenient name to identify the account."))
-    db[table].ip.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("IP|The server IP sending the message to Clickatell - Required for secure use of Clickatell account."))
+            _title=T('Account Name|Convenient name to identify the account.'))
     db[table].url.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("URL|The url for the Clickatell API."))
-    db[table].user.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("User|The username for the Clickatell account"))
-    db[table].api_id.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("API ID|The s/http api id generated through the Clickatell account."))
-    db[table].password.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("Password|The password for the ."))
-    db[table].sender_num.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T("Sender Phone number|The sender phone number displayed with the SMS message ."))
+            _title=T('URL|The url for your gateway'))
+    db[table].parameters.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T('Parameters|The parameters for gateway'))
+    db[table].message_variable.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T('Message variable|The message variable used for the gateway'))
+    db[table].to_variable.comment = A(SPAN("[Help]"), _class="tooltip",
+            _title=T('To variable|The variable containing the phone number '))
+#    db[table].preference.comment = A(SPAN("[Help]"), _class="tooltip",
+#            _title=T('Preference|Prefered weight assigned to this gatway '))
 
     # CRUD Strings
     ADD_SETTING = T('Add Setting')

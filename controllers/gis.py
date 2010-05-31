@@ -186,7 +186,7 @@ def feature_group():
     "RESTlike CRUD controller"
     resource = "feature_group"
     tablename = module + "_" + resource
-    table = db[tablenme]
+    table = db[tablename]
 
     # Model options
     table.name.label = T("Name")

@@ -1743,6 +1743,7 @@ class S3ResourceController(object):
         onaccept = self.model.get_config(table, "onaccept")
         vector = S3Vector(self.db, prefix, name, id,
                           record=record,
+                          element=element,
                           rmap=rmap,
                           directory=directory,
                           permit=permit,
@@ -2117,7 +2118,7 @@ class S3Vector(object):
                 if self.onvalidation:
                     self.onvalidation(form)
                 if form.errors:
-                    print form.errors
+                    #print form.errors
                     if self.element:
                         #TODO: propagate errors to element
                         pass
@@ -2182,14 +2183,19 @@ class S3Vector(object):
             for r in self.rmap:
                 if r.entry:
                     id = r.entry.get("id", None)
+                    if not id:
+                        vector = r.entry.get("vector", None)
+                        if vector:
+                            id = vector.id
+                            r.entry.update(id=id)
+                        else:
+                            continue
                     if id:
                         self.record[r.field] = id
                     else:
                         if r.field in self.record:
                             del self.record[r.field]
-                        vector = r.entry.get("vector", None)
-                        if vector:
-                            vector.update.append(dict(vector=self, field=r.field))
+                        vector.update.append(dict(vector=self, field=r.field))
 
     def writeback(self, field, value):
 

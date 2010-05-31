@@ -4,15 +4,6 @@
 This file was developed by Fran Boon as a web2py extension.
 """
 
-#import os, re, copy, sys, types, datetime, time, cgi, hmac
-#try:
-#    import hashlib
-#    have_hashlib = True
-#except:
-#    import sha, md5
-#    have_hashlib = False
-#from gluon.storage import Storage
-
 import time
 import uuid
 import re

@@ -24,8 +24,10 @@ table = db.define_table(tablename, timestamp,
                 #Field("width", "integer"),  # Not needed since we get size client-side using Javascript's Image() class
                 Field("image", "upload", autodelete = True),
                 migrate=migrate)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
+table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
 # Reusable field for other tables to reference
 ADD_MARKER = T("Add Marker")
 marker_id = SQLTable(None, "marker_id",
@@ -47,6 +49,12 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 Field("maxResolution", "double", notnull=True),
                 Field("units", notnull=True),
                 migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.epsg.requires = IS_NOT_EMPTY()
+table.maxExtent.requires = IS_NOT_EMPTY()
+table.maxResolution.requires = IS_NOT_EMPTY()
+table.units.requires = IS_IN_SET(["m", "degrees"])
 # Reusable field for other tables to reference
 projection_id = SQLTable(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
@@ -108,8 +116,24 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 opt_gis_layout,
                 migrate=migrate)
 
+table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
+table.lat.requires = IS_LAT()
+table.lon.requires = IS_LON()
+table.zoom.requires = IS_INT_IN_RANGE(0, 19)
+table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
+table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1280)]
+table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
+table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
+table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
+gis_resource_opts = {
+        "shelter":T("Shelter"),
+        "office":T("Office"),
+        "track":T("Track"),
+        "image":T("Photo"),
+        }
 resource = "feature_class"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -119,6 +143,10 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("module"),    # Used to build Edit URL
                 Field("resource"),  # Used to build Edit URL & to provide Attributes to Display
                 migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
+table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
 # Reusable field for other tables to reference
 ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = SQLTable(None, "feature_class_id",
@@ -178,7 +206,17 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 admin_id,
                 migrate=migrate)
 
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
+table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
+table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
+# WKT validation is done in the onvalidation callback
+#table.wkt.requires=IS_NULL_OR(IS_WKT())
+table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
+table.lat.requires = IS_NULL_OR(IS_LAT())
+table.lon.requires = IS_NULL_OR(IS_LON())
 
 # Reusable field for other tables to reference
 ADD_LOCATION = T("Add Location")
@@ -242,6 +280,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("description"),
                 Field("enabled", "boolean", default=True, label=T("Enabled?")),
                 migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+#table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # Reusable field for other tables to reference
 ADD_FEATURE_GROUP = T("Add Feature Group")
 feature_group_id = SQLTable(None, "feature_group_id",
@@ -277,6 +318,11 @@ table = db.define_table(tablename, timestamp,
                 Field("apikey", length=128, notnull=True),
                 Field("description"),
                 migrate=migrate)
+# FIXME
+# We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
+table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"])
+#table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
+table.apikey.requires = IS_NOT_EMPTY()
 
 # GPS Tracks (files in GPX format)
 resource = "track"
@@ -323,13 +369,12 @@ track_id = SQLTable(None, "track_id",
                 ))
 
 # GIS Layers
-#gis_layer_types = ["shapefile", "scan", "wfs"]
+#gis_layer_types = ["bing", "shapefile", "scan", "wfs"]
 gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wms", "xyz", "yahoo"]
-#gis_layer_openstreetmap_subtypes = ["Mapnik", "Osmarender", "Aerial"]
-gis_layer_openstreetmap_subtypes = ["Mapnik", "Osmarender"]
-gis_layer_google_subtypes = ["Satellite", "Maps", "Hybrid", "Terrain"]
-gis_layer_yahoo_subtypes = ["Satellite", "Maps", "Hybrid"]
-gis_layer_bing_subtypes = ["Satellite", "Maps", "Hybrid", "Terrain"]
+gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
+gis_layer_google_subtypes = gis.layer_subtypes("google")
+gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
+gis_layer_bing_subtypes = gis.layer_subtypes("bing")
 # Base table from which the rest inherit
 gis_layer = SQLTable(db, "gis_layer", timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
@@ -344,20 +389,22 @@ for layertype in gis_layer_types:
     if layertype == "openstreetmap":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type"))            )
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
         t = SQLTable(db, table,
             gis_layer,
             Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location")),
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
             projection_id,
             marker_id)
         table = db.define_table(tablename, t, migrate=migrate)
+        table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
+        table.projection_id.default = 2
     elif layertype == "google":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type")))
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_google_subtypes)))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "gpx":
         t = SQLTable(db, table,
@@ -371,7 +418,7 @@ for layertype in gis_layer_types:
         t = SQLTable(db, table,
             gis_layer,
             Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location")))
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "js":
         t = SQLTable(db, table,
@@ -386,26 +433,28 @@ for layertype in gis_layer_types:
     elif layertype == "tms":
         t = SQLTable(db, table,
             gis_layer,
-            Field("url", label=T("Location")),
-            Field("layers", label=T("Layers")),
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+            Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
             Field("format", label=T("Format")))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "wms":
         t = SQLTable(db, table,
             gis_layer,
             Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location")),
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
             Field("base", "boolean", default=True, label=T("Base Layer?")),
             Field("map", label=T("Map")),
-            Field("layers", label=T("Layers")),
-            Field("format", label=T("Format")),
+            Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
+            Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png"]))),
             Field("transparent", "boolean", default=False, label=T("Transparent?")),
             projection_id)
         table = db.define_table(tablename, t, migrate=migrate)
+        table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
+        table.projection_id.default = 2
     elif layertype == "xyz":
         t = SQLTable(db, table,
             gis_layer,
-            Field("url", label=T("Location")),
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
             Field("base", "boolean", default=True, label=T("Base Layer?")),
             Field("sphericalMercator", "boolean", default=False, label=T("Spherical Mercator?")),
             Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])), label=T("Transition Effect")),
@@ -418,12 +467,12 @@ for layertype in gis_layer_types:
     elif layertype == "yahoo":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type")))
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_yahoo_subtypes)))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "bing":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type")))
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_bing_subtypes)))
         table = db.define_table(tablename, t, migrate=migrate)
 
 # GIS Cache

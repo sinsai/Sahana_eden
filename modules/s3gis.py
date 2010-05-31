@@ -11,7 +11,7 @@
     @author: Zubin Mithra <zubin.mithra@gmail.com>
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
-
+    
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
     files (the "Software"), to deal in the Software without
@@ -115,7 +115,7 @@ class GIS(object):
 
     def config_read(self):
         """
-            Reads the current GIS Config from the DB
+            Reads the current GIS Config from the DB 
         """
 
         db = self.db
@@ -200,6 +200,12 @@ class GIS(object):
 
         return file, warning
 
+    def get_api_key(self, layer="google"):
+        " Acquire API key from the database "
+        
+        query = self.db.gis_apikey.name == layer
+        return self.db(query).select().first().apikey
+
     def get_bearing(lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
@@ -268,7 +274,7 @@ class GIS(object):
             children = children & self.get_children(child.id)
 
         return children
-
+    
     def get_feature_class_id_from_name(self, name):
         """
             Returns the Feature Class ID from it's name
@@ -368,7 +374,7 @@ class GIS(object):
         marker = db(db.gis_marker.id == marker).select().first().image
 
         return marker
-
+    
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
@@ -379,6 +385,21 @@ class GIS(object):
         WKT = "POINT(%f %f)" % (lon, lat)
         return WKT
 
+    def layer_subtypes(self, layer="openstreetmap"):
+        """ Return a lit of the subtypes available for a Layer """
+
+        if layer == "openstreetmap":
+            #return ["Mapnik", "Osmarender", "Aerial"]
+            return ["Mapnik", "Osmarender"]
+        elif layer == "google":
+            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+        elif layer == "yahoo":
+            return ["Satellite", "Maps", "Hybrid"]
+        elif layer == "bing":
+            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+        else:
+            return None
+
     def show_map( self,
                   height = None,
                   width = None,
@@ -386,6 +407,7 @@ class GIS(object):
                   lon = None,
                   zoom = None,
                   feature_overlays = [],
+                  wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
                   toolbar = False,
@@ -409,6 +431,11 @@ class GIS(object):
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
                 }]
+            @param wms_browser: WMS Server's GetCapabilities & options (dict)
+                {
+                name: string,           # Name for the Folder in LayerTree
+                url: string             # URL of GetCapabilities
+                }
             @param catalogue_overlays: Show the Overlays from the GIS Catalogue (@ToDo: make this a dict of which external overlays to allow)
             @param catalogue_toolbar: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
@@ -507,7 +534,7 @@ class GIS(object):
                 DIV(_id="status_osm"),
                 _style="border: 0px none ;", _valign="top",
             ),
-            TD(
+            TD( 
                 # Somewhere to report whether GeoRSS feed is using cached copy or completely inaccessible
                 DIV(_id="status_georss"),
                 # Somewhere to report whether KML feed is using cached copy or completely inaccessible
@@ -537,6 +564,10 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
+
+        #######
+        # Tools
+        #######
 
         # Toolbar
         if toolbar:
@@ -569,12 +600,11 @@ class GIS(object):
             items: [{
                     region: 'center',
                     items: [ mapSearch ]
-                }]
+                }]    
         });
         """
             search2 = """,
-                            searchCombo
-        """
+                            searchCombo"""
         else:
             search = ""
             search2 = ""
@@ -634,6 +664,10 @@ OpenLayers.Util.extend( selectPdfControl, {
 """
         else:
             mgrs = ""
+
+        # Strategy
+        strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
+        strategy_cluster = """, new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
         if window:
@@ -695,10 +729,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if "URLError" in warning or "HTTPError" in warning:
                         # URL inaccessible
                         if os.access(filepath, os.R_OK):
-                            # Use cached version
-                            date = db(db.gis_cache.name == name).select().first().modified_on
-                            response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
-                            url = URL(r=request, c="default", f="download", args=[filename])
+                            statinfo = os.stat(filepath)
+                            if statinfo.st_size:
+                                # Use cached version
+                                date = db(db.gis_cache.name == name).select().first().modified_on
+                                response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                url = URL(r=request, c="default", f="download", args=[filename])
+                            else:
+                                # 0k file is all that is available
+                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                # skip layer
+                                continue
                         else:
                             # No cached version available
                             response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
@@ -731,18 +772,15 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     visibility = "featureLayer" + name_safe +".setVisibility(false);"
                 layers_features += """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.GML(
+        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
-            '""" + url + """',
             {
-                strategies: [ strategy ],
-                format: OpenLayers.Format.KML,
-                formatOptions: {
-                    extractStyles: true,
-                    extractAttributes: true,
-                    maxDepth: 2
-                },
-                projection: proj4326
+                projection: proj4326,
+                strategies: [ """ + strategy_fixed + strategy_cluster + """ ],
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_kml
+                })
             }
         );
         """ + visibility + """
@@ -752,12 +790,13 @@ OpenLayers.Util.extend( selectPdfControl, {
             "featureunselected": onFeatureUnselect
         });
         allLayers.push(featureLayer""" + name_safe + """);
-
+        
         function loadDetails(url, id) {
-            $.getS3(
+            //$.getS3(
+            $.get(
                     url,
                     function(data) {
-                        $('#' + id).html(data);
+                        $('#' + id + '_contentDiv').html(data);
                     },
                     'html',
                     'popup'
@@ -766,15 +805,16 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         function onKmlFeatureSelect""" + name_safe + """(event) {
             // unselect any previous selections
-            //tooltipUnselect(event);
+            tooltipUnselect(event);
             var feature = event.feature;
             var selectedFeature = feature;
-            var id = 'featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001)
+            //var id = 'featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001)
+            var id = 'featureLayer""" + name_safe + """'
             var popup = new OpenLayers.Popup.FramedCloud(
                 id,
                 feature.geometry.getBounds().getCenterLonLat(),
                 new OpenLayers.Size(400, 400),
-                "<div style='height: 400px; width: 400px; overflow: auto;'>Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0></div>",
+                "<div id='featureLayer""" + name_safe + """' style='height: 400px; width: 400px; overflow: auto;'>Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0></div>",
                 null,
                 true,
                 onPopupClose
@@ -791,22 +831,73 @@ OpenLayers.Util.extend( selectPdfControl, {
             # No Feature Layers requested
             pass
 
+        if wms_browser:
+            name = wms_browser["name"]
+            # urlencode the URL
+            url = urllib.quote(wms_browser["url"])
+            layers_wms_browser = """
+        var root = new Ext.tree.AsyncTreeNode({
+            expanded: true,
+            loader: new GeoExt.tree.WMSCapabilitiesLoader({
+                url: OpenLayers.ProxyHost + '""" + url + """',
+                layerOptions: {buffer: 0, singleTile: true, ratio: 1},
+                layerParams: {'TRANSPARENT': 'TRUE'},
+                // customize the createNode method to add a checkbox to nodes
+                createNode: function(attr) {
+                    attr.checked = attr.leaf ? false : undefined;
+                    return GeoExt.tree.WMSCapabilitiesLoader.prototype.createNode.apply(this, [attr]);
+                }
+            })
+        });
+        wmsBrowser = new Ext.tree.TreePanel({
+            id: 'wmsbrowser',
+            title: '""" + name + """',
+            root: root,
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            listeners: {
+                // Add layers to the map when checked, remove when unchecked.
+                // Note that this does not take care of maintaining the layer
+                // order on the map.
+                'checkchange': function(node, checked) { 
+                    if (checked === true) {
+                        mapPanel.map.addLayer(node.attributes.layer); 
+                    } else {
+                        mapPanel.map.removeLayer(node.attributes.layer);
+                    }
+                }
+            }
+        });
+        """
+            layers_wms_browser2 = """,
+                            wmsBrowser"""
+        else:
+            layers_wms_browser = ""
+            layers_wms_browser2 = ""
+
         #
         # Base Layers
         #
 
-        # OpenStreetMap
-        gis_layer_openstreetmap_subtypes = ["Mapnik", "Osmarender"] # Copied from Model - Need to DRY!
-        openstreetmap = Storage()
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled==True).select()
-        for layer in openstreetmap_enabled:
-            for subtype in gis_layer_openstreetmap_subtypes:
-                if layer.subtype == subtype:
-                    openstreetmap["%s" % subtype] = layer.name
+        # Only enable commercial base layers if using a sphericalMercator projection
+        if projection == 900913:
 
-        functions_openstreetmap = ""
-        if openstreetmap:
-            functions_openstreetmap = """
+            # OpenStreetMap
+            layers_openstreetmap = ""
+            gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
+            openstreetmap = Storage()
+            openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+            for layer in openstreetmap_enabled:
+                for subtype in gis_layer_openstreetmap_subtypes:
+                    if layer.subtype == subtype:
+                        openstreetmap["%s" % subtype] = layer.name
+
+            if openstreetmap:
+                functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
             var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
@@ -821,11 +912,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-
-        layers_openstreetmap = ""
-        if projection==900913:
-            # Only enable commercial base layers if using a sphericalMercator projection
-            if openstreetmap:
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
         var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
@@ -841,40 +927,255 @@ OpenLayers.Util.extend( selectPdfControl, {
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
+            else:
+                functions_openstreetmap = ""
 
-            google = db(db.gis_layer_google.enabled==True).select()
+            # Google
+            layers_google = ""
+            gis_layer_google_subtypes = self.layer_subtypes("google")
+            google = Storage()
+            google_enabled = db(db.gis_layer_google.enabled == True).select()
+            if google_enabled:
+                google.key = self.get_api_key("google")
+                for layer in google_enabled:
+                    for subtype in gis_layer_google_subtypes:
+                        if layer.subtype == subtype:
+                            google["%s" % subtype] = layer.name
             if google:
-                # @ToDo
-                layers_google = ""
-            else:
-                layers_google = ""
-            yahoo = db(db.gis_layer_yahoo.enabled==True).select()
+                html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                if google.Satellite:
+                    layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlesat);
+                    """
+                if google.Maps:
+                    layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlemaps);
+                    """
+                if google.Hybrid:
+                    layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlehybrid);
+                    """
+                if google.Terrain:
+                    layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+        map.addLayer(googleterrain);
+                    """
+            
+            # Yahoo
+            layers_yahoo = ""
+            gis_layer_yahoo_subtypes = self.layer_subtypes("yahoo")
+            yahoo = Storage()
+            yahoo_enabled = db(db.gis_layer_yahoo.enabled == True).select()
+            if yahoo_enabled:
+                yahoo.key = self.get_api_key("yahoo")
+                for layer in yahoo_enabled:
+                    for subtype in gis_layer_yahoo_subtypes:
+                        if layer.subtype == subtype:
+                            yahoo["%s" % subtype] = layer.name
             if yahoo:
-                # @ToDo
-                layers_yahoo = ""
-            else:
-                layers_yahoo = ""
-            #bing = db(db.gis_layer_bing.enabled==True).select()
+                html.append(SCRIPT(_type="text/javascript", _src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid=" + yahoo.key))
+                if yahoo.Satellite:
+                    layers_yahoo += """
+        var yahoosat = new OpenLayers.Layer.Yahoo( '""" + yahoo.Satellite + """' , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
+        map.addLayer(yahoosat);
+                    """
+                if yahoo.Maps:
+                    layers_yahoo += """
+        var yahoomaps = new OpenLayers.Layer.Yahoo( '""" + yahoo.Maps + """' , {'sphericalMercator': true } );
+        map.addLayer(yahoomaps);
+                    """
+                if yahoo.Hybrid:
+                    layers_yahoo += """
+        var yahoohybrid = new OpenLayers.Layer.Yahoo( '""" + yahoo.Hybrid + """' , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
+        map.addLayer(yahoohybrid);
+                    """
+            
+            # Bing - Broken in GeoExt currently: http://www.geoext.org/pipermail/users/2009-December/000417.html
             bing = False
+            layers_bing = ""
+            #gis_layer_bing_subtypes = self.layer_subtypes("bing")
+            #bing = Storage()
+            #bing_enabled = db(db.gis_layer_bing.enabled == True).select()
+            #for layer in bing_enabled:
+            #    for subtype in gis_layer_bing_subtypes:
+            #        if layer.subtype == subtype:
+            #            bing["%s" % subtype] = layer.name
             if bing:
-                # @ToDo
-                layers_bing = ""
-            else:
-                layers_bing = ""
+                html.append(SCRIPT(_type="text/javascript", _src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2&mkt=en-us"))
+                if bing.Satellite:
+                    layers_bing += """
+        var bingsat = new OpenLayers.Layer.VirtualEarth( '""" + bing.Satellite + """' , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
+        map.addLayer(bingsat);
+                    """
+                if bing.Maps:
+                    layers_bing += """
+        var bingmaps = new OpenLayers.Layer.VirtualEarth( '""" + bing.Maps + """' , {type: VEMapStyle.Road, 'sphericalMercator': true } );
+        map.addLayer(bingmaps);
+                    """
+                if bing.Hybrid:
+                    layers_bing += """
+        var binghybrid = new OpenLayers.Layer.VirtualEarth( '""" + bing.Hybrid + """' , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
+        map.addLayer(binghybrid);
+                    """
+                if bing.Terrain:
+                    layers_bing += """
+        var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
+        map.addLayer(bingterrain);
+                    """
+            
         layers_tms = ""
         layers_wms = ""
         layers_xyz = ""
         layers_js = ""
+
+        # Overlays
+
+        layers_georss = ""
+        layers_gpx = ""
+        layers_kml = ""
         if catalogue_overlays:
-            # @ToDo
+            # GeoRSS
+            georss = Storage()
+            georss_enabled = db(db.gis_layer_georss.enabled==True).select()
+            if georss_enabled:
+                layers_georss += """
+        var format_georss = new OpenLayers.Format.GeoRSS();
+        var georssLayers = new Array();
+        function onGeorssFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            if (undefined == feature.attributes.description) {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup', 
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                '<h2>' + feature.attributes.title + '</h2>',
+                null, true, onPopupClose);
+            } else {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
+                null, true, onPopupClose);
+            };
+            feature.popup = popup;
+            popup.feature = feature;
+            map.addPopup(popup);
+        }
+        """
+                for layer in georss_enabled:
+                    name = layer["name"]
+                    url = layer["url"]
+                    visible = layer["visible"]
+                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select().first().epsg
+                    if georss_projection == 4326:
+                        projection_str = "projection: proj4326,"
+                    else:
+                        projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker =db(db.gis_marker.id == marker_id).select().first().image
+                    else:
+                        marker = db(db.gis_marker.id == marker_default).select().first().image
+                    marker_url = URL(r=request, c='default', f='download', args=marker)
+                
+                    if cache:
+                        # Download file
+                        try:
+                            file = fetch(url)
+                            warning = ""
+                        except urllib2.URLError:
+                            warning = "URLError"
+                        except urllib2.HTTPError:
+                            warning = "HTTPError"
+                        filename = "gis_cache.file." + name.replace(" ", "_") + ".rss"
+                        filepath = os.path.join(cachepath, filename)
+                        f = open(filepath, "w")
+                        # Handle errors
+                        if "URLError" in warning or "HTTPError" in warning:
+                            # URL inaccessible
+                            if os.access(filepath, os.R_OK):
+                                # Use cached version
+                                date = db(db.gis_cache.name == name).select().first().modified_on
+                                response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                url = URL(r=request, c="default", f="download", args=[filename])
+                            else:
+                                # No cached version available
+                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                # skip layer
+                                continue
+                        else:
+                            # Download was succesful
+                            # Write file to cache
+                            f.write(file)
+                            f.close()
+                            records = db(db.gis_cache.name == name).select()
+                            if records:
+                                records[0].update(modified_on=response.utcnow)
+                            else:
+                                db.gis_cache.insert(name=name, file=filename)
+                            url = URL(r=request, c="default", f="download", args=[filename])
+                    else:
+                        # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+                        pass
+
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if visible:
+                        visibility = "georssLayer" + name_safe + ".setVisibility(true);"
+                    else:
+                        visibility = "georssLayer" + name_safe + ".setVisibility(false);"
+                    layers_georss += """
+            var iconURL = '""" + marker_url + """';
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            var icon_img = new Image();
+            icon_img.src = iconURL;
+            var width = icon_img.width;
+            var height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name_safe + """',
+                {
+                    """ + projection_str + """
+                    strategies: [ """ + strategy_fixed + strategy_cluster + """ ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: '""" + url + """',
+                        format: format_georss
+                    })
+                }
+            );
+            """ + visibility + """
+            map.addLayer(georssLayer""" + name_safe + """);
+            georssLayers.push(georssLayer""" + name_safe + """);
+            georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+            """
+                layers_georss += """
+        allLayers = allLayers.concat(georssLayers);
+        """
+            # GPX (ToDo)
+            layers_gpx += ""
+            # KML (ToDo)
+            layers_kml += ""
+            # WMS (ToDo)
             layers_wms += ""
-            layers_georss = ""
-            layers_gpx = ""
-            layers_kml = ""
-        else:
-            layers_georss = ""
-            layers_gpx = ""
-            layers_kml = ""
 
         #############
         # Main script
@@ -883,6 +1184,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         html.append(SCRIPT("""
     var map, mapPanel, toolbar;
     var currentFeature, popupControl, highlightControl;
+    var wmsBrowser;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -923,28 +1225,33 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_xyz + """
         // JS
         """ + layers_js + """
+        
         // Overlays
-        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-        style_marker.graphicOpacity = 1;
-        var icon_img = new Image();
         var max_w = 25;
         var max_h = 35;
-        var width, height;
-        var iconURL;
-        var strategy = new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """});
+        var format_kml = new OpenLayers.Format.KML({
+                        extractStyles: true,
+                        extractAttributes: true,
+                        maxDepth: 2
+                    })
+        var kmlLayers = new Array();
+        
         // Features
         """ + layers_features + """
+        
         // GeoRSS
         """ + layers_georss + """
+        
         // GPX
         """ + layers_gpx + """
+        
         // KML
         """ + layers_kml + """
     }
 
     """ + functions_openstreetmap + """
 
-    // ol_vector_registerEvents.js
+    // ol_vector_registerEvents.js (for Draft Features)
 
     // ol_controls_features.js
 
@@ -982,12 +1289,23 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         lastFeature = feature;
-        tooltipPopup = new OpenLayers.Popup("activetooltip",
+        if (undefined == feature.attributes.name) {
+            // GeoRSS
+            tooltipPopup = new OpenLayers.Popup("activetooltip",
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(80, 12),
+                    feature.attributes.title,
+                    true
+            );
+        } else {
+            // KML
+            tooltipPopup = new OpenLayers.Popup("activetooltip",
                     feature.geometry.getBounds().getCenterLonLat(),
                     new OpenLayers.Size(80, 12),
                     feature.attributes.name,
                     true
-        );
+            );
+        }
         // should be moved to CSS
         tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
         tooltipPopup.closeDiv.style.backgroundColor='ffffcb';
@@ -1015,38 +1333,38 @@ OpenLayers.Util.extend( selectPdfControl, {
     Ext.onReady(function() {
         map = new OpenLayers.Map('center', options);
         addLayers(map);
-
+        
         // ol_layers_features_all.js
         map.addControl(new OpenLayers.Control.ScaleLine());
         map.addControl(new OpenLayers.Control.MGRSMousePosition());
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-
+        
         // Popups
         // onClick Popup
         popupControl = new OpenLayers.Control.SelectFeature(
             allLayers, {
-                toggle:true,
+                toggle: true,
                 clickout: true
             }
         );
         // onHover Tooltip
         highlightControl = new OpenLayers.Control.SelectFeature(
-            allLayers, {
+            allLayers, { 
                 hover: true,
                 highlightOnly: true,
                 renderIntent: "temporary",
                 eventListeners: {
-                    featurehighlighted: tooltipSelect,
+                    featurehighlighted: tooltipSelect, 
                     featureunhighlighted: tooltipUnselect
                 }
             }
         );
-        //map.addControl(highlightControl);
+        map.addControl(highlightControl);
         map.addControl(popupControl);
-        //highlightControl.activate();
+        highlightControl.activate();
         popupControl.activate();
-
+        
         """ + mgrs + """
 
         var mapPanel = new GeoExt.MapPanel({
@@ -1060,11 +1378,11 @@ OpenLayers.Util.extend( selectPdfControl, {
             zoom: """ + str(zoom) + """,
             tbar: new Ext.Toolbar()
         });
-
+        
         """ + toolbar + """
-
+        
         """ + search + """
-
+        
         var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
             text: '""" + str(T("Base Layers")) + """',
             layerStore: mapPanel.layers,
@@ -1087,13 +1405,18 @@ OpenLayers.Util.extend( selectPdfControl, {
             expanded: true
         });
 
+        """ + layers_wms_browser + """
+        
         var layerTree = new Ext.tree.TreePanel({
             id: 'treepanel',
             title: '""" + str(T("Layers")) + """',
             root: new Ext.tree.AsyncTreeNode({
                 expanded: true,
-                children: [layerTreeBase, layerTreeFeaturesInternal]
-                //children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+                children: [
+                    layerTreeBase,
+                    //layerTreeFeaturesExternal,
+                    layerTreeFeaturesInternal
+                ],
             }),
             rootVisible: false,
             split: true,
@@ -1119,7 +1442,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree""" + search2 + """
+                            layerTree""" + layers_wms_browser2 + search2 + """
                             ]
                     },
                     mapPanel
@@ -1235,11 +1558,11 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
         db = self.db
-        return db((db.gis_location.lat_min <= lat_max) &
+        return db((db.gis_location.lat_min <= lat_max) & 
             (db.gis_location.lat_max >= lat_min) &
             (db.gis_location.lon_min <= lon_max) &
             (db.gis_location.lon_max >= lon_min))
-
+    
     def _intersects(self, shape):
         """
             Returns Rows of locations whose shape intersects the given shape
@@ -1261,7 +1584,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     if SHAPELY:
         intersects = _intersects
-        intersects_latlon = _intersects_latlon
+        intersects_latlon = _intersects_latlon 
 
 
 class Geocoder(object):

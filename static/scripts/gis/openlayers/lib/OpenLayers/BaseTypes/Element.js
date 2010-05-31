@@ -47,7 +47,10 @@ OpenLayers.Element = {
     hide: function() {
         for (var i=0, len=arguments.length; i<len; i++) {
             var element = OpenLayers.Util.getElement(arguments[i]);
-            element.style.display = 'none';
+            // http://trac.openlayers.org/ticket/2652
+            if (element){
+                element.style.display = 'none';
+            }
         }
     },
 

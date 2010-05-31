@@ -564,7 +564,11 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
-            
+
+        #######
+        # Tools
+        #######
+
         # Toolbar
         if toolbar:
             toolbar = """
@@ -660,7 +664,11 @@ OpenLayers.Util.extend( selectPdfControl, {
 """
         else:
             mgrs = ""
-        
+
+        # Strategy
+        strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
+        strategy_cluster = """, new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
+
         # Layout
         if window:
             layout = """
@@ -757,18 +765,15 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     visibility = "featureLayer" + name_safe +".setVisibility(false);"
                 layers_features += """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.GML(
+        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
-            '""" + url + """',
             {
-                strategies: [ strategy ],
-                format: OpenLayers.Format.KML,
-                formatOptions: {
-                    extractStyles: true,
-                    extractAttributes: true,
-                    maxDepth: 2
-                },
-                projection: proj4326
+                projection: proj4326,
+                strategies: [ """ + strategy_fixed + strategy_cluster + """ ],
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_kml
+                })
             }
         );
         """ + visibility + """
@@ -870,7 +875,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         #
 
         # Only enable commercial base layers if using a sphericalMercator projection
-        if projection==900913:
+        if projection == 900913:
 
             # OpenStreetMap
             layers_openstreetmap = ""
@@ -931,23 +936,23 @@ OpenLayers.Util.extend( selectPdfControl, {
                 html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
                 if google.Satellite:
                     layers_google += """
-                    var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
-                    map.addLayer(googlesat);
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlesat);
                     """
                 if google.Maps:
                     layers_google += """
-                    var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
-                    map.addLayer(googlemaps);
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlemaps);
                     """
                 if google.Hybrid:
                     layers_google += """
-                    var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
-                    map.addLayer(googlehybrid);
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlehybrid);
                     """
                 if google.Terrain:
                     layers_google += """
-                    var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
-                    map.addLayer(googleterrain);
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+        map.addLayer(googleterrain);
                     """
             
             # Yahoo
@@ -965,18 +970,18 @@ OpenLayers.Util.extend( selectPdfControl, {
                 html.append(SCRIPT(_type="text/javascript", _src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid=" + yahoo.key))
                 if yahoo.Satellite:
                     layers_yahoo += """
-                    var yahoosat = new OpenLayers.Layer.Yahoo( '""" + yahoo.Satellite + """' , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
-                    map.addLayer(yahoosat);
+        var yahoosat = new OpenLayers.Layer.Yahoo( '""" + yahoo.Satellite + """' , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
+        map.addLayer(yahoosat);
                     """
                 if yahoo.Maps:
                     layers_yahoo += """
-                    var yahoomaps = new OpenLayers.Layer.Yahoo( '""" + yahoo.Maps + """' , {'sphericalMercator': true } );
-                    map.addLayer(yahoomaps);
+        var yahoomaps = new OpenLayers.Layer.Yahoo( '""" + yahoo.Maps + """' , {'sphericalMercator': true } );
+        map.addLayer(yahoomaps);
                     """
                 if yahoo.Hybrid:
                     layers_yahoo += """
-                    var yahoohybrid = new OpenLayers.Layer.Yahoo( '""" + yahoo.Hybrid + """' , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
-                    map.addLayer(yahoohybrid);
+        var yahoohybrid = new OpenLayers.Layer.Yahoo( '""" + yahoo.Hybrid + """' , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
+        map.addLayer(yahoohybrid);
                     """
             
             # Bing - Broken in GeoExt currently: http://www.geoext.org/pipermail/users/2009-December/000417.html
@@ -993,39 +998,175 @@ OpenLayers.Util.extend( selectPdfControl, {
                 html.append(SCRIPT(_type="text/javascript", _src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2&mkt=en-us"))
                 if bing.Satellite:
                     layers_bing += """
-                    var bingsat = new OpenLayers.Layer.VirtualEarth( '""" + bing.Satellite + """' , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
-                    map.addLayer(bingsat);
+        var bingsat = new OpenLayers.Layer.VirtualEarth( '""" + bing.Satellite + """' , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
+        map.addLayer(bingsat);
                     """
                 if bing.Maps:
                     layers_bing += """
-                    var bingmaps = new OpenLayers.Layer.VirtualEarth( '""" + bing.Maps + """' , {type: VEMapStyle.Road, 'sphericalMercator': true } );
-                    map.addLayer(bingmaps);
+        var bingmaps = new OpenLayers.Layer.VirtualEarth( '""" + bing.Maps + """' , {type: VEMapStyle.Road, 'sphericalMercator': true } );
+        map.addLayer(bingmaps);
                     """
                 if bing.Hybrid:
                     layers_bing += """
-                    var binghybrid = new OpenLayers.Layer.VirtualEarth( '""" + bing.Hybrid + """' , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
-                    map.addLayer(binghybrid);
+        var binghybrid = new OpenLayers.Layer.VirtualEarth( '""" + bing.Hybrid + """' , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
+        map.addLayer(binghybrid);
                     """
                 if bing.Terrain:
                     layers_bing += """
-                    var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
-                    map.addLayer(bingterrain);
+        var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
+        map.addLayer(bingterrain);
                     """
             
         layers_tms = ""
         layers_wms = ""
         layers_xyz = ""
         layers_js = ""
+
+        # Overlays
+
+        layers_georss = ""
+        layers_gpx = ""
+        layers_kml = ""
         if catalogue_overlays:
-            # @ToDo
+            # GeoRSS
+            georss = Storage()
+            georss_enabled = db(db.gis_layer_georss.enabled==True).select()
+            if georss_enabled:
+                layers_georss += """
+        var format_georss = new OpenLayers.Format.GeoRSS();
+        var georssLayers = new Array();
+        function onGeorssFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            if (undefined == feature.attributes.description) {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup', 
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                '<h2>' + feature.attributes.title + '</h2>',
+                null, true, onPopupClose);
+            } else {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
+                null, true, onPopupClose);
+            };
+            feature.popup = popup;
+            popup.feature = feature;
+            map.addPopup(popup);
+        }
+        """
+                for layer in georss_enabled:
+                    name = layer["name"]
+                    url = layer["url"]
+                    visible = layer["visible"]
+                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select().first().epsg
+                    if georss_projection == 4326:
+                        projection_str = "projection: proj4326,"
+                    else:
+                        projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker =db(db.gis_marker.id == marker_id).select().first().image
+                    else:
+                        marker = db(db.gis_marker.id == marker_default).select().first().image
+                    marker_url = URL(r=request, c='default', f='download', args=marker)
+                
+                    if cache:
+                        # Download file
+                        try:
+                            file = fetch(url)
+                            warning = ""
+                        except urllib2.URLError:
+                            warning = "URLError"
+                        except urllib2.HTTPError:
+                            warning = "HTTPError"
+                        filename = "gis_cache.file." + name.replace(" ", "_") + ".rss"
+                        filepath = os.path.join(cachepath, filename)
+                        f = open(filepath, "w")
+                        # Handle errors
+                        if "URLError" in warning or "HTTPError" in warning:
+                            # URL inaccessible
+                            if os.access(filepath, os.R_OK):
+                                # Use cached version
+                                date = db(db.gis_cache.name == name).select().first().modified_on
+                                response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                url = URL(r=request, c="default", f="download", args=[filename])
+                            else:
+                                # No cached version available
+                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                # skip layer
+                                continue
+                        else:
+                            # Download was succesful
+                            # Write file to cache
+                            f.write(file)
+                            f.close()
+                            records = db(db.gis_cache.name == name).select()
+                            if records:
+                                records[0].update(modified_on=response.utcnow)
+                            else:
+                                db.gis_cache.insert(name=name, file=filename)
+                            url = URL(r=request, c="default", f="download", args=[filename])
+                    else:
+                        # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+                        pass
+
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if visible:
+                        visibility = "georssLayer" + name_safe + ".setVisibility(true);"
+                    else:
+                        visibility = "georssLayer" + name_safe + ".setVisibility(false);"
+                    layers_georss += """
+            var iconURL = '""" + marker_url + """';
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            var icon_img = new Image();
+            icon_img.src = iconURL;
+            var width = icon_img.width;
+            var height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name_safe + """',
+                {
+                    """ + projection_str + """
+                    strategies: [ """ + strategy_fixed + strategy_cluster + """ ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: '""" + url + """',
+                        format: format_georss
+                    })
+                }
+            );
+            """ + visibility + """
+            map.addLayer(georssLayer""" + name_safe + """);
+            georssLayers.push(georssLayer""" + name_safe + """);
+            georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+            """
+                layers_georss += """
+        allLayers = allLayers.concat(georssLayers);
+        """
+            # GPX (ToDo)
+            layers_gpx += ""
+            # KML (ToDo)
+            layers_kml += ""
+            # WMS (ToDo)
             layers_wms += ""
-            layers_georss = ""
-            layers_gpx = ""
-            layers_kml = ""
-        else:
-            layers_georss = ""
-            layers_gpx = ""
-            layers_kml = ""
 
         #############
         # Main script
@@ -1075,28 +1216,33 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_xyz + """
         // JS
         """ + layers_js + """
+        
         // Overlays
-        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-        style_marker.graphicOpacity = 1;
-        var icon_img = new Image();
         var max_w = 25;
         var max_h = 35;
-        var width, height;
-        var iconURL;
-        var strategy = new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """});
+        var format_kml = new OpenLayers.Format.KML({
+                        extractStyles: true,
+                        extractAttributes: true,
+                        maxDepth: 2
+                    })
+        var kmlLayers = new Array();
+        
         // Features
         """ + layers_features + """
+        
         // GeoRSS
         """ + layers_georss + """
+        
         // GPX
         """ + layers_gpx + """
+        
         // KML
         """ + layers_kml + """
     }
 
     """ + functions_openstreetmap + """
 
-    // ol_vector_registerEvents.js
+    // ol_vector_registerEvents.js (for Draft Features)
 
     // ol_controls_features.js
 
@@ -1134,12 +1280,23 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         lastFeature = feature;
-        tooltipPopup = new OpenLayers.Popup("activetooltip",
+        if (undefined == feature.attributes.name) {
+            // GeoRSS
+            tooltipPopup = new OpenLayers.Popup("activetooltip",
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(80, 12),
+                    feature.attributes.title,
+                    true
+            );
+        } else {
+            // KML
+            tooltipPopup = new OpenLayers.Popup("activetooltip",
                     feature.geometry.getBounds().getCenterLonLat(),
                     new OpenLayers.Size(80, 12),
                     feature.attributes.name,
                     true
-        );
+            );
+        }
         // should be moved to CSS
         tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
         tooltipPopup.closeDiv.style.backgroundColor='ffffcb';

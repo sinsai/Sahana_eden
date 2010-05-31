@@ -21,8 +21,6 @@ response.menu_options = [
 
 # Model options used in multiple Actions
 table = db.gis_location
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
-table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
 table.level.label = T("Level")
@@ -30,25 +28,16 @@ table.level.comment = DIV( _class="tooltip", _title=T("Level|The Level in the Hi
 table.code.label = T("Code")
 table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
 table.description.label = T("Description")
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
-table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
-table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 table.gis_feature_type.label = T("Feature Type")
-table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
-table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lat.label = T("Latitude")
 #table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."))
 CONVERSION_TOOL = T("Conversion Tool")
 #table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class="colorbox", _href=URL(r=request, c="gis", f="convert_gps", vars=dict(KeepThis="true"))+"&TB_iframe=true", _target="top", _title=CONVERSION_TOOL), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
 table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-table.lon.requires = IS_NULL_OR(IS_LON())
 table.lon.label = T("Longitude")
 table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-# WKT validation is done in the onvalidation callback
-#table.wkt.requires=IS_NULL_OR(IS_WKT())
 table.wkt.label = T("Well-Known Text")
 table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 table.osm_id.label = "OpenStreetMap"
@@ -73,12 +62,17 @@ def index():
     return dict(module_name=module_name)
 
 def test():
-    "Test server-parsed GIS functions"
+    "Test Mapping API"
     html = gis.show_map(
+                catalogue_overlays = True,
                 feature_overlays = [{"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location")}],
                 wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"}
                 )
     return dict(map=html)
+
+def test2():
+    "Test new OpenLayers functionality in a RAD environment"
+    return dict()
 
 def apikey():
     "RESTlike CRUD controller"
@@ -87,12 +81,7 @@ def apikey():
     table = db[tablename]
 
     # Model options
-    # FIXME
-    # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
-    table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"])
     table.name.label = T("Service")
-    #table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
-    table.apikey.requires = IS_NOT_EMPTY()
     table.apikey.label = T("Key")
     table.apikey.comment = SPAN("*", _class="req")
 
@@ -124,28 +113,19 @@ def config():
     table = db[tablename]
 
     # Model options
-    table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
-    table.lat.requires = IS_LAT()
     table.lat.label = T("Latitude")
     table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-    table.lon.requires = IS_LON()
     table.lon.label = T("Longitude")
     table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-    table.zoom.requires = IS_INT_IN_RANGE(0, 19)
     table.zoom.label = T("Zoom")
     table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
     table.marker_id.label = T("Default Marker")
-    table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1024)]
     table.map_height.label = T("Map Height")
     table.map_height.comment = SPAN("*", _class="req")
-    table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(50, 1280)]
     table.map_width.label = T("Map Width")
     table.map_width.comment = SPAN("*", _class="req")
-    table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
     table.zoom_levels.label = T("Zoom Levels")
-    table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
     table.cluster_distance.label = T("Cluster Distance")
-    table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
     table.cluster_threshold.label = T("Cluster Threshold")
 
     # CRUD Strings
@@ -176,20 +156,10 @@ def feature_class():
     table = db[tablename]
 
     # Model options
-    resource_opts = {
-        "shelter":T("Shelter"),
-        "office":T("Office"),
-        "track":T("Track"),
-        "image":T("Photo"),
-        }
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
-    table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
     table.module.label = T("Module")
-    table.resource.requires = IS_NULL_OR(IS_IN_SET(resource_opts))
     table.resource.label = T("Resource")
 
     # CRUD Strings
@@ -219,9 +189,6 @@ def feature_group():
     table = db[tablenme]
 
     # Model options
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
@@ -337,11 +304,9 @@ def marker():
     table = db[tablename]
 
     # Model options
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
     table.image.label = T("Image")
-    table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
 
     # CRUD Strings
     LIST_MARKERS = T("List Markers")
@@ -370,20 +335,14 @@ def projection():
     table = db[table]
 
     # Model options
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
-    table.epsg.requires = IS_NOT_EMPTY()
     table.epsg.label = "EPSG"
     table.epsg.comment = SPAN("*", _class="req")
-    table.maxExtent.requires = IS_NOT_EMPTY()
     table.maxExtent.label = T("maxExtent")
     table.maxExtent.comment = SPAN("*", _class="req")
-    table.maxResolution.requires = IS_NOT_EMPTY()
     table.maxResolution.label = T("maxResolution")
     table.maxResolution.comment = SPAN("*", _class="req")
-    table.units.requires = IS_IN_SET(["m", "degrees"])
     table.units.label = T("Units")
 
     # CRUD Strings
@@ -444,7 +403,6 @@ def layer_openstreetmap():
     table = module + "_" + resource
 
     # Model options
-    db[table].subtype.requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)
 
     # CRUD Strings
     type = "OpenStreetMap"
@@ -474,7 +432,6 @@ def layer_google():
     table = module + "_" + resource
 
     # Model options
-    db[table].subtype.requires = IS_IN_SET(gis_layer_google_subtypes)
 
     # CRUD Strings
     type = "Google"
@@ -504,7 +461,6 @@ def layer_yahoo():
     table = module + "_" + resource
 
     # Model options
-    db[table].subtype.requires = IS_IN_SET(gis_layer_yahoo_subtypes)
 
     # CRUD Strings
     type = "Yahoo"
@@ -563,7 +519,6 @@ def layer_bing():
     table = module + "_" + resource
 
     # Model options
-    db[table].subtype.requires = IS_IN_SET(gis_layer_bing_subtypes)
 
     # CRUD Strings
     type = "Bing"
@@ -594,12 +549,8 @@ def layer_georss():
     table = db[tablename]
 
     # Model options
-    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
-    table.url.requires = IS_NOT_EMPTY()
     table.url.comment = SPAN("*", _class="req")
-    table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-    table.projection_id.default = 2
-
+    
     # CRUD Strings
     type = "GeoRSS"
     GEORSS_LAYERS = T(TYPE_LAYERS_FMT % type)
@@ -663,8 +614,6 @@ def layer_kml():
     table = db[tablename]
 
     # Model options
-    #dbtable.url.requires = [IS_URL, IS_NOT_EMPTY()]
-    table.url.requires = IS_NOT_EMPTY()
     table.url.comment = SPAN("*", _class="req")
 
     # CRUD Strings
@@ -698,10 +647,7 @@ def layer_tms():
     table = db[tablename]
 
     # Model options
-    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
-    table.url.requires = IS_NOT_EMPTY()
     table.url.comment = SPAN("*", _class="req")
-    table.layers.requires = IS_NOT_EMPTY()
     table.layers.comment = SPAN("*", _class="req")
 
     # CRUD Strings
@@ -736,13 +682,8 @@ def layer_wms():
 
     # Model options
     #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
-    table.url.requires = IS_NOT_EMPTY()
     table.url.comment = SPAN("*", _class="req")
-    table.layers.requires = IS_NOT_EMPTY()
     table.layers.comment = SPAN("*", _class="req")
-    table.format.requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png"]))
-    table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-    table.projection_id.default = 2
 
     # CRUD Strings
     type = "WMS"
@@ -807,7 +748,6 @@ def layer_xyz():
     table = db[tablename]
 
     # Model options
-    table.url.requires = IS_NOT_EMPTY()
     table.url.comment = SPAN("*", _class="req")
 
     # CRUD Strings

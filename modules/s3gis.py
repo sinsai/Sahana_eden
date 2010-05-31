@@ -718,7 +718,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 #elif feature_class is office:
                 #    popup_url = str(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = str(URL(r=request, c="gis", f="location"))
+                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
                 if cache:
                     # Download file
                     file, warning = self.download_kml(url, S3_PUBLIC_URL)

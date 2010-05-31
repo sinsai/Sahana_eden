@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    S3VITA SahanaPy Person Management Toolkit
+    S3VITA Sahana-Eden Personal Data Toolkit
 
     @version: 0.5.0
 

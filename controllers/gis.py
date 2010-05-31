@@ -75,6 +75,7 @@ def test():
     html = gis.show_map(
                 catalogue_overlays = True,
                 feature_overlays = [offices, hospitals],
+                search = True,
                 wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"}
                 )
 

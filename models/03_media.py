@@ -63,7 +63,7 @@ table.name.label = T('Name')
 table.name.comment = SPAN("*", _class="req")
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
-IMAGE_EXTENSIONS = ['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG', 'gif', 'GIF', 'tif', 'TIF', 'bmp', 'BMP']
+IMAGE_EXTENSIONS = ['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG', 'gif', 'GIF', 'tif', 'TIF', 'tiff', 'TIFF', 'bmp', 'BMP', 'raw', 'RAW']
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
 ADD_IMAGE = T('Add Image')
 image_id = SQLTable(None, 'image_id',

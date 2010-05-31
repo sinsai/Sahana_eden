@@ -172,7 +172,8 @@ def config():
 def feature_class():
     "RESTlike CRUD controller"
     resource = "feature_class"
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options
     resource_opts = {
@@ -181,19 +182,19 @@ def feature_class():
         "track":T("Track"),
         "image":T("Photo"),
         }
-    db[table].uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
-    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
-    db[table].name.label = T("Name")
-    db[table].name.comment = SPAN("*", _class="req")
-    db[table].description.label = T("Description")
-    db[table].module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
-    db[table].module.label = T("Module")
-    db[table].resource.requires = IS_NULL_OR(IS_IN_SET(resource_opts))
-    db[table].resource.label = T("Resource")
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.description.label = T("Description")
+    table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
+    table.module.label = T("Module")
+    table.resource.requires = IS_NULL_OR(IS_IN_SET(resource_opts))
+    table.resource.label = T("Resource")
 
     # CRUD Strings
     LIST_FEATURE_CLASS = T("List Feature Classes")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_FEATURE_CLASS,
         title_display = T("Feature Class Details"),
         title_list = LIST_FEATURE_CLASS,
@@ -214,21 +215,22 @@ def feature_class():
 def feature_group():
     "RESTlike CRUD controller"
     resource = "feature_group"
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablenme]
 
     # Model options
-    db[table].uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
-    #db[table].author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
-    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
-    db[table].name.label = T("Name")
-    db[table].name.comment = SPAN("*", _class="req")
-    db[table].description.label = T("Description")
-    #db[table].features.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-    #db[table].feature_classes.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.description.label = T("Description")
+    #table.features.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    #table.feature_classes.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
 
     # CRUD Strings
     LIST_FEATURE_GROUPS = T("List Feature Groups")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_FEATURE_GROUP,
         title_display = T("Feature Group Details"),
         title_list = LIST_FEATURE_GROUPS,
@@ -331,17 +333,19 @@ def location():
 def marker():
     "RESTlike CRUD controller"
     resource = "marker"
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options
-    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
-    db[table].name.label = T("Name")
-    db[table].name.comment = SPAN("*", _class="req")
-    db[table].image.label = T("Image")
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.image.label = T("Image")
+    table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
 
     # CRUD Strings
     LIST_MARKERS = T("List Markers")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_MARKER,
         title_display = T("Marker Details"),
         title_list = LIST_MARKERS,
@@ -362,29 +366,30 @@ def marker():
 def projection():
     "RESTlike CRUD controller"
     resource = "projection"
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[table]
 
     # Model options
-    db[table].uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
-    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
-    db[table].name.label = T("Name")
-    db[table].name.comment = SPAN("*", _class="req")
-    db[table].epsg.requires = IS_NOT_EMPTY()
-    db[table].epsg.label = "EPSG"
-    db[table].epsg.comment = SPAN("*", _class="req")
-    db[table].maxExtent.requires = IS_NOT_EMPTY()
-    db[table].maxExtent.label = T("maxExtent")
-    db[table].maxExtent.comment = SPAN("*", _class="req")
-    db[table].maxResolution.requires = IS_NOT_EMPTY()
-    db[table].maxResolution.label = T("maxResolution")
-    db[table].maxResolution.comment = SPAN("*", _class="req")
-    db[table].units.requires = IS_IN_SET(["m", "degrees"])
-    db[table].units.label = T("Units")
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.epsg.requires = IS_NOT_EMPTY()
+    table.epsg.label = "EPSG"
+    table.epsg.comment = SPAN("*", _class="req")
+    table.maxExtent.requires = IS_NOT_EMPTY()
+    table.maxExtent.label = T("maxExtent")
+    table.maxExtent.comment = SPAN("*", _class="req")
+    table.maxResolution.requires = IS_NOT_EMPTY()
+    table.maxResolution.label = T("maxResolution")
+    table.maxResolution.comment = SPAN("*", _class="req")
+    table.units.requires = IS_IN_SET(["m", "degrees"])
+    table.units.label = T("Units")
 
     # CRUD Strings
     ADD_PROJECTION = T("Add Projections")
     LIST_PROJECTIONS = T("List Projections")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_PROJECTION,
         title_display = T("Projection Details"),
         title_list = LIST_PROJECTIONS,
@@ -585,14 +590,15 @@ def layer_bing():
 def layer_georss():
     "RESTlike CRUD controller"
     resource = "layer_georss"
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options
-    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
-    db[table].url.requires = IS_NOT_EMPTY()
-    db[table].url.comment = SPAN("*", _class="req")
-    db[table].projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-    db[table].projection_id.default = 2
+    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
+    table.url.requires = IS_NOT_EMPTY()
+    table.url.comment = SPAN("*", _class="req")
+    table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
+    table.projection_id.default = 2
 
     # CRUD Strings
     type = "GeoRSS"
@@ -600,7 +606,7 @@ def layer_georss():
     ADD_NEW_GEORSS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
     LIST_GEORSS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_GEORSS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=GEORSS_LAYERS,
@@ -653,12 +659,13 @@ def layer_gpx():
 def layer_kml():
     "RESTlike CRUD controller"
     resource = "layer_kml"
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options
-    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
-    db[table].url.requires = IS_NOT_EMPTY()
-    db[table].url.comment = SPAN("*", _class="req")
+    #dbtable.url.requires = [IS_URL, IS_NOT_EMPTY()]
+    table.url.requires = IS_NOT_EMPTY()
+    table.url.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = "KML"
@@ -666,7 +673,7 @@ def layer_kml():
     ADD_NEW_KML_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
     LIST_KML_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_KML_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=KML_LAYERS,
@@ -687,14 +694,15 @@ def layer_kml():
 def layer_tms():
     "RESTlike CRUD controller"
     resource = "layer_tms"
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options
-    #db[table].url.requires = [IS_URL, IS_NOT_EMPTY()]
-    db[table].url.requires = IS_NOT_EMPTY()
-    db[table].url.comment = SPAN("*", _class="req")
-    db[table].layers.requires = IS_NOT_EMPTY()
-    db[table].layers.comment = SPAN("*", _class="req")
+    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
+    table.url.requires = IS_NOT_EMPTY()
+    table.url.comment = SPAN("*", _class="req")
+    table.layers.requires = IS_NOT_EMPTY()
+    table.layers.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = "TMS"
@@ -702,7 +710,7 @@ def layer_tms():
     ADD_NEW_TMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
     LIST_TMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_TMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=TMS_LAYERS,

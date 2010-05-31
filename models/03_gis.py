@@ -321,13 +321,12 @@ track_id = SQLTable(None, "track_id",
                 ))
 
 # GIS Layers
-#gis_layer_types = ["shapefile", "scan", "wfs"]
+#gis_layer_types = ["bing", "shapefile", "scan", "wfs"]
 gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wms", "xyz", "yahoo"]
-#gis_layer_openstreetmap_subtypes = ["Mapnik", "Osmarender", "Aerial"]
-gis_layer_openstreetmap_subtypes = ["Mapnik", "Osmarender"]
-gis_layer_google_subtypes = ["Satellite", "Maps", "Hybrid", "Terrain"]
-gis_layer_yahoo_subtypes = ["Satellite", "Maps", "Hybrid"]
-gis_layer_bing_subtypes = ["Satellite", "Maps", "Hybrid", "Terrain"]
+gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
+gis_layer_google_subtypes = gis.layer_subtypes("google")
+gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
+gis_layer_bing_subtypes = gis.layer_subtypes("bing")
 # Base table from which the rest inherit
 gis_layer = SQLTable(db, "gis_layer", timestamp,
             #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync

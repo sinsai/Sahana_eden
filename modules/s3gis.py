@@ -200,6 +200,12 @@ class GIS(object):
 
         return file, warning
 
+    def get_api_key(self, layer="google"):
+        " Acquire API key from the database "
+        
+        query = self.db.gis_apikey.name == layer
+        return self.db(query).select().first().apikey
+
     def get_bearing(lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
@@ -378,6 +384,21 @@ class GIS(object):
         """
         WKT = "POINT(%f %f)" % (lon, lat)
         return WKT
+
+    def layer_subtypes(self, layer="openstreetmap"):
+        """ Return a lit of the subtypes available for a Layer """
+
+        if layer == "openstreetmap":
+            #return ["Mapnik", "Osmarender", "Aerial"]
+            return ["Mapnik", "Osmarender"]
+        elif layer == "google":
+            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+        elif layer == "yahoo":
+            return ["Satellite", "Maps", "Hybrid"]
+        elif layer == "bing":
+            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+        else:
+            return None
 
     def show_map( self,
                   height = None,
@@ -848,18 +869,21 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Base Layers
         #
 
-        # OpenStreetMap
-        gis_layer_openstreetmap_subtypes = ["Mapnik", "Osmarender"] # Copied from Model - Need to DRY!
-        openstreetmap = Storage()
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled==True).select()
-        for layer in openstreetmap_enabled:
-            for subtype in gis_layer_openstreetmap_subtypes:
-                if layer.subtype == subtype:
-                    openstreetmap["%s" % subtype] = layer.name
+        # Only enable commercial base layers if using a sphericalMercator projection
+        if projection==900913:
 
-        functions_openstreetmap = ""
-        if openstreetmap:
-            functions_openstreetmap = """
+            # OpenStreetMap
+            layers_openstreetmap = ""
+            gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
+            openstreetmap = Storage()
+            openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+            for layer in openstreetmap_enabled:
+                for subtype in gis_layer_openstreetmap_subtypes:
+                    if layer.subtype == subtype:
+                        openstreetmap["%s" % subtype] = layer.name
+
+            if openstreetmap:
+                functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
             var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
@@ -874,11 +898,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-
-        layers_openstreetmap = ""
-        if projection==900913:
-            # Only enable commercial base layers if using a sphericalMercator projection
-            if openstreetmap:
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
         var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
@@ -894,26 +913,105 @@ OpenLayers.Util.extend( selectPdfControl, {
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
+            else:
+                functions_openstreetmap = ""
 
-            google = db(db.gis_layer_google.enabled==True).select()
+            # Google
+            layers_google = ""
+            gis_layer_google_subtypes = self.layer_subtypes("google")
+            google = Storage()
+            google_enabled = db(db.gis_layer_google.enabled == True).select()
+            if google_enabled:
+                google.key = self.get_api_key("google")
+                for layer in google_enabled:
+                    for subtype in gis_layer_google_subtypes:
+                        if layer.subtype == subtype:
+                            google["%s" % subtype] = layer.name
             if google:
-                # @ToDo
-                layers_google = ""
-            else:
-                layers_google = ""
-            yahoo = db(db.gis_layer_yahoo.enabled==True).select()
+                html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                if google.Satellite:
+                    layers_google += """
+                    var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+                    map.addLayer(googlesat);
+                    """
+                if google.Maps:
+                    layers_google += """
+                    var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+                    map.addLayer(googlemaps);
+                    """
+                if google.Hybrid:
+                    layers_google += """
+                    var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+                    map.addLayer(googlehybrid);
+                    """
+                if google.Terrain:
+                    layers_google += """
+                    var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+                    map.addLayer(googleterrain);
+                    """
+            
+            # Yahoo
+            layers_yahoo = ""
+            gis_layer_yahoo_subtypes = self.layer_subtypes("yahoo")
+            yahoo = Storage()
+            yahoo_enabled = db(db.gis_layer_yahoo.enabled == True).select()
+            if yahoo_enabled:
+                yahoo.key = self.get_api_key("yahoo")
+                for layer in yahoo_enabled:
+                    for subtype in gis_layer_yahoo_subtypes:
+                        if layer.subtype == subtype:
+                            yahoo["%s" % subtype] = layer.name
             if yahoo:
-                # @ToDo
-                layers_yahoo = ""
-            else:
-                layers_yahoo = ""
-            #bing = db(db.gis_layer_bing.enabled==True).select()
+                html.append(SCRIPT(_type="text/javascript", _src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid=" + yahoo.key))
+                if yahoo.Satellite:
+                    layers_yahoo += """
+                    var yahoosat = new OpenLayers.Layer.Yahoo( '""" + yahoo.Satellite + """' , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
+                    map.addLayer(yahoosat);
+                    """
+                if yahoo.Maps:
+                    layers_yahoo += """
+                    var yahoomaps = new OpenLayers.Layer.Yahoo( '""" + yahoo.Maps + """' , {'sphericalMercator': true } );
+                    map.addLayer(yahoomaps);
+                    """
+                if yahoo.Hybrid:
+                    layers_yahoo += """
+                    var yahoohybrid = new OpenLayers.Layer.Yahoo( '""" + yahoo.Hybrid + """' , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
+                    map.addLayer(yahoohybrid);
+                    """
+            
+            # Bing - Broken in GeoExt currently: http://www.geoext.org/pipermail/users/2009-December/000417.html
             bing = False
+            layers_bing = ""
+            #gis_layer_bing_subtypes = self.layer_subtypes("bing")
+            #bing = Storage()
+            #bing_enabled = db(db.gis_layer_bing.enabled == True).select()
+            #for layer in bing_enabled:
+            #    for subtype in gis_layer_bing_subtypes:
+            #        if layer.subtype == subtype:
+            #            bing["%s" % subtype] = layer.name
             if bing:
-                # @ToDo
-                layers_bing = ""
-            else:
-                layers_bing = ""
+                html.append(SCRIPT(_type="text/javascript", _src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2&mkt=en-us"))
+                if bing.Satellite:
+                    layers_bing += """
+                    var bingsat = new OpenLayers.Layer.VirtualEarth( '""" + bing.Satellite + """' , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
+                    map.addLayer(bingsat);
+                    """
+                if bing.Maps:
+                    layers_bing += """
+                    var bingmaps = new OpenLayers.Layer.VirtualEarth( '""" + bing.Maps + """' , {type: VEMapStyle.Road, 'sphericalMercator': true } );
+                    map.addLayer(bingmaps);
+                    """
+                if bing.Hybrid:
+                    layers_bing += """
+                    var binghybrid = new OpenLayers.Layer.VirtualEarth( '""" + bing.Hybrid + """' , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
+                    map.addLayer(binghybrid);
+                    """
+                if bing.Terrain:
+                    layers_bing += """
+                    var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
+                    map.addLayer(bingterrain);
+                    """
+            
         layers_tms = ""
         layers_wms = ""
         layers_xyz = ""

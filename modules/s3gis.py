@@ -729,10 +729,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if "URLError" in warning or "HTTPError" in warning:
                         # URL inaccessible
                         if os.access(filepath, os.R_OK):
-                            # Use cached version
-                            date = db(db.gis_cache.name == name).select().first().modified_on
-                            response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
-                            url = URL(r=request, c="default", f="download", args=[filename])
+                            statinfo = os.stat(filepath)
+                            if statinfo.st_size:
+                                # Use cached version
+                                date = db(db.gis_cache.name == name).select().first().modified_on
+                                response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                url = URL(r=request, c="default", f="download", args=[filename])
+                            else:
+                                # 0k file is all that is available
+                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                # skip layer
+                                continue
                         else:
                             # No cached version available
                             response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
@@ -785,10 +792,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         allLayers.push(featureLayer""" + name_safe + """);
         
         function loadDetails(url, id) {
-            $.getS3(
+            //$.getS3(
+            $.get(
                     url,
                     function(data) {
-                        $('#' + id).html(data);
+                        $('#' + id + '_contentDiv').html(data);
                     },
                     'html',
                     'popup'
@@ -800,12 +808,13 @@ OpenLayers.Util.extend( selectPdfControl, {
             tooltipUnselect(event);
             var feature = event.feature;
             var selectedFeature = feature;
-            var id = 'featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001)
+            //var id = 'featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001)
+            var id = 'featureLayer""" + name_safe + """'
             var popup = new OpenLayers.Popup.FramedCloud(
                 id,
                 feature.geometry.getBounds().getCenterLonLat(),
                 new OpenLayers.Size(400, 400),
-                "<div style='height: 400px; width: 400px; overflow: auto;'>Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0></div>",
+                "<div id='featureLayer""" + name_safe + """' style='height: 400px; width: 400px; overflow: auto;'>Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0></div>",
                 null,
                 true,
                 onPopupClose

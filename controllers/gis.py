@@ -34,7 +34,6 @@ table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
 table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
-table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 table.gis_feature_type.label = T("Feature Type")
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
@@ -314,12 +313,13 @@ def location():
         parent = request.vars["parent"]
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!
-        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
+        if parent:
+            filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
         # ToDo: Make this recursive - want ancestor not just direct parent!
 
     # ToDo
     # if "bbox" in request.vars:
-        
+
     if filters:
         response.s3.filter = reduce(__and__, filters)
 
@@ -1849,18 +1849,18 @@ def wms_capabilities():
     google.enabled = False
     yahoo = Storage()
     yahoo.enabled = False
-    
+
     return dict(projection=900913, bing=False, google=google, yahoo=yahoo)
 
 def wms_tree():
     " Controller for custom view testing WMSCapabilitiesLoader "
-    
+
     # Dummies for the 'gis/ol_js_loaders.html'
     google = Storage()
     google.enabled = False
     yahoo = Storage()
     yahoo.enabled = False
-    
+
     # Read the Config from Database
     config = gis.config_read()
     # Support bookmarks (such as from the control)
@@ -1877,7 +1877,7 @@ def wms_tree():
     config.units = epsg.units
     config.maxResolution = epsg.maxResolution
     config.maxExtent = epsg.maxExtent
-    
+
     return dict(config=config, projection=config.projection, bing=False, google=google, yahoo=yahoo)
 
 def geolocate():

@@ -11,7 +11,7 @@
     @author: Zubin Mithra <zubin.mithra@gmail.com>
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
-    
+
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
     files (the "Software"), to deal in the Software without
@@ -115,7 +115,7 @@ class GIS(object):
 
     def config_read(self):
         """
-            Reads the current GIS Config from the DB 
+            Reads the current GIS Config from the DB
         """
 
         db = self.db
@@ -268,7 +268,7 @@ class GIS(object):
             children = children & self.get_children(child.id)
 
         return children
-    
+
     def get_feature_class_id_from_name(self, name):
         """
             Returns the Feature Class ID from it's name
@@ -368,7 +368,7 @@ class GIS(object):
         marker = db(db.gis_marker.id == marker).select().first().image
 
         return marker
-    
+
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
@@ -507,7 +507,7 @@ class GIS(object):
                 DIV(_id="status_osm"),
                 _style="border: 0px none ;", _valign="top",
             ),
-            TD( 
+            TD(
                 # Somewhere to report whether GeoRSS feed is using cached copy or completely inaccessible
                 DIV(_id="status_georss"),
                 # Somewhere to report whether KML feed is using cached copy or completely inaccessible
@@ -537,7 +537,7 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
-            
+
         # Toolbar
         if toolbar:
             toolbar = """
@@ -569,7 +569,7 @@ class GIS(object):
             items: [{
                     region: 'center',
                     items: [ mapSearch ]
-                }]    
+                }]
         });
         """
             search2 = """,
@@ -634,7 +634,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 """
         else:
             mgrs = ""
-        
+
         # Layout
         if window:
             layout = """
@@ -752,7 +752,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             "featureunselected": onFeatureUnselect
         });
         allLayers.push(featureLayer""" + name_safe + """);
-        
+
         function loadDetails(url, id) {
             $.getS3(
                     url,
@@ -1015,13 +1015,13 @@ OpenLayers.Util.extend( selectPdfControl, {
     Ext.onReady(function() {
         map = new OpenLayers.Map('center', options);
         addLayers(map);
-        
+
         // ol_layers_features_all.js
         map.addControl(new OpenLayers.Control.ScaleLine());
         map.addControl(new OpenLayers.Control.MGRSMousePosition());
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-        
+
         // Popups
         // onClick Popup
         popupControl = new OpenLayers.Control.SelectFeature(
@@ -1032,12 +1032,12 @@ OpenLayers.Util.extend( selectPdfControl, {
         );
         // onHover Tooltip
         highlightControl = new OpenLayers.Control.SelectFeature(
-            allLayers, { 
+            allLayers, {
                 hover: true,
                 highlightOnly: true,
                 renderIntent: "temporary",
                 eventListeners: {
-                    featurehighlighted: tooltipSelect, 
+                    featurehighlighted: tooltipSelect,
                     featureunhighlighted: tooltipUnselect
                 }
             }
@@ -1046,7 +1046,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addControl(popupControl);
         //highlightControl.activate();
         popupControl.activate();
-        
+
         """ + mgrs + """
 
         var mapPanel = new GeoExt.MapPanel({
@@ -1060,11 +1060,11 @@ OpenLayers.Util.extend( selectPdfControl, {
             zoom: """ + str(zoom) + """,
             tbar: new Ext.Toolbar()
         });
-        
+
         """ + toolbar + """
-        
+
         """ + search + """
-        
+
         var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
             text: '""" + str(T("Base Layers")) + """',
             layerStore: mapPanel.layers,
@@ -1235,11 +1235,11 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
         db = self.db
-        return db((db.gis_location.lat_min <= lat_max) & 
+        return db((db.gis_location.lat_min <= lat_max) &
             (db.gis_location.lat_max >= lat_min) &
             (db.gis_location.lon_min <= lon_max) &
             (db.gis_location.lon_max >= lon_min))
-    
+
     def _intersects(self, shape):
         """
             Returns Rows of locations whose shape intersects the given shape
@@ -1261,7 +1261,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     if SHAPELY:
         intersects = _intersects
-        intersects_latlon = _intersects_latlon 
+        intersects_latlon = _intersects_latlon
 
 
 class Geocoder(object):

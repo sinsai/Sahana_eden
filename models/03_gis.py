@@ -178,6 +178,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 admin_id,
                 migrate=migrate)
 
+table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+
 # Reusable field for other tables to reference
 ADD_LOCATION = T("Add Location")
 location_id = SQLTable(None, "location_id",

@@ -62,7 +62,7 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 # *****************************************************************************
 class S3RESTController(object):
 
-    """ RESTful interface for S3 compound resources """
+    """ RESTful interface for S3 resources """
 
     # Error messages
     INVALIDREQUEST = "Invalid request."
@@ -74,7 +74,13 @@ class S3RESTController(object):
 
     def __init__(self, rc=None, auth=None, **attr):
 
-        """ Constructor """
+        """ Constructor
+
+            @param rc: the resource controller
+            @param auth: the auth controller
+            @param attr: dict of attributes
+
+        """
 
         assert rc is not None, "Undefined resource controller"
         self.rc = rc
@@ -100,7 +106,11 @@ class S3RESTController(object):
 
     def __dbg(self, msg):
 
-        """ Output debug messages """
+        """ Output debug messages
+
+            @param msg: the message
+
+        """
 
         if self.debug:
             print >> sys.stderr, "S3RESTController: %s" % msg
@@ -110,14 +120,23 @@ class S3RESTController(object):
 
     def set_handler(self, method, handler):
 
-        """ Set a method handler """
+        """ Set a method handler
+
+            @param method: the method
+            @param handler: the method handler
+
+        """
 
         self.__handler[method] = handler
 
 
     def get_handler(self, method):
 
-        """ Get a method handler """
+        """ Get a method handler
+
+            @param method: the method
+
+        """
 
         return self.__handler.get(method, None)
 
@@ -126,7 +145,14 @@ class S3RESTController(object):
 
     def __has_permission(self, session, name, table_name, record_id = 0):
 
-        """ Check permissions of the current user for a table """
+        """ Check permissions of the current user for a table
+
+            @param session: the session
+            @param name: name of the permission to check
+            @param table_name: name of the table to check
+            @param record_id: ID of the record to check
+
+        """
 
         if session.s3.security_policy == 1:
             # Simple policy
@@ -154,7 +180,12 @@ class S3RESTController(object):
 
     def __unauthorised(self, jr, session):
 
-        """ Action upon unauthorized access """
+        """ Action upon unauthorized access
+
+            @param jr: the REST request
+            @param session: the session
+
+        """
 
         if jr.representation == "html":
             session.error = self.UNAUTHORISED
@@ -169,7 +200,15 @@ class S3RESTController(object):
 
     def __call__(self, session, request, response, module, resource, **attr):
 
-        """ REST interface """
+        """ REST interface
+
+            @param session: the session
+            @param request: the web2py request object
+            @param response: the web2py response object
+            @param module: name of the module (=prefix of the resource name)
+            @param resource: name of the resource (=without prefix)
+
+        """
 
         self.__dbg("\nS3RESTController: Call\n")
 
@@ -517,7 +556,16 @@ class S3RESTRequest(object):
 
     def __init__(self, rc, prefix, name, request, session=None, debug=False):
 
-        """ Constructor """
+        """ Constructor
+
+            @param rc: the resource controller
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param request: the web2py request object
+            @param session: the session store
+            @param debug: whether to print debug messages or not
+
+        """
 
         assert rc is not None, "Resource controller must not be None."
         self.rc = rc
@@ -618,7 +666,11 @@ class S3RESTRequest(object):
 
     def __dbg(self, msg):
 
-        """ Output debug messages """
+        """ Output debug messages
+
+            @param msg: the message
+
+        """
 
         if self.debug:
             print >> sys.stderr, "S3RESTRequest: %s" % msg
@@ -690,11 +742,9 @@ class S3RESTRequest(object):
 
     def __record(self):
 
-        """
-            Tries to identify and load the primary record of the resource
+        """ Tries to identify and load the primary record of the resource """
 
-            @todo: allow a set of results (instead of one or all)
-        """
+        # TODO: allow SOME result (current options: ALL or ONE)
 
         uid = self.request.vars.get("%s.uid" % self.name, None)
         if isinstance(uid, list):
@@ -838,7 +888,13 @@ class S3RESTRequest(object):
 
     def __next(self, id=None, method=None, representation=None):
 
-        """ Returns a URL of the current resource """
+        """ Returns a URL of the current resource
+
+            @param id: the record ID for the URL
+            @param method: an explicit method for the URL
+            @param representation: the representation for the URL
+
+        """
 
         args = []
         vars = {}
@@ -892,16 +948,24 @@ class S3RESTRequest(object):
 
     def here(self, representation=None):
 
-        """ URL of the current request """
+        """ URL of the current request
+
+            @param representation: the representation for the URL
+
+        """
 
         return self.__next(id=self.id, representation=representation)
 
 
     def other(self, method=None, record_id=None, representation=None):
 
-        """
-            URL of a request with different method and/or record_id
+        """ URL of a request with different method and/or record_id
             of the same resource
+
+            @param method: an explicit method for the URL
+            @param record_id: the record ID for the URL
+            @param representation: the representation for the URL
+
         """
 
         return self.__next(method=method, id=record_id,
@@ -910,14 +974,22 @@ class S3RESTRequest(object):
 
     def there(self, representation=None):
 
-        """ URL of a HTTP/list request on the same resource """
+        """ URL of a HTTP/list request on the same resource
+
+            @param representation: the representation for the URL
+
+        """
 
         return self.__next(method="", representation=representation)
 
 
     def same(self, representation=None):
 
-        """ URL of the same request with neutralized primary record ID """
+        """ URL of the same request with neutralized primary record ID
+
+            @param representation: the representation for the URL
+
+        """
 
         return self.__next(id="[id]", representation=representation)
 
@@ -942,10 +1014,22 @@ class S3RESTRequest(object):
 
     # XML+JSON helpers ========================================================
 
-    def export_xml(self, permit=None, audit=None, template=None,
-                   filterby=None, pretty_print=False):
+    def export_xml(self,
+                   permit=None,
+                   audit=None,
+                   template=None,
+                   filterby=None,
+                   pretty_print=False):
 
-        """ Export the requested resources as XML """
+        """ Export the requested resources as XML
+
+            @param permit: permit hook (function to check table permissions)
+            @param audit: audit hook (function to audit table access)
+            @param template: the XSLT template (filename)
+            @param filterby: filter option
+            @param pretty_print: provide pretty formatted output
+
+        """
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1001,10 +1085,22 @@ class S3RESTRequest(object):
         return self.rc.xml.tostring(tree, pretty_print=pretty_print)
 
 
-    def export_json(self, permit=None, audit=None, template=None,
-                    filterby=None, pretty_print=False):
+    def export_json(self,
+                    permit=None,
+                    audit=None,
+                    template=None,
+                    filterby=None,
+                    pretty_print=False):
 
-        """ Export the requested resources as JSON """
+        """ Export the requested resources as JSON
+
+            @param permit: permit hook (function to check table permissions)
+            @param audit: audit hook (function to audit table access)
+            @param template: the XSLT template (filename)
+            @param filterby: filter option
+            @param pretty_print: provide pretty formatted output
+
+        """
 
         if self.component:
             joins = [(self.component, self.pkey, self.fkey)]
@@ -1055,7 +1151,13 @@ class S3RESTRequest(object):
 
     def import_xml(self, tree, permit=None, audit=None):
 
-        """ import the requested resources from XML """
+        """ import the requested resources from an element tree
+
+            @param tree: the element tree
+            @param permit: permit hook (function to check table permissions)
+            @param audit: audit hook (function to audit table access)
+
+        """
 
         if self.component:
             skip_resource = True
@@ -1091,7 +1193,7 @@ class S3RESTRequest(object):
 
     def options_tree(self):
 
-        """ Export field options as element tree """
+        """ Export field options in the current resource as element tree """
 
         field = self.request.vars.get("field", None)
 
@@ -1117,7 +1219,11 @@ class S3RESTRequest(object):
 
     def options_xml(self, pretty_print=False):
 
-        """ Export field options in XML """
+        """ Export field options in the current resource as XML
+
+            @param pretty_print: provide pretty formatted output
+
+        """
 
         tree = self.options_tree()
         return self.rc.xml.tostring(tree, pretty_print=pretty_print)
@@ -1125,7 +1231,11 @@ class S3RESTRequest(object):
 
     def options_json(self, pretty_print=False):
 
-        """ Export field options in JSON """
+        """ Export field options in the current resource as JSON
+
+            @param pretty_print: provide pretty formatted output
+
+        """
 
         tree = self.options_tree()
         return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
@@ -1134,13 +1244,18 @@ class S3RESTRequest(object):
 # *****************************************************************************
 class S3ResourceComponent(object):
 
-    """
-        Class to represent component relations between resources
-    """
+    """ Class to represent component relations between resources """
 
     def __init__(self, db, prefix, name, **attr):
 
-        """ Constructor """
+        """ Constructor
+
+            @param db: the database (DAL)
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param attr: attributes
+
+        """
 
         self.db = db
         self.prefix = prefix
@@ -1162,14 +1277,23 @@ class S3ResourceComponent(object):
 
     def set_attr(self, name, value):
 
-        """ Sets an attribute for a component """
+        """ Sets an attribute for a component
+
+            @param name: attribute name
+            @param value: attribute value
+
+        """
 
         self.attr[name] = value
 
 
     def get_attr(self, name):
 
-        """ Reads an attribute of the component """
+        """ Reads an attribute of the component
+
+            @param name: attribute name
+
+        """
 
         if name in self.attr:
             return self.attr[name]
@@ -1179,7 +1303,12 @@ class S3ResourceComponent(object):
 
     def get_join_keys(self, prefix, name):
 
-        """ Reads the join keys of this component and a resource """
+        """ Reads the join keys of this component and a resource
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+
+        """
 
         if "joinby" in self.attr:
             joinby = self.attr.joinby
@@ -1206,7 +1335,11 @@ class S3ResourceModel(object):
 
     def __init__(self, db):
 
-        """ Constructor """
+        """ Constructor
+
+            @param db: the database (DAL)
+
+        """
 
         self.db = db
         self.components = {}
@@ -1219,7 +1352,12 @@ class S3ResourceModel(object):
 
     def configure(self, table, **attr):
 
-        """ Updates the configuration of a resource """
+        """ Updates the configuration of a resource
+
+            @param table: the resource DB table
+            @param attr: dict of attributes to update
+
+        """
 
         cfg = self.config.get(table._tablename, Storage())
         cfg.update(attr)
@@ -1228,7 +1366,12 @@ class S3ResourceModel(object):
 
     def get_config(self, table, key):
 
-        """ Reads a configuration setting of a resource """
+        """ Reads a configuration attribute of a resource
+
+            @param table: the resource DB table
+            @param key: the key (name) of the attribute
+
+        """
 
         if table._tablename in self.config.keys():
             return self.config[table._tablename].get(key, None)
@@ -1238,7 +1381,12 @@ class S3ResourceModel(object):
 
     def clear_config(self, table, *keys):
 
-        """ Removes configuration settings of a resource """
+        """ Removes configuration attributes of a resource
+
+            @param table: the resource DB table
+            @param keys: keys of attributes to remove (maybe multiple)
+
+        """
 
         if not keys:
             if table._tablename in self.config.keys():
@@ -1252,7 +1400,12 @@ class S3ResourceModel(object):
 
     def add_component(self, prefix, name, **attr):
 
-        """ Adds a component to the model """
+        """ Adds a component to the model
+
+            @param prefix: prefix of the component name (=module name)
+            @param name: name of the component (=without prefix)
+
+        """
 
         assert "joinby" in attr, "Join key(s) must be defined."
 
@@ -1263,7 +1416,13 @@ class S3ResourceModel(object):
 
     def get_component(self, prefix, name, component_name):
 
-        """ Retrieves a component of a resource """
+        """ Retrieves a component of a resource
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param component_name: name of the component (=without prefix)
+
+        """
 
         if component_name in self.components and \
            not component_name == name:
@@ -1277,7 +1436,12 @@ class S3ResourceModel(object):
 
     def get_components(self, prefix, name):
 
-        """ Retrieves all components related to a resource """
+        """ Retrieves all components related to a resource
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+
+        """
 
         component_list = []
         for component_name in self.components:
@@ -1294,7 +1458,15 @@ class S3ResourceModel(object):
                    method=None,
                    action=None):
 
-        """ Adds a custom method for a resource or component """
+        """ Adds a custom method for a resource or component
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param component_name: name of the component (=without prefix)
+            @param method: name of the method
+            @param action: function to invoke for this method
+
+        """
 
         assert method is not None, "Method must be specified."
         tablename = "%s_%s" % (prefix, name)
@@ -1317,7 +1489,14 @@ class S3ResourceModel(object):
 
     def get_method(self, prefix, name, component_name=None, method=None):
 
-        """ Retrieves a custom method for a resource or component """
+        """ Retrieves a custom method for a resource or component
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param component_name: name of the component (=without prefix)
+            @param method: name of the method
+
+        """
 
         if not method:
             return None
@@ -1342,14 +1521,25 @@ class S3ResourceModel(object):
 
     def set_attr(self, component_name, name, value):
 
-        """ Sets an attribute for a component """
+        """ Sets an attribute for a component
+
+            @param component_name: name of the component (without prefix)
+            @param name: name of the attribute
+            @param value: value for the attribute
+
+        """
 
         return self.components[component_name].set_attr(name, value)
 
 
     def get_attr(self, component_name, name):
 
-        """ Retrieves an attribute value of a component """
+        """ Retrieves an attribute value of a component
+
+            @param component_name: name of the component (without prefix)
+            @param name: name of the attribute
+
+        """
 
         return self.components[component_name].get_attr(name)
 
@@ -1373,7 +1563,15 @@ class S3ResourceController(object):
 
     def __init__(self, db, domain=None, base_url=None, rpp=None, gis=None):
 
-        """ Constructor """
+        """ Constructor
+
+            @param db: the database (DAL)
+            @param domain: name of the current domain
+            @param base_url: base URL of this instance
+            @param rpp: rows-per-page for server-side pagination
+            @param gis: the GIS toolkit to use
+
+        """
 
         assert db is not None, "Database must not be None."
         self.db = db
@@ -1398,7 +1596,13 @@ class S3ResourceController(object):
 
     def get_session(self, session, prefix, name):
 
-        """ Reads the last record ID for a resource from a session """
+        """ Reads the last record ID for a resource from a session
+
+            @param session: the session store
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
+
+        """
 
         tablename = "%s_%s" % (prefix, name)
         if self.RCVARS in session and tablename in session[self.RCVARS]:
@@ -1407,7 +1611,14 @@ class S3ResourceController(object):
 
     def store_session(self, session, prefix, name, id):
 
-        """ Stores a record ID for a resource in a session """
+        """ Stores a record ID for a resource in a session
+
+            @param session: the session store
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
+            @id: the ID to store
+
+        """
 
         if self.RCVARS not in session:
             session[self.RCVARS] = Storage()
@@ -1420,7 +1631,13 @@ class S3ResourceController(object):
 
     def clear_session(self, session, prefix=None, name=None):
 
-        """ Clears record ID's stored in a session """
+        """ Clears one or all record IDs stored in a session
+
+            @param session: the session store
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
+
+        """
 
         if prefix and name:
             tablename = "%s_%s" % (prefix, name)
@@ -1435,16 +1652,24 @@ class S3ResourceController(object):
 
     # Table helpers ===========================================================
 
-    def __lod2dol(self, d, l, k, v, exclude={}):
+    def __directory(self, d, l, k, v, e={}):
 
-        """ Converts a list of dicts into a dict of lists """
+        """ Converts a list of dicts into a directory
+
+            @param d: the directory
+            @param l: the list
+            @param k: the key field
+            @param v: the value field
+            @param e: directory of elements to exclude
+
+        """
 
         if not d:
             d = {}
 
         for i in l:
             if k in i and v in i:
-                c = exclude.get(i[k], None)
+                c = e.get(i[k], None)
                 if c and i[k] in c:
                     continue
                 if i[k] in d:
@@ -1461,6 +1686,10 @@ class S3ResourceController(object):
         """
             Finds all readable fields in a table and splits
             them into reference and non-reference fields
+
+            @param table: the DB table
+            @param skip: list of field names to skip
+
         """
 
         fields = filter(lambda f:
@@ -1489,13 +1718,29 @@ class S3ResourceController(object):
                    skip=[],
                    permit=None,
                    audit=None,
-                   start=None,  # starting record
-                   limit=None,  # pagesize
-                   marker=None, # override marker to display KML feeds
-                   show_urls=True, # Show URL's in <resource> elements
-                   dereference=True): # export referenced objects
+                   start=None,
+                   limit=None,
+                   marker=None,
+                   show_urls=True,
+                   dereference=True):
 
-        """ Exports data as XML tree """
+        """ Exports data as XML tree
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: resource name (=without prefix)
+            @param id: ID of the record to export (may be None, single or list)
+            @param joins: list of component joins to include in the export
+            @param filterby: filter option
+            @param skip: list of field names to skip
+            @param permit: permit hook (function to check table permissions)
+            @param audit: audit hook (function to audit table access)
+            @param start: starting record (for server-side pagination)
+            @param limit: page size (for server-side pagination)
+            @marker: URL to override map marker URL in location references
+            @show_urls: show resource URLs in <resource> elements
+            @dereference: include referenced resources into the export
+
+        """
 
         self.error = None
 
@@ -1619,8 +1864,7 @@ class S3ResourceController(object):
                         audit(self.ACTION["read"], c.prefix, c.name,
                               record=crecord.id, representation="xml")
                     if show_urls:
-                        resource_url = "%s/%s" % \
-                                       (c_url, crecord.id)
+                        resource_url = "%s/%s" % (c_url, crecord.id)
                     else:
                         resource_url = None
                     rmap = self.xml.rmap(c.table, crecord,
@@ -1645,7 +1889,7 @@ class S3ResourceController(object):
         depth = dereference and self.MAX_DEPTH or 0
         while ref_map and depth:
             depth -= 1
-            load_map = self.__lod2dol(None, ref_map, "table", "id",
+            load_map = self.__directory(None, ref_map, "table", "id",
                                       exclude=exp_map)
             ref_map = []
 
@@ -1718,7 +1962,22 @@ class S3ResourceController(object):
                   vmap=None,
                   lookahead=True):
 
-        """ Builds a list of vectors from an XML resource """
+        """ Builds a list of vectors from an element
+
+            @param resource: the resource name (=tablename)
+            @param element: the element
+            @param id: target record ID
+            @param validate: validate hook (function to validate record)
+            @param permit: permit hook (function to check table permissions)
+            @param audit: audit hook (function to audit table access)
+            @param sync: sync hook (function to resolve sync conflicts)
+            @param log: log hook (function to log imports)
+            @param tree: the element tree of the source
+            @param directory: the resource directory of the tree
+            @param vmap: the vector map for the import
+            @param lookahead: resolve any references
+
+        """
 
         imports = []
 
@@ -1785,7 +2044,19 @@ class S3ResourceController(object):
                    audit=None,
                    ignore_errors=False):
 
-        """ Imports data from an XML tree """
+        """ Imports data from an element tree
+
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the resource name (=without prefix)
+            @param id: the target record ID
+            @param tree: the element tree
+            @param joins: list of component joins to include
+            @param skip_resource: skip the main resource record (currently unused)
+            @param permit: permit hook (function to check table permissions)
+            @param audit: audit hook (function to audit table access)
+            @param ignore_errors: continue at errors (skip invalid elements)
+
+        """
 
         self.error = None
         self.xml.steps = 0
@@ -1829,8 +2100,8 @@ class S3ResourceController(object):
 
         # Import all matching elements
         imports = []
-        directory = {} # Demand map
-        vmap = {} # Vector map
+        directory = {}
+        vmap = {} # Element<->Vector Map
 
         for i in xrange(0, len(elements)):
             element = elements[i]
@@ -1930,7 +2201,14 @@ class S3ResourceController(object):
 
     def validate(self, table, record, fieldname, value):
 
-        """ Validates a single value """
+        """ Validates a single value
+
+            @param table: the DB table
+            @param record: the existing DB record
+            @param fieldname: name of the field
+            @param value: value to check
+
+        """
 
         requires = table[fieldname].requires
 
@@ -1953,7 +2231,13 @@ class S3ResourceController(object):
 
     def options_xml(self, prefix, name, joins=[]):
 
-        """ Exports options for select fields """
+        """ Exports field options in a resource as element tree
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param joins: list of component joins to include
+
+        """
 
         self.error = None
         options = self.xml.get_options(prefix, name, joins=joins)
@@ -1964,7 +2248,14 @@ class S3ResourceController(object):
 
     def search_simple(self, table, fields=None, label=None, filterby=None):
 
-        """ Simple search function for resources """
+        """ Simple search function for resources
+
+            @param table: the DB table
+            @param fields: list of fields to search for the label
+            @param label: label to be found
+            @param filterby: filter query for results
+
+        """
 
         search_fields = []
         if fields and isinstance(fields, (list,tuple)):
@@ -2027,7 +2318,24 @@ class S3Vector(object):
                  onvalidation=None,
                  onaccept=None):
 
-        """ Constructor """
+        """ Constructor
+
+            @param db: the database (DAL)
+            @param prefix: prefix of the resource name (=module name)
+            @param name: the resource name (=without prefix)
+            @param id: the target record ID
+            @param record: the record data to import
+            @param element: the corresponding element from the element tree
+            @param rmap: map of references for this record
+            @param directory: resource directory of the input tree
+            @param permit: permit hook (function to check table permissions)
+            @param audit: audit hook (function to audit table access)
+            @param sync: sync hook (function to resolve sync conflicts)
+            @param log: log hook (function to log imports)
+            @param onvalidation: extra function to validate records
+            @param onaccept: callback function for committed importes
+
+        """
 
         self.db=db
         self.prefix=prefix
@@ -2179,6 +2487,8 @@ class S3Vector(object):
 
     def resolve(self):
 
+        """ Resolve references of this record """
+
         if self.rmap:
             for r in self.rmap:
                 if r.entry:
@@ -2198,6 +2508,13 @@ class S3Vector(object):
                         vector.update.append(dict(vector=self, field=r.field))
 
     def writeback(self, field, value):
+
+        """ Update a field in the record
+
+            @param field: field name
+            @param value: value to write
+
+        """
 
         if self.id and self.permitted:
             self.db(self.table.id == self.id).update(**{field:value})
@@ -2289,7 +2606,14 @@ class S3XML(object):
 
     def __init__(self, db, domain=None, base_url=None, gis=None):
 
-        """ Constructor """
+        """ Constructor
+
+            @param db: the database (DAL)
+            @param domain: name of the current domain
+            @param base_url: base URL of the current instance
+            @param gis: GIS toolkit to use
+
+        """
 
         self.db = db
         self.error = None
@@ -2302,7 +2626,11 @@ class S3XML(object):
 
     def parse(self, source):
 
-        """ Parse an XML source into an element tree """
+        """ Parse an XML source into an element tree
+
+            @param source: the XML source
+
+        """
 
         self.error = None
 
@@ -2317,7 +2645,13 @@ class S3XML(object):
 
     def transform(self, tree, template_path, **args):
 
-        """ Transform an element tree with XSLT """
+        """ Transform an element tree with XSLT
+
+            @param tree: the element tree
+            @param template_path: pathname of the XSLT stylesheet
+            @param args: dict of arguments to pass to the transformer
+
+        """
 
         self.error = None
 
@@ -2347,7 +2681,12 @@ class S3XML(object):
 
     def tostring(self, tree, pretty_print=False):
 
-        """ Convert an element tree into XML as string """
+        """ Convert an element tree into XML as string
+
+            @param tree: the element tree
+            @param pretty_print: provide pretty formatted output
+
+        """
 
         return etree.tostring(tree,
                                 xml_declaration=True,
@@ -2358,7 +2697,16 @@ class S3XML(object):
     def tree(self, resources, domain=None, url=None,
              start=None, limit=None, results=None):
 
-        """ Builds a tree from a list of elements """
+        """ Builds a tree from a list of elements
+
+            @param resources: list of <resource> elements
+            @param domain: name of the current domain
+            @param url: url of the request
+            @param start: the start record (in server-side pagination)
+            @param limit: the page size (in server-side pagination)
+            @param results: number of total available results
+
+        """
 
         # For now we do not nsmap, because the default namespace cannot be
         # matched in XSLT templates (need explicit prefix) and thus this
@@ -2399,7 +2747,11 @@ class S3XML(object):
 
     def xml_encode(self, obj):
 
-        """ Encodes a Python string into an XML text node """
+        """ Encodes a Python string into an XML text node
+
+            @param obj: string to encode
+
+        """
 
         if obj:
             for (x,y) in self.PY2XML:
@@ -2409,7 +2761,11 @@ class S3XML(object):
 
     def xml_decode(self, obj):
 
-        """ Decodes an XML text node into a Python string """
+        """ Decodes an XML text node into a Python string
+
+            @param obj: string to decode
+
+        """
 
         if obj:
             for (x,y) in self.XML2PY:
@@ -2419,7 +2775,11 @@ class S3XML(object):
 
     def export_uid(self, uid):
 
-        """ Maps internal UUIDs to export format """
+        """ Maps internal UUIDs to export format
+
+            @param uid: the (internally used) UUID
+
+        """
 
         if not self.domain:
             return uid
@@ -2432,7 +2792,11 @@ class S3XML(object):
 
     def import_uid(self, uid):
 
-        """ Maps imported UUIDs to internal format """
+        """ Maps imported UUIDs to internal format
+
+            @param uid: the (externally used) UUID
+
+        """
 
         if not self.domain:
             return uid
@@ -2450,6 +2814,14 @@ class S3XML(object):
     # Data export =============================================================
 
     def rmap(self, table, record, fields):
+
+        """ Generates a reference map for a record
+
+            @param table: the database table
+            @param record: the record
+            @param fields: list of reference field names in this table
+
+        """
 
         reference_map = []
 
@@ -2508,6 +2880,13 @@ class S3XML(object):
 
     def add_references(self, element, rmap):
 
+        """ Adds <reference> elements to a <resource>
+
+            @param element: the <resource> element
+            @param rmap: the reference map for the corresponding record
+
+        """
+
         for i in xrange(0, len(rmap)):
             r = rmap[i]
             reference = etree.SubElement(element, self.TAG["reference"])
@@ -2523,6 +2902,14 @@ class S3XML(object):
 
 
     def gis_encode(self, rmap, download_url="", marker=None):
+
+        """ GIS-encodes location references
+
+            @param rmap: list of references to encode
+            @param download_url: download URL of this instance
+            @param marker: filename to override filenames in marker URLs
+
+        """
 
         if not self.gis:
             return
@@ -2563,7 +2950,17 @@ class S3XML(object):
                 download_url=None,
                 marker=None):
 
-        """ Creates an element from a Storage() record """
+        """ Creates an element from a Storage() record
+
+            @param table: the database table
+            @param record: the record
+            @param fields: list of field names to include
+            @param url: URL of the record
+            @param download_url: download URL of the current instance
+            @param marker: filename of the marker to override
+                marker URLs in location references
+
+        """
 
         if not download_url:
             download_url = ""
@@ -2640,7 +3037,12 @@ class S3XML(object):
 
     def select_resources(self, tree, tablename):
 
-        """ Selects resources from an element tree """
+        """ Selects resources from an element tree
+
+            @param tree: the element tree
+            @param tablename: table name to search for
+
+        """
 
         resources = []
 
@@ -2662,16 +3064,14 @@ class S3XML(object):
 
     def lookahead(self, table, element, fields, tree=None, directory=None):
 
-        """
-            Performs a look-ahead for referenced resources in both
-            the database and the given tree. Entries are added to
-            the given directory (demand map), and are returned as list.
+        """ Resolves references in XML resources
 
-            Each entry consists of:
-                - resource (the resource name)
-                - element (the referenced <resource> element in the tree)
-                - id (the DB record ID)
-                - uid (the UUID of the tree resource)
+            @param table: the database table
+            @param element: the element to resolve
+            @param fields: fields to check for references
+            @param tree: the element tree of the input source
+            @param directory: the resource directory of the input tree
+
         """
 
         reference_list = []
@@ -2716,8 +3116,7 @@ class S3XML(object):
                                      element=relement,
                                      uid=uid,
                                      id=id,
-                                     vector=None,
-                                     update=None)
+                                     vector=None)
 
                         if directory is not None:
                             if resource not in directory:
@@ -2732,7 +3131,14 @@ class S3XML(object):
 
     def record(self, table, element, validate=None, skip=[]):
 
-        """ Creates a Storage() record from an element and validates it """
+        """ Creates a Storage() record from an element and validates it
+
+            @param table: the database table
+            @param element: the element
+            @param validate: validate hook (function to validate fields)
+            @param skip: fields to skip
+
+        """
 
         valid = True
         record = Storage()
@@ -2823,7 +3229,12 @@ class S3XML(object):
 
     def get_field_options(self, table, fieldname):
 
-        """ Reads all options for a field """
+        """ Reads all options for a field
+
+            @param table: the database table
+            @param fieldname: the name of the field
+
+        """
 
         select = etree.Element(self.TAG["select"])
 
@@ -2858,7 +3269,13 @@ class S3XML(object):
 
     def get_options(self, prefix, name, joins=[]):
 
-        """ Gets all field options for a resource """
+        """ Gets all field options for a resource
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: the resource name (=without prefix)
+            @param joins: list of component joins to include
+
+        """
 
         resource = "%s_%s" % (prefix, name)
 
@@ -2888,7 +3305,12 @@ class S3XML(object):
 
     def __json2element(self, key, value, native=False):
 
-        """ Converts JSON objects into elements """
+        """ Converts a data field from JSON into an element
+
+            @param key: key (field name)
+            @param name: value for the field
+
+        """
 
         if isinstance(value, dict):
             return self.__obj2element(key, value, native=native)
@@ -2918,7 +3340,13 @@ class S3XML(object):
 
     def __obj2element(self, tag, obj, native=False):
 
-        """ Converts a JSON object into an element """
+        """ Converts a JSON object into an element
+
+            @param tag: tag name for the element
+            @param obj: the JSON object
+            @param native: use native mode for attributes
+
+        """
 
         prefix = name = resource = field = None
 
@@ -2975,7 +3403,12 @@ class S3XML(object):
 
     def json2tree(self, source, format=None):
 
-        """ Converts JSON into an element tree """
+        """ Converts JSON into an element tree
+
+            @param source: the JSON source
+            @param format: name of the XML root element
+
+        """
 
         try:
             root_dict = json.load(source)
@@ -2998,7 +3431,12 @@ class S3XML(object):
 
     def __element2json(self, element, native=False):
 
-        """ Converts an element into JSON """
+        """ Converts an element into JSON
+
+            @param element: the element
+            @param native: use native mode for attributes
+
+        """
 
         if element.tag == self.TAG["list"]:
             obj = []
@@ -3069,7 +3507,12 @@ class S3XML(object):
 
     def tree2json(self, tree, pretty_print=False):
 
-        """ Converts an element tree into JSON """
+        """ Converts an element tree into JSON
+
+            @param tree: the element tree
+            @param pretty_print: provide pretty formatted output
+
+        """
 
         root = tree.getroot()
 
@@ -3093,7 +3536,14 @@ class S3XML(object):
                      message=None,
                      tree=None):
 
-        """ Provide a nicely-formatted JSON Message """
+        """ Provide a nicely-formatted JSON Message
+
+            @param success: action succeeded or failed
+            @param status_code: the HTTP status code
+            @param message: the message text
+            @param tree: result tree to enclose
+
+        """
 
         if success:
             status='"status": "success"'

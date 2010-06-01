@@ -1,14 +1,42 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 encoding=utf-8
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
 
+__doc__ = \
+"""
+Module to spawn modem connectivity
+
+"""
+
+__author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
+
+import sys, os
+path = os.path.join(request.folder, 'modules')
+if not path in sys.path:
+            sys.path.append(path)
 import pygsm
 import threading
 import time
 from pygsm.autogsmmodem import GsmModemNotFound
-
-'''
-  Module to spawn modem connectivity
-'''
 
 
 class ModemThread( threading.Thread ):
@@ -63,7 +91,7 @@ modems=[]
 
 for modem in modem_configs:
     # mode is set to text as PDU mode is flaky
-    modems.append(pygsm.GsmModem(port=modem.port, baudrate=modem.baud, mode="text")) 
+    modems.append(pygsm.GsmModem(port=modem.modem_port, baudrate=modem.modem_baud, mode="text")) 
 
 if len(modems) == 0:
     # If no modem is found try autoconfiguring

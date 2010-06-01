@@ -4,7 +4,8 @@
 # AutoSync daemon running ZeroConf should be launched at startup
 #@reboot root **applications/sahana/cron/daemonX.py
 # SMS handler daemon should be launched at startup
-#@reboot root *applications/sahana/cron/sms_handler.py
+#@reboot root *applications/sahana/cron/sms_handler_in.py
+#@reboot root *applications/sahana/cron/sms_handler_out.py
 # Send outgoing emails every 5 minutes
 #*/5   *       *       *       *       root *msg/email_send
 #*/5   *       *       *       *       root web2py.exe -S sahana/msg/email_send

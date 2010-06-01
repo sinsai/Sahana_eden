@@ -31,9 +31,9 @@ def settings():
     table = module + '_' + resource
 
     # Model options
-    db[table].port.comment = A(SPAN("[Help]"), _class="tooltip",
+    db[table].modem_port.comment = A(SPAN("[Help]"), _class="tooltip",
         _title=T('Port|The serial port where your modem is connected.'))
-    db[table].baud.comment = A(SPAN("[Help]"), _class="tooltip",
+    db[table].modem_baud.comment = A(SPAN("[Help]"), _class="tooltip",
         _title=T('Baud|The Baud rate of your modem - Usually listed in your modem manual.'))
     db[table].account_name.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('Account Name|Convenient name to identify the account.'))

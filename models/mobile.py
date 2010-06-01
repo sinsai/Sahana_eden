@@ -11,8 +11,8 @@ resource = 'settings'
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field('account_name'), # Nametag to remember account
-                Field('port'),                              # Port for the modem
-                Field('baud', 'integer', default = 115200), # Modem Baud rate
+                Field('modem_port'),                              # Port for the modem
+                Field('modem_baud', 'integer', default = 115200), # Modem Baud rate
                 Field('url', default = 'https://api.clickatell.com/http/sendmsg'), # URL for Gateway
                 Field('parameters', default =\
                     'user=yourusername&password=yourpassword&api_id=yourapiid'), # Other Parameters
@@ -22,6 +22,8 @@ table = db.define_table(tablename,
                 migrate=migrate)
 table.to_variable.label = T('To variable')
 table.message_variable.label = T('Message variable')
+table.modem_port.label = T('Port')
+table.modem_baud.label = T('Baud')
 
 # SMS store for persistence and scratch pad for combining incoming xform chunks
 resource = 'store'

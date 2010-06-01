@@ -2,5 +2,7 @@
  <div class='form-container'>
   {{=form}}
  </div>
- {{include 'key.html'}}
+ {{if jr.method != "read":}}
+   {{include 'key.html'}}
+ {{pass}}
 </div>

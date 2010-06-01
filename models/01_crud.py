@@ -51,20 +51,15 @@ PRETTY_PRINT = True
 
 # *****************************************************************************
 # Load Controllers
+_s3xrc = local_import("s3xrc")
 
-exec("from applications.%s.modules.s3xrc import S3ResourceController" % request.application)
-exec("from applications.%s.modules.s3rest import S3RESTController" % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.eden.modules.s3xrc import *
-#from applications.eden.modules.s3rest import *
-
-s3xrc = S3ResourceController(db,
+s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
             base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
             rpp=ROWSPERPAGE,
             gis=gis)
 
-s3rest = S3RESTController(rc=s3xrc, auth=auth,
+s3rest = _s3xrc.S3RESTController(rc=s3xrc, auth=auth,
             xml_import_formats = shn_xml_import_formats,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,
@@ -1113,13 +1108,18 @@ def shn_read(jr, **attr):
 
         shn_audit_read(operation="read", module=module, resource=resource, record=record_id, representation=jr.representation)
 
-        if jr.representation=="html":
-            shn_custom_view(jr, "display.html")
+        if jr.representation=="html" or jr.representation == "popup":
+
+            if jr.representation=="html":
+                shn_custom_view(jr, "display.html")
+            elif jr.representation == "popup":
+                shn_custom_view(jr, "popup.html")
+
             try:
                 title = s3.crud_strings[jr.tablename].title_display
             except:
                 title = s3.crud_strings.title_display
-            output = dict(title=title)
+            output = dict(module_name=module_name, title=title)
             if jr.component:
                 try:
                     subtitle = s3.crud_strings[tablename].title_display
@@ -1134,6 +1134,12 @@ def shn_read(jr, **attr):
                     if _pheader:
                         output.update(pheader=_pheader)
             item = crud.read(table, record_id)
+            
+            if jr.representation=="html":
+                output.update(item=item)
+            elif jr.representation == "popup":
+                output.update(form=item)
+
             if href_edit and editable:
                 edit = A(T("Edit"), _href=href_edit, _id="edit-btn")
             else:
@@ -1148,10 +1154,7 @@ def shn_read(jr, **attr):
                 label_list_button = s3.crud_strings.label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _id="list-btn")
 
-            output.update(module_name=module_name,
-                          item=item,
-                          title=title,
-                          edit=edit,
+            output.update(edit=edit,
                           delete=delete,
                           list_btn=list_btn)
 
@@ -1846,9 +1849,13 @@ def shn_update(jr, **attr):
     if authorised:
         crud.settings.update_deletable = deletable
 
-        if jr.representation == "html":
+        if jr.representation == "html" or jr.representation == "popup":
 
-            shn_custom_view(jr, "update.html")
+            
+            if jr.representation == "html":
+                shn_custom_view(jr, "update.html")
+            elif jr.representation == "popup":
+                shn_custom_view(jr, "popup.html")
 
             output = dict(module_name=module_name)
 

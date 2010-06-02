@@ -29,43 +29,43 @@ def mergeCSS(inputFilenames, outputFilename):
 def cleanline(theLine):
     # Kills line breaks, tabs, and double spaces
     p = re.compile('(\n|\r|\t|\f|\v)+')
-    m = p.sub('',theLine)
+    m = p.sub('', theLine)
 
     # Kills double spaces
     p = re.compile('(  )+')
-    m = p.sub(' ',m)
+    m = p.sub(' ', m)
 
     # Removes last semicolon before }
     p = re.compile('(; }|;})+')
-    m = p.sub('}',m)
+    m = p.sub('}', m)
 
     # Removes space before {
     p = re.compile('({ )+')
-    m = p.sub('{',m)
+    m = p.sub('{', m)
 
     # Removes all comments
     p = re.compile('/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/')
-    m = p.sub('',m)
+    m = p.sub('', m)
 
     # Strip off the Charset
     p = re.compile('@CHARSET .*;')
-    m = p.sub('',m)
+    m = p.sub('', m)
 
     # Strip spaces before the {
     p = re.compile(' {')
-    m = p.sub('{',m)
+    m = p.sub('{', m)
 
     # Strip space after :
     p = re.compile(': ')
-    m = p.sub(':',m)
+    m = p.sub(':', m)
 
     # Strip space after ,
     p = re.compile(', ')
-    m = p.sub(',',m)
+    m = p.sub(',', m)
 
     # Strip space after ;
     p = re.compile('; ')
-    m = p.sub(';',m)
+    m = p.sub(';', m)
 
     return m
 
@@ -209,7 +209,6 @@ def docss(dogis = True):
         '../../styles/web2py/calendar.css',
         "../../styles/S3/s3.multiselect.widget.css"
     ]
-    outputFilenameTmpCSS = "sahana.tmp.css"
     outputFilenameCSS = "sahana.min.css"
 
     # Merge CSS files
@@ -226,8 +225,7 @@ def docss(dogis = True):
         os.remove("../../styles/S3/%s" % outputFilenameCSS)
     except:
         pass
-
-    shutil.move("sahana.min.css", "../../styles/S3")
+    shutil.move(outputFilenameCSS, "../../styles/S3")
 
     if dogis:
         listCSSGIS = [
@@ -239,7 +237,6 @@ def docss(dogis = True):
             #'../../styles/gis/style.css',
             '../../styles/gis/ie6-style.css'
         ]
-        outputFilenameCSSGIS = "gis.tmp.css"
         outputFilenameCSSGIS = "gis.min.css"
     
         # Merge GIS CSS files
@@ -257,7 +254,7 @@ def docss(dogis = True):
             os.remove("../../styles/gis/%s" % outputFilenameCSSGIS)
         except:
             pass
-        shutil.move("gis.min.css", "../../styles/gis")
+        shutil.move(outputFilenameCSSGIS, "../../styles/gis")
 
 def main(argv):
     try:
@@ -266,7 +263,7 @@ def main(argv):
         parameter1 = "ALL"
 
     try:
-        if(argv[1]=="DOGIS"):
+        if(argv[1] == "DOGIS"):
             parameter2 = True
         else:
             parameter2 = False

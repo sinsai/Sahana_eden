@@ -410,6 +410,44 @@ _ajaxS3_rtr_ = 'retry';
             expanded: true
         });
 
+        var root = new Ext.tree.AsyncTreeNode({
+            expanded: true,
+            loader: new GeoExt.tree.WMSCapabilitiesLoader({
+                url: OpenLayers.ProxyHost + 'http%3A//preview.grid.unep.ch%3A8080/geoserver/ows%3Fservice%3DWMS%26request%3DGetCapabilities',
+                layerOptions: {buffer: 0, singleTile: true, ratio: 1},
+                layerParams: {'TRANSPARENT': 'TRUE'},
+                // customize the createNode method to add a checkbox to nodes
+                createNode: function(attr) {
+                    attr.checked = attr.leaf ? false : undefined;
+                    return GeoExt.tree.WMSCapabilitiesLoader.prototype.createNode.apply(this, [attr]);
+                }
+            })
+        });
+        wmsBrowser = new Ext.tree.TreePanel({
+            id: 'wmsbrowser',
+            title: 'Risk Maps',
+            root: root,
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            listeners: {
+                // Add layers to the map when checked, remove when unchecked.
+                // Note that this does not take care of maintaining the layer
+                // order on the map.
+                'checkchange': function(node, checked) { 
+                    if (checked === true) {
+                        mapPanel.map.addLayer(node.attributes.layer); 
+                    } else {
+                        mapPanel.map.removeLayer(node.attributes.layer);
+                    }
+                }
+            }
+        });
+        
+        
         layerTree = new Ext.tree.TreePanel({
             id: 'treepanel',
             //title: 'Layers',
@@ -447,7 +485,8 @@ _ajaxS3_rtr_ = 'retry';
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree
+                            layerTree,
+                            wmsBrowser
                             ]
                     },
                     mapPanel

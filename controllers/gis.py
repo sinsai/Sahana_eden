@@ -77,6 +77,7 @@ def test():
                 feature_overlays = [offices, hospitals],
                 search = True,
                 wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"}
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"}
                 )
 
     return dict(map=html)
@@ -1480,7 +1481,6 @@ def map_viewing_client():
     output.update(dict(mgrs=baselayers.mgrs))
 
     # Internal Features
-    # ToDo: Replace with self-referring KML feed (easier to maintain 1 source of good popups for both internal & external purposes)
     features = Storage()
     # Features are displayed in a layer per FeatureGroup
     feature_groups = db(db.gis_feature_group.enabled == True).select()

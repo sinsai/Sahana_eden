@@ -39,43 +39,44 @@ def setting():
 def theme():
     "RESTlike CRUD controller"
     resource = 'theme'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
-    db[table].name.label = T('Name')
-    db[table].name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % table)]
-    db[table].name.comment = SPAN("*", _class="req")
-    db[table].logo.label = T('Logo')
-    db[table].logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
-    #db[table].header_background.label = T('Header Background')
-    #db[table].header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
-    db[table].footer.label = T('Footer')
-    db[table].footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
-    db[table].text_direction.label = T('Text Direction')
-    db[table].text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')})
-    db[table].text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
-    db[table].col_background.label = T('Background Colour')
-    db[table].col_background.requires = IS_HTML_COLOUR()
-    db[table].col_txt.label = T('Text Colour for Text blocks')
-    db[table].col_txt.requires = IS_HTML_COLOUR()
-    db[table].col_txt_background.label = T('Background Colour for Text blocks')
-    db[table].col_txt_background.requires = IS_HTML_COLOUR()
-    db[table].col_txt_border.label = T('Border Colour for Text blocks')
-    db[table].col_txt_border.requires = IS_HTML_COLOUR()
-    db[table].col_txt_underline.label = T('Colour for Underline of Subheadings')
-    db[table].col_txt_underline.requires = IS_HTML_COLOUR()
-    db[table].col_menu.label = T('Colour of dropdown menus')
-    db[table].col_menu.requires = IS_HTML_COLOUR()
-    db[table].col_highlight.label = T('Colour of selected menu items')
-    db[table].col_highlight.requires = IS_HTML_COLOUR()
-    db[table].col_input.label = T('Colour of selected Input fields')
-    db[table].col_input.requires = IS_HTML_COLOUR()
-    db[table].col_border_btn_out.label = T('Colour of bottom of Buttons when not pressed')
-    db[table].col_border_btn_out.requires = IS_HTML_COLOUR()
-    db[table].col_border_btn_in.label = T('Colour of bottom of Buttons when pressed')
-    db[table].col_border_btn_in.requires = IS_HTML_COLOUR()
-    db[table].col_btn_hover.label = T('Colour of Buttons when hovering')
-    db[table].col_btn_hover.requires = IS_HTML_COLOUR()
+    table.name.label = T('Name')
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
+    table.name.comment = SPAN("*", _class="req")
+    table.logo.label = T('Logo')
+    table.logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
+    #table.header_background.label = T('Header Background')
+    #table.header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
+    table.footer.label = T('Footer')
+    table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
+    table.text_direction.label = T('Text Direction')
+    table.text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')})
+    table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
+    table.col_background.label = T('Background Colour')
+    table.col_background.requires = IS_HTML_COLOUR()
+    table.col_txt.label = T('Text Colour for Text blocks')
+    table.col_txt.requires = IS_HTML_COLOUR()
+    table.col_txt_background.label = T('Background Colour for Text blocks')
+    table.col_txt_background.requires = IS_HTML_COLOUR()
+    table.col_txt_border.label = T('Border Colour for Text blocks')
+    table.col_txt_border.requires = IS_HTML_COLOUR()
+    table.col_txt_underline.label = T('Colour for Underline of Subheadings')
+    table.col_txt_underline.requires = IS_HTML_COLOUR()
+    table.col_menu.label = T('Colour of dropdown menus')
+    table.col_menu.requires = IS_HTML_COLOUR()
+    table.col_highlight.label = T('Colour of selected menu items')
+    table.col_highlight.requires = IS_HTML_COLOUR()
+    table.col_input.label = T('Colour of selected Input fields')
+    table.col_input.requires = IS_HTML_COLOUR()
+    table.col_border_btn_out.label = T('Colour of bottom of Buttons when not pressed')
+    table.col_border_btn_out.requires = IS_HTML_COLOUR()
+    table.col_border_btn_in.label = T('Colour of bottom of Buttons when pressed')
+    table.col_border_btn_in.requires = IS_HTML_COLOUR()
+    table.col_btn_hover.label = T('Colour of Buttons when hovering')
+    table.col_btn_hover.requires = IS_HTML_COLOUR()
 
     # CRUD Strings
     ADD_THEME = T('Add Theme')
@@ -95,9 +96,9 @@ def theme():
         msg_record_deleted = T('Theme deleted'),
         msg_list_empty = T('No Themes currently defined'))
 
-    s3xrc.model.configure(db[table], onvalidation=theme_check)
+    s3xrc.model.configure(table, onvalidation=theme_check)
     return shn_rest_controller(module, resource, list_fields=['id', 'name', 'logo', 'footer', 'col_background'])
-    s3xrc.model.clear_config(db[table], "onvalidation")
+    s3xrc.model.clear_config(table, "onvalidation")
 
 def theme_apply(form):
     "Apply the Theme specified by Form"
@@ -175,7 +176,7 @@ def theme_apply(form):
         os.chdir(currentdir)
 
         # Don't do standard redirect to List view as we only want this option available
-        redirect(URL(r=request, args=['update', 1]))
+        redirect(URL(r=request, args=[1, 'update']))
     else:
         session.error = INVALIDREQUEST
         redirect(URL(r=request))
@@ -217,14 +218,15 @@ def user():
     "RESTlike CRUD controller"
     module = 'auth'
     resource = 'user'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[table]
 
     # Model options
 
     # CRUD Strings
     ADD_USER = T('Add User')
     LIST_USERS = T('List Users')
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_USER,
         title_display = T('User Details'),
         title_list = LIST_USERS,
@@ -252,24 +254,23 @@ def user():
         if jr.method == "update":
             # Send an email to user if their account is approved
             # (=moved from 'pending' to 'blank'(i.e. enabled))
-            s3xrc.model.configure(db[table],
+            s3xrc.model.configure(table,
                                   onvalidation = lambda form: user_approve(form))
         return True
     response.s3.prep = user_prep
 
     output = shn_rest_controller(module, resource, main='first_name')
-    s3xrc.model.clear_config(db[table], "onvalidation", "onaccept")
+    s3xrc.model.clear_config(table, "onvalidation", "onaccept")
     return output
 
 def user_approve(form):
     "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"
-    print "user_approve"
     if form.vars.registration_key:
         # Now non-blank
         return
     else:
         # Now blank - lookup old value
-        status = db(db.auth_user.id == request.vars.id).select()[0].registration_key
+        status = db(db.auth_user.id == request.vars.id).select().first().registration_key
         if status == 'pending':
             # Send email to user confirming that they are now able to login
             if not auth.settings.mailer or \
@@ -302,8 +303,8 @@ def usergroup():
     data['role'] = db.auth_group[user].role
 
     # display the standard user details
-    record=db(db.auth_user.id==user).select()[0]
-    db.auth_user.id.readable=False
+    record = db(db.auth_user.id == user).select().first()
+    db.auth_user.id.readable = False
 
     # Let admin view and modify the registration key
     db.auth_user.registration_key.writable = True
@@ -314,7 +315,7 @@ def usergroup():
     form = SQLFORM(db.auth_user, record, deletable=True)
 
     # find all groups user belongs to
-    query = ( db.auth_membership.user_id == user )
+    query = (db.auth_membership.user_id == user)
     allgroups = db().select(db.auth_group.ALL)
     user_membership = db(query).select(db.auth_membership.ALL)
 
@@ -426,7 +427,7 @@ def users():
         redirect(URL(r=request, f='group'))
     
     table = db.auth_membership
-    query = table.group_id==group
+    query = table.group_id == group
     title = str(T('Role')) + ': ' + db.auth_group[group].role
     description = db.auth_group[group].description
     # Start building the Return
@@ -502,7 +503,7 @@ def groups():
         redirect(URL(r=request, f='user'))
     
     table = db.auth_membership
-    query = table.user_id==user
+    query = table.user_id == user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name
     description = db.auth_user[user].email
     # Start building the Return

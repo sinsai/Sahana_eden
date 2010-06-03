@@ -892,11 +892,119 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addLayer(bingterrain);
                     """
             
-        # ToDo
-        layers_tms = ""
+        # WMS
         layers_wms = ""
+        wms_enabled = db(db.gis_layer_wms.enabled == True).select()
+        for layer in wms_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            try:
+                wms_map = "map: '" + layer.map + "',"
+            except:
+                wms_map = ""
+            wms_layers = layer.layers
+            try:
+                format = "type: '" + layer.format + "'"
+            except:
+                format = ""
+            wms_projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
+            if wms_projection == 4326:
+                wms_projection = "projection: proj4326 }"
+            else:
+                wms_projection = "projection: new OpenLayers.Projection('EPSG:" + wms_projection + "') }"
+            if layer.transparent:
+                transparent = "transparent: true,"
+            else:
+                transparent = ""
+            if not layer.base:
+                base = ", { isBaseLayer: false"
+                if not layer.visible:
+                    base += ", visibility: false"
+                base += "}"
+            else:
+                base = ""
+
+            layers_wms  += """
+        var wmsLayer""" + name_safe + """ = new OpenLayers.Layer.WMS( '""" + name + """', '""" + url + """', {
+                wrapDateLine: 'true',
+                """ + wms_map + """
+                layers: '""" + wms_layers + """',
+                """ + format + """
+                """ + transparent + """
+                """ + wms_projection + """
+                """ + base + """
+            );
+        map.addLayer(wmsLayer""" + name_safe + """);
+        """
+
+        # TMS
+        layers_tms = ""
+        tms_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in tms_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            tms_layers = layer.layers
+            try:
+                format = "type: '" + layer.format + "'"
+            except:
+                format = ""
+                
+            layers_tms  += """
+        var tmsLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', '""" + url + """', {
+                layername: '""" + tms_layers + """',
+                """ + format + """
+            });
+        map.addLayer(tmsLayer""" + name_safe + """);
+        """
+                   
+        # XYZ
         layers_xyz = ""
+        xyz_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in xyz_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            if layer.sphericalMercator:
+                sphericalMercator = "sphericalMercator: 'true',"
+            else:
+                sphericalMercator = ""
+            if layer.transitionEffect:
+                transitionEffect = "transitionEffect: '{{=xyz_layers[layer].transitionEffect}}',"
+            else:
+                transitionEffect = ""
+            if layer.numZoomLevels:
+                xyz_numZoomLevels = "numZoomLevels: '" + layer.numZoomLevels + "'"
+            else:
+                xyz_numZoomLevels = ""
+            if layer.base:
+                base = "isBaseLayer: 'true'"
+            else:
+                base = ""
+                if layer.transparent:
+                    base += "transparent: 'true',"
+                if layer.visible:
+                    base += "visibility: 'true',"
+                if layer.opacity:
+                    base += "opacity: '" + layer.opacity + "',"
+                base += "isBaseLayer: 'false'"
+
+            layers_xyz  += """
+        var xyzLayer""" + name_safe + """ = new OpenLayers.Layer.XYZ( '""" + name + """', '""" + url + """', {
+                """ + sphericalMercator + """
+                """ + transitionEffect + """
+                """ + xyz_numZoomLevels + """
+                """ + base + """
+            });
+        map.addLayer(xyzLayer""" + name_safe + """);
+        """
+
+        # JS
         layers_js = ""
+        js_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in js_enabled:
+            layers_js  += layer.code
 
         #
         # Overlays
@@ -1036,19 +1144,16 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // Create Empty Array to Contain Feature Names
                 var clusterFeaturesArray = [];
                 // Add Each Feature To Array
-                for (var i = 0; i < feat.cluster.length; i++) 
+                for (var i = 0; i < feature.cluster.length; i++) 
                 {
-                    var clusterFeaturesArrayName = feat.cluster[i].attributes.NAME;
-                    var clusterFeaturesArrayType = feat.cluster[i].attributes.FEATURE_CLASS
-                    var clusterFeaturesArrayX = feat.cluster[i].geometry.x;
-                    var clusterFeaturesArrayY = feat.cluster[i].geometry.y;
-                    var clusterFeaturesArrayID = feat.cluster[i].fid;
+                    var clusterFeaturesArrayName = feature.cluster[i].attributes.name;
+                    var clusterFeaturesArrayType = feature.cluster[i].attributes.feature_class;
+                    var clusterFeaturesArrayX = feature.cluster[i].geometry.x;
+                    var clusterFeaturesArrayY = feature.cluster[i].geometry.y;
+                    var clusterFeaturesArrayID = feature.cluster[i].fid;
                     
-                    var clusterFeaturesArrayEntry = 
-                    "<li>" 
-                    + "<a href=\"#\" onclick=\"zoomToClusterFeatureEntry(" + clusterFeaturesArrayX + "," + clusterFeaturesArrayY + "," + clusterFeaturesArrayID + ");\">" + clusterFeaturesArrayName + "</a>"
-                    + "<br /> Type: " + clusterFeaturesArrayType
-                    + "</li>";
+                    // ToDo: Refine
+                    var clusterFeaturesArrayEntry = "<li>" + clusterFeaturesArrayName + "</li>";
                                                      
                     clusterFeaturesArray.push(clusterFeaturesArrayEntry);
                 };
@@ -1085,7 +1190,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_features += """
         geom = parser.read('""" + feature.gis_location.wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', '""" + feature.gis_location.feature_class_id + """', geom, iconURL)
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', '""" + str(feature.gis_location.feature_class_id) + """', geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -1106,8 +1211,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            georss = Storage()
-            georss_enabled = db(db.gis_layer_georss.enabled==True).select()
+            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -1241,8 +1345,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             # GPX (ToDo)
             layers_gpx += ""
             # KML
-            kml = Storage()
-            kml_enabled = db(db.gis_layer_kml.enabled==True).select()
+            kml_enabled = db(db.gis_layer_kml.enabled == True).select()
             if kml_enabled:
                 layers_kml += """
         var kmlLayers = new Array();

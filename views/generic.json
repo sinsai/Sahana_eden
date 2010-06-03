@@ -7,5 +7,5 @@ try:
    response.write(json(response._vars),escape=False)
    response.headers['Content-Type']='text/json'
 except:
-   raise HTTP(405,'no json')
+   raise HTTP(405,T('Sorry, this cannot be represented as JSON.'))
 }}

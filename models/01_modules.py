@@ -64,14 +64,14 @@ table.access.requires = IS_NULL_OR(IS_IN_DB(db, "auth_group.id", "%(role)s", mul
 table.priority.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "s3_module.priority")]
 
 # Set to False in Production
-if db(db["s3_setting"].id>0).count():
+if db(db["s3_setting"].id > 0).count():
     empty = False
 else:
     empty = True
 
 if empty:
     # Pre-populate database
-    if not db(table.id>0).count():
+    if not db(table.id > 0).count():
         table.insert(
             name="default",
             name_nice="Sahana Home",
@@ -256,7 +256,7 @@ if empty:
 # Modules Menu (available in all Controllers)
 s3.menu_modules = []
 for module_type in [1, 2]:
-    query = (db.s3_module.enabled=="Yes") & (db.s3_module.module_type==module_type)
+    query = (db.s3_module.enabled == "Yes") & (db.s3_module.module_type == module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:
         if not module.access:
@@ -273,7 +273,7 @@ for module_type in [3, 4]:
     module_type_name = str(s3_module_type_opts[module_type])
     module_type_menu = ([module_type_name, False, "#"])
     modules_submenu = []
-    query = (db.s3_module.enabled=="Yes") & (db.s3_module.module_type==module_type)
+    query = (db.s3_module.enabled == "Yes") & (db.s3_module.module_type == module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:
         if not module.access:
@@ -289,7 +289,7 @@ for module_type in [3, 4]:
     module_type_menu.append(modules_submenu)
     s3.menu_modules.append(module_type_menu)
 for module_type in [5]:
-    query = (db.s3_module.enabled=="Yes") & (db.s3_module.module_type==module_type)
+    query = (db.s3_module.enabled == "Yes") & (db.s3_module.module_type == module_type)
     modules = db(query).select(db.s3_module.ALL, orderby=db.s3_module.priority)
     for module in modules:
         if not module.access:

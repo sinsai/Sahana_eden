@@ -7,5 +7,5 @@ try:
    response.write(xml(response._vars),escape=False)
    response.headers['Content-Type']='text/xml'
 except:
-   raise HTTP(405,'no xml')
+   raise HTTP(405, T('This information cannot be represented in XML.'))
 }}

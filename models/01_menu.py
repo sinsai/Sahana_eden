@@ -38,7 +38,7 @@ else:
                  URL(request.application, "default", "user/logout")],
                 [T("Edit Profile"), False,
                  URL(request.application, "default", "user/profile")],
-                [T("Edit Contact"), False,
+                [T("My contact details"), False,
                  URL(request.application, "msg", "pe_contact")],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]

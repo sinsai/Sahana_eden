@@ -313,24 +313,44 @@ def group_search():
     return dict(item=item)
 
 def pe_contact():
-    """ Allows the user to add his contacts"""
-    if auth.is_logged_in():
+    """ Allows the user to add,update and delete his contacts"""
+    if auth.is_logged_in() or auth.basic():
         person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id))[0].id
         mycontacts = db(db.pr_pe_contact.pr_pe_id == person).select(db.pr_pe_contact.id)
         my_ids=[]
         for row in mycontacts:
             my_ids.append(row.id)
         response.s3.filter = (db.pr_pe_contact.id.belongs(my_ids))
+    else:
+        redirect(URL(r=request, c='default', f='user', args='login',
+            vars={'_next':URL(r=request, c='msg', f='pe_contact')}))
+
     db.pr_pe_contact.name.writable = False
     db.pr_pe_contact.name.readable = False
+    db.pr_pe_contact.id.writable = False
+#   db.pr_pe_contact.id.readable = False
     db.pr_pe_contact.pr_pe_id.writable = False
     db.pr_pe_contact.pr_pe_id.readable = False
     db.pr_pe_contact.person_name.writable = False
     db.pr_pe_contact.person_name.readable = False
     def msg_pe_contact_onvalidation(form):
-        person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id))[0].id
+        """This onvalidation method adds the person id to the record"""
+        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id))[0].id
         form.vars.pr_pe_id = person
-        print "lala"
+    def msg_pe_contact_restrict_access(jr):
+        """The following restricts update and delete access to contacts not
+        owned by the user"""
+        if jr.id :
+            person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id))[0].id
+            if person == (db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pr_pe_id))[0].pr_pe_id :
+                return True
+            else:
+                session.error = T("Access denied")
+                return dict(bypass = True, output = redirect(URL(r=request)))
+        else:
+            return True
     s3xrc.model.configure(db.pr_pe_contact,
             onvalidation=lambda form: msg_pe_contact_onvalidation(form))
+    response.s3.prep = msg_pe_contact_restrict_access
+    response.menu_options = []
     return shn_rest_controller('pr', 'pe_contact', listadd=True)

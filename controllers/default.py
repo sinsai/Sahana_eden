@@ -106,7 +106,11 @@ def apath(path=''):
     return os.path.join(opath,path).replace('\\','/')
 
 def about():
-    "About Sahana page provides details on component versions."
+    """
+    The About page provides details on the software
+    depedencies and versions available to this instance
+    of Sahana Eden.
+    """
     import sys
     import subprocess
     import string
@@ -116,31 +120,31 @@ def about():
     try:
         sqlite_version = (subprocess.Popen(["sqlite3", "-version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()
     except:
-        sqlite_version = "Not installed or available"
+        sqlite_version = T("Not installed or incorectly configured.")
     try:
         mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]    
     except:
-        mysql_version = "Not installed or available"
+        mysql_version = T("Not installed or incorrectly configured.")
     try:    
         pgsql_reply = (subprocess.Popen(["psql", "--version"], stdout=subprocess.PIPE).communicate()[0]) 
         pgsql_version = string.split(pgsql_reply)[2]
     except:
-        pgsql_version = "Not installed or available"
+        pgsql_version = T("Not installed or incorrectly configured.")
     try:
         import MySQLdb
         pymysql_version = MySQLdb.__revision__
     except:
-        pymysql_version = "Not installed or available"
+        pymysql_version = T("Not installed or incorrectly configured.")
     try:
         import reportlab
         reportlab_version = reportlab.Version
     except:
-        reportlab_version = "Not installed or available"
+        reportlab_version = T("Not installed or incorrectly configured.")
     try:
         import xlwt
         xlwt_version = xlwt.__VERSION__
     except:
-        xlwt_version = "Not installed or available"
+        xlwt_version = T("Not installed or incorrectly configured.")
     return dict(module_name=module_name,
                 python_version=python_version, 
                 sahana_version=sahana_version, 

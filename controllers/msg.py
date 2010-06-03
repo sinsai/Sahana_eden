@@ -165,11 +165,11 @@ def group_user():
 
     title = db.msg_group[group].name
     group_description = db.msg_group[group].comments
-    _group_type = db.msg_group[group].group_type
-    group_type = msg_group_type_opts[_group_type]
+    #_group_type = db.msg_group[group].group_type
+    #group_type = msg_group_type_opts[_group_type]
     query = table.msg_group_id==group
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=group_description, group_type=group_type)
+    output = dict(module_name=module_name, title=title, description=group_description)#, group_type=group_type)
     # Audit
     shn_audit_read(operation='list', module="msg" ,resource='group_user', record=group, representation='html')
     item_list = []
@@ -246,7 +246,7 @@ def group_validation(form):
         # Which type of Group is this?
         table = db.msg_group
         query = table.id==group
-        group_type = db(query).select().first().group_type
+        #group_type = db(query).select().first().group_type
         table = db.pr_person
         query = table.id==user
         email = db(query).select().first().email
@@ -254,15 +254,15 @@ def group_validation(form):
         session.warning = ''
         # type 1 = Email
         # type 3 = Both
-        if group_type == 1 or group_type == 3:
+        #if group_type == 1 or group_type == 3:
             # Check that Email field populated
-            if not email:
-                session.warning += str(T("User has no Email address!"))
+            #if not email:
+                #session.warning += str(T("User has no Email address!"))
         # type 2 = SMS
-        if group_type == 2 or group_type == 3:
+        #if group_type == 2 or group_type == 3:
             # Check that SMS field populated
-            if not sms:
-                session.warning += str(T("User has no SMS address!"))
+            #if not sms:
+                #session.warning += str(T("User has no SMS address!"))
         return
 
 def group_update_users():
@@ -306,7 +306,7 @@ def group_search():
         # JQuery Autocomplete uses 'q' instead of 'value'
         value = request.vars.q
         # JOIN bad for GAE
-        query = (table[field].like('%' + value + '%')) & (table['group_type'].belongs(belongs))
+        query = (table[field].like('%' + value + '%'))# & (table['group_type'].belongs(belongs))
         item = db(query).select().json()
 
     response.view = 'plain.html'
@@ -316,11 +316,7 @@ def pe_contact():
     """ Allows the user to add,update and delete his contacts"""
     if auth.is_logged_in() or auth.basic():
         person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id))[0].id
-        mycontacts = db(db.pr_pe_contact.pr_pe_id == person).select(db.pr_pe_contact.id)
-        my_ids=[]
-        for row in mycontacts:
-            my_ids.append(row.id)
-        response.s3.filter = (db.pr_pe_contact.id.belongs(my_ids))
+        response.s3.filter = (db.pr_pe_contact.pr_pe_id == person)
     else:
         redirect(URL(r=request, c='default', f='user', args='login',
             vars={'_next':URL(r=request, c='msg', f='pe_contact')}))

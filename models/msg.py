@@ -37,23 +37,23 @@ if shn_module_enable.get(module, False):
                     migrate=migrate)
 
     # Group
-    msg_group_type_opts = {
-        1:T('Email'),
-        2:T('SMS'),
-        3:T('Both')
-        }
-    opt_msg_group_type = db.Table(None, 'opt_msg_group_type',
-                        Field('group_type', 'integer', notnull=True,
-                        requires = IS_IN_SET(msg_group_type_opts),
-                        # default = 1,
-                        label = T('Type'),
-                        represent = lambda opt: msg_group_type_opts.get(opt, UNKNOWN_OPT)))
+    #msg_group_type_opts = {
+        #1:T('Email'),
+        #2:T('SMS'),
+        #3:T('Both')
+        #}
+    #opt_msg_group_type = db.Table(None, 'opt_msg_group_type',
+                        #Field('group_type', 'integer', notnull=True,
+                        #requires = IS_IN_SET(msg_group_type_opts),
+                        ## default = 1,
+                        #label = T('Type'),
+                        #represent = lambda opt: msg_group_type_opts.get(opt, UNKNOWN_OPT)))
 
     resource = 'group'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field('name', notnull=True),
-                    opt_msg_group_type,
+                    #opt_msg_group_type,
                     Field('comments'),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)

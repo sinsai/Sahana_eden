@@ -83,6 +83,8 @@ auth.settings.allow_basic_login = True
 auth.settings.lock_keys = False
 auth.settings.logout_onlogout = shn_auth_on_logout
 auth.settings.login_onaccept = shn_auth_on_login
+auth.settings.login_next = URL(r=request, c='default', f='user',
+        args='login_next')
 
 # Extra startup roles for Admin:
 auth.settings.admin_startup_roles = [

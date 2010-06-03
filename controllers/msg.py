@@ -58,9 +58,13 @@ def sms():
     " Simple page for showing links "
     title = T('SMS')
     return dict(module_name=module_name, title=title)
+
+@auth.requires_membership('Administrator')
 def sms_inbox():
     " RESTlike CRUD controller "
     return shn_rest_controller(module, 'sms_inbox', listadd=False)
+
+@auth.requires_membership('Administrator')
 def sms_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
@@ -68,6 +72,8 @@ def sms_outbox():
     # Restrict list to just those of type 'sms'
     # tbc
     return shn_rest_controller(module, 'sms_outbox', listadd = False)
+
+@auth.requires_membership('Administrator')
 def sms_sent():
     " RESTlike CRUD controller "
     return shn_rest_controller(module, 'sms_sent', listadd=False)
@@ -78,6 +84,7 @@ def email():
     title = T('Email')
     return dict(module_name=module_name, title=title)
 
+@auth.requires_membership('Administrator')
 def email_inbox():
     " RESTlike CRUD controller "
     # Is there an error from the polling script?
@@ -90,6 +97,7 @@ def email_inbox():
         pass
     return shn_rest_controller(module, 'email_inbox', listadd=False)
 
+@auth.requires_membership('Administrator')
 def email_outbox():
     " RESTlike CRUD controller "
     # Replace dropdown with an INPUT so that we can use the jQuery autocomplete plugin
@@ -97,6 +105,8 @@ def email_outbox():
     # Restrict list to just those of type 'email'
     # tbc
     return shn_rest_controller(module, 'email_outbox', listadd=False)
+
+@auth.requires_membership('Administrator')
 def email_sent():
     " RESTlike CRUD controller "
     return shn_rest_controller(module, 'email_sent', listadd=False)
@@ -301,3 +311,26 @@ def group_search():
 
     response.view = 'plain.html'
     return dict(item=item)
+
+def pe_contact():
+    """ Allows the user to add his contacts"""
+    if auth.is_logged_in():
+        person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id))[0].id
+        mycontacts = db(db.pr_pe_contact.pr_pe_id == person).select(db.pr_pe_contact.id)
+        my_ids=[]
+        for row in mycontacts:
+            my_ids.append(row.id)
+        response.s3.filter = (db.pr_pe_contact.id.belongs(my_ids))
+    db.pr_pe_contact.name.writable = False
+    db.pr_pe_contact.name.readable = False
+    db.pr_pe_contact.pr_pe_id.writable = False
+    db.pr_pe_contact.pr_pe_id.readable = False
+    db.pr_pe_contact.person_name.writable = False
+    db.pr_pe_contact.person_name.readable = False
+    def msg_pe_contact_onvalidation(form):
+        person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id))[0].id
+        form.vars.pr_pe_id = person
+        print "lala"
+    s3xrc.model.configure(db.pr_pe_contact,
+            onvalidation=lambda form: msg_pe_contact_onvalidation(form))
+    return shn_rest_controller('pr', 'pe_contact', listadd=True)

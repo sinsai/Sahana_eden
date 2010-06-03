@@ -34,6 +34,17 @@ def user():
     # Add newly-registered users to Person Registry & 'Authenticated' role
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
+    if request.args and request.args(0)=="login_next":
+        # The following redirects the user to contacts page on first login - can
+        # be updated for a workflow on login. This also notes the timestamp
+        # of last login through the browser
+        if auth.is_logged_in():
+            if not auth.user.timestamp:
+                db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
+                redirect(URL(r=request, c='msg', f='pe_contact'))
+            db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
+            redirect(URL(r=request, f='index'))
+
     if request.args and request.args(0)=="profile":
         #auth.settings.table_user.organisation.writable = False
         auth.settings.table_user.utc_offset.readable = True

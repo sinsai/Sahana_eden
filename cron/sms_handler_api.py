@@ -52,5 +52,39 @@ def send_sms_api(mobile,text = ''):
 	request = urllib.urlopen(url, query)
 	output = request.read()
 	#print output
-	
-send_sms_api(9935648569,"Hello")
+
+def send_sms():
+	"""Send Pending SMS from OutBox.
+	If succesful then move from OutBox to Sent. A modified copy of send_email"""
+	# Check database for pending mails
+	table = db.msg_sms_outbox
+	query = table.id > 0
+	rows = db(query).select()
+
+	for row in rows:
+		contents = row.contents
+		# Determine list of users
+		group = row.msg_group_id
+		table2 = db.msg_group_user
+		query = table2.msg_group_id == group
+		recipients = db(query).select()
+		status = True
+		for recipient in recipients:
+			to = db(db.pr_person.id==recipient.person_id).select().first().mobile_phone
+			if to:
+				try:
+					send_sms_api(to, contents)
+				except:
+					status = False
+		# We only check status of last recipient
+		if status:
+			# Add message to Sent
+			db.msg_sms_sent.insert(created_by=row.created_by, modified_by=row.modified_by, uuid=row.uuid, msg_group_id=group, contents=contents)
+			# Delete from OutBox
+			db(table.id==row.id).delete()
+			# Explicitly commit DB operations when running from Cron
+			db.commit()
+	return
+
+send_sms()
+#send_sms_api(9935648569,"Hello")

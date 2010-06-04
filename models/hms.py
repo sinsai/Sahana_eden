@@ -858,16 +858,16 @@ if shn_module_enable.get(module, False):
                         TH(db.hms_hospital.phone_business.label),
                         TH(db.hms_hospital.total_beds.label),
                         TH(db.hms_hospital.available_beds.label))),
-                        TBODY(records), _id='list', _class="display"))
+                        TBODY(records), _id="list", _class="display"))
                 else:
-                    items = T('None')
+                    items = T("None")
 
             try:
-                label_create_button = s3.crud_strings['hms_hospital'].label_create_button
+                label_create_button = s3.crud_strings["hms_hospital"].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, f='hospital', args='create'), _id='add-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, f="hospital", args="create"), _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
             return output
@@ -877,19 +877,19 @@ if shn_module_enable.get(module, False):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, 'hospital',
-                        method='search_simple',
+    s3xrc.model.set_method(module, "hospital",
+                        method="search_simple",
                         action=shn_hms_hospital_search_simple)
 
     # -----------------------------------------------------------------------------
     # Hospital Requests for Support
     #
     hms_hrequest_priority_opts = {
-        5: T('immediately'),
-        4: T('urgent'),
-        3: T('high'),
-        2: T('normal'),
-        1: T('low')
+        5: T("immediately"),
+        4: T("urgent"),
+        3: T("high"),
+        2: T("normal"),
+        1: T("low")
     }
 
     hms_hrequest_impact_opts = {
@@ -1139,12 +1139,12 @@ if shn_module_enable.get(module, False):
                 if rows:
                     records = []
                     for row in rows:
-                        href = next.replace('%5bid%5d', '%s' % row.id)
+                        href = next.replace("%5bid%5d", "%s" % row.id)
                         records.append(TR(
                             row.completion_status,
                             row.message,
                             row.timestamp,
-                            row.hospital_id and hospital_id.hospital_id.represent(row.hospital_id) or 'unknown',
+                            row.hospital_id and hospital_id.hospital_id.represent(row.hospital_id) or "unknown",
                             ))
                     items=DIV(TABLE(THEAD(TR(
                         TH("Completion Status"),
@@ -1154,14 +1154,14 @@ if shn_module_enable.get(module, False):
                         )),
                         TBODY(records), _id='list', _class="display"))
                 else:
-                    items = T('None')
+                    items = T("None")
 
             try:
                 label_create_button = s3.crud_strings['hms_hrequest'].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, f='req', args='create'), _id='add-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, f="req", args="create"), _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
             return output
@@ -1172,19 +1172,19 @@ if shn_module_enable.get(module, False):
 
     # Plug into REST controller
     s3xrc.model.set_method(module, resource,
-                        method='search_simple',
+                        method="search_simple",
                         action=shn_hms_hrequest_search_simple)
 
     # -----------------------------------------------------------------------------
     # Pledges
     #
     hms_pledge_status_opts = {
-        1:T('Pledged'),
-        2:T('In Transit'),
-        3:T('Delivered'),
+        1:T("Pledged"),
+        2:T("In Transit"),
+        3:T("Delivered"),
     }
 
-    resource = 'hpledge'
+    resource = "hpledge"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                     Field('submitted_on', 'datetime'),

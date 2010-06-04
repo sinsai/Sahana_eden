@@ -214,7 +214,7 @@ def group_user():
 
         table_header = THEAD(TR(TH('ID'), TH(table.person_id.label), TH(T('Preferred Name'))))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
-        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
+        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _class="action-btn")
         response.view = '%s/group_user_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
     return output

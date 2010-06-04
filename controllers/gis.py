@@ -1020,7 +1020,7 @@ def feature_group_contents():
         table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description"))))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
 
-        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _id="add-btn")
+        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
         response.view = "%s/feature_group_contents_list.html" % module
         output.update(dict(items=items, add_btn=add_btn))
     return output

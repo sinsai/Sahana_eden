@@ -8,8 +8,6 @@
 
 module = 'default'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions)
 response.menu_options = [
     #[T('About Sahana'), False, URL(r=request, f='about')],
@@ -61,11 +59,16 @@ def user():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL, orderby=db.s3_module.priority)
-    admin_name = db().select(db.s3_setting.admin_name)[0].admin_name
-    admin_email = db().select(db.s3_setting.admin_email)[0].admin_email
-    admin_tel = db().select(db.s3_setting.admin_tel)[0].admin_tel
+    
+    module_name = db(db.s3_module.name == module).select().first().name_nice
+    
+    modules = db(db.s3_module.enabled == 'Yes').select(db.s3_module.ALL, orderby=db.s3_module.priority)
+    settings = db(db.s3_setting.id == 1).select().first()
+    admin_name = settings.admin_name
+    admin_email = settings.admin_email
+    admin_tel = settings.admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
+    
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def source():
@@ -145,7 +148,7 @@ def about():
         xlwt_version = xlwt.__VERSION__
     except:
         xlwt_version = T("Not installed or incorrectly configured.")
-    return dict(module_name=module_name,
+    return dict(
                 python_version=python_version, 
                 sahana_version=sahana_version, 
                 web2py_version=web2py_version, 
@@ -154,7 +157,8 @@ def about():
                 pgsql_version=pgsql_version,
                 pymysql_version=pymysql_version,
                 reportlab_version=reportlab_version, 
-                xlwt_version=xlwt_version)
+                xlwt_version=xlwt_version
+                )
 
 def help():
     "Custom View"

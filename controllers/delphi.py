@@ -6,9 +6,6 @@
 
 module = "delphi"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
-
 response.menu_options = [
     [T("Active Problems"), False, URL(r=request, f='index')],
 ]
@@ -191,7 +188,11 @@ def __get_commons(solution=None):
 
 
 def index():
-    groups = db(db.delphi_group.active==True).select()
+    "Module Home Page"
+    
+    module_name = db(db.s3_module.name == module).select().first().name_nice
+    
+    groups = db(db.delphi_group.active == True).select()
     result = []
     for group in groups:
         actions = []

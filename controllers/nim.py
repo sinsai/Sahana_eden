@@ -8,12 +8,6 @@
 
 module = 'nim'
 
-# Current Module (for sidebar title)
-try:
-    module_name = db(db.s3_module.name==module).select().first().name_nice
-except:
-    module_name = T('Nursing Information Manager')
-
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Search for a Person'), False,  URL(r=request, f='person', args=['search_simple'])],
@@ -44,6 +38,12 @@ response.menu_options = [
 
 def index():
     "Module's Home Page"
+
+    try:
+        module_name = db(db.s3_module.name==module).select().first().name_nice
+    except:
+        module_name = T('Nursing Information Manager')
+
     return dict(module_name=module_name)
 
 # Main controller functions

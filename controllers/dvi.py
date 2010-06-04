@@ -18,12 +18,6 @@ module = 'dvi'
 #    session.error=T('Not Authorised!')
 #    redirect(URL(r=request, c='default', f='user', args='login'))
 
-# Current Module (for sidebar title)
-try:
-    module_name = db(db.s3_module.name==module).select().first().name_nice
-except:
-    module_name = T('Disaster Victim Identification')
-
 # Options Menu (available in all Functions' Views)
 def shn_menu():
     response.menu_options = [
@@ -67,6 +61,12 @@ shn_menu()
 # S3 framework functions
 def index():
     "Module's Home Page"
+
+    try:
+        module_name = db(db.s3_module.name == module).select().first().name_nice
+    except:
+        module_name = T('Disaster Victim Identification')
+
     return dict(module_name=module_name)
 
 def find():

@@ -6,8 +6,6 @@
 
 module = 'budget'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Parameters'), False, URL(r=request, f='parameters')],
@@ -184,6 +182,9 @@ table.months.comment = SPAN("*", _class="req")
 # S3 framework functions
 def index():
     "Module's Home Page"
+    
+    module_name = db(db.s3_module.name == module).select().first().name_nice
+    
     return dict(module_name=module_name)
 
 def parameters():
@@ -191,9 +192,9 @@ def parameters():
     table = db.budget_parameter
     authorised = shn_has_permission('update', table)
     if authorised:
-        redirect (URL(r=request, f='parameter', args=['update', 1]))
+        redirect (URL(r=request, f='parameter', args=[1, 'update']))
     else:
-        redirect (URL(r=request, f='parameter', args=['read', 1]))
+        redirect (URL(r=request, f='parameter', args=[1, 'read']))
 
 def parameter():
     "RESTlike CRUD controller"
@@ -420,7 +421,7 @@ def kit_item():
     kit_monthly_cost = db.budget_kit[kit].total_monthly_cost
     query = table.kit_id==kit
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
+    output = dict(title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
     # Audit
     shn_audit_read(operation='list', module=module, resource='kit_item', record=kit, representation='html')
     item_list = []
@@ -825,7 +826,7 @@ def bundle_kit_item():
     bundle_total_cost = db.budget_bundle[bundle].total_unit_cost
     bundle_monthly_cost = db.budget_bundle[bundle].total_monthly_cost
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
+    output = dict(title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
     # Audit
     shn_audit_read(operation='list', module=module, resource='bundle_kit_item', record=bundle, representation='html')
     item_list = []
@@ -1199,7 +1200,7 @@ def budget_staff_bundle():
     budget_onetime_cost = db.budget_budget[budget].total_onetime_costs
     budget_recurring_cost = db.budget_budget[budget].total_recurring_costs
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
+    output = dict(title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
     # Audit
     shn_audit_read(operation='list', module=module, resource='budget_staff_bundle', record=budget, representation='html')
     item_list = []

@@ -1889,8 +1889,7 @@ class S3ResourceController(object):
         depth = dereference and self.MAX_DEPTH or 0
         while ref_map and depth:
             depth -= 1
-            load_map = self.__directory(None, ref_map, "table", "id",
-                                      exclude=exp_map)
+            load_map = self.__directory(None, ref_map, "table", "id", e=exp_map)
             ref_map = []
 
             for tablename in load_map.keys():

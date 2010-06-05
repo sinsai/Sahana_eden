@@ -87,8 +87,8 @@ s3xrc.model.add_component(module, resource,
 #
 pr_contact_method_opts = {
     1:T("E-Mail"),
-    2:T("Telephone"),
-    3:T("Mobile Phone"),
+    2:T("Mobile Phone"),
+    3:T("Telephone"),
     4:T("Fax"),
     5:T("Twitter"),
     6:T("XMPP"),

@@ -23,7 +23,7 @@
 
 __doc__ = \
 """
-This is the async cron daemon for handling outgoing SMS.
+This is the async cron daemon for handling outgoing Email.
 
 """
 
@@ -37,11 +37,10 @@ if not path in sys.path:
             sys.path.append(path)
 
 import s3msg
-msg = s3msg.Msg(globals(), db, T)
+msg = s3msg.Msg(globals(), db, T, mail)
 
-if msg.sms_api_enabled:
-	while 1:
-		time.sleep(10)
-		msg.process_outbox(contact_method = 2)
+while 1:
+	msg.process_outbox(contact_method = 1)
+	time.sleep(15)
 	#For testing
-	#msg.send_sms_via_api(9935648569,"Hello")
+	#msg.send_sms_via_api("lifeeth@gmail.com","Subject","Body message")

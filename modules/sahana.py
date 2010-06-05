@@ -817,7 +817,7 @@ class AuthS3(Auth):
         authenticated = self.id_group('Authenticated')
         self.add_membership(authenticated, form.vars.id)
 
-        # S3: Add to Person Registry as well
+        # S3: Add to Person Registry as well and Email to pr_pe_contact
         self.shn_link_to_person(user=form.vars)
 
 
@@ -854,6 +854,13 @@ class AuthS3(Auth):
                     if new_id:
                         person_uuid = db.pr_person[new_id].uuid
                         db(table.id==user.id).update(person_uuid=person_uuid)
+					# The following adds the email to pr_pe_contact
+                    db.pr_pe_contact.insert(
+                            pr_pe_id = pr_pe_id,
+                            opt_pr_contact_method = 1,
+                            priority = 1,
+                            value = email
+                            )
 
                 if self.user and self.user.id==user.id:
                     self.user.person_uuid=person_uuid

@@ -33,7 +33,7 @@ opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
 
 # -----------------------------------------------------------------------------
 #
-def shn_pentity_represent(id):
+def shn_pentity_represent(id,default_label="[no label]"):
 
     """
         Represent a Person Entity in option fields or list views
@@ -49,7 +49,7 @@ def shn_pentity_represent(id):
     if not pentity:
         return default
     entity_type = pentity.opt_pr_entity_type
-    label = pentity.label or "no label"
+    label = pentity.label or default_label
 
     etype = lambda entity_type: vita.trackable_types[entity_type]
 
@@ -62,7 +62,7 @@ def shn_pentity_represent(id):
                     limitby=(0, 1))
         if person:
             person = person[0]
-            pentity_str = "%s [%s] (%s)" % (
+            pentity_str = "%s %s (%s)" % (
                 vita.fullname(person),
                 label,
                 etype(entity_type)

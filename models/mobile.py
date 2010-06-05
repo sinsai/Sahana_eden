@@ -18,6 +18,7 @@ table = db.define_table(tablename,
                     'user=yourusername&password=yourpassword&api_id=yourapiid'), # Other Parameters
                 Field('message_variable', 'string', default = 'text'), # Variable for message
                 Field('to_variable', 'string', default = 'to'), # Variable for message
+                Field('enabled', 'boolean', default = True), # Variable for message
 #                Field('preference', 'integer', default = 5), # Weight for the setting
                 migrate=migrate)
 table.to_variable.label = T('To variable')

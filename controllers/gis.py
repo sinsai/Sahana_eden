@@ -10,8 +10,6 @@ from operator import __and__
 
 module = "gis"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
@@ -59,6 +57,7 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
+    module_name = db(db.s3_module.name==module).select().first().name_nice
     return dict(module_name=module_name)
 
 def test():
@@ -73,11 +72,15 @@ def test():
         offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
     
     html = gis.show_map(
-                catalogue_overlays = True,
                 feature_overlays = [offices, hospitals],
+                wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
+                catalogue_overlays = True,
+                catalogue_toolbar = True,
+                toolbar = True,
                 search = True,
-                wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"}
-                #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"}
+                #mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
+                window = True,
                 )
 
     return dict(map=html)
@@ -893,7 +896,7 @@ def feature_create_map():
     # Layers
     baselayers = layers()
 
-    return dict(title=title, module_name=module_name, form=form, projection=projection, openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing)
+    return dict(title=title, form=form, projection=projection, openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing)
 
 # Feature Groups
 def feature_group_contents():
@@ -908,7 +911,7 @@ def feature_group_contents():
     title = db.gis_feature_group[feature_group].name
     feature_group_description = db.gis_feature_group[feature_group].description
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=feature_group_description)
+    output = dict(title=title, description=feature_group_description)
     # Audit
     shn_audit_read(operation="list", resource="feature_group_contents", record=feature_group, representation="html")
     item_list = []
@@ -1017,7 +1020,7 @@ def feature_group_contents():
         table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description"))))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
 
-        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _id="add-btn")
+        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
         response.view = "%s/feature_group_contents_list.html" % module
         output.update(dict(items=items, add_btn=add_btn))
     return output
@@ -1077,7 +1080,7 @@ def map_service_catalogue():
     title = T("Map Service Catalogue")
     subtitle = T("List Layers")
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, subtitle=subtitle)
+    output = dict(title=title, subtitle=subtitle)
 
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap
@@ -1437,7 +1440,7 @@ def map_viewing_client():
     response.title = title
 
     # Start building the Return with the Framework
-    output = dict(title=title, module_name=module_name)
+    output = dict(title=title, )
 
     # Config
     # ToDo return all of these to the view via a single 'config' var

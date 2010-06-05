@@ -499,7 +499,7 @@ group_id = SQLTable(None, "group_id",
                 ))
 
 s3xrc.model.configure(table,
-    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=2),
+    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_group, entity_type=2),
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
 # *****************************************************************************
@@ -604,7 +604,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
         except:
             label_create_button = s3.crud_strings.label_create_button
 
-        add_btn = A(label_create_button, _href=URL(r=request, f="person", args="create"), _id="add-btn")
+        add_btn = A(label_create_button, _href=URL(r=request, f="person", args="create"), _class="action-btn")
 
         output.update(add_btn=add_btn)
         return output

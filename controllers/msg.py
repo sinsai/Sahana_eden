@@ -6,8 +6,6 @@
 
 module = 'msg'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Admin'), False, URL(r=request, f='admin')],
@@ -31,6 +29,9 @@ response.menu_options = [
 # S3 framework functions
 def index():
     "Module's Home Page"
+    
+    module_name = db(db.s3_module.name == module).select().first().name_nice
+    
     return dict(module_name=module_name)
 
 def tbc():
@@ -57,7 +58,7 @@ def setting():
 def sms():
     " Simple page for showing links "
     title = T('SMS')
-    return dict(module_name=module_name, title=title)
+    return dict(title=title)
 def sms_inbox():
     " RESTlike CRUD controller "
     return shn_rest_controller(module, 'sms_inbox', listadd=False)
@@ -76,7 +77,7 @@ def sms_sent():
 def email():
     " Simple page for showing links "
     title = T('Email')
-    return dict(module_name=module_name, title=title)
+    return dict(title=title)
 
 def email_inbox():
     " RESTlike CRUD controller "
@@ -159,7 +160,7 @@ def group_user():
     group_type = msg_group_type_opts[_group_type]
     query = table.msg_group_id==group
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=group_description, group_type=group_type)
+    output = dict(title=title, description=group_description, group_type=group_type)
     # Audit
     shn_audit_read(operation='list', module="msg" ,resource='group_user', record=group, representation='html')
     item_list = []
@@ -213,7 +214,7 @@ def group_user():
 
         table_header = THEAD(TR(TH('ID'), TH(table.person_id.label), TH(T('Preferred Name'))))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
-        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
+        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _class="action-btn")
         response.view = '%s/group_user_list.html' % module
         output.update(dict(items=items, add_btn=add_btn))
     return output

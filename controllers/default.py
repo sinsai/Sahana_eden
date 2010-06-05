@@ -8,8 +8,6 @@
 
 module = 'default'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions)
 response.menu_options = [
     #[T('About Sahana'), False, URL(r=request, f='about')],
@@ -61,11 +59,16 @@ def user():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL, orderby=db.s3_module.priority)
-    admin_name = db().select(db.s3_setting.admin_name)[0].admin_name
-    admin_email = db().select(db.s3_setting.admin_email)[0].admin_email
-    admin_tel = db().select(db.s3_setting.admin_tel)[0].admin_tel
+    
+    module_name = db(db.s3_module.name == module).select().first().name_nice
+    
+    modules = db(db.s3_module.enabled == 'Yes').select(db.s3_module.ALL, orderby=db.s3_module.priority)
+    settings = db(db.s3_setting.id == 1).select().first()
+    admin_name = settings.admin_name
+    admin_email = settings.admin_email
+    admin_tel = settings.admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
+    
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def source():
@@ -106,7 +109,11 @@ def apath(path=''):
     return os.path.join(opath,path).replace('\\','/')
 
 def about():
-    "About Sahana page provides details on component versions."
+    """
+    The About page provides details on the software
+    depedencies and versions available to this instance
+    of Sahana Eden.
+    """
     import sys
     import subprocess
     import string
@@ -116,32 +123,32 @@ def about():
     try:
         sqlite_version = (subprocess.Popen(["sqlite3", "-version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()
     except:
-        sqlite_version = "Not installed or available"
+        sqlite_version = T("Not installed or incorectly configured.")
     try:
         mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]    
     except:
-        mysql_version = "Not installed or available"
+        mysql_version = T("Not installed or incorrectly configured.")
     try:    
         pgsql_reply = (subprocess.Popen(["psql", "--version"], stdout=subprocess.PIPE).communicate()[0]) 
         pgsql_version = string.split(pgsql_reply)[2]
     except:
-        pgsql_version = "Not installed or available"
+        pgsql_version = T("Not installed or incorrectly configured.")
     try:
         import MySQLdb
         pymysql_version = MySQLdb.__revision__
     except:
-        pymysql_version = "Not installed or available"
+        pymysql_version = T("Not installed or incorrectly configured.")
     try:
         import reportlab
         reportlab_version = reportlab.Version
     except:
-        reportlab_version = "Not installed or available"
+        reportlab_version = T("Not installed or incorrectly configured.")
     try:
         import xlwt
         xlwt_version = xlwt.__VERSION__
     except:
-        xlwt_version = "Not installed or available"
-    return dict(module_name=module_name,
+        xlwt_version = T("Not installed or incorrectly configured.")
+    return dict(
                 python_version=python_version, 
                 sahana_version=sahana_version, 
                 web2py_version=web2py_version, 
@@ -150,7 +157,8 @@ def about():
                 pgsql_version=pgsql_version,
                 pymysql_version=pymysql_version,
                 reportlab_version=reportlab_version, 
-                xlwt_version=xlwt_version)
+                xlwt_version=xlwt_version
+                )
 
 def help():
     "Custom View"

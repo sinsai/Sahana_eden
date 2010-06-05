@@ -413,9 +413,11 @@ class GIS(object):
                   catalogue_toolbar = False,
                   toolbar = False,
                   search = False,
-                  mgrs = False,
+                  print_tool = False,
+                  mgrs = {},
                   window = False,
-                  S3_PUBLIC_URL = "http://127.0.0.1:8000"):
+                  S3_PUBLIC_URL = "http://127.0.0.1:8000"
+                ):
         """
             Returns the HTML to display a map
 
@@ -443,7 +445,12 @@ class GIS(object):
             @param catalogue_toolbar: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
             @param search: Show the Geonames search box
+            @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
             @param mgrs: Use the MGRS Control to select PDFs
+                {
+                name: string,           # Name for the Control
+                url: string             # URL of PDF server
+                }
             @param window: Have viewport pop out of page into a resizable window
             @param S3_PUBLIC_URL: pass from model (not yet defined when Module instantiated
 
@@ -575,10 +582,302 @@ class GIS(object):
         # Tools
         #######
 
+                # MGRS
+        if mgrs:
+            mgrs_html = """
+var selectPdfControl = new OpenLayers.Control();
+OpenLayers.Util.extend( selectPdfControl, {
+    draw: function () {
+        this.box = new OpenLayers.Handler.Box( this, {
+                'done': this.getPdf
+            });
+        this.box.activate();
+        },
+    response: function(req) {
+        this.w.destroy();
+        var gml = new OpenLayers.Format.GML();
+        var features = gml.read(req.responseText);
+        var html = features.length + ' pdfs. <br /><ul>';
+        if (features.length) {
+            for (var i = 0; i < features.length; i++) {
+                var f = features[i];
+                var text = f.attributes.utm_zone + f.attributes.grid_zone + f.attributes.grid_square + f.attributes.easting + f.attributes.northing;
+                html += "<li><a href='" + features[i].attributes.url + "'>" + text + '</a></li>';
+            }
+        }
+        html += '</ul>';
+        //console.log(html);
+        this.w = new Ext.Window({
+            'html': html,
+            width: 300,
+            'title': 'Results',
+            height: 200
+        });
+        this.w.show();
+    },
+    getPdf: function (bounds) {
+        var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
+        //console.log(ll);
+        var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
+        var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
+        bbox = boundsgeog.toBBOX();
+        //console.log(bbox);
+        OpenLayers.Request.GET({
+            url: '""" + str(XML(mgrs["url"])) + """&bbox=' + bbox,
+            callback: OpenLayers.Function.bind(this.response, this)
+        });
+        this.w = new Ext.Window({
+            'html':'Searching """ + mgrs["name"] + """, please wait.',
+            width: 200,
+            'title': "Please Wait."
+            });
+        this.w.show();
+    }
+});
+"""
+            mgrs2 = """
+    // MGRS Control
+    var mgrsButton = new GeoExt.Action({
+        text: 'Select """ + mgrs["name"] + """',
+        control: selectPdfControl,
+        map: map,
+        toggleGroup: toggleGroup,
+        allowDepress: false,
+        tooltip: 'Select """ + mgrs["name"] + """',
+        // check item options group: 'draw'
+    });
+    """
+            mgrs3 = """
+    toolbar.add(mgrsButton);
+    toolbar.addSeparator();
+    """
+        else:
+            mgrs_html = ""
+            mgrs2 = ""
+            mgrs3 = ""
+
         # Toolbar
         if toolbar:
             toolbar = """
     toolbar = mapPanel.getTopToolbar();
+    var toggleGroup = "controls";
+
+    // OpenLayers controls
+    var length = new OpenLayers.Control.Measure(OpenLayers.Handler.Path, {
+        eventListeners: {
+            measure: function(evt) {
+                alert('""" + str(T("The length was ")) + """' + evt.measure + evt.units);
+            }
+        }
+    });
+
+    var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
+        eventListeners: {
+            measure: function(evt) {
+                alert('""" + str(T("The area was ")) + """' + evt.measure + evt.units);
+            }
+        }
+    });
+
+    // Controls for Draft Features
+    // - interferes with Feature Layers!
+    //var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
+    //    onSelect: onFeatureSelect,
+    //    onUnselect: onFeatureUnselect,
+    //    multiple: false,
+    //    clickout: true,
+    //    isDefault: true
+    //});
+
+    //var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer, 
+    //    {onDone: function(feature) {console.log(feature)}
+    //});
+
+    var nav = new OpenLayers.Control.NavigationHistory();
+
+    // GeoExt Buttons
+    var zoomfull = new GeoExt.Action({
+        control: new OpenLayers.Control.ZoomToMaxExtent(),
+        map: map,
+        iconCls: 'zoomfull',
+        tooltip: '""" + str(T("Zoom to maximum map extent")) + """'
+    });
+        
+    var zoomout = new GeoExt.Action({
+        control: new OpenLayers.Control.ZoomBox({ out: true }),
+        map: map,
+        iconCls: 'zoomout',
+        tooltip: '""" + str(T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+        toggleGroup: toggleGroup
+    });
+        
+    var zoomin = new GeoExt.Action({
+        control: new OpenLayers.Control.ZoomBox(),
+        map: map,
+        iconCls: 'zoomin',
+        tooltip: '""" + str(T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    var pan = new GeoExt.Action({
+        control: new OpenLayers.Control.Navigation(),
+        map: map,
+        iconCls: 'pan-off',
+        tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
+        toggleGroup: toggleGroup,
+        //allowDepress: false,
+        pressed: true
+    });
+
+    var lengthButton = new GeoExt.Action({
+        control: length,
+        map: map,
+        iconCls: 'measure-off',
+        tooltip: '""" + str(T("Measure Length: Click the points along the path & end with a double-click")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    var areaButton = new GeoExt.Action({
+        control: area,
+        map: map,
+        iconCls: 'measure-area',
+        tooltip: '""" + str(T("Measure Area: Click the points around the polygon & end with a double-click")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    """ + mgrs2 + """
+
+    var selectButton = new GeoExt.Action({
+        //control: selectControl,
+        map: map,
+        iconCls: 'searchclick',
+        tooltip: '""" + str(T("Query Feature")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    //var pointButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point),
+    //    map: map,
+    //    iconCls: 'drawpoint-off',
+    //    tooltip: '""" + str(T("Add Point")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var lineButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path),
+    //    map: map,
+    //    iconCls: 'drawline-off',
+    //    tooltip: '""" + str(T("Add Line")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var polygonButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon),
+    //    map: map,
+    //    iconCls: 'drawpolygon-off',
+    //    tooltip: '""" + str(T("Add Polygon")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var dragButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DragFeature(featuresLayer),
+    //    map: map,
+    //    iconCls: 'movefeature',
+    //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var resizeButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
+    //    map: map,
+    //    iconCls: 'resizefeature',
+    //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var rotateButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
+    //    map: map,
+    //    iconCls: 'rotatefeature',
+    //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var modifyButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer),
+    //    map: map,
+    //    iconCls: 'modifyfeature',
+    //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var removeButton = new GeoExt.Action({
+    //    control: removeControl,
+    //    map: map,
+    //    iconCls: 'removefeature',
+    //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    var navPreviousButton = new Ext.Toolbar.Button({
+        iconCls: 'back',
+        tooltip: '""" + str(T("Previous View")) + """', 
+        handler: nav.previous.trigger
+    });
+
+    var navNextButton = new Ext.Toolbar.Button({
+        iconCls: 'next',
+        tooltip: '""" + str(T("Next View")) + """', 
+        handler: nav.next.trigger
+    });
+
+    var saveButton = new Ext.Toolbar.Button({
+        // ToDo: Make work!
+        iconCls: 'save',
+        tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """', 
+        handler: function saveViewport(map) {
+            // Read current settings from map
+            var lonlat = map.getCenter();
+            var zoom_current = map.getZoom();
+            // Convert back to LonLat for saving
+            //var proj4326 = new OpenLayers.Projection('EPSG:4326');
+            lonlat.transform(map.getProjectionObject(), proj4326);
+            //alert('""" + str(T("Latitude")) + """': ' + lat);
+            // Use AJAX to send back
+            var url = '""" + URL(r=request, c="gis", f="config", args=["1.json", "update"]) + """';
+        }
+    });
+
+    // Add to Map & Toolbar
+    toolbar.add(zoomfull);
+    toolbar.add(zoomout);
+    toolbar.add(zoomin);
+    toolbar.add(pan);
+    toolbar.addSeparator();
+    // Measure Tools
+    toolbar.add(lengthButton);
+    toolbar.add(areaButton);
+    toolbar.addSeparator();
+    """ + mgrs3 + """
+    // Draw Controls
+    //toolbar.add(selectButton);
+    //toolbar.add(pointButton);
+    //toolbar.add(lineButton);
+    //toolbar.add(polygonButton);
+    //toolbar.add(dragButton);
+    //toolbar.add(resizeButton);
+    //toolbar.add(rotateButton);
+    //toolbar.add(modifyButton);
+    //toolbar.add(removeButton);
+    //toolbar.addSeparator();
+    // Navigation
+    map.addControl(nav);
+    nav.activate();
+    toolbar.addButton(navPreviousButton);
+    toolbar.addButton(navNextButton);
+    toolbar.addSeparator();
+    // Save Viewport
+toolbar.addButton(saveButton);
     """
             toolbar2 = "Ext.QuickTips.init();"
         else:
@@ -615,62 +914,6 @@ class GIS(object):
             search = ""
             search2 = ""
 
-        # MGRS
-        if mgrs:
-            mgrs = """
-var selectPdfControl = new OpenLayers.Control();
-OpenLayers.Util.extend( selectPdfControl, {
-    draw: function () {
-        this.box = new OpenLayers.Handler.Box( this, {
-                "done": this.getPdf
-            });
-        this.box.activate();
-        },
-    response: function(req) {
-        this.w.destroy();
-        var gml = new OpenLayers.Format.GML();
-        var features = gml.read(req.responseText);
-        var html = features.length + " pdfs. <br /><ul>";
-        if (features.length) {
-            for (var i = 0; i < features.length; i++) {
-                var f = features[i];
-                var text = f.attributes.utm_zone + f.attributes.grid_zone + f.attributes.grid_square + f.attributes.easting + f.attributes.northing;
-                html += "<li><a href='" + features[i].attributes.url + "'>" + text + "</a></li>";
-            }
-        }
-        html += "</ul>";
-        //console.log(html);
-        this.w = new Ext.Window({
-            'html': html,
-            width: 300,
-            'title': 'Results',
-            height: 200
-        });
-        this.w.show();
-    },
-    getPdf: function (bounds) {
-        var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
-        //console.log(ll);
-        var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
-        var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
-        bbox = boundsgeog.toBBOX();
-        //console.log(bbox);
-        OpenLayers.Request.GET({
-            url: '{{=XML(mgrs.url)}}&bbox=' + bbox,
-            callback: OpenLayers.Function.bind(this.response, this)
-        });
-        this.w = new Ext.Window({
-            'html':"Searching {{=mgrs.name}}, please wait.",
-            width: 200,
-            'title': "Please Wait."
-            });
-        this.w.show();
-    }
-});
-"""
-        else:
-            mgrs = ""
-
         # WMS Browser
         if wms_browser:
             name = wms_browser["name"]
@@ -681,7 +924,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             expanded: true,
             loader: new GeoExt.tree.WMSCapabilitiesLoader({
                 url: OpenLayers.ProxyHost + '""" + url + """',
-                layerOptions: {buffer: 0, singleTile: true, ratio: 1},
+                layerOptions: {buffer: 1, singleTile: false, ratio: 1, wrapDateLine: true},
                 layerParams: {'TRANSPARENT': 'TRUE'},
                 // customize the createNode method to add a checkbox to nodes
                 createNode: function(attr) {
@@ -720,6 +963,13 @@ OpenLayers.Util.extend( selectPdfControl, {
             layers_wms_browser = ""
             layers_wms_browser2 = ""
 
+        # Print
+        if print_tool:
+            # ToDo
+            print_tool = ""
+        else:
+            print_tool = ""
+        
         # Strategy
         # Need to be uniquely instantiated
         strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
@@ -892,11 +1142,122 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addLayer(bingterrain);
                     """
             
-        # ToDo
-        layers_tms = ""
+        # WMS
         layers_wms = ""
+        wms_enabled = db(db.gis_layer_wms.enabled == True).select()
+        for layer in wms_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            try:
+                wms_map = "map: '" + layer.map + "',"
+            except:
+                wms_map = ""
+            wms_layers = layer.layers
+            try:
+                format = "type: '" + layer.format + "'"
+            except:
+                format = ""
+            wms_projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
+            if wms_projection == 4326:
+                wms_projection = "projection: proj4326"
+            else:
+                wms_projection = "projection: new OpenLayers.Projection('EPSG:" + wms_projection + "')"
+            if layer.transparent:
+                transparent = "transparent: true,"
+            else:
+                transparent = ""
+            options = "wrapDateLine: 'true'"
+            if not layer.base:
+                options += """,
+                   isBaseLayer: false"""
+                if not layer.visible:
+                   options += """,
+                   visibility: false"""
+                
+            layers_wms  += """
+        var wmsLayer""" + name_safe + """ = new OpenLayers.Layer.WMS(
+            '""" + name + """', '""" + url + """', {
+               """ + wms_map + """
+               layers: '""" + wms_layers + """',
+               """ + format + """
+               """ + transparent + """
+               """ + wms_projection + """
+               },
+               {
+               """ + options + """
+               }
+            );
+        map.addLayer(wmsLayer""" + name_safe + """);
+        """
+
+        # TMS
+        layers_tms = ""
+        tms_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in tms_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            tms_layers = layer.layers
+            try:
+                format = "type: '" + layer.format + "'"
+            except:
+                format = ""
+                
+            layers_tms  += """
+        var tmsLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', '""" + url + """', {
+                layername: '""" + tms_layers + """',
+                """ + format + """
+            });
+        map.addLayer(tmsLayer""" + name_safe + """);
+        """
+                   
+        # XYZ
         layers_xyz = ""
+        xyz_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in xyz_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            if layer.sphericalMercator:
+                sphericalMercator = "sphericalMercator: 'true',"
+            else:
+                sphericalMercator = ""
+            if layer.transitionEffect:
+                transitionEffect = "transitionEffect: '{{=xyz_layers[layer].transitionEffect}}',"
+            else:
+                transitionEffect = ""
+            if layer.numZoomLevels:
+                xyz_numZoomLevels = "numZoomLevels: '" + layer.numZoomLevels + "'"
+            else:
+                xyz_numZoomLevels = ""
+            if layer.base:
+                base = "isBaseLayer: 'true'"
+            else:
+                base = ""
+                if layer.transparent:
+                    base += "transparent: 'true',"
+                if layer.visible:
+                    base += "visibility: 'true',"
+                if layer.opacity:
+                    base += "opacity: '" + layer.opacity + "',"
+                base += "isBaseLayer: 'false'"
+
+            layers_xyz  += """
+        var xyzLayer""" + name_safe + """ = new OpenLayers.Layer.XYZ( '""" + name + """', '""" + url + """', {
+                """ + sphericalMercator + """
+                """ + transitionEffect + """
+                """ + xyz_numZoomLevels + """
+                """ + base + """
+            });
+        map.addLayer(xyzLayer""" + name_safe + """);
+        """
+
+        # JS
         layers_js = ""
+        js_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in js_enabled:
+            layers_js  += layer.code
 
         #
         # Overlays
@@ -1036,19 +1397,16 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // Create Empty Array to Contain Feature Names
                 var clusterFeaturesArray = [];
                 // Add Each Feature To Array
-                for (var i = 0; i < feat.cluster.length; i++) 
+                for (var i = 0; i < feature.cluster.length; i++) 
                 {
-                    var clusterFeaturesArrayName = feat.cluster[i].attributes.NAME;
-                    var clusterFeaturesArrayType = feat.cluster[i].attributes.FEATURE_CLASS
-                    var clusterFeaturesArrayX = feat.cluster[i].geometry.x;
-                    var clusterFeaturesArrayY = feat.cluster[i].geometry.y;
-                    var clusterFeaturesArrayID = feat.cluster[i].fid;
+                    var clusterFeaturesArrayName = feature.cluster[i].attributes.name;
+                    var clusterFeaturesArrayType = feature.cluster[i].attributes.feature_class;
+                    var clusterFeaturesArrayX = feature.cluster[i].geometry.x;
+                    var clusterFeaturesArrayY = feature.cluster[i].geometry.y;
+                    var clusterFeaturesArrayID = feature.cluster[i].fid;
                     
-                    var clusterFeaturesArrayEntry = 
-                    "<li>" 
-                    + "<a href=\"#\" onclick=\"zoomToClusterFeatureEntry(" + clusterFeaturesArrayX + "," + clusterFeaturesArrayY + "," + clusterFeaturesArrayID + ");\">" + clusterFeaturesArrayName + "</a>"
-                    + "<br /> Type: " + clusterFeaturesArrayType
-                    + "</li>";
+                    // ToDo: Refine
+                    var clusterFeaturesArrayEntry = "<li>" + clusterFeaturesArrayName + "</li>";
                                                      
                     clusterFeaturesArray.push(clusterFeaturesArrayEntry);
                 };
@@ -1085,7 +1443,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_features += """
         geom = parser.read('""" + feature.gis_location.wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', '""" + feature.gis_location.feature_class_id + """', geom, iconURL)
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', '""" + str(feature.gis_location.feature_class_id) + """', geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -1106,8 +1464,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            georss = Storage()
-            georss_enabled = db(db.gis_layer_georss.enabled==True).select()
+            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -1146,7 +1503,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker =db(db.gis_marker.id == marker_id).select().first().image
+                        marker = db(db.gis_marker.id == marker_id).select().first().image
                     else:
                         marker = db(db.gis_marker.id == marker_default).select().first().image
                     marker_url = URL(r=request, c='default', f='download', args=marker)
@@ -1238,11 +1595,82 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_georss += """
         allLayers = allLayers.concat(georssLayers);
         """
-            # GPX (ToDo)
-            layers_gpx += ""
+
+            # GPX
+            gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
+            if gpx_enabled:
+                layers_gpx += """
+        var georssLayers = new Array();
+        var format_gpx = new OpenLayers.Format.GPX();
+        function onGpxFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            // Anything we want to do here?
+        }
+        """
+                for layer in gpx_enabled:
+                    name = layer["name"]
+                    track = db(db.gis_track.id == layer.track_id).select().first()
+                    url = track.track
+                    visible = layer["visible"]
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker = db(db.gis_marker.id == marker_id).select().first().image
+                    else:
+                        marker = db(db.gis_marker.id == marker_default).select().first().image
+                    marker_url = URL(r=request, c='default', f='download', args=marker)
+                
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if visible:
+                        visibility = "gpxLayer" + name_safe + ".setVisibility(true);"
+                    else:
+                        visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
+                    layers_gpx += """
+            iconURL = '""" + marker_url + """';
+            icon_img.src = iconURL;
+            width = icon_img.width;
+            height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            // Needs to be uniquely instantiated
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name_safe + """',
+                {
+                    projection: proj4326,
+                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: '""" + url + """',
+                        format: format_gpx
+                    })
+                }
+            );
+            """ + visibility + """
+            map.addLayer(gpxLayer""" + name_safe + """);
+            gpxLayers.push(gpxLayer""" + name_safe + """);
+            gpxLayer""" + name_safe + """.events.on({ "featureselected": onGpxFeatureSelect, "featureunselected": onFeatureUnselect });
+            """
+                layers_gpx += """
+        allLayers = allLayers.concat(gpxLayers);
+        """
+
             # KML
-            kml = Storage()
-            kml_enabled = db(db.gis_layer_kml.enabled==True).select()
+            kml_enabled = db(db.gis_layer_kml.enabled == True).select()
             if kml_enabled:
                 layers_kml += """
         var kmlLayers = new Array();
@@ -1573,7 +2001,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         highlightControl.activate();
         popupControl.activate();
 
-        """ + mgrs + """
+        """ + mgrs_html + """
 
         var mapPanel = new GeoExt.MapPanel({
             region: 'center',

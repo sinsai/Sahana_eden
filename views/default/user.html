@@ -1,32 +1,32 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 <div id="home">
 <h2>
-{{if request.args[0]=='login':}}
- {{=T('Login')}}
-{{elif request.args[0]=='register':}}
- {{=T('Register')}}
-{{elif request.args[0]=='profile':}}
- {{=T('Profile')}}
-{{elif request.args[0]=='change_password':}}
- {{=T('Change Password')}}
-{{elif request.args[0]=='retrieve_password':}}
- {{=T('Retrieve Password')}}
+{{if request.args[0] == "login":}}
+ {{=T("Login")}}
+{{elif request.args[0] == "register":}}
+ {{=T("Register")}}
+{{elif request.args[0] == "profile":}}
+ {{=T("Profile")}}
+{{elif request.args[0] == "change_password":}}
+ {{=T("Change Password")}}
+{{elif request.args[0] == "retrieve_password":}}
+ {{=T("Retrieve Password")}}
 {{pass}}
 </h2>
 {{=form}}
-{{if request.args[0]=='login':}}
- {{self_registration = db().select(db.s3_setting.self_registration)[0].self_registration}}
+{{if request.args[0] == "login":}}
+ {{self_registration = db().select(db.s3_setting.self_registration).first().self_registration}}
  {{if self_registration:}}
     <p>
-    <a id="register-btn" href="{{=URL(r=request, args='register')}}">{{=T('Register')}}</a>
+    <a class="action-btn" href="{{=URL(r=request, args="register")}}">{{=T("Register")}}</a>
     </p>
  {{pass}}
  <p>
- <a id="retrieve-btn" href="{{=URL(r=request, args='retrieve_password')}}">{{=T('Lost Password')}}</a>
+ <a class="action-btn" href="{{=URL(r=request, args="retrieve_password")}}">{{=T("Lost Password")}}</a>
  </p>
 {{pass}}
 </div>
-{{if request.args[0]=='register':}}
+{{if request.args[0] == "register":}}
 <script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
 <script type="text/javascript">
 $(function() {

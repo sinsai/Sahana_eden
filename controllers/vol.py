@@ -6,9 +6,6 @@
 
 module = 'vol'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
-
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
@@ -58,6 +55,8 @@ shn_menu()
 def index():
 
     """ Module's Home Page """
+
+    module_name = db(db.s3_module.name == module).select().first().name_nice
 
     return dict(module_name=module_name)
 

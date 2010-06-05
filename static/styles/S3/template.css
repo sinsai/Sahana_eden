@@ -529,14 +529,7 @@ div#pheader td { text-align: left;
 .delphi_post_text {	display: none; }
 .delphi_post_dbtitle { font-weight: bold;}
 
-.action-btn,
-#add-btn,
-#contents-btn,
-#list-btn,
-#edit-btn,
-#delete-btn,
-#register-btn,
-#retrieve-btn { text-decoration: none;
+.action-btn { text-decoration: none;
                 color: #col_txt;
                 background-color: #col_txt_background;
                 border-right: 1px solid #col_border_btn_out;
@@ -545,14 +538,7 @@ div#pheader td { text-align: left;
                 border-top: 1px solid #col_txt_border;
                 padding: 2px 4px 2px 4px; }
 
-.action-btn:hover,
-#add-btn:hover,
-#contents-btn:hover,
-#list-btn:hover,
-#edit-btn:hover,
-#delete-btn:hover,
-#register-btn:hover,
-#retrieve-btn:hover { text-decoration: none;
+.action-btn:hover { text-decoration: none;
                       color: #fff;
                       background-color: #col_btn_hover;
                       border-right: 1px solid #col_border_btn_in;

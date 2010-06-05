@@ -9,13 +9,6 @@
 module = "pr"
 
 # -----------------------------------------------------------------------------
-# Current Module (for sidebar title)
-try:
-    module_name = db(db.s3_module.name==module).select().first().name_nice
-except:
-    module_name = T("Person Registry")
-
-# -----------------------------------------------------------------------------
 # Options Menu (available in all Functions" Views)
 def shn_menu():
     response.menu_options = [
@@ -55,6 +48,11 @@ def index():
 
     """ Module"s Home Page """
 
+    try:
+        module_name = db(db.s3_module.name == module).select().first().name_nice
+    except:
+        module_name = T("Person Registry")
+
     gender = []
     for g_opt in pr_person_gender_opts:
         count = db((db.pr_person.deleted==False) & (db.pr_person.opt_pr_gender==g_opt)).count()
@@ -90,7 +88,7 @@ def person():
 
 # -----------------------------------------------------------------------------
 def group():
-    response.s3.filter = (db.pr_group.system==False) # do not show system groups
+    response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
     "RESTlike CRUD controller"
     return shn_rest_controller(module, "group",
@@ -142,7 +140,7 @@ def download():
 def tooltip():
     if "formfield" in request.vars:
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
-    return dict(module_name=module_name)
+    return dict()
 
 #
 # -----------------------------------------------------------------------------

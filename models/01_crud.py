@@ -1119,7 +1119,7 @@ def shn_read(jr, **attr):
                 title = s3.crud_strings[jr.tablename].title_display
             except:
                 title = s3.crud_strings.title_display
-            output = dict(module_name=module_name, title=title)
+            output = dict(title=title)
             if jr.component:
                 try:
                     subtitle = s3.crud_strings[tablename].title_display
@@ -1141,18 +1141,18 @@ def shn_read(jr, **attr):
                 output.update(form=item)
 
             if href_edit and editable:
-                edit = A(T("Edit"), _href=href_edit, _id="edit-btn")
+                edit = A(T("Edit"), _href=href_edit, _class="action-btn")
             else:
                 edit = ""
             if href_delete and deletable:
-                delete = A(T("Delete"), _href=href_delete, _id="delete-btn")
+                delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
             else:
                 delete = ""
             try:
                 label_list_button = s3.crud_strings[tablename].label_list_button
             except:
                 label_list_button = s3.crud_strings.label_list_button
-            list_btn = A(label_list_button, _href=jr.there(), _id="list-btn")
+            list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
             output.update(edit=edit,
                           delete=delete,
@@ -1362,7 +1362,7 @@ def shn_list(jr, **attr):
         return json(r)
 
     if jr.representation=="html":
-        output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
+        output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
             try:
@@ -1497,7 +1497,7 @@ def shn_list(jr, **attr):
                     label_create_button = s3.crud_strings[tablename].label_create_button
                 except:
                     label_create_button = s3.crud_strings.label_create_button
-                add_btn = A(label_create_button, _href=href_add, _id="add-btn")
+                add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
 
@@ -1510,7 +1510,7 @@ def shn_list(jr, **attr):
         return output
 
     elif jr.representation=="ext":
-        output = dict(module_name=module_name, main=main, extra=extra, sortby=sortby)
+        output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
             try:
@@ -1577,7 +1577,7 @@ def shn_list(jr, **attr):
                     label_create_button = s3.crud_strings[tablename].label_create_button
                 except:
                     label_create_button = s3.crud_strings.label_create_button
-                add_btn = A(label_create_button, _href=href_add, _id="add-btn")
+                add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
 
@@ -1640,7 +1640,7 @@ def shn_create(jr, **attr):
         # Check for presence of Custom View
         shn_custom_view(jr, "create.html")
 
-        output = dict(module_name=module_name, module=module, resource=resource, main=main)
+        output = dict(module=module, resource=resource, main=main)
 
         if jr.component:
             try:
@@ -1672,7 +1672,7 @@ def shn_create(jr, **attr):
             label_list_button = s3.crud_strings[tablename].label_list_button
         except:
             label_list_button = s3.crud_strings.label_list_button
-        list_btn = A(label_list_button, _href=jr.there(), _id="list-btn")
+        list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
         output.update(title=title, list_btn=list_btn)
 
@@ -1769,7 +1769,7 @@ def shn_create(jr, **attr):
         form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         # Check for presence of Custom View
         shn_custom_view(jr, "popup.html")
-        return dict(module_name=module_name, form=form, module=module,
+        return dict(form=form, module=module,
                     resource=resource, main=main, caller=request.vars.caller)
 
     elif jr.representation == "url":
@@ -1857,7 +1857,7 @@ def shn_update(jr, **attr):
             elif jr.representation == "popup":
                 shn_custom_view(jr, "popup.html")
 
-            output = dict(module_name=module_name)
+            output = dict()
 
             if jr.component:
                 try:
@@ -1889,7 +1889,7 @@ def shn_update(jr, **attr):
                 label_list_button = s3.crud_strings[tablename].label_list_button
             except:
                 label_list_button = s3.crud_strings.label_list_button
-            list_btn = A(label_list_button, _href=jr.there(), _id="list-btn")
+            list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
             if deletable:
                 del_href = jr.other(method="delete", representation=jr.representation)
@@ -1899,7 +1899,7 @@ def shn_update(jr, **attr):
                     label_del_button = None
                 if label_del_button is None:
                     label_del_button = s3.crud_strings.label_delete_button
-                del_btn = A(label_del_button, _href=del_href, _id="delete-btn")
+                del_btn = A(label_del_button, _href=del_href, _id="delete-btn", _class="action-btn")
                 output.update(del_btn=del_btn)
 
             output.update(title=title, list_btn=list_btn)
@@ -2164,7 +2164,7 @@ def shn_search(jr, **attr):
         # CRUD Strings
         title = s3.crud_strings.title_search
 
-        output = dict(module_name=module_name, search=search, title=title)
+        output = dict(search=search, title=title)
 
     elif jr.representation == "json":
 

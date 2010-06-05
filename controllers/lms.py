@@ -8,8 +8,6 @@
 
 module = 'lms'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Procurements'), False, URL(r=request, f='#')],
@@ -96,6 +94,9 @@ response.menu_options = [
 
 def index():
     "Module's Home Page"
+    
+    module_name = db(db.s3_module.name == module).select().first().name_nice
+    
     return dict(module_name=module_name)
 
 # Administration Index Page

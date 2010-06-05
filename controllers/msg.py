@@ -11,23 +11,10 @@ module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Admin'), False, URL(r=request, f='admin')],
-    #[T('Email'), False, URL(r=request, f='email'), [
-        #[T('Send Email'), False, URL(r=request, f='email_outbox', args='create')],
-        #[T('View Email InBox'), False, URL(r=request, f='email_inbox')],
-        #[T('View Email OutBox'), False, URL(r=request, f='email_outbox')],
-        #[T('View Sent Email'), False, URL(r=request, f='email_sent')],
-    #]],
-    #[T('SMS'), False, URL(r=request, f='sms'), [
-        #[T('Send SMS'), False, URL(r=request, f='sms_outbox', args='create')],
-        #[T('View SMS InBox'), False, URL(r=request, f='sms_inbox')],
-        #[T('View SMS OutBox'), False, URL(r=request, f='sms_outbox')],
-        #[T('View Sent SMS'), False, URL(r=request, f='sms_sent')],
-    #]],
 	[T("Compose"), False, URL(r=request, f="outbox", args='create')],
 	[T("Outbox"), False, URL(r=request, f="outbox")],
 	[T('Distribution groups'), False, URL(r=request, f='group'), [
 		[T('List/Add'), False, URL(r=request, f='group')],
-		#[T("Add"), False, URL(r=request, f="group", args="create")],
 		[T('Group Memberships'), False, URL(r=request, f='group_membership')], 
 	]],
     #[T('CAP'), False, URL(r=request, f='tbc')]

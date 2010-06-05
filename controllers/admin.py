@@ -11,8 +11,6 @@ from gluon.fileutils import listdir
 
 module = 'admin'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 # - can Insert/Delete items from default menus within a function, if required.
 response.menu_options = admin_menu_options
@@ -20,6 +18,9 @@ response.menu_options = admin_menu_options
 # S3 framework functions
 def index():
     "Module's Home Page"
+    
+    module_name = db(db.s3_module.name == module).select().first().name_nice
+    
     return dict(module_name=module_name)
 
 @auth.requires_membership('Administrator')
@@ -431,7 +432,7 @@ def users():
     title = str(T('Role')) + ': ' + db.auth_group[group].role
     description = db.auth_group[group].description
     # Start building the Return
-    output = dict(module_name=module_name, title=title, description=description, group=group)
+    output = dict(title=title, description=description, group=group)
 
     if auth.settings.username:
         username = 'username'
@@ -507,7 +508,7 @@ def groups():
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name
     description = db.auth_user[user].email
     # Start building the Return
-    output = dict(module_name=module_name, title=title, description=description, user=user)
+    output = dict(title=title, description=description, user=user)
 
     # Audit
     crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, 'membership', 'html')
@@ -570,7 +571,7 @@ def import_data():
     import_job_form.custom.begin.text = str(import_job_form.custom.begin).replace(
             'action=""',
             'action="%s"' % URL(r=request, f='import_job', args=['create']))
-    return dict(module_name=module_name, title=title,
+    return dict(title=title,
                 import_job_form=import_job_form)
 
 @auth.requires_membership('Administrator')
@@ -590,7 +591,7 @@ def import_csv():
 def export_data():
     "Export data via CRUD controller."
     title = T('Export Data')
-    return dict(module_name=module_name, title=title)
+    return dict(title=title)
 
 @auth.requires_login()
 def export_csv():
@@ -700,7 +701,7 @@ def _import_job_update(jr):
         raise HTTP(400, body=INVALIDREQUEST)
 
     title = '%s - %s' % (T('Input Job'), job.description)
-    output.update(dict(module_name=module_name, title=title, job=job))
+    output.update(dict(title=title, job=job))
     response.view = 'admin/import_job_update.html'
     return output
 
@@ -873,7 +874,7 @@ def handleResults():
 
     response.view = 'display.html'
     title = T('Test Results')
-    return dict(module_name=module_name, title=title, item=message)
+    return dict(title=title, item=message)
 
 #Ticket Viewer functions Borrowed from admin application of web2py
 @auth.requires_membership('Administrator')

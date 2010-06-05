@@ -522,10 +522,10 @@ if shn_module_enable.get(module, False):
                         href = next.replace('%5bid%5d', '%s' % row.id)
                         records.append(TR(
                             A(row.pr_pe_label or '[no label]', _href=href),
-                            row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or 'unknown',
-                            row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or 'unknown',
+                            row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or "unknown",
+                            row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or "unknown",
                             row.date_of_recovery,
-                            (row.location_id and [db.gis_location[row.location_id].name] or [''])[0],
+                            (row.location_id and [db.gis_location[row.location_id].name] or [""])[0],
     #                        location_id.location_id.represent(row.location_id)
                             ))
                     items=DIV(TABLE(THEAD(TR(
@@ -534,16 +534,16 @@ if shn_module_enable.get(module, False):
                         TH("Age Group"),
                         TH("Recovery Date"),
                         TH("Recovery Site"))),
-                        TBODY(records), _id='list', _class="display"))
+                        TBODY(records), _id="list", _class="display"))
                 else:
-                    items = T('None')
+                    items = T("None")
 
             try:
-                label_create_button = s3.crud_strings['dvi_body'].label_create_button
+                label_create_button = s3.crud_strings["dvi_body"].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, f='body', args='create'), _id='add-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, f="body", args="create"), _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
             return output
@@ -553,6 +553,6 @@ if shn_module_enable.get(module, False):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, 'body', method='search_simple', action=shn_dvi_body_search_simple )
+    s3xrc.model.set_method(module, "body", method="search_simple", action=shn_dvi_body_search_simple )
 
     # -----------------------------------------------------------------------------

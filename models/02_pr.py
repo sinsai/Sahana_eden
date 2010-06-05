@@ -499,7 +499,7 @@ group_id = SQLTable(None, "group_id",
                 ))
 
 s3xrc.model.configure(table,
-    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=2),
+    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_group, entity_type=2),
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
 # *****************************************************************************

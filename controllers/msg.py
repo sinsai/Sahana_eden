@@ -11,23 +11,25 @@ module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Admin'), False, URL(r=request, f='admin')],
-    [T('Email'), False, URL(r=request, f='email'), [
-        [T('Send Email'), False, URL(r=request, f='email_outbox', args='create')],
-        [T('View Email InBox'), False, URL(r=request, f='email_inbox')],
-        [T('View Email OutBox'), False, URL(r=request, f='email_outbox')],
-        [T('View Sent Email'), False, URL(r=request, f='email_sent')],
-    ]],
-    [T('SMS'), False, URL(r=request, f='sms'), [
-        [T('Send SMS'), False, URL(r=request, f='sms_outbox', args='create')],
-        [T('View SMS InBox'), False, URL(r=request, f='sms_inbox')],
-        [T('View SMS OutBox'), False, URL(r=request, f='sms_outbox')],
-        [T('View Sent SMS'), False, URL(r=request, f='sms_sent')],
-    ]],
-	[T("Distribution groups"), False, URL(r=request, f="group"), [
-		[T("List/Add"), False, URL(r=request, f="group")],
+    #[T('Email'), False, URL(r=request, f='email'), [
+        #[T('Send Email'), False, URL(r=request, f='email_outbox', args='create')],
+        #[T('View Email InBox'), False, URL(r=request, f='email_inbox')],
+        #[T('View Email OutBox'), False, URL(r=request, f='email_outbox')],
+        #[T('View Sent Email'), False, URL(r=request, f='email_sent')],
+    #]],
+    #[T('SMS'), False, URL(r=request, f='sms'), [
+        #[T('Send SMS'), False, URL(r=request, f='sms_outbox', args='create')],
+        #[T('View SMS InBox'), False, URL(r=request, f='sms_inbox')],
+        #[T('View SMS OutBox'), False, URL(r=request, f='sms_outbox')],
+        #[T('View Sent SMS'), False, URL(r=request, f='sms_sent')],
+    #]],
+	[T("Compose"), False, URL(r=request, f="outbox", args='create')],
+	[T("Outbox"), False, URL(r=request, f="outbox")],
+	[T('Distribution groups'), False, URL(r=request, f='group'), [
+		[T('List/Add'), False, URL(r=request, f='group')],
 		#[T("Add"), False, URL(r=request, f="group", args="create")],
-		[T("Group Memberships"), False, URL(r=request, f="group_membership")], 
-	]]
+		[T('Group Memberships'), False, URL(r=request, f='group_membership')], 
+	]],
     #[T('CAP'), False, URL(r=request, f='tbc')]
 ]
 
@@ -372,3 +374,21 @@ def pe_contact():
     response.s3.prep = msg_pe_contact_restrict_access
     response.menu_options = []
     return shn_rest_controller('pr', 'pe_contact', listadd=True)
+
+#-------------------------------------------------------------------------------
+
+def outbox():
+    "RESTlike CRUD controller"
+    def restrict_methods(jr):
+		if jr.method == 'create' or jr.method == 'update':
+			#session.error = T('Restricted method')
+			return True # remove me later on
+			#return dict(bypass = True, output = redirect(URL(r=request)))
+		else:
+			return True
+    db.msg_outbox.status.writable = False
+    db.msg_outbox.status.readable = True
+    response.s3.prep = restrict_methods
+    return shn_rest_controller('msg', "outbox", listadd=False)
+
+#-------------------------------------------------------------------------------

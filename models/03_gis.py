@@ -140,8 +140,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", length=128, notnull=True, unique=True),
                 Field("description"),
                 marker_id,
-                #Field("module"),    # Used to build Edit URL
-                #Field("resource"),  # Used to build Edit URL & to provide Attributes to Display
+                Field("module"),    # Used to build Edit URL
+                Field("resource"),  # Used to build Edit URL & to provide Attributes to Display
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]

@@ -23,8 +23,8 @@ migrate = deployment_settings.base.get("migrate", True)
     # from google.appengine.api.memcache import Client
     # session.connect(request, response, db=MEMDB(Client())
 #else:                                         # else use a normal relational database
-#db = DAL("sqlite://storage.db")       # if not, use SQLite or other DB
-db = DAL("mysql://sahana:password@localhost/sahana", pool_size=30) # or other DB
+db = DAL("sqlite://storage.db")       # if not, use SQLite or other DB
+#db = DAL("mysql://sahana:password@localhost/sahana", pool_size=30) # or other DB
 #db = DAL("postgres://postgres:password@localhost/db", pool_size=10)
 #session.connect(request, response, db=db) # Store sessions and tickets in DB
 

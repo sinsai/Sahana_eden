@@ -1,23 +1,24 @@
-{{extend 'layout.html'}}
-<div id='home'>
+{{extend "layout.html"}}
+<div id="home">
 <h2>{{=T("Welcome to the Sahana Eden Disaster Management System")}}</h2>
 <p>
 {{=T("Sahana Eden is a collection of web based disaster management applications that provides solutions to large-scale humanitarian coordination and collaboration in disaster situation and its aftermath. Sahana Eden consists of several modules for following functionalities")}}:
 </p>
 <ul>
 {{for module in modules:}}
- {{if not module.access and not module.name=='default':}}
-  <li><strong>{{=A(T(module.name_nice), _href=URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id)))}}</strong> - {{=module.description}}.</li>
+ {{_module = modules[module]}}
+ {{if not _module.access and not module == 'default':}}
+  <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f='index'))}}</strong> - {{=_module.description}}.</li>
  {{else:}}
   {{authorised = False}}
-  {{groups = re.split('\|', module.access)[1:-1]}}
+  {{groups = re.split('\|', _module.access)[1:-1]}}
   {{for group in groups:}}
    {{if auth.has_membership(group):}}
     {{authorised = True}}
    {{pass}}
   {{pass}}
   {{if authorised == True:}}
-   <li><strong>{{=A(T(module.name_nice), _href=URL(r=request, c='default', f='open_module', vars=dict(id='%d' % module.id)))}}</strong> - {{=module.description}}.</li>
+   <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
   {{pass}}
  {{pass}}
 {{pass}}

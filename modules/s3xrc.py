@@ -3413,7 +3413,7 @@ class S3XML(object):
         try:
             root_dict = json.load(source)
         except ValueError, e:
-            raise HTTP(400, body=json_message(False, 400, e.message))
+            raise HTTP(400, body=self.json_message(False, 400, e.message))
 
         native=False
 

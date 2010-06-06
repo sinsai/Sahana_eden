@@ -10,12 +10,10 @@
         ('*/*', '/eden/errors/index'),
     ]
 
-    NOTE: if eden is installed elsewhere or exists under different name in applications folder,
+    NOTE: if Eden is installed elsewhere or exists under different name in applications folder,
           just rename it in above list. Comment the last route to disable error
           catching for other apps in the same web2py environment
 """
-
-module = 'errors'
 
 from gluon.http import defined_status
 response.extra_styles = ['S3/errorpages.css']

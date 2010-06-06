@@ -49,7 +49,7 @@ def index():
     """ Module"s Home Page """
 
     try:
-        module_name = db(db.s3_module.name == module).select().first().name_nice
+        module_name = s3.modules[module]["name_nice"]
     except:
         module_name = T("Person Registry")
 

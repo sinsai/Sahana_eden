@@ -33,26 +33,26 @@ __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 import urllib
 
 class Msg(object):
-	""" Toolkit for hooking into the Messaging framework"""
-	sms_api_post_config={}
+	""" Toolkit for hooking into the Messaging framework """
+	sms_api_post_config = {}
 	sms_api_enabled = False
 	def __init__(self, environment, db=None, T=None, mail=None, modem=None):
 		self.db = db
-		self.sms_api = db(db.mobile_settings.modem_port == '').select()[0]
-		tmp_parameters = self.sms_api.parameters.split('&')
+		self.sms_api = db(db.mobile_settings.modem_port == "").select().first()
+		tmp_parameters = self.sms_api.parameters.split("&")
 		self.sms_api_enabled = self.sms_api.enabled
 		for tmp_parameter in tmp_parameters:
-			self.sms_api_post_config[tmp_parameter.split('=')[0]] = tmp_parameter.split('=')[1]
+			self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
 		self.mail = mail
 		self.modem = modem
 		
-	def send_sms_via_modem(self,mobile,text = ''):
+	def send_sms_via_modem(self, mobile, text = ""):
 		"""
 		Function to send SMS via MODEM
 		"""
 		self.modem.send_sms(mobile, text)
 
-	def send_sms_via_api(self,mobile,text = ''):
+	def send_sms_via_api(self, mobile, text = ""):
 		"""
 		Function to send SMS via API
 		"""
@@ -63,15 +63,15 @@ class Msg(object):
 		output = request.read()
 		#print output
 	
-	def send_email_via_api(self,to,subject,message):
+	def send_email_via_api(self, to, subject, message):
 		"""
 		Wrapper over web2py's email setup
 		"""
 		self.mail.send(to, subject, message)
 
 	def process_outbox(self, contact_method = 1, option = 1):
-		"""Send Pending Messages from OutBox.
-		If succesful then move from OutBox to Sent. A modified copy of send_email"""
+		""" Send Pending Messages from OutBox.
+		If succesful then move from OutBox to Sent. A modified copy of send_email """
 		table = self.db.msg_outbox
 		query = ((table.status == 1) & (table.pr_message_method == contact_method))
 		rows = self.db(query).select()
@@ -97,12 +97,12 @@ class Msg(object):
 							self.send_sms_via_api(recipient.value, contents)
 							return True
 						if (contact_method == 1):
-							self.send_email_via_api(recipient.value,subject,contents)
+							self.send_email_via_api(recipient.value, subject, contents)
 							return True
 					except:
 						return False
 			if entity_type == 2:
-				# V R HAZ GROUP
+				# Group
 				table3 = self.db.pr_group
 				query = (table3.pr_pe_id == entity)
 				group_id = self.db(query).select().first().id
@@ -116,12 +116,12 @@ class Msg(object):
 					pr_pe_id = self.db(query).select().first().pr_pe_id
 					status = send_pr_pe_id(pr_pe_id)
 			if entity_type == 1:
-				# We have a person 
+				# Person 
 				status = send_pr_pe_id(entity)
 				# We only check status of last recipient
 			if status:
 				# Update status to sent in OutBox
-				self.db(table.id==row.id).update(status=2)
+				self.db(table.id == row.id).update(status=2)
 				# Explicitly commit DB operations when running from Cron
 				self.db.commit()
 		return

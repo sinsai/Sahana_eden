@@ -6,8 +6,6 @@
 
 module = 'msg'
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
 	[T("Compose"), False, URL(r=request, f="outbox", args='create')],
@@ -23,14 +21,15 @@ if auth.has_membership(auth.id_group('Administrator')):
 # S3 framework functions
 def index():
     "Module's Home Page"
+    module_name = db(db.s3_module.name == module).select().first().name_nice
     return dict(module_name=module_name)
 
 def tbc():
     "Coming soon..."
-    return dict(module_name=module_name)
+    return dict()
 
 def admin():
-	redirect(URL(r=request, f='setting', args=['update', 1]))
+	redirect(URL(r=request, f='setting', args=[1, 'update']))
 
 def setting():
     " RESTlike CRUD controller "
@@ -44,7 +43,7 @@ def setting():
 # The following 2 functions hook into the pr functions
 # -----------------------------------------------------------------------------
 def group():
-    response.s3.filter = (db.pr_group.system==False) # do not show system groups
+    response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
     "RESTlike CRUD controller"
     return shn_rest_controller('pr', "group",
@@ -62,7 +61,7 @@ def group_membership():
 def pe_contact():
     """ Allows the user to add,update and delete his contacts"""
     if auth.is_logged_in() or auth.basic():
-        person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.pr_pe_id))[0].pr_pe_id
+        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id)).first().pr_pe_id
         response.s3.filter = (db.pr_pe_contact.pr_pe_id == person)
     else:
         redirect(URL(r=request, c='default', f='user', args='login',
@@ -78,14 +77,14 @@ def pe_contact():
     db.pr_pe_contact.person_name.readable = False
     def msg_pe_contact_onvalidation(form):
         """This onvalidation method adds the person id to the record"""
-        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id))[0].pr_pe_id
+        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id)).first().pr_pe_id
         form.vars.pr_pe_id = person
     def msg_pe_contact_restrict_access(jr):
         """The following restricts update and delete access to contacts not
         owned by the user"""
         if jr.id :
-            person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id))[0].pr_pe_id
-            if person == (db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pr_pe_id))[0].pr_pe_id :
+            person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id)).first().pr_pe_id
+            if person == (db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pr_pe_id)).first().pr_pe_id :
                 return True
             else:
                 session.error = T("Access denied")
@@ -138,7 +137,7 @@ def outbox():
         if auth.has_membership(1):
             pass
         else:
-            person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id))[0].id
+            person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)).first().id
             db.msg_outbox.id.readable = False
             response.s3.filter = (db.msg_outbox.person_id == person)
     else:
@@ -159,7 +158,7 @@ def outbox():
 			return True
     def msg_outbox_onvalidation(form):
         """This onvalidation method adds the person id to the record"""
-        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id))[0].id
+        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)).first().id
         form.vars.person_id = person
         if not form.vars.pr_pe_id:
 			session.error = T('Empty Recipients')

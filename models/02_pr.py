@@ -33,7 +33,7 @@ opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
 
 # -----------------------------------------------------------------------------
 #
-def shn_pentity_represent(id,default_label="[no label]"):
+def shn_pentity_represent(id, default_label="[no label]"):
 
     """
         Represent a Person Entity in option fields or list views

@@ -363,67 +363,67 @@ class AuthS3(Auth):
             if self.settings.username_field:
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
-                    Field('first_name', length=128, default='',
+                    Field("first_name", length=128, default="",
                             label=self.messages.label_first_name),
-                    Field('last_name', length=128, default='',
+                    Field("last_name", length=128, default="",
                             label=self.messages.label_last_name),
-                    Field('person_uuid', length=64, default='',
+                    Field("person_uuid", length=64, default='',
                              readable=False, writable=False),
                     # TODO:
                     #   - Needs Validation if possible
-                    #Field('mobile_phone', length=32,default=''),
+                    #Field("mobile_phone", length=32, default=""),
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
-                    Field('username', length=128, default=''),
-                    Field('language', length=16),
-                    Field('email', length=512, default='',
+                    Field("utc_offset", length=16, default="UTC +0000", readable=False, writable=False),
+                    Field("username", length=128, default=""),
+                    Field("language", length=16),
+                    Field("email", length=512, default="",
                             label=self.messages.label_email),
-                    Field(passfield, 'password', length=512,
+                    Field(passfield, "password", length=512,
                              readable=False, label=self.messages.label_password),
-                    Field('registration_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("registration_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field('reset_password_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("reset_password_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field('timestamp', 'datetime', writable=False,
-                            readable=False,default=''),
+                    Field("timestamp", "datetime", writable=False,
+                            readable=False, default=""),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
             else:
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
-                    Field('first_name', length=128, default='',
+                    Field("first_name", length=128, default="",
                             label=self.messages.label_first_name),
-                    Field('last_name', length=128, default='',
+                    Field("last_name", length=128, default="",
                             label=self.messages.label_last_name),
-                    Field('person_uuid', length=64, default='',
+                    Field("person_uuid", length=64, default="",
                              readable=False, writable=False),
-                    #Field('mobile_phone', length=32,default=''),
+                    #Field("mobile_phone", length=32, default=""),
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
-                    #Field('username', length=128, default=''),
-                    Field('language', length=16),
-                    Field('email', length=512, default='',
+                    Field("utc_offset", length=16, default="UTC +0000", readable=False, writable=False),
+                    #Field("username", length=128, default=""),
+                    Field("language", length=16),
+                    Field("email", length=512, default="",
                             label=self.messages.label_email),
-                    Field(passfield, 'password', length=512,
+                    Field(passfield, "password", length=512,
                              readable=False, label=self.messages.label_password),
-                    Field('registration_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("registration_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field('reset_password_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("reset_password_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field('timestamp', 'datetime', writable=False,
-                            readable=False,default=''),
+                    Field("timestamp", "datetime", writable=False,
+                            readable=False, default=""),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
             table = self.settings.table_user

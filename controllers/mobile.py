@@ -30,30 +30,31 @@ def settings():
     "Modem and Mobile related settings"
     module = 'mobile'
     resource = 'settings'
-    table = module + '_' + resource
+    tablename = module + '_' + resource
+    table = db[tablename]
 
     # Model options
-    db[table].modem_port.comment = A(SPAN("[Help]"), _class="tooltip",
+    table.modem_port.comment = A(SPAN("[Help]"), _class="tooltip",
         _title=T('Port|The serial port where your modem is connected.'))
-    db[table].modem_baud.comment = A(SPAN("[Help]"), _class="tooltip",
+    table.modem_baud.comment = A(SPAN("[Help]"), _class="tooltip",
         _title=T('Baud|The Baud rate of your modem - Usually listed in your modem manual.'))
-    db[table].account_name.comment = A(SPAN("[Help]"), _class="tooltip",
+    table.account_name.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('Account Name|Convenient name to identify the account.'))
-    db[table].url.comment = A(SPAN("[Help]"), _class="tooltip",
+    table.url.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('URL|The url for your gateway'))
-    db[table].parameters.comment = A(SPAN("[Help]"), _class="tooltip",
+    table.parameters.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('Parameters|The parameters for gateway'))
-    db[table].message_variable.comment = A(SPAN("[Help]"), _class="tooltip",
+    table.message_variable.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('Message variable|The message variable used for the gateway'))
-    db[table].to_variable.comment = A(SPAN("[Help]"), _class="tooltip",
+    table.to_variable.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('To variable|The variable containing the phone number '))
-#    db[table].preference.comment = A(SPAN("[Help]"), _class="tooltip",
+#    table.preference.comment = A(SPAN("[Help]"), _class="tooltip",
 #            _title=T('Preference|Prefered weight assigned to this gatway '))
 
     # CRUD Strings
     ADD_SETTING = T('Add Setting')
     VIEW_SETTINGS = T('View Settings')
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_SETTING,
         title_display = T('Setting Details'),
         title_list = VIEW_SETTINGS,
@@ -67,7 +68,7 @@ def settings():
         msg_record_deleted = T('Setting deleted'),
         msg_list_empty = T('No Settings currently defined'))
 
-    crud.settings.update_next = URL(r=request, args=['update', 1])
+    crud.settings.update_next = URL(r=request, args=[1, 'update'])
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 

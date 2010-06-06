@@ -17,8 +17,16 @@ request.utcnow = datetime.datetime.utcnow()
 # (need to set to "True" again when amending Table definitions)
 migrate = True
 
-db = DAL("sqlite://storage.db")       # Use SQLite or other DB
-#db = DAL("mysql://sahana:password@localhost/sahana", pool_size=30)
+#if request.env.web2py_runtime_gae:            # if running on Google App Engine
+#    db = DAL("gae")                           # connect to Google BigTable
+#    session.connect(request, response, db=db) # and store sessions and tickets there
+    ### or use the following lines to store sessions in Memcache
+    # from gluon.contrib.memdb import MEMDB
+    # from google.appengine.api.memcache import Client
+    # session.connect(request, response, db=MEMDB(Client())
+#else:                                         # else use a normal relational database
+db = DAL("sqlite://storage.db")       # if not, use SQLite or other DB
+#db = DAL("mysql://sahana:password@localhost/sahana", pool_size=30) # or other DB
 #db = DAL("postgres://postgres:password@localhost/db", pool_size=10)
 #session.connect(request, response, db=db) # Store sessions and tickets in DB
 

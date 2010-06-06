@@ -1,4 +1,4 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -37,12 +37,12 @@ $(function() {
 //     });
 });
 //]]></script>
-<div class='form-container'>
+<div class="form-container">
 {{try:}}
  {{=form.custom.begin}}
  <table>
  <tbody>
- <tr id='msg_outbox_pr_pe_id__row'>
+ <tr id="msg_outbox_pr_pe_id__row">
  <td>
  <label>{{=form.custom.label.pr_pe_id}}</label>
  </td>
@@ -54,7 +54,7 @@ $(function() {
  {{=form.custom.comment.pr_pe_id}}
  </td>
 </tr>
- <tr id='msg_outbox_subject__row'>
+ <tr id="msg_outbox_subject__row">
  <td>
  <label>{{=form.custom.label.subject}}</label>
  </td>
@@ -76,7 +76,7 @@ $(function() {
  {{=form.custom.comment.body}}
  </td>
  </tr>
-  <tr id='msg_outbox_pr_message_method__row'>
+  <tr id="msg_outbox_pr_message_method__row">
  <td>
  <label>{{=form.custom.label.pr_message_method}}</label>
  </td>
@@ -87,11 +87,11 @@ $(function() {
  {{=form.custom.comment.pr_message_method}}
  </td>
  </tr>
- <tr id='submit_record__row'>
+ <tr id="submit_record__row">
  <td>
  </td>
  <td>
-  {{=INPUT(_type="submit", _value=T('Send message'),_id="dummy_submit")}}
+  {{=INPUT(_type="submit", _value=T("Send message"), _id="dummy_submit")}}
  </td>
  </tr>
  <td>

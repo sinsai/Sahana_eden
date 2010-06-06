@@ -220,7 +220,7 @@ def user():
     module = 'auth'
     resource = 'user'
     tablename = module + '_' + resource
-    table = db[table]
+    table = db[tablename]
 
     # Model options
 

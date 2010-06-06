@@ -43,7 +43,7 @@ class ModemThread( threading.Thread ):
 	def __init__(self,modem):
 		self.modem = modem
 		threading.Thread.__init__ ( self )
-		self.msg = s3msg.Msg(globals(), db, T, mail, modem)
+		self.msg = s3msg.Msg(globals(), db, T, modem = modem)
 	def run(self):
 		while True:
 			self.msg.process_outbox(contact_method = 2, option = 2)

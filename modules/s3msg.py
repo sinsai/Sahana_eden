@@ -92,6 +92,7 @@ class Msg(object):
 					try:
 						if (contact_method == 2 and option == 2):
 							self.send_sms_via_modem(recipient.value, contents)
+							return True
 						if (contact_method == 2 and option == 1):
 							self.send_sms_via_api(recipient.value, contents)
 							return True

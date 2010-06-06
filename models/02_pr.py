@@ -355,14 +355,22 @@ table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.mobile_phone" % ta
 table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_person.pr_pe_label"))
 
 # Field representation
-table.pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
-table.first_name.comment = SPAN(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
-table.preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
-table.local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
-table.email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
-table.mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
-table.opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
-table.opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
+table.pr_pe_label.comment = DIV(DIV(_class="tooltip",
+    _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any).")))
+table.first_name.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
+    _title=T("First name|The first or only name of the person (mandatory).")))
+table.preferred_name.comment = DIV(DIV(_class="tooltip",
+    _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional).")))
+table.local_name.comment = DIV(DIV(_class="tooltip",
+    _title=T("Local Name|Name of the person in local language and script (optional).")))
+table.email.comment = DIV(DIV(_class="tooltip",
+    _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates.")))
+table.mobile_phone.comment = DIV(DIV(_class="tooltip",
+    _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates.")))
+table.opt_pr_nationality.comment = DIV(DIV(_class="tooltip",
+    _title=T("Nationality|Nationality of the person.")))
+table.opt_pr_country.comment = DIV(DIV(_class="tooltip",
+    _title=T("Country of Residence|The country the person usually lives in.")))
 
 table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 
@@ -393,7 +401,14 @@ s3.crud_strings[tablename] = Storage(
 #
 # person_id: reusable field for other tables to reference ---------------------
 #
-shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button, _class="colorbox", _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")), _target="top", _title=s3.crud_strings.pr_person.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry.")))
+shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button,
+                           _class="colorbox",
+                           _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
+                           _target="top",
+                           _title=s3.crud_strings.pr_person.label_create_button),
+                         DIV(DIV(_class="tooltip",
+                                 _title=T("Create Person Entry|Create a person entry in the registry."))))
+
 person_id = SQLTable(None, "person_id",
                 FieldS3("person_id", db.pr_person, sortby=["first_name", "middle_name", "last_name"],
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent)),
@@ -494,9 +509,14 @@ group_id = SQLTable(None, "group_id",
                 FieldS3("group_id", db.pr_group, sortby="group_name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id", "%(id)s: %(group_name)s", filterby="system", filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
-                    comment = DIV(A(s3.crud_strings.pr_group.label_create_button, _class="colorbox", _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")), _target="top", _title=s3.crud_strings.pr_group.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
-                    ondelete = "RESTRICT"
-                ))
+                    comment = DIV(A(s3.crud_strings.pr_group.label_create_button,
+                                    _class="colorbox",
+                                    _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
+                                    _target="top",
+                                    _title=s3.crud_strings.pr_group.label_create_button),
+                                  DIV(DIV(_class="tooltip",
+                                          _title=T("Create Group Entry|Create a group entry in the registry.")))),
+                    ondelete = "RESTRICT"))
 
 s3xrc.model.configure(table,
     onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_group, entity_type=2),
@@ -553,9 +573,9 @@ def shn_pr_person_search_simple(xrequest, **attr):
         form = FORM(TABLE(
                 TR(T("Name and/or ID Label: "),
                    INPUT(_type="text", _name="label", _size="40"),
-                   A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."))),
-                TR("", INPUT(_type="submit", _value="Search"))
-                ))
+                   DIV(DIV(_class="tooltip",
+                           _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
+                TR("", INPUT(_type="submit", _value="Search"))))
 
         output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
 

@@ -128,12 +128,12 @@ table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
 
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
-gis_resource_opts = {
-        "shelter":T("Shelter"),
-        "office":T("Office"),
-        "track":T("Track"),
-        "image":T("Photo"),
-        }
+#gis_resource_opts = {
+#        "shelter":T("Shelter"),
+#        "office":T("Office"),
+#        "track":T("Track"),
+#        "image":T("Photo"),
+#        }
 resource = "feature_class"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -145,8 +145,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
-table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
+#table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
+#table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
 # Reusable field for other tables to reference
 ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = SQLTable(None, "feature_class_id",

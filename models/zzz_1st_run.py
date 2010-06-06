@@ -6,6 +6,12 @@
 
 # Deployments can change settings live via appadmin
 
+# Set to False in Production (to save 1x DAL hit every page)
+if db(db["s3_setting"].id > 0).count():
+    empty = False
+else:
+    empty = True
+
 if empty:
 
     # Themes
@@ -152,7 +158,7 @@ if empty:
         )
 
     # Logistics
-    if shn_module_enable.get('lms', False):
+    if "lms" in deployment_settings.modules:
         tablename = 'lms_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -172,7 +178,7 @@ if empty:
             )
 
     # Budget Module
-    if shn_module_enable.get('budget', False):
+    if "budget" in deployment_settings.modules:
         tablename = 'budget_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -189,7 +195,7 @@ if empty:
             )
 
     # Shelter Registry
-    if shn_module_enable.get('cr', False):
+    if "cr" in deployment_settings.modules:
         tablename = 'cr_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -200,7 +206,7 @@ if empty:
             )
 
     # Disaster Victim Identification
-    if shn_module_enable.get('dvi', False):
+    if "dvi" in deployment_settings.modules:
         tablename = 'dvi_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -211,7 +217,7 @@ if empty:
             )
 
     # Disaster Victim Registration
-    if shn_module_enable.get('dvr', False):
+    if "dvr" in deployment_settings.modules:
         tablename = 'dvr_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -222,7 +228,7 @@ if empty:
             )
 
     # Human Remains Management
-    if shn_module_enable.get('hrm', False):
+    if "hrm" in deployment_settings.modules:
         tablename = 'hrm_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -238,7 +244,7 @@ if empty:
     if not db(table.id > 0).count():
         table.insert(modem_baud=115200)
 
-    if shn_module_enable.get('msg', False):
+    if "msg" in deployment_settings.modules:
         tablename = 'msg_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -258,7 +264,7 @@ if empty:
             )
 
     # Missing Person Registry
-    if shn_module_enable.get('mpr', False):
+    if "mpr" in deployment_settings.modules:
         tablename = 'mpr_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -269,7 +275,7 @@ if empty:
             )
 
     # Request Management System
-    if shn_module_enable.get('rms', False):
+    if "rms" in deployment_settings.modules:
         tablename = 'rms_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -280,7 +286,7 @@ if empty:
             )
 
     # Ticketing System
-    if shn_module_enable.get('ticket', False):
+    if "ticket" in deployment_settings.modules:
         tablename = 'ticket_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -300,7 +306,7 @@ if empty:
 
 
     # Volunteer Management
-    if shn_module_enable.get('vol', False):
+    if "vol" in deployment_settings.modules:
         tablename = 'vol_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -326,6 +332,10 @@ if empty:
         #    name = "marker_r1",
         #    image = "marker_r1.png"
         #)
+        table.insert(
+            name = "person",
+            image = "gis_marker.image.Civil_Disturbance_Theme.png"
+        )
         table.insert(
             name = "school",
             image = "gis_marker.image.Edu_Schools_S1.png"
@@ -397,6 +407,10 @@ if empty:
         table.insert(
             name = "rail_station",
             image = "gis_marker.image.Trans_Rail_Station_S1.png"
+        )
+        table.insert(
+            name = "vehicle",
+            image = "gis_marker.image.Transport_Vehicle_Theme.png"
         )
         table.insert(
             name = "water",
@@ -515,6 +529,16 @@ if empty:
             name = 'SMS',
             marker_id = db(db.gis_marker.name=='phone').select().first().id,
         )
+        table.insert(
+            name = 'Person',
+            marker_id = db(db.gis_marker.name=='person').select().first().id,
+            module = 'pr',
+            resource = 'person'
+        )
+        table.insert(
+            name = 'Vehicle',
+            marker_id = db(db.gis_marker.name=='vehicle').select().first().id,
+        )
     tablename = 'gis_feature_group'
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -538,6 +562,12 @@ if empty:
         )
         table.insert(
             name = 'SMS Alerts',
+        )
+        table.insert(
+            name = 'People',
+        )
+        table.insert(
+            name = 'Vehicles',
         )
     tablename = 'gis_feature_class_to_feature_group'
     table = db[tablename]
@@ -585,6 +615,14 @@ if empty:
         table.insert(
             feature_group_id = db(db.gis_feature_group.name == 'SMS Alerts').select().first().id,
             feature_class_id = db(db.gis_feature_class.name == 'SMS').select().first().id,
+        )
+        table.insert(
+            feature_group_id = db(db.gis_feature_group.name == 'People').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Person').select().first().id,
+        )
+        table.insert(
+            feature_group_id = db(db.gis_feature_group.name == 'Vehicles').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Vehicle').select().first().id,
         )
 
     tablename = 'gis_apikey'

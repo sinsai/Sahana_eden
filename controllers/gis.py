@@ -57,7 +57,9 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    module_name = db(db.s3_module.name==module).select().first().name_nice
+
+    module_name = s3.modules[module]["name_nice"]
+
     return dict(module_name=module_name)
 
 def test():
@@ -1687,12 +1689,12 @@ def display_features():
     component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
     table = db["%s_%s" % (res_module, resource)]
     jtable = db[str(component.table)]
-    query = (jtable[fkey]==table[pkey]) & (table.id==instance)
+    query = (jtable[fkey] == table[pkey]) & (table.id == instance)
     # Filter out deleted
     deleted = (table.deleted == False)
     query = query & deleted
     # Filter out inaccessible
-    query2 = db.gis_location.id==jtable.location_id
+    query2 = db.gis_location.id == jtable.location_id
     accessible = shn_accessible_query("read", db.gis_location)
     query2 = query2 & accessible
 

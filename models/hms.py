@@ -7,7 +7,7 @@
 """
 
 module = "hms"
-if shn_module_enable.get(module, False):
+if module in deployment_settings.modules:
 
     # -----------------------------------------------------------------------------
     # Settings

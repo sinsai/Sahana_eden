@@ -40,10 +40,10 @@ try:
         session.error = T('Not Authorised!')
         redirect(URL(r=request, c='default', f='user', args='login'))
 except:
-    session.error=T('Not Authorised!')
+    session.error = T('Not Authorised!')
     redirect(URL(r=request, c='default', f='user', args='login'))
 
-module='admin'
+module = "admin"
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = admin_menu_options

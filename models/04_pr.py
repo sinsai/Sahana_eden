@@ -484,7 +484,7 @@ s3.crud_strings[tablename] = Storage(
 # -----------------------------------------------------------------------------
 # PR Extension: physical descriptions
 #
-if shn_module_enable.get("pr_ext", False):
+if "mpr" in deployment_settings.modules or "dvi" in deployment_settings.modules:
 
     # *****************************************************************************
     # Physical Description (pd_xxx)
@@ -497,7 +497,7 @@ if shn_module_enable.get("pr_ext", False):
 
     pr_pe_id2 = SQLTable(None, "pr_pe_id",
                         Field("pr_pe_id", db.pr_pentity,
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, filterby="opt_pr_entity_type", filter_opts=[1,3])),
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, filterby="opt_pr_entity_type", filter_opts=[1, 3])),
                         represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
                         ondelete = "RESTRICT",
                         label = T("ID")

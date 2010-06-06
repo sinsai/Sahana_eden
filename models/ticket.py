@@ -4,8 +4,9 @@
     Master Message Log to record/route all Inbound messages
 """
 
-module = 'ticket'
-if shn_module_enable.get(module, False):
+module = "ticket"
+
+if module in deployment_settings.modules:
 
     # Settings
     resource = 'setting'

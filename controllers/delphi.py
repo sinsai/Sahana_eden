@@ -6,6 +6,10 @@
 
 module = "delphi"
 
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
 response.menu_options = [
     [T("Active Problems"), False, URL(r=request, f='index')],
 ]
@@ -190,7 +194,7 @@ def __get_commons(solution=None):
 def index():
     "Module Home Page"
     
-    module_name = db(db.s3_module.name == module).select().first().name_nice
+    module_name = s3.modules[module]["name_nice"]
     
     groups = db(db.delphi_group.active == True).select()
     result = []

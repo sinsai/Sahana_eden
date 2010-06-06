@@ -6,7 +6,11 @@
     @author: nursix
 """
 
-module = 'nim'
+module = "nim"
+
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
@@ -40,7 +44,7 @@ def index():
     "Module's Home Page"
 
     try:
-        module_name = db(db.s3_module.name==module).select().first().name_nice
+        module_name = s3.modules[module]["name_nice"]
     except:
         module_name = T('Nursing Information Manager')
 

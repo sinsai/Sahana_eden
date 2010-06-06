@@ -5,7 +5,7 @@
 """
 
 module = "rms"
-if shn_module_enable.get(module, False):
+if module in deployment_settings.modules:
 
     # Settings
     resource = "setting"

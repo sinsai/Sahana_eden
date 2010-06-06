@@ -1440,10 +1440,14 @@ toolbar.addButton(saveButton);
                 for feature in features:
                     marker = self.get_marker(feature.gis_location.id)
                     marker_url = URL(r=request, c='default', f='download', args=[marker])
+                    if feature.gis_location.feature_class_id:
+                        fc = "'" + str(feature.gis_location.feature_class_id) + "'"
+                    else:
+                        fc = "null"
                     layers_features += """
         geom = parser.read('""" + feature.gis_location.wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', '""" + str(feature.gis_location.feature_class_id) + """', geom, iconURL)
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', """ + fc + """, geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer

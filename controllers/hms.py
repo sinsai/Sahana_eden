@@ -6,7 +6,11 @@
     @author: nursix
 """
 
-module = 'hms'
+module = "hms"
+
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions' Views)
@@ -50,7 +54,7 @@ def index():
 
     """ Module's Home Page """
 
-    module_name = db(db.s3_module.name == module).select().first().name_nice
+    module_name = s3.modules[module]["name_nice"]
     
     return dict(module_name=module_name)
 

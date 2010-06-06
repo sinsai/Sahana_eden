@@ -6,8 +6,8 @@
     @author: nursix
 """
 
-module = 'hms'
-if shn_module_enable.get(module, False):
+module = "hms"
+if module in deployment_settings.modules:
 
     # -----------------------------------------------------------------------------
     # Settings

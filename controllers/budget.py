@@ -4,7 +4,11 @@
     Budgetting Module - Controllers
 """
 
-module = 'budget'
+module = "budget"
+
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
@@ -183,7 +187,7 @@ table.months.comment = SPAN("*", _class="req")
 def index():
     "Module's Home Page"
     
-    module_name = db(db.s3_module.name == module).select().first().name_nice
+    module_name = s3.modules[module]["name_nice"]
     
     return dict(module_name=module_name)
 
@@ -1337,7 +1341,8 @@ def budget_staff_bundle():
             recurring = monthly_cost * row.months
             item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align="right"))
 
-        table_header = THEAD(TR(TH("Location"), TH("Project"), TH("Item"), TH(T("Description")), TH(tables[0].quantity.label), TH(T("One-time costs")), TH(T('Recurring costs')), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label)))        table_footer = TFOOT(TR(TD(B(T("Totals for Budget:")), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost))), _align="right")
+        table_header = THEAD(TR(TH("Location"), TH("Project"), TH("Item"), TH(T("Description")), TH(tables[0].quantity.label), TH(T("One-time costs")), TH(T("Recurring costs")), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label)))
+        table_footer = TFOOT(TR(TD(B(T("Totals for Budget:")), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost))), _align="right")
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
 
         add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")

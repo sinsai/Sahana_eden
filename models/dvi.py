@@ -7,8 +7,8 @@
     @author: nursix
 """
 
-module = 'dvi'
-if shn_module_enable.get(module, False):
+module = "dvi"
+if module in deployment_settings.modules:
 
     # Settings
     resource = 'setting'

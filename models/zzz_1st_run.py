@@ -6,6 +6,12 @@
 
 # Deployments can change settings live via appadmin
 
+# Set to False in Production (to save 1x DAL hit every page)
+if db(db["s3_setting"].id > 0).count():
+    empty = False
+else:
+    empty = True
+
 if empty:
 
     # Themes
@@ -152,7 +158,7 @@ if empty:
         )
 
     # Logistics
-    if shn_module_enable.get('lms', False):
+    if "lms" in deployment_settings.modules:
         tablename = 'lms_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -172,7 +178,7 @@ if empty:
             )
 
     # Budget Module
-    if shn_module_enable.get('budget', False):
+    if "budget" in deployment_settings.modules:
         tablename = 'budget_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -189,7 +195,7 @@ if empty:
             )
 
     # Shelter Registry
-    if shn_module_enable.get('cr', False):
+    if "cr" in deployment_settings.modules:
         tablename = 'cr_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -200,7 +206,7 @@ if empty:
             )
 
     # Disaster Victim Identification
-    if shn_module_enable.get('dvi', False):
+    if "dvi" in deployment_settings.modules:
         tablename = 'dvi_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -211,7 +217,7 @@ if empty:
             )
 
     # Disaster Victim Registration
-    if shn_module_enable.get('dvr', False):
+    if "dvr" in deployment_settings.modules:
         tablename = 'dvr_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -222,7 +228,7 @@ if empty:
             )
 
     # Human Remains Management
-    if shn_module_enable.get('hrm', False):
+    if "hrm" in deployment_settings.modules:
         tablename = 'hrm_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -238,7 +244,7 @@ if empty:
     if not db(table.id > 0).count():
         table.insert(modem_baud=115200)
 
-    if shn_module_enable.get('msg', False):
+    if "msg" in deployment_settings.modules:
         tablename = 'msg_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -258,7 +264,7 @@ if empty:
             )
 
     # Missing Person Registry
-    if shn_module_enable.get('mpr', False):
+    if "mpr" in deployment_settings.modules:
         tablename = 'mpr_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -269,7 +275,7 @@ if empty:
             )
 
     # Request Management System
-    if shn_module_enable.get('rms', False):
+    if "rms" in deployment_settings.modules:
         tablename = 'rms_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -280,7 +286,7 @@ if empty:
             )
 
     # Ticketing System
-    if shn_module_enable.get('ticket', False):
+    if "ticket" in deployment_settings.modules:
         tablename = 'ticket_setting'
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -300,7 +306,7 @@ if empty:
 
 
     # Volunteer Management
-    if shn_module_enable.get('vol', False):
+    if "vol" in deployment_settings.modules:
         tablename = 'vol_setting'
         table = db[tablename]
         if not db(table.id > 0).count():

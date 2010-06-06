@@ -4,11 +4,11 @@
     Messaging module
 """
 
-module = 'msg'
-if shn_module_enable.get(module, False):
+module = "msg"
+if module in deployment_settings.modules:
 
     # Settings
-    resource = 'setting'
+    resource = "setting"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                     Field('audit_read', 'boolean'),

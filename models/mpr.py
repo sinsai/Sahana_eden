@@ -4,8 +4,8 @@
     MPR Missing Person Registry (Sahana Legacy)
 """
 
-module = 'mpr'
-if shn_module_enable.get(module, False):
+module = "mpr"
+if module in deployment_settings.modules:
 
     #
     # Settings --------------------------------------------------------------------

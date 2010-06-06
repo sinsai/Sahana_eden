@@ -11,11 +11,7 @@
 
 module = "template"
 
-if shn_module_enable.get(module, False):
-    # Current Module (for sidebar title)
-    module_name = T("Template Module")
-    #Add module to s3_module table (see /models/01_modules.py) to use:
-    #module_name = db(db.s3_module.name==module).select().first().name_nice
+if module in deployment_settings.modules:
 
     # -----------------------------------------------------------------------------
     # Settings

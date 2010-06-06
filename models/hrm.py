@@ -6,15 +6,15 @@
     @author: nursix
 """
 
-module = 'hrm'
-if shn_module_enable.get(module, False):
+module = "hrm"
+if module in deployment_settings.modules:
 
     #
     # Settings --------------------------------------------------------------------
     #
-    resource = 'setting'
-    table = module + '_' + resource
+    resource = "setting"
+    table = module + "_" + resource
     db.define_table(table,
-                    Field('audit_read', 'boolean'),
-                    Field('audit_write', 'boolean'),
+                    Field("audit_read", "boolean"),
+                    Field("audit_write", "boolean"),
                     migrate=migrate)

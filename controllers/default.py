@@ -6,7 +6,7 @@
     @author: Fran Boon
 """
 
-module = 'default'
+module = "default"
 
 # Options Menu (available in all Functions)
 response.menu_options = [
@@ -39,21 +39,21 @@ def user():
         if auth.is_logged_in():
             if not auth.user.timestamp:
                 db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
-                redirect(URL(r=request, c='msg', f='pe_contact'))
+                redirect(URL(r=request, c="msg", f="pe_contact"))
             db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
-            redirect(URL(r=request, f='index'))
+            redirect(URL(r=request, f="index"))
 
+    _table_user = auth.settings.table_user
     if request.args and request.args(0) == "profile":
-        #auth.settings.table_user.organisation.writable = False
-        auth.settings.table_user.utc_offset.readable = True
-        auth.settings.table_user.utc_offset.writable = True
+        #_table_user.organisation.writable = False
+        _table_user.utc_offset.readable = True
+        _table_user.utc_offset.writable = True
 
-    auth.settings.table_user.language.label = T("Language")
-    auth.settings.table_user.language.default = "en"
-    auth.settings.table_user.language.comment = DIV(_class="tooltip",
-        _title=T("Language|The language to use for notifications."))
-    auth.settings.table_user.language.requires = IS_IN_SET(shn_languages)
-    auth.settings.table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
+    _table_user.language.label = T("Language")
+    _table_user.language.default = "en"
+    _table_user.language.comment = DIV(_class="tooltip", _title=T("Language|The language to use for notifications."))
+    _table_user.language.requires = IS_IN_SET(shn_languages)
+    _table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
 
     form = auth()
 
@@ -61,9 +61,9 @@ def user():
 
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
-    #if request.args(0) == 'login':
-    #    response.title = T('Login')
-    #    response.view = 'auth/login.html'
+    #if request.args(0) == "login":
+    #    response.title = T("Login")
+    #    response.view = "auth/login.html"
 
     return dict(form=form, self_registration=self_registration)
 
@@ -71,9 +71,18 @@ def user():
 def index():
     "Module's Home Page"
     
-    module_name = db(db.s3_module.name == module).select().first().name_nice
+    module_name = s3.modules[module]["name_nice"]
     
-    modules = db(db.s3_module.enabled == 'Yes').select(db.s3_module.ALL, orderby=db.s3_module.priority)
+    modules = Storage()
+    for _module in deployment_settings.modules:
+        _module = str(_module)
+        _s3 = s3.modules[_module]
+        modules[_module] = Storage()
+        _module = modules[_module]
+        _module.name_nice = _s3["name_nice"]
+        _module.access = _s3["access"]
+        _module.description = _s3["description"]
+    
     settings = db(db.s3_setting.id == 1).select().first()
     admin_name = settings.admin_name
     admin_email = settings.admin_email
@@ -99,15 +108,6 @@ def menu():
 def list():
     "Custom view designed to be pulled into an Ext layout's Center Panel"
     return dict()
-
-def open_module():
-    "Select Module"
-    id = request.vars.id
-    modules = db(db.s3_module.id==id).select()
-    if not len(modules):
-        redirect(URL(r=request, f='index'))
-    module = modules[0].name
-    redirect(URL(r=request, c=module, f='index'))
 
 # About Sahana
 def apath(path=''):

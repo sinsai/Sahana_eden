@@ -4,7 +4,11 @@
     DVI Module - Controllers
 """
 
-module = 'dvi'
+module = "dvi"
+
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 # Only people with the DVI role should be able to access this module
 #try:
@@ -63,7 +67,7 @@ def index():
     "Module's Home Page"
 
     try:
-        module_name = db(db.s3_module.name == module).select().first().name_nice
+        module_name = s3.modules[module]["name_nice"]
     except:
         module_name = T('Disaster Victim Identification')
 

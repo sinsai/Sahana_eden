@@ -4,8 +4,8 @@
     Camp Registry
 """
 
-module = 'cr'
-if shn_module_enable.get(module, False):
+module = "cr"
+if module in deployment_settings.modules:
 
     # Settings
     resource = 'setting'

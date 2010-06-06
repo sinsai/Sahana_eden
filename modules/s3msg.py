@@ -23,7 +23,7 @@
 
 __doc__ = \
 """
-Module provides api to send messages - Currently SMS
+Module provides api to send messages - Currently SMS and Email
 
 """
 
@@ -36,7 +36,7 @@ class Msg(object):
 	""" Toolkit for hooking into the Messaging framework"""
 	sms_api_post_config={}
 	sms_api_enabled = False
-	def __init__(self, environment, db=None, T=None, mail = None):
+	def __init__(self, environment, db=None, T=None, mail=None, modem=None):
 		self.db = db
 		self.sms_api = db(db.mobile_settings.modem_port == '').select()[0]
 		tmp_parameters = self.sms_api.parameters.split('&')
@@ -44,6 +44,13 @@ class Msg(object):
 		for tmp_parameter in tmp_parameters:
 			self.sms_api_post_config[tmp_parameter.split('=')[0]] = tmp_parameter.split('=')[1]
 		self.mail = mail
+		self.modem = modem
+		
+	def send_sms_via_modem(self,mobile,text = ''):
+		"""
+		Function to send SMS via MODEM
+		"""
+		self.modem.send_sms(mobile, text)
 
 	def send_sms_via_api(self,mobile,text = ''):
 		"""
@@ -62,7 +69,7 @@ class Msg(object):
 		"""
 		self.mail.send(to, subject, message)
 
-	def process_outbox(self,contact_method = 1):
+	def process_outbox(self, contact_method = 1, option = 1):
 		"""Send Pending Messages from OutBox.
 		If succesful then move from OutBox to Sent. A modified copy of send_email"""
 		table = self.db.msg_outbox
@@ -83,7 +90,9 @@ class Msg(object):
 				recipient = self.db(query).select(table3.value,orderby = table3.priority).first()
 				if recipient:
 					try:
-						if (contact_method == 2):
+						if (contact_method == 2 and option == 2):
+							self.send_sms_via_modem(recipient.value, contents)
+						if (contact_method == 2 and option == 1):
 							self.send_sms_via_api(recipient.value, contents)
 							return True
 						if (contact_method == 1):

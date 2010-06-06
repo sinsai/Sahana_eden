@@ -13,9 +13,7 @@ request.utcnow = datetime.datetime.utcnow()
 # Database Configuration
 ########################
 
-# Switch to "False" in Production for a Performance gain
-# (need to set to "True" again when amending Table definitions)
-migrate = True
+migrate = deployment_settings.base.get("migrate", True)
 
 #if request.env.web2py_runtime_gae:            # if running on Google App Engine
 #    db = DAL("gae")                           # connect to Google BigTable
@@ -28,6 +26,7 @@ migrate = True
 #db = DAL("sqlite://storage.db")       # if not, use SQLite or other DB
 db = DAL("mysql://sahana:password@localhost/sahana", pool_size=30) # or other DB
 #db = DAL("postgres://postgres:password@localhost/db", pool_size=10)
+#session.connect(request, response, db=db) # Store sessions and tickets in DB
 
 ##################################
 # Instantiate Classes from Modules
@@ -93,7 +92,6 @@ def shn_auth_on_logout(user):
     # S3XRC
     s3xrc.clear_session(session)
 
-from gluon.storage import Storage
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
 s3 = Storage()

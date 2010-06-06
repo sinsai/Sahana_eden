@@ -233,10 +233,10 @@ if empty:
             )
 
     # Messaging
-    tablename = 'mobile_setting'
+    tablename = 'mobile_settings'
     table = db[tablename]
     if not db(table.id > 0).count():
-        table.insert(baud=115200)
+        table.insert(modem_baud=115200)
 
     if shn_module_enable.get('msg', False):
         tablename = 'msg_setting'

@@ -87,11 +87,11 @@ s3xrc.model.add_component(module, resource,
 #
 pr_contact_method_opts = {
     1:T("E-Mail"),
-    2:T("Telephone"),
-    3:T("Mobile Phone"),
-    4:T("Fax"),
-    5:T("Twitter"),
-    6:T("XMPP"),
+    2:T("Mobile Phone"),
+    3:T("XMPP"),
+    4:T("Twitter"),
+    5:T("Telephone"),
+    6:T("Fax"),
     99:T("other")
     }
 
@@ -125,7 +125,10 @@ s3xrc.model.add_component(module, resource,
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pr_pe_id.requires = IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, filterby="opt_pr_entity_type", filter_opts=(1, 2))
+table.pr_pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
+                                    shn_pentity_represent,
+                                    filterby="opt_pr_entity_type",
+                                    filter_opts=(1, 2))
 table.value.requires = IS_NOT_EMPTY()
 table.priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9])
 

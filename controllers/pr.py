@@ -20,6 +20,7 @@ def shn_menu():
         [T("Groups"), False, URL(r=request, f="group"), [
             [T("List"), False, URL(r=request, f="group")],
             [T("Add"), False, URL(r=request, f="group", args="create")],
+            [T("Group Memberships"), False, URL(r=request, f="group_membership")],
         ]]]
     if session.rcvars and "pr_person" in session.rcvars:
         selection = db.pr_person[session.rcvars["pr_person"]]

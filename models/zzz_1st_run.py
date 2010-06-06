@@ -532,6 +532,8 @@ if empty:
         table.insert(
             name = 'Person',
             marker_id = db(db.gis_marker.name=='person').select().first().id,
+            module = 'pr',
+            resource = 'person'
         )
         table.insert(
             name = 'Vehicle',

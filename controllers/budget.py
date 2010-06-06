@@ -182,9 +182,9 @@ table.months.comment = SPAN("*", _class="req")
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = db(db.s3_module.name == module).select().first().name_nice
-    
+
     return dict(module_name=module_name)
 
 def parameters():
@@ -405,13 +405,13 @@ def kit_item():
         else:
             session.error = BADFORMAT
             redirect(URL(r=request))
-    
+
     try:
         kit = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Kit!")
         redirect(URL(r=request, f='kit'))
-    
+
     table = db.budget_kit_item
     authorised = shn_has_permission('update', table)
 
@@ -510,13 +510,13 @@ def kit_dupes(form):
 
 def kit_update_items():
     "Update a Kit's items (Quantity & Delete)"
-    
+
     try:
         kit = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Kit!")
         redirect(URL(r=request, f='kit'))
-    
+
     table = db.budget_kit_item
     authorised = shn_has_permission('update', table)
     if authorised:
@@ -811,13 +811,13 @@ def bundle():
 
 def bundle_kit_item():
     "Many to Many CRUD Controller"
-    
+
     try:
         bundle = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f='bundle'))
-    
+
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
 
@@ -1013,13 +1013,13 @@ def bundle_dupes(form):
 
 def bundle_update_items():
     "Update a Bundle's items (Quantity, Minutes, Megabytes & Delete)"
-    
+
     try:
         bundle = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f='bundle'))
-    
+
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:
@@ -1185,13 +1185,13 @@ def budget():
 
 def budget_staff_bundle():
     "Many to Many CRUD Controller"
-    
+
     try:
         budget = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Budget!")
         redirect(URL(r=request, f='budget'))
-    
+
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
 
@@ -1337,7 +1337,19 @@ def budget_staff_bundle():
             recurring = monthly_cost * row.months
             item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align="right"))
 
-        table_header = THEAD(TR(TH("Location"), TH("Project"), TH("Item"), TH(T("Description")), TH(tables[0].quantity.label), TH(T("One-time costs")), TH(T('Recurring costs')), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label)))        table_footer = TFOOT(TR(TD(B(T("Totals for Budget:")), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost))), _align="right")
+        table_header = THEAD(TR(TH("Location"),
+                                TH("Project"),
+                                TH("Item"),
+                                TH(T("Description")),
+                                TH(tables[0].quantity.label),
+                                TH(T("One-time costs")),
+                                TH(T('Recurring costs')),
+                                TH(tables[0].months.label),
+                                TH(db.budget_budget.total_onetime_costs.label),
+                                TH(db.budget_budget.total_recurring_costs.label)))
+        table_footer = TFOOT(TR(TD(B(T("Totals for Budget:")), _colspan=8),
+                                TD(B(budget_onetime_cost)),
+                                TD(B(budget_recurring_cost))), _align="right")
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
 
         add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
@@ -1403,13 +1415,13 @@ def budget_totals(budget):
 
 def budget_update_items():
     "Update a Budget's items (Quantity, Months & Delete)"
-    
+
     try:
         budget = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Budget!")
         redirect(URL(r=request, f='budget'))
-    
+
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission('update', tables[0]) and shn_has_permission('update', tables[1])
     if authorised:

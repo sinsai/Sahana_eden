@@ -38,6 +38,8 @@ else:
                  URL(request.application, "default", "user/logout")],
                 [T("Edit Profile"), False,
                  URL(request.application, "default", "user/profile")],
+                [T("My contact details"), False,
+                 URL(request.application, "msg", "pe_contact")],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]
          ]
@@ -45,7 +47,7 @@ else:
 # Menu for Admin module
 # (defined here as used in several different Controller files)
 admin_menu_options = [
-    [T("Settings"), False, URL(r=request, c="admin", f="setting", args=["update", 1]), [
+    [T("Settings"), False, URL(r=request, c="admin", f="setting", args=[1, "update"]), [
         [T("Edit Themes"), False, URL(r=request, c="admin", f="theme")]
     ]],
     [T("User Management"), False, URL(r=request, c="admin", f="user"), [
@@ -62,10 +64,10 @@ admin_menu_options = [
     [T("Synchronisation"), False, URL(r=request, c="sync", f="index"), [
             [T("Sync History"), False, URL(r=request, c="sync", f="history")],
             [T("Sync Partners"), False, URL(r=request, c="sync", f="partner")],
-            [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=["update", 1])]
+            [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])]
     ]],
     [T("Mobile"), False, URL(r=request, c="mobile", f="index"),[
-            [T("Mobile Settings"), False, URL(r=request, c="mobile", f="setting", args=["update", 1])]
+            [T("Mobile Settings"), False, URL(r=request, c="mobile", f="settings", args=[1, "update"])]
     ]],
     [T("Edit Application"), False, URL(r=request, a="admin", c="default", f="design", args=[request.application])],
     [T("Tickets"), False, URL(r=request, c="admin", f="errors")],

@@ -10,7 +10,6 @@ module = 'msg'
 module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Admin'), False, URL(r=request, f='admin')],
 	[T("Compose"), False, URL(r=request, f="outbox", args='create')],
 	[T("Outbox"), False, URL(r=request, f="outbox")],
 	[T('Distribution groups'), False, URL(r=request, f='group'), [
@@ -19,7 +18,8 @@ response.menu_options = [
 	]],
     #[T('CAP'), False, URL(r=request, f='tbc')]
 ]
-
+if auth.has_membership(auth.id_group('Administrator')):
+	response.menu_options.append([T('Admin'), False, URL(r=request, f='admin')])
 # S3 framework functions
 def index():
     "Module's Home Page"
@@ -29,20 +29,14 @@ def tbc():
     "Coming soon..."
     return dict(module_name=module_name)
 
-
 def admin():
-    # This can be set to a MessagingAdmin role, if-desired
-    if auth.has_membership(auth.id_group('Administrator')):
-        redirect(URL(r=request, f='setting', args=['update', 1]))
-    else:
-        redirect(URL(r=request, f='setting', args=['read', 1]))
+	redirect(URL(r=request, f='setting', args=['update', 1]))
 
 def setting():
     " RESTlike CRUD controller "
-    if request.args(0) == 'update' or request.args(0) == 'delete':
-        if not auth.has_membership(auth.id_group('Administrator')):
-            session.error = UNAUTHORISED
-            redirect(URL(r=request, f='index'))
+    if not auth.has_membership(auth.id_group('Administrator')):
+		session.error = UNAUTHORISED
+		redirect(URL(r=request, f='index'))
     return shn_rest_controller(module, 'setting', listadd=False, deletable=False)
 
 #--------------------------------------------------------------------------------------------------
@@ -144,7 +138,8 @@ def outbox():
         if auth.has_membership(1):
             pass
         else:
-            person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.pr_pe_id))[0].pr_pe_id
+            person = (db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id))[0].id
+            db.msg_outbox.id.readable = False
             response.s3.filter = (db.msg_outbox.person_id == person)
     else:
         redirect(URL(r=request, c='default', f='user', args='login',

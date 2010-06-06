@@ -51,7 +51,7 @@ def index():
     """ Module's Home Page """
 
     module_name = db(db.s3_module.name == module).select().first().name_nice
-    
+
     return dict(module_name=module_name)
 
 # -----------------------------------------------------------------------------
@@ -63,19 +63,7 @@ def hospital():
 
     output = shn_rest_controller(module , 'hospital',
         pheader = shn_hms_hospital_pheader,
-        list_fields=['id',
-            'gov_uuid',
-            'name',
-            'organisation_id',
-            'location_id',
-            'phone_business',
-            'ems_status',
-            'facility_status',
-            'clinical_status',
-            'security_status',
-            'total_beds',
-            'available_beds'
-        ],
+        list_fields=shn_hms_hospital_list_fields(),
         rss=dict(
             title="%(name)s",
             description=shn_hms_hospital_rss

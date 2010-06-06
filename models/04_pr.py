@@ -241,7 +241,13 @@ orig_id = SQLTable(None, "orig_id",
                          requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
                          label = T("Origin"),
-                         comment = DIV(A(ADD_LOCATION, _class="colorbox", _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")), _target="top", _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         comment = DIV(A(ADD_LOCATION,
+                                         _class="colorbox",
+                                         _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                         _target="top",
+                                         _title=ADD_LOCATION),
+                                       DIV(DIV(_class="tooltip",
+                                               _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
                          ondelete = "RESTRICT"
                         )
                   )
@@ -251,7 +257,13 @@ dest_id = SQLTable(None, "dest_id",
                          requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
                          label = T("Destination"),
-                         comment = DIV(A(ADD_LOCATION, _class="colorbox", _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")), _target="top", _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                         comment = DIV(A(ADD_LOCATION,
+                                         _class="colorbox",
+                                         _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                         _target="top",
+                                         _title=ADD_LOCATION),
+                                       DIV(DIV(_class="tooltip",
+                                               _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
                          ondelete = "RESTRICT"
                         )
                   )

@@ -973,7 +973,7 @@ def import_json(jr, **attr):
         source.close()
 
     # XSLT Transformation
-    if not jr.representation=="json":
+    if not jr.representation == "json":
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
@@ -1021,7 +1021,7 @@ def import_xml(jr, **attr):
     tree = s3xrc.xml.parse(source)
 
     # XSLT Transformation
-    if not jr.representation=="xml":
+    if not jr.representation == "xml":
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):

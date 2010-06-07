@@ -5,7 +5,7 @@
 """
 
 module = "cr"
-if module in deployment_settings.modules:
+if deployment_settings.has_module(module):
 
     # Settings
     resource = 'setting'

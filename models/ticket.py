@@ -5,8 +5,7 @@
 """
 
 module = "ticket"
-
-if module in deployment_settings.modules:
+if deployment_settings.has_module(module):
 
     # Settings
     resource = 'setting'
@@ -25,7 +24,7 @@ if module in deployment_settings.modules:
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    
+
     # -----------------
     # Tickets table (All sources get entered here : either manually or via S3XRC or Messaging)
 

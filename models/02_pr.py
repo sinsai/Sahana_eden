@@ -469,18 +469,15 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("comment"),                               # optional comment
                 migrate=migrate)
 
-# Field validation
-
-# Field representation
 table.pr_pe_label.readable = False
 table.pr_pe_label.writable = False
 table.system.readable = False
 table.system.writable = False
 table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_group.pr_pe_label"))
-
-# Field labels
 table.opt_pr_group_type.label = T("Group type")
 table.group_name.label = T("Group name")
+table.group_name.requires = IS_NOT_EMPTY()
+table.group_name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 table.group_description.label = T("Group description")
 
 # CRUD Strings

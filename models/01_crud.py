@@ -55,7 +55,7 @@ _s3xrc = local_import("s3xrc")
 
 s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
-            base_url="%s/%s" % (S3_PUBLIC_URL, request.application),
+            base_url="%s/%s" % (deployment_settings.get_base_public_url(), request.application),
             rpp=ROWSPERPAGE,
             gis=gis)
 
@@ -225,7 +225,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
     #else:
         #server = "http://" + request.env.server_name + ":" + request.env.server_port
 
-    server = S3_PUBLIC_URL
+    server = deployment_settings.get_base_public_url()
 
     tablename = "%s_%s" % (module, resource)
     try:
@@ -1134,7 +1134,7 @@ def shn_read(jr, **attr):
                     if _pheader:
                         output.update(pheader=_pheader)
             item = crud.read(table, record_id)
-            
+
             if jr.representation=="html":
                 output.update(item=item)
             elif jr.representation == "popup":
@@ -1851,7 +1851,7 @@ def shn_update(jr, **attr):
 
         if jr.representation == "html" or jr.representation == "popup":
 
-            
+
             if jr.representation == "html":
                 shn_custom_view(jr, "update.html")
             elif jr.representation == "popup":

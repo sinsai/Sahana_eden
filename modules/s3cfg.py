@@ -48,13 +48,13 @@ class S3Config(Storage):
                 "cr",           # Camp Registry
                 "delphi",       # Delphi Decision Maker
                 "dvi",          # Disaster Victim Identification
-                "dvr",         # Disaster Victim Registry
+                "dvr",          # Disaster Victim Registry
                 "hms",          # Hospital Management
-                "hrm",         # Human Resources Management
-                "lms",         # Logistics
+                "hrm",          # Human Resources Management
+                "lms",          # Logistics
                 "mpr",          # Missing Person Registry
                 "msg",          # Messaging
-                "nim",         # Nursing Information Manager
+                "nim",          # Nursing Information Manager
                 "rms",          # Request Management
                 "ticket",       # Ticketing
                 "vol"           # Volunteer Management

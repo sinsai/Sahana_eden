@@ -37,24 +37,29 @@ class S3Config(Storage):
         return self.L10n.get("utc_offset", "UTC +0000")
 
     # Active modules list
-    def get_modules(self):
-        return self.get(modules, [
-            "gis",          # GIS
-            "media",        # Media Manager
-            "pr",           # Person Registry
-            "or",           # Organisation Registry
-            "budget",       # Budgetting
-            "cr",           # Camp Registry
-            "delphi",       # Delphi Decision Maker
-            "dvi",          # Disaster Victim Identification
-            #"dvr",         # Disaster Victim Registry
-            "hms",          # Hospital Management
-            #"hrm",         # Human Resources Management
-            #"lms",         # Logistics
-            "mpr",          # Missing Person Registry
-            "msg",          # Messaging
-            #"nim",         # Nursing Information Manager
-            "rms",          # Request Management
-            "ticket",       # Ticketing
-            "vol"           # Volunteer Management
-        ])
+    def has_module(self, module_name):
+        if not self.modules:
+            _modules = [
+                "gis",          # GIS
+                "media",        # Media Manager
+                "pr",           # Person Registry
+                "or",           # Organisation Registry
+                "budget",       # Budgetting
+                "cr",           # Camp Registry
+                "delphi",       # Delphi Decision Maker
+                "dvi",          # Disaster Victim Identification
+                "dvr",         # Disaster Victim Registry
+                "hms",          # Hospital Management
+                "hrm",         # Human Resources Management
+                "lms",         # Logistics
+                "mpr",          # Missing Person Registry
+                "msg",          # Messaging
+                "nim",         # Nursing Information Manager
+                "rms",          # Request Management
+                "ticket",       # Ticketing
+                "vol"           # Volunteer Management
+            ]
+        else:
+            _modules = self.modules
+
+        return module_name in _modules

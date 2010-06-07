@@ -857,7 +857,6 @@ if deployment_settings.has_module(module):
                     query = table.id.belongs(results)
                 else:
                     query = (table.id == 0)
-                    rows = None
 
                 # Add filter
                 if response.s3.filter:

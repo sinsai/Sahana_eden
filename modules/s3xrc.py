@@ -3411,8 +3411,9 @@ class S3XML(object):
 
         try:
             root_dict = json.load(source)
-        except ValueError, e:
-            raise HTTP(400, body=self.json_message(False, 400, e.message))
+        except (ValueError,):
+            e = sys.exc_info()[1]
+            raise HTTP(400, body=self.json_message(False, 400, "%s %s" % (e.lineno, e.msg)))
 
         native=False
 

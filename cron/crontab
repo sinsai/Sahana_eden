@@ -1,20 +1,16 @@
 # Crontab - scheduled tasks
 # Import data into database
-#@reboot root *applications/sahana/cron/1st_run.py
+#@reboot root *applications/eden/cron/1st_run.py
 # AutoSync daemon running ZeroConf should be launched at startup
-#@reboot root **applications/sahana/cron/daemonX.py
-# Messaging daemon should be launched at startup
-#@reboot root *applications/eden/cron/sms_handler_api.py
-#@reboot root *applications/eden/cron/email_handler_api.py
+#@reboot root **applications/eden/cron/daemonX.py
 # Send outgoing emails every 5 minutes
-#*/5   *       *       *       *       root *msg/email_send
-#*/5   *       *       *       *       root web2py.exe -S sahana/msg/email_send
-#*/5   *       *       *       *       root python web2py.py -S sahana/msg/email_send
+*/5   *       *       *       *       root *msg/process_email_via_api
+*/5   *       *       *       *       root *msg/process_sms_via_api
 # Collect incoming emails every 15 minutes
-#*/15  *       *       *       *       root *applications/sahana/cron/email_receive.py
+#*/15  *       *       *       *       root *applications/eden/cron/email_receive.py
 # Process Import Jobs
-#*/5    *       *       *       *       root *applications/sahana/cron/import_job_do_processing.py
-#*/5    *       *       *       *       root *applications/sahana/cron/import_job_do_import.py
+#*/5    *       *       *       *       root *applications/eden/cron/import_job_do_processing.py
+#*/5    *       *       *       *       root *applications/eden/cron/import_job_do_import.py
 # Poll RMS Feeds
-#*/5   *       *       *       *       root *applications/sahana/cron/rms_sms2record.py
-#*/5   *       *       *       *       root *applications/sahana/cron/rms_tweet2request.py
+#*/5   *       *       *       *       root *applications/eden/cron/rms_sms2record.py
+#*/5   *       *       *       *       root *applications/eden/cron/rms_tweet2request.py

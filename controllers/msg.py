@@ -110,7 +110,7 @@ def search():
     """Do a search of groups which match a type
     Used for auto-completion
     """
-    import json as original_json #get the json lib
+    import gluon.contrib.simplejson as sj
     table1 = db.pr_group
     field1 = 'group_name'
     table2 = db.pr_person
@@ -133,7 +133,7 @@ def search():
 		query = db((table2[field23].like('%' + value + '%'))).select(db.pr_person.pr_pe_id)
 		for row in query:
 			item.append({'id':row.pr_pe_id,'name':shn_pentity_represent(row.pr_pe_id, default_label = '')})
-		item = original_json.dumps(item)
+		item = sj.dumps(item)
 		response.view = 'plain.html'
 		return dict(item=item)
     return
@@ -180,3 +180,12 @@ def outbox():
     return shn_rest_controller('msg', "outbox", listadd=False)
 
 #-------------------------------------------------------------------------------
+def process_sms_via_api():
+	"Controller for SMS api processing - to be called via cron"
+	msg.process_outbox(contact_method = 2)
+	return
+	
+def process_email_via_api():
+	"Controller for Email api processing - to be called via cron"
+	msg.process_outbox(contact_method = 1)
+	return

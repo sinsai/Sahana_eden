@@ -1444,8 +1444,12 @@ toolbar.addButton(saveButton);
                         fc = "'" + str(feature.gis_location.feature_class_id) + "'"
                     else:
                         fc = "null"
+                    if feature.gis_location.wkt:
+                        wkt = feature.gis_location.wkt
+                    else:
+                        wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
                     layers_features += """
-        geom = parser.read('""" + feature.gis_location.wkt + """').geometry;
+        geom = parser.read('""" + wkt + """').geometry;
         iconURL = '""" + marker_url + """';
         featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', """ + fc + """, geom, iconURL)
         features.push(featureVec);

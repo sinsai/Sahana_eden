@@ -78,11 +78,7 @@ class Msg(object):
 		"""
 		Wrapper over web2py's email setup
 		"""
-		try:
-			self.mail.send(to, subject, message)
-			return True
-		except:
-			return False
+		return self.mail.send(to, subject, message)
 
 	def process_outbox(self, contact_method = 1, option = 1):
 		""" Send Pending Messages from OutBox.
@@ -106,14 +102,11 @@ class Msg(object):
 				if recipient:
 					try:
 						if (contact_method == 2 and option == 2):
-							self.send_sms_via_modem(recipient.value, contents)
-							return True
+							return self.send_sms_via_modem(recipient.value, contents)
 						if (contact_method == 2 and option == 1):
-							self.send_sms_via_api(recipient.value, contents)
-							return True
+							return self.send_sms_via_api(recipient.value, contents)
 						if (contact_method == 1):
-							self.send_email_via_api(recipient.value, subject, contents)
-							return True
+							return self.send_email_via_api(recipient.value, subject, contents)
 					except:
 						return False
 			if entity_type == 2:

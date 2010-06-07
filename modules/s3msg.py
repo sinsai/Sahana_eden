@@ -39,13 +39,14 @@ class Msg(object):
 	def __init__(self, environment, db=None, T=None, mail=None, modem=None):
 		self.db = db
 		self.sms_api = db(db.mobile_settings.modem_port == "").select().first()
-		tmp_parameters = self.sms_api.parameters.split("&")
-		self.sms_api_enabled = self.sms_api.enabled
-		for tmp_parameter in tmp_parameters:
-			self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
+        if self.sms_api:
+            tmp_parameters = self.sms_api.parameters.split("&")
+            self.sms_api_enabled = self.sms_api.enabled
+            for tmp_parameter in tmp_parameters:
+                self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
 		self.mail = mail
 		self.modem = modem
-		
+
 	def send_sms_via_modem(self, mobile, text = ""):
 		"""
 		Function to send SMS via MODEM
@@ -62,7 +63,7 @@ class Msg(object):
 		request = urllib.urlopen(self.sms_api.url, query)
 		output = request.read()
 		#print output
-	
+
 	def send_email_via_api(self, to, subject, message):
 		"""
 		Wrapper over web2py's email setup
@@ -116,7 +117,7 @@ class Msg(object):
 					pr_pe_id = self.db(query).select().first().pr_pe_id
 					status = send_pr_pe_id(pr_pe_id)
 			if entity_type == 1:
-				# Person 
+				# Person
 				status = send_pr_pe_id(entity)
 				# We only check status of last recipient
 			if status:

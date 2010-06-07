@@ -161,7 +161,7 @@ module_type = 2
 for module in modules:
     _module = modules[module]
     if (_module["module_type"] == module_type):
-        if module in deployment_settings.modules:
+        if deployment_settings.has_module(module):
             if not _module["access"]:
                 s3.menu_modules.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
             else:
@@ -180,7 +180,7 @@ modules_submenu = []
 for module in modules:
     _module = modules[module]
     if (_module["module_type"] == module_type):
-        if module in deployment_settings.modules:
+        if deployment_settings.has_module(module):
             if not _module["access"]:
                 modules_submenu.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
             else:
@@ -201,7 +201,7 @@ modules_submenu = []
 for module in modules:
     _module = modules[module]
     if (_module["module_type"] == module_type):
-        if module in deployment_settings.modules:
+        if deployment_settings.has_module(module):
             if not _module["access"]:
                 modules_submenu.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
             else:
@@ -219,7 +219,7 @@ module_type = 5
 for module in modules:
     _module = modules[module]
     if (_module["module_type"] == module_type):
-        if module in deployment_settings.modules:
+        if deployment_settings.has_module(module):
             if not _module["access"]:
                 s3.menu_modules.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
             else:

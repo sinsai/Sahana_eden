@@ -193,9 +193,9 @@ def __get_commons(solution=None):
 
 def index():
     "Module Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     groups = db(db.delphi_group.active == True).select()
     result = []
     for group in groups:
@@ -288,19 +288,19 @@ def new_problem():
     table = db.delphi_problem
     table.group.default = request.get_vars['group']
     table.group.writable = False
-    
+
     return problem()
 
 def group():
     if not auth.has_membership(1):
         raise HTTP(403)
-        
-    return shn_rest_controller(module, 'group', list_fields=['id', 'name', 'last_modification'])
+
+    return shn_rest_controller(module, 'group', list_fields=['id', 'name', 'description'])
 
 def user_to_group():
     if not auth.has_membership(1):
         raise HTTP(403)
-        
+
     return shn_rest_controller(module, 'user_to_group', list_fields=['id', 'group_id', 'user_id', 'status', 'req'])
 
 def problem():

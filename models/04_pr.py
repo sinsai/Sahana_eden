@@ -484,7 +484,8 @@ s3.crud_strings[tablename] = Storage(
 # -----------------------------------------------------------------------------
 # PR Extension: physical descriptions
 #
-if "mpr" in deployment_settings.modules or "dvi" in deployment_settings.modules:
+if deployment_settings.has_module("dvi") or \
+   deployment_settings.has_module("mpr"):
 
     # *****************************************************************************
     # Physical Description (pd_xxx)

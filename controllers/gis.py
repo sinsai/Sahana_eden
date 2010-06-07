@@ -72,7 +72,7 @@ def test():
         offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="update.popup")}
     else:
         offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
-    
+
     html = gis.show_map(
                 feature_overlays = [offices, hospitals],
                 wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
@@ -306,7 +306,7 @@ def location():
 
     # ToDo
     # if "bbox" in request.vars:
-        
+
     if filters:
         response.s3.filter = reduce(__and__, filters)
 
@@ -567,7 +567,7 @@ def layer_georss():
 
     # Model options
     table.url.comment = SPAN("*", _class="req")
-    
+
     # CRUD Strings
     type = "GeoRSS"
     GEORSS_LAYERS = T(TYPE_LAYERS_FMT % type)
@@ -1292,7 +1292,7 @@ def layers():
             filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"
             filepath = os.path.join(cachepath, filename)
             # Download file
-            file, warning = gis.download_kml(url, S3_PUBLIC_URL)
+            file, warning = gis.download_kml(url, deployment_settings.get_base_public_url())
             # Handle errors
             if "URLError" in warning or "HTTPError" in warning:
                 # URL inaccessible

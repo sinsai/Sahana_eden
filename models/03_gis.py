@@ -260,7 +260,7 @@ def shn_gis_location_represent(id):
             text = location.name
         represent = text
         # Hyperlink
-        represent = A(text, _href = S3_PUBLIC_URL + URL(r=request, c="gis", f="location", args=[location.id]))
+        represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
         # ToDo: Convert to popup? (HTML again!)
     except:
         try:

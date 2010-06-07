@@ -55,7 +55,6 @@ def index():
     """ Module's Home Page """
 
     module_name = s3.modules[module]["name_nice"]
-    
     return dict(module_name=module_name)
 
 # -----------------------------------------------------------------------------

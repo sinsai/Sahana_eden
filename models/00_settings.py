@@ -6,8 +6,6 @@
     Deployers shouldn't typically need to edit any settings here
 """
 
-S3_PUBLIC_URL = deployment_settings.base.get("public_url", "http://127.0.0.1:8000")
-S3_UTC_OFFSET = deployment_settings.L10n.get("utc_offset", "UTC +0000")
 BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
 
@@ -30,34 +28,38 @@ T.current_languages = ["en", "en-us"]
 # These settings could be made configurable as part of the Messaging Module
 # - however also need to be used by Auth (order issues), DB calls are overheads
 # - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
-mail.settings.server = deployment_settings.mail.get("server", "127.0.0.1:25")
+mail.settings.server = deployment_settings.get_mail_server()
 #mail.settings.server = "smtp.gmail.com:587"
 #mail.settings.login = "username:password"
-mail.settings.sender = deployment_settings.mail.get("sender", "sahana@your.org")
+mail.settings.sender = deployment_settings.get_mail_sender()
 
 ######
 # Auth
 ######
 
 #auth.settings.username_field = True
-auth.settings.hmac_key = deployment_settings.auth.get("hmac_key", "iwasntchanged")
+auth.settings.hmac_key = deployment_settings.get_auth_hmac_key()
 auth.define_tables()
 auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key="PUBLIC_KEY", private_key="PRIVATE_KEY")
 # Require Email Verification
-auth.settings.registration_requires_verification = deployment_settings.auth.get("registration_requires_verification", False)
+auth.settings.registration_requires_verification = deployment_settings.get_auth_registration_requires_verification()
 # Email settings for registration verification
 auth.settings.mailer = mail
-auth.messages.verify_email = "Click on the link " + S3_PUBLIC_URL + "/" + request.application + "/default/user/verify_email/%(key)s to verify your email"
+auth.messages.verify_email = "Click on the link " + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/verify_email/%(key)s to verify your email"
 auth.settings.on_failed_authorization = URL(r=request, c="default", f="user", args="not_authorized")
 auth.settings.reset_password_requires_verification = True
-auth.messages.reset_password = "Click on the link "+S3_PUBLIC_URL + "/" + request.application + "/default/user/reset_password/%(key)s to reset your password"
+auth.messages.reset_password = "Click on the link "+deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/reset_password/%(key)s to reset your password"
 # Require Admin approval for self-registered users
-auth.settings.registration_requires_approval = deployment_settings.auth.get("registration_requires_approval", False)
+auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
 auth.messages.registration_pending = "Email address verified, however registration is still pending approval - please wait until confirmation received."
 # Notify UserAdmin of new pending user registration to action
-auth.settings.verify_email_onaccept = lambda form: auth.settings.mailer.send(to=deployment_settings.mail.get("approver", "useradmin@your.org"), subject="Sahana Login Approval Pending", message="Your action is required. Please approve user %s asap: " % form.email + S3_PUBLIC_URL + "/" + request.application + "/admin/user")
+auth.settings.verify_email_onaccept = lambda form: \
+    auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
+                              subject="Sahana Login Approval Pending",
+                              message="Your action is required. Please approve user %s asap: " % form.email +
+                              deployment_settings.get_base_public_url() + "/" + request.application + "/admin/user")
 
 # Allow use of LDAP accounts for login
 # NB Currently this means that change password should be disabled:
@@ -110,4 +112,4 @@ crud.messages.submit_button = T("Save")
 from gluon.storage import Messages
 s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = "Sahana access granted"
-s3.messages.confirmation_email = "Welcome to the Sahana Portal at " + S3_PUBLIC_URL + ". Thanks for your assistance."
+s3.messages.confirmation_email = "Welcome to the Sahana Portal at " + deployment_settings.get_base_public_url() + ". Thanks for your assistance."

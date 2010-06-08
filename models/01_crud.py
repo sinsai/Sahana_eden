@@ -889,7 +889,7 @@ def shn_custom_wizard_style_ui(wizard=False, prev=None, next=None, cancel=None):
         if wizard:
             if next:
                 output.update(A("Next",next, "class='action-button'"))
-            elif  prev:
+            elif prev:
                 output.update(A("Previous",prev, "class='action-button'"))
             elif cancel:
                 output.update(A("Cancel",cancel, "class='action-button'"))

@@ -904,6 +904,7 @@ def shn_custom_wizard_style_ui(wizard=False, prev=None, next=None, cancel=None):
                     output.update(A("Cancel",cancel, _class="action-button"))
         return output
     return wizard_postp
+
 #
 # shn_convert_orderby ----------------------------------------------------------
 #

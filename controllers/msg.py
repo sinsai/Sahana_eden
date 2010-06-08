@@ -149,7 +149,7 @@ def outbox():
             response.s3.filter = (db.msg_outbox.person_id == person)
     else:
         redirect(URL(r=request, c='default', f='user', args='login',
-            vars={'_next':URL(r=request, c='msg', f='pe_contact')}))
+            vars={'_next':URL(r=request, c='msg', f='outbox')}))
 
     def restrict_methods(jr):
 		if jr.method == 'create':

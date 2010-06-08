@@ -896,11 +896,11 @@ def shn_custom_wizard_style_ui(prev=None, next=None, cancel=None):
     def wizard_postp(jr, output):
         if jr.representation == "html":
             if next:
-                output.update(A("Next",next, _class="action-button"))
+                output.append(A("Next",next, _class="action-button"))
             if prev:
-                output.update(A("Previous",prev, _class="action-button"))
+                output.append(A("Previous",prev, _class="action-button"))
             if cancel:
-                output.update(A("Cancel",cancel, _class="action-button"))
+                output.append(A("Cancel",cancel, _class="action-button"))
         return output
     return wizard_postp
 

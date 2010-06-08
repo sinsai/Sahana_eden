@@ -53,7 +53,7 @@ import uuid
 from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
                 type = "string",
-                native = "VARCHAR(64)",
+                native = "VARCHAR(128)",
                 encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
@@ -61,7 +61,7 @@ s3uuid = SQLCustomType(
 uuidstamp = db.Table(None, "uuidstamp",
                      Field("uuid",
                           type=s3uuid,
-                          length=64,
+                          length=128,
                           notnull=True,
                           unique=True,
                           readable=False,

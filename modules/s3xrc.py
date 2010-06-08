@@ -36,7 +36,7 @@
 __name__ = "S3XRC"
 __all__ = ["S3RESTController", "S3RESTRequest", "S3ResourceController"]
 
-import sys, uuid
+import sys, uuid, datetime
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -1985,6 +1985,13 @@ class S3ResourceController(object):
 
         table = self.db[resource]
         record = self.xml.record(table, element, validate=validate)
+
+        mtime = element.get(self.xml.MTIME, None)
+        if mtime:
+            mtime, error = self.validate(table, None, self.xml.MTIME, mtime)
+            if error:
+                mtime = None
+
         if not record:
             self.error = S3XRC_VALIDATION_ERROR
             return None
@@ -2002,6 +2009,7 @@ class S3ResourceController(object):
         vector = S3Vector(self.db, prefix, name, id,
                           record=record,
                           element=element,
+                          mtime=mtime,
                           rmap=rmap,
                           directory=directory,
                           permit=permit,
@@ -2308,6 +2316,7 @@ class S3Vector(object):
     def __init__(self, db, prefix, name, id,
                  record=None,
                  element=None,
+                 mtime=None,
                  rmap=None,
                  directory=None,
                  permit=None,
@@ -2347,6 +2356,11 @@ class S3Vector(object):
         self.record=record
         self.id=id
 
+        if mtime:
+            self.mtime = mtime
+        else:
+            self.mtime = datetime.datetime.utcnow()
+
         self.rmap=rmap
 
         self.components = []
@@ -2372,8 +2386,8 @@ class S3Vector(object):
             self.id = 0
             self.method = permission = self.ACTION["create"]
             if uid and self.UID in self.table:
-                orig = self.db(self.table[self.UID] == uid).select(
-                       self.table.id, limitby=(0,1))
+                query = (self.table[self.UID] == uid)
+                orig = self.db(query).select(self.table.ALL, limitby=(0,1))
                 if orig:
                     self.id = orig[0].id
                     self.method = permission = self.ACTION["update"]
@@ -2413,6 +2427,8 @@ class S3Vector(object):
 
         if not self.committed:
             if self.accepted and self.permitted:
+
+                #print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
 
                 # Create pseudoform
                 form = Storage() # PseudoForm for callbacks
@@ -2528,6 +2544,7 @@ class S3XML(object):
     NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
 
     UID = "uuid"
+    MTIME = "modified_on"
     Lat = "lat"
     Lon = "lon"
     Marker = "marker_id"
@@ -3147,9 +3164,8 @@ class S3XML(object):
             uid = element.get(self.UID, None)
             if uid:
                 if self.domain_mapping:
-                    record[self.UID] = self.import_uid(uid)
-                else:
-                    record[self.UID] = uid
+                    uid = self.import_uid(uid)
+                record[self.UID] = uid
                 original = self.db(table[self.UID] == uid).select(table.ALL,
                                                               limitby=(0,1))
                 if original:

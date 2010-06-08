@@ -885,6 +885,11 @@ def shn_custom_view(jr, default_name, format=None):
 # wizard style UI
 def shn_custom_wizard_style_ui(wizard=False, prev=None, next=None, cancel=None):
     """ Generic Support for a "Wizard" style UI using basic S3 CRUD"""
+    """
+        To use this do the following in your controller:
+        response.s3.postp = shn_custom_wizard_style_ui(wizard=True,prev=URL(..),next=URL(...), cancel=URL(...))
+        return shn_rest_controller(...)
+    """
     def wizard_postp(jr, output):
         if jr.representation == "html":
             if wizard:

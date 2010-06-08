@@ -881,6 +881,30 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace(".html", "_%s.html" % format)
         else:
             response.view = default_name
+            
+# Wizard-style UI
+def shn_wizard(prev=None, next=None, cancel=None):
+    """
+        Support for a 'Wizard' style UI using basic S3 CRUD
+    
+        To use this do the following in your controller:
+
+        response.s3.postp = shn_wizard(wizard=True, prev=URL(..), next=URL(...), cancel=URL(...))
+        return shn_rest_controller(...)
+
+        NB: You may omit any of the parameters if you feel your page does not need it.
+    """
+    def wizard_postp(jr, output):
+        if jr.representation == "html":
+            if next:
+                output.update(next_btn = A(T("Next"), next, _class="action-button"))
+            if prev:
+                output.update(prev_btn = A(T("Previous"), prev, _class="action-button"))
+            if cancel:
+                output.update(cancel_btn = A(T("Cancel"), cancel, _class="action-button"))
+        return output
+
+    return wizard_postp
 
 #
 # shn_convert_orderby ----------------------------------------------------------

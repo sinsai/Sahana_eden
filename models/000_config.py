@@ -23,6 +23,8 @@ deployment_settings.base.public_url = "http://127.0.0.1:8000"
 # Switch to "False" in Production for a Performance gain
 # (need to set to "True" again when Table definitions are changed)
 deployment_settings.base.migrate = True
+# Set to False during manual DB migration
+deployment_settings.base.prepopulate = True
 
 
 # Email settings
@@ -37,7 +39,6 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # L10n settings
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
-
 
 # Module settings
 # Comment/uncomment modules here to disable/enable them

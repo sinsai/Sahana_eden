@@ -23,6 +23,8 @@ class S3Config(Storage):
         return self.base.get("public_url", "http://127.0.0.1:8000")
     def get_base_migrate(self):
         return self.base.get("migrate", True)
+    def get_base_prepopulate(self):
+        return self.base.get("prepopulate", True)
 
     # Mail settings
     def get_mail_server(self):

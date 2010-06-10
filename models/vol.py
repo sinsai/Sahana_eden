@@ -44,7 +44,8 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
 
     # Settings and Restrictions
-    table.name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')), IS_NOT_IN_DB(db,'vol_project.name')]
+    table.name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')),
+                         IS_NOT_IN_DB(db,'vol_project.name')]
 
     table.description.requires = IS_NOT_EMPTY()
 
@@ -81,6 +82,9 @@ if deployment_settings.has_module(module):
                             label = "Project",
                             ondelete = 'RESTRICT'
                             ))
+
+    def shn_vol_project_list_fields():
+        return ["id", "name", "location_id", "start_date", "end_date", "status"]
 
     # -----------------------------------------------------------------------------
     # vol_position (component of vol_project)
@@ -293,7 +297,7 @@ if deployment_settings.has_module(module):
         deletable=True,
         editable=True,
         main='person_id', extra='subject',
-        list_fields = ['id', 'resource', 'subject', 'deployment', 'status'])
+        list_fields = ['id', 'type', 'subject', 'deployment', 'status'])
 
     # CRUD Strings
     ADD_RESOURCE = T('Add Resource')
@@ -415,6 +419,9 @@ if deployment_settings.has_module(module):
     # Field labels
     table.person_id.label = T('Assigned to')
 
+    def shn_vol_task_list_fields():
+        return ['id', 'priority', 'subject', 'person_id', 'status']
+
     # Component
     s3xrc.model.add_component(module, resource,
         multiple=True,
@@ -422,7 +429,7 @@ if deployment_settings.has_module(module):
         deletable=True,
         editable=True,
         main='subject', extra='description',
-        list_fields = ['id', 'priority', 'subject', 'vol_volunteer_id', 'status'])
+        list_fields = shn_vol_task_list_fields())
 
     # CRUD Strings
     ADD_TASK = T('Add Task')

@@ -50,6 +50,8 @@ table.co_name.label = T("c/o Name")
 table.street1.label = T("Street")
 table.street2.label = T("Street (add.)")
 table.postcode.label = T("ZIP/Postcode")
+table.city.requires = IS_NOT_EMPTY()
+table.city.comment = SPAN("*", _class="req")
 table.opt_pr_country.label = T("Country")
 
 # CRUD Strings
@@ -410,6 +412,9 @@ s3xrc.model.add_component(module, resource,
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.person_id.label = T("Person")
+table.value.requires = IS_NOT_EMPTY()
+table.value.comment = SPAN("*", _class="req")
 
 # Field representation
 

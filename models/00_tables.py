@@ -20,15 +20,21 @@ timestamp = db.Table(None, "timestamp",
 # Reusable author fields, TODO: make a better represent!
 def shn_user_represent(id):
 
-    if id:
-        user = db(db.auth_user.id==id).select()
+    def user_represent(id):
+        table = db.auth_user
+        user = db(table.id==id).select(table.first_name,
+                                       table.last_name,
+                                       limitby=(0,1))
         if user:
             user = user[0]
             name = user.first_name
             if user.last_name:
                 name = "%s %s" % (name, user.last_name)
             return name
-    return None
+        return None
+
+    return cache.ram("repr_user_%s" % id,
+                     lambda: user_represent(id), time_expire=10)
 
 authorstamp = db.Table(None, "authorstamp",
             Field("created_by", db.auth_user,

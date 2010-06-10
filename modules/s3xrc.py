@@ -1575,6 +1575,7 @@ class S3ResourceController(object):
 
         assert db is not None, "Database must not be None."
         self.db = db
+        self.cache = cache
 
         self.error = None
 
@@ -1710,7 +1711,6 @@ class S3ResourceController(object):
                          fields)
 
         return (rfields, dfields)
-
 
     # XML Export ==============================================================
 
@@ -2854,17 +2854,28 @@ class S3XML(object):
     # Data export =============================================================
 
     def represent(self, table, f, v):
+
+        """ Get the representation of a field value
+
+            @param table: the database table
+            @param f: the field name
+            @param v: the value
+
+        """
+
         text = str(table[f].represent(v)).decode("utf-8")
         # Filter out markup from text
-        try:
-            markup = etree.XML(text)
-            text = markup.xpath(".//text()")
-            if text:
-                text = " ".join(text)
-        except etree.XMLSyntaxError:
-            pass
+        if "<" in text:
+            try:
+                markup = etree.XML(text)
+                text = markup.xpath(".//text()")
+                if text:
+                    text = " ".join(text)
+            except etree.XMLSyntaxError:
+                pass
         text = self.xml_encode(text)
         return text
+
 
     def rmap(self, table, record, fields):
 
@@ -2910,12 +2921,7 @@ class S3XML(object):
             value = text = self.xml_encode(str(
                            table[f].formatter(value)).decode("utf-8"))
             if table[f].represent:
-                if self.cache:
-                    text = self.cache.ram("%s+%s+%s" % (table._tablename, f, value),
-                                          lambda: self.represent(table, f, value),
-                                          time_expire=self.CACHE_TTL)
-                else:
-                    text = self.represent(table, f, value)
+                text = self.represent(table, f, value)
 
             reference_map.append(Storage(field=f,
                                          table=ktablename,
@@ -3040,12 +3046,7 @@ class S3XML(object):
                            str(table[f].formatter(v)).decode("utf-8"))
 
             if table[f].represent:
-                if self.cache:
-                    text = self.cache.ram("%s+%s+%s" % (table._tablename, f, v),
-                                          lambda: self.represent(table, f, v),
-                                          time_expire=self.CACHE_TTL)
-                else:
-                    text = self.represent(table, f, v)
+                text = self.represent(table, f, v)
 
             fieldtype = str(table[f].type)
 

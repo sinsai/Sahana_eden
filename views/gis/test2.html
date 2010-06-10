@@ -1,0 +1,514 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+  <link href="/eden/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+
+<script src="/eden/static/scripts/web2py/jquery-1.4.2.min.js" type="text/javascript"></script>
+
+<script src="/eden/static/scripts/S3/S3.min.js" type="text/javascript"></script>
+
+<script type="text/javascript">//<![CDATA[
+_ajaxS3_wht_ = 'We have tried';
+_ajaxS3_gvn_ = 'times and it is still not working. We give in. Sorry.';
+_ajaxS3_500_ = 'Sorry - the server has a problem, please try again later.';
+_ajaxS3_dwn_ = 'There was a problem, sorry, please try again later.';
+_ajaxS3_get_ = 'getting';
+_ajaxS3_fmd_ = 'form data';
+_ajaxS3_rtr_ = 'retry';
+//]]></script>
+
+</head>
+<body>
+
+
+<!--
+<div id="header">
+</div>
+-->
+
+<div id="menu_modules">
+    <ul id="modulenav"><li style="float: left;"><div class="hoverable"><a href="/eden/default/open_module?id=1"><span class="S3menulogo"></span></a><span><a class="S3menuHome" href="/eden/default/open_module?id=1">Sahana Home</a></span></div></li><li style="float: left;"><div class="hoverable"><a href="/eden/default/open_module?id=2">Administration</a></div></li><li style="float: left;"><div class="hoverable"><a href="/eden/default/open_module?id=3">Mapping</a></div></li><li style="float: left;"><div class="hoverable"><a href="#">Person Management</a></div><ul><li><a href="/eden/default/open_module?id=5">Person Registry</a></li><li><a href="/eden/default/open_module?id=8">Missing Persons Registry</a></li><li><a href="/eden/default/open_module?id=9">Disaster Victim Registry</a></li><li><a href="/eden/default/open_module?id=11">Disaster Victim Identification</a></li></ul></li><li style="float: left;"><div class="hoverable"><a href="#">Aid Management</a></div><ul><li><a href="/eden/default/open_module?id=10">Human Resources</a></li><li><a href="/eden/default/open_module?id=6">Organization Registry</a></li><li><a href="/eden/default/open_module?id=12">Shelter Registry</a></li><li><a href="/eden/default/open_module?id=13">Volunteer Registry</a></li><li><a href="/eden/default/open_module?id=14">Request Management</a></li><li><a href="/eden/default/open_module?id=15">Budgeting Module</a></li><li><a href="/eden/default/open_module?id=17">Delphi Decision Maker</a></li><li><a href="/eden/default/open_module?id=4">Media Manager</a></li><li><a href="/eden/default/open_module?id=19">Hospital Management</a></li><li><a href="/eden/default/open_module?id=20">Ticketing Module</a></li></ul></li><li style="float: left;"><div class="hoverable"><a href="/eden/default/open_module?id=16">Messaging Module</a></div></li><li style="float: right;"><div class="hoverable"><a href="#null">Logged-in as: Fran Boon</a></div><ul><li><a href="/eden/default/user/logout">Logout</a></li><li><a href="/eden/default/user/profile">Edit Profile</a></li><li><a href="/eden/default/user/change_password">Change Password</a></li></ul></li><li style="float: right;"><div class="hoverable"><a href="/eden/default/contact">Contact us</a></div><ul><li><a href="/eden/default/about">About</a></li></ul></li></ul>
+</div>
+
+
+  <div id="menu_options">
+    <ul id="subnav"><li style="float: left;"><div class="hoverable"><a href="/eden/gis/map_viewing_client">Map Viewing Client</a></div></li><li style="float: left;"><div class="hoverable"><a href="/eden/gis/map_service_catalogue">Map Service Catalogue</a></div></li><li style="float: left;"><div class="hoverable"><a href="/eden/media/bulk_upload">Bulk Uploader</a></div></li></ul>
+  </div>
+
+<div class="colmask fullpage">
+	<div class="col1">
+        <div id="content" class="clearfix">
+
+<div id="map_wrapper">
+<link charset="utf-8" href="/eden/static/scripts/ext/resources/css/ext-all.min.css" media="screen" rel="stylesheet" type="text/css" />
+<link charset="utf-8" href="/eden/static/styles/gis/gis.min.css" media="screen" rel="stylesheet" type="text/css" />
+
+<div id="map_panel"></div>
+<table><tr>
+<td style="border: 0px none ;" valign="top"><div id="status_osm"></div></td>
+<td style="border: 0px none ;" valign="top">
+<div id="status_georss"></div>
+<div id="status_kml"></div>
+<div id="status_files"></div>
+</td></tr></table>
+
+<script src="/eden/static/scripts/ext/adapter/jquery/ext-jquery-adapter.js" type="text/javascript"></script>
+<script src="/eden/static/scripts/ext/ext-all.js" type="text/javascript"></script>
+<script src="/eden/static/scripts/gis/openlayers/lib/OpenLayers.js" type="text/javascript"></script>
+<!--<script src="/eden/static/scripts/gis/OpenLayers.js" type="text/javascript"></script>-->
+<script type="text/javascript" src="/eden/static/scripts/gis/MP.js"></script>
+<script type="text/javascript" src="/eden/static/scripts/gis/usng2.js"></script>
+<script src="/eden/static/scripts/gis/RemoveFeature.js" type="text/javascript"></script>
+<script src="/eden/static/scripts/gis/geoext/lib/GeoExt.js" type="text/javascript"></script>
+<!--<script src="/eden/static/scripts/gis/GeoExt.js" type="text/javascript"></script>-->
+
+<script><!--
+    var map, mapPanel, toolbar;
+    var currentFeature, popupControl, highlightControl;
+    var layerTree, wmsBrowser;
+    var allLayers = new Array();
+    OpenLayers.ImgPath = '/eden/static/img/gis/openlayers/';
+    // avoid pink tiles
+    OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
+    OpenLayers.Util.onImageLoadErrorColor = "transparent";
+    OpenLayers.ProxyHost = '/eden/gis/proxy?url=';
+    // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
+    var proj4326 = new OpenLayers.Projection('EPSG:4326');
+    var projection_current = new OpenLayers.Projection('EPSG:900913');
+    var lat = 18.58;
+    var lon = -72.42;
+    var center = new OpenLayers.LonLat(lon, lat);
+    center.transform(proj4326, projection_current);
+    var options = {
+        displayProjection: proj4326,
+        projection: projection_current,
+        units: 'm',
+        maxResolution: 156543.0339,
+        maxExtent: new OpenLayers.Bounds(-20037508, -20037508, 20037508, 20037508.34),
+        numZoomLevels: 16
+    };
+
+    function addLayers(map) {
+        // Base Layers
+        var mapnik = new OpenLayers.Layer.TMS( 'OSM Mapnik', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        map.addLayer(mapnik);
+                    
+        // Overlays
+        var max_w = 25;
+        var max_h = 35;
+        var format_kml = new OpenLayers.Format.KML({
+                        extractStyles: true,
+                        extractAttributes: true,
+                        maxDepth: 2
+                    })
+        var format_georss = new OpenLayers.Format.GeoRSS();
+        
+        // Features
+        var featureLayerOffices = new OpenLayers.Layer.Vector(
+            'Offices',
+            {
+                projection: proj4326,
+                strategies: [ new OpenLayers.Strategy.Fixed(), new OpenLayers.Strategy.Cluster({distance: 5, threshold: 2}) ],
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '/eden/default/download/gis_cache.file.Offices.kml',
+                    format: format_kml
+                })
+            }
+        );
+        featureLayerOffices.setVisibility(false);
+        map.addLayer(featureLayerOffices);
+        featureLayerOffices.events.on({
+            "featureselected": onKmlFeatureSelectOffices,
+            "featureunselected": onFeatureUnselect
+        });
+        allLayers.push(featureLayerOffices);
+
+        // GeoRSS
+        ﻿var georssLayers = new Array();
+
+        function onGeorssFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            if (undefined == feature.attributes.description) {
+                var popup = new OpenLayers.Popup.FramedCloud("chicken", 
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                "<h2>" + feature.attributes.title + "</h2>",
+                null, true, onPopupClose);
+            } else {
+                var popup = new OpenLayers.Popup.FramedCloud("chicken",
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                "<h2>" + feature.attributes.title + "</h2>" + feature.attributes.description,
+                null, true, onPopupClose);
+            };
+            feature.popup = popup;
+            popup.feature = feature;
+            map.addPopup(popup);
+        }
+        
+        function addGeorssLayerEarthquakes() {
+            var iconURL = "/eden/default/download/gis_marker.image.Geo_Earth_Quake_Epicenter.png";
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            var icon_img = new Image();
+            icon_img.src = iconURL;
+            var width = icon_img.width;
+            var height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var georssLayerEarthquakes = new OpenLayers.Layer.Vector( "Earthquakes", {
+                    projection: proj4326,
+                    strategies: [ new OpenLayers.Strategy.Fixed(), new OpenLayers.Strategy.Cluster({distance: 5, threshold: 2}) ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: "/eden/default/download/gis_cache.file.Earthquakes.rss",
+                        format: format_georss
+                    })
+            });
+            georssLayerEarthquakes.setVisibility(false);
+            
+            map.addLayer(georssLayerEarthquakes);
+            georssLayers.push(georssLayerEarthquakes);
+            georssLayerEarthquakes.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+        }
+        addGeorssLayerEarthquakes()
+
+        function addGeorssLayerVolcanoes() {
+            var iconURL = "/eden/default/download/gis_marker.image.Geo_Volcanic_Threat.png";
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            var icon_img = new Image();
+            icon_img.src = iconURL;
+            var width = icon_img.width;
+            var height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var georssLayerVolcanoes = new OpenLayers.Layer.Vector( "Volcanoes", {
+                    projection: proj4326,
+                    strategies: [ new OpenLayers.Strategy.Fixed(), new OpenLayers.Strategy.Cluster({distance: 5, threshold: 2}) ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: "/eden/default/download/gis_cache.file.Volcanoes.rss",
+                        format: format_georss
+                    })
+            });
+            georssLayerVolcanoes.setVisibility(false);
+            
+            map.addLayer(georssLayerVolcanoes);
+            georssLayers.push(georssLayerVolcanoes);
+            georssLayerVolcanoes.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+        }
+        addGeorssLayerVolcanoes()
+
+        allLayers = allLayers.concat(georssLayers);
+    }
+
+        function loadDetails(url, id) {
+            $.getS3(
+                    url,
+                    function(data) {
+                        $('#' + id).html(data);
+                    },
+                    'html',
+                    'popup'
+                );
+        }
+
+        function onKmlFeatureSelectOffices(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            var id = 'featureLayerOffices' + '_' + Math.floor(Math.random()*1001)
+            var popup = new OpenLayers.Popup.FramedCloud(
+                id,
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(400, 400),
+                "<div style='height: 400px; width: 400px; overflow: auto;'>Loading...<img src='/eden/static/img/ajax-loader.gif' border=0></div>",
+                null,
+                true,
+                onPopupClose
+            );
+            feature.popup = popup;
+            map.addPopup(popup);
+            // call AJAX to get the data
+            var uuid = feature.attributes.styleUrl.replace(new RegExp('^[#"]+', 'g'), '');
+            loadDetails('/eden/gis/location' + '?location.uid=' + uuid, id);
+        }
+
+        
+
+        function osm_getTileURL(bounds) {
+            var res = this.map.getResolution();
+            var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
+            var y = Math.round((this.maxExtent.top - bounds.top) / (res * this.tileSize.h));
+            var z = this.map.getZoom();
+            var limit = Math.pow(2, z);
+            if (y < 0 || y >= limit) {
+                return OpenLayers.Util.getImagesLocation() + '404.png';
+            } else {
+                x = ((x % limit) + limit) % limit;
+                return this.url + z + '/' + x + '/' + y + '.' + this.type;
+            }
+        }
+
+    // ol_vector_registerEvents.js (for Draft Features)
+
+    // ol_controls_features.js
+
+    // Supports selectControl for All Feature Layers
+    function onFeatureUnselect(event) {
+        var feature = event.feature;
+        if (feature.popup) {
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            delete feature.popup;
+        }
+    }
+    function onPopupClose(evt) {
+        //currentFeature.popup.hide();
+        popupControl.unselectAll();
+    }
+
+    // Supports highlightControl for All Feature Layers
+    var lastFeature = null;
+    var tooltipPopup = null;
+    function tooltipSelect(event){
+        var feature = event.feature;
+        var selectedFeature = feature;
+        // if there is already an opened details window, don't draw the tooltip
+        if(feature.popup != null){
+            return;
+        }
+        // if there are other tooltips active, destroy them
+        if(tooltipPopup != null){
+            map.removePopup(tooltipPopup);
+            tooltipPopup.destroy();
+            if(lastFeature != null){
+                delete lastFeature.popup;
+                tooltipPopup = null;
+            }
+        }
+        lastFeature = feature;
+        tooltipPopup = new OpenLayers.Popup("activetooltip",
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(80, 12),
+                    feature.attributes.name,
+                    true
+        );
+        // should be moved to CSS
+        tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+        tooltipPopup.closeDiv.style.backgroundColor='ffffcb';
+        tooltipPopup.contentDiv.style.overflow='hidden';
+        tooltipPopup.contentDiv.style.padding='3px';
+        tooltipPopup.contentDiv.style.margin='0';
+        tooltipPopup.closeOnMove = true;
+        tooltipPopup.autoSize = true;
+        feature.popup = tooltipPopup;
+        map.addPopup(tooltipPopup);
+    }
+    function tooltipUnselect(event){
+        var feature = event.feature;
+        if(feature != null && feature.popup != null){
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            delete feature.popup;
+            tooltipPopup = null;
+            lastFeature = null;
+        }
+    }
+
+    // ol_functions.js
+
+    Ext.onReady(function() {
+        map = new OpenLayers.Map('center', options);
+        addLayers(map);
+        
+        // ol_layers_features_all.js
+        map.addControl(new OpenLayers.Control.ScaleLine());
+        map.addControl(new OpenLayers.Control.MGRSMousePosition());
+        map.addControl(new OpenLayers.Control.Permalink());
+        map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+        
+        // Popups
+        // onClick Popup
+        popupControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                toggle: true,
+                clickout: true
+            }
+        );
+        // onHover Tooltip
+        highlightControl = new OpenLayers.Control.SelectFeature(
+            allLayers, { 
+                hover: true,
+                highlightOnly: true,
+                renderIntent: "temporary",
+                eventListeners: {
+                    featurehighlighted: tooltipSelect, 
+                    featureunhighlighted: tooltipUnselect
+                }
+            }
+        );
+        map.addControl(highlightControl);
+        map.addControl(popupControl);
+        highlightControl.activate();
+        popupControl.activate();
+
+        var mapPanel = new GeoExt.MapPanel({
+            region: 'center',
+            height: 600,
+            width: 800,
+            id: 'mappanel',
+            xtype: 'gx_mappanel',
+            map: map,
+            center: center,
+            zoom: 7,
+            tbar: new Ext.Toolbar()
+        });
+
+        var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
+            text: 'Base Layers',
+            layerStore: mapPanel.layers,
+            leaf: false,
+            expanded: true
+        });
+
+        var layerTreeFeaturesInternal = new GeoExt.tree.OverlayLayerContainer({
+            //text: 'Internal Features',
+            text: 'Overlays',
+            layerStore: mapPanel.layers,
+            leaf: false,
+            expanded: true
+        });
+
+        var root = new Ext.tree.AsyncTreeNode({
+            expanded: true,
+            loader: new GeoExt.tree.WMSCapabilitiesLoader({
+                url: OpenLayers.ProxyHost + 'http%3A//preview.grid.unep.ch%3A8080/geoserver/ows%3Fservice%3DWMS%26request%3DGetCapabilities',
+                layerOptions: {buffer: 0, singleTile: true, ratio: 1},
+                layerParams: {'TRANSPARENT': 'TRUE'},
+                // customize the createNode method to add a checkbox to nodes
+                createNode: function(attr) {
+                    attr.checked = attr.leaf ? false : undefined;
+                    return GeoExt.tree.WMSCapabilitiesLoader.prototype.createNode.apply(this, [attr]);
+                }
+            })
+        });
+        wmsBrowser = new Ext.tree.TreePanel({
+            id: 'wmsbrowser',
+            title: 'Risk Maps',
+            root: root,
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            listeners: {
+                // Add layers to the map when checked, remove when unchecked.
+                // Note that this does not take care of maintaining the layer
+                // order on the map.
+                'checkchange': function(node, checked) { 
+                    if (checked === true) {
+                        mapPanel.map.addLayer(node.attributes.layer); 
+                    } else {
+                        mapPanel.map.removeLayer(node.attributes.layer);
+                    }
+                }
+            }
+        });
+        
+        
+        layerTree = new Ext.tree.TreePanel({
+            id: 'treepanel',
+            //title: 'Layers',
+            root: new Ext.tree.AsyncTreeNode({
+                expanded: true,
+                children: [
+                    layerTreeBase,
+                    layerTreeFeaturesInternal
+                    //layerTreeFeaturesExternal
+                ],
+            }),
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            enableDD: true,
+        });
+
+    var panel = new Ext.Panel({
+        renderTo: "map_panel",
+            
+            maximizable: true,
+            titleCollapse: true,
+            height: 600,
+            width: 800,
+            layout: 'border',
+            items:  [{
+                        region: 'west',
+                        id: 'tools',
+                        title: 'Tools',
+                        border: true,
+                        width: 250,
+                        collapsible: true,
+                        split: true,
+                        items: [
+                            layerTree,
+                            wmsBrowser
+                            ]
+                    },
+                    mapPanel
+                    ]
+        });
+    });
+//--></script></div>
+</div>
+</div>
+</div>
+
+<div id="footer">
+    ﻿<p>
+    <a class="help" target="_blank" href="http://sahanafoundation.org/chat" title="Chat">Chat on IRC</a> |
+    <a class="help" target="_blank" href="http://eden.sahanafoundation.org/report" title="Report a Bug">Report a Bug</a>
+</p>
+<hr/>
+<p>
+    <a target="_blank" href="http://www.web2py.com" title="Powered by Web2Py"><img src="/eden/static/img/button-web2py.png" width="47" height="13" alt="Powered by Web2Py" /></a>
+</p>
+
+</div>
+
+</body>
+</html>

@@ -6,10 +6,8 @@
     @author: Fran Boon
 """
 
-module = 'default'
+module = "default"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
 # Options Menu (available in all Functions)
 response.menu_options = [
     #[T('About Sahana'), False, URL(r=request, f='about')],
@@ -34,38 +32,63 @@ def user():
     # Add newly-registered users to Person Registry & 'Authenticated' role
     auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
-    if request.args and request.args(0)=="profile":
-        #auth.settings.table_user.organisation.writable = False
-        auth.settings.table_user.utc_offset.readable = True
-        auth.settings.table_user.utc_offset.writable = True
+    if request.args and request.args(0) == "login_next":
+        # The following redirects the user to contacts page on first login - can
+        # be updated for a workflow on login. This also notes the timestamp
+        # of last login through the browser
+        if auth.is_logged_in():
+            if not auth.user.timestamp:
+                db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
+                redirect(URL(r=request, c="msg", f="pe_contact"))
+            db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
+            redirect(URL(r=request, f="index"))
 
-    auth.settings.table_user.language.label = T("Language")
-    auth.settings.table_user.language.default = "en"
-    auth.settings.table_user.language.comment = DIV(_class="tooltip",
-        _title=T("Language|The language to use for notifications."))
-    auth.settings.table_user.language.requires = IS_IN_SET(shn_languages)
-    auth.settings.table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
+    _table_user = auth.settings.table_user
+    if request.args and request.args(0) == "profile":
+        #_table_user.organisation.writable = False
+        _table_user.utc_offset.readable = True
+        _table_user.utc_offset.writable = True
+
+    _table_user.language.label = T("Language")
+    _table_user.language.default = "en"
+    _table_user.language.comment = DIV(_class="tooltip", _title=T("Language|The language to use for notifications."))
+    _table_user.language.requires = IS_IN_SET(shn_languages)
+    _table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
 
     form = auth()
 
-    self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
+    self_registration = db().select(db.s3_setting.self_registration).first().self_registration
 
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
-    #if request.args(0) == 'login':
-    #    response.title = T('Login')
-    #    response.view = 'auth/login.html'
+    #if request.args(0) == "login":
+    #    response.title = T("Login")
+    #    response.view = "auth/login.html"
 
     return dict(form=form, self_registration=self_registration)
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    modules = db(db.s3_module.enabled=='Yes').select(db.s3_module.ALL, orderby=db.s3_module.priority)
-    admin_name = db().select(db.s3_setting.admin_name)[0].admin_name
-    admin_email = db().select(db.s3_setting.admin_email)[0].admin_email
-    admin_tel = db().select(db.s3_setting.admin_tel)[0].admin_tel
+    
+    module_name = s3.modules[module]["name_nice"]
+    
+    modules = Storage()
+    for _module in deployment_settings.modules:
+        _module = str(_module)
+        _s3 = s3.modules[_module]
+        modules[_module] = Storage()
+        _module = modules[_module]
+        _module.name_nice = _s3["name_nice"]
+        _module.access = _s3["access"]
+        _module.description = _s3["description"]
+    
+    settings = db(db.s3_setting.id == 1).select().first()
+    admin_name = settings.admin_name
+    admin_email = settings.admin_email
+    admin_tel = settings.admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
+    
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def source():
@@ -86,15 +109,6 @@ def list():
     "Custom view designed to be pulled into an Ext layout's Center Panel"
     return dict()
 
-def open_module():
-    "Select Module"
-    id = request.vars.id
-    modules = db(db.s3_module.id==id).select()
-    if not len(modules):
-        redirect(URL(r=request, f='index'))
-    module = modules[0].name
-    redirect(URL(r=request, c=module, f='index'))
-
 # About Sahana
 def apath(path=''):
     "Application path"
@@ -106,7 +120,11 @@ def apath(path=''):
     return os.path.join(opath,path).replace('\\','/')
 
 def about():
-    "About Sahana page provides details on component versions."
+    """
+    The About page provides details on the software
+    depedencies and versions available to this instance
+    of Sahana Eden.
+    """
     import sys
     import subprocess
     import string
@@ -116,32 +134,32 @@ def about():
     try:
         sqlite_version = (subprocess.Popen(["sqlite3", "-version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()
     except:
-        sqlite_version = "Not installed or available"
+        sqlite_version = T("Not installed or incorectly configured.")
     try:
         mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]    
     except:
-        mysql_version = "Not installed or available"
+        mysql_version = T("Not installed or incorrectly configured.")
     try:    
         pgsql_reply = (subprocess.Popen(["psql", "--version"], stdout=subprocess.PIPE).communicate()[0]) 
         pgsql_version = string.split(pgsql_reply)[2]
     except:
-        pgsql_version = "Not installed or available"
+        pgsql_version = T("Not installed or incorrectly configured.")
     try:
         import MySQLdb
         pymysql_version = MySQLdb.__revision__
     except:
-        pymysql_version = "Not installed or available"
+        pymysql_version = T("Not installed or incorrectly configured.")
     try:
         import reportlab
         reportlab_version = reportlab.Version
     except:
-        reportlab_version = "Not installed or available"
+        reportlab_version = T("Not installed or incorrectly configured.")
     try:
         import xlwt
         xlwt_version = xlwt.__VERSION__
     except:
-        xlwt_version = "Not installed or available"
-    return dict(module_name=module_name,
+        xlwt_version = T("Not installed or incorrectly configured.")
+    return dict(
                 python_version=python_version, 
                 sahana_version=sahana_version, 
                 web2py_version=web2py_version, 
@@ -150,7 +168,8 @@ def about():
                 pgsql_version=pgsql_version,
                 pymysql_version=pymysql_version,
                 reportlab_version=reportlab_version, 
-                xlwt_version=xlwt_version)
+                xlwt_version=xlwt_version
+                )
 
 def help():
     "Custom View"

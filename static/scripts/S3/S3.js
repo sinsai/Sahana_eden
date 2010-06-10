@@ -1,8 +1,8 @@
 var popupWin = null;
 function openPopup(url) {
-	if ( !popupWin || popupWin.closed ) {
-		popupWin = window.open( url, "popupWin", "width=640,height=480" );
-	} else popupWin.focus();
+    if ( !popupWin || popupWin.closed ) {
+        popupWin = window.open( url, "popupWin", "width=640,height=480" );
+    } else popupWin.focus();
 }
 $(document).ready(function() {
     $('.error').hide().slideDown('slow')
@@ -75,34 +75,34 @@ _ajaxS3_rtr_ = {{=T('retry')}};
 */
 (function($) {
     jQuery.ajaxS3 = function(s) {
-        var options = jQuery.extend({}, jQuery.ajaxS3Settings, s);
-	options.tryCount = 0;
-	showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
-	options.success = function(data, status) {
-	    hideStatus();
-	    if(s.success)
-		s.success(data, status);
-	}
-	options.error = function(xhr, textStatus, errorThrown ) {
-	    if (textStatus == 'timeout') {
-		this.tryCount++;
-		if (this.tryCount <= this.retryLimit) {
-		    //try again
-    		    showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '... ' + _ajaxS3_rtr_+ ' ' + this.tryCount,
-				$.ajaxS3Settings.msgTimeout);
-		    $.ajax(this);
-		    return;
-		}
-		showStatus(_ajaxS3_wht_ + ' ' + (this.retryLimit + 1) + ' ' + _ajaxS3_gvn_,
-			   $.ajaxS3Settings.msgTimeout, false, true);
-		return;
-	    }
-	    if (xhr.status == 500) {
-		showStatus(_ajaxS3_500_, $.ajaxS3Settings.msgTimeout, false, true);
-	    } else {
-		showStatus(_ajaxS3_dwn_, $.ajaxS3Settings.msgTimeout, false, true);
-	    }
-	};
+        var options = jQuery.extend( {}, jQuery.ajaxS3Settings, s );
+        options.tryCount = 0;
+        showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
+        options.success = function(data, status) {
+            hideStatus();
+            if (s.success)
+                s.success(data, status);
+        }
+        options.error = function(xhr, textStatus, errorThrown ) {
+            if (textStatus == 'timeout') {
+                this.tryCount++;
+                if (this.tryCount <= this.retryLimit) {
+                    // try again
+                    showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '... ' + _ajaxS3_rtr_ + ' ' + this.tryCount,
+                        $.ajaxS3Settings.msgTimeout);
+                    $.ajax(this);
+                    return;
+                }
+                showStatus(_ajaxS3_wht_ + ' ' + (this.retryLimit + 1) + ' ' + _ajaxS3_gvn_,
+                    $.ajaxS3Settings.msgTimeout, false, true);
+                return;
+            }
+            if (xhr.status == 500) {
+                showStatus(_ajaxS3_500_, $.ajaxS3Settings.msgTimeout, false, true);
+            } else {
+                showStatus(_ajaxS3_dwn_, $.ajaxS3Settings.msgTimeout, false, true);
+            }
+        };
         jQuery.ajax(options);
     };
 
@@ -117,37 +117,37 @@ _ajaxS3_rtr_ = {{=T('retry')}};
     };
 
     jQuery.getS3 = function(url, data, callback, type, message) {
-	// shift arguments if data argument was ommited
-	if ( jQuery.isFunction( data ) ) {
-		callback = data;
-		data = null;
-	}
+        // shift arguments if data argument was omitted
+        if ( jQuery.isFunction( data ) ) {
+            callback = data;
+            data = null;
+        }
         return jQuery.ajaxS3({
             type: 'GET',
             url: url,
-	    data: data,
+            data: data,
             success: callback,
             dataType: type,
-	    message: message
+            message: message
         });
     };
 
     jQuery.getJSONS3 = function(url, data, callback, message) {
-	// shift arguments if data argument was ommited
-	if ( jQuery.isFunction( data ) ) {
-		message = callback;
-		callback = data;
-		data = null;
-	}
+        // shift arguments if data argument was omitted
+        if ( jQuery.isFunction( data ) ) {
+            message = callback;
+            callback = data;
+            data = null;
+        }
         return jQuery.getS3(url, data, callback, 'json', message);
     };
 
     jQuery.ajaxS3Settings = {
-	timeout : 10000,
-	msgTimeout: 2000,
-	retryLimit : 10,
-	dataType: 'json',
-	type: 'GET'
+        timeout : 10000,
+        msgTimeout: 2000,
+        retryLimit : 10,
+        dataType: 'json',
+        type: 'GET'
     };
 
     jQuery.ajaxS3Setup = function(settings) {
@@ -237,10 +237,10 @@ function StatusBar(sel,options)
     }
     this.release = function()
     {
-        if(_statusbar){
+        if (_statusbar) {
             $('#_statusbar').remove();
-	    _statusbar = undefined;
-	}
+            _statusbar = undefined;
+        }
     }
 }
 // use this as a global instance to customize constructor
@@ -254,6 +254,6 @@ function showStatus(message, timeout, additive, isError)
 }
 function hideStatus()
 {
-    if(_statusbar)
-	_statusbar.release();
+    if (_statusbar)
+        _statusbar.release();
 }

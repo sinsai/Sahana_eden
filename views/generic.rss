@@ -12,5 +12,5 @@ try:
    response.write(rss(response._vars),escape=False)
    response.headers['Content-Type']='application/rss+xml'
 except:
-   raise HTTP(405,'no rss')
+   raise HTTP(405, T('This information cannot be sent via RSS.'))
 }}

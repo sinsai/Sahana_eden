@@ -4,44 +4,44 @@
     Request Management System
 """
 
-module = 'rms'
-if shn_module_enable.get(module, False):
+module = "rms"
+if deployment_settings.has_module(module):
 
     # Settings
-    resource = 'setting'
-    table = module + '_' + resource
+    resource = "setting"
+    table = module + "_" + resource
     db.define_table(table,
-                    Field('audit_read', 'boolean'),
-                    Field('audit_write', 'boolean'),
+                    Field("audit_read", "boolean"),
+                    Field("audit_write", "boolean"),
                     migrate=migrate)
 
     # -------------------------------
     # Load lists/dictionaries for drop down menus
 
     rms_priority_opts = {
-        3:T('High'),
-        2:T('Medium'),
-        1:T('Low')
+        3:T("High"),
+        2:T("Medium"),
+        1:T("Low")
     }
 
     rms_status_opts = {
-        1:T('Pledged'),
-        2:T('In Transit'),
-        3:T('Delivered'),
+        1:T("Pledged"),
+        2:T("In Transit"),
+        3:T("Delivered"),
         }
 
     rms_type_opts = {
-        1:T('Food'),
-        2:T('Find'),
-        3:T('Water'),
-        4:T('Medicine'),
-        5:T('Shelter'),
-        6:T('Report'),
+        1:T("Food"),
+        2:T("Find"),
+        3:T("Water"),
+        4:T("Medicine"),
+        5:T("Shelter"),
+        6:T("Report"),
         }
 
-    rms_req_source_type = { 1 : 'Manual',
-                            2 : 'SMS',
-                            3 : 'Tweet' }
+    rms_req_source_type = { 1 : "Manual",
+                            2 : "SMS",
+                            3 : "Tweet" }
 
     # -----------------
     # Requests table (Combined SMS, Tweets & Manual entry)
@@ -241,12 +241,12 @@ if shn_module_enable.get(module, False):
                 if rows:
                     records = []
                     for row in rows:
-                        href = next.replace('%5bid%5d', '%s' % row.id)
+                        href = next.replace("%5bid%5d", "%s" % row.id)
                         records.append(TR(
                             row.completion_status,
                             row.message,
                             row.timestamp,
-                            row.location_id and shn_gis_location_represent(row.location_id) or 'unknown',
+                            row.location_id and shn_gis_location_represent(row.location_id) or "unknown",
                             ))
                     items=DIV(TABLE(THEAD(TR(
                         TH("Completion Status"),
@@ -254,16 +254,16 @@ if shn_module_enable.get(module, False):
                         TH("Time"),
                         TH("Location"),
                         )),
-                        TBODY(records), _id='list', _class="display"))
+                        TBODY(records), _id="list", _class="display"))
                 else:
-                    items = T('None')
+                    items = T("None")
 
             try:
-                label_create_button = s3.crud_strings['rms_req'].label_create_button
+                label_create_button = s3.crud_strings["rms_req"].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, f='req', args='create'), _id='add-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, f="req", args="create"), _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
             return output
@@ -273,26 +273,23 @@ if shn_module_enable.get(module, False):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, resource, method='search_simple', action=shn_rms_req_search_simple )
+    s3xrc.model.set_method(module, resource, method="search_simple", action=shn_rms_req_search_simple )
 
     # ------------------
     # Create pledge table
 
     def shn_req_pledge_represent(id):
-    #    return  A(T('Edit Pledge'), _href=URL(r=request, f='pledge', args=[id, 'pledge']))
-        return  A(T('Edit Pledge'), _href=URL(r=request, f='pledge', args=[id]))
+        return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
 
 
-    resource = 'pledge'
+    resource = "pledge"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_status,
-        Field('submitted_on', 'datetime'),
+        Field("submitted_on", "datetime"),
         Field("req_id", db.rms_req),
         Field("status", "integer"),
         organisation_id,
         person_id,
-        #   Field('submitted_by', db.auth_user), # replaced by authorstamp
-        #   location_id,
         #   Field('comment_id', db.comment),
         migrate=migrate)
 

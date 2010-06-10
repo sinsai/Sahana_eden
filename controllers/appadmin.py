@@ -40,12 +40,11 @@ try:
         session.error = T('Not Authorised!')
         redirect(URL(r=request, c='default', f='user', args='login'))
 except:
-    session.error=T('Not Authorised!')
+    session.error = T('Not Authorised!')
     redirect(URL(r=request, c='default', f='user', args='login'))
 
-module='admin'
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
+module = "admin"
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = admin_menu_options
 
@@ -113,7 +112,7 @@ def get_query(request):
 
 
 def index():
-    return dict(databases=databases, module_name=module_name)
+    return dict(databases=databases)
 
 
 # ##########################################################

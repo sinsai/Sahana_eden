@@ -1,10 +1,11 @@
-{{extend 'layout.html'}}
-{{include 'gis/catalogue_toolbar.html'}}
-{{include '_update.html'}}
+{{extend "layout.html"}}
+{{include "gis/catalogue_toolbar.html"}}
+{{include "_update.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Hide the Delete Button as otherwise we lose the map!
     $("#delete-btn").hide();
-    $("#list-btn").hide();
+    // Hide the List Button too
+    $(".action-btn").hide();
 });
 //]]></script>

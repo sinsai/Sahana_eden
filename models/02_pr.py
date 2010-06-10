@@ -4,7 +4,7 @@
     S3 Person Registry
 
     @author: nursix
-    @see: U{http://trac.sahanapy.org/wiki/BluePrintVITA}
+    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
 """
 
 module = "pr"
@@ -33,7 +33,7 @@ opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
 
 # -----------------------------------------------------------------------------
 #
-def shn_pentity_represent(id):
+def shn_pentity_represent(id, default_label="[no label]"):
 
     """
         Represent a Person Entity in option fields or list views
@@ -42,27 +42,27 @@ def shn_pentity_represent(id):
     pentity_str = default = T("None (no such record)")
 
     table = db.pr_pentity
-    pentity = db(table.id==id).select(
+    pentity = db(table.id == id).select(
         table.opt_pr_entity_type,
         table.label,
-        limitby=(0,1)).first()
+        limitby=(0, 1)).first()
     if not pentity:
         return default
     entity_type = pentity.opt_pr_entity_type
-    label = pentity.label or "no label"
+    label = pentity.label or default_label
 
     etype = lambda entity_type: vita.trackable_types[entity_type]
 
     if entity_type == 1:
         table = db.pr_person
-        person = db(table.pr_pe_id==id).select(
+        person = db(table.pr_pe_id == id).select(
                     table.first_name,
                     table.middle_name,
                     table.last_name,
-                    limitby=(0,1))
+                    limitby=(0, 1))
         if person:
             person = person[0]
-            pentity_str = "%s [%s] (%s)" % (
+            pentity_str = "%s %s (%s)" % (
                 vita.fullname(person),
                 label,
                 etype(entity_type)
@@ -70,9 +70,9 @@ def shn_pentity_represent(id):
 
     elif entity_type == 2:
         table = db.pr_group
-        group = db(table.pr_pe_id==id).select(
+        group = db(table.pr_pe_id == id).select(
                     table.group_name,
-                    limitby=(0,1))
+                    limitby=(0, 1))
         if group:
             group = group[0]
             pentity_str = "%s (%s)" % (
@@ -166,7 +166,7 @@ def shn_pentity_ondelete(record):
         crud.settings.delete_onvalidation = None
         crud.settings.delete_onaccept = None
 
-        if db(db.s3_setting.id==1).select()[0].archive_not_delete:
+        if db(db.s3_setting.id == 1).select().first().archive_not_delete:
             db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
         else:
             crud.delete(db.pr_pentity, pr_pe_id)
@@ -187,19 +187,19 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
     """
 
     if "pr_pe_id" in table.fields:
-        record = db(table.id==form.vars.id).select(table.pr_pe_id, table.pr_pe_label).first()
+        record = db(table.id == form.vars.id).select(table.pr_pe_id, table.pr_pe_label).first()
         if record:
             pr_pe_id = record.pr_pe_id
             label = record.pr_pe_label
             if pr_pe_id:
                 # update action
-                db(db.pr_pentity.id==pr_pe_id).update(label=label)
+                db(db.pr_pentity.id == pr_pe_id).update(label=label)
             else:
                 # create action
                 pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=entity_type,
                                                 label=label)
                 if pr_pe_id:
-                    db(table.id==form.vars.id).update(pr_pe_id=pr_pe_id)
+                    db(table.id == form.vars.id).update(pr_pe_id=pr_pe_id)
 
     return True
 
@@ -308,11 +308,11 @@ opt_pr_country = SQLTable(None, "opt_pr_country",
 #
 def shn_pr_person_represent(id):
     table = db.pr_person
-    person = db(table.id==id).select(
+    person = db(table.id == id).select(
                 table.first_name,
                 table.middle_name,
                 table.last_name,
-                limitby=(0,1))
+                limitby=(0, 1))
     if person:
         return vita.fullname(person[0])
     else:
@@ -333,9 +333,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("local_name"),                    # name in local language and script, Sahana legacy
                 opt_pr_gender,
                 opt_pr_age_group,
-                #Field("email", length=128, unique=True), # Needed for AAA (change this!)
-                Field("email", length=128), # Needed for AAA (change this!)
-                Field("mobile_phone"),                   # Needed for SMS (change this!)
+                Field("email", length=128),             # Deprecated - see pe_contact
+                Field("mobile_phone"),                  # Deprecated - see pe_contact
                 # Person Details
                 Field("date_of_birth", "date"),         # Sahana legacy
                 opt_pr_nationality,                     # Nationality
@@ -356,14 +355,22 @@ table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.mobile_phone" % ta
 table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_person.pr_pe_label"))
 
 # Field representation
-table.pr_pe_label.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any)."))
-table.first_name.comment = SPAN(SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("First name|The first or only name of the person (mandatory).")))
-table.preferred_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional)."))
-table.local_name.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Local Name|Name of the person in local language and script (optional)."))
-table.email.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates."))
-table.mobile_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates."))
-table.opt_pr_nationality.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Nationality|Nationality of the person."))
-table.opt_pr_country.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Country of Residence|The country the person usually lives in."))
+table.pr_pe_label.comment = DIV(DIV(_class="tooltip",
+    _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any).")))
+table.first_name.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
+    _title=T("First name|The first or only name of the person (mandatory).")))
+table.preferred_name.comment = DIV(DIV(_class="tooltip",
+    _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional).")))
+table.local_name.comment = DIV(DIV(_class="tooltip",
+    _title=T("Local Name|Name of the person in local language and script (optional).")))
+table.email.comment = DIV(DIV(_class="tooltip",
+    _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates.")))
+table.mobile_phone.comment = DIV(DIV(_class="tooltip",
+    _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates.")))
+table.opt_pr_nationality.comment = DIV(DIV(_class="tooltip",
+    _title=T("Nationality|Nationality of the person.")))
+table.opt_pr_country.comment = DIV(DIV(_class="tooltip",
+    _title=T("Country of Residence|The country the person usually lives in.")))
 
 table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 
@@ -394,9 +401,16 @@ s3.crud_strings[tablename] = Storage(
 #
 # person_id: reusable field for other tables to reference ---------------------
 #
-shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button, _class="colorbox", _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")), _target="top", _title=s3.crud_strings.pr_person.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Person Entry|Create a person entry in the registry.")))
+shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button,
+                           _class="colorbox",
+                           _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
+                           _target="top",
+                           _title=s3.crud_strings.pr_person.label_create_button),
+                         DIV(DIV(_class="tooltip",
+                                 _title=T("Create Person Entry|Create a person entry in the registry."))))
+
 person_id = SQLTable(None, "person_id",
-                FieldS3("person_id", db.pr_person, sortby=["first_name","middle_name","last_name"],
+                FieldS3("person_id", db.pr_person, sortby=["first_name", "middle_name", "last_name"],
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent)),
                     represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
                     comment = shn_person_comment,
@@ -441,11 +455,11 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("group_name"),                            # Group name (optional? => No!)
                 Field("group_description"),                     # Group short description
 #                Field("group_head"),                           # Sahana legacy
-#                Field("no_of_adult_males","integer"),           # Sahana legacy
-#                Field("no_of_adult_females","integer"),         # Sahana legacy
+#                Field("no_of_adult_males", "integer"),         # Sahana legacy
+#                Field("no_of_adult_females", "integer"),       # Sahana legacy
 #                Field("no_of_children", "integer"),            # Sahana legacy
-#                Field("no_of_children_males","integer"),        # by Khushbu
-#                Field("no_of_children_females","integer"),      # by Khushbu
+#                Field("no_of_children_males", "integer"),      # by Khushbu
+#                Field("no_of_children_females", "integer"),    # by Khushbu
 #                Field("no_of_displaced", "integer"),           # Sahana legacy
 #                Field("no_of_missing", "integer"),             # Sahana legacy
 #                Field("no_of_dead", "integer"),                # Sahana legacy
@@ -455,18 +469,15 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("comment"),                               # optional comment
                 migrate=migrate)
 
-# Field validation
-
-# Field representation
 table.pr_pe_label.readable = False
 table.pr_pe_label.writable = False
 table.system.readable = False
 table.system.writable = False
 table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_group.pr_pe_label"))
-
-# Field labels
 table.opt_pr_group_type.label = T("Group type")
 table.group_name.label = T("Group name")
+table.group_name.requires = IS_NOT_EMPTY()
+table.group_name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 table.group_description.label = T("Group description")
 
 # CRUD Strings
@@ -495,12 +506,17 @@ group_id = SQLTable(None, "group_id",
                 FieldS3("group_id", db.pr_group, sortby="group_name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id", "%(id)s: %(group_name)s", filterby="system", filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
-                    comment = DIV(A(s3.crud_strings.pr_group.label_create_button, _class="colorbox", _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")), _target="top", _title=s3.crud_strings.pr_group.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Create Group Entry|Create a group entry in the registry."))),
-                    ondelete = "RESTRICT"
-                ))
+                    comment = DIV(A(s3.crud_strings.pr_group.label_create_button,
+                                    _class="colorbox",
+                                    _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
+                                    _target="top",
+                                    _title=s3.crud_strings.pr_group.label_create_button),
+                                  DIV(DIV(_class="tooltip",
+                                          _title=T("Create Group Entry|Create a group entry in the registry.")))),
+                    ondelete = "RESTRICT"))
 
 s3xrc.model.configure(table,
-    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=2),
+    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_group, entity_type=2),
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
 # *****************************************************************************
@@ -536,7 +552,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
         redirect(URL(r=request, c="default", f="user", args="login",
             vars={"_next":URL(r=request, args="search_simple", vars=request.vars)}))
 
-    if xrequest.representation=="html":
+    if xrequest.representation == "html":
         # Check for redirection
         if request.vars._next:
             next = str.lower(request.vars._next)
@@ -554,9 +570,9 @@ def shn_pr_person_search_simple(xrequest, **attr):
         form = FORM(TABLE(
                 TR(T("Name and/or ID Label: "),
                    INPUT(_type="text", _name="label", _size="40"),
-                   A(SPAN("[Help]"), _class="tooltip", _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."))),
-                TR("", INPUT(_type="submit", _value="Search"))
-                ))
+                   DIV(DIV(_class="tooltip",
+                           _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
+                TR("", INPUT(_type="submit", _value="Search"))))
 
         output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
 
@@ -568,8 +584,8 @@ def shn_pr_person_search_simple(xrequest, **attr):
                 form.vars.label = "%"
 
             results = s3xrc.search_simple(db.pr_person,
-                fields=["pr_pe_label", "first_name", "middle_name", "last_name"],
-                label=form.vars.label)
+                fields = ["pr_pe_label", "first_name", "middle_name", "last_name"],
+                label = form.vars.label)
 
             if results and len(results):
                 query = table.id.belongs(results)
@@ -605,7 +621,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
         except:
             label_create_button = s3.crud_strings.label_create_button
 
-        add_btn = A(label_create_button, _href=URL(r=request, f="person", args="create"), _id="add-btn")
+        add_btn = A(label_create_button, _href=URL(r=request, f="person", args="create"), _class="action-btn")
 
         output.update(add_btn=add_btn)
         return output

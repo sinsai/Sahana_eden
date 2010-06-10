@@ -3,7 +3,7 @@
 """
     Sahana Eden GIS Module
 
-    @version: 0.0.6
+    @version: 0.0.7
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
@@ -11,7 +11,7 @@
     @author: Zubin Mithra <zubin.mithra@gmail.com>
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
-    
+
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
     files (the "Software"), to deal in the Software without
@@ -37,7 +37,7 @@
 
 __name__ = "S3GIS"
 
-__all__ = ['GIS', 'GoogleGeocoder', 'YahooGeocoder']
+__all__ = ["GIS", "GoogleGeocoder", "YahooGeocoder"]
 
 #import logging
 import os
@@ -93,7 +93,7 @@ class GIS(object):
         assert auth is not None, "Undefined authentication controller"
         self.auth = auth
         self.messages = Messages(None)
-        #self.messages.centroid_error = str(A('Shapely', _href='http://pypi.python.org/pypi/Shapely/', _target='_blank')) + " library not found, so can't find centroid!"
+        #self.messages.centroid_error = str(A("Shapely", _href="http://pypi.python.org/pypi/Shapely/", _target="_blank")) + " library not found, so can't find centroid!"
         self.messages.centroid_error = "Shapely library not functional, so can't find centroid! Install Geos & Shapely for Line/Polygon support"
         self.messages.unknown_type = "Unknown Type!"
         self.messages.invalid_wkt_linestring = "Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!"
@@ -101,7 +101,7 @@ class GIS(object):
         self.messages.lon_empty = "Invalid: Longitude can't be empty if Latitude specified!"
         self.messages.lat_empty = "Invalid: Latitude can't be empty if Longitude specified!"
         self.messages.unknown_parent = "Invalid: %(parent_id)s is not a known Location"
-        self.messages['T'] = self.T
+        self.messages["T"] = self.T
         self.messages.lock_keys = True
 
     def abbreviate_wkt(self, wkt, max_length=30):
@@ -109,13 +109,13 @@ class GIS(object):
             # Blank WKT field
             return None
         elif len(wkt) > max_length:
-            return "%s(...)" % wkt[0:wkt.index('(')]
+            return "%s(...)" % wkt[0:wkt.index("(")]
         else:
             return wkt
 
     def config_read(self):
         """
-            Reads the current GIS Config from the DB 
+            Reads the current GIS Config from the DB
         """
 
         db = self.db
@@ -124,7 +124,7 @@ class GIS(object):
 
         return config
 
-    def download_kml(self, url, S3_PUBLIC_URL):
+    def download_kml(self, url, public_url):
         """
         Download a KML file:
             unzip it if-required
@@ -139,7 +139,7 @@ class GIS(object):
         file = ""
         warning = ""
 
-        if len(url) > len(S3_PUBLIC_URL) and url[:len(S3_PUBLIC_URL)] == S3_PUBLIC_URL:
+        if len(url) > len(public_url) and url[:len(public_url)] == public_url:
             # Keep Session for local URLs
             cookie = Cookie.SimpleCookie()
             cookie[response.session_id_name] = response.session_id
@@ -163,12 +163,12 @@ class GIS(object):
                 warning = "HTTPError"
                 return file, warning
 
-            if file[:2] == 'PK':
+            if file[:2] == "PK":
                 # Unzip
                 fp = StringIO(file)
                 myfile = zipfile.ZipFile(fp)
                 try:
-                    file = myfile.read('doc.kml')
+                    file = myfile.read("doc.kml")
                 except:
                     file = myfile.read(myfile.infolist()[0].filename)
                 myfile.close()
@@ -176,17 +176,17 @@ class GIS(object):
             # Check for NetworkLink
             if "<NetworkLink>" in file:
                 # Remove extraneous whitespace
-                #file = ' '.join(file.split())
+                #file = " ".join(file.split())
                 try:
                     parser = etree.XMLParser(recover=True, remove_blank_text=True)
                     tree = etree.XML(file, parser)
                     # Find contents of href tag (must be a better way?)
-                    url = ''
+                    url = ""
                     for element in tree.iter():
-                        if element.tag == '{%s}href' % KML_NAMESPACE:
+                        if element.tag == "{%s}href" % KML_NAMESPACE:
                             url = element.text
                     if url:
-                        file, warning2 = self.download_kml(url, S3_PUBLIC_URL)
+                        file, warning2 = self.download_kml(url, public_url)
                         warning += warning2
                 except (etree.XMLSyntaxError,):
                     e = sys.exc_info()[1]
@@ -199,6 +199,12 @@ class GIS(object):
                 warning += "ScreenOverlay"
 
         return file, warning
+
+    def get_api_key(self, layer="google"):
+        " Acquire API key from the database "
+
+        query = self.db.gis_apikey.name == layer
+        return self.db(query).select().first().apikey
 
     def get_bearing(lat_start, lon_start, lat_end, lon_end):
         """
@@ -268,7 +274,7 @@ class GIS(object):
             children = children & self.get_children(child.id)
 
         return children
-    
+
     def get_feature_class_id_from_name(self, name):
         """
             Returns the Feature Class ID from it's name
@@ -368,7 +374,7 @@ class GIS(object):
         marker = db(db.gis_marker.id == marker).select().first().image
 
         return marker
-    
+
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
@@ -376,8 +382,23 @@ class GIS(object):
             >>> s3gis.latlon_to_wkt(6, 80)
             'POINT(80 6)'
         """
-        WKT = 'POINT(%f %f)' % (lon, lat)
+        WKT = "POINT(%f %f)" % (lon, lat)
         return WKT
+
+    def layer_subtypes(self, layer="openstreetmap"):
+        """ Return a lit of the subtypes available for a Layer """
+
+        if layer == "openstreetmap":
+            #return ["Mapnik", "Osmarender", "Aerial"]
+            return ["Mapnik", "Osmarender"]
+        elif layer == "google":
+            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+        elif layer == "yahoo":
+            return ["Satellite", "Maps", "Hybrid"]
+        elif layer == "bing":
+            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+        else:
+            return None
 
     def show_map( self,
                   height = None,
@@ -385,35 +406,53 @@ class GIS(object):
                   lat = None,
                   lon = None,
                   zoom = None,
+                  projection = None,
                   feature_overlays = [],
+                  wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
                   toolbar = False,
-                  mgrs = False,
+                  search = False,
+                  print_tool = False,
+                  mgrs = {},
                   window = False,
-                  S3_PUBLIC_URL = "http://127.0.0.1:8000"):
+                  public_url = "http://127.0.0.1:8000"
+                ):
         """
             Returns the HTML to display a map
 
-            @param height: Height of viewport
-            @param width: Width of viewport
-            @param lat: default Latitude of viewport
-            @param lon: default Longitude of viewport
-            @param zoom: default Zoom level of viewport
+            @param height: Height of viewport (if not provided then the default setting from the Map Service Catalogue is used)
+            @param width: Width of viewport (if not provided then the default setting from the Map Service Catalogue is used)
+            @param lat: default Latitude of viewport (if not provided then the default setting from the Map Service Catalogue is used)
+            @param lon: default Longitude of viewport (if not provided then the default setting from the Map Service Catalogue is used)
+            @param zoom: default Zoom level of viewport (if not provided then the default setting from the Map Service Catalogue is used)
+            @param projection: EPSG code for the Projection to use (if not provided then the default setting from the Map Service Catalogue is used)
             @param feature_overlays: Which Feature Groups to overlay onto the map & their options (List of Dicts):
                 [{
                  feature_group : db.gis_feature_group.name,
-                 filter : None,         # A query to limit which features from the feature group are loaded
+                 parent : None,         # Only display features with this parent set. ToDo: search recursively to allow all descendants
+                 filter : None,         # A query to further limit which features from the feature group are loaded
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
                 }]
+            @param wms_browser: WMS Server's GetCapabilities & options (dict)
+                {
+                name: string,           # Name for the Folder in LayerTree
+                url: string             # URL of GetCapabilities
+                }
             @param catalogue_overlays: Show the Overlays from the GIS Catalogue (@ToDo: make this a dict of which external overlays to allow)
             @param catalogue_toolbar: Show the Catalogue Toolbar
             @param toolbar: Show the Icon Toolbar of Controls
+            @param search: Show the Geonames search box
+            @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
             @param mgrs: Use the MGRS Control to select PDFs
+                {
+                name: string,           # Name for the Control
+                url: string             # URL of PDF server
+                }
             @param window: Have viewport pop out of page into a resizable window
-            @param S3_PUBLIC_URL: pass from model (not yet defined when Module instantiated
+            @param public_url: pass from model (not yet defined when Module instantiated
 
             @ToDo: Rewrite these to use the API:
                 map_viewing_client()
@@ -423,6 +462,8 @@ class GIS(object):
 
         request = self.request
         response = self.response
+        if not response.warning:
+            response.warning = ""
         session = self.session
         T = self.T
         db = self.db
@@ -436,21 +477,22 @@ class GIS(object):
             width = config.map_width
         # Support bookmarks (such as from the control)
         # - these over-ride the arguments
-        if 'lat' in request.vars:
+        if "lat" in request.vars:
             lat = request.vars.lat
         elif not lat:
             lat = config.lat
-        if 'lon' in request.vars:
+        if "lon" in request.vars:
             lon = request.vars.lon
         elif not lon:
             lon = config.lon
-        if 'zoom' in request.vars:
+        if "zoom" in request.vars:
             zoom = request.vars.zoom
         elif not zoom:
             zoom = config.zoom
-        _projection = config.projection_id
-        projection = db(db.gis_projection.id==_projection).select().first().epsg
-        epsg = db(db.gis_projection.epsg==projection).select().first()
+        if not projection:
+            _projection = config.projection_id
+            projection = db(db.gis_projection.id == _projection).select().first().epsg
+        epsg = db(db.gis_projection.epsg == projection).select().first()
         units = epsg.units
         maxResolution = epsg.maxResolution
         maxExtent = epsg.maxExtent
@@ -468,7 +510,7 @@ class GIS(object):
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/google.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
@@ -505,7 +547,7 @@ class GIS(object):
                 DIV(_id="status_osm"),
                 _style="border: 0px none ;", _valign="top",
             ),
-            TD( 
+            TD(
                 # Somewhere to report whether GeoRSS feed is using cached copy or completely inaccessible
                 DIV(_id="status_georss"),
                 # Somewhere to report whether KML feed is using cached copy or completely inaccessible
@@ -534,18 +576,404 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/script/GeoExt.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.min.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
+
+        #######
+        # Tools
+        #######
+
+                # MGRS
+        if mgrs:
+            mgrs_html = """
+var selectPdfControl = new OpenLayers.Control();
+OpenLayers.Util.extend( selectPdfControl, {
+    draw: function () {
+        this.box = new OpenLayers.Handler.Box( this, {
+                'done': this.getPdf
+            });
+        this.box.activate();
+        },
+    response: function(req) {
+        this.w.destroy();
+        var gml = new OpenLayers.Format.GML();
+        var features = gml.read(req.responseText);
+        var html = features.length + ' pdfs. <br /><ul>';
+        if (features.length) {
+            for (var i = 0; i < features.length; i++) {
+                var f = features[i];
+                var text = f.attributes.utm_zone + f.attributes.grid_zone + f.attributes.grid_square + f.attributes.easting + f.attributes.northing;
+                html += "<li><a href='" + features[i].attributes.url + "'>" + text + '</a></li>';
+            }
+        }
+        html += '</ul>';
+        //console.log(html);
+        this.w = new Ext.Window({
+            'html': html,
+            width: 300,
+            'title': 'Results',
+            height: 200
+        });
+        this.w.show();
+    },
+    getPdf: function (bounds) {
+        var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
+        //console.log(ll);
+        var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
+        var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
+        bbox = boundsgeog.toBBOX();
+        //console.log(bbox);
+        OpenLayers.Request.GET({
+            url: '""" + str(XML(mgrs["url"])) + """&bbox=' + bbox,
+            callback: OpenLayers.Function.bind(this.response, this)
+        });
+        this.w = new Ext.Window({
+            'html':'Searching """ + mgrs["name"] + """, please wait.',
+            width: 200,
+            'title': "Please Wait."
+            });
+        this.w.show();
+    }
+});
+"""
+            mgrs2 = """
+    // MGRS Control
+    var mgrsButton = new GeoExt.Action({
+        text: 'Select """ + mgrs["name"] + """',
+        control: selectPdfControl,
+        map: map,
+        toggleGroup: toggleGroup,
+        allowDepress: false,
+        tooltip: 'Select """ + mgrs["name"] + """',
+        // check item options group: 'draw'
+    });
+    """
+            mgrs3 = """
+    toolbar.add(mgrsButton);
+    toolbar.addSeparator();
+    """
+        else:
+            mgrs_html = ""
+            mgrs2 = ""
+            mgrs3 = ""
 
         # Toolbar
         if toolbar:
             toolbar = """
     toolbar = mapPanel.getTopToolbar();
+    var toggleGroup = "controls";
+
+    // OpenLayers controls
+    var length = new OpenLayers.Control.Measure(OpenLayers.Handler.Path, {
+        eventListeners: {
+            measure: function(evt) {
+                alert('""" + str(T("The length was ")) + """' + evt.measure + evt.units);
+            }
+        }
+    });
+
+    var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
+        eventListeners: {
+            measure: function(evt) {
+                alert('""" + str(T("The area was ")) + """' + evt.measure + evt.units);
+            }
+        }
+    });
+
+    // Controls for Draft Features
+    // - interferes with Feature Layers!
+    //var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
+    //    onSelect: onFeatureSelect,
+    //    onUnselect: onFeatureUnselect,
+    //    multiple: false,
+    //    clickout: true,
+    //    isDefault: true
+    //});
+
+    //var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer,
+    //    {onDone: function(feature) {console.log(feature)}
+    //});
+
+    var nav = new OpenLayers.Control.NavigationHistory();
+
+    // GeoExt Buttons
+    var zoomfull = new GeoExt.Action({
+        control: new OpenLayers.Control.ZoomToMaxExtent(),
+        map: map,
+        iconCls: 'zoomfull',
+        tooltip: '""" + str(T("Zoom to maximum map extent")) + """'
+    });
+
+    var zoomout = new GeoExt.Action({
+        control: new OpenLayers.Control.ZoomBox({ out: true }),
+        map: map,
+        iconCls: 'zoomout',
+        tooltip: '""" + str(T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    var zoomin = new GeoExt.Action({
+        control: new OpenLayers.Control.ZoomBox(),
+        map: map,
+        iconCls: 'zoomin',
+        tooltip: '""" + str(T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    var pan = new GeoExt.Action({
+        control: new OpenLayers.Control.Navigation(),
+        map: map,
+        iconCls: 'pan-off',
+        tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
+        toggleGroup: toggleGroup,
+        //allowDepress: false,
+        pressed: true
+    });
+
+    var lengthButton = new GeoExt.Action({
+        control: length,
+        map: map,
+        iconCls: 'measure-off',
+        tooltip: '""" + str(T("Measure Length: Click the points along the path & end with a double-click")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    var areaButton = new GeoExt.Action({
+        control: area,
+        map: map,
+        iconCls: 'measure-area',
+        tooltip: '""" + str(T("Measure Area: Click the points around the polygon & end with a double-click")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    """ + mgrs2 + """
+
+    var selectButton = new GeoExt.Action({
+        //control: selectControl,
+        map: map,
+        iconCls: 'searchclick',
+        tooltip: '""" + str(T("Query Feature")) + """',
+        toggleGroup: toggleGroup
+    });
+
+    //var pointButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point),
+    //    map: map,
+    //    iconCls: 'drawpoint-off',
+    //    tooltip: '""" + str(T("Add Point")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var lineButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path),
+    //    map: map,
+    //    iconCls: 'drawline-off',
+    //    tooltip: '""" + str(T("Add Line")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var polygonButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon),
+    //    map: map,
+    //    iconCls: 'drawpolygon-off',
+    //    tooltip: '""" + str(T("Add Polygon")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var dragButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.DragFeature(featuresLayer),
+    //    map: map,
+    //    iconCls: 'movefeature',
+    //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var resizeButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
+    //    map: map,
+    //    iconCls: 'resizefeature',
+    //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var rotateButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
+    //    map: map,
+    //    iconCls: 'rotatefeature',
+    //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var modifyButton = new GeoExt.Action({
+    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer),
+    //    map: map,
+    //    iconCls: 'modifyfeature',
+    //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    //var removeButton = new GeoExt.Action({
+    //    control: removeControl,
+    //    map: map,
+    //    iconCls: 'removefeature',
+    //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
+    //    toggleGroup: toggleGroup
+    //});
+
+    var navPreviousButton = new Ext.Toolbar.Button({
+        iconCls: 'back',
+        tooltip: '""" + str(T("Previous View")) + """',
+        handler: nav.previous.trigger
+    });
+
+    var navNextButton = new Ext.Toolbar.Button({
+        iconCls: 'next',
+        tooltip: '""" + str(T("Next View")) + """',
+        handler: nav.next.trigger
+    });
+
+    var saveButton = new Ext.Toolbar.Button({
+        // ToDo: Make work!
+        iconCls: 'save',
+        tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
+        handler: function saveViewport(map) {
+            // Read current settings from map
+            var lonlat = map.getCenter();
+            var zoom_current = map.getZoom();
+            // Convert back to LonLat for saving
+            //var proj4326 = new OpenLayers.Projection('EPSG:4326');
+            lonlat.transform(map.getProjectionObject(), proj4326);
+            //alert('""" + str(T("Latitude")) + """': ' + lat);
+            // Use AJAX to send back
+            var url = '""" + URL(r=request, c="gis", f="config", args=["1.json", "update"]) + """';
+        }
+    });
+
+    // Add to Map & Toolbar
+    toolbar.add(zoomfull);
+    toolbar.add(zoomout);
+    toolbar.add(zoomin);
+    toolbar.add(pan);
+    toolbar.addSeparator();
+    // Measure Tools
+    toolbar.add(lengthButton);
+    toolbar.add(areaButton);
+    toolbar.addSeparator();
+    """ + mgrs3 + """
+    // Draw Controls
+    //toolbar.add(selectButton);
+    //toolbar.add(pointButton);
+    //toolbar.add(lineButton);
+    //toolbar.add(polygonButton);
+    //toolbar.add(dragButton);
+    //toolbar.add(resizeButton);
+    //toolbar.add(rotateButton);
+    //toolbar.add(modifyButton);
+    //toolbar.add(removeButton);
+    //toolbar.addSeparator();
+    // Navigation
+    map.addControl(nav);
+    nav.activate();
+    toolbar.addButton(navPreviousButton);
+    toolbar.addButton(navNextButton);
+    toolbar.addSeparator();
+    // Save Viewport
+toolbar.addButton(saveButton);
     """
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""
             toolbar2 = ""
+
+        # Search
+        if search:
+            search = """
+        var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+            map: map,
+            zoom: 8
+         });
+
+        var searchCombo = new Ext.Panel({
+            title: '""" + str(T("Search Geonames")) + """',
+            layout: 'border',
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            html: '""" + str(T("Geonames.org search requires Internet connectivity!")) + """',
+            items: [{
+                    region: 'center',
+                    items: [ mapSearch ]
+                }]
+        });
+        """
+            search2 = """,
+                            searchCombo"""
+        else:
+            search = ""
+            search2 = ""
+
+        # WMS Browser
+        if wms_browser:
+            name = wms_browser["name"]
+            # urlencode the URL
+            url = urllib.quote(wms_browser["url"])
+            layers_wms_browser = """
+        var root = new Ext.tree.AsyncTreeNode({
+            expanded: true,
+            loader: new GeoExt.tree.WMSCapabilitiesLoader({
+                url: OpenLayers.ProxyHost + '""" + url + """',
+                layerOptions: {buffer: 1, singleTile: false, ratio: 1, wrapDateLine: true},
+                layerParams: {'TRANSPARENT': 'TRUE'},
+                // customize the createNode method to add a checkbox to nodes
+                createNode: function(attr) {
+                    attr.checked = attr.leaf ? false : undefined;
+                    return GeoExt.tree.WMSCapabilitiesLoader.prototype.createNode.apply(this, [attr]);
+                }
+            })
+        });
+        wmsBrowser = new Ext.tree.TreePanel({
+            id: 'wmsbrowser',
+            title: '""" + name + """',
+            root: root,
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            listeners: {
+                // Add layers to the map when checked, remove when unchecked.
+                // Note that this does not take care of maintaining the layer
+                // order on the map.
+                'checkchange': function(node, checked) {
+                    if (checked === true) {
+                        mapPanel.map.addLayer(node.attributes.layer);
+                    } else {
+                        mapPanel.map.removeLayer(node.attributes.layer);
+                    }
+                }
+            }
+        });
+        """
+            layers_wms_browser2 = """,
+                            wmsBrowser"""
+        else:
+            layers_wms_browser = ""
+            layers_wms_browser2 = ""
+
+        # Print
+        if print_tool:
+            # ToDo
+            print_tool = ""
+        else:
+            print_tool = ""
+
+        # Strategy
+        # Need to be uniquely instantiated
+        strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
+        strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
         if window:
@@ -566,138 +994,29 @@ class GIS(object):
         # Layers
         ########
 
-        # Can we cache downloaded feeds?
-        # Needed for unzipping & filtering as well
-        cachepath = os.path.join(request.folder, 'uploads', 'gis_cache')
-        if os.access(cachepath, os.W_OK):
-            cache = True
-        else:
-            cache = False
-
-        #
-        # Features
-        #
-        layers_features = ""
-        if feature_overlays:
-            #    [{
-            #    feature_group : db.gis_feature_group.name,
-            #    filter : None,         # A query to limit which features from the feature group are loaded
-            #    active : True,         # Is the feed displayed upon load or needs ticking to load afterwards?
-            #    popup_url : <default>, # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-            #    marker : <default>     # The icon used to display the feature. Can be a lambda to vary icon (size/colour) based on attribute levels.
-            #   }]
-
-            for layer in feature_overlays:
-                name = layer['feature_group']
-                url = S3_PUBLIC_URL + '/' + request.application + "/gis/location.kml?feature_group=" + urllib.quote(name)
-                if cache:
-                    # Download file
-                    file, warning = self.download_kml(url, S3_PUBLIC_URL)
-                    filename = 'gis_cache.file.' + name.replace(' ', '_') + '.kml'
-                    filepath = os.path.join(cachepath, filename)
-                    f = open(filepath, 'w')
-                    # Handle errors
-                    if "URLError" in warning or "HTTPError" in warning:
-                        # URL inaccessible
-                        if os.access(filepath, os.R_OK):
-                            # Use cached version
-                            date = db(db.gis_cache.name == name).select().first().modified_on
-                            response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
-                            url = URL(r=request, c="default", f="download", args=[filename])
-                        else:
-                            # No cached version available
-                            response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
-                            # skip layer
-                            continue
-                    else:
-                        # Download was succesful
-                        if "ParseError" in warning:
-                            # @ToDo Parse detail
-                            response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
-                        if "GroundOverlay" in warning or "ScreenOverlay" in warning:
-                            response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
-                        # Write file to cache
-                        f.write(file)
-                        f.close()
-                        records = db(db.gis_cache.name == name).select()
-                        if records:
-                            records[0].update(modified_on=response.utcnow)
-                        else:
-                            db.gis_cache.insert(name=name, file=filename)
-                        url = URL(r=request, c="default", f="download", args=[filename])
-                else:
-                    # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
-                    pass
-
-                # Generate HTML snippet
-                name_safe = re.sub('\W', '_', name)
-                if 'active' in layer and layer['active']:
-                    visibility = "featureLayer" + name_safe +".setVisibility(true);"
-                else:
-                    visibility = "featureLayer" + name_safe +".setVisibility(false);"
-                layers_features += """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.GML( '""" + name + """', '""" + url + """', {
-            strategies: [ strategy ],
-            format: OpenLayers.Format.KML,
-            formatOptions: { extractStyles: true, extractAttributes: true, maxDepth: 2 },
-            projection: proj4326});
-        """ + visibility + """
-        map.addLayer(featureLayer""" + name_safe + """);
-        featureLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect""" + name_safe + """, "featureunselected": onFeatureUnselect });
-        allLayers.push(featureLayer""" + name_safe + """);
-        function onKmlFeatureSelect""" + name_safe + """(event) {
-            var feature = event.feature;
-            var selectedFeature = feature;
-            var type = typeof feature.attributes.name
-            if ('object' == type) {
-                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + Math.floor(Math.random()*1001),
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
-                '<h3>' + '</h3>',
-                null, true, onPopupClose);
-            } else if (undefined == feature.attributes.description) {
-                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + feature.attributes.name,
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
-                '<h3>' + feature.attributes.name + '</h3>',
-                null, true, onPopupClose);
-            } else {
-                var content = '<h3>' + feature.attributes.name + '</h3>' + feature.attributes.description;
-                // Protect the description against JavaScript attacks
-                if (content.search('<script') != -1) {
-                    content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
-                }
-                var popup = new OpenLayers.Popup.FramedCloud('featureLayer""" + name_safe + """' + '_' + feature.attributes.name,
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
-                content,
-                null, true, onPopupClose);
-            };
-            feature.popup = popup;
-            map.addPopup(popup);
-        }
-                """
-
-        else:
-            # No Feature Layers requested
-            pass
-
         #
         # Base Layers
         #
 
-        # OpenStreetMap
-        gis_layer_openstreetmap_subtypes = ['Mapnik', 'Osmarender'] # Copied from Model - Need to DRY!
-        openstreetmap = Storage()
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled==True).select()
-        for layer in openstreetmap_enabled:
-            for subtype in gis_layer_openstreetmap_subtypes:
-                if layer.subtype == subtype:
-                    openstreetmap['%s' % subtype] = layer.name
+        layers_openstreetmap = ""
+        layers_google = ""
+        layers_yahoo = ""
+        layers_bing = ""
 
-        functions_openstreetmap = ""
-        if openstreetmap:
-            functions_openstreetmap = """
+        # Only enable commercial base layers if using a sphericalMercator projection
+        if projection == 900913:
+
+            # OpenStreetMap
+            gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
+            openstreetmap = Storage()
+            openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+            for layer in openstreetmap_enabled:
+                for subtype in gis_layer_openstreetmap_subtypes:
+                    if layer.subtype == subtype:
+                        openstreetmap["%s" % subtype] = layer.name
+
+            if openstreetmap:
+                functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
             var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
@@ -712,11 +1031,6 @@ class GIS(object):
             }
         }
         """
-
-        layers_openstreetmap = ""
-        if projection==900913:
-            # Only enable commercial base layers if using a sphericalMercator projection
-            if openstreetmap:
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
         var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
@@ -732,40 +1046,788 @@ class GIS(object):
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
+            else:
+                functions_openstreetmap = ""
 
-            google = db(db.gis_layer_google.enabled==True).select()
+            # Google
+            gis_layer_google_subtypes = self.layer_subtypes("google")
+            google = Storage()
+            google_enabled = db(db.gis_layer_google.enabled == True).select()
+            if google_enabled:
+                google.key = self.get_api_key("google")
+                for layer in google_enabled:
+                    for subtype in gis_layer_google_subtypes:
+                        if layer.subtype == subtype:
+                            google["%s" % subtype] = layer.name
             if google:
-                # @ToDo
-                layers_google = ""
-            else:
-                layers_google = ""
-            yahoo = db(db.gis_layer_yahoo.enabled==True).select()
+                html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                if google.Satellite:
+                    layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlesat);
+                    """
+                if google.Maps:
+                    layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlemaps);
+                    """
+                if google.Hybrid:
+                    layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+        map.addLayer(googlehybrid);
+                    """
+                if google.Terrain:
+                    layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+        map.addLayer(googleterrain);
+                    """
+
+            # Yahoo
+            gis_layer_yahoo_subtypes = self.layer_subtypes("yahoo")
+            yahoo = Storage()
+            yahoo_enabled = db(db.gis_layer_yahoo.enabled == True).select()
+            if yahoo_enabled:
+                yahoo.key = self.get_api_key("yahoo")
+                for layer in yahoo_enabled:
+                    for subtype in gis_layer_yahoo_subtypes:
+                        if layer.subtype == subtype:
+                            yahoo["%s" % subtype] = layer.name
             if yahoo:
-                # @ToDo
-                layers_yahoo = ""
-            else:
-                layers_yahoo = ""
-            #bing = db(db.gis_layer_bing.enabled==True).select()
+                html.append(SCRIPT(_type="text/javascript", _src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid=" + yahoo.key))
+                if yahoo.Satellite:
+                    layers_yahoo += """
+        var yahoosat = new OpenLayers.Layer.Yahoo( '""" + yahoo.Satellite + """' , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
+        map.addLayer(yahoosat);
+                    """
+                if yahoo.Maps:
+                    layers_yahoo += """
+        var yahoomaps = new OpenLayers.Layer.Yahoo( '""" + yahoo.Maps + """' , {'sphericalMercator': true } );
+        map.addLayer(yahoomaps);
+                    """
+                if yahoo.Hybrid:
+                    layers_yahoo += """
+        var yahoohybrid = new OpenLayers.Layer.Yahoo( '""" + yahoo.Hybrid + """' , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
+        map.addLayer(yahoohybrid);
+                    """
+
+            # Bing - Broken in GeoExt currently: http://www.geoext.org/pipermail/users/2009-December/000417.html
             bing = False
+            #gis_layer_bing_subtypes = self.layer_subtypes("bing")
+            #bing = Storage()
+            #bing_enabled = db(db.gis_layer_bing.enabled == True).select()
+            #for layer in bing_enabled:
+            #    for subtype in gis_layer_bing_subtypes:
+            #        if layer.subtype == subtype:
+            #            bing["%s" % subtype] = layer.name
             if bing:
-                # @ToDo
-                layers_bing = ""
-            else:
-                layers_bing = ""
-        layers_tms = ""
+                html.append(SCRIPT(_type="text/javascript", _src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2&mkt=en-us"))
+                if bing.Satellite:
+                    layers_bing += """
+        var bingsat = new OpenLayers.Layer.VirtualEarth( '""" + bing.Satellite + """' , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
+        map.addLayer(bingsat);
+                    """
+                if bing.Maps:
+                    layers_bing += """
+        var bingmaps = new OpenLayers.Layer.VirtualEarth( '""" + bing.Maps + """' , {type: VEMapStyle.Road, 'sphericalMercator': true } );
+        map.addLayer(bingmaps);
+                    """
+                if bing.Hybrid:
+                    layers_bing += """
+        var binghybrid = new OpenLayers.Layer.VirtualEarth( '""" + bing.Hybrid + """' , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
+        map.addLayer(binghybrid);
+                    """
+                if bing.Terrain:
+                    layers_bing += """
+        var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
+        map.addLayer(bingterrain);
+                    """
+
+        # WMS
         layers_wms = ""
+        wms_enabled = db(db.gis_layer_wms.enabled == True).select()
+        for layer in wms_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            try:
+                wms_map = "map: '" + layer.map + "',"
+            except:
+                wms_map = ""
+            wms_layers = layer.layers
+            try:
+                format = "type: '" + layer.format + "'"
+            except:
+                format = ""
+            wms_projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
+            if wms_projection == 4326:
+                wms_projection = "projection: proj4326"
+            else:
+                wms_projection = "projection: new OpenLayers.Projection('EPSG:" + wms_projection + "')"
+            if layer.transparent:
+                transparent = "transparent: true,"
+            else:
+                transparent = ""
+            options = "wrapDateLine: 'true'"
+            if not layer.base:
+                options += """,
+                   isBaseLayer: false"""
+                if not layer.visible:
+                   options += """,
+                   visibility: false"""
+
+            layers_wms  += """
+        var wmsLayer""" + name_safe + """ = new OpenLayers.Layer.WMS(
+            '""" + name + """', '""" + url + """', {
+               """ + wms_map + """
+               layers: '""" + wms_layers + """',
+               """ + format + """
+               """ + transparent + """
+               """ + wms_projection + """
+               },
+               {
+               """ + options + """
+               }
+            );
+        map.addLayer(wmsLayer""" + name_safe + """);
+        """
+
+        # TMS
+        layers_tms = ""
+        tms_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in tms_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            tms_layers = layer.layers
+            try:
+                format = "type: '" + layer.format + "'"
+            except:
+                format = ""
+
+            layers_tms  += """
+        var tmsLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', '""" + url + """', {
+                layername: '""" + tms_layers + """',
+                """ + format + """
+            });
+        map.addLayer(tmsLayer""" + name_safe + """);
+        """
+
+        # XYZ
         layers_xyz = ""
+        xyz_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in xyz_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            if layer.sphericalMercator:
+                sphericalMercator = "sphericalMercator: 'true',"
+            else:
+                sphericalMercator = ""
+            if layer.transitionEffect:
+                transitionEffect = "transitionEffect: '{{=xyz_layers[layer].transitionEffect}}',"
+            else:
+                transitionEffect = ""
+            if layer.numZoomLevels:
+                xyz_numZoomLevels = "numZoomLevels: '" + layer.numZoomLevels + "'"
+            else:
+                xyz_numZoomLevels = ""
+            if layer.base:
+                base = "isBaseLayer: 'true'"
+            else:
+                base = ""
+                if layer.transparent:
+                    base += "transparent: 'true',"
+                if layer.visible:
+                    base += "visibility: 'true',"
+                if layer.opacity:
+                    base += "opacity: '" + layer.opacity + "',"
+                base += "isBaseLayer: 'false'"
+
+            layers_xyz  += """
+        var xyzLayer""" + name_safe + """ = new OpenLayers.Layer.XYZ( '""" + name + """', '""" + url + """', {
+                """ + sphericalMercator + """
+                """ + transitionEffect + """
+                """ + xyz_numZoomLevels + """
+                """ + base + """
+            });
+        map.addLayer(xyzLayer""" + name_safe + """);
+        """
+
+        # JS
         layers_js = ""
-        if catalogue_overlays:
-            # @ToDo
-            layers_wms += ""
-            layers_georss = ""
-            layers_gpx = ""
-            layers_kml = ""
+        js_enabled = db(db.gis_layer_tms.enabled == True).select()
+        for layer in js_enabled:
+            layers_js  += layer.code
+
+        #
+        # Overlays
+        #
+
+        # Can we cache downloaded feeds?
+        # Needed for unzipping & filtering as well
+        cachepath = os.path.join(request.folder, "uploads", "gis_cache")
+        if os.access(cachepath, os.W_OK):
+            cache = True
         else:
-            layers_georss = ""
-            layers_gpx = ""
-            layers_kml = ""
+            cache = False
+
+        #
+        # Features
+        #
+        layers_features = ""
+        if feature_overlays:
+
+            layers_features += """
+        var featureLayers = new Array();
+        var features = [];
+        var parser = new OpenLayers.Format.WKT();
+        var geom, featureVec;
+
+        function addFeature(feature_id, name, feature_class, geom, iconURL) {
+            geom = geom.transform(proj4326, projection_current);
+            // Set icon dims
+            icon_img.src = iconURL;
+            width = icon_img.width;
+            height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            // Needs to be uniquely instantiated
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            // Create Feature Vector
+            var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
+            featureVec.fid = feature_id;
+            featureVec.attributes.name = name;
+            featureVec.attributes.feature_class = feature_class;
+            return featureVec;
+        }
+
+        function loadDetails(url, id, popup) {
+            //$.getS3(
+            $.get(
+                    url,
+                    function(data) {
+                        $('#' + id + '_contentDiv').html(data);
+                        popup.updateSize();
+                    },
+                    'html'
+                );
+        }
+        """
+            for layer in feature_overlays:
+                name = layer["feature_group"]
+                if "popup_url" in layer:
+                    popup_url = layer["popup_url"]
+                # We'd like to do something like this:
+                #elif feature_class is office:
+                #    popup_url = str(URL(r=request, c="or", f="office"))
+                else:
+                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
+
+                # Generate HTML snippet
+                name_safe = re.sub("\W", "_", name)
+                if "active" in layer and layer["active"]:
+                    visibility = "featureLayer" + name_safe +".setVisibility(true);"
+                else:
+                    visibility = "featureLayer" + name_safe +".setVisibility(false);"
+                layers_features += """
+        features = [];
+        // Style Rule For Clusters
+        var style_cluster = new OpenLayers.Style({
+            pointRadius: "${radius}",
+            fillColor: "#8087ff",
+            fillOpacity: 1,
+            strokeColor: "#2b2f76",
+            strokeWidth: 2,
+            strokeOpacity: 1
+        }, {
+            context: {
+                radius: function(feature) {
+                    // Size For Unclustered Point
+                    var pix = 6;
+                    // Size For Clustered Point
+                    if(feature.cluster) {
+                        pix = Math.min(feature.attributes.count, 7) + 4;
+                    }
+                    return pix;
+                }
+            }
+        });
+        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+        var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                          "default": style_cluster,
+                                          "select": {
+                                              fillColor: "#ffdc33",
+                                              strokeColor: "#ff9933"
+                                          }
+        });
+
+        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name + """',
+            {
+                strategies: [ """ + strategy_cluster + """ ],
+                styleMap: featureClusterStyleMap
+            }
+        );
+        """ + visibility + """
+        map.addLayer(featureLayer""" + name_safe + """);
+        featureLayer""" + name_safe + """.events.on({
+            "featureselected": onFeatureSelect""" + name_safe + """,
+            "featureunselected": onFeatureUnselect
+        });
+        featureLayers.push(featureLayer""" + name_safe + """);
+
+        function onFeatureSelect""" + name_safe + """(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            if(feature.cluster) {
+                // Cluster
+                // Create Empty Array to Contain Feature Names
+                var clusterFeaturesArray = [];
+                // Add Each Feature To Array
+                for (var i = 0; i < feature.cluster.length; i++)
+                {
+                    var clusterFeaturesArrayName = feature.cluster[i].attributes.name;
+                    var clusterFeaturesArrayType = feature.cluster[i].attributes.feature_class;
+                    var clusterFeaturesArrayX = feature.cluster[i].geometry.x;
+                    var clusterFeaturesArrayY = feature.cluster[i].geometry.y;
+                    var clusterFeaturesArrayID = feature.cluster[i].fid;
+
+                    // ToDo: Refine
+                    var clusterFeaturesArrayEntry = "<li>" + clusterFeaturesArrayName + "</li>";
+
+                    clusterFeaturesArray.push(clusterFeaturesArrayEntry);
+                };
+            } else {
+                // Single Feature
+                var selectedFeature = feature;
+                var id = 'featureLayer""" + name_safe + """Popup';
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(200, 200),
+                    "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+                // call AJAX to get the contentHTML
+                var uuid = feature.fid;
+                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
+            }
+        }
+        """
+                if "parent" in feature_overlays:
+                    parent_id = db(db.gis_location.name == parent).select().first().id
+                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) & (db.gis_location.parent == parent_id)
+                else:
+                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
+                features = db(query).select()
+                for feature in features:
+                    marker = self.get_marker(feature.gis_location.id)
+                    marker_url = URL(r=request, c='default', f='download', args=[marker])
+                    # Deal with null Feature Classes
+                    if feature.gis_location.feature_class_id:
+                        fc = "'" + str(feature.gis_location.feature_class_id) + "'"
+                    else:
+                        fc = "null"
+                    # Deal with manually-imported Features which are missing WKT
+                    if feature.gis_location.wkt:
+                        wkt = feature.gis_location.wkt
+                    else:
+                        wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
+                    # Deal with apostrophes in Feature Names
+                    fname = re.sub("'", "\\'", feature.gis_location.name)
+                    
+                    layers_features += """
+        geom = parser.read('""" + wkt + """').geometry;
+        iconURL = '""" + marker_url + """';
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        features.push(featureVec);
+        """
+                # Append to Features layer
+                layers_features += """
+        featureLayer""" + name_safe + """.addFeatures(features);
+        """
+            # Append to Features section
+            layers_features += """
+        allLayers = allLayers.concat(featureLayers);
+        """
+
+        else:
+            # No Feature Layers requested
+            pass
+
+        layers_georss = ""
+        layers_gpx = ""
+        layers_kml = ""
+        if catalogue_overlays:
+            # GeoRSS
+            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
+            if georss_enabled:
+                layers_georss += """
+        var georssLayers = new Array();
+        var format_georss = new OpenLayers.Format.GeoRSS();
+        function onGeorssFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            if (undefined == feature.attributes.description) {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                '<h2>' + feature.attributes.title + '</h2>',
+                null, true, onPopupClose);
+            } else {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
+                feature.geometry.getBounds().getCenterLonLat(),
+                new OpenLayers.Size(200,200),
+                '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
+                null, true, onPopupClose);
+            };
+            feature.popup = popup;
+            popup.feature = feature;
+            map.addPopup(popup);
+        }
+        """
+                for layer in georss_enabled:
+                    name = layer["name"]
+                    url = layer["url"]
+                    visible = layer["visible"]
+                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select().first().epsg
+                    if georss_projection == 4326:
+                        projection_str = "projection: proj4326,"
+                    else:
+                        projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker = db(db.gis_marker.id == marker_id).select().first().image
+                    else:
+                        marker = db(db.gis_marker.id == marker_default).select().first().image
+                    marker_url = URL(r=request, c='default', f='download', args=marker)
+
+                    if cache:
+                        # Download file
+                        try:
+                            file = fetch(url)
+                            warning = ""
+                        except urllib2.URLError:
+                            warning = "URLError"
+                        except urllib2.HTTPError:
+                            warning = "HTTPError"
+                        filename = "gis_cache.file." + name.replace(" ", "_") + ".rss"
+                        filepath = os.path.join(cachepath, filename)
+                        f = open(filepath, "w")
+                        # Handle errors
+                        if "URLError" in warning or "HTTPError" in warning:
+                            # URL inaccessible
+                            if os.access(filepath, os.R_OK):
+                                # Use cached version
+                                date = db(db.gis_cache.name == name).select().first().modified_on
+                                response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                url = URL(r=request, c="default", f="download", args=[filename])
+                            else:
+                                # No cached version available
+                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                # skip layer
+                                continue
+                        else:
+                            # Download was succesful
+                            # Write file to cache
+                            f.write(file)
+                            f.close()
+                            records = db(db.gis_cache.name == name).select()
+                            if records:
+                                records[0].update(modified_on=response.utcnow)
+                            else:
+                                db.gis_cache.insert(name=name, file=filename)
+                            url = URL(r=request, c="default", f="download", args=[filename])
+                    else:
+                        # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+                        pass
+
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if visible:
+                        visibility = "georssLayer" + name_safe + ".setVisibility(true);"
+                    else:
+                        visibility = "georssLayer" + name_safe + ".setVisibility(false);"
+                    layers_georss += """
+            iconURL = '""" + marker_url + """';
+            icon_img.src = iconURL;
+            width = icon_img.width;
+            height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            // Needs to be uniquely instantiated
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name_safe + """',
+                {
+                    """ + projection_str + """
+                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: '""" + url + """',
+                        format: format_georss
+                    })
+                }
+            );
+            """ + visibility + """
+            map.addLayer(georssLayer""" + name_safe + """);
+            georssLayers.push(georssLayer""" + name_safe + """);
+            georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+            """
+                layers_georss += """
+        allLayers = allLayers.concat(georssLayers);
+        """
+
+            # GPX
+            gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
+            if gpx_enabled:
+                layers_gpx += """
+        var georssLayers = new Array();
+        var format_gpx = new OpenLayers.Format.GPX();
+        function onGpxFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            // Anything we want to do here?
+        }
+        """
+                for layer in gpx_enabled:
+                    name = layer["name"]
+                    track = db(db.gis_track.id == layer.track_id).select().first()
+                    url = track.track
+                    visible = layer["visible"]
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker = db(db.gis_marker.id == marker_id).select().first().image
+                    else:
+                        marker = db(db.gis_marker.id == marker_default).select().first().image
+                    marker_url = URL(r=request, c='default', f='download', args=marker)
+
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if visible:
+                        visibility = "gpxLayer" + name_safe + ".setVisibility(true);"
+                    else:
+                        visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
+                    layers_gpx += """
+            iconURL = '""" + marker_url + """';
+            icon_img.src = iconURL;
+            width = icon_img.width;
+            height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            // Needs to be uniquely instantiated
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name_safe + """',
+                {
+                    projection: proj4326,
+                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: '""" + url + """',
+                        format: format_gpx
+                    })
+                }
+            );
+            """ + visibility + """
+            map.addLayer(gpxLayer""" + name_safe + """);
+            gpxLayers.push(gpxLayer""" + name_safe + """);
+            gpxLayer""" + name_safe + """.events.on({ "featureselected": onGpxFeatureSelect, "featureunselected": onFeatureUnselect });
+            """
+                layers_gpx += """
+        allLayers = allLayers.concat(gpxLayers);
+        """
+
+            # KML
+            kml_enabled = db(db.gis_layer_kml.enabled == True).select()
+            if kml_enabled:
+                layers_kml += """
+        var kmlLayers = new Array();
+        var format_kml = new OpenLayers.Format.KML({
+            extractStyles: true,
+            extractAttributes: true,
+            maxDepth: 2
+        })
+        function onKmlFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            var type = typeof feature.attributes.name;
+            if ('object' == type) {
+                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(200,200),
+                    "<h2>" + "</h2>",
+                    null, true, onPopupClose
+                );
+            } else if (undefined == feature.attributes.description) {
+                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(200,200),
+                    "<h2>" + feature.attributes.name + "</h2>",
+                    null, true, onPopupClose
+                );
+            } else {
+                var content = "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description;
+                // Protect the description against JavaScript attacks
+                if (content.search("<script") != -1) {
+                    content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
+                }
+                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
+                    feature.geometry.getBounds().getCenterLonLat(),
+                    new OpenLayers.Size(200,200),
+                    content,
+                    null, true, onPopupClose
+                );
+            };
+            feature.popup = popup;
+            popup.feature = feature;
+            map.addPopup(popup);
+        }
+        """
+                for layer in kml_enabled:
+                    name = layer["name"]
+                    url = layer["url"]
+                    visible = layer["visible"]
+                    projection_str = "projection: proj4326,"
+                    if cache:
+                        # Download file
+                        file, warning = self.download_kml(url, public_url)
+                        filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"
+                        filepath = os.path.join(cachepath, filename)
+                        f = open(filepath, "w")
+                        # Handle errors
+                        if "URLError" in warning or "HTTPError" in warning:
+                            # URL inaccessible
+                            if os.access(filepath, os.R_OK):
+                                statinfo = os.stat(filepath)
+                                if statinfo.st_size:
+                                    # Use cached version
+                                    date = db(db.gis_cache.name == name).select().first().modified_on
+                                    response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                    url = URL(r=request, c="default", f="download", args=[filename])
+                                else:
+                                    # 0k file is all that is available
+                                    response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                    # skip layer
+                                    continue
+                            else:
+                                # No cached version available
+                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                # skip layer
+                                continue
+                        else:
+                            # Download was succesful
+                            if "ParseError" in warning:
+                                # @ToDo Parse detail
+                                response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
+                            if "GroundOverlay" in warning or "ScreenOverlay" in warning:
+                                response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
+                            # Write file to cache
+                            f.write(file)
+                            f.close()
+                            records = db(db.gis_cache.name == name).select()
+                            if records:
+                                records[0].update(modified_on=response.utcnow)
+                            else:
+                                db.gis_cache.insert(name=name, file=filename)
+                            url = URL(r=request, c="default", f="download", args=[filename])
+                    else:
+                        # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+                        pass
+
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if visible:
+                        visibility = "kmlLayer" + name_safe + ".setVisibility(true);"
+                    else:
+                        visibility = "kmlLayer" + name_safe + ".setVisibility(false);"
+                    layers_kml += """
+            iconURL = '""" + marker_url + """';
+            icon_img.src = iconURL;
+            width = icon_img.width;
+            height = icon_img.height;
+            if(width > max_w){
+                height = ((max_w / width) * height);
+                width = max_w;
+            }
+            if(height > max_h){
+                width = ((max_h / height) * width);
+                height = max_h;
+            }
+            // Needs to be uniquely instantiated
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            style_marker.graphicOpacity = 1;
+            style_marker.graphicWidth = width;
+            style_marker.graphicHeight = height;
+            style_marker.graphicXOffset = -(width / 2);
+            style_marker.graphicYOffset = -height;
+            style_marker.externalGraphic = iconURL;
+            var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name_safe + """',
+                {
+                    """ + projection_str + """
+                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                    style: style_marker,
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: '""" + url + """',
+                        format: format_kml
+                    })
+                }
+            );
+            """ + visibility + """
+            map.addLayer(kmlLayer""" + name_safe + """);
+            kmlLayers.push(kmlLayer""" + name_safe + """);
+            kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
+            """
+                layers_kml += """
+        allLayers = allLayers.concat(kmlLayers);
+        """
 
         #############
         # Main script
@@ -773,7 +1835,8 @@ class GIS(object):
 
         html.append(SCRIPT("""
     var map, mapPanel, toolbar;
-    var currentFeature, popupControl;
+    var currentFeature, popupControl, highlightControl;
+    var wmsBrowser;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -814,32 +1877,30 @@ class GIS(object):
         """ + layers_xyz + """
         // JS
         """ + layers_js + """
+
         // Overlays
-        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-        style_marker.graphicOpacity = 1;
-        var icon_img = new Image();
         var max_w = 25;
         var max_h = 35;
         var width, height;
+        var icon_img = new Image();
         var iconURL;
-        var strategy = new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """});
+
         // Features
         """ + layers_features + """
+
         // GeoRSS
         """ + layers_georss + """
+
         // GPX
         """ + layers_gpx + """
+
         // KML
         """ + layers_kml + """
     }
 
     """ + functions_openstreetmap + """
 
-    // ol_vector_registerEvents.js
-
-    // ol_controls_features.js
-
-    // Supports selectControl for All Feature Layers
+    // Supports popupControl for All Vector Layers
     function onFeatureUnselect(event) {
         var feature = event.feature;
         if (feature.popup) {
@@ -853,23 +1914,108 @@ class GIS(object):
         popupControl.unselectAll();
     }
 
-    // ol_functions.js
+    // Supports highlightControl for All Vector Layers
+    var lastFeature = null;
+    var tooltipPopup = null;
+    function tooltipSelect(event){
+        var feature = event.feature;
+        if(feature.cluster) {
+            // Cluster
+            // no tooltip
+        } else {
+            // Single Feature
+            var selectedFeature = feature;
+            // if there is already an opened details window, don\'t draw the tooltip
+            if(feature.popup != null){
+                return;
+            }
+            // if there are other tooltips active, destroy them
+            if(tooltipPopup != null){
+                map.removePopup(tooltipPopup);
+                tooltipPopup.destroy();
+                if(lastFeature != null){
+                    delete lastFeature.popup;
+                    tooltipPopup = null;
+                }
+            }
+            lastFeature = feature;
+            if (undefined == feature.attributes.name) {
+                // GeoRSS
+                tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        feature.geometry.getBounds().getCenterLonLat(),
+                        new OpenLayers.Size(80, 12),
+                        feature.attributes.title,
+                        true
+                );
+            } else {
+                // KML
+                tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        feature.geometry.getBounds().getCenterLonLat(),
+                        new OpenLayers.Size(80, 12),
+                        feature.attributes.name,
+                        true
+                );
+            }
+            // should be moved to CSS
+            tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+            tooltipPopup.closeDiv.style.backgroundColor='ffffcb';
+            tooltipPopup.contentDiv.style.overflow='hidden';
+            tooltipPopup.contentDiv.style.padding='3px';
+            tooltipPopup.contentDiv.style.margin='0';
+            tooltipPopup.closeOnMove = true;
+            tooltipPopup.autoSize = true;
+            feature.popup = tooltipPopup;
+            map.addPopup(tooltipPopup);
+        }
+    }
+    function tooltipUnselect(event){
+        var feature = event.feature;
+        if(feature != null && feature.popup != null){
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            delete feature.popup;
+            tooltipPopup = null;
+            lastFeature = null;
+        }
+    }
 
     Ext.onReady(function() {
         map = new OpenLayers.Map('center', options);
         addLayers(map);
-        
-        // ol_layers_features_all.js
+
         map.addControl(new OpenLayers.Control.ScaleLine());
         map.addControl(new OpenLayers.Control.MGRSMousePosition());
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-        popupControl = new OpenLayers.Control.SelectFeature(allLayers);
+
+        // Popups
+        // onClick Popup
+        popupControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                toggle: true,
+                clickout: true,
+                multiple: false
+            }
+        );
+        // onHover Tooltip
+        highlightControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                hover: true,
+                highlightOnly: true,
+                renderIntent: "temporary",
+                eventListeners: {
+                    featurehighlighted: tooltipSelect,
+                    featureunhighlighted: tooltipUnselect
+                }
+            }
+        );
+        map.addControl(highlightControl);
         map.addControl(popupControl);
+        highlightControl.activate();
         popupControl.activate();
-        
-        // MGRS from ol_controls.js
-    
+
+        """ + mgrs_html + """
+
         var mapPanel = new GeoExt.MapPanel({
             region: 'center',
             height: """ + str(height) + """,
@@ -881,9 +2027,11 @@ class GIS(object):
             zoom: """ + str(zoom) + """,
             tbar: new Ext.Toolbar()
         });
-        
+
         """ + toolbar + """
-        
+
+        """ + search + """
+
         var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
             text: '""" + str(T("Base Layers")) + """',
             layerStore: mapPanel.layers,
@@ -906,13 +2054,18 @@ class GIS(object):
             expanded: true
         });
 
+        """ + layers_wms_browser + """
+
         var layerTree = new Ext.tree.TreePanel({
             id: 'treepanel',
             title: '""" + str(T("Layers")) + """',
             root: new Ext.tree.AsyncTreeNode({
                 expanded: true,
-                children: [layerTreeBase, layerTreeFeaturesInternal]
-                //children: [layerTreeBase, layerTreeFeaturesExternal, layerTreeFeaturesInternal]
+                children: [
+                    layerTreeBase,
+                    //layerTreeFeaturesExternal,
+                    layerTreeFeaturesInternal
+                ],
             }),
             rootVisible: false,
             split: true,
@@ -921,27 +2074,6 @@ class GIS(object):
             collapseMode: 'mini',
             lines: false,
             enableDD: true
-        });
-
-        var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
-            map: map,
-            zoom: 8
-         });
-
-        var searchCombo = new Ext.Panel({
-            title: '""" + str(T("Search Geonames")) + """',
-            layout: 'border',
-            rootVisible: false,
-            split: true,
-            autoScroll: true,
-            collapsible: true,
-            collapseMode: 'mini',
-            lines: false,
-            html: '""" + str(T("Geonames.org search requires Internet connectivity!")) + """',
-            items: [{
-                    region: 'center',
-                    items: [ mapSearch ]
-                }]    
         });
 
         """ + layout + """
@@ -959,8 +2091,7 @@ class GIS(object):
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree,
-                            searchCombo
+                            layerTree""" + layers_wms_browser2 + search2 + """
                             ]
                     },
                     mapPanel
@@ -983,8 +2114,8 @@ class GIS(object):
 
         if not wkt:
             assert lon is not None and lat is not None, "Need wkt or lon+lat to parse a location"
-            wkt = 'POINT(%f %f)' % (lon, lat)
-            geom_type = GEOM_TYPES['point']
+            wkt = "POINT(%f %f)" % (lon, lat)
+            geom_type = GEOM_TYPES["point"]
             bbox = (lon, lat, lon, lat)
         else:
             if SHAPELY:
@@ -997,12 +2128,12 @@ class GIS(object):
             else:
                 lat = None
                 lon = None
-                geom_type = GEOM_TYPES[wkt.split('(')[0].lower()]
+                geom_type = GEOM_TYPES[wkt.split("(")[0].lower()]
                 bbox = None
 
-        res = {'wkt': wkt, 'lat': lat, 'lon': lon, 'gis_feature_type': geom_type}
+        res = {"wkt": wkt, "lat": lat, "lon": lon, "gis_feature_type": geom_type}
         if bbox:
-            res['lon_min'], res['lat_min'], res['lon_max'], res['lat_max'] = bbox
+            res["lon_min"], res["lat_min"], res["lon_max"], res["lat_max"] = bbox
 
         return res
 
@@ -1027,45 +2158,45 @@ class GIS(object):
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
         """
 
-        if form.vars.gis_feature_type == '1':
+        if form.vars.gis_feature_type == "1":
             # Point
             if form.vars.lon == None and form.vars.lat == None:
                 # No geo to create WKT from, so skip
                 return
             elif form.vars.lat == None:
-                form.errors['lat'] = self.messages.lat_empty
+                form.errors["lat"] = self.messages.lat_empty
                 return
             elif form.vars.lon == None:
-                form.errors['lon'] = self.messages.lon_empty
+                form.errors["lon"] = self.messages.lon_empty
                 return
             else:
-                form.vars.wkt = 'POINT(%(lon)f %(lat)f)' % form.vars
+                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
                 return
 
-        elif form.vars.gis_feature_type == '2':
+        elif form.vars.gis_feature_type == "2":
             # Line
             try:
                 try:
                     line = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors['wkt'] = self.messages.invalid_wkt_linestring
+                    form.errors["wkt"] = self.messages.invalid_wkt_linestring
                     return
                 centroid_point = line.centroid
-                form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-                form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
+                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
             except:
                 form.errors.gis_feature_type = self.messages.centroid_error
-        elif form.vars.gis_feature_type == '3':
+        elif form.vars.gis_feature_type == "3":
             # Polygon
             try:
                 try:
                     polygon = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors['wkt'] = self.messages.invalid_wkt_polygon
+                    form.errors["wkt"] = self.messages.invalid_wkt_polygon
                     return
                 centroid_point = polygon.centroid
-                form.vars.lon = centroid_point.wkt.split('(')[1].split(' ')[0]
-                form.vars.lat = centroid_point.wkt.split('(')[1].split(' ')[1][:1]
+                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
+                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
             except:
                 form.errors.gis_feature_type = self.messages.centroid_error
 
@@ -1076,11 +2207,11 @@ class GIS(object):
 
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
         db = self.db
-        return db((db.gis_location.lat_min <= lat_max) & 
+        return db((db.gis_location.lat_min <= lat_max) &
             (db.gis_location.lat_max >= lat_min) &
             (db.gis_location.lon_min <= lon_max) &
             (db.gis_location.lon_max >= lon_min))
-    
+
     def _intersects(self, shape):
         """
             Returns Rows of locations whose shape intersects the given shape
@@ -1102,7 +2233,7 @@ class GIS(object):
 
     if SHAPELY:
         intersects = _intersects
-        intersects_latlon = _intersects_latlon 
+        intersects_latlon = _intersects_latlon
 
 
 class Geocoder(object):
@@ -1118,18 +2249,18 @@ class Geocoder(object):
 class GoogleGeocoder(Geocoder):
     " Google Geocoder module "
 
-    def __init__(self, location, db, domain='maps.google.com', resource='maps/geo', output_format='kml'):
+    def __init__(self, location, db, domain="maps.google.com", resource="maps/geo", output_format="kml"):
         " Initialize the values based on arguments or default settings "
         self.api_key = self.get_api_key()
         self.domain = domain
         self.resource = resource
-        self.params = {'q': location, 'key': self.api_key}
+        self.params = {"q": location, "key": self.api_key}
         self.url = "http://%(domain)s/%(resource)?%%s" % locals()
         self.db = db
 
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name=='google'
+        query = self.db.gis_apikey.name == "google"
         return self.db(query).select().first().apikey
 
     def construct_url(self):
@@ -1147,12 +2278,12 @@ class YahooGeocoder(Geocoder):
         " Initialize the values based on arguments or default settings "
         self.api_key = self.get_api_key()
         self.location = location
-        self.params = {'location': self.location, 'appid': self.app_key}
+        self.params = {"location": self.location, "appid": self.app_key}
         self.db = db
 
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name=='yahoo'
+        query = self.db.gis_apikey.name == "yahoo"
         return self.db(query).select().first().apikey
 
     def construct_url(self):

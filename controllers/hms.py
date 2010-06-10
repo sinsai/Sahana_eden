@@ -6,35 +6,22 @@
     @author: nursix
 """
 
-module = 'hms'
+module = "hms"
 
-# -----------------------------------------------------------------------------
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select()[0].name_nice
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
-    [T('Hospitals'), False, URL(r=request, f='hospital'), [
-        [T('List All'), False, URL(r=request, f='hospital')],
-        [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-        [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')],
-    ]],
-    [T('Add Request'), False, URL(r=request, f='hrequest', args='create')],
-    [T('Requests'), False, URL(r=request, f='hrequest')],
-    [T('Pledges'), False, URL(r=request, f='hpledge')],
-]
-
-# -----------------------------------------------------------------------------
-def shn_hms_menu_ext():
+def shn_menu():
     menu = [
         [T('Home'), False, URL(r=request, f='index')],
-            [T('Hospitals'), False, URL(r=request, f='hospital'), [
-                [T('List All'), False, URL(r=request, f='hospital')],
-                [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
-                [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')]
-            ]],
+        [T('Hospitals'), False, URL(r=request, f='hospital'), [
+            [T('List All'), False, URL(r=request, f='hospital')],
+            [T('Find by Name'), False, URL(r=request, f='hospital', args='search_simple')],
+            [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')]
+        ]],
     ]
     if session.rcvars and 'hms_hospital' in session.rcvars:
         selection = db.hms_hospital[session.rcvars['hms_hospital']]
@@ -60,13 +47,14 @@ def shn_hms_menu_ext():
     menu.extend(menu2)
     response.menu_options = menu
 
-shn_hms_menu_ext()
+shn_menu()
 
 # -----------------------------------------------------------------------------
 def index():
 
     """ Module's Home Page """
 
+    module_name = s3.modules[module]["name_nice"]
     return dict(module_name=module_name)
 
 # -----------------------------------------------------------------------------
@@ -78,26 +66,14 @@ def hospital():
 
     output = shn_rest_controller(module , 'hospital',
         pheader = shn_hms_hospital_pheader,
-        list_fields=['id',
-            'gov_uuid',
-            'name',
-            'organisation_id',
-            'location_id',
-            'phone_business',
-            'ems_status',
-            'facility_status',
-            'clinical_status',
-            'security_status',
-            'total_beds',
-            'available_beds'
-        ],
+        list_fields=shn_hms_hospital_list_fields(),
         rss=dict(
             title="%(name)s",
             description=shn_hms_hospital_rss
         ),
         listadd=False)
 
-    shn_hms_menu_ext()
+    shn_menu()
 
     return output
 
@@ -130,7 +106,7 @@ def hrequest():
             description="%(message)s"
         ))
 
-    shn_hms_menu_ext()
+    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -156,7 +132,7 @@ def hpledge():
 
     output = shn_rest_controller(module, resource, editable = True, listadd=False)
 
-    shn_hms_menu_ext()
+    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------

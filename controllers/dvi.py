@@ -4,7 +4,11 @@
     DVI Module - Controllers
 """
 
-module = 'dvi'
+module = "dvi"
+
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 # Only people with the DVI role should be able to access this module
 #try:
@@ -18,40 +22,24 @@ module = 'dvi'
 #    session.error=T('Not Authorised!')
 #    redirect(URL(r=request, c='default', f='user', args='login'))
 
-# Current Module (for sidebar title)
-try:
-    module_name = db(db.s3_module.name==module).select().first().name_nice
-except:
-    module_name = T('Disaster Victim Identification')
-
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T('Body Find'), False, URL(r=request, f='find', args='create'),[
-        [T('New Report'), False, URL(r=request, f='find', args='create')],
-        [T('List Reports'), False, URL(r=request, f='find')],
-    ]],
-    [T('Body Recovery'), False, URL(r=request, f='body', args='create'),[
-        [T('New Report'), False, URL(r=request, f='body', args='create')],
-        [T('List Reports'), False, URL(r=request, f='body')],
-    ]],
-    [T('Select Body'), False, URL(r=request, f='body', args='search_simple')]
-]
-
-def shn_dvi_module_menu_ext():
+def shn_menu():
+    response.menu_options = [
+        [T('Body Find'), False, URL(r=request, f='find', args='create'),[
+            [T('New Report'), False, URL(r=request, f='find', args='create')],
+            [T('List Reports'), False, URL(r=request, f='find')],
+        ]],
+        [T('Body Recovery'), False, URL(r=request, f='body', args='create'),[
+            [T('New Report'), False, URL(r=request, f='body', args='create')],
+            [T('List Reports'), False, URL(r=request, f='body')],
+        ]],
+        [T('Select Body'), False, URL(r=request, f='body', args='search_simple')]
+    ]
     if session.rcvars and 'dvi_body' in session.rcvars:
         selection = db.dvi_body[session.rcvars['dvi_body']]
         if selection:
             selection = selection.pr_pe_label
-            response.menu_options = [
-                [T('Body Find'), False, URL(r=request, f='find', args='create'),[
-                    [T('New Report'), False, URL(r=request, f='find', args='create')],
-                    [T('List Reports'), False, URL(r=request, f='find')],
-                ]],
-                [T('Body Recovery'), False, URL(r=request, f='body', args='create'),[
-                    [T('New Report'), False, URL(r=request, f='body', args='create')],
-                    [T('List Reports'), False, URL(r=request, f='body')],
-                ]],
-                [T('Select Body'), False, URL(r=request, f='body', args='search_simple')],
+            menu_body = [
                 [str(T('Body:')) + ' ' + selection, False, URL(r=request, f='body', args='read'),[
                     [T('Recovery'), False, URL(r=request, f='body', args='read')],
                     [T('Tracing'), False, URL(r=request, f='body', args='presence')],
@@ -70,12 +58,19 @@ def shn_dvi_module_menu_ext():
                     [T('Checklist'), False, URL(r=request, f='body', args=['checklist'])],
                 ]]
             ]
+            response.menu_options.extend(menu_body)
 
-shn_dvi_module_menu_ext()
+shn_menu()
 
 # S3 framework functions
 def index():
     "Module's Home Page"
+
+    try:
+        module_name = s3.modules[module]["name_nice"]
+    except:
+        module_name = T('Disaster Victim Identification')
+
     return dict(module_name=module_name)
 
 def find():
@@ -92,6 +87,7 @@ def find():
             'opt_dvi_task_status'
         ]
     )
+    shn_menu()
     return output
 
 def body():
@@ -106,7 +102,7 @@ def body():
             'location_id',
         ]
     )
-    shn_dvi_module_menu_ext()
+    shn_menu()
     return output
 
 def personal_effects():

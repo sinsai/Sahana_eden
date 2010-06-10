@@ -4,23 +4,14 @@
     Volunteer Management Module
 """
 
-module = 'vol'
+module = "vol"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions)
-response.menu_options = [
-    [T('Projects'), False, URL(r=request, f='project'),[
-        [T('Search'), False, URL(r=request, f='project', args='search_location')],
-        [T('Add Project'), False, URL(r=request, f='project', args='create')],
-    ]],
-    [T('Persons'), False,  URL(r=request, f='person', args=['search_simple'],
-                               vars={"_next":URL(r=request, f='person', args=['[id]','volunteer'])})],
-]
-
-
-def shn_vol_menu_ext():
+def shn_menu():
     menu = [
         [T('Projects'), False, URL(r=request, f='project'),[
             [T('Search'), False, URL(r=request, f='project', args='search_location')],
@@ -62,12 +53,14 @@ def shn_vol_menu_ext():
         menu.extend(menu_user)
     response.menu_options = menu
 
-shn_vol_menu_ext()
+shn_menu()
 
 
 def index():
 
     """ Module's Home Page """
+
+    module_name = s3.modules[module]["name_nice"]
 
     return dict(module_name=module_name)
 
@@ -84,7 +77,7 @@ def project():
     table.status.comment = SPAN("*", _class="req")
 
     output = shn_rest_controller( module , resource, pheader=shn_vol_project_pheader)
-    shn_vol_menu_ext()
+    shn_menu()
     return output
 
 
@@ -102,7 +95,7 @@ def person():
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ))
 
-    shn_vol_menu_ext()
+    shn_menu()
     return output
 
 

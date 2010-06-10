@@ -6,8 +6,8 @@
     @author: Ajay Kumar
 """
 
-module = 'lms'
-if shn_module_enable.get(module, False):
+module = "lms"
+if deployment_settings.has_module(module):
 
     # Settings
     resource = 'setting'

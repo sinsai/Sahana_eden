@@ -7,8 +7,8 @@
     @author: nursix
 """
 
-module = 'vol'
-if shn_module_enable.get(module, False):
+module = "vol"
+if deployment_settings.has_module(module):
 
     # Settings
     resource = 'setting'
@@ -536,7 +536,7 @@ if shn_module_enable.get(module, False):
                 if results and len(results):
                     records = []
                     for result in results:
-                        href = next.replace('%5bid%5d', '%s' % result.id)
+                        href = next.replace("%5bid%5d", "%s" % result.id)
                         records.append(TR(
                             A(result.name, _href=href),
                             result.start_date or "None",
@@ -552,14 +552,14 @@ if shn_module_enable.get(module, False):
                         TH("Status"))),
                         TBODY(records), _id='list', _class="display"))
                 else:
-                        items = T('None')
+                        items = T("None")
 
             try:
-                label_create_button = s3.crud_strings['vol_project'].label_create_button
+                label_create_button = s3.crud_strings["vol_project"].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, f='project', args='create'), _id='add-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, f="project", args="create"), _class='action-btn')
 
             output.update(dict(items=items, add_btn=add_btn))
 
@@ -570,7 +570,7 @@ if shn_module_enable.get(module, False):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, 'project', method='search_location', action=shn_vol_project_search_location )
+    s3xrc.model.set_method(module, "project", method="search_location", action=shn_vol_project_search_location )
 
     # -----------------------------------------------------------------------------
     # shn_vol_project_search_location:

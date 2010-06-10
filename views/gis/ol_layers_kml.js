@@ -20,7 +20,7 @@ allLayers = allLayers.concat(kmlLayers);
 function onKmlFeatureSelect(event) {
     var feature = event.feature;
     var selectedFeature = feature;
-    var type = typeof feature.attributes.name
+    var type = typeof feature.attributes.name;
     if ('object' == type) {
         var popup = new OpenLayers.Popup.FramedCloud("chicken",
         feature.geometry.getBounds().getCenterLonLat(),

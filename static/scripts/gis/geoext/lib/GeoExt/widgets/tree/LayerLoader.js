@@ -8,6 +8,7 @@
 
 /**
  * @include GeoExt/widgets/tree/LayerNode.js
+ * @include GeoExt/widgets/tree/LayerContainer.js
  */
 Ext.namespace("GeoExt.tree");
 
@@ -85,7 +86,7 @@ Ext.extend(GeoExt.tree.LayerLoader, Ext.util.Observable, {
      *  attribute for child nodes is a string rather than a reference to a
      *  TreeNodeUI implementation, then that string value is used as a
      *  property name in the uiProviders object. If not provided, the
-     *  uiProviders object will be taken from the ownerTree.
+     *  uiProviders object will be taken from the ownerTree's loader.
      */
     uiProviders: null,
     
@@ -212,11 +213,8 @@ Ext.extend(GeoExt.tree.LayerLoader, Ext.util.Observable, {
      */
     onChildMove: function(tree, node, oldParent, newParent, index) {
         this._reordering = true;
-        var oldRecordIndex = this.store.findBy(function(record) {
-            return record.get("layer") === node.layer;
-        });
         // remove the record and re-insert it at the correct index
-        var record = this.store.getAt(oldRecordIndex);
+        var record = this.store.getByLayer(node.layer);
 
         if(newParent instanceof GeoExt.tree.LayerContainer && 
                                     this.store === newParent.loader.store) {

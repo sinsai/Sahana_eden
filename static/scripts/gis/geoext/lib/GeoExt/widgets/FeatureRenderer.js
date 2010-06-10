@@ -9,7 +9,7 @@
 /** api: (define)
  *  module = GeoExt
  *  class = FeatureRenderer
- *  base_link = `Ext.Panel <http://extjs.com/deploy/dev/docs/?class=Ext.BoxComponent>`_
+ *  base_link = `Ext.BoxComponent <http://extjs.com/deploy/dev/docs/?class=Ext.BoxComponent>`_
  */
 Ext.namespace('GeoExt');
 
@@ -181,8 +181,9 @@ GeoExt.FeatureRenderer = Ext.extend(Ext.BoxComponent, {
             }).createDelegate(this)
         };
         
-        this.drawFeature();
         GeoExt.FeatureRenderer.superclass.onRender.apply(this, arguments);
+
+        this.drawFeature();
     },
 
     /** private: method[afterRender]

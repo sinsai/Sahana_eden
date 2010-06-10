@@ -9,42 +9,24 @@
 module = "pr"
 
 # -----------------------------------------------------------------------------
-# Current Module (for sidebar title)
-try:
-    module_name = db(db.s3_module.name==module).select().first().name_nice
-except:
-    module_name = T("Person Registry")
-
-# -----------------------------------------------------------------------------
 # Options Menu (available in all Functions" Views)
-response.menu_options = [
-    [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
-    [T("Persons"), False, URL(r=request, f="person"), [
-        [T("List"), False, URL(r=request, f="person")],
-        [T("Add"), False, URL(r=request, f="person", args="create")],
-    ]],
-    [T("Groups"), False, URL(r=request, f="group"), [
-        [T("List"), False, URL(r=request, f="group")],
-        [T("Add"), False, URL(r=request, f="group", args="create")],
-    ]]
-]
-
-# -----------------------------------------------------------------------------
-def shn_pr_module_menu_ext():
+def shn_menu():
+    response.menu_options = [
+        [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
+        [T("Persons"), False, URL(r=request, f="person"), [
+            [T("List"), False, URL(r=request, f="person")],
+            [T("Add"), False, URL(r=request, f="person", args="create")],
+        ]],
+        [T("Groups"), False, URL(r=request, f="group"), [
+            [T("List"), False, URL(r=request, f="group")],
+            [T("Add"), False, URL(r=request, f="group", args="create")],
+            [T("Group Memberships"), False, URL(r=request, f="group_membership")],
+        ]]]
     if session.rcvars and "pr_person" in session.rcvars:
         selection = db.pr_person[session.rcvars["pr_person"]]
         if selection:
             selection = shn_pr_person_represent(selection.id)
-            response.menu_options = [
-                [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
-                [T("Persons"), False, URL(r=request, f="person"), [
-                    [T("List"), False, URL(r=request, f="person")],
-                    [T("Add"), False, URL(r=request, f="person", args="create")],
-                ]],
-                [T("Groups"), False, URL(r=request, f="group"), [
-                    [T("List"), False, URL(r=request, f="group")],
-                    [T("Add"), False, URL(r=request, f="group", args="create")],
-                ]],
+            menu_person = [
                 [str(T("Person:")) + " " + selection, False, URL(r=request, f="person", args="read"),[
                     [T("Basic Details"), False, URL(r=request, f="person", args="read")],
                     [T("Images"), False, URL(r=request, f="person", args="image")],
@@ -57,13 +39,19 @@ def shn_pr_module_menu_ext():
             #        [T("Group Memberships"), False, URL(r=request, f="person", args="group_membership")],
                 ]]
             ]
+            response.menu_options.extend(menu_person)
 
-shn_pr_module_menu_ext()
+shn_menu()
 
 # -----------------------------------------------------------------------------
 def index():
 
     """ Module"s Home Page """
+
+    try:
+        module_name = s3.modules[module]["name_nice"]
+    except:
+        module_name = T("Person Registry")
 
     gender = []
     for g_opt in pr_person_gender_opts:
@@ -95,12 +83,12 @@ def person():
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
         ))
 
-    shn_pr_module_menu_ext()
+    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
 def group():
-    response.s3.filter = (db.pr_group.system==False) # do not show system groups
+    response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
     "RESTlike CRUD controller"
     return shn_rest_controller(module, "group",
@@ -152,7 +140,7 @@ def download():
 def tooltip():
     if "formfield" in request.vars:
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
-    return dict(module_name=module_name)
+    return dict()
 
 #
 # -----------------------------------------------------------------------------

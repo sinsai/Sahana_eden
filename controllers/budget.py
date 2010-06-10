@@ -4,10 +4,12 @@
     Budgetting Module - Controllers
 """
 
-module = 'budget'
+module = "budget"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Parameters'), False, URL(r=request, f='parameters')],
@@ -22,12 +24,14 @@ response.menu_options = [
 
 # Options used in multiple functions
 table = db.budget_item
+table.category_type.comment = SPAN("*", _class="req")
 table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % table)]
 table.code.label = T('Code')
 table.code.comment = SPAN("*", _class="req")
 table.description.requires = IS_NOT_EMPTY()
 table.description.label = T('Description')
 table.description.comment = SPAN("*", _class="req")
+table.cost_type.comment = SPAN("*", _class="req")
 table.unit_cost.label = T('Unit Cost')
 table.monthly_cost.label = T('Monthly Cost')
 table.minute_cost.label = T('Cost per Minute')
@@ -182,6 +186,9 @@ table.months.comment = SPAN("*", _class="req")
 # S3 framework functions
 def index():
     "Module's Home Page"
+    
+    module_name = s3.modules[module]["name_nice"]
+    
     return dict(module_name=module_name)
 
 def parameters():
@@ -189,9 +196,9 @@ def parameters():
     table = db.budget_parameter
     authorised = shn_has_permission('update', table)
     if authorised:
-        redirect (URL(r=request, f='parameter', args=['update', 1]))
+        redirect (URL(r=request, f='parameter', args=[1, 'update']))
     else:
-        redirect (URL(r=request, f='parameter', args=['read', 1]))
+        redirect (URL(r=request, f='parameter', args=[1, 'read']))
 
 def parameter():
     "RESTlike CRUD controller"
@@ -242,7 +249,7 @@ def item():
         msg_record_deleted = T('Item deleted'),
         msg_list_empty = T('No Items currently registered'))
 
-    response.s3.pdf = URL(r=request, f='item_export_pdf')
+    response.s3.formats.pdf = URL(r=request, f='item_export_pdf')
 
     return shn_rest_controller(module, resource,
                                main='code',
@@ -375,8 +382,8 @@ def kit():
         msg_record_deleted = T('Kit deleted'),
         msg_list_empty = T('No Kits currently registered'))
 
-    response.s3.pdf = URL(r=request, f='kit_export_pdf')
-    response.s3.xls = URL(r=request, f='kit_export_xls')
+    response.s3.formats.pdf = URL(r=request, f='kit_export_pdf')
+    response.s3.formats.xls = URL(r=request, f='kit_export_xls')
     if len(request.args) == 2:
         crud.settings.update_next = URL(r=request, f='kit_item', args=request.args[1])
 
@@ -418,7 +425,7 @@ def kit_item():
     kit_monthly_cost = db.budget_kit[kit].total_monthly_cost
     query = table.kit_id==kit
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
+    output = dict(title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
     # Audit
     shn_audit_read(operation='list', module=module, resource='kit_item', record=kit, representation='html')
     item_list = []
@@ -474,7 +481,7 @@ def kit_item():
                 even = True
             id = row.item_id
             description = db.budget_item[id].description
-            id_link = A(id, _href=URL(r=request, f='item', args=['read', id]))
+            id_link = A(id, _href=URL(r=request, f="item", args=[id, "read"]))
             quantity_box = row.quantity
             unit_cost = db.budget_item[id].unit_cost
             monthly_cost = db.budget_item[id].monthly_cost
@@ -482,13 +489,13 @@ def kit_item():
             megabyte_cost = db.budget_item[id].megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
-            item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minute_cost), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
+            item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minute_cost), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align="right"))
 
-        table_header = THEAD(TR(TH('ID'), TH(table.item_id.label), TH(table.quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(db.budget_item.minute_cost.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly'))))
-        table_footer = TFOOT(TR(TD(B(T('Totals for Kit:')), _colspan=7), TD(B(kit_total_cost)), TD(B(kit_monthly_cost)), _align='right'))
+        table_header = THEAD(TR(TH("ID"), TH(table.item_id.label), TH(table.quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(db.budget_item.minute_cost.label), TH(db.budget_item.megabyte_cost.label), TH(T("Total Units")), TH(T("Total Monthly"))))
+        table_footer = TFOOT(TR(TD(B(T("Totals for Kit:")), _colspan=7), TD(B(kit_total_cost)), TD(B(kit_monthly_cost)), _align="right"))
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
-        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
-        response.view = '%s/kit_item_list.html' % module
+        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
+        response.view = "%s/kit_item_list.html" % module
         output.update(dict(items=items, add_btn=add_btn))
     return output
 
@@ -823,7 +830,7 @@ def bundle_kit_item():
     bundle_total_cost = db.budget_bundle[bundle].total_unit_cost
     bundle_monthly_cost = db.budget_bundle[bundle].total_monthly_cost
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
+    output = dict(title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
     # Audit
     shn_audit_read(operation='list', module=module, resource='bundle_kit_item', record=bundle, representation='html')
     item_list = []
@@ -964,7 +971,7 @@ def bundle_kit_item():
                 even = True
             id = row.item_id
             description = db.budget_item[id].description
-            id_link = A(id, _href=URL(r=request, f='item', args=['read', id]))
+            id_link = A(id, _href=URL(r=request, f="item", args=[id, "read"]))
             quantity_box = row.quantity
             minute_cost = db.budget_item[id].minute_cost
             minutes_box = row.minutes
@@ -976,28 +983,28 @@ def bundle_kit_item():
             megabyte_cost = db.budget_item[id].megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
-            item_list.append(TR(TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align='right'))
+            item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align="right"))
 
-        table_header = THEAD(TR(TH('ID'), TH(T('Description')), TH(tables[0].quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(tables[0].minutes.label), TH(db.budget_item.minute_cost.label), TH(tables[0].megabytes.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T('Total Monthly'))))
-        table_footer = TFOOT(TR(TD(B(T('Totals for Bundle:')), _colspan=9), TD(B(bundle_total_cost)), TD(B(bundle_monthly_cost))), _align='right')
+        table_header = THEAD(TR(TH("ID"), TH(T("Description")), TH(tables[0].quantity.label), TH(db.budget_item.unit_cost.label), TH(db.budget_item.monthly_cost.label), TH(tables[0].minutes.label), TH(db.budget_item.minute_cost.label), TH(tables[0].megabytes.label), TH(db.budget_item.megabyte_cost.label), TH(T('Total Units')), TH(T("Total Monthly"))))
+        table_footer = TFOOT(TR(TD(B(T("Totals for Bundle:")), _colspan=9), TD(B(bundle_total_cost)), TD(B(bundle_monthly_cost))), _align='right')
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
 
-        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
-        response.view = '%s/bundle_kit_item_list.html' % module
+        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
+        response.view = "%s/bundle_kit_item_list.html" % module
         output.update(dict(items=items, add_btn=add_btn))
     return output
 
 def bundle_dupes(form):
     "Checks for duplicate Kit/Item before adding to DB"
     bundle = form.vars.bundle_id
-    if 'kit_id' in form.vars:
+    if "kit_id" in form.vars:
         kit = form.vars.kit_id
         table = db.budget_bundle_kit
-        query = (table.bundle_id==bundle) & (table.kit_id==kit)
-    elif 'item_id' in form.vars:
+        query = (table.bundle_id == bundle) & (table.kit_id==kit)
+    elif "item_id" in form.vars:
         item = form.vars.item_id
         table = db.budget_bundle_item
-        query = (table.bundle_id==bundle) & (table.item_id==item)
+        query = (table.bundle_id == bundle) & (table.item_id==item)
     else:
         # Something went wrong!
         return
@@ -1197,7 +1204,7 @@ def budget_staff_bundle():
     budget_onetime_cost = db.budget_budget[budget].total_onetime_costs
     budget_recurring_cost = db.budget_budget[budget].total_recurring_costs
     # Start building the Return with the common items
-    output = dict(module_name=module_name, title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
+    output = dict(title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
     # Audit
     shn_audit_read(operation='list', module=module, resource='budget_staff_bundle', record=budget, representation='html')
     item_list = []
@@ -1320,11 +1327,11 @@ def budget_staff_bundle():
                 even = True
             id = row.bundle_id
             name = db.budget_bundle[id].name
-            id_link = A(name, _href=URL(r=request, f='bundle', args=['read', id]))
+            id_link = A(name, _href=URL(r=request, f="bundle", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
-            location_link = A(location, _href=URL(r=request, f='location', args=['read', row.location_id]))
+            location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
             project = db.budget_project[row.project_id].code
-            project_link = A(project, _href=URL(r=request, f='project', args=['read', row.project_id]))
+            project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
             description = db.budget_bundle[id].description
             quantity_box = row.quantity
             months_box = row.months
@@ -1332,28 +1339,39 @@ def budget_staff_bundle():
             monthly_cost = db.budget_bundle[id].total_monthly_cost
             onetime = unit_cost * row.quantity
             recurring = monthly_cost * row.months
-            item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align='left'), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align='right'))
+            item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align="right"))
 
-        table_header = THEAD(TR(TH('Location'), TH('Project'), TH('Item'), TH(T('Description')), TH(tables[0].quantity.label), TH(T('One-time costs')), TH(T('Recurring costs')), TH(tables[0].months.label), TH(db.budget_budget.total_onetime_costs.label), TH(db.budget_budget.total_recurring_costs.label)))
-        table_footer = TFOOT(TR(TD(B(T('Totals for Budget:')), _colspan=8), TD(B(budget_onetime_cost)), TD(B(budget_recurring_cost))), _align='right')
+        table_header = THEAD(TR(TH("Location"),
+                                TH("Project"),
+                                TH("Item"),
+                                TH(T("Description")),
+                                TH(tables[0].quantity.label),
+                                TH(T("One-time costs")),
+                                TH(T("Recurring costs")),
+                                TH(tables[0].months.label),
+                                TH(db.budget_budget.total_onetime_costs.label),
+                                TH(db.budget_budget.total_recurring_costs.label)))
+        table_footer = TFOOT(TR(TD(B(T("Totals for Budget:")), _colspan=8),
+                                TD(B(budget_onetime_cost)),
+                                TD(B(budget_recurring_cost))), _align="right")
         items = DIV(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"))
 
-        add_btn = A(T('Edit Contents'), _href=URL(r=request, c='default', f='user', args='login'), _id='add-btn')
-        response.view = '%s/budget_staff_bundle_list.html' % module
+        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
+        response.view = "%s/budget_staff_bundle_list.html" % module
         output.update(dict(items=items, add_btn=add_btn))
     return output
 
 def budget_dupes(form):
     "Checks for duplicate staff/bundle before adding to DB"
     budget = form.vars.budget_id
-    if 'staff_id' in form.vars:
+    if "staff_id" in form.vars:
         staff = form.vars.staff_id
         table = db.budget_budget_staff
-        query = (table.budget_id==budget) & (table.staff_id==staff)
-    elif 'bundle_id' in form.vars:
+        query = (table.budget_id == budget) & (table.staff_id==staff)
+    elif "bundle_id" in form.vars:
         bundle = form.vars.bundle_id
         table = db.budget_budget_bundle
-        query = (table.budget_id==budget) & (table.bundle_id==bundle)
+        query = (table.budget_id == budget) & (table.bundle_id==bundle)
     else:
         # Something went wrong!
         return

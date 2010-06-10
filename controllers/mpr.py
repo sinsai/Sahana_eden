@@ -6,10 +6,12 @@
     @author: nursix
 """
 
-module = 'mpr'
+module = "mpr"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Search for a Person'), False,  URL(r=request, f='person', args=['search_simple'])],
@@ -39,6 +41,9 @@ response.menu_options = [
 
 def index():
     "Module's Home Page"
+    
+    module_name = s3.modules[module]["name_nice"]
+        
     return dict(module_name=module_name)
 
 # Main controller functions
@@ -54,24 +59,25 @@ def person():
         ))
 
 def person_search():
-    "Module's Home Page"
-    return dict(module_name=module_name)
+    ""
+    return dict()
 
 def report_missing():
-    "Module's Home Page"
-    return dict(module_name=module_name)
+    ""
+    return dict()
 
 def edit_missing():
-    "Module's Home Page"
-    return dict(module_name=module_name)
+    ""
+    return dict()
 
 def report_found():
-    "Module's Home Page"
-    return dict(module_name=module_name)
+    ""
+    return dict()
 
 def missing_persons():
-    "Module's Home Page"
-    return dict(module_name=module_name)
+    ""
+    return dict()
+
 def found_persons():
-    "Module's Home Page"
-    return dict(module_name=module_name)
+    ""
+    return dict()

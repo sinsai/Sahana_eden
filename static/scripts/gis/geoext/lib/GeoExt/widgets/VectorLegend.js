@@ -14,7 +14,10 @@
 /** api: (define)
  *  module = GeoExt
  *  class = VectorLegend
- *  base_link = `Ext.Panel <http://extjs.com/deploy/dev/docs/?class=Ext.Panel>`_
+ */
+
+/** api: (extends)
+ * GeoExt/widgets/LayerLegend.js
  */
 
 Ext.namespace('GeoExt');
@@ -54,7 +57,11 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
      *  The symbol type for legend swatches.  Must be one of ``"Point"``, 
      *  ``"Line"``, or ``"Polygon"``.  If not provided, the ``layer`` or
      *  ``layerRecord`` config property must be specified, and the geometry type
-     *  of the first feature found on the layer will be used.
+     *  of the first feature found on the layer will be used. If a rule does
+     *  not have a symbolizer for ``symbolType``, we look at the symbolizers
+     *  for the rule, and see if it has a ``"Point"``, ``"Line"`` or
+     *  ``"Polygon"`` symbolizer, which we use for rendering a swatch of the
+     *  respective geometry type. 
      */
     symbolType: null,
 
@@ -183,6 +190,7 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
              *  Fires when a rule title is clicked.
              *
              *  Listener arguments:
+             *  
              *  * comp - :class:`GeoExt.VectorLegend`` This component.
              *  * rule - ``OpenLayers.Rule`` The rule whose title was clicked.
              */
@@ -192,6 +200,7 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
              *  Fires when a rule symbolizer is clicked.
              *
              *  Listener arguments:
+             *  
              *  * comp - :class:`GeoExt.VectorLegend`` This component.
              *  * rule - ``OpenLayers.Rule`` The rule whose symbol was clicked.
              */
@@ -202,6 +211,7 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
              *  title click).
              *
              *  Listener arguments:
+             *  
              *  * comp - :class:`GeoExt.VectorLegend`` This component.
              *  * rule - ``OpenLayers.Rule`` The rule that was clicked.
              */
@@ -212,6 +222,7 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
              *  ``true``.
              * 
              *  Listener arguments:
+             *  
              *  * comp - :class:`GeoExt.VectorLegend`` This component.
              *  * rule - ``OpenLayers.Rule`` The rule that was selected.
              */
@@ -223,6 +234,7 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
              *  different one.
              * 
              *  Listener arguments:
+             *  
              *  * comp - :class:`GeoExt.VectorLegend`` This component.
              *  * rule - ``OpenLayers.Rule`` The rule that was unselected.
              */
@@ -232,6 +244,7 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
              *  Fires when a rule is moved.
              * 
              *  Listener arguments:
+             *  
              *  * comp - :class:`GeoExt.VectorLegend`` This component.
              *  * rule - ``OpenLayers.Rule`` The rule that was moved.
              */
@@ -434,12 +447,19 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
      */
     createRuleRenderer: function(rule) {
         var symbolizer = rule.symbolizer;
-        if (symbolizer[this.symbolType]) {
-            symbolizer = symbolizer[this.symbolType];
+        var types = [this.symbolType, "Point", "Line", "Polygon"];
+        var type, haveType;
+        for(var i=0, len=types.length; i<len; ++i) {
+            type = types[i];
+            if(symbolizer[type]) {
+                symbolizer = symbolizer[type];
+                haveType = true;
+                break;
+            }
         }
         return {
             xtype: "gx_renderer",
-            symbolType: this.symbolType,
+            symbolType: haveType === true ? type : this.symbolType,
             symbolizers: [symbolizer],
             style: this.clickableSymbol ? {cursor: "pointer"} : undefined,
             listeners: {
@@ -554,6 +574,9 @@ GeoExt.VectorLegend = Ext.extend(GeoExt.LayerLegend, {
                 this.addRuleEntry(this.rules[i], true);
             }
             this.doLayout();
+            if (this.selectedRule) {
+                this.getRuleEntry(this.selectedRule).body.addClass("x-grid3-row-selected");
+            }
         }
     },
 

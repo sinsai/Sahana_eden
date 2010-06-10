@@ -10,12 +10,7 @@
 """
 
 module = "template"
-
-if shn_module_enable.get(module, False):
-    # Current Module (for sidebar title)
-    module_name = T("Template Module")
-    #Add module to s3_module table (see /models/01_modules.py) to use:
-    #module_name = db(db.s3_module.name==module).select().first().name_nice
+if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # Settings
@@ -35,9 +30,9 @@ if shn_module_enable.get(module, False):
     table_name = module + '_' + resource
     table = db.define_table(table_name, timestamp, uuidstamp, deletion_status,
                     #fields for table >>>
-                    Field('name', 
-                          length=128, 
-                          notnull=True, 
+                    Field('name',
+                          length=128,
+                          notnull=True,
                           unique=True),
                     #<<<
                     Field('comment'),
@@ -51,7 +46,7 @@ if shn_module_enable.get(module, False):
     s3.crud_strings[table_name] = shn_crud_strings("Hazard")
 
     field_settings = S3CheckboxesWidget(db = db,
-                                        lookup_table_name = "template_hazard", 
+                                        lookup_table_name = "template_hazard",
                                         lookup_field_name = "name",
                                         multiple = True,
                                         num_column=3,
@@ -62,7 +57,7 @@ if shn_module_enable.get(module, False):
     # Reusable field
     hazard_ids = SQLTable(None, 'hazard_ids',
                          Field('hazard_ids',
-                               requires = field_settings.requires, 
+                               requires = field_settings.requires,
                                widget = field_settings.widget,
                                represent = field_settings.represent,
                                label = T("Hazard"),
@@ -75,15 +70,15 @@ if shn_module_enable.get(module, False):
     # -----------------------------------------------------------------------------
     # Disaster
     # Example table
-    # According to Disaster Management Theory: Disaster = Hazard * Vulnerability 
+    # According to Disaster Management Theory: Disaster = Hazard * Vulnerability
 
     resource = "disaster"
     table_name = "%s_%s" % (module, resource)
-    table = db.define_table( table_name, timestamp, uuidstamp, deletion_status,   
+    table = db.define_table( table_name, timestamp, uuidstamp, deletion_status,
                              #fields for table >>>
                              Field("name"),
                              hazard_ids,
-                             Field("vulnerability","integer"),  
+                             Field("vulnerability","integer"),
                              Field("update_dummy"), #This field is mainly used as a place holder
                              #<<<
                              migrate=migrate)
@@ -98,7 +93,7 @@ if shn_module_enable.get(module, False):
                     }
 
     #Will be displayed as a select
-    table.vulnerability.requires = IS_IN_SET(opt_vulnerability)  
+    table.vulnerability.requires = IS_IN_SET(opt_vulnerability)
 
     # -----------------------------------------------------------------------------
     # Update:
@@ -131,8 +126,8 @@ if shn_module_enable.get(module, False):
     def template_disaster_onaccept(form):
         template_disaster_id = session.rcvars.template_disaster
 
-        #The widget is finished processing here, 
+        #The widget is finished processing here,
         #so that records can be linked to new table  (id=template_disaster_id
-        update_dummy_element.onaccept( db, template_disaster_id, request)  
+        update_dummy_element.onaccept( db, template_disaster_id, request)
 
     s3xrc.model.configure(db.template_disaster, onaccept=lambda form: template_disaster_onaccept(form))

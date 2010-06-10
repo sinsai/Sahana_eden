@@ -6,8 +6,9 @@
 
 module = "delphi"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
 
 response.menu_options = [
     [T("Active Problems"), False, URL(r=request, f='index')],
@@ -191,7 +192,11 @@ def __get_commons(solution=None):
 
 
 def index():
-    groups = db(db.delphi_group.active==True).select()
+    "Module Home Page"
+
+    module_name = s3.modules[module]["name_nice"]
+
+    groups = db(db.delphi_group.active == True).select()
     result = []
     for group in groups:
         actions = []
@@ -283,19 +288,19 @@ def new_problem():
     table = db.delphi_problem
     table.group.default = request.get_vars['group']
     table.group.writable = False
-    
+
     return problem()
 
 def group():
     if not auth.has_membership(1):
         raise HTTP(403)
-        
-    return shn_rest_controller(module, 'group', list_fields=['id', 'name', 'last_modification'])
+
+    return shn_rest_controller(module, 'group', list_fields=['id', 'name', 'description'])
 
 def user_to_group():
     if not auth.has_membership(1):
         raise HTTP(403)
-        
+
     return shn_rest_controller(module, 'user_to_group', list_fields=['id', 'group_id', 'user_id', 'status', 'req'])
 
 def problem():

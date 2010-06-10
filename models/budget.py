@@ -6,8 +6,8 @@
     @author: Fran Boon
 """
 
-module = 'budget'
-if shn_module_enable.get(module, False):
+module = "budget"
+if deployment_settings.has_module(module):
 
     # Settings
     resource = 'setting'

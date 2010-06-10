@@ -4,10 +4,12 @@
     Shelter Registry - Controllers
 """
 
-module = 'cr'
+module = "cr"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Add Shelter'), False, URL(r=request, f='shelter', args='create')],
@@ -18,6 +20,9 @@ response.menu_options = [
 # S3 framework functions
 def index():
     "Module's Home Page"
+    
+    module_name = s3.modules[module]["name_nice"]
+    
     return dict(module_name=module_name)
 
 def shelter():

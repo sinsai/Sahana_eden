@@ -6,10 +6,12 @@
     @author: ajuonline
 """
 
-module = 'lms'
+module = "lms"
 
-# Current Module (for sidebar title)
-module_name = db(db.s3_module.name==module).select().first().name_nice
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T('Procurements'), False, URL(r=request, f='#')],
@@ -96,6 +98,9 @@ response.menu_options = [
 
 def index():
     "Module's Home Page"
+    
+    module_name = s3.modules[module]["name_nice"]
+    
     return dict(module_name=module_name)
 
 # Administration Index Page

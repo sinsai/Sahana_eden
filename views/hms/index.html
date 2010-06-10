@@ -1,7 +1,7 @@
 {{extend 'layout.html'}}
 <div id="home">
 <div style="margin:20px auto; width:96%; max-width:1000px;" >
-    <div style="float:left; font-size:x-large; line-height:110%; width:50%; margin-right:50px;">
+    <div class='col3left' style='font-size:large;'>
 
     {{=OL(
       LI(
@@ -33,7 +33,7 @@
 
     </div>
 
-    <div style="width:200px; padding:0 10px; float:right; margin:0 auto;">
+    <div class='col3mid'>
       {{=H4(T('ACCESS DATA'))}}
       {{=DIV(T('Use these links to download data that is currently in the database.'))}}
       {{=UL(
@@ -61,7 +61,7 @@
       {{=DIV(T('All data provided by the Sahana Software Foundation from this site is licenced under a Creative Commons Attribution licence. However, not all data originates here. Please consult the source field of each entry.'))}}
     </div>
 
-  <div style="width:200px; float:right; padding:0 10px; margin: 0 auto;">
+  <div class='col3right'>
     {{=H4(T('ABOUT THIS MODULE'))}}
     {{=T("The")}} {{=T(module_name)}} {{=T("module helps monitoring the status of hospitals.")}}
     {{=H3(T("Features Include"), _style='margin-top:15px;')}}

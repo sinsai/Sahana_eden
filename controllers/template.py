@@ -11,6 +11,10 @@
 
 module = "template"
 
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
 def disaster():
     "RESTful CRUD controller"
     return shn_rest_controller(module, "disaster" )

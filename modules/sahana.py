@@ -363,63 +363,67 @@ class AuthS3(Auth):
             if self.settings.username_field:
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
-                    Field('first_name', length=128, default='',
+                    Field("first_name", length=128, default="",
                             label=self.messages.label_first_name),
-                    Field('last_name', length=128, default='',
+                    Field("last_name", length=128, default="",
                             label=self.messages.label_last_name),
-                    Field('person_uuid', length=64, default='',
+                    Field("person_uuid", length=64, default='',
                              readable=False, writable=False),
                     # TODO:
                     #   - Needs Validation if possible
-                    Field('mobile_phone', length=32,default=''),
+                    #Field("mobile_phone", length=32, default=""),
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
-                    Field('username', length=128, default=''),
-                    Field('language', length=16),
-                    Field('email', length=512, default='',
+                    Field("utc_offset", length=16, default="UTC +0000", readable=False, writable=False),
+                    Field("username", length=128, default=""),
+                    Field("language", length=16),
+                    Field("email", length=512, default="",
                             label=self.messages.label_email),
-                    Field(passfield, 'password', length=512,
+                    Field(passfield, "password", length=512,
                              readable=False, label=self.messages.label_password),
-                    Field('registration_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("registration_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field('reset_password_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("reset_password_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
+                    Field("timestamp", "datetime", writable=False,
+                            readable=False, default=""),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
             else:
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
-                    Field('first_name', length=128, default='',
+                    Field("first_name", length=128, default="",
                             label=self.messages.label_first_name),
-                    Field('last_name', length=128, default='',
+                    Field("last_name", length=128, default="",
                             label=self.messages.label_last_name),
-                    Field('person_uuid', length=64, default='',
+                    Field("person_uuid", length=64, default="",
                              readable=False, writable=False),
-                    Field('mobile_phone', length=32,default=''),
+                    #Field("mobile_phone", length=32, default=""),
                     # add UTC Offset (+/-HHMM) to specify the user's timezone
                     # TODO:
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    Field('utc_offset', length=16, default="UTC +0000", readable=False, writable=False),
-                    #Field('username', length=128, default=''),
-                    Field('language', length=16),
-                    Field('email', length=512, default='',
+                    Field("utc_offset", length=16, default="UTC +0000", readable=False, writable=False),
+                    #Field("username", length=128, default=""),
+                    Field("language", length=16),
+                    Field("email", length=512, default="",
                             label=self.messages.label_email),
-                    Field(passfield, 'password', length=512,
+                    Field(passfield, "password", length=512,
                              readable=False, label=self.messages.label_password),
-                    Field('registration_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("registration_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field('reset_password_key', length=512,
-                            writable=False, readable=False, default='',
+                    Field("reset_password_key", length=512,
+                            writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
+                    Field("timestamp", "datetime", writable=False,
+                            readable=False, default=""),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
             table = self.settings.table_user
@@ -813,7 +817,7 @@ class AuthS3(Auth):
         authenticated = self.id_group('Authenticated')
         self.add_membership(authenticated, form.vars.id)
 
-        # S3: Add to Person Registry as well
+        # S3: Add to Person Registry as well and Email to pr_pe_contact
         self.shn_link_to_person(user=form.vars)
 
 
@@ -850,6 +854,13 @@ class AuthS3(Auth):
                     if new_id:
                         person_uuid = db.pr_person[new_id].uuid
                         db(table.id==user.id).update(person_uuid=person_uuid)
+					# The following adds the email to pr_pe_contact
+                    db.pr_pe_contact.insert(
+                            pr_pe_id = pr_pe_id,
+                            opt_pr_contact_method = 1,
+                            priority = 1,
+                            value = email
+                            )
 
                 if self.user and self.user.id==user.id:
                     self.user.person_uuid=person_uuid

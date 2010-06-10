@@ -4,8 +4,8 @@
     Master Message Log to record/route all Inbound messages
 """
 
-module = 'ticket'
-if shn_module_enable.get(module, False):
+module = "ticket"
+if deployment_settings.has_module(module):
 
     # Settings
     resource = 'setting'
@@ -24,7 +24,7 @@ if shn_module_enable.get(module, False):
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    
+
     # -----------------
     # Tickets table (All sources get entered here : either manually or via S3XRC or Messaging)
 

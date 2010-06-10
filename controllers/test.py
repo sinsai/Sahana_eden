@@ -4,7 +4,7 @@
     This file is used to test out various ideas or new Web2Py features
 """
 
-module = 'test'
+module = "test"
 response.menu_options = [
 ]
 

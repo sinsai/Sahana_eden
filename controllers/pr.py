@@ -105,7 +105,7 @@ def image():
 # -----------------------------------------------------------------------------
 def pe_contact():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "contact")
+    return shn_rest_controller(module, "pe_contact")
 
 # -----------------------------------------------------------------------------
 def address():

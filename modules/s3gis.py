@@ -82,7 +82,7 @@ GEOM_TYPES = {
 class GIS(object):
     """ GIS functions """
 
-    def __init__(self, environment, db, auth=None):
+    def __init__(self, environment, db, auth=None, cache=None):
         self.environment = Storage(environment)
         self.request = self.environment.request
         self.response = self.environment.response
@@ -90,6 +90,7 @@ class GIS(object):
         self.T = self.environment.T
         assert db is not None, "Database must not be None."
         self.db = db
+        self.cache = cache and (cache.ram, 60) or None
         assert auth is not None, "Undefined authentication controller"
         self.auth = auth
         self.messages = Messages(None)
@@ -120,8 +121,7 @@ class GIS(object):
 
         db = self.db
 
-        config = db(db.gis_config.id == 1).select().first()
-
+        config = db(db.gis_config.id == 1).select(cache=self.cache).first()
         return config
 
     def download_kml(self, url, public_url):
@@ -328,52 +328,70 @@ class GIS(object):
         return features
 
     def get_marker(self, feature_id):
-        """
-            Returns the Marker URL for a Feature
+
+        """ Returns the Marker URL for a Feature
+
+            @param feature_id: the feature ID (int) or UUID (str)
+
         """
 
         db = self.db
+        table_feature = db.gis_location
+        table_marker = db.gis_marker
+        table_fclass = db.gis_feature_class
+        table_symbology = db.gis_symbology_to_feature_class
 
         config = self.config_read()
         symbology = config.symbology_id
 
-        marker = False
-        if type(feature_id) == int:
-            # ID passed
-            feature = db(db.gis_location.id == feature_id).select().first()
-        elif type(feature_id) == str:
-            # UUID passed
-            feature = db(db.gis_location.uuid == feature_id).select().first()
-        else:
-            # Unknown type - something wrong, so fallback to default!
-            marker = config.marker_id
-        try:
-            feature_class = feature.feature_class_id
-        except:
-            # Feature not found, so fallback to default!
-            marker = config.marker_id
+        query = None
 
-        if not marker:
+        if isinstance(feature_id, int):
+            query = (table_feature.id == feature_id)
+        elif isinstance(feature_id, str):
+            query = (table_feature.uuid == feature_id)
+
+        feature = db(query).select(table_feature.marker_id,
+                                   table_feature.feature_class_id,
+                                   limitby=(0, 1))
+        if feature:
+            feature_class = feature.first().feature_class_id
+            marker_id = feature.first().marker_id
+
             # 1st choice for a Marker is the Feature's
-            marker = feature.marker_id
-            if not marker:
-                # 2nd choice for a Marker is the Symbology for the Feature Class
-                query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-                try:
-                    marker = db(query).select().first().marker_id
-                except:
-                    if not marker:
-                        # 3rd choice for a Marker is the Feature Class's
-                        marker = db(db.gis_feature_class.id == feature_class).select().first()
-                        if marker:
-                            marker = marker.marker_id
-                    if not marker:
-                        # 4th choice for a Marker is the default
-                        marker = config.marker_id
+            if marker_id:
+                query = (table_marker.id == marker_id)
+                marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                          cache=self.cache)
+                if marker:
+                    return marker.first().image
 
-        marker = db(db.gis_marker.id == marker).select().first().image
+            # 2nd choice for a Marker is the Symbology for the Feature Class
+            query = (table_symbology.feature_class_id == feature_class) & \
+                    (table_symbology.symbology_id == symbology) & \
+                    (table_marker.id == table_symbology.marker_id)
+            marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                      cache=self.cache)
+            if marker:
+                return marker.first().image
 
-        return marker
+            # 3rd choice for a Marker is the Feature Class's
+            query = (table_fclass.id == feature_class) & \
+                    (table_marker.id == table_fclass.marker_id)
+            marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                      cache=self.cache)
+            if marker:
+                return marker.first().image
+
+        # 4th choice for a Marker is the default
+        query = (table_marker.id == config.marker_id)
+        marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                  cache=self.cache)
+        if marker:
+            return marker.first().image
+        else:
+            return ""
+
 
     def latlon_to_wkt(self, lat, lon):
         """

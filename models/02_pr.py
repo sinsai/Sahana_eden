@@ -307,16 +307,21 @@ opt_pr_country = SQLTable(None, "opt_pr_country",
 # shn_pr_person_represent -----------------------------------------------------
 #
 def shn_pr_person_represent(id):
-    table = db.pr_person
-    person = db(table.id == id).select(
-                table.first_name,
-                table.middle_name,
-                table.last_name,
-                limitby=(0, 1))
-    if person:
-        return vita.fullname(person[0])
-    else:
-        return None
+
+    def _represent(id):
+        table = db.pr_person
+        person = db(table.id == id).select(
+                    table.first_name,
+                    table.middle_name,
+                    table.last_name,
+                    limitby=(0, 1))
+        if person:
+            return vita.fullname(person[0])
+        else:
+            return None
+
+    name = cache.ram("pr_person_%s" % id, lambda: _represent(id), time_expire=10)
+    return name
 
 #
 # person table ----------------------------------------------------------------

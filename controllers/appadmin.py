@@ -126,7 +126,7 @@ def insert():
     form = SQLFORM(db[table], ignore_rw=ignore_rw)
     if form.accepts(request.vars, session):
         response.flash = T('new record inserted')
-    return dict(form=form, module_name=module_name)
+    return dict(form=form)
 
 
 # ##########################################################
@@ -234,8 +234,7 @@ def select():
         stop=stop,
         nrows=nrows,
         rows=rows,
-        query=request.vars.query,
-        module_name=module_name
+        query=request.vars.query
         )
 
 
@@ -263,7 +262,7 @@ def update():
         redirect(URL(r=request, f='select', args=request.args[:1],
                  vars=dict(query='%s.%s.id>0'
                   % tuple(request.args[:2]))))
-    return dict(form=form, module_name=module_name)
+    return dict(form=form)
 
 
 # ##########################################################
@@ -272,6 +271,6 @@ def update():
 
 
 def state():
-    return dict(module_name=module_name)
+    return dict()
 
 

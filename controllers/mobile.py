@@ -10,6 +10,7 @@ module = "admin"
 # - can Insert/Delete items from default menus within a function, if required.
 response.menu_options = admin_menu_options
 
+
 # Web2Py Tools functions
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
@@ -17,12 +18,11 @@ def call():
     session.forget()
     return service()
 
+
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
     module_name = s3.modules[module]["name_nice"]
-    
     return dict(module_name=module_name)
 
 @auth.requires_membership('Administrator')
@@ -37,7 +37,8 @@ def settings():
     table.modem_port.comment = A(SPAN("[Help]"), _class="tooltip",
         _title=T('Port|The serial port where your modem is connected.'))
     table.modem_baud.comment = A(SPAN("[Help]"), _class="tooltip",
-        _title=T('Baud|The Baud rate of your modem - Usually listed in your modem manual.'))
+        _title=T('Baud|The Baud rate of your modem - Usually listed in your\
+                modem manual.'))
     table.account_name.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('Account Name|Convenient name to identify the account.'))
     table.url.comment = A(SPAN("[Help]"), _class="tooltip",
@@ -45,7 +46,8 @@ def settings():
     table.parameters.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('Parameters|The parameters for gateway'))
     table.message_variable.comment = A(SPAN("[Help]"), _class="tooltip",
-            _title=T('Message variable|The message variable used for the gateway'))
+            _title=T('Message variable|The message variable used for \
+                    the gateway'))
     table.to_variable.comment = A(SPAN("[Help]"), _class="tooltip",
             _title=T('To variable|The variable containing the phone number '))
 #    table.preference.comment = A(SPAN("[Help]"), _class="tooltip",
@@ -70,5 +72,5 @@ def settings():
 
     crud.settings.update_next = URL(r=request, args=[1, 'update'])
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
-
+    return shn_rest_controller(module, resource, deletable=False,
+                                listadd=False)

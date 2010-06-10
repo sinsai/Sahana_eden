@@ -98,7 +98,7 @@ class Msg(object):
 			def send_pr_pe_id(pr_pe_id):
 				table3 = self.db.pr_pe_contact
 				query = (table3.pr_pe_id == pr_pe_id) & (table3.opt_pr_contact_method == contact_method)
-				recipient = self.db(query).select(table3.value,orderby = table3.priority).first()
+				recipient = self.db(query).select(table3.value, orderby = table3.priority).first()
 				if recipient:
 					if (contact_method == 2 and option == 2):
 						return self.send_sms_via_modem(recipient.value, contents)

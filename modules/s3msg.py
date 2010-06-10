@@ -78,11 +78,7 @@ class Msg(object):
 		"""
 		Wrapper over web2py's email setup
 		"""
-		try:
-			self.mail.send(to, subject, message)
-			return True
-		except:
-			return False
+		return self.mail.send(to, subject, message)
 
 	def process_outbox(self, contact_method = 1, option = 1):
 		""" Send Pending Messages from OutBox.
@@ -104,18 +100,12 @@ class Msg(object):
 				query = (table3.pr_pe_id == pr_pe_id) & (table3.opt_pr_contact_method == contact_method)
 				recipient = self.db(query).select(table3.value,orderby = table3.priority).first()
 				if recipient:
-					try:
-						if (contact_method == 2 and option == 2):
-							self.send_sms_via_modem(recipient.value, contents)
-							return True
-						if (contact_method == 2 and option == 1):
-							self.send_sms_via_api(recipient.value, contents)
-							return True
-						if (contact_method == 1):
-							self.send_email_via_api(recipient.value, subject, contents)
-							return True
-					except:
-						return False
+					if (contact_method == 2 and option == 2):
+						return self.send_sms_via_modem(recipient.value, contents)
+					if (contact_method == 2 and option == 1):
+						return self.send_sms_via_api(recipient.value, contents)
+					if (contact_method == 1):
+						return self.send_email_via_api(recipient.value, subject, contents)
 			if entity_type == 2:
 				# Group
 				table3 = self.db.pr_group

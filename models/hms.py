@@ -1042,13 +1042,10 @@ if deployment_settings.has_module(module):
     #
     def shn_hms_hrequest_onaccept(form):
 
-        print "hms_request_onaccept"
         hrequest = db.hms_hrequest[form.vars.id]
         if hrequest:
-            print "Found request"
             hospital = db.hms_hospital[hrequest.hospital_id]
             if hospital:
-                print "Found hospital %s in %s" % (hospital.name, hospital.city)
                 db(db.hms_hrequest.id==hrequest.id).update(city=hospital.city)
 
     s3xrc.model.configure(db.hms_hrequest,

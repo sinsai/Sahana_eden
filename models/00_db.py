@@ -65,7 +65,7 @@ service = Service(globals())
 
 # GIS Module
 s3gis = local_import("s3gis")
-gis = s3gis.GIS(globals(), db, auth)
+gis = s3gis.GIS(globals(), db, auth, cache=cache)
 
 # VITA
 s3vita = local_import("s3vita")

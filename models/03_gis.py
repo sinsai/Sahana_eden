@@ -255,7 +255,7 @@ def shn_gis_location_represent(id):
                 lon_prefix = "E"
             else:
                 lon_prefix = "W"
-            text = lat_prefix + " " + str(lat) + " " + lon_prefix + " " + str(lon)
+            text = "%s %s %s %s" % (lat_prefix, lat, lon_prefix, lon)
         else:
             text = location.name
         represent = text

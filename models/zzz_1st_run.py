@@ -7,7 +7,8 @@
 # Deployments can change settings live via appadmin
 
 # Set to False in Production (to save 1x DAL hit every page)
-if db(db["s3_setting"].id > 0).count():
+if db(db["s3_setting"].id > 0).count() or \
+   not deployment_settings.get_base_prepopulate:
     empty = False
 else:
     empty = True
@@ -458,115 +459,143 @@ if empty:
     table = db[tablename]
     if not db(table.id > 0).count():
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-TRACK',
             name = 'Track',
-            #marker_id = db(db.gis_marker.name=='shelter').select().first().id,
             module = 'gis',
             resource = 'track'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-L0',
             name = 'Country',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-L1',
             name = 'Region',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-L2',
             name = 'District',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-L3',
             name = 'Town',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-INCIDENT',
             name = 'Incident',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SHELTER',
             name = 'Shelter',
-            marker_id = db(db.gis_marker.name=='shelter').select().first().id,
+            marker_id = db(db.gis_marker.name == 'shelter').select().first().id,
             module = 'cr',
             resource = 'shelter'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-OFFICE',
             name = 'Office',
-            marker_id = db(db.gis_marker.name=='office').select().first().id,
+            marker_id = db(db.gis_marker.name == 'office').select().first().id,
             module = 'or',
             resource = 'office'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE',
             name = 'Warehouse',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT',
             name = 'Airport',
-            marker_id = db(db.gis_marker.name=='airport').select().first().id,
+            marker_id = db(db.gis_marker.name == 'airport').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-BRIDGE',
             name = 'Bridge',
-            marker_id = db(db.gis_marker.name=='bridge').select().first().id,
+            marker_id = db(db.gis_marker.name == 'bridge').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT',
             name = 'Port',
-            marker_id = db(db.gis_marker.name=='port').select().first().id,
+            marker_id = db(db.gis_marker.name == 'port').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-HOSPITAL',
             name = 'Hospital',
-            marker_id = db(db.gis_marker.name=='hospital').select().first().id,
+            marker_id = db(db.gis_marker.name == 'hospital').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-CHURCH',
             name = 'Church',
-            marker_id = db(db.gis_marker.name=='church').select().first().id,
+            marker_id = db(db.gis_marker.name == 'church').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SCHOOL',
             name = 'School',
-            marker_id = db(db.gis_marker.name=='school').select().first().id,
+            marker_id = db(db.gis_marker.name == 'school').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-FOOD',
             name = 'Food',
-            marker_id = db(db.gis_marker.name=='food').select().first().id,
+            marker_id = db(db.gis_marker.name == 'food').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-WATER',
             name = 'Water',
-            marker_id = db(db.gis_marker.name=='water').select().first().id,
+            marker_id = db(db.gis_marker.name == 'water').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SMS',
             name = 'SMS',
-            marker_id = db(db.gis_marker.name=='phone').select().first().id,
+            marker_id = db(db.gis_marker.name == 'phone').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON',
             name = 'Person',
-            marker_id = db(db.gis_marker.name=='person').select().first().id,
+            marker_id = db(db.gis_marker.name == 'person').select().first().id,
             module = 'pr',
             resource = 'person'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-VEHICLE',
             name = 'Vehicle',
-            marker_id = db(db.gis_marker.name=='vehicle').select().first().id,
+            marker_id = db(db.gis_marker.name == 'vehicle').select().first().id,
         )
     tablename = 'gis_feature_group'
     table = db[tablename]
     if not db(table.id > 0).count():
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-L4',
             name = 'Towns',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-TRANSPORT',
             name = 'Transport',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-INFRASTRUCTURE',
             name = 'Infrastructure',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-PROGRAMME',
             name = 'Programme',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-OFFICES',
             name = 'Offices',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS',
             name = 'Hospitals',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-SMS-ALERTS',
             name = 'SMS Alerts',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-PEOPLE',
             name = 'People',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-VEHICLES',
             name = 'Vehicles',
         )
     tablename = 'gis_feature_class_to_feature_group'

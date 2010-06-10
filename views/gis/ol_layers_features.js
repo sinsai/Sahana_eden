@@ -11,7 +11,11 @@ var parser = new OpenLayers.Format.WKT();
 var geom, popupContentHTML, iconURL;
 
 {{for feature in features:}}
+  {{if feature.wkt:}}
     geom = parser.read('{{=feature.wkt}}').geometry;
+  {{else:}}
+    geom = parser.read('POINT({{=feature.lon}}, {{=feature.lat}})').geometry;
+  {{pass}}
     geom = geom.transform(proj4326, projection_current);
     popupContentHTML = "{{include 'gis/ol_features_popup.html'}}";
     iconURL = '{{=URL(r=request, c='default', f='download', args=[feature.marker])}}';

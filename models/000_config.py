@@ -21,6 +21,7 @@ deployment_settings.auth.registration_requires_approval = False
 # Base settings
 # Set this to the Public URL of the instance
 deployment_settings.base.public_url = "http://127.0.0.1:8000"
+
 # Switch to "False" in Production for a Performance gain
 # (need to set to "True" again when Table definitions are changed)
 deployment_settings.base.migrate = True

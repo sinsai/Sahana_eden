@@ -22,9 +22,9 @@ def shn_user_represent(id):
 
     def user_represent(id):
         table = db.auth_user
-        user = db(table.id==id).select(table.first_name,
+        user = db(table.id == id).select(table.first_name,
                                        table.last_name,
-                                       limitby=(0,1))
+                                       limitby=(0, 1))
         if user:
             user = user[0]
             name = user.first_name

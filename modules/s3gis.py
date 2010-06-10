@@ -349,46 +349,46 @@ class GIS(object):
         if isinstance(feature_id, int):
             query = (table_feature.id == feature_id)
         elif isinstance(feature_id, str):
-            query= (table_feature.uuid == feature_id)
+            query = (table_feature.uuid == feature_id)
 
         feature = db(query).select(table_feature.marker_id,
                                    table_feature.feature_class_id,
-                                   limitby=(0,1))
+                                   limitby=(0, 1))
         if feature:
-            feature_class = feature[0].feature_class_id
-            marker_id = feature[0].marker_id
+            feature_class = feature.first().feature_class_id
+            marker_id = feature.first().marker_id
 
             # 1st choice for a Marker is the Feature's
             if marker_id:
-                query =(table_marker.id==marker_id)
-                marker = db(query).select(table_marker.image, limitby=(0,1),
+                query = (table_marker.id == marker_id)
+                marker = db(query).select(table_marker.image, limitby=(0, 1),
                                           cache=self.cache)
                 if marker:
-                    return marker[0].image
+                    return marker.first().image
 
             # 2nd choice for a Marker is the Symbology for the Feature Class
-            query = (table_symbology.feature_class_id==feature_class) & \
-                    (table_symbology.symbology_id==symbology) & \
-                    (table_marker.id==table_symbology.marker_id)
-            marker = db(query).select(table_marker.image, limitby=(0,1),
+            query = (table_symbology.feature_class_id == feature_class) & \
+                    (table_symbology.symbology_id == symbology) & \
+                    (table_marker.id == table_symbology.marker_id)
+            marker = db(query).select(table_marker.image, limitby=(0, 1),
                                       cache=self.cache)
             if marker:
-                return marker[0].image
+                return marker.first().image
 
             # 3rd choice for a Marker is the Feature Class's
-            query = (table_fclass.id==feature_class) & \
-                    (table_marker.id==table_fclass.marker_id)
-            marker = db(query).select(table_marker.image, limitby=(0,1),
+            query = (table_fclass.id == feature_class) & \
+                    (table_marker.id == table_fclass.marker_id)
+            marker = db(query).select(table_marker.image, limitby=(0, 1),
                                       cache=self.cache)
             if marker:
-                return marker[0].image
+                return marker.first().image
 
         # 4th choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
-        marker = db(query).select(table_marker.image, limitby=(0,1),
+        marker = db(query).select(table_marker.image, limitby=(0, 1),
                                   cache=self.cache)
         if marker:
-            return marker[0].image
+            return marker.first().image
         else:
             return ""
 
@@ -1458,18 +1458,23 @@ toolbar.addButton(saveButton);
                 for feature in features:
                     marker = self.get_marker(feature.gis_location.id)
                     marker_url = URL(r=request, c='default', f='download', args=[marker])
+                    # Deal with null Feature Classes
                     if feature.gis_location.feature_class_id:
                         fc = "'" + str(feature.gis_location.feature_class_id) + "'"
                     else:
                         fc = "null"
+                    # Deal with manually-imported Features which are missing WKT
                     if feature.gis_location.wkt:
                         wkt = feature.gis_location.wkt
                     else:
                         wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
+                    # Deal with apostrophes in Feature Names
+                    fname = re.sub("'", "\\'", feature.gis_location.name)
+                    
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + feature.gis_location.name + """', """ + fc + """, geom, iconURL)
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer

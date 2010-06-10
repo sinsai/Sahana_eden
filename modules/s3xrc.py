@@ -2408,9 +2408,9 @@ class S3Vector(object):
             self.method = permission = self.METHOD.create
             if uid and self.UID in self.table:
                 query = (self.table[self.UID] == uid)
-                orig = self.db(query).select(self.table.ALL, limitby=(0,1))
+                orig = self.db(query).select(self.table.ALL, limitby=(0, 1))
                 if orig:
-                    self.id = orig[0].id
+                    self.id = orig.first().id
                     self.method = permission = self.METHOD.update
         else:
             self.method = permission = self.METHOD.update
@@ -3400,13 +3400,13 @@ class S3XML(object):
 
         elif native:
             if tag.startswith(self.PREFIX.reference):
-                field = tag[len(self.PREFIX.reference)+1:]
+                field = tag[len(self.PREFIX.reference) + 1:]
                 tag = self.TAG.reference
             elif tag.startswith(self.PREFIX.options):
-                resource = tag[len(self.PREFIX.options)+1:]
+                resource = tag[len(self.PREFIX.options) + 1:]
                 tag = self.TAG.options
             elif tag.startswith(self.PREFIX.resource):
-                resource = tag[len(self.PREFIX.resource)+1:]
+                resource = tag[len(self.PREFIX.resource) + 1:]
                 tag = self.TAG.resource
             elif not tag == self.TAG.root:
                 field = tag

@@ -65,7 +65,7 @@ if deployment_settings.has_module(module):
     table.user_id.represent = lambda user_id: (user_id == 0) and '-' or '%(first_name)s %(last_name)s [%(id)d]' % db(db.auth_user.id==user_id).select()[0]
     #table.user_id.requires = IS_IN_DB(db, 'auth_user.id', '%(first_name)s %(last_name)s [%(id)d]')
     table.user_id.requires = IS_IN_DB(db, 'auth_user.id', shn_user_represent)
-    table.status.requires = IS_IN_SET(delphi_role_opts)
+    table.status.requires = IS_IN_SET(delphi_role_opts, zero=None)
     table.status.represent = lambda opt: delphi_role_opts.get(opt, UNKNOWN_OPT)
 
     # CRUD Strings

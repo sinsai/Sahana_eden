@@ -35,7 +35,7 @@ if deployment_settings.has_module(module):
         }
     opt_budget_cost_type = db.Table(None, 'budget_cost_type',
                             Field('cost_type', 'integer', notnull=True,
-                                requires = IS_IN_SET(budget_cost_type_opts),
+                                requires = IS_IN_SET(budget_cost_type_opts, zero=None),
                                 # default = 1,
                                 label = T('Cost Type'),
                                 represent = lambda opt: budget_cost_type_opts.get(opt, UNKNOWN_OPT)))
@@ -62,7 +62,7 @@ if deployment_settings.has_module(module):
         }
     opt_budget_category_type = db.Table(None, 'budget_category_type',
                                 Field('category_type', 'integer', notnull=True,
-                                    requires = IS_IN_SET(budget_category_type_opts),
+                                    requires = IS_IN_SET(budget_category_type_opts, zero=None),
                                     # default = 1,
                                     label = T('Category'),
                                     represent = lambda opt: budget_category_type_opts.get(opt, UNKNOWN_OPT)))
@@ -248,7 +248,7 @@ if deployment_settings.has_module(module):
         }
     opt_budget_currency_type = db.Table(None, 'budget_currency_type',
                         Field('currency_type', 'integer', notnull=True,
-                        requires = IS_IN_SET(budget_currency_type_opts),
+                        requires = IS_IN_SET(budget_currency_type_opts, zero=None),
                         # default = 1,
                         label = T('Currency'),
                         represent = lambda opt: budget_currency_type_opts.get(opt, UNKNOWN_OPT)))

@@ -18,9 +18,9 @@ response.menu_options = admin_menu_options
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     return dict(module_name=module_name)
 
 @auth.requires_membership('Administrator')
@@ -54,7 +54,7 @@ def theme():
     table.footer.label = T('Footer')
     table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
     table.text_direction.label = T('Text Direction')
-    table.text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')})
+    table.text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')}, zero=None)
     table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
     table.col_background.label = T('Background Colour')
     table.col_background.requires = IS_HTML_COLOUR()
@@ -426,7 +426,7 @@ def users():
     except TypeError, ValueError:
         session.error = T("Need to specify a role!")
         redirect(URL(r=request, f='group'))
-    
+
     table = db.auth_membership
     query = table.group_id == group
     title = str(T('Role')) + ': ' + db.auth_group[group].role
@@ -496,13 +496,13 @@ def group_remove_users():
 @auth.requires_membership('Administrator')
 def groups():
     "List/amend which groups a User is in"
-    
+
     try:
         user = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a user!")
         redirect(URL(r=request, f='user'))
-    
+
     table = db.auth_membership
     query = table.user_id == user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name

@@ -54,7 +54,7 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.epsg.requires = IS_NOT_EMPTY()
 table.maxExtent.requires = IS_NOT_EMPTY()
 table.maxResolution.requires = IS_NOT_EMPTY()
-table.units.requires = IS_IN_SET(["m", "degrees"])
+table.units.requires = IS_IN_SET(["m", "degrees"], zero=None)
 # Reusable field for other tables to reference
 projection_id = SQLTable(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
@@ -88,7 +88,7 @@ gis_config_layout_opts = {
     }
 opt_gis_layout = SQLTable(None, "opt_gis_layout",
                     Field("opt_gis_layout", "integer",
-                        requires = IS_IN_SET(gis_config_layout_opts),
+                        requires = IS_IN_SET(gis_config_layout_opts, zero=None),
                         default = 1,
                         label = T("Layout"),
                         represent = lambda opt: gis_config_layout_opts.get(opt, UNKNOWN_OPT)))
@@ -210,7 +210,7 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id==id).select().first().name] or ["None"])[0]
-table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts)
+table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 # WKT validation is done in the onvalidation callback
 #table.wkt.requires=IS_NULL_OR(IS_WKT())
@@ -218,16 +218,24 @@ table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 
+
 # Reusable field for other tables to reference
 ADD_LOCATION = T("Add Location")
+repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = SQLTable(None, "location_id",
-            FieldS3("location_id", db.gis_location, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
-                represent = lambda id: shn_gis_location_represent(id),
-                label = T("Location"),
-                comment = DIV(A(ADD_LOCATION, _class="colorbox", _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")), _target="top", _title=ADD_LOCATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
-                ondelete = "RESTRICT"
-                ))
+                       FieldS3("location_id", db.gis_location, sortby="name",
+                       requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, alphasort=True)),
+                       represent = lambda id: shn_gis_location_represent(id),
+                       label = T("Location"),
+                       comment = DIV(A(ADD_LOCATION,
+                                       _class="colorbox",
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                       _target="top",
+                                       _title=ADD_LOCATION),
+                                     A(SPAN("[Help]"),
+                                       _class="tooltip",
+                                       _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                       ondelete = "RESTRICT"))
 
 s3xrc.model.configure(db.gis_location,
                       onvalidation=lambda form: gis.wkt_centroid(form),
@@ -320,7 +328,7 @@ table = db.define_table(tablename, timestamp,
                 migrate=migrate)
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
-table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"])
+table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
 #table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
 
@@ -389,7 +397,7 @@ for layertype in gis_layer_types:
     if layertype == "openstreetmap":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes)))
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None)))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
         t = SQLTable(db, table,
@@ -404,7 +412,7 @@ for layertype in gis_layer_types:
     elif layertype == "google":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_google_subtypes)))
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_google_subtypes, zero=None)))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "gpx":
         t = SQLTable(db, table,
@@ -467,12 +475,12 @@ for layertype in gis_layer_types:
     elif layertype == "yahoo":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_yahoo_subtypes)))
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_yahoo_subtypes, zero=None)))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "bing":
         t = SQLTable(db, table,
             gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_bing_subtypes)))
+            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_bing_subtypes, zero=None)))
         table = db.define_table(tablename, t, migrate=migrate)
 
 # GIS Cache

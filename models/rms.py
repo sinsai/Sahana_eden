@@ -305,7 +305,7 @@ if deployment_settings.has_module(module):
     table.submitted_on.default = request.now
     table.submitted_on.writable = False
 
-    table.status.requires = IS_IN_SET(rms_status_opts)
+    table.status.requires = IS_IN_SET(rms_status_opts, zero=None)
     table.status.represent = lambda status: status and rms_status_opts[status]
     table.status.label = T('Pledge Status')
 

@@ -24,7 +24,7 @@ table = db.define_table(tablename,
 #
 opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
                               Field("opt_pr_entity_type", "integer",
-                                    requires = IS_IN_SET(vita.trackable_types),
+                                    requires = IS_IN_SET(vita.trackable_types, zero=None),
                                     default = vita.DEFAULT_TRACKABLE,
                                     label = T("Entity Type"),
                                     represent = lambda opt:
@@ -218,7 +218,7 @@ pr_person_gender_opts = {
 
 opt_pr_gender = SQLTable(None, "opt_pr_gender",
                     Field("opt_pr_gender", "integer",
-                        requires = IS_IN_SET(pr_person_gender_opts),
+                        requires = IS_IN_SET(pr_person_gender_opts, zero=None),
                         default = 1,
                         label = T("Gender"),
                         represent = lambda opt: pr_person_gender_opts.get(opt, UNKNOWN_OPT)))
@@ -237,7 +237,7 @@ pr_person_age_group_opts = {
 
 opt_pr_age_group = SQLTable(None, "opt_pr_age_group",
                     Field("opt_pr_age_group", "integer",
-                        requires = IS_IN_SET(pr_person_age_group_opts),
+                        requires = IS_IN_SET(pr_person_age_group_opts, zero=None),
                         default = 1,
                         label = T("Age Group"),
                         represent = lambda opt:
@@ -442,11 +442,11 @@ pr_group_type_opts = {
     }
 
 opt_pr_group_type = SQLTable(None, "opt_pr_group_type",
-                    Field("opt_pr_group_type", "integer",
-                        requires = IS_IN_SET(pr_group_type_opts),
-                        default = 4,
-                        label = T("Group Type"),
-                        represent = lambda opt: pr_group_type_opts.get(opt, UNKNOWN_OPT)))
+                             Field("opt_pr_group_type", "integer",
+                                   requires = IS_IN_SET(pr_group_type_opts, zero=None),
+                                   default = 4,
+                                   label = T("Group Type"),
+                                   represent = lambda opt: pr_group_type_opts.get(opt, UNKNOWN_OPT)))
 
 #
 # group table -----------------------------------------------------------------

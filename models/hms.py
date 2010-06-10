@@ -485,7 +485,7 @@ if deployment_settings.has_module(module):
                     hospital_id,
                     Field("unit_name", length=64),
                     Field("bed_type", "integer",
-                        requires = IS_IN_SET(hms_bed_type_opts),
+                        requires = IS_IN_SET(hms_bed_type_opts, zero=None),
                         default = 6,
                         label = T("Bed Type"),
                         represent = lambda opt: hms_bed_type_opts.get(opt, UNKNOWN_OPT)),
@@ -652,7 +652,7 @@ if deployment_settings.has_module(module):
                     hospital_id,
                     #Field("title"),
                     Field("type", "integer",
-                        requires = IS_IN_SET(hms_image_type_opts),
+                        requires = IS_IN_SET(hms_image_type_opts, zero=None),
                         default = 1,
                         label = T("Image Type"),
                         represent = lambda opt: hms_image_type_opts.get(opt, T("not specified"))),
@@ -1227,7 +1227,7 @@ if deployment_settings.has_module(module):
     table.submitted_on.default = request.now
     table.submitted_on.writable = False
 
-    table.status.requires = IS_IN_SET(hms_pledge_status_opts)
+    table.status.requires = IS_IN_SET(hms_pledge_status_opts, zero=None)
     table.status.represent = lambda status: status and hms_pledge_status_opts[status]
     table.status.label = T("Status")
 

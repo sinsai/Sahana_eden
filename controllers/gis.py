@@ -1270,12 +1270,12 @@ def layers():
         if layer.marker_id:
             layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select().first().image
         else:
-            marker_id = db(db.gis_config.id==1).select().first().marker_id
+            marker_id = db(db.gis_config.id == 1).select().first().marker_id
             layers.georss[name].marker = db(db.gis_marker.id == marker_id).select().first().image
 
     # KML
     layers.kml = Storage()
-    layers_kml = db(db.gis_layer_kml.enabled==True).select()
+    layers_kml = db(db.gis_layer_kml.enabled == True).select()
     if layers_kml and not cache:
         response.warning += cachepath + " " + str(T("not writable - unable to cache KML layers!")) + "\n"
 

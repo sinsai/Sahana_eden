@@ -61,3 +61,26 @@ deployment_settings.modules = [
     "ticket",       # Ticketing
     "vol"           # Volunteer Management
 ]
+
+#########################################################################################
+
+# Typically you wont need to change the following settings.
+# If you donot understand any of the following setting - It probably doesnt need a change
+
+#########################################################################################
+
+# Sysadmin maintenance and upgrade settings
+
+# Control auto import of default data 
+
+# Warning use the following only if 
+# 1) You have a sql dump of the data 
+# 2) You are aware of the schema changes if the code was updated after the above SQL dump was taken.
+# 3) Wish to prevent zzz_1st run from running.
+# The web UI is not accessible if you have an empty database - Run via 
+# python web2py.py -S eden -M
+# and exit to create the db structure
+
+
+deployment_settings.maintenance.zzz_1st_run_disable = False
+

@@ -10,7 +10,10 @@
 if db(db["s3_setting"].id > 0).count():
     empty = False
 else:
-    empty = True
+    if deployment_settings.maintenance.get("zzz_1st_run_disable", False) :
+        empty = False
+    else:
+        empty = True
 
 if empty:
 

@@ -9,6 +9,7 @@ class S3Config(Storage):
         self.base = Storage()
         self.mail = Storage()
         self.L10n = Storage()
+        self.maintenance = Storage()
 
     # Auth settings
     def get_auth_hmac_key(self):

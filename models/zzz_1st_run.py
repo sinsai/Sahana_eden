@@ -459,84 +459,104 @@ if empty:
     table = db[tablename]
     if not db(table.id > 0).count():
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-001',
             name = 'Track',
             #marker_id = db(db.gis_marker.name=='shelter').select().first().id,
             module = 'gis',
             resource = 'track'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-002',
             name = 'Country',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-003',
             name = 'Region',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-004',
             name = 'District',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-005',
             name = 'Town',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-006',
             name = 'Incident',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-007',
             name = 'Shelter',
             marker_id = db(db.gis_marker.name=='shelter').select().first().id,
             module = 'cr',
             resource = 'shelter'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-008',
             name = 'Office',
             marker_id = db(db.gis_marker.name=='office').select().first().id,
             module = 'or',
             resource = 'office'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-009',
             name = 'Warehouse',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-010',
             name = 'Airport',
             marker_id = db(db.gis_marker.name=='airport').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-011',
             name = 'Bridge',
             marker_id = db(db.gis_marker.name=='bridge').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-012',
             name = 'Port',
             marker_id = db(db.gis_marker.name=='port').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-013',
             name = 'Hospital',
             marker_id = db(db.gis_marker.name=='hospital').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-014',
             name = 'Church',
             marker_id = db(db.gis_marker.name=='church').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-015',
             name = 'School',
             marker_id = db(db.gis_marker.name=='school').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-016',
             name = 'Food',
             marker_id = db(db.gis_marker.name=='food').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-017',
             name = 'Water',
             marker_id = db(db.gis_marker.name=='water').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-018',
             name = 'SMS',
             marker_id = db(db.gis_marker.name=='phone').select().first().id,
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-019',
             name = 'Person',
             marker_id = db(db.gis_marker.name=='person').select().first().id,
             module = 'pr',
             resource = 'person'
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-020',
             name = 'Vehicle',
             marker_id = db(db.gis_marker.name=='vehicle').select().first().id,
         )
@@ -544,30 +564,39 @@ if empty:
     table = db[tablename]
     if not db(table.id > 0).count():
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-001',
             name = 'Towns',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-002',
             name = 'Transport',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-003',
             name = 'Infrastructure',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-004',
             name = 'Programme',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-005',
             name = 'Offices',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-006',
             name = 'Hospitals',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-007',
             name = 'SMS Alerts',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-008',
             name = 'People',
         )
         table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-GROUP-009',
             name = 'Vehicles',
         )
     tablename = 'gis_feature_class_to_feature_group'

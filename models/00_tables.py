@@ -177,7 +177,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 Field("audit_read", "boolean", default=False),
                 Field("audit_write", "boolean", default=False),
                 migrate=migrate)
-table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
+table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
 table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
 table.security_policy.label = T("Security Policy")
 table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))

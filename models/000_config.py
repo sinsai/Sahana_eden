@@ -12,7 +12,8 @@ deployment_settings = s3cfg.S3Config()
 # Authentication settings
 # This setting should be changed _before_ registering the 1st user
 deployment_settings.auth.hmac_key = "akeytochange"
-# These settings should be changed _after_ the 1st (admin) user is registered in order to secure the deployment
+# These settings should be changed _after_ the 1st (admin) user is
+# registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
 
@@ -23,7 +24,14 @@ deployment_settings.base.public_url = "http://127.0.0.1:8000"
 # Switch to "False" in Production for a Performance gain
 # (need to set to "True" again when Table definitions are changed)
 deployment_settings.base.migrate = True
-# Set to False during manual DB migration
+
+# Enable/disable pre-population of the database.
+# Set to False during first run for manual DB migration in case this
+# is explicitly required for a code upgrade, otherwise leave at True
+# NOTE: the web UI will not be accessible while the DB is empty,
+# instead run:
+#   python web2py.py -S eden -M
+# to create the db structure, then exit and re-import the data.
 deployment_settings.base.prepopulate = True
 
 

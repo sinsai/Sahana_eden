@@ -23,9 +23,9 @@ response.menu_options = [
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     return dict(module_name=module_name, a=1)
 
 def req(): #aid requests
@@ -42,11 +42,21 @@ def req(): #aid requests
         # Uncomment to enable Server-side pagination:
         response.s3.pagination = True
 
-    return shn_rest_controller(module, resource,
-                               editable=False,
-                               listadd=False,
-                               pheader=shn_rms_req_pheader)
-                               # call pheader to act as parent header for parent/child forms (layout defined below)
+    def req_postp(jr, output):
+        if jr.representation in ("html", "popup") and not jr.component:
+            response.s3.actions = [
+                dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=['[id]', 'pledge'])))
+            ]
+        return output
+    response.s3.postp = req_postp
+
+    output = shn_rest_controller(module, resource,
+                                 editable=False,
+                                 listadd=False,
+                                 pheader=shn_rms_req_pheader)
+                                 # call pheader to act as parent header for parent/child forms (layout defined below)
+
+    return output
 
 
 def req_detail(): #arbitrary key:value pairs for aid requests

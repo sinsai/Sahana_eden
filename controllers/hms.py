@@ -91,6 +91,15 @@ def hrequest():
 
     response.s3.pagination = True
 
+    def hrequest_postp(jr, output):
+        if jr.representation in ("html", "popup") and not jr.component:
+            response.s3.actions = [
+                dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=['[id]', 'hpledge'])))
+            ]
+        return output
+    response.s3.postp = hrequest_postp
+
+
     output = shn_rest_controller(module , resource, listadd=False, deletable=False,
         pheader=shn_hms_hrequest_pheader,
         list_fields=['id',

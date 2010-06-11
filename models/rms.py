@@ -282,8 +282,8 @@ if deployment_settings.has_module(module):
     # ------------------
     # Create pledge table
 
-    def shn_req_pledge_represent(id):
-        return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
+    #def shn_req_pledge_represent(id):
+        #return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
 
 
     resource = "pledge"
@@ -297,7 +297,7 @@ if deployment_settings.has_module(module):
         #   Field("comment_id", db.comment),
         migrate=migrate)
 
-    table.id.represent = lambda id: shn_req_pledge_represent(id)
+    #table.id.represent = lambda id: shn_req_pledge_represent(id)
 
     # hide unnecessary fields
     table.req_id.readable = table.req_id.writable = False

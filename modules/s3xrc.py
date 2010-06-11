@@ -638,7 +638,7 @@ class S3RESTRequest(object):
                ("select" in self.request.vars):
                 if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
-                    if self.representation==self.DEFAULT_REPRESENTATION or \
+                    if self.representation == self.DEFAULT_REPRESENTATION or \
                        self.extension:
                         self.request.args.insert(0, str(self.id))
                     else:
@@ -761,11 +761,11 @@ class S3RESTRequest(object):
 
         if self.id:
             # Primary record ID is specified
-            query = (self.table.id==self.id)
+            query = (self.table.id == self.id)
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid resource record ID")
                 self.id = None
@@ -776,11 +776,11 @@ class S3RESTRequest(object):
 
         elif uids and uids[0] is not None and "uuid" in self.table:
             # Primary record UUID is specified
-            query = (self.table.uuid==uids[0])
+            query = (self.table.uuid == uids[0])
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid resource record UUID")
                 self.id = None
@@ -792,18 +792,18 @@ class S3RESTRequest(object):
 
         if self.component and self.component_id:
             # Component record ID is specified
-            query = ((self.component.table.id==self.component_id) &
-                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            query = ((self.component.table.id == self.component_id) &
+                     (self.table[self.pkey] == self.component.table[self.fkey]))
             if self.id:
                 # Must match if a primary record has been found
-                query = (self.table.id==self.id) & query
+                query = (self.table.id == self.id) & query
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
             if "deleted" in self.component.table:
-                query = ((self.component.table.deleted==False) |
-                         (self.component.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.component.table.deleted == False) |
+                         (self.component.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid component record ID or component not matching primary record.")
                 self.id = None
@@ -816,19 +816,19 @@ class S3RESTRequest(object):
         elif self.component and \
              uids and uids[1] is not None and "uuid" in self.component.table:
             # Component record ID is specified
-            query = ((self.component.table.uuid==uids[1]) &
-                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            query = ((self.component.table.uuid == uids[1]) &
+                     (self.table[self.pkey] == self.component.table[self.fkey]))
             if self.id:
                 # Must match if a primary record has been found
-                query = (self.table.id==self.id) & query
+                query = (self.table.id == self.id) & query
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
             if "deleted" in self.component.table:
-                query = ((self.component.table.deleted==False) |
-                         (self.component.table.deleted==None)) & query
+                query = ((self.component.table.deleted == False) |
+                         (self.component.table.deleted == None)) & query
             records = self.rc.db(query).select(
-                        self.table.ALL, self.component.table.id, limitby=(0,1))
+                        self.table.ALL, self.component.table.id, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid component record UUID or component not matching primary record.")
                 self.id = None
@@ -845,10 +845,10 @@ class S3RESTRequest(object):
                 return True
             id_label = str.strip(self.request.vars.id_label)
             if "pr_pe_label" in self.table:
-                query = (self.table.pr_pe_label==id_label)
+                query = (self.table.pr_pe_label == id_label)
                 if "deleted" in self.table:
-                    query = ((self.table.deleted==False) |
-                             (self.table.deleted==None)) & query
+                    query = ((self.table.deleted == False) |
+                             (self.table.deleted == None)) & query
                 records = self.rc.db(query).select(self.table.ALL,
                                                    limitby=(0, 1))
                 if records:
@@ -866,8 +866,8 @@ class S3RESTRequest(object):
             if self.id:
                 query = (self.table.id == self.id)
                 if "deleted" in self.table:
-                    query = ((self.table.deleted==False) |
-                             (self.table.deleted==None)) & query
+                    query = ((self.table.deleted == False) |
+                             (self.table.deleted == None)) & query
                 records = self.rc.db(query).select(self.table.ALL,
                                                    limitby=(0, 1))
                 if not records:

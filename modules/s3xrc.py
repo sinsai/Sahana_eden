@@ -2570,8 +2570,8 @@ class S3XML(object):
     MTIME = "modified_on"
     Lat = "lat"
     Lon = "lon"
-    Marker = "marker_id"
-    FeatureClass = "feature_class_id"
+    #Marker = "marker_id"
+    #FeatureClass = "feature_class_id"
 
     IGNORE_FIELDS = ["deleted", "id"]
 
@@ -2618,7 +2618,8 @@ class S3XML(object):
         lon="lon",
         lonmin="lonmin",
         lonmax="lonmax",
-        marker="marker"
+        marker="marker",
+        sym="sym"
     )
 
     ACTION = Storage(
@@ -2969,6 +2970,8 @@ class S3XML(object):
         if not self.gis:
             return
 
+        db = self.db
+        
         references = filter(lambda r:
                             r.element is not None and \
                             self.Lat in self.db[r.table].fields and \
@@ -2977,18 +2980,19 @@ class S3XML(object):
 
         for i in xrange(0, len(references)):
             r = references[i]
-            ktable = self.db[r.table]
-            LatLon = self.db(ktable.id == r.id).select(ktable[self.Lat],
+            ktable = db[r.table]
+            LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
                                                        ktable[self.Lon],
                                                        limitby=(0, 1))
             if LatLon:
-                LatLon = LatLon[0]
+                LatLon = LatLon.first()
                 if LatLon[self.Lat] is not None and \
                    LatLon[self.Lon] is not None:
                     r.element.set(self.ATTRIBUTE.lat,
                                   self.xml_encode("%.6f" % LatLon[self.Lat]))
                     r.element.set(self.ATTRIBUTE.lon,
                                   self.xml_encode("%.6f" % LatLon[self.Lon]))
+                    # Lookup Marker (Icon)
                     if marker:
                         marker_url = "%s/gis_marker.image.%s.png" % \
                                      (download_url, marker)
@@ -2997,7 +3001,17 @@ class S3XML(object):
                         marker_url = "%s/%s" % (download_url, marker)
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
-
+                    # Lookup GPS Marker
+                    symbol = None
+                    try:
+                        symbol = db(db.gis_feature_class.id == r.feature_class_id).select().first().gps_marker
+                    except:
+                        # No Feature Class
+                        pass
+                    if not symbol:
+                        symbol = "White Dot"
+                    r.element.set(self.ATTRIBUTE.sym,
+                                  self.xml_encode(symbol))
 
     def element(self, table, record,
                 fields=[],
@@ -3029,12 +3043,24 @@ class S3XML(object):
                 value = self.export_uid(_value)
             resource.set(self.UID, self.xml_encode(value))
             if table._tablename == "gis_location":
-                # Look up the marker to display
                 if self.gis:
+                    # Look up the marker to display
                     marker = self.gis.get_marker(_value)
                     marker_url = "%s/%s" % (download_url, marker)
                     resource.set(self.ATTRIBUTE.marker,
                                  self.xml_encode(marker_url))
+                    # Look up the GPS Marker
+                    symbol = None
+                    try:
+                        db = self.db
+                        symbol = db(db.gis_feature_class.id == record.feature_class_id).select().first().gps_marker
+                    except:
+                        # No Feature Class
+                        pass
+                    if not symbol:
+                        symbol = "White Dot"
+                    resource.set(self.ATTRIBUTE.sym,
+                                  self.xml_encode(symbol))
 
         for i in xrange(0, len(fields)):
             f = fields[i]

@@ -51,7 +51,7 @@
                             <xsl:attribute name="lon"><xsl:value-of select="./data[@field='lon']"/></xsl:attribute>
                             
                             <tag>
-                                <xsl:attribute name="k">uuid</xsl:attribute>
+                                <xsl:attribute name="k">id:uuid</xsl:attribute>
                                 <xsl:attribute name="v">
                                     <xsl:value-of select="$domain"/>
                                     <xsl:text>/</xsl:text>
@@ -114,7 +114,7 @@
                             <xsl:attribute name="lon"><xsl:value-of select="reference[@field='location_id']/@lon"/></xsl:attribute>
                             
                             <tag>
-                                <xsl:attribute name="k">uuid</xsl:attribute>
+                                <xsl:attribute name="k">id:uuid</xsl:attribute>
                                 <xsl:attribute name="v">
                                     <xsl:value-of select="$domain"/>
                                     <xsl:text>/</xsl:text>

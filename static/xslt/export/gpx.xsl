@@ -27,6 +27,7 @@
 	  <xsl:attribute name="lon"><xsl:value-of select="reference[@field='location_id']/@lon"/></xsl:attribute>
 	  <name><xsl:value-of select="data[@field='name']"/></name>
 	  <desc><xsl:value-of select="reference[@field='organisation_id']"/> <xsl:value-of select="data[@field='type']"/></desc>
+	  <sym><xsl:value-of select="reference[@field='location_id']/@sym"/></sym>
 	</wpt>
 </xsl:if>
 <xsl:if test="@name='gis_location'">
@@ -35,6 +36,7 @@
 	<xsl:attribute name="lon"><xsl:value-of select="data[@field='lon']"/></xsl:attribute>
 	<name><xsl:value-of select="data[@field='name']"/></name>
 	<desc><xsl:value-of select="@url"/></desc>
+	<sym><xsl:value-of select="@sym"/></sym>
   </wpt>
 </xsl:if>
 </xsl:template>

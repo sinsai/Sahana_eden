@@ -638,7 +638,7 @@ class S3RESTRequest(object):
                ("select" in self.request.vars):
                 if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
-                    if self.representation==self.DEFAULT_REPRESENTATION or \
+                    if self.representation == self.DEFAULT_REPRESENTATION or \
                        self.extension:
                         self.request.args.insert(0, str(self.id))
                     else:
@@ -761,11 +761,11 @@ class S3RESTRequest(object):
 
         if self.id:
             # Primary record ID is specified
-            query = (self.table.id==self.id)
+            query = (self.table.id == self.id)
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid resource record ID")
                 self.id = None
@@ -776,11 +776,11 @@ class S3RESTRequest(object):
 
         elif uids and uids[0] is not None and "uuid" in self.table:
             # Primary record UUID is specified
-            query = (self.table.uuid==uids[0])
+            query = (self.table.uuid == uids[0])
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid resource record UUID")
                 self.id = None
@@ -792,18 +792,18 @@ class S3RESTRequest(object):
 
         if self.component and self.component_id:
             # Component record ID is specified
-            query = ((self.component.table.id==self.component_id) &
-                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            query = ((self.component.table.id == self.component_id) &
+                     (self.table[self.pkey] == self.component.table[self.fkey]))
             if self.id:
                 # Must match if a primary record has been found
-                query = (self.table.id==self.id) & query
+                query = (self.table.id == self.id) & query
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
             if "deleted" in self.component.table:
-                query = ((self.component.table.deleted==False) |
-                         (self.component.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.component.table.deleted == False) |
+                         (self.component.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid component record ID or component not matching primary record.")
                 self.id = None
@@ -816,19 +816,19 @@ class S3RESTRequest(object):
         elif self.component and \
              uids and uids[1] is not None and "uuid" in self.component.table:
             # Component record ID is specified
-            query = ((self.component.table.uuid==uids[1]) &
-                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            query = ((self.component.table.uuid == uids[1]) &
+                     (self.table[self.pkey] == self.component.table[self.fkey]))
             if self.id:
                 # Must match if a primary record has been found
-                query = (self.table.id==self.id) & query
+                query = (self.table.id == self.id) & query
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
             if "deleted" in self.component.table:
-                query = ((self.component.table.deleted==False) |
-                         (self.component.table.deleted==None)) & query
+                query = ((self.component.table.deleted == False) |
+                         (self.component.table.deleted == None)) & query
             records = self.rc.db(query).select(
-                        self.table.ALL, self.component.table.id, limitby=(0,1))
+                        self.table.ALL, self.component.table.id, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid component record UUID or component not matching primary record.")
                 self.id = None
@@ -845,10 +845,10 @@ class S3RESTRequest(object):
                 return True
             id_label = str.strip(self.request.vars.id_label)
             if "pr_pe_label" in self.table:
-                query = (self.table.pr_pe_label==id_label)
+                query = (self.table.pr_pe_label == id_label)
                 if "deleted" in self.table:
-                    query = ((self.table.deleted==False) |
-                             (self.table.deleted==None)) & query
+                    query = ((self.table.deleted == False) |
+                             (self.table.deleted == None)) & query
                 records = self.rc.db(query).select(self.table.ALL,
                                                    limitby=(0, 1))
                 if records:
@@ -866,8 +866,8 @@ class S3RESTRequest(object):
             if self.id:
                 query = (self.table.id == self.id)
                 if "deleted" in self.table:
-                    query = ((self.table.deleted==False) |
-                             (self.table.deleted==None)) & query
+                    query = ((self.table.deleted == False) |
+                             (self.table.deleted == None)) & query
                 records = self.rc.db(query).select(self.table.ALL,
                                                    limitby=(0, 1))
                 if not records:
@@ -2570,8 +2570,8 @@ class S3XML(object):
     MTIME = "modified_on"
     Lat = "lat"
     Lon = "lon"
-    Marker = "marker_id"
-    FeatureClass = "feature_class_id"
+    #Marker = "marker_id"
+    #FeatureClass = "feature_class_id"
 
     IGNORE_FIELDS = ["deleted", "id"]
 
@@ -2618,7 +2618,8 @@ class S3XML(object):
         lon="lon",
         lonmin="lonmin",
         lonmax="lonmax",
-        marker="marker"
+        marker="marker",
+        sym="sym"
     )
 
     ACTION = Storage(
@@ -2969,6 +2970,8 @@ class S3XML(object):
         if not self.gis:
             return
 
+        db = self.db
+        
         references = filter(lambda r:
                             r.element is not None and \
                             self.Lat in self.db[r.table].fields and \
@@ -2977,18 +2980,19 @@ class S3XML(object):
 
         for i in xrange(0, len(references)):
             r = references[i]
-            ktable = self.db[r.table]
-            LatLon = self.db(ktable.id == r.id).select(ktable[self.Lat],
+            ktable = db[r.table]
+            LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
                                                        ktable[self.Lon],
                                                        limitby=(0, 1))
             if LatLon:
-                LatLon = LatLon[0]
+                LatLon = LatLon.first()
                 if LatLon[self.Lat] is not None and \
                    LatLon[self.Lon] is not None:
                     r.element.set(self.ATTRIBUTE.lat,
                                   self.xml_encode("%.6f" % LatLon[self.Lat]))
                     r.element.set(self.ATTRIBUTE.lon,
                                   self.xml_encode("%.6f" % LatLon[self.Lon]))
+                    # Lookup Marker (Icon)
                     if marker:
                         marker_url = "%s/gis_marker.image.%s.png" % \
                                      (download_url, marker)
@@ -2997,7 +3001,17 @@ class S3XML(object):
                         marker_url = "%s/%s" % (download_url, marker)
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
-
+                    # Lookup GPS Marker
+                    symbol = None
+                    try:
+                        symbol = db(db.gis_feature_class.id == r.feature_class_id).select().first().gps_marker
+                    except:
+                        # No Feature Class
+                        pass
+                    if not symbol:
+                        symbol = "White Dot"
+                    r.element.set(self.ATTRIBUTE.sym,
+                                  self.xml_encode(symbol))
 
     def element(self, table, record,
                 fields=[],
@@ -3029,12 +3043,24 @@ class S3XML(object):
                 value = self.export_uid(_value)
             resource.set(self.UID, self.xml_encode(value))
             if table._tablename == "gis_location":
-                # Look up the marker to display
                 if self.gis:
+                    # Look up the marker to display
                     marker = self.gis.get_marker(_value)
                     marker_url = "%s/%s" % (download_url, marker)
                     resource.set(self.ATTRIBUTE.marker,
                                  self.xml_encode(marker_url))
+                    # Look up the GPS Marker
+                    symbol = None
+                    try:
+                        db = self.db
+                        symbol = db(db.gis_feature_class.id == record.feature_class_id).select().first().gps_marker
+                    except:
+                        # No Feature Class
+                        pass
+                    if not symbol:
+                        symbol = "White Dot"
+                    resource.set(self.ATTRIBUTE.sym,
+                                  self.xml_encode(symbol))
 
         for i in xrange(0, len(fields)):
             f = fields[i]

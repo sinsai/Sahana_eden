@@ -9,6 +9,15 @@
 s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config()
 
+# Database settings
+# NB Not yet used
+deployment_settings.database.type = "sqlite"
+deployment_settings.database.host = "localhost"
+deployment_settings.database.port = "" # use default
+deployment_settings.database.database = "sahana"
+deployment_settings.database.username = "sahana"
+deployment_settings.database.password = "password"
+
 # Authentication settings
 # This setting should be changed _before_ registering the 1st user
 deployment_settings.auth.hmac_key = "akeytochange"

@@ -107,7 +107,7 @@ def shn_rms_pheader(resource, record_id, representation, next=None, same=None):
 
         if resource == "req":
 
-            aid_request = db(db.rms_req.id == record_id).select(limitby=(0,1))
+            aid_request = db(db.rms_req.id == record_id).select(limitby=(0, 1))
             if not aid_request:
                 return None
             else:

@@ -2021,22 +2021,22 @@ def shn_delete(jr, **attr):
 
     if jr.component:
 
-        query = ((table[jr.fkey]==jr.table[jr.pkey]) & (table[jr.fkey]==jr.record[jr.pkey]))
+        query = ((table[jr.fkey] == jr.table[jr.pkey]) & (table[jr.fkey] == jr.record[jr.pkey]))
         if jr.component_id:
-            query = (table.id==jr.component_id) & query
+            query = (table.id == jr.component_id) & query
         if "deleted" in table:
-            query = (table.deleted==False) & query
+            query = (table.deleted == False) & query
     else:
-        query = (table.id==jr.id)
+        query = (table.id == jr.id)
 
     if "deleted" in table:
-        query = (table.deleted==False) & query
+        query = (table.deleted == False) & query
 
     # Get target records
     rows = db(query).select(table.ALL)
 
     # Nothing to do? Return here!
-    if not rows or len(rows)==0:
+    if not rows or len(rows) == 0:
         session.confirmation = T("No records to delete")
         return
 
@@ -2061,30 +2061,36 @@ def shn_delete(jr, **attr):
     for row in rows:
         if shn_has_permission("delete", table, row.id):
             numrows += 1
-            shn_audit_delete(module, resource, row.id, jr.representation)
-            if "deleted" in db[table] and \
-               db(db.s3_setting.id==1).select()[0].archive_not_delete:
-                if crud.settings.delete_onvalidation:
-                    crud.settings.delete_onvalidation(row)
-                # Avoid collisions of values in unique fields between deleted records and
-                # later new records => better solution could be: move the deleted data to
-                # a separate table (e.g. in JSON) and delete from this table (that would
-                # also eliminate the need for special deletion status awareness throughout
-                # the system). Should at best be solved in the DAL.
-                deleted = dict(deleted=True)
-                for f in table.fields:
-                    if f not in ("id", "uuid") and table[f].unique:
-                        deleted.update({f:None}) # not good => data loss!
-                db(db[table].id == row.id).update(**deleted)
-                if crud.settings.delete_onaccept:
-                    crud.settings.delete_onaccept(row)
-            else:
-                # Do not CRUD.delete! (it never returns, but redirects)
-                if crud.settings.delete_onvalidation:
-                    crud.settings.delete_onvalidation(row)
-                del db[table][row.id]
-                if crud.settings.delete_onaccept:
-                    crud.settings.delete_onaccept(row)
+            try:
+                shn_audit_delete(module, resource, row.id, jr.representation)
+                if "deleted" in db[table] and \
+                   db(db.s3_setting.id == 1).select().first().archive_not_delete:
+                    if crud.settings.delete_onvalidation:
+                        crud.settings.delete_onvalidation(row)
+                    # Avoid collisions of values in unique fields between deleted records and
+                    # later new records => better solution could be: move the deleted data to
+                    # a separate table (e.g. in JSON) and delete from this table (that would
+                    # also eliminate the need for special deletion status awareness throughout
+                    # the system). Should at best be solved in the DAL.
+                    deleted = dict(deleted=True)
+                    for f in table.fields:
+                        if f not in ("id", "uuid") and table[f].unique:
+                            deleted.update({f:None}) # not good => data loss!
+                    db(db[table].id == row.id).update(**deleted)
+                    if crud.settings.delete_onaccept:
+                        crud.settings.delete_onaccept(row)
+                else:
+                    # Do not CRUD.delete! (it never returns, but redirects)
+                    if crud.settings.delete_onvalidation:
+                        crud.settings.delete_onvalidation(row)
+                    del db[table][row.id]
+                    if crud.settings.delete_onaccept:
+                        crud.settings.delete_onaccept(row)
+            
+            except:
+            # Would prefer to import sqlite3 & catch specific error, but this isn't generalisable to other DBs...we need a DB config to pull in.
+            #except sqlite3.IntegrityError:
+                session.error = T("Cannot delete whilst there are linked records. Please delete linked records first.")
         else:
             continue
 
@@ -2095,12 +2101,12 @@ def shn_delete(jr, **attr):
         crud.settings.delete_next = delete_next
 
         delete_next =  jr.component.attr.delete_next
-
-    # Confirm and return
-    if numrows > 1:
-        session.confirmation = "%s %s" % ( numrows, T("records deleted"))
-    else:
-        session.confirmation = message
+    
+    if not session.error:
+        if numrows > 1:
+            session.confirmation = "%s %s" % ( numrows, T("records deleted"))
+        else:
+            session.confirmation = message
 
     if jr.component and delete_next: # but redirect here!
         redirect(delete_next)
@@ -2116,12 +2122,12 @@ def shn_delete(jr, **attr):
 #
 def shn_options(jr, **attr):
 
-    if jr.representation=="xml":
+    if jr.representation == "xml":
         response.headers["Content-Type"] = "text/xml"
         response.view = "plain.html"
         return jr.options_xml(pretty_print=PRETTY_PRINT)
 
-    elif jr.representation=="json":
+    elif jr.representation == "json":
         response.headers["Content-Type"] = "text/x-json"
         response.view = "plain.html"
         return jr.options_json(pretty_print=PRETTY_PRINT)

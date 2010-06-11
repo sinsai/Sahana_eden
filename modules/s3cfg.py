@@ -7,6 +7,7 @@ class S3Config(Storage):
     def __init__(self):
         self.auth = Storage()
         self.base = Storage()
+        self.database = Storage()
         self.mail = Storage()
         self.L10n = Storage()
 

@@ -302,22 +302,26 @@ gis_feature_type_opts = {
     3:T("Polygon"),
     #4:T("MultiPolygon")
     }
+gis_source_opts = {
+    1:T("GPS"),
+    2:T("Imagery"),
+    }
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", notnull=True),
-                Field("level", length=2),
                 Field("code"),
                 Field("description"),
                 feature_class_id,
+                marker_id,
                 #Field("resource_id", "integer"), # ID in associated resource table. FIXME: Remove as link should be reversed?
+                Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
+                Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+                Field("rght", "integer", readable=False, writable=False),# Right currently unused
                 # Street Address (other address fields come from hierarchy)
                 Field("addr_street"),
                 #Field("addr_postcode"),
-                Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-                Field("rght", "integer", readable=False, writable=False),# Right currently unused
-                marker_id,
                 Field("gis_feature_type", "integer", default=1, notnull=True),
                 Field("lat", "double"), # Points or Centroid for Polygons
                 Field("lon", "double"), # Points or Centroid for Polygons
@@ -330,6 +334,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("elevation", "integer", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
                 Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                 Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
+                Field("source", "integer"),
                 admin_id,
                 migrate=migrate)
 
@@ -344,7 +349,7 @@ table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UN
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
-
+table.source.requires = IS_IN_SET(gis_source_opts)
 
 # Reusable field for other tables to reference
 ADD_LOCATION = T("Add Location")

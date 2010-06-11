@@ -4,7 +4,7 @@
 
     <!-- **********************************************************************
 
-         KML Export Templates
+         KML Export Templates for S3XRC
 
          Copyright (c) 2010 Sahana Software Foundation
 

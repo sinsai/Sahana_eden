@@ -9,7 +9,7 @@
 
     <!-- **********************************************************************
 
-         EDXL-HAVE Export Templates
+         EDXL-HAVE Export Templates for S3XRC
 
          Version 0.4 / 2010-06-10 / by nursix
 

@@ -16,7 +16,7 @@ response.menu_options = [
 	[T("Outbox"), False, URL(r=request, f="outbox")],
 	[T('Distribution groups'), False, URL(r=request, f='group'), [
 		[T('List/Add'), False, URL(r=request, f='group')],
-		[T('Group Memberships'), False, URL(r=request, f='group_membership')], 
+		[T('Group Memberships'), False, URL(r=request, f='group_membership')],
 	]],
     #[T('CAP'), False, URL(r=request, f='tbc')]
 ]
@@ -56,7 +56,7 @@ def group():
     return shn_rest_controller('pr', "group",
                                main="group_name",
                                extra="group_description",
-                               pheader=shn_pr_pheader,
+                               rheader=shn_pr_rheader,
                                deletable=False)
 # -----------------------------------------------------------------------------
 def group_membership():
@@ -184,7 +184,7 @@ def process_sms_via_api():
 	"Controller for SMS api processing - to be called via cron"
 	msg.process_outbox(contact_method = 2)
 	return
-	
+
 def process_email_via_api():
 	"Controller for Email api processing - to be called via cron"
 	msg.process_outbox(contact_method = 1)

@@ -583,7 +583,7 @@ if deployment_settings.has_module(module):
     # shn_vol_project_search_location:
     #   form function to search projects by location
     #
-    def shn_vol_project_pheader(resource, record_id, representation, next=None, same=None):
+    def shn_vol_project_rheader(resource, record_id, representation, next=None, same=None):
 
         if resource == "project":
             if representation == "html":
@@ -600,7 +600,7 @@ if deployment_settings.has_module(module):
 
                 project = db.vol_project[record_id]
                 if project:
-                    pheader = TABLE(
+                    rheader = TABLE(
                         TR(
                             TH(T('Name: ')),
                             project.name,
@@ -619,6 +619,6 @@ if deployment_settings.has_module(module):
                                 _href=URL(r=request, f='project', args=['update', record_id], vars={'_next': _next})))
                             )
                     )
-                    return pheader
+                    return rheader
 
         return None

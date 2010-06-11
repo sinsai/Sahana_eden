@@ -41,9 +41,9 @@ response.menu_options = [
 
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-        
+
     return dict(module_name=module_name)
 
 # Main controller functions
@@ -51,7 +51,7 @@ def person():
     db.pr_pd_general.est_age.readable=False
     db.pr_person.missing.default = True
     return shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
-        pheader=shn_pr_pheader,
+        rheader=shn_pr_rheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
         rss=dict(
             title=shn_pr_person_represent,

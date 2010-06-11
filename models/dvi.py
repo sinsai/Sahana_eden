@@ -368,7 +368,7 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_dvi_pheader(resource, record_id, representation, next=None, same=None):
+    def shn_dvi_rheader(resource, record_id, representation, next=None, same=None):
 
         """ page header for component pages """
 
@@ -387,7 +387,7 @@ if deployment_settings.has_module(module):
                 body = db.dvi_body[record_id]
 
                 if body:
-                    pheader = TABLE(
+                    rheader = TABLE(
                         TR(
                             TH(T('ID Label: ')),
                             "%(pr_pe_label)s" % body,
@@ -406,7 +406,7 @@ if deployment_settings.has_module(module):
                                 _href=URL(r=request, f='body', args=['update', record_id], vars={'_next': _next})))
                         )
                     )
-                    return pheader
+                    return rheader
 
         return None
 

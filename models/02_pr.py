@@ -640,7 +640,7 @@ s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_p
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
+def shn_pr_rheader(resource, record_id, representation, next=None, same=None):
 
     """
         Person Registry page headers
@@ -662,7 +662,7 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
             person = vita.person(record_id)
 
             if person:
-                pheader = DIV(TABLE(
+                rheader = DIV(TABLE(
                     TR(
                         TH(T("Name: ")),
                         vita.fullname(person),
@@ -692,9 +692,9 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
                         #A(T("Addresses"), _href=URL(r=request, f="person", args=[record_id, "address"], vars={"_next": _next})),
                         #A(T("Contact Information"), _href=URL(r=request, f="person", args=[record_id, "pe_contact"], vars={"_next": _next})),
                         #A(T("Presence Log"), _href=URL(r=request, f="person", args=[record_id, "presence"], vars={"_next": _next})),
-                        #_class="pheader_tabs"
+                        #_class="rheader_tabs"
                 ))
-                return pheader
+                return rheader
 
         else:
             pass

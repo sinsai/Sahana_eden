@@ -57,8 +57,8 @@ def req(): #aid requests
     output = shn_rest_controller(module, resource,
                                  editable=False,
                                  listadd=False,
-                                 pheader=shn_rms_pheader)
-                                 # call pheader to act as parent header for parent/child forms (layout defined below)
+                                 rheader=shn_rms_rheader)
+                                 # call rheader to act as parent header for parent/child forms (layout defined below)
 
     return output
 
@@ -91,7 +91,7 @@ def pledge(): #pledges from agencies
     return shn_rest_controller(module, resource, editable = True, listadd=False)
 
 
-def shn_rms_pheader(resource, record_id, representation, next=None, same=None):
+def shn_rms_rheader(resource, record_id, representation, next=None, same=None):
 
     if representation == "html":
 
@@ -118,7 +118,7 @@ def shn_rms_pheader(resource, record_id, representation, next=None, same=None):
             except:
                 location_represent = None
 
-            pheader = TABLE(TR(TH(T('Message: ')),
+            rheader = TABLE(TR(TH(T('Message: ')),
                             TD(aid_request.message, _colspan=3)),
                             TR(TH(T('Priority: ')),
                             aid_request.priority,
@@ -133,7 +133,7 @@ def shn_rms_pheader(resource, record_id, representation, next=None, same=None):
                             TH(T('Actionable: ')),
                             aid_request.actionable))
 
-            return pheader
+            return rheader
 
     return None
 

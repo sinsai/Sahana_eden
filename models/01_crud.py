@@ -882,7 +882,7 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace(".html", "_%s.html" % format)
         else:
             response.view = default_name
-            
+
 #
 # shn_convert_orderby ----------------------------------------------------------
 #
@@ -1056,7 +1056,7 @@ def shn_read(jr, **attr):
 
     """ Read a single record. """
 
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
     rss = attr.get("rss", None)
@@ -1127,13 +1127,13 @@ def shn_read(jr, **attr):
                 except:
                     subtitle = s3.crud_strings.title_display
                 output.update(subtitle=subtitle)
-                if pheader:
+                if rheader:
                     try:
-                        _pheader = pheader(jr.name, jr.id, jr.representation, next=jr.there(), same=jr.same())
+                        _rheader = rheader(jr.name, jr.id, jr.representation, next=jr.there(), same=jr.same())
                     except:
-                        _pheader = pheader
-                    if _pheader:
-                        output.update(pheader=_pheader)
+                        _rheader = rheader
+                    if _rheader:
+                        output.update(rheader=_rheader)
             item = crud.read(table, record_id)
 
             if jr.representation=="html":
@@ -1244,7 +1244,7 @@ def shn_list(jr, **attr):
     onaccept = s3xrc.model.get_config(table, "onaccept")
 
     # Get request arguments
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     _attr = jr.component and jr.component.attr or attr
 
     editable = _attr.get("editable", True)
@@ -1375,15 +1375,15 @@ def shn_list(jr, **attr):
             except:
                 subtitle = s3.crud_strings.subtitle_list
 
-            if pheader:
+            if rheader:
                 try:
-                    _pheader = pheader(jr.name, jr.id, jr.representation,
+                    _rheader = rheader(jr.name, jr.id, jr.representation,
                                        next=jr.there(),
                                        same=jr.same())
                 except:
-                    _pheader = pheader
-                if _pheader:
-                    output.update(pheader=_pheader)
+                    _rheader = rheader
+                if _rheader:
+                    output.update(rheader=_rheader)
         else:
             try:
                 title = s3.crud_strings[tablename].title_list
@@ -1624,7 +1624,7 @@ def shn_create(jr, **attr):
 
     """ Create new records """
 
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     main = attr.get("main", None)
 
     module, resource, table, tablename = jr.target()
@@ -1654,15 +1654,15 @@ def shn_create(jr, **attr):
                 subtitle = s3.crud_strings.subtitle_create
             output.update(subtitle=subtitle)
 
-            if pheader:
+            if rheader:
                 try:
-                    _pheader = pheader(jr.name, jr.id, jr.representation,
+                    _rheader = rheader(jr.name, jr.id, jr.representation,
                                        next=jr.there(),
                                        same=jr.same())
                 except:
-                    _pheader = pheader
-                if _pheader:
-                    output.update(pheader=_pheader)
+                    _rheader = rheader
+                if _rheader:
+                    output.update(rheader=_rheader)
         else:
             try:
                 title = s3.crud_strings[tablename].title_create
@@ -1807,7 +1807,7 @@ def shn_update(jr, **attr):
 
     """ Update an existing record """
 
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
 
@@ -1819,7 +1819,7 @@ def shn_update(jr, **attr):
     if jr.component:
 
         if jr.multiple and not jr.component_id:
-            return shn_create(jr, pheader)
+            return shn_create(jr, rheader)
 
         query = (table[jr.fkey]==jr.record[jr.pkey])
         if jr.component_id:
@@ -1871,15 +1871,15 @@ def shn_update(jr, **attr):
                     subtitle = s3.crud_strings.title_update
                 output.update(subtitle=subtitle)
 
-                if pheader:
+                if rheader:
                     try:
-                        _pheader = pheader(jr.name, jr.id, jr.representation,
+                        _rheader = rheader(jr.name, jr.id, jr.representation,
                                            next=jr.there(),
                                            same=jr.same())
                     except:
-                        _pheader = pheader
-                    if _pheader:
-                        output.update(pheader=_pheader)
+                        _rheader = rheader
+                    if _rheader:
+                        output.update(rheader=_rheader)
             else:
                 try:
                     title = s3.crud_strings[tablename].title_update
@@ -2086,7 +2086,7 @@ def shn_delete(jr, **attr):
                     del db[table][row.id]
                     if crud.settings.delete_onaccept:
                         crud.settings.delete_onaccept(row)
-            
+
             except:
             # Would prefer to import sqlite3 & catch specific error, but this isn't generalisable to other DBs...we need a DB config to pull in.
             #except sqlite3.IntegrityError:
@@ -2101,7 +2101,7 @@ def shn_delete(jr, **attr):
         crud.settings.delete_next = delete_next
 
         delete_next =  jr.component.attr.delete_next
-    
+
     if not session.error:
         if numrows > 1:
             session.confirmation = "%s %s" % ( numrows, T("records deleted"))
@@ -2343,8 +2343,8 @@ def shn_rest_controller(module, resource, **attr):
 
             see: U{http://datatables.net/examples/basic_init/table_sorting.html}
 
-        @param pheader: function to produce a page header for the primary resource
-        @type pheader:
+        @param rheader: function to produce a page header for the primary resource
+        @type rheader:
             function(resource, record_id, representation, next=None, same=None)
 
         @author: Fran Boon

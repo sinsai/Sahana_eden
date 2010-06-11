@@ -744,7 +744,7 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_hms_hospital_pheader(resource, record_id, representation, next=None, same=None):
+    def shn_hms_hospital_rheader(resource, record_id, representation, next=None, same=None):
 
         """ Page header for component resources """
 
@@ -763,7 +763,7 @@ if deployment_settings.has_module(module):
 
                 hospital = db.hms_hospital[record_id]
                 if hospital:
-                    pheader = TABLE(
+                    rheader = TABLE(
                         TR(
                             TH(T("Name: ")),
                             hospital.name,
@@ -797,7 +797,7 @@ if deployment_settings.has_module(module):
                                 _href=URL(r=request, f="hospital", args=["update", record_id], vars={"_next": _next})))
                             )
                     )
-                    return pheader
+                    return rheader
 
         return None
 

@@ -93,7 +93,7 @@ if deployment_settings.has_module(module):
                     }
 
     #Will be displayed as a select
-    table.vulnerability.requires = IS_IN_SET(opt_vulnerability)
+    table.vulnerability.requires = IS_IN_SET(opt_vulnerability, zero=None)
 
     # -----------------------------------------------------------------------------
     # Update:

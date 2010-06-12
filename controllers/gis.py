@@ -175,6 +175,8 @@ def feature_class():
     # Model options
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
+    table.gps_marker.label = T("GPS Marker")
+    table.gps_marker.comment = DIV( _class="tooltip", _title=T("GPS Marker|Defines the icon used for display of features on handheld GPS."))
     table.description.label = T("Description")
     table.module.label = T("Module")
     table.resource.label = T("Resource")
@@ -1270,12 +1272,12 @@ def layers():
         if layer.marker_id:
             layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select().first().image
         else:
-            marker_id = db(db.gis_config.id==1).select().first().marker_id
+            marker_id = db(db.gis_config.id == 1).select().first().marker_id
             layers.georss[name].marker = db(db.gis_marker.id == marker_id).select().first().image
 
     # KML
     layers.kml = Storage()
-    layers_kml = db(db.gis_layer_kml.enabled==True).select()
+    layers_kml = db(db.gis_layer_kml.enabled == True).select()
     if layers_kml and not cache:
         response.warning += cachepath + " " + str(T("not writable - unable to cache KML layers!")) + "\n"
 

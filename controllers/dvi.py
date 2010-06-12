@@ -92,7 +92,7 @@ def find():
 
 def body():
     output = shn_rest_controller(module, 'body', main='pr_pe_label', extra='opt_pr_gender',
-        pheader=shn_dvi_pheader,
+        rheader=shn_dvi_rheader,
         list_fields=[
             'id',
             'pr_pe_label',

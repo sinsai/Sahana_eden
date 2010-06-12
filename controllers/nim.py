@@ -54,7 +54,7 @@ def index():
 def person():
     db.pr_pd_general.est_age.readable=False
     return shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
-        pheader=shn_pr_pheader,
+        rheader=shn_pr_rheader,
         list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
         rss=dict(
             title=shn_pr_person_represent,

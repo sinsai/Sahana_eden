@@ -13,16 +13,45 @@
 $(function() {
     // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
     if (self.parent.$("input[name='_formname']").val().match("or_office")) {
-        var office_name = self.parent.$('#or_office_name').val();
-        $("#gis_location_name").val(office_name);
+        var location_name = self.parent.$('#or_office_name').val();
+        $("#gis_location_name").val(location_name);
         $("#gis_location_name__row").hide();
-        $("#gis_location_parent__row").hide();
+        $("#gis_location_description__row").hide();
+        $("#gis_location_level__row").hide();
+        $("#gis_location_code__row").hide();
+        //$("#gis_location_parent__row").hide();
         $("#gis_location_feature_class_id").val(8);
-        $("#gis_location_feature_class_id__row").hide();
-        $("#gis_location_marker_id").val(5);
-        //$("#gis_location_marker_id__row").hide();
+        // Don't hide in case magic number changes! :/
+        //$("#gis_location_feature_class_id__row").hide();
+        // Use default Marker for Class
+        //$("#gis_location_marker_id").val(6);
+        $("#gis_location_marker_id__row").hide();
         $("#gis_location_gis_feature_type__row").hide();
         $("#gis_location_wkt__row").hide();
+        $("#gis_location_osm_id__row").hide();
+    }
+});
+//]]></script>
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
+    if (self.parent.$("input[name='_formname']").val().match("hms_hospital")) {
+        var location_name = self.parent.$('#hms_hospital_name').val();
+        $("#gis_location_name").val(location_name);
+        $("#gis_location_name__row").hide();
+        $("#gis_location_description__row").hide();
+        $("#gis_location_level__row").hide();
+        $("#gis_location_code__row").hide();
+        //$("#gis_location_parent__row").hide();
+        $("#gis_location_feature_class_id").val(13);
+        // Don't hide in case magic number changes! :/
+        //$("#gis_location_feature_class_id__row").hide();
+        // Use default Marker for Class
+        //$("#gis_location_marker_id").val(7);
+        $("#gis_location_marker_id__row").hide();
+        $("#gis_location_gis_feature_type__row").hide();
+        $("#gis_location_wkt__row").hide();
+        $("#gis_location_osm_id__row").hide();
     }
 });
 //]]></script>

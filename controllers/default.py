@@ -52,7 +52,7 @@ def user():
     _table_user.language.label = T("Language")
     _table_user.language.default = "en"
     _table_user.language.comment = DIV(_class="tooltip", _title=T("Language|The language to use for notifications."))
-    _table_user.language.requires = IS_IN_SET(shn_languages)
+    _table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
     _table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
 
     form = auth()
@@ -70,9 +70,9 @@ def user():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     modules = Storage()
     for _module in deployment_settings.modules:
         _module = str(_module)
@@ -82,13 +82,13 @@ def index():
         _module.name_nice = _s3["name_nice"]
         _module.access = _s3["access"]
         _module.description = _s3["description"]
-    
+
     settings = db(db.s3_setting.id == 1).select().first()
     admin_name = settings.admin_name
     admin_email = settings.admin_email
     admin_tel = settings.admin_tel
     response.title = T('Sahana FOSS Disaster Management System')
-    
+
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def source():
@@ -136,11 +136,11 @@ def about():
     except:
         sqlite_version = T("Not installed or incorectly configured.")
     try:
-        mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]    
+        mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]
     except:
         mysql_version = T("Not installed or incorrectly configured.")
-    try:    
-        pgsql_reply = (subprocess.Popen(["psql", "--version"], stdout=subprocess.PIPE).communicate()[0]) 
+    try:
+        pgsql_reply = (subprocess.Popen(["psql", "--version"], stdout=subprocess.PIPE).communicate()[0])
         pgsql_version = string.split(pgsql_reply)[2]
     except:
         pgsql_version = T("Not installed or incorrectly configured.")
@@ -160,14 +160,14 @@ def about():
     except:
         xlwt_version = T("Not installed or incorrectly configured.")
     return dict(
-                python_version=python_version, 
-                sahana_version=sahana_version, 
-                web2py_version=web2py_version, 
+                python_version=python_version,
+                sahana_version=sahana_version,
+                web2py_version=web2py_version,
                 sqlite_version=sqlite_version,
                 mysql_version=mysql_version,
                 pgsql_version=pgsql_version,
                 pymysql_version=pymysql_version,
-                reportlab_version=reportlab_version, 
+                reportlab_version=reportlab_version,
                 xlwt_version=xlwt_version
                 )
 

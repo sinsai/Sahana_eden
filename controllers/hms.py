@@ -55,7 +55,7 @@ def index():
     """ Module's Home Page """
 
     module_name = s3.modules[module]["name_nice"]
-    return dict(module_name=module_name)
+    return dict(module_name=module_name, public_url=deployment_settings.base.public_url)
 
 # -----------------------------------------------------------------------------
 def hospital():
@@ -65,7 +65,7 @@ def hospital():
     response.s3.pagination = True
 
     output = shn_rest_controller(module , 'hospital',
-        pheader = shn_hms_hospital_pheader,
+        rheader = shn_hms_hospital_rheader,
         list_fields=shn_hms_hospital_list_fields(),
         rss=dict(
             title="%(name)s",
@@ -91,8 +91,17 @@ def hrequest():
 
     response.s3.pagination = True
 
+    def hrequest_postp(jr, output):
+        if jr.representation in ("html", "popup") and not jr.component:
+            response.s3.actions = [
+                dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=['[id]', 'hpledge'])))
+            ]
+        return output
+    response.s3.postp = hrequest_postp
+
+
     output = shn_rest_controller(module , resource, listadd=False, deletable=False,
-        pheader=shn_hms_hrequest_pheader,
+        rheader=shn_hms_hrequest_rheader,
         list_fields=['id',
             'timestamp',
             'hospital_id',
@@ -136,7 +145,7 @@ def hpledge():
     return output
 
 # -----------------------------------------------------------------------------
-def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, same=None):
+def shn_hms_hrequest_rheader(resource, record_id, representation, next=None, same=None):
 
     """ Request PHeader """
 
@@ -158,7 +167,7 @@ def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, sam
         except:
             hospital_represent = None
 
-        pheader = TABLE(
+        rheader = TABLE(
                     TR(
                         TH(T('Message: ')),
                         TD(aid_request.message, _colspan=3),
@@ -186,7 +195,7 @@ def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, sam
                         "",
                         ),
                 )
-        return pheader
+        return rheader
 
     else:
         return None

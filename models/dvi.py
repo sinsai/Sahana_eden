@@ -32,7 +32,7 @@ if deployment_settings.has_module(module):
 
     opt_dvi_task_status = db.Table(None, 'opt_dvi_task_status',
                         Field('opt_dvi_task_status','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Task Status'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, UNKNOWN_OPT)))
@@ -166,42 +166,42 @@ if deployment_settings.has_module(module):
     db.define_table(table, timestamp, uuidstamp, deletion_status,
                     pr_pe_id,
                     Field('personal_effects','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Inventory of Effects'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                     Field('body_radiology','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Radiology'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                     Field('fingerprints','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Fingerprinting'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                     Field('anthropology','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Anthropolgy'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                     Field('pathology','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Pathology'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                     Field('embalming','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Embalming'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                     Field('dna','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('DNA Profiling'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
                     Field('dental','integer',
-                        requires = IS_IN_SET(dvi_task_status_opts),
+                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
                         label = T('Dental Examination'),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T('not specified'))),
@@ -290,7 +290,7 @@ if deployment_settings.has_module(module):
 
     opt_dvi_id_status = db.Table(None, 'opt_dvi_id_status',
                         Field('opt_dvi_id_status','integer',
-                        requires = IS_IN_SET(dvi_id_status_opts),
+                        requires = IS_IN_SET(dvi_id_status_opts, zero=None),
                         default = 1,
                         label = T('Identification Status'),
                         represent = lambda opt: dvi_id_status_opts.get(opt, UNKNOWN_OPT)))
@@ -307,7 +307,7 @@ if deployment_settings.has_module(module):
 
     opt_dvi_id_method = db.Table(None, 'opt_dvi_id_method',
                         Field('opt_dvi_id_method','integer',
-                        requires = IS_IN_SET(dvi_id_method_opts),
+                        requires = IS_IN_SET(dvi_id_method_opts, zero=None),
                         default = 99,
                         label = T('Method used'),
                         represent = lambda opt: dvi_id_method_opts.get(opt, UNKNOWN_OPT)))
@@ -368,7 +368,7 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_dvi_pheader(resource, record_id, representation, next=None, same=None):
+    def shn_dvi_rheader(resource, record_id, representation, next=None, same=None):
 
         """ page header for component pages """
 
@@ -387,7 +387,7 @@ if deployment_settings.has_module(module):
                 body = db.dvi_body[record_id]
 
                 if body:
-                    pheader = TABLE(
+                    rheader = TABLE(
                         TR(
                             TH(T('ID Label: ')),
                             "%(pr_pe_label)s" % body,
@@ -406,7 +406,7 @@ if deployment_settings.has_module(module):
                                 _href=URL(r=request, f='body', args=['update', record_id], vars={'_next': _next})))
                         )
                     )
-                    return pheader
+                    return rheader
 
         return None
 

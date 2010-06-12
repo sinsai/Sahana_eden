@@ -37,14 +37,15 @@ if deployment_settings.has_module(module):
                     Field('end_date', 'date'),
                     Field('description','text', notnull=True),
                     Field('status', 'integer',
-                        requires = IS_IN_SET(vol_project_status_opts),
+                        requires = IS_IN_SET(vol_project_status_opts, zero=None),
                         # default = 99,
                         label = T('Project Status'),
                         represent = lambda opt: vol_project_status_opts.get(opt, UNKNOWN_OPT)),
                     migrate=migrate)
 
     # Settings and Restrictions
-    table.name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')), IS_NOT_IN_DB(db,'vol_project.name')]
+    table.name.requires=[IS_NOT_EMPTY( error_message=T('Please fill this!')),
+                         IS_NOT_IN_DB(db,'vol_project.name')]
 
     table.description.requires = IS_NOT_EMPTY()
 
@@ -82,6 +83,9 @@ if deployment_settings.has_module(module):
                             ondelete = 'RESTRICT'
                             ))
 
+    def shn_vol_project_list_fields():
+        return ["id", "name", "location_id", "start_date", "end_date", "status"]
+
     # -----------------------------------------------------------------------------
     # vol_position (component of vol_project)
     #   describes a position in a project
@@ -98,7 +102,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     vol_project_id,
                     Field('type', 'integer',
-                        requires = IS_IN_SET(vol_position_type_opts),
+                        requires = IS_IN_SET(vol_position_type_opts, zero=None),
                         # default = 99,
                         label = T('Position type'),
                         represent = lambda opt: vol_position_type_opts.get(opt, UNKNOWN_OPT)),
@@ -163,7 +167,7 @@ if deployment_settings.has_module(module):
                     Field('hrs_avail_start', 'time'),
                     Field('hrs_avail_end', 'time'),
                     Field('status', 'integer',
-                        requires = IS_IN_SET(vol_volunteer_status_opts),
+                        requires = IS_IN_SET(vol_volunteer_status_opts, zero=None),
                         # default = 1,
                         label = T('Status'),
                         represent = lambda opt: vol_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
@@ -181,11 +185,11 @@ if deployment_settings.has_module(module):
 
     # Representation function
     def shn_vol_volunteer_represent(id):
-        person = db((db.vol_volunteer.id==id)&(db.pr_person.id==db.vol_volunteer.person_id)).select(
+        person = db((db.vol_volunteer.id == id) & (db.pr_person.id == db.vol_volunteer.person_id)).select(
                     db.pr_person.first_name,
                     db.pr_person.middle_name,
                     db.pr_person.last_name,
-                    limitby=(0,1))
+                    limitby=(0, 1))
         if person:
             return vita.fullname(person[0])
         else:
@@ -211,7 +215,7 @@ if deployment_settings.has_module(module):
 
     # Reusable field
     vol_volunteer_id = db.Table(None, 'vol_volunteer_id',
-                                FieldS3('vol_volunteer_id', db.vol_volunteer, sortby=['first_name','middle_name','last_name'],
+                                FieldS3('vol_volunteer_id', db.vol_volunteer, sortby=['first_name', 'middle_name', 'last_name'],
                                 requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status==1), 'vol_volunteer.id', shn_vol_volunteer_represent)),
                                 represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
                                 comment = DIV(A(s3.crud_strings.vol_volunteer.label_create_button, _class='colorbox', _href=URL(r=request, c='vol', f='volunteer', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings.vol_volunteer.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Volunteer|Add new volunteer)."))),
@@ -266,22 +270,22 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp,
                     person_id,
                     Field('type', 'integer',
-                        requires = IS_IN_SET(vol_resource_type_opts),
+                        requires = IS_IN_SET(vol_resource_type_opts, zero=None),
                         # default = 99,
                         label = T('Resource'),
                         represent = lambda opt: vol_resource_type_opts.get(opt, UNKNOWN_OPT)),
                     Field('subject', 'integer',
-                        requires = IS_IN_SET(vol_resource_subject_opts),
+                        requires = IS_IN_SET(vol_resource_subject_opts, zero=None),
                         # default = 99,
                         label = T('Subject'),
                         represent = lambda opt: vol_resource_subject_opts.get(opt, UNKNOWN_OPT)),
                     Field('deployment', 'integer',
-                        requires = IS_IN_SET(vol_resource_deployment_opts),
+                        requires = IS_IN_SET(vol_resource_deployment_opts, zero=None),
                         # default = 99,
                         label = T('Deployment'),
                         represent = lambda opt: vol_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
                     Field('status', 'integer',
-                        requires = IS_IN_SET(vol_resource_status_opts),
+                        requires = IS_IN_SET(vol_resource_status_opts, zero=None),
                         # default = 2,
                         label = T('Status'),
                         represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
@@ -293,7 +297,7 @@ if deployment_settings.has_module(module):
         deletable=True,
         editable=True,
         main='person_id', extra='subject',
-        list_fields = ['id', 'resource', 'subject', 'deployment', 'status'])
+        list_fields = ['id', 'type', 'subject', 'deployment', 'status'])
 
     # CRUD Strings
     ADD_RESOURCE = T('Add Resource')
@@ -398,7 +402,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     vol_project_id,
                     Field('priority', 'integer',
-                        requires = IS_IN_SET(vol_task_priority_opts),
+                        requires = IS_IN_SET(vol_task_priority_opts, zero=None),
                         # default = 4,
                         label = T('Priority'),
                         represent = lambda opt: vol_task_priority_opts.get(opt, UNKNOWN_OPT)),
@@ -406,7 +410,7 @@ if deployment_settings.has_module(module):
                     Field('description', 'text'),
                     person_id,
                     Field('status', 'integer',
-                        requires = IS_IN_SET(vol_task_status_opts),
+                        requires = IS_IN_SET(vol_task_status_opts, zero=None),
                         # default = 1,
                         label = T('Status'),
                         represent = lambda opt: vol_task_status_opts.get(opt, UNKNOWN_OPT)),
@@ -415,6 +419,9 @@ if deployment_settings.has_module(module):
     # Field labels
     table.person_id.label = T('Assigned to')
 
+    def shn_vol_task_list_fields():
+        return ['id', 'priority', 'subject', 'person_id', 'status']
+
     # Component
     s3xrc.model.add_component(module, resource,
         multiple=True,
@@ -422,7 +429,7 @@ if deployment_settings.has_module(module):
         deletable=True,
         editable=True,
         main='subject', extra='description',
-        list_fields = ['id', 'priority', 'subject', 'vol_volunteer_id', 'status'])
+        list_fields = shn_vol_task_list_fields())
 
     # CRUD Strings
     ADD_TASK = T('Add Task')
@@ -448,9 +455,9 @@ if deployment_settings.has_module(module):
     #table = module + '_' + resource
     #db.define_table(table, timestamp, uuidstamp,
     #    Field('request_id','integer', notnull=True),
-    #    Field('act','string', length=100,label=T('act')),
-    #    Field('vm_action','string', length=100,label=T('vm_action')),
-    #    Field('description','string', length=300,label=T('description')),
+    #    Field('act','string', length=100, label=T('act')),
+    #    Field('vm_action','string', length=100, label=T('vm_action')),
+    #    Field('description','string', length=300, label=T('description')),
     #    migrate=migrate)
 
     # -----------------------------------------------------------------------------
@@ -458,7 +465,7 @@ if deployment_settings.has_module(module):
     #resource = 'access_constraint'
     #table = module + '_' + resource
     #db.define_table(table, timestamp, uuidstamp,
-    #    Field('constraint_id','string', length=30, notnull=True, default=' ',label=T('constraint_id')),
+    #    Field('constraint_id','string', length=30, notnull=True, default=' ', label=T('constraint_id')),
     #    Field('description','string', length=200,label=T('description')),
     #    migrate=migrate)
 
@@ -477,8 +484,8 @@ if deployment_settings.has_module(module):
     #table = module + '_' + resource
     #db.define_table(table, timestamp, uuidstamp,
     #    Field('request_id','integer', length=11, notnull=True, default=0),
-    #    Field('table_name','string', length=200, notnull=True, default=' ',label=T('table_name')),
-    #    Field('crud','string', length=4, notnull=True, default=' ',label=T('crud')),
+    #    Field('table_name','string', length=200, notnull=True, default=' ', label=T('table_name')),
+    #    Field('crud','string', length=4, notnull=True, default=' ', label=T('crud')),
     #    migrate=migrate)
 
     # -----------------------------------------------------------------------------
@@ -511,10 +518,10 @@ if deployment_settings.has_module(module):
             # Select form:
             l_opts = [OPTION(_value='')]
             l_opts += [OPTION(location.name, _value=location.id)
-                    for location in db(db.gis_location.deleted==False).select(db.gis_location.ALL,cache=(cache.ram,3600))]
+                    for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL, cache=(cache.ram, 3600))]
             form = FORM(TABLE(
                     TR(T('Location: '),
-                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db,'gis_location.id'))))),
+                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, 'gis_location.id'))))),
                     TR("", INPUT(_type="submit", _value="Search"))
                     ))
 
@@ -525,12 +532,12 @@ if deployment_settings.has_module(module):
             if form.accepts(request.vars, session):
 
                 table = db.vol_project
-                query = (table.deleted==False)
+                query = (table.deleted == False)
 
                 if form.vars.location is None:
                     results = db(query).select(table.ALL)
                 else:
-                    query = query & (table.location_id==form.vars.location)
+                    query = query & (table.location_id == form.vars.location)
                     results = db(query).select(table.ALL)
 
                 if results and len(results):
@@ -576,7 +583,7 @@ if deployment_settings.has_module(module):
     # shn_vol_project_search_location:
     #   form function to search projects by location
     #
-    def shn_vol_project_pheader(resource, record_id, representation, next=None, same=None):
+    def shn_vol_project_rheader(resource, record_id, representation, next=None, same=None):
 
         if resource == "project":
             if representation == "html":
@@ -593,7 +600,7 @@ if deployment_settings.has_module(module):
 
                 project = db.vol_project[record_id]
                 if project:
-                    pheader = TABLE(
+                    rheader = TABLE(
                         TR(
                             TH(T('Name: ')),
                             project.name,
@@ -612,6 +619,6 @@ if deployment_settings.has_module(module):
                                 _href=URL(r=request, f='project', args=['update', record_id], vars={'_next': _next})))
                             )
                     )
-                    return pheader
+                    return rheader
 
         return None

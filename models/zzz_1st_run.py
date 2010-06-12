@@ -461,6 +461,7 @@ if empty:
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-TRACK',
             name = 'Track',
+            gps_marker = "TracBack Point",
             module = 'gis',
             resource = 'track'
         )
@@ -479,15 +480,18 @@ if empty:
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-L3',
             name = 'Town',
+            gps_marker = "City (Medium)",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-INCIDENT',
             name = 'Incident',
+            gps_marker = "Danger Area",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SHELTER',
             name = 'Shelter',
             marker_id = db(db.gis_marker.name == 'shelter').select().first().id,
+            gps_marker = "Campground",
             module = 'cr',
             resource = 'shelter'
         )
@@ -495,52 +499,64 @@ if empty:
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-OFFICE',
             name = 'Office',
             marker_id = db(db.gis_marker.name == 'office').select().first().id,
+            gps_marker = "Building",
             module = 'or',
             resource = 'office'
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE',
             name = 'Warehouse',
+            gps_marker = "Building",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT',
             name = 'Airport',
             marker_id = db(db.gis_marker.name == 'airport').select().first().id,
+            gps_marker = "Airport",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-BRIDGE',
             name = 'Bridge',
             marker_id = db(db.gis_marker.name == 'bridge').select().first().id,
+            gps_marker = "Bridge",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT',
             name = 'Port',
             marker_id = db(db.gis_marker.name == 'port').select().first().id,
+            gps_marker = "Marina",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-HOSPITAL',
             name = 'Hospital',
             marker_id = db(db.gis_marker.name == 'hospital').select().first().id,
+            gps_marker = "Medical Facility",
+            module = 'hms',
+            resource = 'hospital'
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-CHURCH',
             name = 'Church',
             marker_id = db(db.gis_marker.name == 'church').select().first().id,
+            gps_marker = "Church",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SCHOOL',
             name = 'School',
             marker_id = db(db.gis_marker.name == 'school').select().first().id,
+            gps_marker = "School",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-FOOD',
             name = 'Food',
             marker_id = db(db.gis_marker.name == 'food').select().first().id,
+            gps_marker = "Restaurant",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-WATER',
             name = 'Water',
             marker_id = db(db.gis_marker.name == 'water').select().first().id,
+            gps_marker = "Drinking Water",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SMS',
@@ -551,6 +567,7 @@ if empty:
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON',
             name = 'Person',
             marker_id = db(db.gis_marker.name == 'person').select().first().id,
+            gps_marker = "Contact, Dreadlocks",
             module = 'pr',
             resource = 'person'
         )
@@ -558,6 +575,7 @@ if empty:
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-VEHICLE',
             name = 'Vehicle',
             marker_id = db(db.gis_marker.name == 'vehicle').select().first().id,
+            gps_marker = "Car",
         )
     tablename = 'gis_feature_group'
     table = db[tablename]

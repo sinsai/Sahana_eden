@@ -32,7 +32,7 @@ if deployment_settings.has_module(module):
 
     opt_lms_unit_type = SQLTable(None, 'opt_lms_unit_type',
                         db.Field('opt_lms_unit_type', 'integer',
-                        requires = IS_IN_SET(lms_unit_type_opts),
+                        requires = IS_IN_SET(lms_unit_type_opts, zero=None),
                         # default = 1,
                         label = T('Unit Set'),
                         represent = lambda opt: lms_unit_type_opts.get(opt, UNKNOWN_OPT)))
@@ -109,7 +109,7 @@ if deployment_settings.has_module(module):
         }
     opt_site_category = SQLTable(None, 'site_category_type',
                             Field('category', 'integer', notnull=True,
-                                requires = IS_IN_SET(site_category_opts),
+                                requires = IS_IN_SET(site_category_opts, zero=None),
                                 # default = 1,
                                 label = T('Category'),
                                 represent = lambda opt: site_category_opts.get(opt, UNKNOWN_OPT)))

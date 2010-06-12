@@ -1,31 +1,89 @@
 {{extend 'layout.html'}}
-<h1>{{=T("Synchronization")}}</h1>
-{{=T("This page provides you with information about how to use the automatic synchronization feature of Sahana")}}.<br /> {{=T("For more information, see ")}}<a href="http://eden.sahanafoundation.org/wiki/BluePrintSynchronisation">{{=T("this")}}</a>.
+<h1>{{=T("Synchronisation")}}</h1>
+{{=T("Synchronization allows you to share data that you have with others and update your own database with latest data from other peers. This page provides you with information about how to use the automatic synchronization feature of SahanaEden")}}. {{=T("For more information, see ")}}<a href="http://eden.sahanafoundation.org/wiki/BluePrintSynchronisation">{{=T("this")}}</a>.
+<br /><br />
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("To begin the sync process, click the button on the right => ")}}
+        </td>
+        <td align="right" nowrap><a href="sync/now">{{=T(">> SYNC NOW <<")}}</a></td>
+    </tr>
+</table>
 <br />
-{{=T("Right now, your system is set default synchronization scheme. You are currently able to synchronize your server with other servers.")}}
 <h3>{{=T("Important")}}</h3>
-<b> {{=T("For enhanced security, you are recommended to enter a username and password, and notify administrators of other machines in your organization to add this username and password against your UUID in Synchronization -> Sync Partners")}}</b>
+<b>{{=T("For enhanced security, you are recommended to enter a username and password, and notify administrators of other machines in your organization to add this username and password against your UUID in Synchronization -> Sync Partners")}}</b>
+<br /><br />
 <h3>{{=T("How does it work?")}}</h3>
 {{=T("Your system has been assigned a unique identification (UUID), which other computers around you can use to identify you. To view your UUID, you may go to Synchronization -> Sync Settings.
 You can also see other settings on that page.")}}<br /><br />
+<h4>{{=T("Offline Sync (from USB/File Backup)")}}</h4>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("Instead of automatically syncing from other peers over the network, you can also sync from files, which is necessary where there's no network. You can use this page to import sync data from files and also export data to sync files. Click the link on the right to go to this page.")}}
+        </td>
+        <td align="right" nowrap><a href="sync/offline">{{=T("> Offline Sync")}}</a></td>
+    </tr>
+</table>
+<br />
 <h4>{{=T("Sync Settings")}}</h4>
-<b>UUID:</b> {{=T("Your unique identification key. It is a 16 character word (aka string). Other servers in your organization will recognize you from this.")}}<br/>
-<b>{{=T("Policy")}}:</b> {{=T("Refers to default syncronization policy adopted if data entry recieved from other machine is already present in your machine.")}}
-		<br/> {{=T("It gives four options: No Sync, Newer Timestamp, Keep All, Replace All")}}
-		<br/> {{=T("A practical example can be of a report of lost person. Now if one machine register him to be found on 16th August and another machine registers him to found on 17th August, then e.g. Newer timestamp will replace data entry of your machine with that of foriegn machine because that is newer one.")}}<br/>
-<b>{{=T("Username & Password")}}:</b> {{=T("Currently your system has default username and password. Username and Password are required by foriegn machines to sync data with your computer. You may set a username and password so that only those machines can fetch and submit data to your machines which your grant access by sharing your password.")}}<br />
-<b>{{=T("Zeroconf Port")}}:</b> {{=T("Sahana has to hook to a network port other than port being used by website (normally port 80). If your firewall blocks this port you have change it to any other free port. For information on eligible ports, see")}} <a href="http://www.iana.org/assignments/port-numbers">{{=T("this")}}</a><br/>
-<b>{{=T("Zeroconf Description")}}:</b> {{=T("You can add information about your organization here. It is the information which other servers can read about you.")}}<br/>
-<b>{{=T("RPC Service URL")}}:</b> {{=T("Required by other servers.")}}<br/><br/>
-
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("You can change the configuration of synchronization module in the Settings section. This configuration includes your UUID (unique identification number), sync schedules, beacon service and so on. Click the following link to go to the Sync Settings page.")}}
+        </td>
+        <td align="right" nowrap><a href="sync/settings">{{=T("> Sync Settings")}}</a></td>
+    </tr>
+</table>
+<br />
 <h4>{{=T("Sync Partners")}}</h4>
-{{=T("If you run multiple servers in a network, you would probably see this place listing some other machines. Sahana can automatically pick servers in your organization (if they have sync username and password of your machine or if it is set to default) and add them to your list of machines to perform synchronization with. You can modify individual sync policy for each server. You can also add username and password of that server to retrieve and send data to that server. You can also manually add other servers.")}} <br />
-<b>UUID:</b> {{=T("UUID of foreign Sahana server")}}<br />
-<b>{{=T("Policy")}}:</b> {{=T("how to deal with duplicate data found between your machine and that particular sahana instance.")}}<br />
-<b>{{=T("Username & Password")}}:</b> {{=T("Authentication information of foreign server.")}}<br /><br />
-
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("Sync Partners are instances or peers (SahanaEden, SahanaAgasti, Ushahidi, etc.) that you want to sync information with. Click on the link on the right to go the page where you can add sync partners, search for sync partners and modify them.")}}
+        </td>
+        <td align="right" nowrap><a href="sync/partners">{{=T(">Sync Partners")}}</a></td>
+    </tr>
+</table>
+<br />
+<h4>{{=T("Sync Pools")}}</h4>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("Sync Pools are groups of peers (SahanaEden & SahanaAgasti instances) willing to sync with each other. You can subscribe to different groups, define new groups and dicsover the existing ones. Click the link on the right to go to Sync Pools page.")}}
+        </td>
+        <td align="right" nowrap><a href="sync/pools">{{=T("> Sync Pools")}}</a></td>
+    </tr>
+</table>
+<br />
+<h4>{{=T("Sync Conflicts")}}</h4>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("When syncing data with others, conflicts happen in cases when two (or more) parties want to sync information which both of them have modified, i.e. conflicting information. Sync module tries to resolve such conflicts automatically but in some cases it can't. In those cases, it is up to you to resolve those conflicts manually, click on the link on the right to go to this page.")}}
+        </td>
+        <td align="right" nowrap><a href="sync/conflicts">{{=T("> Sync Conflicts")}}</a></td>
+    </tr>
+</table>
+<br />
+<h4>{{=T("Sync Schedule")}}</h4>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("For each sync partner, there is a default sync job that runs after a specified interval of time. You can also set up more sync jobs which could be customized on your needs. Click the link on the right to get started.")}}
+        </td>
+        <td align="right" nowrap><a href="sync/schedule">{{=T("> Sync Schedule")}}</a></td>
+    </tr>
+</table>
+<br />
 <h4>{{=T("Sync History")}}</h4>
-{{=T("Here you will find all synchronization attempts made by either your machine or foreign machines for data exchange. This also lists data exchanges made using Sahana API.")}}<br/>
-<b>{{=T("Operation")}}:</b> {{=T("Which API function was called, it can only have two values: getdata refers to data export operation and putdata refers to data import operation.")}}<br/>
-<b>{{=T("Time Stamp")}}:</b> {{=T("Time at which data was exchanged.")}}<br/>
-<b>UUID:</b> {{=T("Machine with which data was exchanged.")}}
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="left">
+            {{=T("This page shows you logs of past syncs. Click on the link below to go to this page.")}}
+        </td>
+        <td align="right" nowrap><a href="sync/history">{{=T("> Sync History")}}</a></td>
+    </tr>
+</table>
+<br /><br />

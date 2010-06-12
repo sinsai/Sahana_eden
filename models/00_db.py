@@ -13,7 +13,7 @@ request.utcnow = datetime.datetime.utcnow()
 # Database Configuration
 ########################
 
-migrate = deployment_settings.base.get("migrate", True)
+migrate = deployment_settings.get_base_migrate()
 
 db_string = deployment_settings.get_database_string()
 if isinstance(db_string, str):

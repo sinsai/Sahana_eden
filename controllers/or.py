@@ -60,7 +60,12 @@ def organisation():
     "RESTlike CRUD controller"
     # ServerSidePagination
     response.s3.pagination = True
-    return shn_rest_controller(module, 'organisation', listadd=False)
+    output = shn_rest_controller(module, 'organisation', listadd=False)
+    if response.s3.or_redirect:
+        session.flash = T("Submission Succesful")
+        redirect(response.s3.or_redirect)
+    else:
+        return output
 
 @service.jsonrpc
 @service.xmlrpc

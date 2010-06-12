@@ -35,16 +35,24 @@ class S3Config(Storage):
         if (db_type == "sqlite"):
             db_string = "sqlite://storage.db"
         elif (db_type == "mysql"):
-            db_string = "mysql://%s:%s@%s/%s" % (self.database.get("username", "sahana"), self.database.get("password", "password"), self.database.get("host", "localhost"), self.database.get("database", "sahana"))
+            db_string = "mysql://%s:%s@%s/%s" % \
+                        (self.database.get("username", "sahana"),
+                         self.database.get("password", "password"),
+                         self.database.get("host", "localhost"),
+                         self.database.get("database", "sahana"))
         elif (db_type == "postgres"):
-            db_string = "postgres://%s:%s@%s/%s" % (self.database.get("username", "sahana"), self.database.get("password", "password"), self.database.get("host", "localhost"), self.database.get("database", "sahana"))
+            db_string = "postgres://%s:%s@%s/%s" % \
+                        (self.database.get("username", "sahana"),
+                         self.database.get("password", "password"),
+                         self.database.get("host", "localhost"),
+                         self.database.get("database", "sahana"))
         else:
             raise HTTP(501, body="Database type '%s' not recognised - please correct file models/000_config.py." % db_type)
         if pool_size:
             return (db_string, pool_size)
         else:
             return db_string
-    
+
     # Mail settings
     def get_mail_server(self):
         return self.mail.get("server", "127.0.0.1:25")

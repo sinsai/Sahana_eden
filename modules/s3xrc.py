@@ -3,7 +3,7 @@
 """
     S3XRC Resource Framework
 
-    @version: 1.7
+    @version: 1.8
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -2311,26 +2311,19 @@ class S3Vector(object):
     """ Helper class for data imports """
 
     METHOD = Storage(
-        create="create",
-        update="update"
-    )
-
-    STRATEGY = Storage(
-        create="create",
-        update="update",
-        replace="replace",
-        merge="merge",
-        skip="skip"
+        CREATE="create",
+        UPDATE="update"
     )
 
     RESOLUTION = Storage(
-        this="THIS",
-        other="OTHER",
-        newer="NEWER",
-        vote="VOTE"
+        THIS="THIS",        # keep local instance
+        OTHER="OTHER",      # import other instance
+        NEWER="NEWER",      # import other only if newer
+        #vote="VOTE"        # not yet implemented
     )
 
     UID = "uuid"
+    MTIME = "modified_on"
 
 
     def __init__(self, db, prefix, name, id,
@@ -2388,9 +2381,10 @@ class S3Vector(object):
         self.update = []
 
         self.method = None
+        self.strategy = [self.METHOD.CREATE, self.METHOD.UPDATE]
 
-        self.strategy = (self.STRATEGY.create, self.STRATEGY.update)
-        self.resolution = (self.RESOLUTION.other)
+        self.resolution = self.RESOLUTION.OTHER
+        self.default_resolution = self.RESOLUTION.THIS
 
         self.onvalidation=onvalidation
         self.onaccept=onaccept
@@ -2405,32 +2399,33 @@ class S3Vector(object):
         uid = self.record.get(self.UID, None)
         if not self.id:
             self.id = 0
-            self.method = permission = self.METHOD.create
+            self.method = permission = self.METHOD.CREATE
             if uid and self.UID in self.table:
                 query = (self.table[self.UID] == uid)
-                orig = self.db(query).select(self.table.ALL, limitby=(0, 1))
+                orig = self.db(query).select(self.table.id, limitby=(0, 1))
                 if orig:
                     self.id = orig.first().id
-                    self.method = permission = self.METHOD.update
+                    self.method = permission = self.METHOD.UPDATE
         else:
-            self.method = permission = self.METHOD.update
+            self.method = permission = self.METHOD.UPDATE
             if not self.db(self.table.id == id).count():
                 self.id = 0
-                self.method = permission = self.METHOD.create
-            else:
-                if self.UID in self.record:
-                    del self.record[self.UID]
+                self.method = permission = self.METHOD.CREATE
+            # Unclear what this has once been good for, uncomment if necessary:
+            #else:
+                #if self.UID in self.record:
+                    #del self.record[self.UID]
 
-        if permit and not \
+        # Do allow import to tables with these prefixes:
+        if self.prefix in ("auth", "admin", "s3"):
+            self.permitted=False
+
+        # ...or check permission explicitly:
+        elif permit and not \
            permit(permission, self.tablename, record_id=self.id):
             self.permitted=False
 
-        if self.prefix == "auth" or \
-           self.prefix == "admin" or \
-           self.prefix == "s3":
-            self.permitted=False
-
-        # Once the vector has been created, update the entry in the vector directory
+        # Once the vector has been created, update the entry in the directory
         uid = self.record.get(self.UID, None)
         if uid and \
            directory is not None and self.tablename in directory:
@@ -2441,19 +2436,38 @@ class S3Vector(object):
 
     # Data import =============================================================
 
+    def get_resolution(self, field):
+
+        """ Find Sync resolution for a particular field in this record
+
+            @param field: the field name
+
+        """
+
+        if isinstance(self.resolution, dict):
+            r = self.resolution.get(field, self.default_resolution)
+        else:
+            r = self.resolution
+        if not r in self.RESOLUTION.values():
+            r = self.default_resolution
+        return r
+
+
     def commit(self):
 
         """ Commits the vector to the database """
 
-        self.resolve()
+        self.resolve() # Resolve references
+
+        skip_components = False
 
         if not self.committed:
             if self.accepted and self.permitted:
 
                 #print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
 
-                # Create pseudoform
-                form = Storage() # PseudoForm for callbacks
+                # Create pseudoform for callbacks
+                form = Storage()
                 form.method = self.method
                 form.vars = self.record
                 form.vars.id = self.id
@@ -2463,43 +2477,72 @@ class S3Vector(object):
                 if self.onvalidation:
                     self.onvalidation(form)
                 if form.errors:
-                    #print form.errors
+                    #print >> sys.stderr, form.errors
                     if self.element:
                         #TODO: propagate errors to element
                         pass
                     return False
 
-                # Call Sync resolver
+                # Call Sync resolver+logger
                 if self.sync:
                     self.sync(self)
-
-                # Call Sync logger
                 if self.log:
                     self.log(self)
 
-                if self.method == self.METHOD.update:
-                    try:
-                        self.record.update(deleted=False) # Undelete re-imported records!
-                        success = self.db(self.table.id == self.id).update(
-                                    **dict(self.record))
-                        if self.components:
-                            db_record = self.db(self.table.id == self.id).select(
-                                            self.table.ALL)[0]
-                    except:
-                        return False
-                    if success:
+                # Check for strategy
+                if not isinstance(self.strategy, (list, tuple)):
+                    self.strategy = [self.strategy]
+
+                if self.method not in self.strategy:
+                    # Skip this record ----------------------------------------
+
+                    # Do not create/update components when skipping primary
+                    skip_components = True
+
+                elif self.method == self.METHOD.UPDATE:
+                    # Update existing record ----------------------------------
+
+                    # Merge as per Sync resolution:
+                    query = (self.table.id == self.id)
+                    this = self.db(query).select(self.table.ALL, limitby=(0,1))
+                    if this:
+                        this = this.first()
+                        if self.MTIME in self.table.fields:
+                            this_mtime = this[self.MTIME]
+                        else:
+                            this_mtime = None
+                        for f in self.record.keys():
+                            r = self.get_resolution(f)
+                            if r == self.RESOLUTION.THIS:
+                                del self.record[f]
+                            elif r == self.RESOLUTION.NEWER:
+                                if this_mtime and \
+                                   this_mtime > self.mtime:
+                                    del self.record[f]
+
+                    if len(self.record):
+                        try:
+                            self.record.update(deleted=False) # Undelete re-imported records!
+                            success = self.db(self.table.id == self.id).update(**dict(self.record))
+                        except: # TODO: propagate error to XML importer
+                            return False
+                        if success:
+                            self.committed = True
+                    else:
                         self.committed = True
-                elif self.method == self.METHOD.create:
+
+                elif self.method == self.METHOD.CREATE:
+                    # Create new record ---------------------------------------
+
                     try:
                         success = self.table.insert(**dict(self.record))
-                        if self.components:
-                            db_record = self.db(self.table.id == success).select(
-                                            self.table.ALL)[0]
-                    except:
+                    except: # TODO: propagate error to XML importer
                         return False
                     if success:
                         self.id = success
                         self.committed = True
+
+                # audit + onaccept on successful commits
                 if self.committed:
                     form.vars.id = self.id
                     if self.audit:
@@ -2507,23 +2550,30 @@ class S3Vector(object):
                                    form=form, record=self.id, representation="xml")
                     if self.onaccept:
                         self.onaccept(form)
-                else:
-                    return False
 
-        for i in xrange(0, len(self.components)):
-            component = self.components[i]
-            pkey = component.pkey
-            fkey = component.fkey
-            component.record[fkey] = db_record[pkey]
-            component.commit()
+        # Load record if components pending
+        if self.id and self.components and not skip_components:
+            db_record = self.db(self.table.id == self.id).select(self.table.ALL)
+            if db_record:
+                db_record = db_record.first()
 
-        if self.update:
+            # Commit components
+            for i in xrange(0, len(self.components)):
+                component = self.components[i]
+                pkey = component.pkey
+                fkey = component.fkey
+                component.record[fkey] = db_record[pkey]
+                component.commit()
+
+        # Update referencing vectors
+        if self.update and self.id:
             for u in self.update:
                 vector = u.get("vector", None)
                 if vector:
                     field = u.get("field", None)
                     vector.writeback(field, self.id)
 
+        # Phew...done!
         return True
 
 
@@ -2562,9 +2612,6 @@ class S3Vector(object):
         if self.id and self.permitted:
             self.db(self.table.id == self.id).update(**{field:value})
 
-
-    def merge(self):
-        pass
 
 # *****************************************************************************
 class S3XML(object):

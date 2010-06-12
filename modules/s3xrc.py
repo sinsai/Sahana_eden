@@ -2430,13 +2430,14 @@ class S3Vector(object):
            self.prefix == "s3":
             self.permitted=False
 
-        # Once the vector has been created, update the entry in the demand map
+        # Once the vector has been created, update the entry in the vector directory
         uid = self.record.get(self.UID, None)
         if uid and \
            directory is not None and self.tablename in directory:
             entry = directory[self.tablename].get(uid, None)
             if entry:
                 entry.update(vector=self)
+
 
     # Data import =============================================================
 
@@ -2468,10 +2469,14 @@ class S3Vector(object):
                         pass
                     return False
 
+                # Call Sync resolver
                 if self.sync:
                     self.sync(self)
+
+                # Call Sync logger
                 if self.log:
                     self.log(self)
+
                 if self.method == self.METHOD.update:
                     try:
                         self.record.update(deleted=False) # Undelete re-imported records!
@@ -2521,6 +2526,7 @@ class S3Vector(object):
 
         return True
 
+
     def resolve(self):
 
         """ Resolve references of this record """
@@ -2543,6 +2549,7 @@ class S3Vector(object):
                             del self.record[r.field]
                         vector.update.append(dict(vector=self, field=r.field))
 
+
     def writeback(self, field, value):
 
         """ Update a field in the record
@@ -2554,6 +2561,10 @@ class S3Vector(object):
 
         if self.id and self.permitted:
             self.db(self.table.id == self.id).update(**{field:value})
+
+
+    def merge(self):
+        pass
 
 # *****************************************************************************
 class S3XML(object):
@@ -2568,10 +2579,12 @@ class S3XML(object):
 
     UID = "uuid"
     MTIME = "modified_on"
+
+    # GIS field names
     Lat = "lat"
     Lon = "lon"
+    FeatureClass = "feature_class_id"
     #Marker = "marker_id"
-    #FeatureClass = "feature_class_id"
 
     IGNORE_FIELDS = ["deleted", "id"]
 
@@ -2971,7 +2984,7 @@ class S3XML(object):
             return
 
         db = self.db
-        
+
         references = filter(lambda r:
                             r.element is not None and \
                             self.Lat in self.db[r.table].fields and \
@@ -2982,8 +2995,9 @@ class S3XML(object):
             r = references[i]
             ktable = db[r.table]
             LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
-                                                       ktable[self.Lon],
-                                                       limitby=(0, 1))
+                                                  ktable[self.Lon],
+                                                  ktable[self.FeatureClass],
+                                                  limitby=(0, 1))
             if LatLon:
                 LatLon = LatLon.first()
                 if LatLon[self.Lat] is not None and \
@@ -3003,8 +3017,11 @@ class S3XML(object):
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
                     symbol = None
+                    fctbl = db.gis_feature_class
+                    query = (fctbl.id == str(LatLon[self.FeatureClass]))
                     try:
-                        symbol = db(db.gis_feature_class.id == r.feature_class_id).select().first().gps_marker
+                        symbol = db(query).select(fctbl.gps_marker,
+                                                  limitby=(0, 1)).first().gps_marker
                     except:
                         # No Feature Class
                         pass

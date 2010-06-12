@@ -1663,7 +1663,7 @@ def display_feature():
 def display_features():
     """
     Cut-down version of the Map Viewing Client.
-    Used as a link from the PHeader.
+    Used as a link from the RHeader.
         URL generated server-side
     Shows all locations matching a query.
     Most recent location is marked using a bigger Marker.

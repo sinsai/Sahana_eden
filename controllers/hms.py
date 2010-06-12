@@ -147,7 +147,7 @@ def hpledge():
 # -----------------------------------------------------------------------------
 def shn_hms_hrequest_rheader(resource, record_id, representation, next=None, same=None):
 
-    """ Request PHeader """
+    """ Request RHeader """
 
     if representation == "html":
 

@@ -162,17 +162,18 @@ organisation_id = SQLTable(None, "organisation_id",
                           ))
 
 def organisation_onaccept(form):
-    # This does not work:
-    # a) request.vars.format does not always contain the representation
-    # b) redirection not allowed => onaccept is executed by XML importer!
-    session.flash = T("Submission Succesful")
+    # Do not redirect from onaccept directly, because that
+    # would break XML imports! Instead, set a redirect URL
+    # in response, and redirect from the controller
     if request.vars.format == "popup":
-        redirect(organisation_popup_url + "&caller=" + request.vars.caller)
+        response.s3.or_redirect = organisation_popup_url + \
+                                  "&caller=" + request.vars.caller
     else:
         f="dashboard"
-        redirect(URL(r=request, f=f, args=form.vars.id))
+        response.s3.or_redirect = URL(r=request, f=f, args=form.vars.id)
 
-#s3xrc.model.configure(table, onaccept=lambda form: organisation_onaccept(form))
+s3xrc.model.configure(table,
+                      onaccept=lambda form: organisation_onaccept(form))
 
 # Orgs as component of Clusters
 s3xrc.model.add_component(module, resource,

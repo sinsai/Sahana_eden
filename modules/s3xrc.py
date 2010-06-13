@@ -34,7 +34,7 @@
 """
 
 __name__ = "S3XRC"
-__all__ = ["S3RESTController", "S3RESTRequest", "S3ResourceController"]
+__all__ = ["S3RESTController", "S3ResourceController"]
 
 import sys, uuid, datetime, time
 import gluon.contrib.simplejson as json
@@ -1047,34 +1047,30 @@ class S3RESTRequest(object):
             else:
                 joins = self.rc.model.get_components(self.prefix, self.name)
 
-        if "start" in self.request.vars:
-            start = int(self.request.vars["start"])
-        else:
-            start = None
-
-        if "limit" in self.request.vars:
-            limit = int(self.request.vars["limit"])
-        else:
-            limit = None
-
-        if "marker" in self.request.vars:
-            # Override marker for displaying KML feeds
-            marker = self.request.vars["marker"]
-        else:
-            marker = None
-
-        if "msince" in self.request.vars:
-            tfmt = "%Y-%m-%dT%H:%M:%SZ"
-            dstr = self.request.vars.get("msince", None)
-
+        start = self.request.vars.get("start", None)
+        if start is not None:
             try:
-                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dstr, tfmt)
-                dt = datetime.datetime(y,m,d,hh,mm,ss)
+                start = int(self.request.vars["start"])
             except ValueError:
-                dt = None
-            msince = dt
-        else:
-            msince = None
+                start = None
+
+        limit = self.request.vars.get("limit", None)
+        if limit is not None:
+            try:
+                limit = int(self.request.vars["limit"])
+            except ValueError:
+                limit = None
+
+        marker = self.request.vars.get("marker", None)
+
+        msince = self.request.vars.get("msince", None)
+        if msince is not None:
+            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
+                msince = datetime.datetime(y,m,d,hh,mm,ss)
+            except ValueError:
+                msince = None
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                   joins=joins,
@@ -1165,15 +1161,19 @@ class S3RESTRequest(object):
         return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
-    def import_xml(self, tree, permit=None, audit=None):
+    def import_xml(self, tree, permit=None, audit=None, push_limit=1):
 
         """ import the requested resources from an element tree
 
             @param tree: the element tree
             @param permit: permit hook (function to check table permissions)
             @param audit: audit hook (function to audit table access)
+            @param push_limit: number of resources allowed in pushes
 
         """
+
+        if self.http not in ("PUT", "POST"):
+            push_limit = None
 
         if self.component:
             skip_resource = True
@@ -1204,6 +1204,7 @@ class S3RESTRequest(object):
                                   skip_resource=skip_resource,
                                   permit=permit,
                                   audit=audit,
+                                  push_limit=push_limit,
                                   ignore_errors=ignore_errors)
 
 
@@ -2080,6 +2081,7 @@ class S3ResourceController(object):
                    skip_resource=False,
                    permit=None,
                    audit=None,
+                   push_limit=None,
                    ignore_errors=False):
 
         """ Imports data from an element tree
@@ -2134,6 +2136,11 @@ class S3ResourceController(object):
 
         if joins is None:
             joins = []
+
+        if push_limit is not None and \
+           len(elements) > push_limit:
+            self.error = S3XRC_NOT_PERMITTED
+            return False
 
         # Import all matching elements
         imports = []

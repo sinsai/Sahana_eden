@@ -36,7 +36,7 @@
 __name__ = "S3XRC"
 __all__ = ["S3RESTController", "S3RESTRequest", "S3ResourceController"]
 
-import sys, uuid, datetime
+import sys, uuid, datetime, time
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -1063,11 +1063,25 @@ class S3RESTRequest(object):
         else:
             marker = None
 
+        if "msince" in self.request.vars:
+            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+            dstr = self.request.vars.get("msince", None)
+
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dstr, tfmt)
+                dt = datetime.datetime(y,m,d,hh,mm,ss)
+            except ValueError:
+                dt = None
+            msince = dt
+        else:
+            msince = None
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                   joins=joins,
                                   filterby=filterby,
                                   permit=permit,
                                   audit=audit,
+                                  msince=msince,
                                   start=start,
                                   limit=limit,
                                   marker=marker)
@@ -1126,6 +1140,8 @@ class S3RESTRequest(object):
             limit = int(self.request.vars["limit"])
         else:
             limit = None
+
+        # marker and msince not supported in JSON
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins,
@@ -1723,6 +1739,7 @@ class S3ResourceController(object):
                    start=None,
                    limit=None,
                    marker=None,
+                   msince=None,
                    show_urls=True,
                    dereference=True):
 
@@ -1739,6 +1756,7 @@ class S3ResourceController(object):
             @param start: starting record (for server-side pagination)
             @param limit: page size (for server-side pagination)
             @marker: URL to override map marker URL in location references
+            @msince: report only resources which have been modified since that datetime
             @show_urls: show resource URLs in <resource> elements
             @dereference: include referenced resources into the export
 
@@ -1770,7 +1788,7 @@ class S3ResourceController(object):
         if filterby:
             query = (filterby) & query
 
-        results = self.db(query).count()
+        #results = self.db(query).count()
 
         # Server-side pagination
         if start is not None: # can't be 'if start': 0 is a valid value
@@ -1804,8 +1822,10 @@ class S3ResourceController(object):
                 (c, pkey, fkey) = joins[i]
                 pkeys = map(lambda r: r[pkey], records)
                 cquery = (c.table[fkey].belongs(pkeys))
-                if "deleted" in c.table:
+                if "deleted" in c.table.fields:
                     cquery = (c.table.deleted == False) & cquery
+                if msince and "modified_on" in c.table.fields:
+                    cquery = (c.table.modified_on >= msince) & cquery
                 cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
                 _skip = [fkey,]
                 if skip:
@@ -1841,12 +1861,6 @@ class S3ResourceController(object):
             self.xml.gis_encode(rmap,
                                 download_url=self.download_url,
                                 marker=marker)
-            ref_map.extend(rmap)
-            resources.append(resource)
-            if exp_map.get(table._tablename, None):
-                exp_map[table._tablename].append(record.id)
-            else:
-                exp_map[table._tablename] = [record.id]
 
             # Export components of this record
             r_url = "%s/%s" % (url, record.id)
@@ -1886,6 +1900,21 @@ class S3ResourceController(object):
                         exp_map[c.tablename].append(crecord.id)
                     else:
                         exp_map[c.tablename] = [crecord.id]
+
+            if msince and "modified_on" in table.fields:
+                mtime = record.get("modified_on", None)
+                if mtime and mtime < msince and \
+                   not len(resource.findall("resource")):
+                    continue
+
+            ref_map.extend(rmap)
+            resources.append(resource)
+            if exp_map.get(table._tablename, None):
+                exp_map[table._tablename].append(record.id)
+            else:
+                exp_map[table._tablename] = [record.id]
+
+        results = len(resources)
 
         # Add referenced resources to the tree
         depth = dereference and self.MAX_DEPTH or 0

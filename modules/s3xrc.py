@@ -1214,7 +1214,10 @@ class S3RESTRequest(object):
 
         fields = self.request.vars.get("field", None)
         if fields and not isinstance(fields, list):
-            fields = [fields]
+            if "," in fields:
+                fields = fields.split(",")
+            else:
+                fields = [fields]
 
         if not fields:
             if self.component:

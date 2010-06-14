@@ -76,7 +76,7 @@ def person():
     output = shn_rest_controller(module, "person",
         main="first_name",
         extra="last_name",
-        pheader=shn_pr_pheader,
+        rheader=shn_pr_rheader,
         list_fields=shn_pr_person_list_fields(),
         rss=dict(
             title=shn_pr_person_represent,
@@ -94,7 +94,7 @@ def group():
     return shn_rest_controller(module, "group",
                                main="group_name",
                                extra="group_description",
-                               pheader=shn_pr_pheader,
+                               rheader=shn_pr_rheader,
                                deletable=False)
 
 # -----------------------------------------------------------------------------
@@ -105,7 +105,7 @@ def image():
 # -----------------------------------------------------------------------------
 def pe_contact():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "contact")
+    return shn_rest_controller(module, "pe_contact")
 
 # -----------------------------------------------------------------------------
 def address():

@@ -24,7 +24,7 @@ table = db.define_table(tablename,
 #
 opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
                               Field("opt_pr_entity_type", "integer",
-                                    requires = IS_IN_SET(vita.trackable_types),
+                                    requires = IS_IN_SET(vita.trackable_types, zero=None),
                                     default = vita.DEFAULT_TRACKABLE,
                                     label = T("Entity Type"),
                                     represent = lambda opt:
@@ -218,7 +218,7 @@ pr_person_gender_opts = {
 
 opt_pr_gender = SQLTable(None, "opt_pr_gender",
                     Field("opt_pr_gender", "integer",
-                        requires = IS_IN_SET(pr_person_gender_opts),
+                        requires = IS_IN_SET(pr_person_gender_opts, zero=None),
                         default = 1,
                         label = T("Gender"),
                         represent = lambda opt: pr_person_gender_opts.get(opt, UNKNOWN_OPT)))
@@ -237,7 +237,7 @@ pr_person_age_group_opts = {
 
 opt_pr_age_group = SQLTable(None, "opt_pr_age_group",
                     Field("opt_pr_age_group", "integer",
-                        requires = IS_IN_SET(pr_person_age_group_opts),
+                        requires = IS_IN_SET(pr_person_age_group_opts, zero=None),
                         default = 1,
                         label = T("Age Group"),
                         represent = lambda opt:
@@ -307,16 +307,21 @@ opt_pr_country = SQLTable(None, "opt_pr_country",
 # shn_pr_person_represent -----------------------------------------------------
 #
 def shn_pr_person_represent(id):
-    table = db.pr_person
-    person = db(table.id == id).select(
-                table.first_name,
-                table.middle_name,
-                table.last_name,
-                limitby=(0, 1))
-    if person:
-        return vita.fullname(person[0])
-    else:
-        return None
+
+    def _represent(id):
+        table = db.pr_person
+        person = db(table.id == id).select(
+                    table.first_name,
+                    table.middle_name,
+                    table.last_name,
+                    limitby=(0, 1))
+        if person:
+            return vita.fullname(person[0])
+        else:
+            return None
+
+    name = cache.ram("pr_person_%s" % id, lambda: _represent(id), time_expire=10)
+    return name
 
 #
 # person table ----------------------------------------------------------------
@@ -437,11 +442,11 @@ pr_group_type_opts = {
     }
 
 opt_pr_group_type = SQLTable(None, "opt_pr_group_type",
-                    Field("opt_pr_group_type", "integer",
-                        requires = IS_IN_SET(pr_group_type_opts),
-                        default = 4,
-                        label = T("Group Type"),
-                        represent = lambda opt: pr_group_type_opts.get(opt, UNKNOWN_OPT)))
+                             Field("opt_pr_group_type", "integer",
+                                   requires = IS_IN_SET(pr_group_type_opts, zero=None),
+                                   default = 4,
+                                   label = T("Group Type"),
+                                   represent = lambda opt: pr_group_type_opts.get(opt, UNKNOWN_OPT)))
 
 #
 # group table -----------------------------------------------------------------
@@ -635,7 +640,7 @@ s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_p
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
+def shn_pr_rheader(resource, record_id, representation, next=None, same=None):
 
     """
         Person Registry page headers
@@ -657,7 +662,7 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
             person = vita.person(record_id)
 
             if person:
-                pheader = DIV(TABLE(
+                rheader = DIV(TABLE(
                     TR(
                         TH(T("Name: ")),
                         vita.fullname(person),
@@ -687,9 +692,9 @@ def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
                         #A(T("Addresses"), _href=URL(r=request, f="person", args=[record_id, "address"], vars={"_next": _next})),
                         #A(T("Contact Information"), _href=URL(r=request, f="person", args=[record_id, "pe_contact"], vars={"_next": _next})),
                         #A(T("Presence Log"), _href=URL(r=request, f="person", args=[record_id, "presence"], vars={"_next": _next})),
-                        #_class="pheader_tabs"
+                        #_class="rheader_tabs"
                 ))
-                return pheader
+                return rheader
 
         else:
             pass

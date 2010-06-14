@@ -69,7 +69,7 @@ if deployment_settings.has_module(module):
                         shelter_id,
                         Field('opt_nim_care_strategy',
                             'integer',
-                            requires = IS_IN_SET(nim_care_strategy_opts),
+                            requires = IS_IN_SET(nim_care_strategy_opts, zero=None),
                             default = 99,
                             label = T('Care Strategy'),
                             represent = lambda opt: nim_care_strategy_opts.get(opt, UNKNOWN_OPT)),

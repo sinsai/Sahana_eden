@@ -81,6 +81,7 @@ def test():
                 catalogue_toolbar = True,
                 toolbar = True,
                 search = True,
+                #print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},
                 #mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
                 window = True,
                 )
@@ -175,6 +176,8 @@ def feature_class():
     # Model options
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
+    table.gps_marker.label = T("GPS Marker")
+    table.gps_marker.comment = DIV( _class="tooltip", _title=T("GPS Marker|Defines the icon used for display of features on handheld GPS."))
     table.description.label = T("Description")
     table.module.label = T("Module")
     table.resource.label = T("Resource")
@@ -349,7 +352,7 @@ def projection():
     "RESTlike CRUD controller"
     resource = "projection"
     tablename = module + "_" + resource
-    table = db[table]
+    table = db[tablename]
 
     # Model options
     table.name.label = T("Name")
@@ -1270,12 +1273,12 @@ def layers():
         if layer.marker_id:
             layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select().first().image
         else:
-            marker_id = db(db.gis_config.id==1).select().first().marker_id
+            marker_id = db(db.gis_config.id == 1).select().first().marker_id
             layers.georss[name].marker = db(db.gis_marker.id == marker_id).select().first().image
 
     # KML
     layers.kml = Storage()
-    layers_kml = db(db.gis_layer_kml.enabled==True).select()
+    layers_kml = db(db.gis_layer_kml.enabled == True).select()
     if layers_kml and not cache:
         response.warning += cachepath + " " + str(T("not writable - unable to cache KML layers!")) + "\n"
 
@@ -1661,7 +1664,7 @@ def display_feature():
 def display_features():
     """
     Cut-down version of the Map Viewing Client.
-    Used as a link from the PHeader.
+    Used as a link from the RHeader.
         URL generated server-side
     Shows all locations matching a query.
     Most recent location is marked using a bigger Marker.

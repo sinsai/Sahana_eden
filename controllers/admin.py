@@ -18,23 +18,46 @@ response.menu_options = admin_menu_options
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     return dict(module_name=module_name)
 
 @auth.requires_membership('Administrator')
 def setting():
     "RESTlike CRUD controller"
+
+    table = db.s3_setting
+
+    table.admin_name.label = T("Admin Name")
+    table.admin_email.label = T("Admin Email")
+    table.admin_tel.label = T("Admin Tel")
+    table.utc_offset.label = T("UTC Offset")
+    table.theme.label = T("Theme")
+    table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox", _href=URL(r=request, c="admin", f="theme", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Theme"))),
+    table.debug.label = T("Debug")
+    table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
+    table.self_registration.label = T("Self Registration")
+    table.self_registration.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Self-registration|Can users register themselves for authenticated login access?"))
+    table.security_policy.label = T("Security Policy")
+    table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
+    table.archive_not_delete.label = T("Archive not Delete")
+    table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Archive not Delete|If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
+    table.audit_read.label = T("Audit Read")
+    table.audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Read|If enabled then a log is maintained of all records a user accesses. If disabled then it can still be enabled on a per-module basis."))
+    table.audit_write.label = T("Audit Write")
+    table.audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Write|If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
+
     s3.crud_strings.setting.title_update = T('Edit Settings')
     s3.crud_strings.setting.msg_record_modified = T('Settings updated')
     s3.crud_strings.setting.label_list_button = None
-    #crud.settings.update_next = URL(r=request, args=['update', 1])
-    s3xrc.model.configure(db.s3_setting,
+    #crud.settings.update_next = URL(r=request, args=[1, 'update'])
+    
+    s3xrc.model.configure(table,
                           onvalidation=theme_check,
                           onaccept=theme_apply)
     return shn_rest_controller('s3', 'setting', deletable=False, listadd=False)
-    s3xrc.model.clear_config(db.s3_setting, "onvalidation", "onaccept")
+    s3xrc.model.clear_config(table, "onvalidation", "onaccept")
 
 @auth.requires_membership('Administrator')
 def theme():
@@ -54,7 +77,7 @@ def theme():
     table.footer.label = T('Footer')
     table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
     table.text_direction.label = T('Text Direction')
-    table.text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')})
+    table.text_direction.requires = IS_IN_SET({'ltr':T('Left-to-Right'), 'rtl':T('Right-to-Left')}, zero=None)
     table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
     table.col_background.label = T('Background Colour')
     table.col_background.requires = IS_HTML_COLOUR()
@@ -426,7 +449,7 @@ def users():
     except TypeError, ValueError:
         session.error = T("Need to specify a role!")
         redirect(URL(r=request, f='group'))
-    
+
     table = db.auth_membership
     query = table.group_id == group
     title = str(T('Role')) + ': ' + db.auth_group[group].role
@@ -496,13 +519,13 @@ def group_remove_users():
 @auth.requires_membership('Administrator')
 def groups():
     "List/amend which groups a User is in"
-    
+
     try:
         user = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a user!")
         redirect(URL(r=request, f='user'))
-    
+
     table = db.auth_membership
     query = table.user_id == user
     title = db.auth_user[user].first_name + ' ' + db.auth_user[user].last_name

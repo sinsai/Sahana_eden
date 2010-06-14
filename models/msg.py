@@ -25,7 +25,7 @@ if deployment_settings.has_module(module):
                     #Field('outbound_mail_server'),
                     #Field('outbound_mail_from'),
                     migrate=migrate)
-    table.inbound_mail_type.requires = IS_IN_SET(['imap', 'pop3'])
+    table.inbound_mail_type.requires = IS_IN_SET(['imap', 'pop3'], zero=None)
     table.inbound_mail_port.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP)."))
     table.inbound_mail_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Delete|If this is set to True then mails will be deleted from the server after downloading."))
 
@@ -47,7 +47,7 @@ if deployment_settings.has_module(module):
 
     opt_msg_status = db.Table(None, 'opt_msg_status',
                         Field('status', 'integer', notnull=True,
-                        requires = IS_IN_SET(msg_status_type_opts),
+                        requires = IS_IN_SET(msg_status_type_opts, zero=None),
                         default = 1,
                         label = T('Status'),
                         represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
@@ -62,7 +62,7 @@ if deployment_settings.has_module(module):
                     Field('body', 'text'),
                     Field("pr_message_method",
                       "integer",
-                      requires = IS_IN_SET(pr_contact_method_opts),
+                      requires = IS_IN_SET(pr_contact_method_opts, zero=None),
                       default = 1,
                       label = T("Contact Method"),
                       represent = lambda opt: pr_contact_method_opts.get(opt, UNKNOWN_OPT)),

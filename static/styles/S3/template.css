@@ -482,10 +482,10 @@ div.toolbar-container { width: 100%;
                 color: #000000 }
 
 /* Joined Resources */
-div#pheader table { width: 100%; }
-div#pheader th { text-align: left;
+div#rheader table { width: 100%; }
+div#rheader th { text-align: left;
                  width: 10%; }
-div#pheader td { text-align: left;
+div#rheader td { text-align: left;
                  padding: 1px 6px 1px 1px;
                  width: 20%; }
 

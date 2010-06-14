@@ -82,7 +82,7 @@ GEOM_TYPES = {
 class GIS(object):
     """ GIS functions """
 
-    def __init__(self, environment, db, auth=None):
+    def __init__(self, environment, db, auth=None, cache=None):
         self.environment = Storage(environment)
         self.request = self.environment.request
         self.response = self.environment.response
@@ -90,6 +90,7 @@ class GIS(object):
         self.T = self.environment.T
         assert db is not None, "Database must not be None."
         self.db = db
+        self.cache = cache and (cache.ram, 60) or None
         assert auth is not None, "Undefined authentication controller"
         self.auth = auth
         self.messages = Messages(None)
@@ -120,8 +121,7 @@ class GIS(object):
 
         db = self.db
 
-        config = db(db.gis_config.id == 1).select().first()
-
+        config = db(db.gis_config.id == 1).select(cache=self.cache).first()
         return config
 
     def download_kml(self, url, public_url):
@@ -328,52 +328,70 @@ class GIS(object):
         return features
 
     def get_marker(self, feature_id):
-        """
-            Returns the Marker URL for a Feature
+
+        """ Returns the Marker URL for a Feature
+
+            @param feature_id: the feature ID (int) or UUID (str)
+
         """
 
         db = self.db
+        table_feature = db.gis_location
+        table_marker = db.gis_marker
+        table_fclass = db.gis_feature_class
+        table_symbology = db.gis_symbology_to_feature_class
 
         config = self.config_read()
         symbology = config.symbology_id
 
-        marker = False
-        if type(feature_id) == int:
-            # ID passed
-            feature = db(db.gis_location.id == feature_id).select().first()
-        elif type(feature_id) == str:
-            # UUID passed
-            feature = db(db.gis_location.uuid == feature_id).select().first()
-        else:
-            # Unknown type - something wrong, so fallback to default!
-            marker = config.marker_id
-        try:
-            feature_class = feature.feature_class_id
-        except:
-            # Feature not found, so fallback to default!
-            marker = config.marker_id
+        query = None
 
-        if not marker:
+        if isinstance(feature_id, int):
+            query = (table_feature.id == feature_id)
+        elif isinstance(feature_id, str):
+            query = (table_feature.uuid == feature_id)
+
+        feature = db(query).select(table_feature.marker_id,
+                                   table_feature.feature_class_id,
+                                   limitby=(0, 1))
+        if feature:
+            feature_class = feature.first().feature_class_id
+            marker_id = feature.first().marker_id
+
             # 1st choice for a Marker is the Feature's
-            marker = feature.marker_id
-            if not marker:
-                # 2nd choice for a Marker is the Symbology for the Feature Class
-                query = (db.gis_symbology_to_feature_class.feature_class_id == feature_class) & (db.gis_symbology_to_feature_class.symbology_id == symbology)
-                try:
-                    marker = db(query).select().first().marker_id
-                except:
-                    if not marker:
-                        # 3rd choice for a Marker is the Feature Class's
-                        marker = db(db.gis_feature_class.id == feature_class).select().first()
-                        if marker:
-                            marker = marker.marker_id
-                    if not marker:
-                        # 4th choice for a Marker is the default
-                        marker = config.marker_id
+            if marker_id:
+                query = (table_marker.id == marker_id)
+                marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                          cache=self.cache)
+                if marker:
+                    return marker.first().image
 
-        marker = db(db.gis_marker.id == marker).select().first().image
+            # 2nd choice for a Marker is the Symbology for the Feature Class
+            query = (table_symbology.feature_class_id == feature_class) & \
+                    (table_symbology.symbology_id == symbology) & \
+                    (table_marker.id == table_symbology.marker_id)
+            marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                      cache=self.cache)
+            if marker:
+                return marker.first().image
 
-        return marker
+            # 3rd choice for a Marker is the Feature Class's
+            query = (table_fclass.id == feature_class) & \
+                    (table_marker.id == table_fclass.marker_id)
+            marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                      cache=self.cache)
+            if marker:
+                return marker.first().image
+
+        # 4th choice for a Marker is the default
+        query = (table_marker.id == config.marker_id)
+        marker = db(query).select(table_marker.image, limitby=(0, 1),
+                                  cache=self.cache)
+        if marker:
+            return marker.first().image
+        else:
+            return ""
+
 
     def latlon_to_wkt(self, lat, lon):
         """
@@ -413,7 +431,7 @@ class GIS(object):
                   catalogue_toolbar = False,
                   toolbar = False,
                   search = False,
-                  print_tool = False,
+                  print_tool = {},
                   mgrs = {},
                   window = False,
                   public_url = "http://127.0.0.1:8000"
@@ -446,6 +464,9 @@ class GIS(object):
             @param toolbar: Show the Icon Toolbar of Controls
             @param search: Show the Geonames search box
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
+                {
+                url: string             # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
+                }
             @param mgrs: Use the MGRS Control to select PDFs
                 {
                 name: string,           # Name for the Control
@@ -578,11 +599,15 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
 
+        if print_tool:
+            url = print_tool["url"] + "info.json?var=printCapabilities"
+            html.append(SCRIPT(_type="text/javascript", _src=url))
+
         #######
         # Tools
         #######
 
-                # MGRS
+        # MGRS
         if mgrs:
             mgrs_html = """
 var selectPdfControl = new OpenLayers.Control();
@@ -659,226 +684,226 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Toolbar
         if toolbar:
             toolbar = """
-    toolbar = mapPanel.getTopToolbar();
-    var toggleGroup = "controls";
+        toolbar = mapPanel.getTopToolbar();
+        var toggleGroup = "controls";
 
-    // OpenLayers controls
-    var length = new OpenLayers.Control.Measure(OpenLayers.Handler.Path, {
-        eventListeners: {
-            measure: function(evt) {
-                alert('""" + str(T("The length was ")) + """' + evt.measure + evt.units);
+        // OpenLayers controls
+        var length = new OpenLayers.Control.Measure(OpenLayers.Handler.Path, {
+            eventListeners: {
+                measure: function(evt) {
+                    alert('""" + str(T("The length was ")) + """' + evt.measure + evt.units);
+                }
             }
-        }
-    });
+        });
 
-    var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
-        eventListeners: {
-            measure: function(evt) {
-                alert('""" + str(T("The area was ")) + """' + evt.measure + evt.units);
+        var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
+            eventListeners: {
+                measure: function(evt) {
+                    alert('""" + str(T("The area was ")) + """' + evt.measure + evt.units);
+                }
             }
-        }
-    });
+        });
 
-    // Controls for Draft Features
-    // - interferes with Feature Layers!
-    //var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
-    //    onSelect: onFeatureSelect,
-    //    onUnselect: onFeatureUnselect,
-    //    multiple: false,
-    //    clickout: true,
-    //    isDefault: true
-    //});
+        // Controls for Draft Features
+        // - interferes with Feature Layers!
+        //var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
+        //    onSelect: onFeatureSelect,
+        //    onUnselect: onFeatureUnselect,
+        //    multiple: false,
+        //    clickout: true,
+        //    isDefault: true
+        //});
 
-    //var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer,
-    //    {onDone: function(feature) {console.log(feature)}
-    //});
+        //var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer,
+        //    {onDone: function(feature) {console.log(feature)}
+        //});
 
-    var nav = new OpenLayers.Control.NavigationHistory();
+        var nav = new OpenLayers.Control.NavigationHistory();
 
-    // GeoExt Buttons
-    var zoomfull = new GeoExt.Action({
-        control: new OpenLayers.Control.ZoomToMaxExtent(),
-        map: map,
-        iconCls: 'zoomfull',
-        tooltip: '""" + str(T("Zoom to maximum map extent")) + """'
-    });
+        // GeoExt Buttons
+        var zoomfull = new GeoExt.Action({
+            control: new OpenLayers.Control.ZoomToMaxExtent(),
+            map: map,
+            iconCls: 'zoomfull',
+            tooltip: '""" + str(T("Zoom to maximum map extent")) + """'
+        });
 
-    var zoomout = new GeoExt.Action({
-        control: new OpenLayers.Control.ZoomBox({ out: true }),
-        map: map,
-        iconCls: 'zoomout',
-        tooltip: '""" + str(T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")) + """',
-        toggleGroup: toggleGroup
-    });
+        var zoomout = new GeoExt.Action({
+            control: new OpenLayers.Control.ZoomBox({ out: true }),
+            map: map,
+            iconCls: 'zoomout',
+            tooltip: '""" + str(T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+            toggleGroup: toggleGroup
+        });
 
-    var zoomin = new GeoExt.Action({
-        control: new OpenLayers.Control.ZoomBox(),
-        map: map,
-        iconCls: 'zoomin',
-        tooltip: '""" + str(T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")) + """',
-        toggleGroup: toggleGroup
-    });
+        var zoomin = new GeoExt.Action({
+            control: new OpenLayers.Control.ZoomBox(),
+            map: map,
+            iconCls: 'zoomin',
+            tooltip: '""" + str(T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+            toggleGroup: toggleGroup
+        });
 
-    var pan = new GeoExt.Action({
-        control: new OpenLayers.Control.Navigation(),
-        map: map,
-        iconCls: 'pan-off',
-        tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
-        toggleGroup: toggleGroup,
-        //allowDepress: false,
-        pressed: true
-    });
+        var pan = new GeoExt.Action({
+            control: new OpenLayers.Control.Navigation(),
+            map: map,
+            iconCls: 'pan-off',
+            tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
+            toggleGroup: toggleGroup,
+            //allowDepress: false,
+            pressed: true
+        });
 
-    var lengthButton = new GeoExt.Action({
-        control: length,
-        map: map,
-        iconCls: 'measure-off',
-        tooltip: '""" + str(T("Measure Length: Click the points along the path & end with a double-click")) + """',
-        toggleGroup: toggleGroup
-    });
+        var lengthButton = new GeoExt.Action({
+            control: length,
+            map: map,
+            iconCls: 'measure-off',
+            tooltip: '""" + str(T("Measure Length: Click the points along the path & end with a double-click")) + """',
+            toggleGroup: toggleGroup
+        });
 
-    var areaButton = new GeoExt.Action({
-        control: area,
-        map: map,
-        iconCls: 'measure-area',
-        tooltip: '""" + str(T("Measure Area: Click the points around the polygon & end with a double-click")) + """',
-        toggleGroup: toggleGroup
-    });
+        var areaButton = new GeoExt.Action({
+            control: area,
+            map: map,
+            iconCls: 'measure-area',
+            tooltip: '""" + str(T("Measure Area: Click the points around the polygon & end with a double-click")) + """',
+            toggleGroup: toggleGroup
+        });
 
-    """ + mgrs2 + """
+        """ + mgrs2 + """
 
-    var selectButton = new GeoExt.Action({
-        //control: selectControl,
-        map: map,
-        iconCls: 'searchclick',
-        tooltip: '""" + str(T("Query Feature")) + """',
-        toggleGroup: toggleGroup
-    });
+        var selectButton = new GeoExt.Action({
+            //control: selectControl,
+            map: map,
+            iconCls: 'searchclick',
+            tooltip: '""" + str(T("Query Feature")) + """',
+            toggleGroup: toggleGroup
+        });
 
-    //var pointButton = new GeoExt.Action({
-    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point),
-    //    map: map,
-    //    iconCls: 'drawpoint-off',
-    //    tooltip: '""" + str(T("Add Point")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var pointButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point),
+        //    map: map,
+        //    iconCls: 'drawpoint-off',
+        //    tooltip: '""" + str(T("Add Point")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    //var lineButton = new GeoExt.Action({
-    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path),
-    //    map: map,
-    //    iconCls: 'drawline-off',
-    //    tooltip: '""" + str(T("Add Line")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var lineButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path),
+        //    map: map,
+        //    iconCls: 'drawline-off',
+        //    tooltip: '""" + str(T("Add Line")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    //var polygonButton = new GeoExt.Action({
-    //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon),
-    //    map: map,
-    //    iconCls: 'drawpolygon-off',
-    //    tooltip: '""" + str(T("Add Polygon")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var polygonButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon),
+        //    map: map,
+        //    iconCls: 'drawpolygon-off',
+        //    tooltip: '""" + str(T("Add Polygon")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    //var dragButton = new GeoExt.Action({
-    //    control: new OpenLayers.Control.DragFeature(featuresLayer),
-    //    map: map,
-    //    iconCls: 'movefeature',
-    //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var dragButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.DragFeature(featuresLayer),
+        //    map: map,
+        //    iconCls: 'movefeature',
+        //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    //var resizeButton = new GeoExt.Action({
-    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
-    //    map: map,
-    //    iconCls: 'resizefeature',
-    //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var resizeButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
+        //    map: map,
+        //    iconCls: 'resizefeature',
+        //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    //var rotateButton = new GeoExt.Action({
-    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
-    //    map: map,
-    //    iconCls: 'rotatefeature',
-    //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var rotateButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
+        //    map: map,
+        //    iconCls: 'rotatefeature',
+        //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    //var modifyButton = new GeoExt.Action({
-    //    control: new OpenLayers.Control.ModifyFeature(featuresLayer),
-    //    map: map,
-    //    iconCls: 'modifyfeature',
-    //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var modifyButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer),
+        //    map: map,
+        //    iconCls: 'modifyfeature',
+        //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    //var removeButton = new GeoExt.Action({
-    //    control: removeControl,
-    //    map: map,
-    //    iconCls: 'removefeature',
-    //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
-    //    toggleGroup: toggleGroup
-    //});
+        //var removeButton = new GeoExt.Action({
+        //    control: removeControl,
+        //    map: map,
+        //    iconCls: 'removefeature',
+        //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
+        //    toggleGroup: toggleGroup
+        //});
 
-    var navPreviousButton = new Ext.Toolbar.Button({
-        iconCls: 'back',
-        tooltip: '""" + str(T("Previous View")) + """',
-        handler: nav.previous.trigger
-    });
+        var navPreviousButton = new Ext.Toolbar.Button({
+            iconCls: 'back',
+            tooltip: '""" + str(T("Previous View")) + """',
+            handler: nav.previous.trigger
+        });
 
-    var navNextButton = new Ext.Toolbar.Button({
-        iconCls: 'next',
-        tooltip: '""" + str(T("Next View")) + """',
-        handler: nav.next.trigger
-    });
+        var navNextButton = new Ext.Toolbar.Button({
+            iconCls: 'next',
+            tooltip: '""" + str(T("Next View")) + """',
+            handler: nav.next.trigger
+        });
 
-    var saveButton = new Ext.Toolbar.Button({
-        // ToDo: Make work!
-        iconCls: 'save',
-        tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
-        handler: function saveViewport(map) {
-            // Read current settings from map
-            var lonlat = map.getCenter();
-            var zoom_current = map.getZoom();
-            // Convert back to LonLat for saving
-            //var proj4326 = new OpenLayers.Projection('EPSG:4326');
-            lonlat.transform(map.getProjectionObject(), proj4326);
-            //alert('""" + str(T("Latitude")) + """': ' + lat);
-            // Use AJAX to send back
-            var url = '""" + URL(r=request, c="gis", f="config", args=["1.json", "update"]) + """';
-        }
-    });
+        var saveButton = new Ext.Toolbar.Button({
+            // ToDo: Make work!
+            iconCls: 'save',
+            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
+            handler: function saveViewport(map) {
+                // Read current settings from map
+                var lonlat = map.getCenter();
+                var zoom_current = map.getZoom();
+                // Convert back to LonLat for saving
+                //var proj4326 = new OpenLayers.Projection('EPSG:4326');
+                lonlat.transform(map.getProjectionObject(), proj4326);
+                //alert('""" + str(T("Latitude")) + """': ' + lat);
+                // Use AJAX to send back
+                var url = '""" + URL(r=request, c="gis", f="config", args=["1.json", "update"]) + """';
+            }
+        });
 
-    // Add to Map & Toolbar
-    toolbar.add(zoomfull);
-    toolbar.add(zoomout);
-    toolbar.add(zoomin);
-    toolbar.add(pan);
-    toolbar.addSeparator();
-    // Measure Tools
-    toolbar.add(lengthButton);
-    toolbar.add(areaButton);
-    toolbar.addSeparator();
-    """ + mgrs3 + """
-    // Draw Controls
-    //toolbar.add(selectButton);
-    //toolbar.add(pointButton);
-    //toolbar.add(lineButton);
-    //toolbar.add(polygonButton);
-    //toolbar.add(dragButton);
-    //toolbar.add(resizeButton);
-    //toolbar.add(rotateButton);
-    //toolbar.add(modifyButton);
-    //toolbar.add(removeButton);
-    //toolbar.addSeparator();
-    // Navigation
-    map.addControl(nav);
-    nav.activate();
-    toolbar.addButton(navPreviousButton);
-    toolbar.addButton(navNextButton);
-    toolbar.addSeparator();
-    // Save Viewport
-toolbar.addButton(saveButton);
-    """
+        // Add to Map & Toolbar
+        toolbar.add(zoomfull);
+        toolbar.add(zoomout);
+        toolbar.add(zoomin);
+        toolbar.add(pan);
+        toolbar.addSeparator();
+        // Measure Tools
+        toolbar.add(lengthButton);
+        toolbar.add(areaButton);
+        toolbar.addSeparator();
+        """ + mgrs3 + """
+        // Draw Controls
+        //toolbar.add(selectButton);
+        //toolbar.add(pointButton);
+        //toolbar.add(lineButton);
+        //toolbar.add(polygonButton);
+        //toolbar.add(dragButton);
+        //toolbar.add(resizeButton);
+        //toolbar.add(rotateButton);
+        //toolbar.add(modifyButton);
+        //toolbar.add(removeButton);
+        //toolbar.addSeparator();
+        // Navigation
+        map.addControl(nav);
+        nav.activate();
+        toolbar.addButton(navPreviousButton);
+        toolbar.addButton(navNextButton);
+        toolbar.addSeparator();
+        // Save Viewport
+        toolbar.addButton(saveButton);
+        """
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""
@@ -965,10 +990,112 @@ toolbar.addButton(saveButton);
 
         # Print
         if print_tool:
-            # ToDo
-            print_tool = ""
+            url = print_tool["url"]
+            print_tool1 = """
+        printProvider = new GeoExt.data.PrintProvider({
+            //method: 'POST',
+            //url: '""" + url + """'
+            method: 'GET', // 'POST' recommended for production use
+            capabilities: printCapabilities // from the info.json script in the html
+        });
+        // Our print page. Stores scale, center and rotation and gives us a page
+        // extent feature that we can add to a layer.
+        printPage = new GeoExt.data.PrintPage({
+            printProvider: printProvider,
+            customParams: {
+                mapTitle: 'Printing Demo'
+            }
+        });
+        // A layer to display the print page extent
+        var pageLayer = new OpenLayers.Layer.Vector();
+        pageLayer.addFeatures(printPage.feature);
+        map.addLayer(pageLayer);
+        map.setOptions(options, {
+            eventListeners: {
+                // recenter/resize page extent after pan/zoom
+                'moveend': function(){ printPage.fit(this); }
+            }
+        });
+        // The form with fields controlling the print output
+        var formPanel = new Ext.form.FormPanel({
+            title: 'Print Map',
+            rootVisible: false,
+            split: true,
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false,
+            bodyStyle: 'padding:5px',
+            labelAlign: 'top',
+            defaults: {anchor: '100%'},
+            items: [{
+                xtype: 'textarea',
+                name: 'comment',
+                value: '',
+                fieldLabel: 'Comment',
+                plugins: new GeoExt.plugins.PrintPageField({
+                    printPage: printPage
+                })
+            }, {
+                xtype: 'combo',
+                store: printProvider.layouts,
+                displayField: 'name',
+                fieldLabel: 'Layout',
+                typeAhead: true,
+                mode: 'local',
+                triggerAction: 'all',
+                plugins: new GeoExt.plugins.PrintProviderField({
+                    printProvider: printProvider
+                })
+            }, {
+                xtype: 'combo',
+                store: printProvider.dpis,
+                displayField: 'name',
+                fieldLabel: 'Resolution',
+                tpl: '<tpl for="."><div class="x-combo-list-item">{name} dpi</div></tpl>',
+                typeAhead: true,
+                mode: 'local',
+                triggerAction: 'all',
+                plugins: new GeoExt.plugins.PrintProviderField({
+                    printProvider: printProvider
+                }),
+                // the plugin will work even if we modify a combo value
+                setValue: function(v) {
+                    v = parseInt(v) + ' dpi';
+                    Ext.form.ComboBox.prototype.setValue.apply(this, arguments);
+                }
+            }, {
+                xtype: 'combo',
+                store: printProvider.scales,
+                displayField: 'name',
+                fieldLabel: 'Scale',
+                typeAhead: true,
+                mode: 'local',
+                triggerAction: 'all',
+                plugins: new GeoExt.plugins.PrintPageField({
+                    printPage: printPage
+                })
+            }, {
+                xtype: 'textfield',
+                name: 'rotation',
+                fieldLabel: 'Rotation',
+                plugins: new GeoExt.plugins.PrintPageField({
+                    printPage: printPage
+                })
+            }],
+            buttons: [{
+                text: 'Create PDF',
+                handler: function() {
+                    printProvider.print(mapPanel, printPage);
+                }
+            }]
+        });
+        """
+            print_tool2 = """,
+                    formPanel"""
         else:
-            print_tool = ""
+            print_tool1 = ""
+            print_tool2 = ""
 
         # Strategy
         # Need to be uniquely instantiated
@@ -978,8 +1105,8 @@ toolbar.addButton(saveButton);
         # Layout
         if window:
             layout = """
-    var win = new Ext.Window({
-        collapsible: true,
+        var win = new Ext.Window({
+            collapsible: true,
             """
             layout2 = "win.show();"
         else:
@@ -1837,6 +1964,7 @@ toolbar.addButton(saveButton);
     var map, mapPanel, toolbar;
     var currentFeature, popupControl, highlightControl;
     var wmsBrowser;
+    var printProvider, printForm;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -2016,7 +2144,7 @@ toolbar.addButton(saveButton);
 
         """ + mgrs_html + """
 
-        var mapPanel = new GeoExt.MapPanel({
+        mapPanel = new GeoExt.MapPanel({
             region: 'center',
             height: """ + str(height) + """,
             width: """ + str(width) + """,
@@ -2076,6 +2204,8 @@ toolbar.addButton(saveButton);
             enableDD: true
         });
 
+        """ + print_tool1 + """
+
         """ + layout + """
             maximizable: true,
             titleCollapse: true,
@@ -2091,7 +2221,7 @@ toolbar.addButton(saveButton);
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree""" + layers_wms_browser2 + search2 + """
+                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + """
                             ]
                     },
                     mapPanel

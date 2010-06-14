@@ -16,17 +16,16 @@ response.menu_options = [
     [T('Request Aid'), False, URL(r=request, f='req', args='create')],
     [T('View Requests & Pledge Aid'), False, URL(r=request, f='req')],
     [T('View & Edit Pledges'),False, URL(r=request, f='pledge')]
-#    [T('Search Requests'), False, URL(r=request, f='req', args='search')] #disabled due to problems with pagination
-
 ]
 
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     return dict(module_name=module_name, a=1)
+
 
 def req(): #aid requests
     "RESTlike CRUD controller"
@@ -42,22 +41,26 @@ def req(): #aid requests
         # Uncomment to enable Server-side pagination:
         response.s3.pagination = True
 
-    return shn_rest_controller(module, resource,
-                               editable=False,
-                               listadd=False,
-                               pheader=shn_rms_req_pheader)
-                               # call pheader to act as parent header for parent/child forms (layout defined below)
+    def req_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                response.s3.actions = [
+                    dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=['[id]', 'pledge'])))
+                ]
+            elif jr.component_name == "pledge":
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=['pledge', '[id]'])))
+                ]
+        return output
+    response.s3.postp = req_postp
 
+    output = shn_rest_controller(module, resource,
+                                 editable=False,
+                                 listadd=False,
+                                 rheader=shn_rms_rheader)
+                                 # call rheader to act as parent header for parent/child forms (layout defined below)
 
-def req_detail(): #arbitrary key:value pairs for aid requests
-    "RESTlike CRUD controller"
-
-    resource = 'req_detail' #an optional unconnected list of all the arbitrary key-values for requests
-
-        # Uncomment to enable Server-side pagination:
-        #response.s3.pagination = True #commented due to display problems
-
-    return shn_rest_controller( module , resource, editable=False, listadd=False)
+    return output
 
 
 def pledge(): #pledges from agencies
@@ -75,63 +78,65 @@ def pledge(): #pledges from agencies
 
     db.commit()
 
+    def pledge_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=['[id]'])))
+                ]
+        return output
+    response.s3.postp = pledge_postp
+
+    response.s3.pagination = True
     return shn_rest_controller(module, resource, editable = True, listadd=False)
 
-def shn_rms_req_pheader(resource, record_id, representation, next=None, same=None): #parent header for child/parent forms
+
+def shn_rms_rheader(resource, record_id, representation, next=None, same=None):
+
     if representation == "html":
 
         if next:
             _next = next
         else:
-            _next = URL(r=request, f=resource, args=['read'])
+            _next = URL(r=request, f=resource)
 
         if same:
             _same = same
         else:
-            _same = URL(r=request, f=resource, args=['read', '[id]'])
+            _same = URL(r=request, f=resource, args=['[id]'])
 
-        aid_request = db(db.rms_req.id == record_id).select().first()
-        try:
-            location = db(db.gis_location.id == aid_request.location_id).select().first()
-            location_represent = shn_gis_location_represent(location.id)
-        except:
-            location_represent = None
+        if resource == "req":
 
-        pheader = TABLE(
-                    TR(
-                        TH(T('Message: ')),
-                        TD(aid_request.message, _colspan=3),
-                        ),
-                    TR(
-                        TH(T('Priority: ')),
-                        aid_request.priority,
-                        TH(T('Source Type: ')),
-                        rms_req_source_type[aid_request.source_type],
-                        ),
-                    TR(
-                        TH(T('Time of Request: ')),
-                        aid_request.timestamp,
-                        TH(T('Verified: ')),
-                        aid_request.verified,
-                        ),
-                    TR(
-                        TH(T('Location: ')),
-                        location_represent,
-                        TH(T('Actionable: ')),
-                        aid_request.actionable,
-                        TH(T('Completion status: ')),
-                        aid_request.completion_status,
-                        ),
-#Todo - Create a link for editing the arbitrary key-value args
-#                    TR(
-#                        TH(A(T('Edit Request Details'), _href=URL(r=request, f='req_detail', args=[id])))
-#                        ),
+            aid_request = db(db.rms_req.id == record_id).select(limitby=(0, 1))
+            if not aid_request:
+                return None
+            else:
+                aid_request = aid_request[0]
+            try:
+                location = db(db.gis_location.id == aid_request.location_id).select().first()
+                location_represent = shn_gis_location_represent(location.id)
+            except:
+                location_represent = None
 
-                )
-        return pheader
+            rheader = TABLE(TR(TH(T('Message: ')),
+                            TD(aid_request.message, _colspan=3)),
+                            TR(TH(T('Priority: ')),
+                            aid_request.priority,
+                            TH(T('Source Type: ')),
+                            rms_req_source_type.get(aid_request.source_type, T("unknown"))),
+                            TR(TH(T('Time of Request: ')),
+                            aid_request.timestamp,
+                            TH(T('Verified: ')),
+                            aid_request.verified),
+                            TR(TH(T('Location: ')),
+                            location_represent,
+                            TH(T('Actionable: ')),
+                            aid_request.actionable))
 
-    else:
-        return None
+            return rheader
+
+    return None
+
 
 def sms_complete(): #contributes to RSS feed for closing the loop with Ushahidi
 

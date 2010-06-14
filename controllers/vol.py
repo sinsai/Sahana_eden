@@ -41,14 +41,14 @@ def shn_menu():
                     [T('Volunteer Status'), False, URL(r=request, f='person', args='volunteer')],
                     [T('Resources'), False, URL(r=request, f='person', args='resource')],
                     [T('Address'), False, URL(r=request, f='person', args='address')],
-                    [T('Contact'), False, URL(r=request, f='person', args='contact')],
+                    [T('Contact'), False, URL(r=request, f='person', args='pe_contact')],
                     [T('Identity'), False, URL(r=request, f='person', args='identity')],
                 ]]
             ]
             menu.extend(menu_person)
     if auth.user is not None:
         menu_user = [
-            [T('My Tasks'), False, URL(r=request, f='mytasks', args='')]
+            [T('My Tasks'), False, URL(r=request, f='task', args='')]
         ]
         menu.extend(menu_user)
     response.menu_options = menu
@@ -76,7 +76,11 @@ def project():
     table.description.comment = SPAN("*", _class="req")
     table.status.comment = SPAN("*", _class="req")
 
-    output = shn_rest_controller( module , resource, pheader=shn_vol_project_pheader)
+    response.s3.pagination = True
+
+    output = shn_rest_controller(module , resource,
+                rheader=shn_vol_project_rheader,
+                list_fields=shn_vol_project_list_fields())
     shn_menu()
     return output
 
@@ -87,9 +91,11 @@ def person():
 
     db.pr_person.missing.default = False
 
+    response.s3.pagination = True
+
     output = shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
-        pheader=shn_pr_pheader,
-        list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
+        rheader=shn_pr_rheader,
+        list_fields=shn_pr_person_list_fields(),
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
@@ -99,7 +105,7 @@ def person():
     return output
 
 
-def mytasks():
+def task():
 
     """ Manage current user's tasks """
 
@@ -122,5 +128,7 @@ def mytasks():
     s3.crud_strings['vol_task'].title_list = T('My Tasks')
     s3.crud_strings['vol_task'].subtitle_list = T('Task List')
 
+    response.s3.pagination = True
+
     return shn_rest_controller(module, 'task', listadd=False,
-        list_fields=['id', 'vol_project_id', 'subject', 'priority', 'status'])
+                               list_fields = shn_vol_task_list_fields())

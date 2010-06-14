@@ -41,9 +41,9 @@ response.menu_options = [
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     return dict(module_name=module_name)
 
 @service.jsonrpc
@@ -60,7 +60,12 @@ def organisation():
     "RESTlike CRUD controller"
     # ServerSidePagination
     response.s3.pagination = True
-    return shn_rest_controller(module, 'organisation', listadd=False)
+    output = shn_rest_controller(module, 'organisation', listadd=False)
+    if response.s3.or_redirect:
+        session.flash = T("Submission Succesful")
+        redirect(response.s3.or_redirect)
+    else:
+        return output
 
 @service.jsonrpc
 @service.xmlrpc
@@ -85,7 +90,7 @@ def office():
             session.s3.organisation_id = request.vars.organisation_id
             # Organisation name should be displayed on the form if organisation_id is pre-selected
             session.s3.organisation_name = db(db.or_organisation.id == int(session.s3.organisation_id)).select(db.or_organisation.name)[0]["name"]
-    return shn_rest_controller(module, resource, listadd=False, pheader=shn_office_pheader)
+    return shn_rest_controller(module, resource, listadd=False, rheader=shn_office_rheader)
 
 @service.jsonrpc
 @service.xmlrpc
@@ -265,7 +270,7 @@ def who_what_where_when():
     #print project_list
     return dict(project_list = project_list)
 
-def shn_office_pheader(resource, record_id, representation, next=None, same=None):
+def shn_office_rheader(resource, record_id, representation, next=None, same=None):
 
     if representation == "html":
 
@@ -282,7 +287,7 @@ def shn_office_pheader(resource, record_id, representation, next=None, same=None
         office = db(db.or_office.id == record_id).select()[0]
         organisation = db(db.or_organisation.id == office.organisation_id).select()[0]
 
-        pheader = TABLE(
+        rheader = TABLE(
             TR(
                 TH(T('Name: ')),
                 office.name,
@@ -300,7 +305,7 @@ def shn_office_pheader(resource, record_id, representation, next=None, same=None
                     _href=URL(r=request, c='or', f='office', args=['update', record_id], vars={'_next': _next})))
                 )
         )
-        return pheader
+        return rheader
 
     else:
         return None

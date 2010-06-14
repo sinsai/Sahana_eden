@@ -20,15 +20,21 @@ timestamp = db.Table(None, "timestamp",
 # Reusable author fields, TODO: make a better represent!
 def shn_user_represent(id):
 
-    if id:
-        user = db(db.auth_user.id==id).select()
+    def user_represent(id):
+        table = db.auth_user
+        user = db(table.id == id).select(table.first_name,
+                                       table.last_name,
+                                       limitby=(0, 1))
         if user:
             user = user[0]
             name = user.first_name
             if user.last_name:
                 name = "%s %s" % (name, user.last_name)
             return name
-    return None
+        return None
+
+    return cache.ram("repr_user_%s" % id,
+                     lambda: user_represent(id), time_expire=10)
 
 authorstamp = db.Table(None, "authorstamp",
             Field("created_by", db.auth_user,
@@ -53,7 +59,7 @@ import uuid
 from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
                 type = "string",
-                native = "VARCHAR(64)",
+                native = "VARCHAR(128)",
                 encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
@@ -61,7 +67,7 @@ s3uuid = SQLCustomType(
 uuidstamp = db.Table(None, "uuidstamp",
                      Field("uuid",
                           type=s3uuid,
-                          length=64,
+                          length=128,
                           notnull=True,
                           unique=True,
                           readable=False,
@@ -171,24 +177,10 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 Field("audit_read", "boolean", default=False),
                 Field("audit_write", "boolean", default=False),
                 migrate=migrate)
-table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts)
+table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
 table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
-table.security_policy.label = T("Security Policy")
-table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
-table.theme.label = T("Theme")
-table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name")
-table.theme.represent = lambda name: db(db.admin_theme.id==name).select()[0].name
-table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox", _href=URL(r=request, c="admin", f="theme", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Theme"))),
-table.debug.label = T("Debug")
-table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
-table.self_registration.label = T("Self Registration")
-table.self_registration.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Self-registration|Can users register themselves for authenticated login access?"))
-table.archive_not_delete.label = T("Archive not Delete")
-table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Archive not Delete|If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
-table.audit_read.label = T("Audit Read")
-table.audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Read|If enabled then a log is maintained of all records a user accesses. If disabled then it can still be enabled on a per-module basis."))
-table.audit_write.label = T("Audit Write")
-table.audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Write|If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
+table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
+table.theme.represent = lambda name: db(db.admin_theme.id == name).select().first().name
 # Define CRUD strings (NB These apply to all Modules' "settings" too)
 ADD_SETTING = T("Add Setting")
 LIST_SETTINGS = T("List Settings")

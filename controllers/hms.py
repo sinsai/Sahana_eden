@@ -8,6 +8,8 @@
 
 module = "hms"
 
+import sys
+
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
@@ -55,7 +57,7 @@ def index():
     """ Module's Home Page """
 
     module_name = s3.modules[module]["name_nice"]
-    return dict(module_name=module_name)
+    return dict(module_name=module_name, public_url=deployment_settings.base.public_url)
 
 # -----------------------------------------------------------------------------
 def hospital():
@@ -64,8 +66,10 @@ def hospital():
 
     response.s3.pagination = True
 
+    #s3xrc.sync_resolve = shn_hospital_resolver
+
     output = shn_rest_controller(module , 'hospital',
-        pheader = shn_hms_hospital_pheader,
+        rheader = shn_hms_hospital_rheader,
         list_fields=shn_hms_hospital_list_fields(),
         rss=dict(
             title="%(name)s",
@@ -76,6 +80,25 @@ def hospital():
     shn_menu()
 
     return output
+
+def shn_hospital_resolver(vector):
+
+    """ Example for a simple Sync resolver - not for production use """
+
+    # Default resolution: import data from peer if newer
+    vector.default_resolution = vector.RESOLUTION.NEWER
+
+    if vector.tablename == "hms_hospital":
+        # Do not update hospital Gov-UUIDs or names
+        vector.resolution = dict(
+            gov_uuid = vector.RESOLUTION.THIS,
+            name = vector.RESOLUTION.THIS
+        )
+    else:
+        vector.resolution = vector.RESOLUTION.NEWER
+
+    # Allow both, update of existing and create of new records:
+    vector.strategy = [vector.METHOD.UPDATE, vector.METHOD.CREATE]
 
 # -----------------------------------------------------------------------------
 def hrequest():
@@ -91,8 +114,17 @@ def hrequest():
 
     response.s3.pagination = True
 
+    def hrequest_postp(jr, output):
+        if jr.representation in ("html", "popup") and not jr.component:
+            response.s3.actions = [
+                dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=['[id]', 'hpledge'])))
+            ]
+        return output
+    response.s3.postp = hrequest_postp
+
+
     output = shn_rest_controller(module , resource, listadd=False, deletable=False,
-        pheader=shn_hms_hrequest_pheader,
+        rheader=shn_hms_hrequest_rheader,
         list_fields=['id',
             'timestamp',
             'hospital_id',
@@ -136,9 +168,9 @@ def hpledge():
     return output
 
 # -----------------------------------------------------------------------------
-def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, same=None):
+def shn_hms_hrequest_rheader(resource, record_id, representation, next=None, same=None):
 
-    """ Request PHeader """
+    """ Request RHeader """
 
     if representation == "html":
 
@@ -158,7 +190,7 @@ def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, sam
         except:
             hospital_represent = None
 
-        pheader = TABLE(
+        rheader = TABLE(
                     TR(
                         TH(T('Message: ')),
                         TD(aid_request.message, _colspan=3),
@@ -186,7 +218,7 @@ def shn_hms_hrequest_pheader(resource, record_id, representation, next=None, sam
                         "",
                         ),
                 )
-        return pheader
+        return rheader
 
     else:
         return None

@@ -485,7 +485,7 @@ if deployment_settings.has_module(module):
                     hospital_id,
                     Field("unit_name", length=64),
                     Field("bed_type", "integer",
-                        requires = IS_IN_SET(hms_bed_type_opts),
+                        requires = IS_IN_SET(hms_bed_type_opts, zero=None),
                         default = 6,
                         label = T("Bed Type"),
                         represent = lambda opt: hms_bed_type_opts.get(opt, UNKNOWN_OPT)),
@@ -652,7 +652,7 @@ if deployment_settings.has_module(module):
                     hospital_id,
                     #Field("title"),
                     Field("type", "integer",
-                        requires = IS_IN_SET(hms_image_type_opts),
+                        requires = IS_IN_SET(hms_image_type_opts, zero=None),
                         default = 1,
                         label = T("Image Type"),
                         represent = lambda opt: hms_image_type_opts.get(opt, T("not specified"))),
@@ -744,7 +744,7 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_hms_hospital_pheader(resource, record_id, representation, next=None, same=None):
+    def shn_hms_hospital_rheader(resource, record_id, representation, next=None, same=None):
 
         """ Page header for component resources """
 
@@ -763,7 +763,7 @@ if deployment_settings.has_module(module):
 
                 hospital = db.hms_hospital[record_id]
                 if hospital:
-                    pheader = TABLE(
+                    rheader = TABLE(
                         TR(
                             TH(T("Name: ")),
                             hospital.name,
@@ -797,7 +797,7 @@ if deployment_settings.has_module(module):
                                 _href=URL(r=request, f="hospital", args=["update", record_id], vars={"_next": _next})))
                             )
                     )
-                    return pheader
+                    return rheader
 
         return None
 
@@ -1042,13 +1042,10 @@ if deployment_settings.has_module(module):
     #
     def shn_hms_hrequest_onaccept(form):
 
-        print "hms_request_onaccept"
         hrequest = db.hms_hrequest[form.vars.id]
         if hrequest:
-            print "Found request"
             hospital = db.hms_hospital[hrequest.hospital_id]
             if hospital:
-                print "Found hospital %s in %s" % (hospital.name, hospital.city)
                 db(db.hms_hrequest.id==hrequest.id).update(city=hospital.city)
 
     s3xrc.model.configure(db.hms_hrequest,
@@ -1230,7 +1227,7 @@ if deployment_settings.has_module(module):
     table.submitted_on.default = request.now
     table.submitted_on.writable = False
 
-    table.status.requires = IS_IN_SET(hms_pledge_status_opts)
+    table.status.requires = IS_IN_SET(hms_pledge_status_opts, zero=None)
     table.status.represent = lambda status: status and hms_pledge_status_opts[status]
     table.status.label = T("Status")
 

@@ -57,7 +57,8 @@ s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
             base_url="%s/%s" % (deployment_settings.get_base_public_url(), request.application),
             rpp=ROWSPERPAGE,
-            gis=gis)
+            gis=gis,
+            cache=cache)
 
 s3rest = _s3xrc.S3RESTController(rc=s3xrc, auth=auth,
             xml_import_formats = shn_xml_import_formats,
@@ -881,30 +882,6 @@ def shn_custom_view(jr, default_name, format=None):
             response.view = default_name.replace(".html", "_%s.html" % format)
         else:
             response.view = default_name
-            
-# Wizard-style UI
-def shn_wizard(prev=None, next=None, cancel=None):
-    """
-        Support for a 'Wizard' style UI using basic S3 CRUD
-    
-        To use this do the following in your controller:
-
-        response.s3.postp = shn_wizard(wizard=True, prev=URL(..), next=URL(...), cancel=URL(...))
-        return shn_rest_controller(...)
-
-        NB: You may omit any of the parameters if you feel your page does not need it.
-    """
-    def wizard_postp(jr, output):
-        if jr.representation == "html":
-            if next:
-                output.update(next_btn = A(T("Next"), next, _class="action-button"))
-            if prev:
-                output.update(prev_btn = A(T("Previous"), prev, _class="action-button"))
-            if cancel:
-                output.update(cancel_btn = A(T("Cancel"), cancel, _class="action-button"))
-        return output
-
-    return wizard_postp
 
 #
 # shn_convert_orderby ----------------------------------------------------------
@@ -1079,7 +1056,7 @@ def shn_read(jr, **attr):
 
     """ Read a single record. """
 
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
     rss = attr.get("rss", None)
@@ -1150,13 +1127,13 @@ def shn_read(jr, **attr):
                 except:
                     subtitle = s3.crud_strings.title_display
                 output.update(subtitle=subtitle)
-                if pheader:
+                if rheader:
                     try:
-                        _pheader = pheader(jr.name, jr.id, jr.representation, next=jr.there(), same=jr.same())
+                        _rheader = rheader(jr.name, jr.id, jr.representation, next=jr.there(), same=jr.same())
                     except:
-                        _pheader = pheader
-                    if _pheader:
-                        output.update(pheader=_pheader)
+                        _rheader = rheader
+                    if _rheader:
+                        output.update(rheader=_rheader)
             item = crud.read(table, record_id)
 
             if jr.representation=="html":
@@ -1267,7 +1244,7 @@ def shn_list(jr, **attr):
     onaccept = s3xrc.model.get_config(table, "onaccept")
 
     # Get request arguments
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     _attr = jr.component and jr.component.attr or attr
 
     editable = _attr.get("editable", True)
@@ -1398,15 +1375,15 @@ def shn_list(jr, **attr):
             except:
                 subtitle = s3.crud_strings.subtitle_list
 
-            if pheader:
+            if rheader:
                 try:
-                    _pheader = pheader(jr.name, jr.id, jr.representation,
+                    _rheader = rheader(jr.name, jr.id, jr.representation,
                                        next=jr.there(),
                                        same=jr.same())
                 except:
-                    _pheader = pheader
-                if _pheader:
-                    output.update(pheader=_pheader)
+                    _rheader = rheader
+                if _rheader:
+                    output.update(rheader=_rheader)
         else:
             try:
                 title = s3.crud_strings[tablename].title_list
@@ -1647,7 +1624,7 @@ def shn_create(jr, **attr):
 
     """ Create new records """
 
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     main = attr.get("main", None)
 
     module, resource, table, tablename = jr.target()
@@ -1677,15 +1654,15 @@ def shn_create(jr, **attr):
                 subtitle = s3.crud_strings.subtitle_create
             output.update(subtitle=subtitle)
 
-            if pheader:
+            if rheader:
                 try:
-                    _pheader = pheader(jr.name, jr.id, jr.representation,
+                    _rheader = rheader(jr.name, jr.id, jr.representation,
                                        next=jr.there(),
                                        same=jr.same())
                 except:
-                    _pheader = pheader
-                if _pheader:
-                    output.update(pheader=_pheader)
+                    _rheader = rheader
+                if _rheader:
+                    output.update(rheader=_rheader)
         else:
             try:
                 title = s3.crud_strings[tablename].title_create
@@ -1830,7 +1807,7 @@ def shn_update(jr, **attr):
 
     """ Update an existing record """
 
-    pheader = attr.get("pheader", None)
+    rheader = attr.get("rheader", None)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
 
@@ -1842,7 +1819,7 @@ def shn_update(jr, **attr):
     if jr.component:
 
         if jr.multiple and not jr.component_id:
-            return shn_create(jr, pheader)
+            return shn_create(jr, rheader)
 
         query = (table[jr.fkey]==jr.record[jr.pkey])
         if jr.component_id:
@@ -1894,15 +1871,15 @@ def shn_update(jr, **attr):
                     subtitle = s3.crud_strings.title_update
                 output.update(subtitle=subtitle)
 
-                if pheader:
+                if rheader:
                     try:
-                        _pheader = pheader(jr.name, jr.id, jr.representation,
+                        _rheader = rheader(jr.name, jr.id, jr.representation,
                                            next=jr.there(),
                                            same=jr.same())
                     except:
-                        _pheader = pheader
-                    if _pheader:
-                        output.update(pheader=_pheader)
+                        _rheader = rheader
+                    if _rheader:
+                        output.update(rheader=_rheader)
             else:
                 try:
                     title = s3.crud_strings[tablename].title_update
@@ -2044,22 +2021,22 @@ def shn_delete(jr, **attr):
 
     if jr.component:
 
-        query = ((table[jr.fkey]==jr.table[jr.pkey]) & (table[jr.fkey]==jr.record[jr.pkey]))
+        query = ((table[jr.fkey] == jr.table[jr.pkey]) & (table[jr.fkey] == jr.record[jr.pkey]))
         if jr.component_id:
-            query = (table.id==jr.component_id) & query
+            query = (table.id == jr.component_id) & query
         if "deleted" in table:
-            query = (table.deleted==False) & query
+            query = (table.deleted == False) & query
     else:
-        query = (table.id==jr.id)
+        query = (table.id == jr.id)
 
     if "deleted" in table:
-        query = (table.deleted==False) & query
+        query = (table.deleted == False) & query
 
     # Get target records
     rows = db(query).select(table.ALL)
 
     # Nothing to do? Return here!
-    if not rows or len(rows)==0:
+    if not rows or len(rows) == 0:
         session.confirmation = T("No records to delete")
         return
 
@@ -2084,30 +2061,36 @@ def shn_delete(jr, **attr):
     for row in rows:
         if shn_has_permission("delete", table, row.id):
             numrows += 1
-            shn_audit_delete(module, resource, row.id, jr.representation)
-            if "deleted" in db[table] and \
-               db(db.s3_setting.id==1).select()[0].archive_not_delete:
-                if crud.settings.delete_onvalidation:
-                    crud.settings.delete_onvalidation(row)
-                # Avoid collisions of values in unique fields between deleted records and
-                # later new records => better solution could be: move the deleted data to
-                # a separate table (e.g. in JSON) and delete from this table (that would
-                # also eliminate the need for special deletion status awareness throughout
-                # the system). Should at best be solved in the DAL.
-                deleted = dict(deleted=True)
-                for f in table.fields:
-                    if f not in ("id", "uuid") and table[f].unique:
-                        deleted.update({f:None}) # not good => data loss!
-                db(db[table].id == row.id).update(**deleted)
-                if crud.settings.delete_onaccept:
-                    crud.settings.delete_onaccept(row)
-            else:
-                # Do not CRUD.delete! (it never returns, but redirects)
-                if crud.settings.delete_onvalidation:
-                    crud.settings.delete_onvalidation(row)
-                del db[table][row.id]
-                if crud.settings.delete_onaccept:
-                    crud.settings.delete_onaccept(row)
+            try:
+                shn_audit_delete(module, resource, row.id, jr.representation)
+                if "deleted" in db[table] and \
+                   db(db.s3_setting.id == 1).select().first().archive_not_delete:
+                    if crud.settings.delete_onvalidation:
+                        crud.settings.delete_onvalidation(row)
+                    # Avoid collisions of values in unique fields between deleted records and
+                    # later new records => better solution could be: move the deleted data to
+                    # a separate table (e.g. in JSON) and delete from this table (that would
+                    # also eliminate the need for special deletion status awareness throughout
+                    # the system). Should at best be solved in the DAL.
+                    deleted = dict(deleted=True)
+                    for f in table.fields:
+                        if f not in ("id", "uuid") and table[f].unique:
+                            deleted.update({f:None}) # not good => data loss!
+                    db(db[table].id == row.id).update(**deleted)
+                    if crud.settings.delete_onaccept:
+                        crud.settings.delete_onaccept(row)
+                else:
+                    # Do not CRUD.delete! (it never returns, but redirects)
+                    if crud.settings.delete_onvalidation:
+                        crud.settings.delete_onvalidation(row)
+                    del db[table][row.id]
+                    if crud.settings.delete_onaccept:
+                        crud.settings.delete_onaccept(row)
+
+            except:
+            # Would prefer to import sqlite3 & catch specific error, but this isn't generalisable to other DBs...we need a DB config to pull in.
+            #except sqlite3.IntegrityError:
+                session.error = T("Cannot delete whilst there are linked records. Please delete linked records first.")
         else:
             continue
 
@@ -2119,11 +2102,11 @@ def shn_delete(jr, **attr):
 
         delete_next =  jr.component.attr.delete_next
 
-    # Confirm and return
-    if numrows > 1:
-        session.confirmation = "%s %s" % ( numrows, T("records deleted"))
-    else:
-        session.confirmation = message
+    if not session.error:
+        if numrows > 1:
+            session.confirmation = "%s %s" % ( numrows, T("records deleted"))
+        else:
+            session.confirmation = message
 
     if jr.component and delete_next: # but redirect here!
         redirect(delete_next)
@@ -2139,12 +2122,12 @@ def shn_delete(jr, **attr):
 #
 def shn_options(jr, **attr):
 
-    if jr.representation=="xml":
+    if jr.representation == "xml":
         response.headers["Content-Type"] = "text/xml"
         response.view = "plain.html"
         return jr.options_xml(pretty_print=PRETTY_PRINT)
 
-    elif jr.representation=="json":
+    elif jr.representation == "json":
         response.headers["Content-Type"] = "text/x-json"
         response.view = "plain.html"
         return jr.options_json(pretty_print=PRETTY_PRINT)
@@ -2360,8 +2343,8 @@ def shn_rest_controller(module, resource, **attr):
 
             see: U{http://datatables.net/examples/basic_init/table_sorting.html}
 
-        @param pheader: function to produce a page header for the primary resource
-        @type pheader:
+        @param rheader: function to produce a page header for the primary resource
+        @type rheader:
             function(resource, record_id, representation, next=None, same=None)
 
         @author: Fran Boon

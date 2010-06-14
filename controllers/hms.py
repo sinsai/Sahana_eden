@@ -191,23 +191,17 @@ def shn_hms_hrequest_rheader(resource, record_id, representation, next=None, sam
                         db.hms_hospital[aid_request.hospital_id] and db.hms_hospital[aid_request.hospital_id].name or "unknown",
                         TH(T('Source Type: ')),
                         hms_hrequest_source_type.get(aid_request.source_type, "unknown"),
-                        TH(T('Completed: ')),
-                        aid_request.completed and T("yes") or T("no"),
-                        ),
-                    TR(
-                        TH(T('Time of Request: ')),
-                        aid_request.timestamp,
-                        TH(T('Status: ')),
-                        hms_hrequest_review_opts.get(aid_request.status, "unknown"),
                         TH(""),
                         ""
                         ),
                     TR(
+                        TH(T('Time of Request: ')),
+                        aid_request.timestamp,
                         TH(T('Priority: ')),
                         hms_hrequest_priority_opts.get(aid_request.priority, "unknown"),
-                        TH(""),
-                        "",
-                        ),
+                        TH(T('Status: ')),
+                        hms_hrequest_status_opts.get(aid_request.status, "unknown")
+                     ),
                 )
         return rheader
 

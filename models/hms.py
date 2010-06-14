@@ -1072,8 +1072,7 @@ if deployment_settings.has_module(module):
                                        "type",
                                        "subject",
                                        "priority",
-                                       "status",
-                                       "completed"])
+                                       "status"])
 
     # -----------------------------------------------------------------------------
     # Request Representation

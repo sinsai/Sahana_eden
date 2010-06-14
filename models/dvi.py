@@ -389,24 +389,16 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_dvi_rheader(resource, record_id, representation, next=None, same=None):
+    def shn_dvi_rheader(jr):
 
         """ page header for component pages """
 
-        if resource == "body":
-            if representation == "html":
-                if next:
-                    _next = next
-                else:
-                    _next = URL(r=request, f=resource, args=['read'])
+        if jr.name == "body":
+            if jr.representation == "html":
+                _next = jr.here()
+                _same = jr.same()
 
-                if same:
-                    _same = same
-                else:
-                    _same = URL(r=request, f=resource, args=['read', '[id]'])
-
-                body = db.dvi_body[record_id]
-
+                body = jr.record
                 if body:
                     rheader = TABLE(
                         TR(
@@ -424,7 +416,7 @@ if deployment_settings.has_module(module):
                             TH(T('Age Group: ')),
                             "%s" % pr_person_age_group_opts[body.opt_pr_age_group],
                             TH(A(T('Edit Record'),
-                                _href=URL(r=request, f='body', args=['update', record_id], vars={'_next': _next})))
+                                _href=URL(r=request, f='body', args=['update', jr.id], vars={'_next': _next})))
                         )
                     )
                     return rheader

@@ -776,24 +776,17 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_hms_hospital_rheader(resource, record_id, representation, next=None, same=None):
+    def shn_hms_hospital_rheader(jr):
 
         """ Page header for component resources """
 
-        if resource == "hospital":
-            if representation == "html":
+        if jr.name == "hospital":
+            if jr.representation == "html":
 
-                if next:
-                    _next = next
-                else:
-                    _next = URL(r=request, f=resource, args=["read"])
+                _next = jr.here()
+                _same = jr.same()
 
-                if same:
-                    _same = same
-                else:
-                    _same = URL(r=request, f=resource, args=["read", "[id]"])
-
-                hospital = db.hms_hospital[record_id]
+                hospital = jr.record
                 if hospital:
                     rheader = TABLE(
                         TR(
@@ -826,7 +819,7 @@ if deployment_settings.has_module(module):
                             TH(T("Security Status: ")),
                             "%s" % db.hms_hospital.security_status.represent(hospital.security_status),
                             TH(A(T("Edit Hospital"),
-                                _href=URL(r=request, f="hospital", args=["update", record_id], vars={"_next": _next})))
+                                _href=URL(r=request, f="hospital", args=["update", jr.id], vars={"_next": _next})))
                             )
                     )
                     return rheader

@@ -77,6 +77,7 @@ def person():
         main="first_name",
         extra="last_name",
         rheader=shn_pr_rheader,
+        sticky=True,
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"

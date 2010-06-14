@@ -632,26 +632,17 @@ s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_p
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_rheader(resource, record_id, representation, next=None, same=None):
+def shn_pr_rheader(jr):
 
-    """
-        Person Registry page headers
-    """
+    """ Person Registry page headers """
 
-    if resource == "person":
-        if representation == "html":
+    if jr.name == "person":
+        if jr.representation == "html":
 
-            if next:
-                _next = next
-            else:
-                _next = URL(r=request, f=resource, args=["read"])
+            _next = jr.here()
+            _same = jr.same()
 
-            if same:
-                _same = same
-            else:
-                _same = URL(r=request, f=resource, args=["read", "[id]"])
-
-            person = vita.person(record_id)
+            person = jr.record
 
             if person:
                 rheader = DIV(TABLE(
@@ -676,14 +667,14 @@ def shn_pr_rheader(resource, record_id, representation, next=None, same=None):
                         TH(T("Age Group: ")),
                         "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
                         TH(A(T("Edit Person"),
-                            _href=URL(r=request, f="person", args=["update", record_id], vars={"_next": _next})))
+                            _href=URL(r=request, f="person", args=["update", jr.id], vars={"_next": _next})))
                         )
                 #), DIV(
-                        #A(T("Images"), _href=URL(r=request, f="person", args=[record_id, "image"], vars={"_next": _next})),
-                        #A(T("Identity"), _href=URL(r=request, f="person", args=[record_id, "identity"], vars={"_next": _next})),
-                        #A(T("Addresses"), _href=URL(r=request, f="person", args=[record_id, "address"], vars={"_next": _next})),
-                        #A(T("Contact Information"), _href=URL(r=request, f="person", args=[record_id, "pe_contact"], vars={"_next": _next})),
-                        #A(T("Presence Log"), _href=URL(r=request, f="person", args=[record_id, "presence"], vars={"_next": _next})),
+                        #A(T("Images"), _href=URL(r=request, f="person", args=[jr.id, "image"], vars={"_next": _next})),
+                        #A(T("Identity"), _href=URL(r=request, f="person", args=[jr.id, "identity"], vars={"_next": _next})),
+                        #A(T("Addresses"), _href=URL(r=request, f="person", args=[jr.id, "address"], vars={"_next": _next})),
+                        #A(T("Contact Information"), _href=URL(r=request, f="person", args=[jr.id, "pe_contact"], vars={"_next": _next})),
+                        #A(T("Presence Log"), _href=URL(r=request, f="person", args=[jr.id, "presence"], vars={"_next": _next})),
                         #_class="rheader_tabs"
                 ))
                 return rheader

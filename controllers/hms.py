@@ -159,54 +159,48 @@ def hpledge():
     return output
 
 # -----------------------------------------------------------------------------
-def shn_hms_hrequest_rheader(resource, record_id, representation, next=None, same=None):
+def shn_hms_hrequest_rheader(jr):
 
     """ Request RHeader """
 
-    if representation == "html":
+    if jr.representation == "html":
 
-        if next:
-            _next = next
-        else:
-            _next = URL(r=request, f=resource, args=['read'])
+        _next = jr.here()
+        _same = jr.same()
 
-        if same:
-            _same = same
-        else:
-            _same = URL(r=request, f=resource, args=['read', '[id]'])
+        aid_request = jr.record
+        if aid_request:
+            try:
+                hospital_represent = hospital_id.hospital_id.represent(aid_request.hospital.id)
+            except:
+                hospital_represent = None
 
-        aid_request = db(db.hms_hrequest.id == record_id).select().first()
-        try:
-            hospital_represent = hospital_id.hospital_id.represent(aid_request.hospital.id)
-        except:
-            hospital_represent = None
-
-        rheader = TABLE(
-                    TR(
-                        TH(T('Message: ')),
-                        TD(aid_request.message, _colspan=3),
+            rheader = TABLE(
+                        TR(
+                            TH(T('Message: ')),
+                            TD(aid_request.message, _colspan=3),
+                            ),
+                        TR(
+                            TH(T('Hospital: ')),
+                            db.hms_hospital[aid_request.hospital_id] and \
+                            db.hms_hospital[aid_request.hospital_id].name or "unknown",
+                            TH(T('Source Type: ')),
+                            hms_hrequest_source_type.get(aid_request.source_type, "unknown"),
+                            TH(""),
+                            ""
+                            ),
+                        TR(
+                            TH(T('Time of Request: ')),
+                            aid_request.timestamp,
+                            TH(T('Priority: ')),
+                            hms_hrequest_priority_opts.get(aid_request.priority, "unknown"),
+                            TH(T('Status: ')),
+                            hms_hrequest_status_opts.get(aid_request.status, "unknown")
                         ),
-                    TR(
-                        TH(T('Hospital: ')),
-                        db.hms_hospital[aid_request.hospital_id] and db.hms_hospital[aid_request.hospital_id].name or "unknown",
-                        TH(T('Source Type: ')),
-                        hms_hrequest_source_type.get(aid_request.source_type, "unknown"),
-                        TH(""),
-                        ""
-                        ),
-                    TR(
-                        TH(T('Time of Request: ')),
-                        aid_request.timestamp,
-                        TH(T('Priority: ')),
-                        hms_hrequest_priority_opts.get(aid_request.priority, "unknown"),
-                        TH(T('Status: ')),
-                        hms_hrequest_status_opts.get(aid_request.status, "unknown")
-                     ),
-                )
-        return rheader
+                    )
+            return rheader
 
-    else:
-        return None
+    return None
 
 #
 # -----------------------------------------------------------------------------

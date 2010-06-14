@@ -606,22 +606,15 @@ if deployment_settings.has_module(module):
     # shn_vol_project_search_location:
     #   form function to search projects by location
     #
-    def shn_vol_project_rheader(resource, record_id, representation, next=None, same=None):
+    def shn_vol_project_rheader(jr):
 
-        if resource == "project":
-            if representation == "html":
+        if jr.name == "project":
+            if jr.representation == "html":
 
-                if next:
-                    _next = next
-                else:
-                    _next = URL(r=request, f=resource, args=['read'])
+                _next = jr.here()
+                _same = jr.same()
 
-                if same:
-                    _same = same
-                else:
-                    _same = URL(r=request, f=resource, args=['read', '[id]'])
-
-                project = db.vol_project[record_id]
+                project = jr.record
                 if project:
                     rheader = TABLE(
                         TR(
@@ -639,7 +632,7 @@ if deployment_settings.has_module(module):
                             TH(T('Status: ')),
                             "%s" % vol_project_status_opts[project.status],
                             TH(A(T('Edit Project'),
-                                _href=URL(r=request, f='project', args=['update', record_id], vars={'_next': _next})))
+                                _href=URL(r=request, f='project', args=['update', jr.id], vars={'_next': _next})))
                             )
                     )
                     return rheader

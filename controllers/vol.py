@@ -79,8 +79,7 @@ def project():
     response.s3.pagination = True
 
     output = shn_rest_controller(module , resource,
-                rheader=shn_vol_project_rheader,
-                list_fields=shn_vol_project_list_fields())
+                                 rheader=shn_vol_project_rheader)
     shn_menu()
     return output
 
@@ -95,7 +94,6 @@ def person():
 
     output = shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
         rheader=shn_pr_rheader,
-        list_fields=shn_pr_person_list_fields(),
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"
@@ -130,5 +128,4 @@ def task():
 
     response.s3.pagination = True
 
-    return shn_rest_controller(module, 'task', listadd=False,
-                               list_fields = shn_vol_task_list_fields())
+    return shn_rest_controller(module, 'task', listadd=False)

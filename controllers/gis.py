@@ -46,8 +46,7 @@ table.osm_id.comment = DIV( _class="tooltip", _title=T("OSM ID|The <a href='http
 #    multiple=True,
 #    joinby=dict(gis_location="location_id"),
 #    deletable=True,
-#    editable=True,
-#    list_fields = ["id", "description", "source", "event_time", "url"])
+#    editable=True)
 
 # Web2Py Tools functions
 def download():

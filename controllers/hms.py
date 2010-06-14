@@ -70,7 +70,6 @@ def hospital():
 
     output = shn_rest_controller(module , 'hospital',
         rheader = shn_hms_hospital_rheader,
-        list_fields=shn_hms_hospital_list_fields(),
         rss=dict(
             title="%(name)s",
             description=shn_hms_hospital_rss
@@ -123,20 +122,12 @@ def hrequest():
     response.s3.postp = hrequest_postp
 
 
-    output = shn_rest_controller(module , resource, listadd=False, deletable=False,
-        rheader=shn_hms_hrequest_rheader,
-        list_fields=['id',
-            'timestamp',
-            'hospital_id',
-            'city',
-            'type',
-            'subject',
-            'priority',
-            'status'],
-        rss=dict(
-            title="%(subject)s",
-            description="%(message)s"
-        ))
+    output = shn_rest_controller(module , resource,
+                                 listadd=False,
+                                 deletable=False,
+                                 rheader=shn_hms_hrequest_rheader,
+                                 rss=dict(title="%(subject)s",
+                                          description="%(message)s"))
 
     shn_menu()
     return output

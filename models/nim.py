@@ -80,11 +80,13 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'opt_nim_care_strategy'])
+                              multiple=False,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table],
+                          list_fields = ['id', 'opt_nim_care_strategy'])
 
     # *****************************************************************************
     # Anamnesis: Disabilities
@@ -98,11 +100,13 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'disabilities'])
+                              multiple=False,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table],
+                          list_fields = ['id', 'disabilities'])
 
     # *****************************************************************************
     # Anamnesis: Diseases
@@ -116,11 +120,13 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'diseases'])
+                              multiple=False,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table],
+                          list_fields = ['id', 'diseases'])
 
     # *****************************************************************************
     # Anamnesis: Injuries
@@ -134,11 +140,13 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'injuries'])
+                              multiple=False,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table],
+                          list_fields = ['id', 'injuries'])
 
     # *****************************************************************************
     # Anamnesis: Treatments
@@ -152,11 +160,13 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'treatments'])
+                              multiple=False,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table],
+                          list_fields = ['id', 'treatments'])
 
     # *****************************************************************************
     # Status, physical
@@ -177,11 +187,13 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'user_id', 'time'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table],
+                          list_fields = ['id', 'user_id', 'time'])
 
     # *****************************************************************************
     # Care Status: Mental
@@ -195,11 +207,12 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id'])
 
     # *****************************************************************************
     # Care Status: Social
@@ -213,11 +226,12 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id'])
 
     # *****************************************************************************
     # Care Report: Planning
@@ -231,11 +245,12 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id'])
 
     # *****************************************************************************
     # Care Report: Measures
@@ -254,11 +269,12 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'time', 'measures'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id', 'time', 'measures'])
 
     # *****************************************************************************
     # Care Report: Planning
@@ -272,11 +288,12 @@ if deployment_settings.has_module(module):
 
     # Component
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id'])
 
     # *****************************************************************************
     # Functions

@@ -1067,6 +1067,7 @@ def shn_read(jr, **attr):
 
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
+    list_fields = s3xrc.model.get_config(table, "list_fields")
 
     if jr.component:
 
@@ -1180,7 +1181,7 @@ def shn_read(jr, **attr):
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
-            return export_xls(table, query)
+            return export_xls(table, query, list_fields)
 
         elif jr.representation in shn_json_export_formats:
             return export_json(jr)
@@ -1242,6 +1243,7 @@ def shn_list(jr, **attr):
 
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
+    list_fields = s3xrc.model.get_config(table, "list_fields")
 
     # Get request arguments
     rheader = attr.get("rheader", None)
@@ -1250,7 +1252,6 @@ def shn_list(jr, **attr):
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
     rss = _attr.get("rss", None)
-    list_fields = _attr.get("list_fields", None)
     listadd = _attr.get("listadd", True)
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
@@ -1323,8 +1324,6 @@ def shn_list(jr, **attr):
         # Which fields do we display?
         fields = None
 
-        if jr.component:
-            list_fields = jr.component.attr.list_fields
         if list_fields:
             fields = [f for f in list_fields if table[f].readable]
 
@@ -1399,14 +1398,7 @@ def shn_list(jr, **attr):
         # Which fields do we display?
         fields = None
 
-        if jr.component:
-            list_fields = jr.component.attr.list_fields or []
-            _fields = [jr.component.table[f] for f in list_fields if f in jr.component.table.fields]
-            if _fields:
-                fields = [f for f in _fields if f.readable]
-            else:
-                fields = None
-        elif list_fields:
+        if list_fields:
             fields = [table[f] for f in list_fields if table[f].readable]
 
         if fields and len(fields)==0:
@@ -1602,7 +1594,7 @@ def shn_list(jr, **attr):
         return export_pdf(table, query)
 
     elif jr.representation == "xls":
-        return export_xls(table, query)
+        return export_xls(table, query, list_fields)
 
     elif jr.representation in shn_json_export_formats:
         return export_json(jr)

@@ -96,6 +96,16 @@ if deployment_settings.has_module(module):
                                 comment = DIV(A(s3.crud_strings.dvi_find.label_create_button, _class='colorbox', _href=URL(r=request, c='dvi', f='find', args='create', vars=dict(format='popup')), _target='top', _title=s3.crud_strings.dvi_find.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Find report|Add new report on body find)."))),
                                 ondelete = 'RESTRICT'))
 
+    s3xrc.model.configure(db[table],
+                          list_fields = ['id',
+                                         'find_date',
+                                         'location_id',
+                                         'location_details',
+                                         'description',
+                                         'bodies_est',
+                                         'bodies_rcv',
+                                         'opt_dvi_task_status'])
+
     #
     # Body ------------------------------------------------------------------------
     #
@@ -155,8 +165,16 @@ if deployment_settings.has_module(module):
         msg_list_empty = T('No recovery reports available'))
 
     s3xrc.model.configure(db[table],
-        onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=3),
-        delete_onaccept=lambda form: shn_pentity_ondelete(form))
+                          onaccept=lambda form: \
+                          shn_pentity_onaccept(form, table=db.pr_person, entity_type=3),
+                          delete_onaccept=lambda form: \
+                          shn_pentity_ondelete(form),
+                          list_fields=['id',
+                                       'pr_pe_label',
+                                       'opt_pr_gender',
+                                       'opt_pr_age_group',
+                                       'date_of_recovery',
+                                       'location_id'])
 
     #
     # Checklist of operations -----------------------------------------------------
@@ -228,11 +246,12 @@ if deployment_settings.has_module(module):
 
     # Joined Resource
     s3xrc.model.add_component(module, resource,
-        multiple = False,
-        joinby = 'pr_pe_id',
-        deletable = True,
-        editable = True,
-        list_fields = ['id'])
+                              multiple = False,
+                              joinby = 'pr_pe_id',
+                              deletable = True,
+                              editable = True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id'])
 
     #
     # Personal Effects ------------------------------------------------------------------------
@@ -273,11 +292,12 @@ if deployment_settings.has_module(module):
 
     # Joined Resource
     s3xrc.model.add_component(module, resource,
-        multiple = False,
-        joinby = 'pr_pe_id',
-        deletable = True,
-        editable = True,
-        list_fields = ['id'])
+                              multiple = False,
+                              joinby = 'pr_pe_id',
+                              deletable = True,
+                              editable = True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id'])
 
     #
     # Identification --------------------------------------------------------------
@@ -360,11 +380,12 @@ if deployment_settings.has_module(module):
 
     # Joined Resource
     s3xrc.model.add_component(module, resource,
-        multiple = False,
-        joinby = 'pr_pe_id',
-        deletable = True,
-        editable = True,
-        list_fields = ['id'])
+                              multiple = False,
+                              joinby = 'pr_pe_id',
+                              deletable = True,
+                              editable = True)
+
+    s3xrc.model.configure(db[table], list_fields = ['id'])
 
     # -----------------------------------------------------------------------------
     #

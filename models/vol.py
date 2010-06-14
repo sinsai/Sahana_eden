@@ -83,8 +83,13 @@ if deployment_settings.has_module(module):
                             ondelete = 'RESTRICT'
                             ))
 
-    def shn_vol_project_list_fields():
-        return ["id", "name", "location_id", "start_date", "end_date", "status"]
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "name",
+                                       "location_id",
+                                       "start_date",
+                                       "end_date",
+                                       "status"])
 
     # -----------------------------------------------------------------------------
     # vol_position (component of vol_project)
@@ -141,12 +146,18 @@ if deployment_settings.has_module(module):
                             ))
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(vol_project='vol_project_id'),
-        deletable=True,
-        editable=True,
-        main='title', extra='description',
-        list_fields = ['type', 'title', 'description', 'slots', 'payrate'])
+                              multiple=True,
+                              joinby=dict(vol_project='vol_project_id'),
+                              deletable=True,
+                              editable=True,
+                              main='title', extra='description')
+
+    s3xrc.model.configure(table,
+                          list_fields=['type',
+                                       'title',
+                                       'description',
+                                       'slots',
+                                       'payrate'])
 
     # -----------------------------------------------------------------------------
     # vol_volunteer (Component of pr_person)
@@ -223,12 +234,15 @@ if deployment_settings.has_module(module):
                             ))
 
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        main='person_id', extra='organisation_id',
-        list_fields = ['organisation_id', 'status'])
+                              multiple=False,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True,
+                              main='person_id', extra='organisation_id')
+
+    s3xrc.model.configure(table,
+                          list_fields=['organisation_id',
+                                       'status'])
 
     # -----------------------------------------------------------------------------
     # vol_resource (Component of pr_person)
@@ -292,12 +306,18 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        main='person_id', extra='subject',
-        list_fields = ['id', 'type', 'subject', 'deployment', 'status'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True,
+                              main='person_id', extra='subject')
+
+    s3xrc.model.configure(table,
+                          list_fields=['id',
+                                       'type',
+                                       'subject',
+                                       'deployment',
+                                       'status'])
 
     # CRUD Strings
     ADD_RESOURCE = T('Add Resource')
@@ -419,17 +439,20 @@ if deployment_settings.has_module(module):
     # Field labels
     table.person_id.label = T('Assigned to')
 
-    def shn_vol_task_list_fields():
-        return ['id', 'priority', 'subject', 'person_id', 'status']
-
     # Component
     s3xrc.model.add_component(module, resource,
         multiple=True,
         joinby=dict(vol_project='vol_project_id'),
         deletable=True,
         editable=True,
-        main='subject', extra='description',
-        list_fields = shn_vol_task_list_fields())
+        main='subject', extra='description')
+
+    s3xrc.model.configure(table,
+                          list_fields=['id',
+                                       'priority',
+                                       'subject',
+                                       'person_id',
+                                       'status'])
 
     # CRUD Strings
     ADD_TASK = T('Add Task')

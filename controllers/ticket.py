@@ -21,9 +21,9 @@ response.menu_options = [
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = s3.modules[module]["name_nice"]
-    
+
     return dict(module_name=module_name, a=1)
 
 def category():
@@ -103,15 +103,4 @@ def log():
 
     return shn_rest_controller(module, resource,
         listadd=False,
-        list_fields=['id',
-            'subject',
-            'attachment',
-            'priority',
-            'source',
-            'source_id',
-            'source_time',
-            'location_id',
-            'verified',
-            'actionable',
-            'actioned'
-        ],)
+)

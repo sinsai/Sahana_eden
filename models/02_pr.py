@@ -423,9 +423,17 @@ person_id = SQLTable(None, "person_id",
                 ))
 
 s3xrc.model.configure(table,
-    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1),
-    delete_onaccept=lambda form: shn_pentity_ondelete(form))
-
+                      onaccept=lambda form: \
+                      shn_pentity_onaccept(form, table=db.pr_person, entity_type=1),
+                      delete_onaccept=lambda form: \
+                      shn_pentity_ondelete(form),
+                      list_fields = ["id",
+                                     "first_name",
+                                     "middle_name",
+                                     "last_name",
+                                     "date_of_birth",
+                                     "opt_pr_nationality",
+                                     "missing"])
 
 # *****************************************************************************
 # Group (group)
@@ -527,20 +535,6 @@ s3xrc.model.configure(table,
 # *****************************************************************************
 # Functions:
 #
-def shn_pr_person_list_fields():
-
-    list_fields = ["id",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "date_of_birth",
-            "opt_pr_nationality",
-            "missing"]
-
-    return list_fields
-
-# -----------------------------------------------------------------------------
-#
 def shn_pr_person_search_simple(xrequest, **attr):
 
     """
@@ -607,9 +601,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
             xrequest.id = None
 
             # Get report from HTML exporter
-            report = shn_list(xrequest,
-                              listadd=False,
-                              list_fields=shn_pr_person_list_fields())
+            report = shn_list(xrequest, listadd=False)
 
             output.update(dict(report))
 

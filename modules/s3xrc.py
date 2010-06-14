@@ -42,7 +42,7 @@ import gluon.contrib.simplejson as json
 from gluon.storage import Storage
 from gluon.html import URL
 from gluon.http import HTTP, redirect
-from gluon.validators import IS_NULL_OR
+from gluon.validators import IS_NULL_OR, IS_EMPTY_OR
 from xml.etree.cElementTree import ElementTree
 from lxml import etree
 
@@ -1212,9 +1212,11 @@ class S3RESTRequest(object):
 
         """ Export field options in the current resource as element tree """
 
-        field = self.request.vars.get("field", None)
+        fields = self.request.vars.get("field", None)
+        if fields and not isinstance(fields, list):
+            fields = [fields]
 
-        if not field:
+        if not fields:
             if self.component:
                 tree = self.rc.options_xml(self.component.prefix,
                                            self.component.name)
@@ -1223,12 +1225,19 @@ class S3RESTRequest(object):
                 tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
         else:
             if self.component:
-                tree = self.rc.xml.get_field_options(self.component.table,
-                                                     field)
+                table = self.component.table
             else:
-                tree = self.rc.xml.get_field_options(self.table, field)
-            tree.set("id", "%s_%s_%s" % (self.prefix, self.name, field))
-            tree.set("name", "%s" % field)
+                table = self.table
+            tree = etree.Element(self.rc.xml.TAG.options)
+            for field in fields:
+                opt_list = self.rc.xml.get_field_options(table, field)
+                opt_list.set("id", "%s_%s" % (table._tablename, field))
+                opt_list.set("name", "%s" % field)
+                tree.append(opt_list)
+            if len(tree) == 1:
+                tree = tree.findall("select")[0]
+            else:
+                tree.set(self.rc.xml.TAG.resource, table._tablename)
             tree = etree.ElementTree(tree)
 
         return tree
@@ -3421,10 +3430,10 @@ class S3XML(object):
         if requires:
             r = requires[0]
             options = []
-            if isinstance(r, IS_NULL_OR) and hasattr(r.other, "options"):
-                null = etree.SubElement(select, self.TAG.option)
-                null.set(self.ATTRIBUTE.value, "")
-                null.text = ""
+            if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
+                #null = etree.SubElement(select, self.TAG.option)
+                #null.set(self.ATTRIBUTE.value, "")
+                #null.text = ""
                 options = r.other.options()
             elif hasattr(r, "options"):
                 options = r.options()
@@ -3457,7 +3466,7 @@ class S3XML(object):
             table = self.db[resource]
             for f in table.fields:
                 select = self.get_field_options(table, f)
-                if select is not None:
+                if select is not None and len(select):
                     options.append(select)
             for j in joins:
                 component = j[0]
@@ -3465,7 +3474,7 @@ class S3XML(object):
                 coptions.set(self.ATTRIBUTE.resource, component.tablename)
                 for f in component.table.fields:
                     select = self.get_field_options(component.table, f)
-                    if select is not None:
+                    if select is not None and len(select):
                         coptions.append(select)
                 options.append(coptions)
 

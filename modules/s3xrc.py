@@ -34,9 +34,9 @@
 """
 
 __name__ = "S3XRC"
-__all__ = ["S3RESTController", "S3RESTRequest", "S3ResourceController"]
+__all__ = ["S3RESTController", "S3ResourceController"]
 
-import sys, uuid, datetime
+import sys, uuid, datetime, time
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -1047,27 +1047,37 @@ class S3RESTRequest(object):
             else:
                 joins = self.rc.model.get_components(self.prefix, self.name)
 
-        if "start" in self.request.vars:
-            start = int(self.request.vars["start"])
-        else:
-            start = None
+        start = self.request.vars.get("start", None)
+        if start is not None:
+            try:
+                start = int(self.request.vars["start"])
+            except ValueError:
+                start = None
 
-        if "limit" in self.request.vars:
-            limit = int(self.request.vars["limit"])
-        else:
-            limit = None
+        limit = self.request.vars.get("limit", None)
+        if limit is not None:
+            try:
+                limit = int(self.request.vars["limit"])
+            except ValueError:
+                limit = None
 
-        if "marker" in self.request.vars:
-            # Override marker for displaying KML feeds
-            marker = self.request.vars["marker"]
-        else:
-            marker = None
+        marker = self.request.vars.get("marker", None)
+
+        msince = self.request.vars.get("msince", None)
+        if msince is not None:
+            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
+                msince = datetime.datetime(y,m,d,hh,mm,ss)
+            except ValueError:
+                msince = None
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                   joins=joins,
                                   filterby=filterby,
                                   permit=permit,
                                   audit=audit,
+                                  msince=msince,
                                   start=start,
                                   limit=limit,
                                   marker=marker)
@@ -1127,6 +1137,8 @@ class S3RESTRequest(object):
         else:
             limit = None
 
+        # marker and msince not supported in JSON
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins,
                                filterby=filterby,
@@ -1149,15 +1161,19 @@ class S3RESTRequest(object):
         return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
-    def import_xml(self, tree, permit=None, audit=None):
+    def import_xml(self, tree, permit=None, audit=None, push_limit=1):
 
         """ import the requested resources from an element tree
 
             @param tree: the element tree
             @param permit: permit hook (function to check table permissions)
             @param audit: audit hook (function to audit table access)
+            @param push_limit: number of resources allowed in pushes
 
         """
+
+        if self.http not in ("PUT", "POST"):
+            push_limit = None
 
         if self.component:
             skip_resource = True
@@ -1188,6 +1204,7 @@ class S3RESTRequest(object):
                                   skip_resource=skip_resource,
                                   permit=permit,
                                   audit=audit,
+                                  push_limit=push_limit,
                                   ignore_errors=ignore_errors)
 
 
@@ -1723,6 +1740,7 @@ class S3ResourceController(object):
                    start=None,
                    limit=None,
                    marker=None,
+                   msince=None,
                    show_urls=True,
                    dereference=True):
 
@@ -1739,6 +1757,7 @@ class S3ResourceController(object):
             @param start: starting record (for server-side pagination)
             @param limit: page size (for server-side pagination)
             @marker: URL to override map marker URL in location references
+            @msince: report only resources which have been modified since that datetime
             @show_urls: show resource URLs in <resource> elements
             @dereference: include referenced resources into the export
 
@@ -1770,7 +1789,7 @@ class S3ResourceController(object):
         if filterby:
             query = (filterby) & query
 
-        results = self.db(query).count()
+        #results = self.db(query).count()
 
         # Server-side pagination
         if start is not None: # can't be 'if start': 0 is a valid value
@@ -1804,8 +1823,10 @@ class S3ResourceController(object):
                 (c, pkey, fkey) = joins[i]
                 pkeys = map(lambda r: r[pkey], records)
                 cquery = (c.table[fkey].belongs(pkeys))
-                if "deleted" in c.table:
+                if "deleted" in c.table.fields:
                     cquery = (c.table.deleted == False) & cquery
+                if msince and "modified_on" in c.table.fields:
+                    cquery = (c.table.modified_on >= msince) & cquery
                 cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
                 _skip = [fkey,]
                 if skip:
@@ -1841,12 +1862,6 @@ class S3ResourceController(object):
             self.xml.gis_encode(rmap,
                                 download_url=self.download_url,
                                 marker=marker)
-            ref_map.extend(rmap)
-            resources.append(resource)
-            if exp_map.get(table._tablename, None):
-                exp_map[table._tablename].append(record.id)
-            else:
-                exp_map[table._tablename] = [record.id]
 
             # Export components of this record
             r_url = "%s/%s" % (url, record.id)
@@ -1886,6 +1901,21 @@ class S3ResourceController(object):
                         exp_map[c.tablename].append(crecord.id)
                     else:
                         exp_map[c.tablename] = [crecord.id]
+
+            if msince and "modified_on" in table.fields:
+                mtime = record.get("modified_on", None)
+                if mtime and mtime < msince and \
+                   not len(resource.findall("resource")):
+                    continue
+
+            ref_map.extend(rmap)
+            resources.append(resource)
+            if exp_map.get(table._tablename, None):
+                exp_map[table._tablename].append(record.id)
+            else:
+                exp_map[table._tablename] = [record.id]
+
+        results = len(resources)
 
         # Add referenced resources to the tree
         depth = dereference and self.MAX_DEPTH or 0
@@ -2051,6 +2081,7 @@ class S3ResourceController(object):
                    skip_resource=False,
                    permit=None,
                    audit=None,
+                   push_limit=None,
                    ignore_errors=False):
 
         """ Imports data from an element tree
@@ -2105,6 +2136,11 @@ class S3ResourceController(object):
 
         if joins is None:
             joins = []
+
+        if push_limit is not None and \
+           len(elements) > push_limit:
+            self.error = S3XRC_NOT_PERMITTED
+            return False
 
         # Import all matching elements
         imports = []
@@ -3549,7 +3585,7 @@ class S3XML(object):
             root_dict = json.load(source)
         except (ValueError,):
             e = sys.exc_info()[1]
-            raise HTTP(400, body=self.json_message(False, 400, "%s %s" % (e.lineno, e.msg)))
+            raise HTTP(400, body=self.json_message(False, 400, e))
 
         native=False
 

@@ -8,6 +8,8 @@
 
 module = "hms"
 
+import sys
+
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
@@ -64,6 +66,8 @@ def hospital():
 
     response.s3.pagination = True
 
+    #s3xrc.sync_resolve = shn_hospital_resolver
+
     output = shn_rest_controller(module , 'hospital',
         rheader = shn_hms_hospital_rheader,
         list_fields=shn_hms_hospital_list_fields(),
@@ -76,6 +80,25 @@ def hospital():
     shn_menu()
 
     return output
+
+def shn_hospital_resolver(vector):
+
+    """ Example for a simple Sync resolver - not for production use """
+
+    # Default resolution: import data from peer if newer
+    vector.default_resolution = vector.RESOLUTION.NEWER
+
+    if vector.tablename == "hms_hospital":
+        # Do not update hospital Gov-UUIDs or names
+        vector.resolution = dict(
+            gov_uuid = vector.RESOLUTION.THIS,
+            name = vector.RESOLUTION.THIS
+        )
+    else:
+        vector.resolution = vector.RESOLUTION.NEWER
+
+    # Allow both, update of existing and create of new records:
+    vector.strategy = [vector.METHOD.UPDATE, vector.METHOD.CREATE]
 
 # -----------------------------------------------------------------------------
 def hrequest():
@@ -147,7 +170,7 @@ def hpledge():
 # -----------------------------------------------------------------------------
 def shn_hms_hrequest_rheader(resource, record_id, representation, next=None, same=None):
 
-    """ Request PHeader """
+    """ Request RHeader """
 
     if representation == "html":
 

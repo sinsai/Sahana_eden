@@ -13,20 +13,21 @@ request.utcnow = datetime.datetime.utcnow()
 # Database Configuration
 ########################
 
-migrate = deployment_settings.base.get("migrate", True)
+migrate = deployment_settings.get_base_migrate()
 
-#if request.env.web2py_runtime_gae:            # if running on Google App Engine
-#    db = DAL("gae")                           # connect to Google BigTable
-#    session.connect(request, response, db=db) # and store sessions and tickets there
-    ### or use the following lines to store sessions in Memcache
-    # from gluon.contrib.memdb import MEMDB
-    # from google.appengine.api.memcache import Client
-    # session.connect(request, response, db=MEMDB(Client())
-#else:                                         # else use a normal relational database
-db = DAL("sqlite://storage.db")       # if not, use SQLite or other DB
-#db = DAL("mysql://sahana:password@localhost/sahana", pool_size=30) # or other DB
-#db = DAL("postgres://postgres:password@localhost/db", pool_size=10)
+db_string = deployment_settings.get_database_string()
+if isinstance(db_string, str):
+    db = DAL(db_string)
+else:
+    # Tuple (inc pool_size)
+    db = DAL(db_string[0], pool_size=db_string[1])
+
+#if request.env.web2py_runtime_gae:        # if running on Google App Engine
 #session.connect(request, response, db=db) # Store sessions and tickets in DB
+### or use the following lines to store sessions in Memcache (GAE-only)
+# from gluon.contrib.memdb import MEMDB
+# from google.appengine.api.memcache import Client
+# session.connect(request, response, db=MEMDB(Client())
 
 ##################################
 # Instantiate Classes from Modules

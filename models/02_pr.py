@@ -632,7 +632,7 @@ s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_p
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_rheader(jr):
+def shn_pr_rheader(jr, tabs=[]):
 
     """ Person Registry page headers """
 
@@ -644,39 +644,34 @@ def shn_pr_rheader(jr):
 
             person = jr.record
 
+            rheader_tabs = shn_rheader_tabs(jr, tabs)
+
             if person:
                 rheader = DIV(TABLE(
-                    TR(
-                        TH(T("Name: ")),
-                        vita.fullname(person),
-                        TH(T("ID Label: ")),
-                        "%(pr_pe_label)s" % person,
-                        TH(A(T("Clear Selection"),
-                            _href=URL(r=request, f="person", args="clear", vars={"_next": _same})))
-                        ),
-                    TR(
-                        TH(T("Date of Birth: ")),
-                        "%s" % (person.date_of_birth or T("unknown")),
-                        TH(T("Gender: ")),
-                        "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown")),
-                        TH(""),
-                        ),
-                    TR(
-                        TH(T("Nationality: ")),
-                        "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
-                        TH(T("Age Group: ")),
-                        "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
-                        TH(A(T("Edit Person"),
-                            _href=URL(r=request, f="person", args=["update", jr.id], vars={"_next": _next})))
-                        )
-                #), DIV(
-                        #A(T("Images"), _href=URL(r=request, f="person", args=[jr.id, "image"], vars={"_next": _next})),
-                        #A(T("Identity"), _href=URL(r=request, f="person", args=[jr.id, "identity"], vars={"_next": _next})),
-                        #A(T("Addresses"), _href=URL(r=request, f="person", args=[jr.id, "address"], vars={"_next": _next})),
-                        #A(T("Contact Information"), _href=URL(r=request, f="person", args=[jr.id, "pe_contact"], vars={"_next": _next})),
-                        #A(T("Presence Log"), _href=URL(r=request, f="person", args=[jr.id, "presence"], vars={"_next": _next})),
-                        #_class="rheader_tabs"
-                ))
+
+                    TR(TH(T("Name: ")),
+                       vita.fullname(person),
+                       TH(T("ID Label: ")),
+                       "%(pr_pe_label)s" % person,
+                       TH(A(T("Clear Selection"),
+                            _href=URL(r=request, f="person", args="clear", vars={"_next": _same})))),
+
+                    TR(TH(T("Date of Birth: ")),
+                       "%s" % (person.date_of_birth or T("unknown")),
+                       TH(T("Gender: ")),
+                       "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown")),
+                       TH("")),
+
+                    TR(TH(T("Nationality: ")),
+                       "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
+                       TH(T("Age Group: ")),
+                       "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
+                       TH(A(T("Edit Person"),
+                            _href=URL(r=request, f="person", args=["update", jr.id], vars={"_next": _next}))))
+
+                    ))
+                    #), rheader_tabs)
+
                 return rheader
 
         else:

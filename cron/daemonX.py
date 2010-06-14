@@ -18,7 +18,8 @@ from struct import *
 import socket
 import time
 try:
-    from jsonrpc import ServiceProxy, JSONRPCException
+    from jsonrpc.proxy import ServiceProxy
+    from jsonrpc import JSONRPCError
 except ImportError:
     print 'JSONRPC module not available within the running Python - this needs installing for AutoSync!'
 
@@ -59,7 +60,7 @@ class Config(object):
         items = {}
         items['localhost'] = "127.0.0.1" # this should be dealt with different approach
         items['localhost-port'] = 8000 # this too
-        items['servername'] = 'sahana'
+        items['servername'] = 'eden2'
         self.items = items
 
     def getConfFromServer(self, server):
@@ -249,6 +250,7 @@ class ServerManager(object):
         """server is URI of the server to be called"""
         if adress is "127.0.0.1": #local server shouldn't be added
             returnnode = []
+        node = []
         node.append( adress )
         node.append( port )
         node.append( properties )
@@ -263,8 +265,10 @@ class ServerManager(object):
             # For each element in self.cue, call that server and exchange data with local server
             self.starttime = int(time.time())
             for i in self.cue:
+                print 'processing => '
+                print i[2]['rpc_service_url']
                 try:
-                    url = "http://"+i[0]+":" + str(i[1]) + i[2]['rpc_service_url']
+                    url = i[2]['rpc_service_url']
                     foreignrpc = RpcManager(self.conf, self.logger, server = url)
                     foreignrpc.open_server()
                     
@@ -282,7 +286,8 @@ class ServerManager(object):
                         self.logger.log('ServerManager', logging.ERROR, "error occured while processing: " + str(e) )
             
             #pausetime = 30 * 60 # 30 mins
-            pausetime = 1 * 60 # for debugging set to 1 mins
+            #pausetime = 1 * 60 # for debugging set to 1 mins
+            pausetime = 10 # for debugging set to 10 seconds
             if int(time.time()) - self.starttime < pausetime:
                 time.sleep(pausetime - time.time() + self.starttime)
             
@@ -302,6 +307,7 @@ class RpcManager(object):
         if self.server == None:
             try:
                 url = "http://" + self.conf.items['localhost'] + ":" + str(self.conf.items['localhost-port']) + "/" + self.conf.items['servername'] + "/sync/call/jsonrpc"
+                print url
             except:
                 raise Exception("Configuration file seems to be corrupt. Delete it, system will regenerate new for you, you can edit it later on")
             try:
@@ -357,12 +363,11 @@ class SyncByIp(object):
         content = localserver.execute('getAllServers')
 
         for i in content:
-            if not i['ip'] is None and not i['ip'] is '':
-                print i
-                ip = i['ip'][:i['ip'].find(':')]
-                port = i['ip'][i['ip'].find(':')+1:]
-                properties={'discription':'This IP was manually entered by user'}
-                serverManager.addServer(ip, port, properties)
+            if not i['rpc_service_url'] is None and not i['rpc_service_url'] is '':
+                port = i['webservice_port']
+                address = i['rpc_service_url']
+                properties=i
+                serverManager.addServer(address, port, properties)
 
 if __name__ == '__main__':
     init()

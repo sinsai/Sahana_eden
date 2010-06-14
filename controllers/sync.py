@@ -27,6 +27,72 @@ def index():
 
 logtable = "sync_log"
 
+@auth.requires_login()
+def now():
+    "Manual syncing"
+    
+    module_name = "Synchronisation"
+    final_status = ""
+    
+    # retrieve sync partners from DB
+    peers = db().select(db.sync_partner.ALL)
+    
+    tables = [['budget', 'item'],
+            ['budget', 'kit'],
+            ['or', 'organisation'],
+            ['or', 'office'],
+            ['pr', 'person'],
+            ['cr', 'shelter'],
+            ['gis', 'location']]
+    
+#    final_status = ""
+#    modules = s3.modules
+#    db_tables = db.tables
+#    for _table in db_tables:
+#        for module in modules:
+#            if _table.find(module)==0:
+#                final_status += "            ['" + module + "', '" + _table[_table.find(module+"_")+len(module)+1:] + "'],\n"
+    
+    self_instance_url = db().select(db.sync_setting.instance_url)[0].instance_url
+    if not self_instance_url:
+        final_status = "Please specify Instance URL in Sync Settings before proceeding with Sync, your instance URL is the root URL of SahanaEden application, similar to http://demo.eden.sahanafoundation.org/eden/.<br /><br /><a href=\"" + URL(r=request, c='sync', f='setting/1/update') + "\">Click here</a> to go to Sync Settings.<br /><br />\n"
+        return dict(module_name=module_name, sync_status=final_status)
+    
+    _base_url = s3xrc.base_url
+    if _base_url.endswith("/")==False:
+        _base_url += "/"
+    
+    if len(peers) < 1:
+        final_status = "There are no sync partners. Please add peers (Sync Partners) to sync with.<br /><br /><a href=\"" + URL(r=request, c='sync', f='partner') + "\">Click here</a> to go to Sync Partners page.<br /><br />\n"
+        return dict(module_name=module_name, sync_status=final_status)
+    
+    for peer in peers:
+        if peer.instance_type == 'SahanaEden': 
+            final_status += "<br />Begin sync with: " + peer.uuid + ", " + peer.instance_url + " (" + peer.instance_type + "):<br />\n\n"
+            for module, resource in tables:
+                resource_url = peer.instance_url
+                if resource_url.endswith("/")==False:
+                    resource_url += "/"
+                resource_url += module + "/" + resource + ".xml"
+                final_status += "......processing " + resource_url + "<br />\n"
+                # sync this resource (Pull => fetch and sync)
+                resource_sync_url = _base_url + module + "/" + resource + "/create.xml?fetchurl=" + resource_url
+                import urllib2
+                try:
+                    _request = urllib2.Request(resource_sync_url, None, request.cookies)
+                    _response = urllib2.urlopen(_request).read()
+                except IOError, e:
+                    final_status = "ERROR while processing: " + resource_sync_url + "<br /><br />\n"
+                    return dict(module_name=module_name, sync_status=final_status)
+                else:
+                    final_status += ".........processed " + resource_sync_url + "<br />\n"
+                    
+            final_status += "......completed<br /><br />\n"
+
+    final_status += "Sync completed sucessfully."
+    
+    return dict(module_name=module_name, sync_status=final_status)
+
 @auth.requires_membership('Administrator')
 def partner():
     "RESTlike CRUD controller"
@@ -55,11 +121,6 @@ def setting():
     db.sync_setting.uuid.writable = False
     db.sync_setting.uuid.label = 'UUID'
     db.sync_setting.uuid.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("UUID|The unique identifier which identifies this server to other instances."))
-    db.sync_setting.policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Policy|The default Sync Policy for new Partners."))
-    db.sync_setting.username.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Username|The default Username used to login to new Partners."))
-    db.sync_setting.password.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Password|The default Password used to login to new Partners."))
-    db.sync_setting.rpc_service_url.writable = False
-    db.sync_setting.rpc_service_url.label = T('RPC Service URL')
     title_update = T('Edit Sync Settings')
     label_list_button = None
     msg_record_modified = T('Sync Settings updated')
@@ -119,7 +180,7 @@ def getconf():
     temp = db().select(db.sync_setting.ALL)[0]
     toreturn = {}
     for i in temp:
-        if not i is "update_record":
+        if (not i is "update_record") and (not i is "delete_record"):
             toreturn[str(i)] = temp[str(i)]
     return toreturn
 
@@ -339,7 +400,6 @@ def getdata(uuid, username, password, timestamp = None):
             ['or', 'office'],
             ['pr', 'person'],
             ['cr', 'shelter'],
-            ['gis', 'feature'],
             ['gis', 'location']]
 
     nicedbdump = []
@@ -356,9 +416,9 @@ def getdata(uuid, username, password, timestamp = None):
         for row in sqltabledump:
             temp = [row[col] for col in db[_table]["fields"]]
             nicetabledumpdata.append(temp)
-        shn_audit_read(operation = 'read', resource = _table, record=None, representation= 'json')
+        ###shn_audit_read(operation = 'read', resource = _table, record=None, representation= 'json')
         nicetabledump.append(nicetabledumpdata)
-        #nicetabledump.append(function(table, query)) # we aren't using this function because then we will have to manually translate json back into objects, let web2py do it for us
+        ###nicetabledump.append(function(table, query)) # we aren't using this function because then we will have to manually translate json back into objects, let web2py do it for us
         nicedbdump.append(nicetabledump)
 
     # Logging (not auditing)

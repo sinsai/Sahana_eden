@@ -1,0 +1,4 @@
+{{extend 'layout.html'}}
+<h1>{{=T("Synchronisation - Sync Now")}}</h1>
+{{=XML(sync_status, sanitize=False)}} Click <a href="../sync">here</a> to return to the main page.
+<br /><br />

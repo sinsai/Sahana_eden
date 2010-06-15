@@ -229,10 +229,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
     server = deployment_settings.get_base_public_url()
 
     tablename = "%s_%s" % (module, resource)
-    try:
-        title_list = s3.crud_strings[tablename].subtitle_list
-    except:
-        title_list =  s3.crud_strings.subtitle_list
+    title_list = shn_crud_strings(tablename).subtitle_list
 
     if not linkto:
         link = "/%s/%s/%s" % (request.application, module, resource)
@@ -1079,12 +1076,17 @@ def shn_read(jr, **attr):
             query = ((table.deleted==False) | (table.deleted==None)) & query
 
         try:
-            record_id = db(query).select(table.id)[0].id
+            record_id = db(query).select(table.id, limitby=(0,1)).first().id
             href_delete = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "delete", record_id])
             href_edit = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "update", record_id])
         except:
             if not jr.multiple:
-                redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"]))
+                if shn_has_permission("create", table):
+                    redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"]))
+                else:
+                    record_id = None
+                    href_edit = None
+                    href_delete = None
             else:
                 record_id = None
                 href_delete = None
@@ -1118,17 +1120,12 @@ def shn_read(jr, **attr):
             elif jr.representation == "popup":
                 shn_custom_view(jr, "popup.html")
 
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
+            title = shn_crud_strings(jr.tablename).title_display
             output = dict(title=title)
             if jr.component:
-                try:
-                    subtitle = s3.crud_strings[tablename].title_display
-                except:
-                    subtitle = s3.crud_strings.title_display
+                subtitle = shn_crud_strings(tablename).title_display
                 output.update(subtitle=subtitle)
+
             if rheader and jr.id and (jr.component or sticky):
                 try:
                     _rheader = rheader(jr)
@@ -1136,7 +1133,11 @@ def shn_read(jr, **attr):
                     _rheader = rheader
                 if _rheader:
                     output.update(rheader=_rheader)
-            item = crud.read(table, record_id)
+
+            if record_id:
+                item = crud.read(table, record_id)
+            else:
+                item = shn_crud_strings(tablename).msg_list_empty
 
             if jr.representation=="html":
                 output.update(item=item)
@@ -1151,15 +1152,11 @@ def shn_read(jr, **attr):
                 delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
             else:
                 delete = ""
-            try:
-                label_list_button = s3.crud_strings[tablename].label_list_button
-            except:
-                label_list_button = s3.crud_strings.label_list_button
+
+            label_list_button = shn_crud_strings(tablename).label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
-            output.update(edit=edit,
-                          delete=delete,
-                          list_btn=list_btn)
+            output.update(edit=edit, delete=delete, list_btn=list_btn)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -1373,11 +1370,7 @@ def shn_list(jr, **attr):
         output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
-
+            title = shn_crud_strings(jr.tablename).title_display
             if rheader:
                 try:
                     _rheader = rheader(jr)
@@ -1385,18 +1378,10 @@ def shn_list(jr, **attr):
                     _rheader = rheader
                 if _rheader:
                     output.update(rheader=_rheader)
-
         else:
-            try:
-                title = s3.crud_strings[tablename].title_list
-            except:
-                title = s3.crud_strings.title_list
+            title = shn_crud_strings(tablename).title_list
 
-        try:
-            subtitle = s3.crud_strings[tablename].subtitle_list
-        except:
-            subtitle = s3.crud_strings.subtitle_list
-
+        subtitle = shn_crud_strings(tablename).subtitle_list
         output.update(title=title, subtitle=subtitle)
 
         # Which fields do we display?
@@ -1429,10 +1414,7 @@ def shn_list(jr, **attr):
             truncate=48, _id="list", _class="display")
 
         if not items:
-            try:
-                items = s3.crud_strings[tablename].msg_list_empty
-            except:
-                items = s3.crud_strings.msg_list_empty
+            items = shn_crud_strings(tablename).msg_list_empty
 
         # Update the Return with common items
         output.update(dict(items=items))
@@ -1457,10 +1439,7 @@ def shn_list(jr, **attr):
                             shn_audit_create(form, module, resource, jr.representation) and \
                             s3xrc.store_session(session, module, resource, 0)
 
-            try:
-                message = s3.crud_strings[tablename].msg_record_created
-            except:
-                message = s3.crud_strings.msg_record_created
+            message = shn_crud_strings(tablename).msg_record_created
 
             # Display the Add form above List
             form = crud.create(table,
@@ -1476,10 +1455,7 @@ def shn_list(jr, **attr):
             if jr.component:
                 table[jr.fkey].comment = _comment
 
-            try:
-                addtitle = s3.crud_strings[tablename].subtitle_create
-            except:
-                addtitle = s3.crud_strings.subtitle_create
+            addtitle = shn_crud_strings(tablename).subtitle_create
 
             # Check for presence of Custom View
             shn_custom_view(jr, "list_create.html")
@@ -1490,10 +1466,7 @@ def shn_list(jr, **attr):
         else:
             # List only with create button below
             if listadd:
-                try:
-                    label_create_button = s3.crud_strings[tablename].label_create_button
-                except:
-                    label_create_button = s3.crud_strings.label_create_button
+                label_create_button = shn_crud_strings(tablename).label_create_button
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
@@ -1510,15 +1483,9 @@ def shn_list(jr, **attr):
         output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
+            title = shn_crud_strings(jr.tablename).title_display
         else:
-            try:
-                title = s3.crud_strings[tablename].title_list
-            except:
-                title = s3.crud_strings.title_list
+            title = shn_crud_strings(tablename).title_list
 
         # Add to Return
         output.update(title=title)
@@ -1540,10 +1507,7 @@ def shn_list(jr, **attr):
                         shn_audit_create(form, module, resource, jr.representation) and \
                         s3xrc.store_session(session, module, resource, form.vars.id)
 
-        try:
-            message = s3.crud_strings[tablename].msg_record_created
-        except:
-            message = s3.crud_strings.msg_record_created
+        message = shn_crud_strings(tablename).msg_record_created
 
         # Form is used to build the initial list view
         form = crud.create(table,
@@ -1570,10 +1534,7 @@ def shn_list(jr, **attr):
             # (We could do this from the HTML table using TableGrid, but then we wouldn't have client-side pagination)
 
             if listadd:
-                try:
-                    label_create_button = s3.crud_strings[tablename].label_create_button
-                except:
-                    label_create_button = s3.crud_strings.label_create_button
+                label_create_button = shn_crud_strings(tablename).label_create_button
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
@@ -1641,14 +1602,8 @@ def shn_create(jr, **attr):
         output = dict(module=module, resource=resource, main=main)
 
         if jr.component:
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
-            try:
-                subtitle = s3.crud_strings[tablename].subtitle_create
-            except:
-                subtitle = s3.crud_strings.subtitle_create
+            title = shn_crud_strings(jr.tablename).title_display
+            subtitle = shn_crud_strings(tablename).subtitle_create
             output.update(subtitle=subtitle)
 
             if rheader and jr.id:
@@ -1659,15 +1614,9 @@ def shn_create(jr, **attr):
                 if _rheader:
                     output.update(rheader=_rheader)
         else:
-            try:
-                title = s3.crud_strings[tablename].title_create
-            except:
-                title = s3.crud_strings.title_create
+            title = shn_crud_strings(tablename).title_create
 
-        try:
-            label_list_button = s3.crud_strings[tablename].label_list_button
-        except:
-            label_list_button = s3.crud_strings.label_list_button
+        label_list_button = shn_crud_strings(tablename).label_list_button
         list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
         output.update(title=title, list_btn=list_btn)
@@ -1705,10 +1654,7 @@ def shn_create(jr, **attr):
                         shn_audit_create(form, module, resource, jr.representation) and \
                         s3xrc.store_session(session, module, resource, form.vars.id)
 
-        try:
-            message = s3.crud_strings[tablename].msg_record_created
-        except:
-            message = s3.crud_strings.msg_record_created
+        message = shn_crud_strings(tablename).msg_record_created
 
         form = crud.create(table,
                            message=message,
@@ -1857,21 +1803,12 @@ def shn_update(jr, **attr):
             output = dict()
 
             if jr.component:
-                try:
-                    title = s3.crud_strings[jr.tablename].title_display
-                except:
-                    title = s3.crud_strings.title_display
-                try:
-                    subtitle = s3.crud_strings[tablename].title_update
-                except:
-                    subtitle = s3.crud_strings.title_update
+                title = shn_crud_strings(jr.tablename).title_display
+                subtitle = shn_crud_strings(tablename).title_update
                 output.update(subtitle=subtitle)
 
             else:
-                try:
-                    title = s3.crud_strings[tablename].title_update
-                except:
-                    title = s3.crud_strings.title_update
+                title = shn_crud_strings(tablename).title_update
 
             if rheader and jr.id and (jr.component or sticky):
                 try:
@@ -1880,20 +1817,13 @@ def shn_update(jr, **attr):
                     _rheader = rheader
                 if _rheader:
                     output.update(rheader=_rheader)
-            try:
-                label_list_button = s3.crud_strings[tablename].label_list_button
-            except:
-                label_list_button = s3.crud_strings.label_list_button
+
+            label_list_button = shn_crud_strings(tablename).label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
             if deletable:
                 del_href = jr.other(method="delete", representation=jr.representation)
-                if tablename in s3.crud_strings and "label_delete_button" in s3.crud_strings[tablename]:
-                    label_del_button = s3.crud_strings[tablename].label_delete_button
-                else:
-                    label_del_button = None
-                if label_del_button is None:
-                    label_del_button = s3.crud_strings.label_delete_button
+                label_del_button = shn_crud_strings(tablename).label_delete_button
                 del_btn = A(label_del_button, _href=del_href, _id="delete-btn", _class="action-btn")
                 output.update(del_btn=del_btn)
 
@@ -1922,10 +1852,7 @@ def shn_update(jr, **attr):
                 if not onaccept:
                     onaccept = crud.settings.update_onaccept
 
-            try:
-                message = s3.crud_strings[tablename].msg_record_modified
-            except:
-                message = s3.crud_strings.msg_record_modified
+            message = shn_crud_strings(tablename).msg_record_modified
 
             if onaccept:
                 _onaccept = lambda form: \
@@ -2034,10 +1961,7 @@ def shn_delete(jr, **attr):
         session.confirmation = T("No records to delete")
         return
 
-    try:
-        message = s3.crud_strings[tablename].msg_record_deleted
-    except:
-        message = s3.crud_strings.msg_record_deleted
+    message = shn_crud_strings(tablename).msg_record_deleted
 
     if jr.component:
         # Save callback settings

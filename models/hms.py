@@ -278,22 +278,6 @@ if deployment_settings.has_module(module):
                                 ondelete = "RESTRICT"))
 
     # -----------------------------------------------------------------------------
-    def shn_hms_hospital_list_fields():
-        return ['id',
-                'gov_uuid',
-                'name',
-                'organisation_id',
-                'location_id',
-                'phone_business',
-                'ems_status',
-                'facility_status',
-                'clinical_status',
-                'security_status',
-                'total_beds',
-                'available_beds']
-
-
-    # -----------------------------------------------------------------------------
     def shn_hms_hospital_rss(record):
 
         """ Hospital RSS Feed """
@@ -339,8 +323,22 @@ if deployment_settings.has_module(module):
 
 
     s3xrc.model.configure(table,
-                          onvalidation=lambda form: shn_hms_hospital_onvalidation(form))
-                          #onaccept=lambda form:shn_hms_hospital_onaccept(form))
+                          onvalidation=lambda form: \
+                          shn_hms_hospital_onvalidation(form),
+                          onaccept=lambda form: \
+                          shn_hms_hospital_onaccept(form),
+                          list_fields=['id',
+                                       'gov_uuid',
+                                       'name',
+                                       'organisation_id',
+                                       'location_id',
+                                       'phone_business',
+                                       'ems_status',
+                                       'facility_status',
+                                       'clinical_status',
+                                       'security_status',
+                                       'total_beds',
+                                       'available_beds'])
 
     # -----------------------------------------------------------------------------
     # Contacts
@@ -372,12 +370,21 @@ if deployment_settings.has_module(module):
     table.skype.label = T("Skype ID")
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hospital="hospital_id"),
-        deletable=True,
-        editable=True,
-        main="person_id", extra="title",
-        list_fields = ["id", "person_id", "title", "phone", "mobile", "email", "fax", "skype"])
+                              multiple=True,
+                              joinby=dict(hms_hospital="hospital_id"),
+                              deletable=True,
+                              editable=True,
+                              main="person_id", extra="title")
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "person_id",
+                                       "title",
+                                       "phone",
+                                       "mobile",
+                                       "email",
+                                       "fax",
+                                       "skype"])
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -435,12 +442,20 @@ if deployment_settings.has_module(module):
         _title=T("Deaths/24hrs|Number of deaths during the past 24 hours.")))
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hospital="hospital_id"),
-        deletable=True,
-        editable=True,
-        main="hospital_id", extra="id",
-        list_fields = ["id", "date", "patients", "admissions24", "discharges24", "deaths24", "comment"])
+                              multiple=True,
+                              joinby=dict(hms_hospital="hospital_id"),
+                              deletable=True,
+                              editable=True,
+                              main="hospital_id", extra="id")
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "date",
+                                       "patients",
+                                       "admissions24",
+                                       "discharges24",
+                                       "deaths24",
+                                       "comment"])
 
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Activity Report"),
@@ -543,16 +558,24 @@ if deployment_settings.has_module(module):
                 total_beds=t_beds,
                 available_beds=a_beds)
 
-    s3xrc.model.configure(table, onaccept=shn_hms_bedcount_update)
-
     # add as component
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hospital="hospital_id"),
-        deletable=True,
-        editable=True,
-        main="hospital_id", extra="id",
-        list_fields = ["id", "unit_name", "bed_type", "date", "beds_baseline", "beds_available", "beds_add24"])
+                              multiple=True,
+                              joinby=dict(hms_hospital="hospital_id"),
+                              deletable=True,
+                              editable=True,
+                              main="hospital_id", extra="id")
+
+    s3xrc.model.configure(table,
+                          onaccept=lambda form: \
+                          shn_hms_bedcount_update(form),
+                          list_fields=["id",
+                                       "unit_name",
+                                       "bed_type",
+                                       "date",
+                                       "beds_baseline",
+                                       "beds_available",
+                                       "beds_add24"])
 
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Unit"),
@@ -629,12 +652,13 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No service profile available"))
 
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(hms_hospital="hospital_id"),
-        deletable=True,
-        editable=True,
-        main="hospital_id", extra="id",
-        list_fields = ["id"])
+                              multiple=False,
+                              joinby=dict(hms_hospital="hospital_id"),
+                              deletable=True,
+                              editable=True,
+                              main="hospital_id", extra="id")
+
+    s3xrc.model.configure(table, list_fields = ["id"])
 
     # -----------------------------------------------------------------------------
     # Images
@@ -697,11 +721,18 @@ if deployment_settings.has_module(module):
     )
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hospital="hospital_id"),
-        deletable=True,
-        editable=True,
-        list_fields = ["id", "type", "image", "url", "description", "tags"])
+                              multiple=True,
+                              joinby=dict(hms_hospital="hospital_id"),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "type",
+                                       "image",
+                                       "url",
+                                       "description",
+                                       "tags"])
 
     # -----------------------------------------------------------------------------
     # Resources (multiple) - TODO: to be completed!
@@ -735,33 +766,27 @@ if deployment_settings.has_module(module):
 
     # Add as component
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hospital="hospital_id"),
-        deletable=True,
-        editable=True,
-        main="hospital_id", extra="id",
-        list_fields = ["id"])
+                              multiple=True,
+                              joinby=dict(hms_hospital="hospital_id"),
+                              deletable=True,
+                              editable=True,
+                              main="hospital_id", extra="id")
+
+    s3xrc.model.configure(table, list_fields = ["id"])
 
     # -----------------------------------------------------------------------------
     #
-    def shn_hms_hospital_rheader(resource, record_id, representation, next=None, same=None):
+    def shn_hms_hospital_rheader(jr):
 
         """ Page header for component resources """
 
-        if resource == "hospital":
-            if representation == "html":
+        if jr.name == "hospital":
+            if jr.representation == "html":
 
-                if next:
-                    _next = next
-                else:
-                    _next = URL(r=request, f=resource, args=["read"])
+                _next = jr.here()
+                _same = jr.same()
 
-                if same:
-                    _same = same
-                else:
-                    _same = URL(r=request, f=resource, args=["read", "[id]"])
-
-                hospital = db.hms_hospital[record_id]
+                hospital = jr.record
                 if hospital:
                     rheader = TABLE(
                         TR(
@@ -794,7 +819,7 @@ if deployment_settings.has_module(module):
                             TH(T("Security Status: ")),
                             "%s" % db.hms_hospital.security_status.represent(hospital.security_status),
                             TH(A(T("Edit Hospital"),
-                                _href=URL(r=request, f="hospital", args=["update", record_id], vars={"_next": _next})))
+                                _href=URL(r=request, f="hospital", args=["update", jr.id], vars={"_next": _next})))
                             )
                     )
                     return rheader
@@ -867,11 +892,7 @@ if deployment_settings.has_module(module):
                 xrequest.id = None
 
                 # Get report from HTML exporter
-                report = shn_list(xrequest,
-                                  listadd=False,
-                                  list_fields=shn_hms_hospital_list_fields(),
-                                  onvalidation=onvalidation, onaccept=onaccept)
-
+                report = shn_list(xrequest, listadd=False)
                 output.update(dict(report))
 
             # Title and subtitle
@@ -1034,8 +1055,17 @@ if deployment_settings.has_module(module):
         multiple=True,
         joinby=dict(hms_hospital = "hospital_id"),
         deletable=True,
-        editable=True,
-        list_fields = ["id", "timestamp", "hospital_id", "city", "type", "subject", "priority", "status", "completed"])
+        editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "timestamp",
+                                       "hospital_id",
+                                       "city",
+                                       "type",
+                                       "subject",
+                                       "priority",
+                                       "status"])
 
     # -----------------------------------------------------------------------------
     # Request Representation
@@ -1233,11 +1263,17 @@ if deployment_settings.has_module(module):
 
     # Pledges as a component of requests
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hrequest = "hrequest_id"),
-        deletable=True,
-        editable=True,
-        list_fields = ["id", "organisation_id", "person_id", "submitted_on", "status"])
+                              multiple=True,
+                              joinby=dict(hms_hrequest = "hms_hrequest_id"),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       #"organisation_id",
+                                       #"person_id",
+                                       "submitted_on",
+                                       "status"])
 
     s3.crud_strings[tablename] = Storage(
         title_create = "Add Pledge",
@@ -1253,12 +1289,5 @@ if deployment_settings.has_module(module):
         msg_record_modified = "Pledge updated",
         msg_record_deleted = "Pledge deleted",
         msg_list_empty = "No Pledges currently available")
-
-    s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hrequest = "hms_hrequest_id"),
-        deletable=True,
-        editable=True,
-        list_fields = ["id", "submitted_on", "status"])
 
     # -----------------------------------------------------------------------------

@@ -75,33 +75,15 @@ def index():
 
 def find():
     "RESTlike CRUD controller"
-    output = shn_rest_controller(module, 'find',
-        list_fields = [
-            'id',
-            'find_date',
-            'location_id',
-            'location_details',
-            'description',
-            'bodies_est',
-            'bodies_rcv',
-            'opt_dvi_task_status'
-        ]
-    )
+    output = shn_rest_controller(module, 'find')
     shn_menu()
     return output
 
 def body():
-    output = shn_rest_controller(module, 'body', main='pr_pe_label', extra='opt_pr_gender',
-        rheader=shn_dvi_rheader,
-        list_fields=[
-            'id',
-            'pr_pe_label',
-            'opt_pr_gender',
-            'opt_pr_age_group',
-            'date_of_recovery',
-            'location_id',
-        ]
-    )
+    output = shn_rest_controller(module, 'body',
+                                 main='pr_pe_label',
+                                 extra='opt_pr_gender',
+                                 rheader=shn_dvi_rheader)
     shn_menu()
     return output
 

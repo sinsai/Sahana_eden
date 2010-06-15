@@ -52,7 +52,8 @@ $(document).ready(function() {
                 var re = />(.*)</i;
                 id = re.exec(aData[0])[1];
                 c = Actions[i]._class
-                Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace('%5Bid%5D',id) + '">' + Actions[i].label + '</a>' + '&nbsp;';
+                re = /%5Bid%5D/g;
+                Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re,id) + '">' + Actions[i].label + '</a>' + '&nbsp;';
                 }
             // Set the first column to the action buttons
             $('td:eq(0)', nRow).html( Buttons );

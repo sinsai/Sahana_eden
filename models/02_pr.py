@@ -652,22 +652,17 @@ def shn_pr_rheader(jr, tabs=[]):
                     TR(TH(T("Name: ")),
                        vita.fullname(person),
                        TH(T("ID Label: ")),
-                       "%(pr_pe_label)s" % person,
-                       TH(A(T("Clear Selection"),
-                            _href=URL(r=request, f="person", args="clear", vars={"_next": _same})))),
+                       "%(pr_pe_label)s" % person),
 
                     TR(TH(T("Date of Birth: ")),
                        "%s" % (person.date_of_birth or T("unknown")),
                        TH(T("Gender: ")),
-                       "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown")),
-                       TH("")),
+                       "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown"))),
 
                     TR(TH(T("Nationality: ")),
                        "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
                        TH(T("Age Group: ")),
-                       "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
-                       TH(A(T("Edit Person"),
-                            _href=URL(r=request, f="person", args=["update", jr.id], vars={"_next": _next}))))
+                       "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown"))),
 
                     #))
                     ), rheader_tabs)

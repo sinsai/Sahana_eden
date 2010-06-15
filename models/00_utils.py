@@ -413,6 +413,13 @@ def shn_crud_strings(table_name,
     return table_strings
 
 
+def shn_get_crud_strings(tablename):
+
+    """ Get the CRUD strings for a table """
+
+    return s3.crud_strings.get(tablename, s3.crud_strings)
+
+
 def shn_import_table(table_name,
                      import_if_not_empty = False):
     """
@@ -479,11 +486,14 @@ def shn_rheader_tabs(jr, tabs=[]):
             if jr.component and jr.component.name == component:
                 _class = "rheader_tab_here"
             args = [jr.id, component]
+            _href = URL(r=request, f=jr.name, args=args)
         else:
             if not jr.component:
                 _class = "rheader_tab_here"
             args = [jr.id]
-        tab = SPAN(A(title, _href=URL(r=request, f=jr.name, args=args)), _class=_class)
+            _next = URL(r=request, f=jr.name, args=[jr.id])
+            _href = URL(r=request, f=jr.name, args=args, vars = {"_next": _next})
+        tab = SPAN(A(title, _href=_href), _class=_class)
         rheader_tabs.append(tab)
 
     if rheader_tabs:

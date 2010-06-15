@@ -2,7 +2,7 @@
 
 # 1st-run initialisation
 # designed to be called from Crontab's @reboot
-# however this isn't reliable so still in models for now...
+# however this isn't reliable (doesn't work on Win32 Service) so still in models for now...
 
 # Deployments can change settings live via appadmin
 
@@ -11,10 +11,7 @@ if db(db["s3_setting"].id > 0).count() or \
    not deployment_settings.get_base_prepopulate:
     empty = False
 else:
-    if deployment_settings.maintenance.get("zzz_1st_run_disable", False) :
-        empty = False
-    else:
-        empty = True
+    empty = True
 
 if empty:
 

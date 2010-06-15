@@ -7,13 +7,13 @@
 import sys, socket, email, uuid
 
 # Read-in configuration from Database
-host = db(db.msg_setting.id==1).select()[0].inbound_mail_server
-server_type = db(db.msg_setting.id==1).select()[0].inbound_mail_type
-ssl = db(db.msg_setting.id==1).select()[0].inbound_mail_ssl
-port = db(db.msg_setting.id==1).select()[0].inbound_mail_port
-username = db(db.msg_setting.id==1).select()[0].inbound_mail_username
-password = db(db.msg_setting.id==1).select()[0].inbound_mail_password
-delete = db(db.msg_setting.id==1).select()[0].inbound_mail_delete
+host = db(db.msg_email_settings.id==1).select()[0].inbound_mail_server
+server_type = db(db.msg_email_settings.id==1).select()[0].inbound_mail_type
+ssl = db(db.msg_email_settings.id==1).select()[0].inbound_mail_ssl
+port = db(db.msg_email_settings.id==1).select()[0].inbound_mail_port
+username = db(db.msg_email_settings.id==1).select()[0].inbound_mail_username
+password = db(db.msg_email_settings.id==1).select()[0].inbound_mail_password
+delete = db(db.msg_email_settings.id==1).select()[0].inbound_mail_delete
 
 if server_type == 'pop3':
     import poplib

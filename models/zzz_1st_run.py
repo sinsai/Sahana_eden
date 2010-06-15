@@ -249,7 +249,7 @@ if empty:
         table.insert(modem_baud=115200)
 
     if "msg" in deployment_settings.modules:
-        tablename = 'msg_setting'
+        tablename = 'msg_email_settings'
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(

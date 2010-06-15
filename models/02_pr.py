@@ -669,8 +669,8 @@ def shn_pr_rheader(jr, tabs=[]):
                        TH(A(T("Edit Person"),
                             _href=URL(r=request, f="person", args=["update", jr.id], vars={"_next": _next}))))
 
-                    ))
-                    #), rheader_tabs)
+                    #))
+                    ), rheader_tabs)
 
                 return rheader
 

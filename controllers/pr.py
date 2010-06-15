@@ -22,24 +22,21 @@ def shn_menu():
             [T("Add"), False, URL(r=request, f="group", args="create")],
             [T("Group Memberships"), False, URL(r=request, f="group_membership")],
         ]]]
-    if session.rcvars and "pr_person" in session.rcvars:
-        selection = db.pr_person[session.rcvars["pr_person"]]
-        if selection:
-            selection = shn_pr_person_represent(selection.id)
-            menu_person = [
-                [str(T("Person:")) + " " + selection, False, URL(r=request, f="person", args="read"),[
-                    [T("Basic Details"), False, URL(r=request, f="person", args="read")],
-                    [T("Images"), False, URL(r=request, f="person", args="image")],
-                    [T("Identity"), False, URL(r=request, f="person", args="identity")],
-                    [T("Address"), False, URL(r=request, f="person", args="address")],
-                    [T("Contact Data"), False, URL(r=request, f="person", args="pe_contact")],
-                    [T("Presence Log"), False, URL(r=request, f="person", args="presence")],
-            #        [T("Roles"), False, URL(r=request, f="person", args="role")],
-            #        [T("Status"), False, URL(r=request, f="person", args="status")],
-            #        [T("Group Memberships"), False, URL(r=request, f="person", args="group_membership")],
-                ]]
-            ]
-            response.menu_options.extend(menu_person)
+    #if session.rcvars and "pr_person" in session.rcvars:
+        #selection = db.pr_person[session.rcvars["pr_person"]]
+        #if selection:
+            #selection = shn_pr_person_represent(selection.id)
+            #menu_person = [
+                #[str(T("Person:")) + " " + selection, False, URL(r=request, f="person", args="read"),[
+                    #[T("Basic Details"), False, URL(r=request, f="person", args="read")],
+                    #[T("Images"), False, URL(r=request, f="person", args="image")],
+                    #[T("Identity"), False, URL(r=request, f="person", args="identity")],
+                    #[T("Address"), False, URL(r=request, f="person", args="address")],
+                    #[T("Contact Data"), False, URL(r=request, f="person", args="pe_contact")],
+                    #[T("Presence Log"), False, URL(r=request, f="person", args="presence")],
+                #]]
+            #]
+            #response.menu_options.extend(menu_person)
 
 shn_menu()
 
@@ -83,7 +80,10 @@ def person():
                 rheader=lambda jr: shn_pr_rheader(jr,
                     tabs = [(T("Basic Details"), None),
                             (T("Images"), "image"),
-                            (T("Identities"), "identity")]),
+                            (T("Identity"), "identity"),
+                            (T("Address"), "address"),
+                            (T("Contact Data"), "pe_contact"),
+                            (T("Presence Log"), "presence")]),
                 sticky=True,
                 rss=dict(title=shn_pr_person_represent,
                         description="ID Label: %(pr_pe_label)s\n%(comment)s"))

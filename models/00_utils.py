@@ -413,7 +413,7 @@ def shn_crud_strings(table_name,
     return table_strings
 
 
-def shn_crud_strings(tablename):
+def shn_get_crud_strings(tablename):
 
     """ Get the CRUD strings for a table """
 

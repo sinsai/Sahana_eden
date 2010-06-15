@@ -237,7 +237,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
     server = deployment_settings.get_base_public_url()
 
     tablename = "%s_%s" % (module, resource)
-    title_list = shn_crud_strings(tablename).subtitle_list
+    title_list = shn_get_crud_strings(tablename).subtitle_list
 
     if not linkto:
         link = "/%s/%s/%s" % (request.application, module, resource)
@@ -1130,10 +1130,10 @@ def shn_read(jr, **attr):
             elif jr.representation == "popup":
                 shn_custom_view(jr, "popup.html")
 
-            title = shn_crud_strings(jr.tablename).title_display
+            title = shn_get_crud_strings(jr.tablename).title_display
             output = dict(title=title)
             if jr.component:
-                subtitle = shn_crud_strings(tablename).title_display
+                subtitle = shn_get_crud_strings(tablename).title_display
                 output.update(subtitle=subtitle)
 
             if rheader and jr.id and (jr.component or sticky):
@@ -1147,7 +1147,7 @@ def shn_read(jr, **attr):
             if record_id:
                 item = crud.read(table, record_id)
             else:
-                item = shn_crud_strings(tablename).msg_list_empty
+                item = shn_get_crud_strings(tablename).msg_list_empty
 
             if jr.representation == "html":
                 output.update(item=item)
@@ -1163,7 +1163,7 @@ def shn_read(jr, **attr):
             else:
                 delete = ""
 
-            label_list_button = shn_crud_strings(tablename).label_list_button
+            label_list_button = shn_get_crud_strings(tablename).label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
             output.update(edit=edit, delete=delete, list_btn=list_btn)
@@ -1381,7 +1381,7 @@ def shn_list(jr, **attr):
         output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
-            title = shn_crud_strings(jr.tablename).title_display
+            title = shn_get_crud_strings(jr.tablename).title_display
             if rheader:
                 try:
                     _rheader = rheader(jr)
@@ -1390,9 +1390,9 @@ def shn_list(jr, **attr):
                 if _rheader:
                     output.update(rheader=_rheader)
         else:
-            title = shn_crud_strings(tablename).title_list
+            title = shn_get_crud_strings(tablename).title_list
 
-        subtitle = shn_crud_strings(tablename).subtitle_list
+        subtitle = shn_get_crud_strings(tablename).subtitle_list
         output.update(title=title, subtitle=subtitle)
 
         # Which fields do we display?
@@ -1425,7 +1425,7 @@ def shn_list(jr, **attr):
             truncate=48, _id="list", _class="display")
 
         if not items:
-            items = shn_crud_strings(tablename).msg_list_empty
+            items = shn_get_crud_strings(tablename).msg_list_empty
 
         # Update the Return with common items
         output.update(dict(items=items))
@@ -1450,7 +1450,7 @@ def shn_list(jr, **attr):
                             shn_audit_create(form, module, resource, jr.representation) and \
                             s3xrc.store_session(session, module, resource, 0)
 
-            message = shn_crud_strings(tablename).msg_record_created
+            message = shn_get_crud_strings(tablename).msg_record_created
 
             # Display the Add form above List
             form = crud.create(table,
@@ -1466,7 +1466,7 @@ def shn_list(jr, **attr):
             if jr.component:
                 table[jr.fkey].comment = _comment
 
-            addtitle = shn_crud_strings(tablename).subtitle_create
+            addtitle = shn_get_crud_strings(tablename).subtitle_create
 
             # Check for presence of Custom View
             shn_custom_view(jr, "list_create.html")
@@ -1477,7 +1477,7 @@ def shn_list(jr, **attr):
         else:
             # List only with create button below
             if listadd:
-                label_create_button = shn_crud_strings(tablename).label_create_button
+                label_create_button = shn_get_crud_strings(tablename).label_create_button
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
@@ -1494,9 +1494,9 @@ def shn_list(jr, **attr):
         output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
-            title = shn_crud_strings(jr.tablename).title_display
+            title = shn_get_crud_strings(jr.tablename).title_display
         else:
-            title = shn_crud_strings(tablename).title_list
+            title = shn_get_crud_strings(tablename).title_list
 
         # Add to Return
         output.update(title=title)
@@ -1518,7 +1518,7 @@ def shn_list(jr, **attr):
                         shn_audit_create(form, module, resource, jr.representation) and \
                         s3xrc.store_session(session, module, resource, form.vars.id)
 
-        message = shn_crud_strings(tablename).msg_record_created
+        message = shn_get_crud_strings(tablename).msg_record_created
 
         # Form is used to build the initial list view
         form = crud.create(table,
@@ -1545,7 +1545,7 @@ def shn_list(jr, **attr):
             # (We could do this from the HTML table using TableGrid, but then we wouldn't have client-side pagination)
 
             if listadd:
-                label_create_button = shn_crud_strings(tablename).label_create_button
+                label_create_button = shn_get_crud_strings(tablename).label_create_button
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
@@ -1613,8 +1613,8 @@ def shn_create(jr, **attr):
         output = dict(module=module, resource=resource, main=main)
 
         if jr.component:
-            title = shn_crud_strings(jr.tablename).title_display
-            subtitle = shn_crud_strings(tablename).subtitle_create
+            title = shn_get_crud_strings(jr.tablename).title_display
+            subtitle = shn_get_crud_strings(tablename).subtitle_create
             output.update(subtitle=subtitle)
 
             if rheader and jr.id:
@@ -1625,9 +1625,9 @@ def shn_create(jr, **attr):
                 if _rheader:
                     output.update(rheader=_rheader)
         else:
-            title = shn_crud_strings(tablename).title_create
+            title = shn_get_crud_strings(tablename).title_create
 
-        label_list_button = shn_crud_strings(tablename).label_list_button
+        label_list_button = shn_get_crud_strings(tablename).label_list_button
         list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
         output.update(title=title, list_btn=list_btn)
@@ -1665,7 +1665,7 @@ def shn_create(jr, **attr):
                         shn_audit_create(form, module, resource, jr.representation) and \
                         s3xrc.store_session(session, module, resource, form.vars.id)
 
-        message = shn_crud_strings(tablename).msg_record_created
+        message = shn_get_crud_strings(tablename).msg_record_created
 
         form = crud.create(table,
                            message=message,
@@ -1814,12 +1814,12 @@ def shn_update(jr, **attr):
             output = dict()
 
             if jr.component:
-                title = shn_crud_strings(jr.tablename).title_display
-                subtitle = shn_crud_strings(tablename).title_update
+                title = shn_get_crud_strings(jr.tablename).title_display
+                subtitle = shn_get_crud_strings(tablename).title_update
                 output.update(subtitle=subtitle)
 
             else:
-                title = shn_crud_strings(tablename).title_update
+                title = shn_get_crud_strings(tablename).title_update
 
             if rheader and jr.id and (jr.component or sticky):
                 try:
@@ -1829,12 +1829,12 @@ def shn_update(jr, **attr):
                 if _rheader:
                     output.update(rheader=_rheader)
 
-            label_list_button = shn_crud_strings(tablename).label_list_button
+            label_list_button = shn_get_crud_strings(tablename).label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
             if deletable:
                 del_href = jr.other(method="delete", representation=jr.representation)
-                label_del_button = shn_crud_strings(tablename).label_delete_button
+                label_del_button = shn_get_crud_strings(tablename).label_delete_button
                 del_btn = A(label_del_button, _href=del_href, _id="delete-btn", _class="action-btn")
                 output.update(del_btn=del_btn)
 
@@ -1863,7 +1863,7 @@ def shn_update(jr, **attr):
                 if not onaccept:
                     onaccept = crud.settings.update_onaccept
 
-            message = shn_crud_strings(tablename).msg_record_modified
+            message = shn_get_crud_strings(tablename).msg_record_modified
 
             if onaccept:
                 _onaccept = lambda form: \
@@ -1972,7 +1972,7 @@ def shn_delete(jr, **attr):
         session.confirmation = T("No records to delete")
         return
 
-    message = shn_crud_strings(tablename).msg_record_deleted
+    message = shn_get_crud_strings(tablename).msg_record_deleted
 
     if jr.component:
         # Save callback settings

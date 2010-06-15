@@ -60,11 +60,14 @@ def hospital():
 
     def hospital_postp(jr, output):
         if jr.representation in ("html", "popup"):
-            if not jr.component:
-                linkto = shn_linkto(jr, sticky=True)("[id]")
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=linkto)
-                ]
+            if jr.component and jr.component.name == "bed_capacity":
+                label = T("Update")
+            else:
+                label = T("Details")
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
         return output
     response.s3.postp = hospital_postp
 
@@ -88,6 +91,7 @@ def hospital():
     shn_menu()
 
     return output
+
 
 def shn_hospital_resolver(vector):
 
@@ -162,10 +166,56 @@ def hpledge():
         if person:
             db.hms_hpledge.person_id.default = person[0].id
 
+    response.s3.pagination = True
+
     output = shn_rest_controller(module, resource, editable = True, listadd=False)
 
     shn_menu()
     return output
+
+# -----------------------------------------------------------------------------
+#
+def shn_hms_hospital_rheader(jr, tabs=[]):
+
+    """ Page header for component resources """
+
+    if jr.name == "hospital":
+        if jr.representation == "html":
+
+            _next = jr.here()
+            _same = jr.same()
+
+            rheader_tabs = shn_rheader_tabs(jr, tabs)
+
+            hospital = jr.record
+            if hospital:
+                rheader = DIV(TABLE(
+
+                    TR(TH(T("Name: ")),
+                        hospital.name,
+                        TH(T("EMS Status: ")),
+                        "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status)),
+
+                    TR(TH(T("Location: ")),
+                        db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
+                        TH(T("Facility Status: ")),
+                        "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status)),
+
+                    TR(TH(T("Total Beds: ")),
+                        hospital.total_beds,
+                        TH(T("Clinical Status: ")),
+                        "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status)),
+
+                    TR(TH(T("Available Beds: ")),
+                        hospital.available_beds,
+                        TH(T("Security Status: ")),
+                        "%s" % db.hms_hospital.security_status.represent(hospital.security_status))
+
+                        ), rheader_tabs)
+
+                return rheader
+
+    return None
 
 # -----------------------------------------------------------------------------
 def shn_hms_hrequest_rheader(jr):

@@ -163,9 +163,17 @@ def export_pdf(table, query):
     output = StringIO.StringIO()
 
     fields = [table[f] for f in table.fields if table[f].readable]
-    _elements = [SystemField(expression="%(report_title)s", top=0.1*cm,
-                    left=0, width=BAND_WIDTH, style={"fontName": "Helvetica-Bold",
-                    "fontSize": 14, "alignment": TA_CENTER})]
+    _elements = [ SystemField(
+                        expression="%(report_title)s",
+                        top=0.1*cm,
+                        left=0,
+                        width=BAND_WIDTH,
+                        style={
+                            "fontName": "Helvetica-Bold",
+                            "fontSize": 14,
+                            "alignment": TA_CENTER
+                            }
+                        )]
     detailElements = []
     COLWIDTH = 2.5
     LEFTMARGIN = 0.2
@@ -180,7 +188,7 @@ def export_pdf(table, query):
         LEFTMARGIN += COLWIDTH
 
     mod, res = str(table).split("_", 1)
-    mod_nice = db(db.s3_module.name==mod).select()[0].name_nice
+    mod_nice = db(db.s3_module.name==mod).select().first().name_nice
     _title = mod_nice + ": " + res.capitalize()
 
     class MyReport(Report):
@@ -229,10 +237,7 @@ def export_rss(module, resource, query, rss=None, linkto=None):
     server = deployment_settings.get_base_public_url()
 
     tablename = "%s_%s" % (module, resource)
-    try:
-        title_list = s3.crud_strings[tablename].subtitle_list
-    except:
-        title_list =  s3.crud_strings.subtitle_list
+    title_list = shn_crud_strings(tablename).subtitle_list
 
     if not linkto:
         link = "/%s/%s/%s" % (request.application, module, resource)
@@ -313,7 +318,7 @@ def export_xls(table, query, list_fields=None):
     fields = None
     if list_fields:
         fields = [table[f] for f in list_fields if table[f].readable]
-    if fields and len(fields)==0:
+    if fields and len(fields) == 0:
         fields.append(table.id)
     if not fields:
         fields = [table[f] for f in table.fields if table[f].readable]
@@ -331,11 +336,12 @@ def export_xls(table, query, list_fields=None):
         for field in fields:
             tab, col = str(field).split(".")
             # Check for Date formats
-            if db[tab][col].type == "date":
+            coltype = db[tab][col].type
+            if coltype == "date":
                 style.num_format_str = "D-MMM-YY"
-            elif db[tab][col].type == "datetime":
+            elif coltype == "datetime":
                 style.num_format_str = "M/D/YY h:mm"
-            elif db[tab][col].type == "time":
+            elif coltype == "time":
                 style.num_format_str = "h:mm:ss"
 
             # Check for a custom.represent (e.g. for ref fields)
@@ -363,7 +369,7 @@ def export_json(jr):
     except:
         response.headers["Content-Type"] = "text/x-json"
 
-    if jr.representation=="json":
+    if jr.representation == "json":
         template = None
     else:
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
@@ -399,7 +405,7 @@ def export_xml(jr):
     except:
         response.headers["Content-Type"] = "application/xml"
 
-    if jr.representation=="xml":
+    if jr.representation == "xml":
         template = None
     else:
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
@@ -498,7 +504,7 @@ def import_url(jr, table, method):
     if method == "update":
         if uuid:
             try:
-                original = db(table.uuid==uuid).select(table.ALL)[0]
+                original = db(table.uuid == uuid).select(table.ALL).first()
             except:
                 raise HTTP(404, body=s3xrc.xml.json_message(False, 404, "Record not found!"))
         else:
@@ -532,7 +538,7 @@ def import_url(jr, table, method):
     # Create/update record
     try:
         if jr.component:
-            record[jr.fkey]=jr.record[jr.pkey]
+            record[jr.fkey] = jr.record[jr.pkey]
         if method == "create":
             id = table.insert(**dict(record))
             if id:
@@ -546,7 +552,7 @@ def import_url(jr, table, method):
                 item = s3xrc.xml.json_message(False, error, "Could not create record!")
 
         elif method == "update":
-            result = db(table.uuid==uuid).update(**dict(record))
+            result = db(table.uuid == uuid).update(**dict(record))
             if result:
                 error = 200
                 item = s3xrc.xml.json_message(True, error, "Record updated.")
@@ -654,13 +660,13 @@ def shn_audit(operation, module, resource, form=None, record=None, representatio
     if operation in ("list", "read"):
         return shn_audit_read(operation, module, resource,
                               record=record, representation=representation)
-    elif operation=="create":
+    elif operation == "create":
         return shn_audit_create(form, module, resource, representation=representation)
 
-    elif operation=="update":
+    elif operation == "update":
         return shn_audit_update(form, module, resource, representation=representation)
 
-    elif operation=="delete":
+    elif operation == "delete":
         return shn_audit_create(module, resource, record, representation=representation)
 
     return True
@@ -779,7 +785,7 @@ def shn_audit_delete(module, resource, record, representation=None):
         module = module
         table = "%s_%s" % (module, resource)
         old_value = []
-        _old_value = db(db[table].id==record).select()[0]
+        _old_value = db(db[table].id == record).select().first()
         for field in _old_value:
             old_value.append(field + ":" + str(_old_value[field]))
         db.s3_audit.insert(
@@ -843,7 +849,7 @@ def shn_list_item(table, resource, action, main="name", extra=None):
 
     """ Display nice names with clickable links & optional extra info """
 
-    item_list = [TD(A(table[main], _href=URL(r=request, f=resource, args=[action, table.id])))]
+    item_list = [TD(A(table[main], _href=URL(r=request, f=resource, args=[table.id, action])))]
     if extra:
         item_list.extend(eval(extra))
     items = DIV(TABLE(TR(item_list)))
@@ -958,11 +964,12 @@ def import_json(jr, **attr):
 
     #return json_message(False, 501, "Not implemented!")
 
-    if "filename" in jr.request.vars:
-        source = open(jr.request.vars["filename"])
-    elif "fetchurl" in jr.request.vars:
+    _vars = jr.request.vars
+    if "filename" in _vars:
+        source = open(_vars["filename"])
+    elif "fetchurl" in _vars:
         import urllib
-        source = urllib.urlopen(jr.request.vars["fetchurl"])
+        source = urllib.urlopen(_vars["fetchurl"])
     else:
         #from StringIO import StringIO
         #source = StringIO(jr.request.body)
@@ -1072,19 +1079,24 @@ def shn_read(jr, **attr):
 
     if jr.component:
 
-        query = ((table[jr.fkey]==jr.table[jr.pkey]) & (table[jr.fkey]==jr.record[jr.pkey]))
+        query = ((table[jr.fkey] == jr.table[jr.pkey]) & (table[jr.fkey] == jr.record[jr.pkey]))
         if jr.component_id:
-            query = (table.id==jr.component_id) & query
+            query = (table.id == jr.component_id) & query
         if "deleted" in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
+            query = ((table.deleted == False) | (table.deleted == None)) & query
 
         try:
-            record_id = db(query).select(table.id)[0].id
-            href_delete = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "delete", record_id])
-            href_edit = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "update", record_id])
+            record_id = db(query).select(table.id, limitby=(0, 1)).first().id
+            href_delete = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "delete"])
+            href_edit = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "update"])
         except:
             if not jr.multiple:
-                redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"]))
+                if shn_has_permission("create", table):
+                    redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"]))
+                else:
+                    record_id = None
+                    href_edit = None
+                    href_delete = None
             else:
                 record_id = None
                 href_delete = None
@@ -1099,11 +1111,11 @@ def shn_read(jr, **attr):
 
     else:
         record_id = jr.id
-        href_delete = URL(r=jr.request, f=jr.name, args=["delete", record_id])
-        href_edit = URL(r=jr.request, f=jr.name, args=["update", record_id])
+        href_delete = URL(r=jr.request, f=jr.name, args=[record_id, "delete"])
+        href_edit = URL(r=jr.request, f=jr.name, args=[record_id, "update"])
 
     authorised = shn_has_permission("update", table, record_id)
-    if authorised and jr.representation=="html" and editable:
+    if authorised and jr.representation == "html" and editable:
         return shn_update(jr, **attr)
 
     authorised = shn_has_permission("read", table, record_id)
@@ -1111,24 +1123,19 @@ def shn_read(jr, **attr):
 
         shn_audit_read(operation="read", module=module, resource=resource, record=record_id, representation=jr.representation)
 
-        if jr.representation=="html" or jr.representation == "popup":
+        if jr.representation == "html" or jr.representation == "popup":
 
-            if jr.representation=="html":
+            if jr.representation == "html":
                 shn_custom_view(jr, "display.html")
             elif jr.representation == "popup":
                 shn_custom_view(jr, "popup.html")
 
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
+            title = shn_crud_strings(jr.tablename).title_display
             output = dict(title=title)
             if jr.component:
-                try:
-                    subtitle = s3.crud_strings[tablename].title_display
-                except:
-                    subtitle = s3.crud_strings.title_display
+                subtitle = shn_crud_strings(tablename).title_display
                 output.update(subtitle=subtitle)
+
             if rheader and jr.id and (jr.component or sticky):
                 try:
                     _rheader = rheader(jr)
@@ -1136,9 +1143,13 @@ def shn_read(jr, **attr):
                     _rheader = rheader
                 if _rheader:
                     output.update(rheader=_rheader)
-            item = crud.read(table, record_id)
 
-            if jr.representation=="html":
+            if record_id:
+                item = crud.read(table, record_id)
+            else:
+                item = shn_crud_strings(tablename).msg_list_empty
+
+            if jr.representation == "html":
                 output.update(item=item)
             elif jr.representation == "popup":
                 output.update(form=item)
@@ -1151,15 +1162,11 @@ def shn_read(jr, **attr):
                 delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
             else:
                 delete = ""
-            try:
-                label_list_button = s3.crud_strings[tablename].label_list_button
-            except:
-                label_list_button = s3.crud_strings.label_list_button
+
+            label_list_button = shn_crud_strings(tablename).label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
-            output.update(edit=edit,
-                          delete=delete,
-                          list_btn=list_btn)
+            output.update(edit=edit, delete=delete, list_btn=list_btn)
 
             if jr.component and not jr.multiple:
                 del output["list_btn"]
@@ -1267,10 +1274,11 @@ def shn_list(jr, **attr):
     sortby = _attr.get("sortby", None)
 
     # Provide the ability to get a subset of records
-    if request.vars.limit:
-        limit = int(request.vars.limit)
-        if request.vars.start:
-            start = int(request.vars.start)
+    _vars = request.vars
+    if _vars.limit:
+        limit = int(_vars.limit)
+        if _vars.start:
+            start = int(_vars.start)
             limitby = (start, start + limit)
         else:
             limitby = (0, limit)
@@ -1283,10 +1291,10 @@ def shn_list(jr, **attr):
     # Get qualified query and create link
     if jr.component:
         if jr.record:
-            query = ((table[jr.fkey]==jr.table[jr.pkey]) & \
-                     (table[jr.fkey]==jr.record[jr.pkey])) & query
+            query = ((table[jr.fkey] == jr.table[jr.pkey]) & \
+                     (table[jr.fkey] == jr.record[jr.pkey])) & query
         else:
-            query = (table[jr.fkey]==jr.table[jr.pkey]) & query
+            query = (table[jr.fkey] == jr.table[jr.pkey]) & query
         if jr.component_id:
             query = (table.id==jr.component_id) & query
         href_add = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"])
@@ -1318,7 +1326,7 @@ def shn_list(jr, **attr):
 
     # dataTables representation
     # Migrate to an XSLT in future?
-    if jr.representation.lower()=="aadata":
+    if jr.representation.lower() == "aadata":
 
         if "iDisplayStart" in request.vars:
             start = int(request.vars.iDisplayStart)
@@ -1335,7 +1343,7 @@ def shn_list(jr, **attr):
         if list_fields:
             fields = [f for f in list_fields if table[f].readable]
 
-        if fields and len(fields)==0:
+        if fields and len(fields) == 0:
             fields.append("id")
 
         if not fields:
@@ -1349,7 +1357,7 @@ def shn_list(jr, **attr):
             if squery is not None:
                 query = squery & query
 
-        sEcho = int(request.vars.sEcho)
+        sEcho = int(_vars.sEcho)
 
         totalrows = db(query).count()
         if limit:
@@ -1373,15 +1381,7 @@ def shn_list(jr, **attr):
         output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
-            try:
-                subtitle = s3.crud_strings[tablename].subtitle_list
-            except:
-                subtitle = s3.crud_strings.subtitle_list
-
+            title = shn_crud_strings(jr.tablename).title_display
             if rheader:
                 try:
                     _rheader = rheader(jr)
@@ -1389,17 +1389,10 @@ def shn_list(jr, **attr):
                     _rheader = rheader
                 if _rheader:
                     output.update(rheader=_rheader)
-
         else:
-            try:
-                title = s3.crud_strings[tablename].title_list
-            except:
-                title = s3.crud_strings.title_list
-            try:
-                subtitle = s3.crud_strings[tablename].subtitle_list
-            except:
-                subtitle = s3.crud_strings.subtitle_list
+            title = shn_crud_strings(tablename).title_list
 
+        subtitle = shn_crud_strings(tablename).subtitle_list
         output.update(title=title, subtitle=subtitle)
 
         # Which fields do we display?
@@ -1432,10 +1425,7 @@ def shn_list(jr, **attr):
             truncate=48, _id="list", _class="display")
 
         if not items:
-            try:
-                items = s3.crud_strings[tablename].msg_list_empty
-            except:
-                items = s3.crud_strings.msg_list_empty
+            items = shn_crud_strings(tablename).msg_list_empty
 
         # Update the Return with common items
         output.update(dict(items=items))
@@ -1460,10 +1450,7 @@ def shn_list(jr, **attr):
                             shn_audit_create(form, module, resource, jr.representation) and \
                             s3xrc.store_session(session, module, resource, 0)
 
-            try:
-                message = s3.crud_strings[tablename].msg_record_created
-            except:
-                message = s3.crud_strings.msg_record_created
+            message = shn_crud_strings(tablename).msg_record_created
 
             # Display the Add form above List
             form = crud.create(table,
@@ -1479,10 +1466,7 @@ def shn_list(jr, **attr):
             if jr.component:
                 table[jr.fkey].comment = _comment
 
-            try:
-                addtitle = s3.crud_strings[tablename].subtitle_create
-            except:
-                addtitle = s3.crud_strings.subtitle_create
+            addtitle = shn_crud_strings(tablename).subtitle_create
 
             # Check for presence of Custom View
             shn_custom_view(jr, "list_create.html")
@@ -1493,10 +1477,7 @@ def shn_list(jr, **attr):
         else:
             # List only with create button below
             if listadd:
-                try:
-                    label_create_button = s3.crud_strings[tablename].label_create_button
-                except:
-                    label_create_button = s3.crud_strings.label_create_button
+                label_create_button = shn_crud_strings(tablename).label_create_button
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
@@ -1509,19 +1490,13 @@ def shn_list(jr, **attr):
 
         return output
 
-    elif jr.representation=="ext":
+    elif jr.representation == "ext":
         output = dict(main=main, extra=extra, sortby=sortby)
 
         if jr.component:
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
+            title = shn_crud_strings(jr.tablename).title_display
         else:
-            try:
-                title = s3.crud_strings[tablename].title_list
-            except:
-                title = s3.crud_strings.title_list
+            title = shn_crud_strings(tablename).title_list
 
         # Add to Return
         output.update(title=title)
@@ -1543,10 +1518,7 @@ def shn_list(jr, **attr):
                         shn_audit_create(form, module, resource, jr.representation) and \
                         s3xrc.store_session(session, module, resource, form.vars.id)
 
-        try:
-            message = s3.crud_strings[tablename].msg_record_created
-        except:
-            message = s3.crud_strings.msg_record_created
+        message = shn_crud_strings(tablename).msg_record_created
 
         # Form is used to build the initial list view
         form = crud.create(table,
@@ -1573,10 +1545,7 @@ def shn_list(jr, **attr):
             # (We could do this from the HTML table using TableGrid, but then we wouldn't have client-side pagination)
 
             if listadd:
-                try:
-                    label_create_button = s3.crud_strings[tablename].label_create_button
-                except:
-                    label_create_button = s3.crud_strings.label_create_button
+                label_create_button = shn_crud_strings(tablename).label_create_button
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
@@ -1644,14 +1613,8 @@ def shn_create(jr, **attr):
         output = dict(module=module, resource=resource, main=main)
 
         if jr.component:
-            try:
-                title = s3.crud_strings[jr.tablename].title_display
-            except:
-                title = s3.crud_strings.title_display
-            try:
-                subtitle = s3.crud_strings[tablename].subtitle_create
-            except:
-                subtitle = s3.crud_strings.subtitle_create
+            title = shn_crud_strings(jr.tablename).title_display
+            subtitle = shn_crud_strings(tablename).subtitle_create
             output.update(subtitle=subtitle)
 
             if rheader and jr.id:
@@ -1662,15 +1625,9 @@ def shn_create(jr, **attr):
                 if _rheader:
                     output.update(rheader=_rheader)
         else:
-            try:
-                title = s3.crud_strings[tablename].title_create
-            except:
-                title = s3.crud_strings.title_create
+            title = shn_crud_strings(tablename).title_create
 
-        try:
-            label_list_button = s3.crud_strings[tablename].label_list_button
-        except:
-            label_list_button = s3.crud_strings.label_list_button
+        label_list_button = shn_crud_strings(tablename).label_list_button
         list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
         output.update(title=title, list_btn=list_btn)
@@ -1708,10 +1665,7 @@ def shn_create(jr, **attr):
                         shn_audit_create(form, module, resource, jr.representation) and \
                         s3xrc.store_session(session, module, resource, form.vars.id)
 
-        try:
-            message = s3.crud_strings[tablename].msg_record_created
-        except:
-            message = s3.crud_strings.msg_record_created
+        message = shn_crud_strings(tablename).msg_record_created
 
         form = crud.create(table,
                            message=message,
@@ -1820,14 +1774,14 @@ def shn_update(jr, **attr):
         if jr.multiple and not jr.component_id:
             return shn_create(jr, rheader)
 
-        query = (table[jr.fkey]==jr.record[jr.pkey])
+        query = (table[jr.fkey] == jr.record[jr.pkey])
         if jr.component_id:
-            query = (table.id==jr.component_id) & query
+            query = (table.id == jr.component_id) & query
         if "deleted" in table:
-            query = ((table.deleted==False) | (table.deleted==None)) & query
+            query = ((table.deleted == False) | (table.deleted == None)) & query
 
         try:
-            record_id = db(query).select(table.id)[0].id
+            record_id = db(query).select(table.id).first().id
         except:
             record_id = None
             href_delete = None
@@ -1842,7 +1796,7 @@ def shn_update(jr, **attr):
         record_id = jr.id
         deletable = deletable and shn_has_permission("delete", table, record_id)
 
-    if not editable and jr.representation=="html":
+    if not editable and jr.representation == "html":
         return shn_read(jr, **attr)
 
     authorised = shn_has_permission("update", table, record_id)
@@ -1860,21 +1814,12 @@ def shn_update(jr, **attr):
             output = dict()
 
             if jr.component:
-                try:
-                    title = s3.crud_strings[jr.tablename].title_display
-                except:
-                    title = s3.crud_strings.title_display
-                try:
-                    subtitle = s3.crud_strings[tablename].title_update
-                except:
-                    subtitle = s3.crud_strings.title_update
+                title = shn_crud_strings(jr.tablename).title_display
+                subtitle = shn_crud_strings(tablename).title_update
                 output.update(subtitle=subtitle)
 
             else:
-                try:
-                    title = s3.crud_strings[tablename].title_update
-                except:
-                    title = s3.crud_strings.title_update
+                title = shn_crud_strings(tablename).title_update
 
             if rheader and jr.id and (jr.component or sticky):
                 try:
@@ -1883,20 +1828,13 @@ def shn_update(jr, **attr):
                     _rheader = rheader
                 if _rheader:
                     output.update(rheader=_rheader)
-            try:
-                label_list_button = s3.crud_strings[tablename].label_list_button
-            except:
-                label_list_button = s3.crud_strings.label_list_button
+
+            label_list_button = shn_crud_strings(tablename).label_list_button
             list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
 
             if deletable:
                 del_href = jr.other(method="delete", representation=jr.representation)
-                if tablename in s3.crud_strings and "label_delete_button" in s3.crud_strings[tablename]:
-                    label_del_button = s3.crud_strings[tablename].label_delete_button
-                else:
-                    label_del_button = None
-                if label_del_button is None:
-                    label_del_button = s3.crud_strings.label_delete_button
+                label_del_button = shn_crud_strings(tablename).label_delete_button
                 del_btn = A(label_del_button, _href=del_href, _id="delete-btn", _class="action-btn")
                 output.update(del_btn=del_btn)
 
@@ -1925,10 +1863,7 @@ def shn_update(jr, **attr):
                 if not onaccept:
                     onaccept = crud.settings.update_onaccept
 
-            try:
-                message = s3.crud_strings[tablename].msg_record_modified
-            except:
-                message = s3.crud_strings.msg_record_modified
+            message = shn_crud_strings(tablename).msg_record_modified
 
             if onaccept:
                 _onaccept = lambda form: \
@@ -2037,10 +1972,7 @@ def shn_delete(jr, **attr):
         session.confirmation = T("No records to delete")
         return
 
-    try:
-        message = s3.crud_strings[tablename].msg_record_deleted
-    except:
-        message = s3.crud_strings.msg_record_deleted
+    message = shn_crud_strings(tablename).msg_record_deleted
 
     if jr.component:
         # Save callback settings
@@ -2151,7 +2083,7 @@ def shn_search(jr, **attr):
 
     # Filter search to items which aren't deleted
     if "deleted" in jr.table:
-        query = (jr.table.deleted==False) & query
+        query = (jr.table.deleted == False) & query
 
     # Respect response.s3.filter
     if response.s3.filter:
@@ -2172,87 +2104,91 @@ def shn_search(jr, **attr):
 
     elif jr.representation == "json":
 
-        # JQuery Autocomplete uses "q" instead of "value"
-        value = request.vars.value or request.vars.q or None
+        _vars = request.vars
+        _table - jr.table
+        _field = _table[field]
 
-        if request.vars.field and request.vars.filter and value:
-            field = str.lower(request.vars.field)
+        # JQuery Autocomplete uses "q" instead of "value"
+        value = _vars.value or _vars.q or None
+
+        if _vars.field and _vars.filter and value:
+            field = str.lower(_vars.field)
 
             # Optional fields
-            if "field2" in request.vars:
-                field2 = str.lower(request.vars.field2)
+            if "field2" in _vars:
+                field2 = str.lower(_vars.field2)
             else:
                 field2 = None
-            if "field3" in request.vars:
-                field3 = str.lower(request.vars.field3)
+            if "field3" in _vars:
+                field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            if "extra_string" in request.vars:
-                extra_string = str.lower(request.vars.extra_string)
+            if "extra_string" in _vars:
+                extra_string = str.lower(_vars.extra_string)
             else:
                 extra_string = None
-            if "parent" in request.vars:
-                parent = int(request.vars.parent)
+            if "parent" in _vars:
+                parent = int(_vars.parent)
             else:
                 parent = None
-            if "exclude" in request.vars:
+            if "exclude" in _vars:
                 import urllib
-                exclude = urllib.unquote(request.vars.exclude)
+                exclude = urllib.unquote(_vars.exclude)
             else:
                 exclude = None
 
-            filter = request.vars.filter
+            filter = _vars.filter
             if filter == "~":
                 if field2 and field3:
 
                     # pr_person name search
                     if " " in value:
                         value1, value2 = value.split(" ", 1)
-                        query = query & ((jr.table[field].like("%" + value1 + "%")) & \
-                                        (jr.table[field2].like("%" + value2 + "%")) | \
-                                        (jr.table[field3].like("%" + value2 + "%")))
+                        query = query & ((_field.like("%" + value1 + "%")) & \
+                                        (_table[field2].like("%" + value2 + "%")) | \
+                                        (_table[field3].like("%" + value2 + "%")))
                     else:
-                        query = query & ((jr.table[field].like("%" + value + "%")) | \
-                                        (jr.table[field2].like("%" + value + "%")) | \
-                                        (jr.table[field3].like("%" + value + "%")))
+                        query = query & ((_field.like("%" + value + "%")) | \
+                                        (_table[field2].like("%" + value + "%")) | \
+                                        (_table[field3].like("%" + value + "%")))
 
                 elif extra_string:
 
                     # gis_location hierarchical search
                     if parent:
-                        query = query & (jr.table.parent == parent) & \
-                                        (jr.table[field].like("%" + value + "%")) & \
-                                        (jr.table[field].like("%" + extra_string + "%"))
+                        query = query & (_table.parent == parent) & \
+                                        (_field.like("%" + value + "%")) & \
+                                        (_field.like("%" + extra_string + "%"))
                     else:
-                        query = query & (jr.table[field].like("%" + value + "%")) & \
-                                        (jr.table[field].like("%" + extra_string + "%"))
+                        query = query & (_field.like("%" + value + "%")) & \
+                                        (_field.like("%" + extra_string + "%"))
 
                 elif exclude:
 
                     # gis_location without Admin Areas
-                    query = query & ~(jr.table[field].like(exclude)) & \
-                                    (jr.table[field].like("%" + value + "%"))
+                    query = query & ~(_field.like(exclude)) & \
+                                    (_field.like("%" + value + "%"))
 
                 else:
                     # Normal single-field
-                    query = query & (jr.table[field].like("%" + value + "%"))
+                    query = query & (_field.like("%" + value + "%"))
 
-                limit = int(request.vars.limit or 0)
+                limit = int(_vars.limit or 0)
                 if limit:
                     item = db(query).select(limitby=(0, limit)).json()
                 else:
                     item = db(query).select().json()
 
             elif filter == "=":
-                query = query & (jr.table[field] == value)
+                query = query & (_field == value)
                 item = db(query).select().json()
 
             elif filter == "<":
-                query = query & (jr.table[field] < value)
+                query = query & (_field < value)
                 item = db(query).select().json()
 
             elif filter == ">":
-                query = query & (jr.table[field] > value)
+                query = query & (_field > value)
                 item = db(query).select().json()
 
             else:

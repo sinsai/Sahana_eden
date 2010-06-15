@@ -823,47 +823,77 @@ class AuthS3(Auth):
 
     def shn_link_to_person(self, user=None):
 
+        """ Links user accounts to person registry entries
+
+            Policy for linking to pre-existing person records:
+
+            If and only if:
+                a person record with exactly the same first name and
+                last name exists, which has a contact information record
+                with exactly the same email address as used in the user
+                account, and which is not linked to another user account,
+                then this person record will be linked to this user account,
+
+            otherwise:
+                a new person record is created, and a new email contact
+                record with the email address from the user record is
+                registered for that person
+
+        """
+
         db = self.db
-        table = self.settings.table_user
+        utable = self.settings.table_user
+        ptable = db.pr_person
+        ctable = db.pr_pe_contact
+        etable = db.pr_pentity
 
         if user is None:
-            users = db(table.person_uuid==None).select(table.ALL)
+            users = db(utable.person_uuid==None).select(utable.ALL)
         else:
             users = [user]
 
         for user in users:
             if 'email' in user:
 
-                email = user.email
-                if db(db.pr_person.email==email).count():
-                    person = db(db.pr_person.email==email).select(db.pr_person.ALL, limitby=(0,1))[0]
-                    if not db(table.person_uuid==person.uuid).count():
-                        db(table.id==user.id).update(person_uuid=person.uuid)
-                        continue
-                    else:
-                        email = None
+                first_name = user.first_name
+                last_name = user.last_name
+                email = user.email.lower()
 
-                pr_pe_id = db.pr_pentity.insert(opt_pr_entity_type=1)
+                query = (ptable.first_name == first_name) & \
+                        (ptable.last_name == last_name) & \
+                        (ctable.pr_pe_id == ptable.pr_pe_id) & \
+                        (ctable.opt_pr_contact_method == 1) & \
+                        (ctable.value.lower() == email)
+                person = db(query).select(ptable.uuid)
+                if person and len(person) == 1:
+                    person = person.first()
+                    if not db(utable.person_uuid==person.uuid).count():
+                        db(utable.id==user.id).update(person_uuid=person.uuid)
+                        if self.user and self.user.id==user.id:
+                            self.user.person_uuid=person.uuid
+                        continue
+                    #else:
+                        #email = None
+
+                pr_pe_id = etable.insert(opt_pr_entity_type=1)
                 if pr_pe_id:
-                    new_id = db.pr_person.insert(
+                    new_id = ptable.insert(
                         pr_pe_id = pr_pe_id,
                         first_name = user.first_name,
-                        last_name = user.last_name,
-                        email = email
-                    )
+                        last_name = user.last_name)
                     if new_id:
-                        person_uuid = db.pr_person[new_id].uuid
-                        db(table.id==user.id).update(person_uuid=person_uuid)
-					# The following adds the email to pr_pe_contact
-                    db.pr_pe_contact.insert(
-                            pr_pe_id = pr_pe_id,
-                            opt_pr_contact_method = 1,
-                            priority = 1,
-                            value = email
-                            )
+                        person_uuid = ptable[new_id].uuid
+                        db(utable.id==user.id).update(person_uuid=person_uuid)
+                        # The following adds the email to pr_pe_contact
+                        ctable.insert(
+                                pr_pe_id = pr_pe_id,
+                                opt_pr_contact_method = 1,
+                                priority = 1,
+                                value = email)
 
                 if self.user and self.user.id==user.id:
                     self.user.person_uuid=person_uuid
+
 
     def requires_membership(self, role):
         """

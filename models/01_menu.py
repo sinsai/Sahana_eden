@@ -32,14 +32,19 @@ if not auth.is_logged_in():
                      URL(request.application, "default", "user/retrieve_password")]]
              ],
 else:
-    s3.menu_auth = ["Logged-in as: " + auth.user.first_name + " " + auth.user.last_name, True, None,
+    s3.menu_auth = ["%s: %s %s" % (T("Logged-in as: "),
+                                  auth.user.first_name,
+                                  auth.user.last_name), True, None,
          [
                 [T("Logout"), False,
                  URL(request.application, "default", "user/logout")],
-                [T("Edit Profile"), False,
+                [T("User Profile"), False,
                  URL(request.application, "default", "user/profile")],
-                [T("My contact details"), False,
-                 URL(request.application, "msg", "pe_contact")],
+                [T("Personal Data"), False,
+                 URL(request.application, c="pr", f="person", vars={"person.uid":auth.user.person_uuid})],
+                [T("Contact details"), False,
+                 URL(request.application, c="pr", f="person/pe_contact", vars={"person.uid":auth.user.person_uuid})],
+                 #URL(request.application, "msg", "pe_contact")],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]
          ]
@@ -66,8 +71,10 @@ admin_menu_options = [
             [T("Sync Partners"), False, URL(r=request, c="sync", f="partner")],
             [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])]
     ]],
-    [T("Mobile"), False, URL(r=request, c="mobile", f="index"),[
-            [T("Mobile Settings"), False, URL(r=request, c="mobile", f="settings", args=[1, "update"])]
+    [T("Messaging"), False, "#",[
+            [T("Email Settings"), False, URL(r=request, c="msg", f="email_settings", args=[1, "update"])],
+            [T("Modem Settings"), False, URL(r=request, c="msg", f="modem_settings", args=[1, "update"])],
+            [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])]
     ]],
     [T("Edit Application"), False, URL(r=request, a="admin", c="default", f="design", args=[request.application])],
     [T("Tickets"), False, URL(r=request, c="admin", f="errors")],

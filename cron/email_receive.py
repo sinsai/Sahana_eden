@@ -7,15 +7,15 @@
 import sys, socket, email, uuid
 
 # Read-in configuration from Database
-host = db(db.msg_setting.id==1).select()[0].inbound_mail_server
-server_type = db(db.msg_setting.id==1).select()[0].inbound_mail_type
-ssl = db(db.msg_setting.id==1).select()[0].inbound_mail_ssl
-port = db(db.msg_setting.id==1).select()[0].inbound_mail_port
-username = db(db.msg_setting.id==1).select()[0].inbound_mail_username
-password = db(db.msg_setting.id==1).select()[0].inbound_mail_password
-delete = db(db.msg_setting.id==1).select()[0].inbound_mail_delete
+host = db(db.msg_email_settings.id == 1).select().first().inbound_mail_server
+server_type = db(db.msg_email_settings.id == 1).select().first().inbound_mail_type
+ssl = db(db.msg_email_settings.id == 1).select().first().inbound_mail_ssl
+port = db(db.msg_email_settings.id == 1).select().first().inbound_mail_port
+username = db(db.msg_email_settings.id == 1).select().first().inbound_mail_username
+password = db(db.msg_email_settings.id == 1).select().first().inbound_mail_password
+delete = db(db.msg_email_settings.id == 1).select().first().inbound_mail_delete
 
-if server_type == 'pop3':
+if server_type == "pop3":
     import poplib
     # http://docs.python.org/library/poplib.html
     try:
@@ -57,18 +57,18 @@ if server_type == 'pop3':
     dellist = []
     mblist = p.list()[1]
     for item in mblist:
-        number, octets = item.split(' ')
+        number, octets = item.split(" ")
         # Retrieve the message (storing it in a list of lines)
         lines = p.retr(number)[1]
         # Create an e-mail object representing the message
         msg = email.message_from_string("\n".join(lines))
         # Parse out the 'From' Header
-        sender = msg['from']
+        sender = msg["from"]
         # Parse out the 'Subject' Header
-        if 'subject' in msg:
-            subject = msg['subject']
+        if "subject" in msg:
+            subject = msg["subject"]
         else:
-            subject = ''
+            subject = ""
         # Parse out the 'Body'
         textParts = msg.get_payload()
         body = textParts[0].get_payload()
@@ -85,7 +85,7 @@ if server_type == 'pop3':
         p.dele(number)
     p.quit()
     
-elif server_type == 'imap':
+elif server_type == "imap":
     import imaplib
     # http://docs.python.org/library/imaplib.html
     try:
@@ -123,19 +123,19 @@ elif server_type == 'imap':
     # Select inbox
     M.select()
     # Search for Messages to Download
-    typ, data = M.search(None, 'ALL')
+    typ, data = M.search(None, "ALL")
     for num in data[0].split():
-        typ, msg_data = M.fetch(num, '(RFC822)')
+        typ, msg_data = M.fetch(num, "(RFC822)")
         for response_part in msg_data:
             if isinstance(response_part, tuple):
                 msg = email.message_from_string(response_part[1])
                 # Parse out the 'From' Header
-                sender = msg['from']
+                sender = msg["from"]
                 # Parse out the 'Subject' Header
-                if 'subject' in msg:
-                    subject = msg['subject']
+                if "subject" in msg:
+                    subject = msg["subject"]
                 else:
-                    subject = ''
+                    subject = ""
                 # Parse out the 'Body'
                 textParts = msg.get_payload()
                 body = textParts[0].get_payload()
@@ -149,7 +149,7 @@ elif server_type == 'imap':
     db.commit()
     # Iterate over the list of messages to delete
     for number in dellist:
-        typ, response = M.store(number, '+FLAGS', r'(\Deleted)')
+        typ, response = M.store(number, "+FLAGS", r"(\Deleted)")
     M.close()
     M.logout()
     

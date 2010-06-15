@@ -52,7 +52,7 @@ class ModemThread( threading.Thread ):
 		#self.modem.send_sms("9935648569","Hey!")
 
 
-modem_configs = db(db.mobile_settings.modem_port != "").select()
+modem_configs = db(db.msg_modem_settings.enabled == True).select()
 
 # PyGSM GsmModem class instances
 modems=[]
@@ -62,12 +62,13 @@ for modem in modem_configs:
     modems.append(pygsm.GsmModem(port=modem.modem_port, baudrate=modem.modem_baud, mode="text")) 
 
 if len(modems) == 0:
-    # If no modem is found try autoconfiguring
-    try:
-      modems.append(pygsm.AutoGsmModem())
-    except GsmModemNotFound, e:
-      # No way yet to pass back the error yet
-      pass
+    # If no modem is found try autoconfiguring - We shouldnt do this anymore
+    #try:
+    #  modems.append(pygsm.AutoGsmModem())
+    #except GsmModemNotFound, e:
+    #  # No way yet to pass back the error yet
+    #  pass
+    pass
 
 # Starting a thread for each modem we have
 for modem in modems:

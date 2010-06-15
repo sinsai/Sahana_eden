@@ -2,7 +2,7 @@
 
 # 1st-run initialisation
 # designed to be called from Crontab's @reboot
-# however this isn't reliable so still in models for now...
+# however this isn't reliable (doesn't work on Win32 Service) so still in models for now...
 
 # Deployments can change settings live via appadmin
 
@@ -239,14 +239,9 @@ if empty:
                 audit_write = False
             )
 
-    # Messaging
-    tablename = 'mobile_settings'
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(modem_baud=115200)
-
+    # Messaging Module
     if "msg" in deployment_settings.modules:
-        tablename = 'msg_setting'
+        tablename = 'msg_email_settings'
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(
@@ -263,6 +258,15 @@ if empty:
                 audit_read = False,
                 audit_write = False
             )
+        tablename = 'msg_modem_settings'
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(modem_baud=115200)
+        tablename = 'msg_gateway_settings'
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(to_variable = 'to')
+
 
     # Missing Person Registry
     if "mpr" in deployment_settings.modules:

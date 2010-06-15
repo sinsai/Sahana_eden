@@ -22,21 +22,14 @@ def shn_menu():
             [T("Add"), False, URL(r=request, f="group", args="create")],
             [T("Group Memberships"), False, URL(r=request, f="group_membership")],
         ]]]
-    #if session.rcvars and "pr_person" in session.rcvars:
-        #selection = db.pr_person[session.rcvars["pr_person"]]
-        #if selection:
-            #selection = shn_pr_person_represent(selection.id)
-            #menu_person = [
-                #[str(T("Person:")) + " " + selection, False, URL(r=request, f="person", args="read"),[
-                    #[T("Basic Details"), False, URL(r=request, f="person", args="read")],
-                    #[T("Images"), False, URL(r=request, f="person", args="image")],
-                    #[T("Identity"), False, URL(r=request, f="person", args="identity")],
-                    #[T("Address"), False, URL(r=request, f="person", args="address")],
-                    #[T("Contact Data"), False, URL(r=request, f="person", args="pe_contact")],
-                    #[T("Presence Log"), False, URL(r=request, f="person", args="presence")],
-                #]]
-            #]
-            #response.menu_options.extend(menu_person)
+    if session.rcvars and "pr_person" in session.rcvars:
+        selection = db.pr_person[session.rcvars["pr_person"]]
+        if selection:
+            selection = shn_pr_person_represent(selection.id)
+            menu_person = [
+                [str(T("Person:")) + " " + selection, False, URL(r=request, f="person", args="read")]
+            ]
+            response.menu_options.extend(menu_person)
 
 shn_menu()
 
@@ -73,6 +66,16 @@ def person():
     """ RESTful CRUD controller """
 
     response.s3.pagination = True
+
+    def person_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                linkto = shn_linkto(jr, sticky=True)("[id]")
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=linkto)
+                ]
+        return output
+    response.s3.postp = person_postp
 
     output = shn_rest_controller(module, "person",
                 main="first_name",

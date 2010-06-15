@@ -327,18 +327,18 @@ if deployment_settings.has_module(module):
                           shn_hms_hospital_onvalidation(form),
                           onaccept=lambda form: \
                           shn_hms_hospital_onaccept(form),
-                          list_fields=['id',
-                                       'gov_uuid',
-                                       'name',
-                                       'organisation_id',
-                                       'location_id',
-                                       'phone_business',
-                                       'ems_status',
-                                       'facility_status',
-                                       'clinical_status',
-                                       'security_status',
-                                       'total_beds',
-                                       'available_beds'])
+                          list_fields=["id",
+                                       "gov_uuid",
+                                       "name",
+                                       "organisation_id",
+                                       "location_id",
+                                       "phone_business",
+                                       "ems_status",
+                                       "facility_status",
+                                       "clinical_status",
+                                       "security_status",
+                                       "total_beds",
+                                       "available_beds"])
 
     # -----------------------------------------------------------------------------
     # Contacts
@@ -795,30 +795,22 @@ if deployment_settings.has_module(module):
                         TR(TH(T("Name: ")),
                            hospital.name,
                            TH(T("EMS Status: ")),
-                           "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status),
-                           TH(A(T("Clear Selection"),
-                                _href=URL(r=request, f="hospital", args="clear", vars={"_next": _same})))),
+                           "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status)),
 
                         TR(TH(T("Location: ")),
                            db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
                            TH(T("Facility Status: ")),
-                           "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status),
-                           TH(""),
-                           ""),
+                           "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status)),
 
                         TR(TH(T("Total Beds: ")),
                            hospital.total_beds,
                            TH(T("Clinical Status: ")),
-                           "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status),
-                           TH(""),
-                           ""),
+                           "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status)),
 
                         TR(TH(T("Available Beds: ")),
                            hospital.available_beds,
                            TH(T("Security Status: ")),
-                           "%s" % db.hms_hospital.security_status.represent(hospital.security_status),
-                           TH(A(T("Edit Hospital"),
-                                _href=URL(r=request, f="hospital", args=["update", jr.id], vars={"_next": _next}))))
+                           "%s" % db.hms_hospital.security_status.represent(hospital.security_status))
 
                          ), rheader_tabs)
 

@@ -52,7 +52,7 @@ def setting():
     s3.crud_strings.setting.msg_record_modified = T('Settings updated')
     s3.crud_strings.setting.label_list_button = None
     #crud.settings.update_next = URL(r=request, args=[1, 'update'])
-    
+
     s3xrc.model.configure(table,
                           onvalidation=theme_check,
                           onaccept=theme_apply)
@@ -120,8 +120,11 @@ def theme():
         msg_record_deleted = T('Theme deleted'),
         msg_list_empty = T('No Themes currently defined'))
 
-    s3xrc.model.configure(table, onvalidation=theme_check)
-    return shn_rest_controller(module, resource, list_fields=['id', 'name', 'logo', 'footer', 'col_background'])
+    s3xrc.model.configure(table,
+                          onvalidation=theme_check,
+                          list_fields=['id', 'name', 'logo', 'footer', 'col_background'])
+
+    return shn_rest_controller(module, resource)
     s3xrc.model.clear_config(table, "onvalidation")
 
 def theme_apply(form):

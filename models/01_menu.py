@@ -70,8 +70,10 @@ admin_menu_options = [
             [T("Sync Conflicts"), False, URL(r=request, c="sync", f="conflicts")],
             [T("Sync History"), False, URL(r=request, c="sync", f="history")]
     ]],
-    [T("Mobile"), False, URL(r=request, c="mobile", f="index"),[
-            [T("Mobile Settings"), False, URL(r=request, c="mobile", f="settings", args=[1, "update"])]
+    [T("Messaging"), False, "#",[
+            [T("Email Settings"), False, URL(r=request, c="msg", f="email_settings", args=[1, "update"])],
+            [T("Modem Settings"), False, URL(r=request, c="msg", f="modem_settings", args=[1, "update"])],
+            [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])]
     ]],
     [T("Edit Application"), False, URL(r=request, a="admin", c="default", f="design", args=[request.application])],
     [T("Tickets"), False, URL(r=request, c="admin", f="errors")],

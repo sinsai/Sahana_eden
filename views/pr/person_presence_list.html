@@ -6,8 +6,6 @@
 <div id='rheader'>
 {{try:}}
  {{=rheader}}
-<a onclick="viewMapMulti('{{=request.controller}}','{{=request.function}}',{{=request.args[0]}},'{{=request.args[1]}}');return false" href="#">View All on Map</a>
-<p>&nbsp;</p>
 {{except:}}
  {{pass}}
 </div>
@@ -19,6 +17,10 @@
 <div id='table-container'>
 {{try:}}
  {{=items}}
+<div style="margin-top: 1.0em;">
+<a class="action-btn" onclick="viewMapMulti('{{=request.controller}}','{{=request.function}}',{{=request.args[0]}},'{{=request.args[1]}}');return false" href="#">View All on Map</a>
+</div>
+<p>&nbsp;</p>
 {{except:}}
 {{pass}}
 </div>

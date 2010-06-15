@@ -318,11 +318,17 @@ if deployment_settings.has_module(module):
 
     # Pledges as a component of requests
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(rms_req = "req_id"),
-        deletable=True,
-        editable=True,
-        list_fields = ["id", "organisation_id", "person_id", "submitted_on", "status"])
+                              multiple=True,
+                              joinby=dict(rms_req = "req_id"),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "organisation_id",
+                                       "person_id",
+                                       "submitted_on",
+                                       "status"])
 
     s3.crud_strings[tablename] = Storage(title_create        = "Add Pledge",
                                     title_display       = "Pledge Details",
@@ -338,8 +344,6 @@ if deployment_settings.has_module(module):
                                     msg_record_deleted  = "Pledge deleted",
                                     msg_list_empty      = "No Pledges currently available")
 
-
-
     # ------------------
     # Create the table for request_detail for requests with arbitrary keys
     resource = "req_detail"
@@ -351,12 +355,17 @@ if deployment_settings.has_module(module):
         migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(rms_req="req_id"),
-        deletable=True,
-        editable=True,
-        main="request_key", extra="value",
-        list_fields = ["id", "req_id", "request_key", "value"])
+                              multiple=True,
+                              joinby=dict(rms_req="req_id"),
+                              deletable=True,
+                              editable=True,
+                              main="request_key", extra="value")
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "req_id",
+                                       "request_key",
+                                       "value"])
 
     # Make some fields invisible:
     table.req_id.readable = table.req_id.writable = False

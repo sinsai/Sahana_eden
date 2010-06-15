@@ -52,7 +52,6 @@ def person():
     db.pr_person.missing.default = True
     return shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
         rheader=shn_pr_rheader,
-        list_fields=['id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'opt_pr_nationality'],
         rss=dict(
             title=shn_pr_person_represent,
             description="ID Label: %(pr_pe_label)s\n%(comment)s"

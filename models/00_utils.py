@@ -413,6 +413,13 @@ def shn_crud_strings(table_name,
     return table_strings
 
 
+def shn_get_crud_strings(tablename):
+
+    """ Get the CRUD strings for a table """
+
+    return s3.crud_strings.get(tablename, s3.crud_strings)
+
+
 def shn_import_table(table_name,
                      import_if_not_empty = False):
     """
@@ -466,3 +473,32 @@ def shn_represent_file(file_name,
         filename = file_name
 
     return A(filename, _href = url_file)
+
+
+def shn_rheader_tabs(jr, tabs=[]):
+
+    """ Constructs a DIV of component links for a S3RESTRequest """
+
+    rheader_tabs = []
+    for (title, component) in tabs:
+        _class = "rheader_tab_other"
+        if component:
+            if jr.component and jr.component.name == component:
+                _class = "rheader_tab_here"
+            args = [jr.id, component]
+            _href = URL(r=request, f=jr.name, args=args)
+        else:
+            if not jr.component:
+                _class = "rheader_tab_here"
+            args = [jr.id]
+            _next = URL(r=request, f=jr.name, args=[jr.id])
+            _href = URL(r=request, f=jr.name, args=args, vars = {"_next": _next})
+        tab = SPAN(A(title, _href=_href), _class=_class)
+        rheader_tabs.append(tab)
+
+    if rheader_tabs:
+        rheader_tabs = DIV(rheader_tabs, _id="rheader_tabs")
+    else:
+        rheader_tabs = ""
+
+    return rheader_tabs

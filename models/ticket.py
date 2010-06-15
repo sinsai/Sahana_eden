@@ -47,3 +47,15 @@ if deployment_settings.has_module(module):
         Field("actioned_details", "text"),
         migrate=migrate)
 
+    s3xrc.model.configure(table,
+                          list_fields=['id',
+                                       'subject',
+                                       'attachment',
+                                       'priority',
+                                       'source',
+                                       'source_id',
+                                       'source_time',
+                                       'location_id',
+                                       'verified',
+                                       'actionable',
+                                       'actioned'])

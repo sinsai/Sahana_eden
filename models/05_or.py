@@ -172,16 +172,20 @@ def organisation_onaccept(form):
         f="dashboard"
         response.s3.or_redirect = URL(r=request, f=f, args=form.vars.id)
 
-s3xrc.model.configure(table,
-                      onaccept=lambda form: organisation_onaccept(form))
-
 # Orgs as component of Clusters
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(or_sector="sector_id"),
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "name", "acronym", "type", "country"])
+                          multiple=True,
+                          joinby=dict(or_sector="sector_id"),
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      onaccept=lambda form: organisation_onaccept(form),
+                      list_fields = ["id",
+                                     "name",
+                                     "acronym",
+                                     "type",
+                                     "country"])
 
 # -----------------------------------------------------------------------------
 # Offices
@@ -282,11 +286,16 @@ office_id = SQLTable(None, "office_id",
 
 # Offices as component of Orgs
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(or_organisation="organisation_id"),
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "name", "phone1", "email"])
+                          multiple=True,
+                          joinby=dict(or_organisation="organisation_id"),
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "name",
+                                   "phone1",
+                                   "email"])
 
 # -----------------------------------------------------------------------------
 # Contacts
@@ -367,11 +376,18 @@ s3.crud_strings[tablename] = Storage(
 
 # Contacts as component of Orgs
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(or_organisation="organisation_id"),
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "person_id", "office_id", "title", "manager_id", "focal_point"])
+                          multiple=True,
+                          joinby=dict(or_organisation="organisation_id"),
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "person_id",
+                                   "office_id",
+                                   "title",
+                                   "manager_id",
+                                   "focal_point"])
 
 # -----------------------------------------------------------------------------
 # Projects:

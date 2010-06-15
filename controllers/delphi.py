@@ -295,21 +295,21 @@ def group():
     if not auth.has_membership(1):
         raise HTTP(403)
 
-    return shn_rest_controller(module, 'group', list_fields=['id', 'name', 'description'])
+    return shn_rest_controller(module, 'group')
 
 def user_to_group():
     if not auth.has_membership(1):
         raise HTTP(403)
 
-    return shn_rest_controller(module, 'user_to_group', list_fields=['id', 'group_id', 'user_id', 'status', 'req'])
+    return shn_rest_controller(module, 'user_to_group')
 
 def problem():
     # TODO: access check
-    return shn_rest_controller(module, 'problem', list_fields=['id', 'group_id', 'name', 'created_by', 'last_modification'])
+    return shn_rest_controller(module, 'problem')
 
 def solution():
     # TODO: access check
-    return shn_rest_controller(module, 'solution', list_fields=['id', 'problem_id', 'name', 'suggested_by', 'last_modification'])
+    return shn_rest_controller(module, 'solution')
 
 
 def summary():

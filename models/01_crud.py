@@ -1057,6 +1057,7 @@ def shn_read(jr, **attr):
     """ Read a single record. """
 
     rheader = attr.get("rheader", None)
+    sticky = attr.get("sticky", False)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
     rss = attr.get("rss", None)
@@ -1067,6 +1068,7 @@ def shn_read(jr, **attr):
 
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
+    list_fields = s3xrc.model.get_config(table, "list_fields")
 
     if jr.component:
 
@@ -1127,13 +1129,13 @@ def shn_read(jr, **attr):
                 except:
                     subtitle = s3.crud_strings.title_display
                 output.update(subtitle=subtitle)
-                if rheader:
-                    try:
-                        _rheader = rheader(jr.name, jr.id, jr.representation, next=jr.there(), same=jr.same())
-                    except:
-                        _rheader = rheader
-                    if _rheader:
-                        output.update(rheader=_rheader)
+            if rheader and jr.id and (jr.component or sticky):
+                try:
+                    _rheader = rheader(jr)
+                except:
+                    _rheader = rheader
+                if _rheader:
+                    output.update(rheader=_rheader)
             item = crud.read(table, record_id)
 
             if jr.representation=="html":
@@ -1180,7 +1182,7 @@ def shn_read(jr, **attr):
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
-            return export_xls(table, query)
+            return export_xls(table, query, list_fields)
 
         elif jr.representation in shn_json_export_formats:
             return export_json(jr)
@@ -1242,6 +1244,7 @@ def shn_list(jr, **attr):
 
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
+    list_fields = s3xrc.model.get_config(table, "list_fields")
 
     # Get request arguments
     rheader = attr.get("rheader", None)
@@ -1250,7 +1253,6 @@ def shn_list(jr, **attr):
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
     rss = _attr.get("rss", None)
-    list_fields = _attr.get("list_fields", None)
     listadd = _attr.get("listadd", True)
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
@@ -1323,8 +1325,6 @@ def shn_list(jr, **attr):
         # Which fields do we display?
         fields = None
 
-        if jr.component:
-            list_fields = jr.component.attr.list_fields
         if list_fields:
             fields = [f for f in list_fields if table[f].readable]
 
@@ -1377,13 +1377,12 @@ def shn_list(jr, **attr):
 
             if rheader:
                 try:
-                    _rheader = rheader(jr.name, jr.id, jr.representation,
-                                       next=jr.there(),
-                                       same=jr.same())
+                    _rheader = rheader(jr)
                 except:
                     _rheader = rheader
                 if _rheader:
                     output.update(rheader=_rheader)
+
         else:
             try:
                 title = s3.crud_strings[tablename].title_list
@@ -1399,14 +1398,7 @@ def shn_list(jr, **attr):
         # Which fields do we display?
         fields = None
 
-        if jr.component:
-            list_fields = jr.component.attr.list_fields or []
-            _fields = [jr.component.table[f] for f in list_fields if f in jr.component.table.fields]
-            if _fields:
-                fields = [f for f in _fields if f.readable]
-            else:
-                fields = None
-        elif list_fields:
+        if list_fields:
             fields = [table[f] for f in list_fields if table[f].readable]
 
         if fields and len(fields)==0:
@@ -1602,7 +1594,7 @@ def shn_list(jr, **attr):
         return export_pdf(table, query)
 
     elif jr.representation == "xls":
-        return export_xls(table, query)
+        return export_xls(table, query, list_fields)
 
     elif jr.representation in shn_json_export_formats:
         return export_json(jr)
@@ -1625,6 +1617,7 @@ def shn_create(jr, **attr):
     """ Create new records """
 
     rheader = attr.get("rheader", None)
+    sticky = attr.get("sticky", False)
     main = attr.get("main", None)
 
     module, resource, table, tablename = jr.target()
@@ -1654,11 +1647,9 @@ def shn_create(jr, **attr):
                 subtitle = s3.crud_strings.subtitle_create
             output.update(subtitle=subtitle)
 
-            if rheader:
+            if rheader and jr.id:
                 try:
-                    _rheader = rheader(jr.name, jr.id, jr.representation,
-                                       next=jr.there(),
-                                       same=jr.same())
+                    _rheader = rheader(jr)
                 except:
                     _rheader = rheader
                 if _rheader:
@@ -1808,6 +1799,7 @@ def shn_update(jr, **attr):
     """ Update an existing record """
 
     rheader = attr.get("rheader", None)
+    sticky = attr.get("sticky", False)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
 
@@ -1871,21 +1863,19 @@ def shn_update(jr, **attr):
                     subtitle = s3.crud_strings.title_update
                 output.update(subtitle=subtitle)
 
-                if rheader:
-                    try:
-                        _rheader = rheader(jr.name, jr.id, jr.representation,
-                                           next=jr.there(),
-                                           same=jr.same())
-                    except:
-                        _rheader = rheader
-                    if _rheader:
-                        output.update(rheader=_rheader)
             else:
                 try:
                     title = s3.crud_strings[tablename].title_update
                 except:
                     title = s3.crud_strings.title_update
 
+            if rheader and jr.id and (jr.component or sticky):
+                try:
+                    _rheader = rheader(jr)
+                except:
+                    _rheader = rheader
+                if _rheader:
+                    output.update(rheader=_rheader)
             try:
                 label_list_button = s3.crud_strings[tablename].label_list_button
             except:

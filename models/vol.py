@@ -83,8 +83,13 @@ if deployment_settings.has_module(module):
                             ondelete = 'RESTRICT'
                             ))
 
-    def shn_vol_project_list_fields():
-        return ["id", "name", "location_id", "start_date", "end_date", "status"]
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "name",
+                                       "location_id",
+                                       "start_date",
+                                       "end_date",
+                                       "status"])
 
     # -----------------------------------------------------------------------------
     # vol_position (component of vol_project)
@@ -141,12 +146,18 @@ if deployment_settings.has_module(module):
                             ))
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(vol_project='vol_project_id'),
-        deletable=True,
-        editable=True,
-        main='title', extra='description',
-        list_fields = ['type', 'title', 'description', 'slots', 'payrate'])
+                              multiple=True,
+                              joinby=dict(vol_project='vol_project_id'),
+                              deletable=True,
+                              editable=True,
+                              main='title', extra='description')
+
+    s3xrc.model.configure(table,
+                          list_fields=['type',
+                                       'title',
+                                       'description',
+                                       'slots',
+                                       'payrate'])
 
     # -----------------------------------------------------------------------------
     # vol_volunteer (Component of pr_person)
@@ -223,12 +234,15 @@ if deployment_settings.has_module(module):
                             ))
 
     s3xrc.model.add_component(module, resource,
-        multiple=False,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        main='person_id', extra='organisation_id',
-        list_fields = ['organisation_id', 'status'])
+                              multiple=False,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True,
+                              main='person_id', extra='organisation_id')
+
+    s3xrc.model.configure(table,
+                          list_fields=['organisation_id',
+                                       'status'])
 
     # -----------------------------------------------------------------------------
     # vol_resource (Component of pr_person)
@@ -292,12 +306,18 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person='person_id'),
-        deletable=True,
-        editable=True,
-        main='person_id', extra='subject',
-        list_fields = ['id', 'type', 'subject', 'deployment', 'status'])
+                              multiple=True,
+                              joinby=dict(pr_person='person_id'),
+                              deletable=True,
+                              editable=True,
+                              main='person_id', extra='subject')
+
+    s3xrc.model.configure(table,
+                          list_fields=['id',
+                                       'type',
+                                       'subject',
+                                       'deployment',
+                                       'status'])
 
     # CRUD Strings
     ADD_RESOURCE = T('Add Resource')
@@ -419,17 +439,20 @@ if deployment_settings.has_module(module):
     # Field labels
     table.person_id.label = T('Assigned to')
 
-    def shn_vol_task_list_fields():
-        return ['id', 'priority', 'subject', 'person_id', 'status']
-
     # Component
     s3xrc.model.add_component(module, resource,
         multiple=True,
         joinby=dict(vol_project='vol_project_id'),
         deletable=True,
         editable=True,
-        main='subject', extra='description',
-        list_fields = shn_vol_task_list_fields())
+        main='subject', extra='description')
+
+    s3xrc.model.configure(table,
+                          list_fields=['id',
+                                       'priority',
+                                       'subject',
+                                       'person_id',
+                                       'status'])
 
     # CRUD Strings
     ADD_TASK = T('Add Task')
@@ -583,22 +606,15 @@ if deployment_settings.has_module(module):
     # shn_vol_project_search_location:
     #   form function to search projects by location
     #
-    def shn_vol_project_rheader(resource, record_id, representation, next=None, same=None):
+    def shn_vol_project_rheader(jr):
 
-        if resource == "project":
-            if representation == "html":
+        if jr.name == "project":
+            if jr.representation == "html":
 
-                if next:
-                    _next = next
-                else:
-                    _next = URL(r=request, f=resource, args=['read'])
+                _next = jr.here()
+                _same = jr.same()
 
-                if same:
-                    _same = same
-                else:
-                    _same = URL(r=request, f=resource, args=['read', '[id]'])
-
-                project = db.vol_project[record_id]
+                project = jr.record
                 if project:
                     rheader = TABLE(
                         TR(
@@ -616,7 +632,7 @@ if deployment_settings.has_module(module):
                             TH(T('Status: ')),
                             "%s" % vol_project_status_opts[project.status],
                             TH(A(T('Edit Project'),
-                                _href=URL(r=request, f='project', args=['update', record_id], vars={'_next': _next})))
+                                _href=URL(r=request, f='project', args=['update', jr.id], vars={'_next': _next})))
                             )
                     )
                     return rheader

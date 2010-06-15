@@ -39,6 +39,8 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T('Group deleted'),
         msg_list_empty = T('No Groups currently defined'))
 
+    s3xrc.model.configure(table, list_fields=['id', 'name', 'description'])
+
     ##################
     # Group Membership
     ##################
@@ -86,6 +88,8 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T('Membership deleted'),
         msg_list_empty = T('No Memberships currently defined'))
 
+    s3xrc.model.configure(table, list_fields=['id', 'group_id', 'user_id', 'status', 'req'])
+
     ##########
     # Problems
     ##########
@@ -125,6 +129,8 @@ if deployment_settings.has_module(module):
         msg_record_modified = T('Problem updated'),
         msg_record_deleted = T('Problem deleted'),
         msg_list_empty = T('No Problems currently defined'))
+
+    s3xrc.model.configure(table, list_fields=['id', 'group_id', 'name', 'created_by', 'last_modification'])
 
     def get_last_problem_id():
         last_problems = db(db.delphi_problem.id > 0).select(db.delphi_problem.id, orderby =~ db.delphi_problem.id, limitby = (0, 1))
@@ -169,6 +175,8 @@ if deployment_settings.has_module(module):
         msg_record_modified = T('Solution updated'),
         msg_record_deleted = T('Solution deleted'),
         msg_list_empty = T('No Solutions currently defined'))
+
+    s3xrc.model.configure(table, list_fields=['id', 'problem_id', 'name', 'suggested_by', 'last_modification'])
 
     #######
     # Votes

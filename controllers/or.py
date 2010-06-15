@@ -270,43 +270,36 @@ def who_what_where_when():
     #print project_list
     return dict(project_list = project_list)
 
-def shn_office_rheader(resource, record_id, representation, next=None, same=None):
+def shn_office_rheader(jr):
 
-    if representation == "html":
+    if jr.name == "office":
+        if jr.representation == "html":
 
-        if next:
-            _next = next
-        else:
-            _next = URL(r=request, f=resource, args=['read'])
+            _next = jr.here()
+            _same = jr.same()
 
-        if same:
-            _same = same
-        else:
-            _same = URL(r=request, f=resource, args=['read', '[id]'])
+            office = jr.record
+            organisation = db(db.or_organisation.id == office.organisation_id).select().first()
 
-        office = db(db.or_office.id == record_id).select()[0]
-        organisation = db(db.or_organisation.id == office.organisation_id).select()[0]
+            rheader = TABLE(
+                TR(
+                    TH(T('Name: ')),
+                    office.name,
+                    TH(T('Type: ')),
+                    office.type,
+                TR(
+                    TH(T('Organisation: ')),
+                    organisation.name
+                    ),
+                    TH(T('Sector: ')),
+                    db(db.or_sector.id == organisation.sector_id).select()[0].name
+                    ),
+                TR(
+                    TH(A(T('Edit Office'),
+                        _href=URL(r=request, c='or', f='office', args=['update', jr.id], vars={'_next': _next})))
+                    )
+            )
+            return rheader
 
-        rheader = TABLE(
-            TR(
-                TH(T('Name: ')),
-                office.name,
-                TH(T('Type: ')),
-                office.type,
-            TR(
-                TH(T('Organisation: ')),
-                organisation.name
-                ),
-                TH(T('Sector: ')),
-                db(db.or_sector.id == organisation.sector_id).select()[0].name
-                ),
-            TR(
-                TH(A(T('Edit Office'),
-                    _href=URL(r=request, c='or', f='office', args=['update', record_id], vars={'_next': _next})))
-                )
-        )
-        return rheader
-
-    else:
-        return None
+    return None
 

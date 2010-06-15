@@ -74,11 +74,19 @@ s3.crud_strings[tablename] = Storage(
 
 # Component of pr_pentity
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby="pr_pe_id",
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "opt_pr_address_type", "co_name", "street1", "postcode", "city", "opt_pr_country"])
+                          multiple=True,
+                          joinby="pr_pe_id",
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields = ["id",
+                                     "opt_pr_address_type",
+                                     "co_name",
+                                     "street1",
+                                     "postcode",
+                                     "city",
+                                     "opt_pr_country"])
 
 # *****************************************************************************
 # Contact (pe_contact)
@@ -119,11 +127,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby="pr_pe_id",
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "name", "person_name", "opt_pr_contact_method", "value", "priority"])
+                          multiple=True,
+                          joinby="pr_pe_id",
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "name",
+                                   "person_name",
+                                   "opt_pr_contact_method",
+                                   "value",
+                                   "priority"])
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -194,11 +209,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby="pr_pe_id",
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "opt_pr_image_type", "image", "url", "title","description"])
+                          multiple=True,
+                          joinby="pr_pe_id",
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "opt_pr_image_type",
+                                   "image",
+                                   "url",
+                                   "title",
+                                   "description"])
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -317,15 +339,16 @@ s3xrc.model.add_component(module, resource,
     main="time", extra="location_details",
     rss=dict(
         title="%(time)s",
-        description=shn_pr_presence_rss
-    ),
-    list_fields = ["id",
-        "time",
-        "location_id",
-        "location_details",
-        "opt_pr_presence_condition",
-        "orig_id",
-        "dest_id"])
+        description=shn_pr_presence_rss))
+
+s3xrc.model.configure(table,
+                      list_fields = ["id",
+                                     "time",
+                                     "location_id",
+                                     "location_details",
+                                     "opt_pr_presence_condition",
+                                     "orig_id",
+                                     "dest_id"])
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -404,11 +427,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(pr_person="person_id"),
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "opt_pr_id_type", "type", "value", "country_code", "ia_name"])
+                          multiple=True,
+                          joinby=dict(pr_person="person_id"),
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "opt_pr_id_type",
+                                   "type",
+                                   "value",
+                                   "country_code",
+                                   "ia_name"])
 
 # Field validation
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -457,11 +487,18 @@ table = db.define_table(tablename, timestamp, deletion_status,
 
 # Joined Resource
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(pr_group="group_id", pr_person="person_id"),
-    deletable=True,
-    editable=True,
-    list_fields = ["id", "group_id", "person_id", "group_head", "description"])
+                          multiple=True,
+                          joinby=dict(pr_group="group_id",
+                                      pr_person="person_id"),
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "group_id",
+                                   "person_id",
+                                   "group_head",
+                                   "description"])
 
 # Field validation
 

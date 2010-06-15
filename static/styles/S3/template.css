@@ -481,13 +481,32 @@ div.toolbar-container { width: 100%;
                 text-decoration: none;
                 color: #000000 }
 
-/* Joined Resources */
+/* Resource header */
+div#rheader { margin-bottom: 16px; }
 div#rheader table { width: 100%; }
 div#rheader th { text-align: left;
                  width: 10%; }
 div#rheader td { text-align: left;
                  padding: 1px 6px 1px 1px;
                  width: 20%; }
+div#rheader_tabs { width: 100%;
+                   padding: 10px 0px 2px 0px;
+                   margin-bottom: 5px;
+                   border-bottom: 1px solid #bbb;
+                   text-align: left; }
+
+div#rheader_tabs span { padding: 1px 3px 3px 3px;
+                        -moz-border-radius: 3px 3px 0px 0px;
+                        -webkit-border-radius: 3px 3px 0px 0px; }
+
+div#rheader_tabs span.rheader_tab_other { border: 1px solid #bbb; border-bottom: 0; }
+div#rheader_tabs span.rheader_tab_here { border: 2px solid #col_border_btn_out; border-bottom: 0; }
+
+div#rheader_tabs span.rheader_tab_other a { color: #bbb;
+                                            text-decoration: None; }
+
+div#rheader_tabs span.rheader_tab_here a { color: #col_txt;
+                                            text-decoration: None; }
 
 /* Ext button (e.g. on Bulk Upload form */
 #show-dialog-btn { border:1px solid #efefef;

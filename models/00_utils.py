@@ -466,3 +466,29 @@ def shn_represent_file(file_name,
         filename = file_name
 
     return A(filename, _href = url_file)
+
+
+def shn_rheader_tabs(jr, tabs=[]):
+
+    """ Constructs a DIV of component links for a S3RESTRequest """
+
+    rheader_tabs = []
+    for (title, component) in tabs:
+        _class = "rheader_tab_other"
+        if component:
+            if jr.component and jr.component.name == component:
+                _class = "rheader_tab_here"
+            args = [jr.id, component]
+        else:
+            if not jr.component:
+                _class = "rheader_tab_here"
+            args = [jr.id]
+        tab = SPAN(A(title, _href=URL(r=request, f=jr.name, args=args)), _class=_class)
+        rheader_tabs.append(tab)
+
+    if rheader_tabs:
+        rheader_tabs = DIV(rheader_tabs, _id="rheader_tabs")
+    else:
+        rheader_tabs = ""
+
+    return rheader_tabs

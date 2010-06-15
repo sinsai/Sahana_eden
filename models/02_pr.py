@@ -423,9 +423,17 @@ person_id = SQLTable(None, "person_id",
                 ))
 
 s3xrc.model.configure(table,
-    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1),
-    delete_onaccept=lambda form: shn_pentity_ondelete(form))
-
+                      onaccept=lambda form: \
+                      shn_pentity_onaccept(form, table=db.pr_person, entity_type=1),
+                      delete_onaccept=lambda form: \
+                      shn_pentity_ondelete(form),
+                      list_fields = ["id",
+                                     "first_name",
+                                     "middle_name",
+                                     "last_name",
+                                     "date_of_birth",
+                                     "opt_pr_nationality",
+                                     "missing"])
 
 # *****************************************************************************
 # Group (group)
@@ -527,20 +535,6 @@ s3xrc.model.configure(table,
 # *****************************************************************************
 # Functions:
 #
-def shn_pr_person_list_fields():
-
-    list_fields = ["id",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "date_of_birth",
-            "opt_pr_nationality",
-            "missing"]
-
-    return list_fields
-
-# -----------------------------------------------------------------------------
-#
 def shn_pr_person_search_simple(xrequest, **attr):
 
     """
@@ -607,9 +601,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
             xrequest.id = None
 
             # Get report from HTML exporter
-            report = shn_list(xrequest,
-                              listadd=False,
-                              list_fields=shn_pr_person_list_fields())
+            report = shn_list(xrequest, listadd=False)
 
             output.update(dict(report))
 
@@ -640,60 +632,46 @@ s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_p
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_rheader(resource, record_id, representation, next=None, same=None):
+def shn_pr_rheader(jr, tabs=[]):
 
-    """
-        Person Registry page headers
-    """
+    """ Person Registry page headers """
 
-    if resource == "person":
-        if representation == "html":
+    if jr.name == "person":
+        if jr.representation == "html":
 
-            if next:
-                _next = next
-            else:
-                _next = URL(r=request, f=resource, args=["read"])
+            _next = jr.here()
+            _same = jr.same()
 
-            if same:
-                _same = same
-            else:
-                _same = URL(r=request, f=resource, args=["read", "[id]"])
+            person = jr.record
 
-            person = vita.person(record_id)
+            rheader_tabs = shn_rheader_tabs(jr, tabs)
 
             if person:
                 rheader = DIV(TABLE(
-                    TR(
-                        TH(T("Name: ")),
-                        vita.fullname(person),
-                        TH(T("ID Label: ")),
-                        "%(pr_pe_label)s" % person,
-                        TH(A(T("Clear Selection"),
-                            _href=URL(r=request, f="person", args="clear", vars={"_next": _same})))
-                        ),
-                    TR(
-                        TH(T("Date of Birth: ")),
-                        "%s" % (person.date_of_birth or T("unknown")),
-                        TH(T("Gender: ")),
-                        "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown")),
-                        TH(""),
-                        ),
-                    TR(
-                        TH(T("Nationality: ")),
-                        "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
-                        TH(T("Age Group: ")),
-                        "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
-                        TH(A(T("Edit Person"),
-                            _href=URL(r=request, f="person", args=["update", record_id], vars={"_next": _next})))
-                        )
-                #), DIV(
-                        #A(T("Images"), _href=URL(r=request, f="person", args=[record_id, "image"], vars={"_next": _next})),
-                        #A(T("Identity"), _href=URL(r=request, f="person", args=[record_id, "identity"], vars={"_next": _next})),
-                        #A(T("Addresses"), _href=URL(r=request, f="person", args=[record_id, "address"], vars={"_next": _next})),
-                        #A(T("Contact Information"), _href=URL(r=request, f="person", args=[record_id, "pe_contact"], vars={"_next": _next})),
-                        #A(T("Presence Log"), _href=URL(r=request, f="person", args=[record_id, "presence"], vars={"_next": _next})),
-                        #_class="rheader_tabs"
-                ))
+
+                    TR(TH(T("Name: ")),
+                       vita.fullname(person),
+                       TH(T("ID Label: ")),
+                       "%(pr_pe_label)s" % person,
+                       TH(A(T("Clear Selection"),
+                            _href=URL(r=request, f="person", args="clear", vars={"_next": _same})))),
+
+                    TR(TH(T("Date of Birth: ")),
+                       "%s" % (person.date_of_birth or T("unknown")),
+                       TH(T("Gender: ")),
+                       "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown")),
+                       TH("")),
+
+                    TR(TH(T("Nationality: ")),
+                       "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
+                       TH(T("Age Group: ")),
+                       "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
+                       TH(A(T("Edit Person"),
+                            _href=URL(r=request, f="person", args=["update", jr.id], vars={"_next": _next}))))
+
+                    #))
+                    ), rheader_tabs)
+
                 return rheader
 
         else:

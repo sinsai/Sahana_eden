@@ -91,49 +91,38 @@ def pledge(): #pledges from agencies
     return shn_rest_controller(module, resource, editable = True, listadd=False)
 
 
-def shn_rms_rheader(resource, record_id, representation, next=None, same=None):
+def shn_rms_rheader(jr):
 
-    if representation == "html":
+    if jr.representation == "html":
 
-        if next:
-            _next = next
-        else:
-            _next = URL(r=request, f=resource)
+        _next = jr.here()
+        _same = jr.same()
 
-        if same:
-            _same = same
-        else:
-            _same = URL(r=request, f=resource, args=['[id]'])
+        if jr.name == "req":
+            aid_request = jr.record
+            if aid_request:
+                try:
+                    location = db(db.gis_location.id == aid_request.location_id).select().first()
+                    location_represent = shn_gis_location_represent(location.id)
+                except:
+                    location_represent = None
 
-        if resource == "req":
+                rheader = TABLE(TR(TH(T('Message: ')),
+                                TD(aid_request.message, _colspan=3)),
+                                TR(TH(T('Priority: ')),
+                                aid_request.priority,
+                                TH(T('Source Type: ')),
+                                rms_req_source_type.get(aid_request.source_type, T("unknown"))),
+                                TR(TH(T('Time of Request: ')),
+                                aid_request.timestamp,
+                                TH(T('Verified: ')),
+                                aid_request.verified),
+                                TR(TH(T('Location: ')),
+                                location_represent,
+                                TH(T('Actionable: ')),
+                                aid_request.actionable))
 
-            aid_request = db(db.rms_req.id == record_id).select(limitby=(0, 1))
-            if not aid_request:
-                return None
-            else:
-                aid_request = aid_request[0]
-            try:
-                location = db(db.gis_location.id == aid_request.location_id).select().first()
-                location_represent = shn_gis_location_represent(location.id)
-            except:
-                location_represent = None
-
-            rheader = TABLE(TR(TH(T('Message: ')),
-                            TD(aid_request.message, _colspan=3)),
-                            TR(TH(T('Priority: ')),
-                            aid_request.priority,
-                            TH(T('Source Type: ')),
-                            rms_req_source_type.get(aid_request.source_type, T("unknown"))),
-                            TR(TH(T('Time of Request: ')),
-                            aid_request.timestamp,
-                            TH(T('Verified: ')),
-                            aid_request.verified),
-                            TR(TH(T('Location: ')),
-                            location_represent,
-                            TH(T('Actionable: ')),
-                            aid_request.actionable))
-
-            return rheader
+                return rheader
 
     return None
 

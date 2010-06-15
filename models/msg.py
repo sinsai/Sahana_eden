@@ -100,3 +100,33 @@ if deployment_settings.has_module(module):
                 Field('partno', 'integer'),
                 Field('message', 'string', length = 160),
             migrate=migrate)
+
+    # Settings for modem.
+    resource = 'modem_settings'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                #Field('account_name'), # Nametag to remember account - Too be used later
+                Field('modem_port'),
+                Field('modem_baud', 'integer', default = 115200),
+                Field('enabled', 'boolean', default = False),
+#                Field('preference', 'integer', default = 5), To be used later
+                migrate=migrate)
+    table.modem_port.label = T('Port')
+    table.modem_baud.label = T('Baud')
+
+
+    # Settings for modem.
+    resource = 'gateway_settings'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+               Field('url', default =\
+                'https://api.clickatell.com/http/sendmsg'),
+                Field('parameters', default =\
+                'user=yourusername&password=yourpassword&api_id=yourapiid'),
+                Field('message_variable', 'string', default = 'text'),
+                Field('to_variable', 'string', default = 'to'),
+                Field('enabled', 'boolean', default = False),
+#                Field('preference', 'integer', default = 5), To be used later
+                migrate=migrate)
+    table.to_variable.label = T('To variable')
+    table.message_variable.label = T('Message variable')

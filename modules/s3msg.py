@@ -39,12 +39,12 @@ class Msg(object):
 	def __init__(self, environment, db=None, T=None, mail=None, modem=None):
 		try:
 			self.db = db
-			self.sms_api = db(db.mobile_settings.modem_port == "").select().first()
+			self.sms_api = db(db.msg_gateway_settings.enabled == True).select().first()
 			if self.sms_api:
-				tmp_parameters = self.sms_api.parameters.split("&")
+				tmp_parameters = self.sms_api.parameters.split('&')
 				self.sms_api_enabled = self.sms_api.enabled
 				for tmp_parameter in tmp_parameters:
-					self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
+					self.sms_api_post_config[tmp_parameter.split('=')[0]] = tmp_parameter.split('=')[1]
 				self.mail = mail
 				self.modem = modem
 		except:

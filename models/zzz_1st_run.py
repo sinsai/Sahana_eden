@@ -242,12 +242,7 @@ if empty:
                 audit_write = False
             )
 
-    # Messaging
-    tablename = 'mobile_settings'
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(modem_baud=115200)
-
+    # Messaging Module
     if "msg" in deployment_settings.modules:
         tablename = 'msg_email_settings'
         table = db[tablename]
@@ -266,6 +261,15 @@ if empty:
                 audit_read = False,
                 audit_write = False
             )
+        tablename = 'msg_modem_settings'
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(modem_baud=115200)
+        tablename = 'msg_gateway_settings'
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(to_variable = 'to')
+
 
     # Missing Person Registry
     if "mpr" in deployment_settings.modules:

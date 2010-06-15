@@ -39,12 +39,12 @@ class Msg(object):
 	def __init__(self, environment, db=None, T=None, mail=None, modem=None):
 		try:
 			self.db = db
-			self.sms_api = db(db.mobile_settings.modem_port == "").select().first()
+			self.sms_api = db(db.msg_gateway_settings.enabled == True).select().first()
 			if self.sms_api:
-				tmp_parameters = self.sms_api.parameters.split("&")
+				tmp_parameters = self.sms_api.parameters.split('&')
 				self.sms_api_enabled = self.sms_api.enabled
 				for tmp_parameter in tmp_parameters:
-					self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
+					self.sms_api_post_config[tmp_parameter.split('=')[0]] = tmp_parameter.split('=')[1]
 				self.mail = mail
 				self.modem = modem
 		except:
@@ -98,7 +98,7 @@ class Msg(object):
 			def send_pr_pe_id(pr_pe_id):
 				table3 = self.db.pr_pe_contact
 				query = (table3.pr_pe_id == pr_pe_id) & (table3.opt_pr_contact_method == contact_method)
-				recipient = self.db(query).select(table3.value,orderby = table3.priority).first()
+				recipient = self.db(query).select(table3.value, orderby = table3.priority).first()
 				if recipient:
 					if (contact_method == 2 and option == 2):
 						return self.send_sms_via_modem(recipient.value, contents)

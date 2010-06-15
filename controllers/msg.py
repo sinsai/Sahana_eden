@@ -211,6 +211,12 @@ def process_email_via_api():
 @auth.requires_membership('Administrator')
 def modem_settings():
     "Modem settings"
+    try:
+        import serial
+    except ImportError:
+        session.error = T('Python Serial module not available within the\
+        Python - this needs installing to activate the Modem')
+        redirect(URL(r=request, c='admin', f='index'))
     resource = 'modem_settings'
     tablename = module + '_' + resource
     table = db[tablename]

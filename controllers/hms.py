@@ -25,22 +25,22 @@ def shn_menu():
             [T('Add Hospital'), False, URL(r=request, f='hospital', args='create')]
         ]],
     ]
-    if session.rcvars and 'hms_hospital' in session.rcvars:
-        selection = db.hms_hospital[session.rcvars['hms_hospital']]
-        if selection:
-            menu_hospital = [
-                    [selection.name, False, URL(r=request, f='hospital', args=[selection.id]), [
-                        [T('Status Report'), False, URL(r=request, f='hospital', args=[selection.id])],
-                        [T('Bed Capacity'), False, URL(r=request, f='hospital', args=[selection.id, 'bed_capacity'])],
-                        [T('Activity Report'), False, URL(r=request, f='hospital', args=[selection.id, 'hactivity'])],
-                        [T('Requests'), False, URL(r=request, f='hospital', args=[selection.id, 'hrequest'])],
-                        #[T('Resources'), False, URL(r=request, f='hospital', args=[selection.id, 'resources'])],
-                        [T('Images'), False, URL(r=request, f='hospital', args=[selection.id, 'himage'])],
-                        [T('Services'), False, URL(r=request, f='hospital', args=[selection.id, 'services'])],
-                        [T('Contacts'), False, URL(r=request, f='hospital', args=[selection.id, 'hcontact'])],
-                    ]]
-            ]
-            menu.extend(menu_hospital)
+    #if session.rcvars and 'hms_hospital' in session.rcvars:
+        #selection = db.hms_hospital[session.rcvars['hms_hospital']]
+        #if selection:
+            #menu_hospital = [
+                    #[selection.name, False, URL(r=request, f='hospital', args=[selection.id]), [
+                        #[T('Status Report'), False, URL(r=request, f='hospital', args=[selection.id])],
+                        #[T('Bed Capacity'), False, URL(r=request, f='hospital', args=[selection.id, 'bed_capacity'])],
+                        #[T('Activity Report'), False, URL(r=request, f='hospital', args=[selection.id, 'hactivity'])],
+                        #[T('Requests'), False, URL(r=request, f='hospital', args=[selection.id, 'hrequest'])],
+                        ##[T('Resources'), False, URL(r=request, f='hospital', args=[selection.id, 'resources'])],
+                        #[T('Images'), False, URL(r=request, f='hospital', args=[selection.id, 'himage'])],
+                        #[T('Services'), False, URL(r=request, f='hospital', args=[selection.id, 'services'])],
+                        #[T('Contacts'), False, URL(r=request, f='hospital', args=[selection.id, 'hcontact'])],
+                    #]]
+            #]
+            #menu.extend(menu_hospital)
     menu2 = [
         [T('Add Request'), False, URL(r=request, f='hrequest', args='create')],
         [T('Requests'), False, URL(r=request, f='hrequest')],
@@ -69,7 +69,16 @@ def hospital():
     #s3xrc.sync_resolve = shn_hospital_resolver
 
     output = shn_rest_controller(module , 'hospital',
-        rheader = shn_hms_hospital_rheader,
+        rheader = lambda jr: shn_hms_hospital_rheader(jr,
+                  tabs=[
+                        (T('Status Report'), ''),
+                        (T('Bed Capacity'), 'bed_capacity'),
+                        (T('Activity Report'), 'hactivity'),
+                        (T('Requests'), 'hrequest'),
+                        (T('Images'), 'himage'),
+                        (T('Services'), 'services'),
+                        (T('Contacts'), 'hcontact')]),
+        sticky=True,
         rss=dict(
             title="%(name)s",
             description=shn_hms_hospital_rss

@@ -776,7 +776,7 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_hms_hospital_rheader(jr):
+    def shn_hms_hospital_rheader(jr, tabs=[]):
 
         """ Page header for component resources """
 
@@ -786,42 +786,42 @@ if deployment_settings.has_module(module):
                 _next = jr.here()
                 _same = jr.same()
 
+                rheader_tabs = shn_rheader_tabs(jr, tabs)
+
                 hospital = jr.record
                 if hospital:
-                    rheader = TABLE(
-                        TR(
-                            TH(T("Name: ")),
-                            hospital.name,
-                            TH(T("EMS Status: ")),
-                            "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status),
-                            TH(A(T("Clear Selection"),
-                                _href=URL(r=request, f="hospital", args="clear", vars={"_next": _same})))
-                            ),
-                        TR(
-                            TH(T("Location: ")),
-                            db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
-                            TH(T("Facility Status: ")),
-                            "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status),
-                            TH(""),
-                            "",
-                        ),
-                        TR(
-                            TH(T("Total Beds: ")),
-                            hospital.total_beds,
-                            TH(T("Clinical Status: ")),
-                            "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status),
-                            TH(""),
-                            "",
-                        ),
-                        TR(
-                            TH(T("Available Beds: ")),
-                            hospital.available_beds,
-                            TH(T("Security Status: ")),
-                            "%s" % db.hms_hospital.security_status.represent(hospital.security_status),
-                            TH(A(T("Edit Hospital"),
-                                _href=URL(r=request, f="hospital", args=["update", jr.id], vars={"_next": _next})))
-                            )
-                    )
+                    rheader = DIV(TABLE(
+
+                        TR(TH(T("Name: ")),
+                           hospital.name,
+                           TH(T("EMS Status: ")),
+                           "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status),
+                           TH(A(T("Clear Selection"),
+                                _href=URL(r=request, f="hospital", args="clear", vars={"_next": _same})))),
+
+                        TR(TH(T("Location: ")),
+                           db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
+                           TH(T("Facility Status: ")),
+                           "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status),
+                           TH(""),
+                           ""),
+
+                        TR(TH(T("Total Beds: ")),
+                           hospital.total_beds,
+                           TH(T("Clinical Status: ")),
+                           "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status),
+                           TH(""),
+                           ""),
+
+                        TR(TH(T("Available Beds: ")),
+                           hospital.available_beds,
+                           TH(T("Security Status: ")),
+                           "%s" % db.hms_hospital.security_status.represent(hospital.security_status),
+                           TH(A(T("Edit Hospital"),
+                                _href=URL(r=request, f="hospital", args=["update", jr.id], vars={"_next": _next}))))
+
+                         ), rheader_tabs)
+
                     return rheader
 
         return None

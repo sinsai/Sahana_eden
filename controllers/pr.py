@@ -190,13 +190,19 @@ def group_membership():
 def pentity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, "pentity")
+
 # -----------------------------------------------------------------------------
 def download():
-    "Download a file."
+
+    """ Download a file. """
+
     return response.download(request, db)
 
 # -----------------------------------------------------------------------------
 def tooltip():
+
+    """ Ajax tooltips """
+
     if "formfield" in request.vars:
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()

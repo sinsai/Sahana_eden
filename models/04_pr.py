@@ -154,22 +154,21 @@ table.priority.requires = IS_IN_SET([1,2,3,4,5,6,7,8,9], zero=None)
 # Field labels
 
 # CRUD Strings
-ADD_CONTACT = T("Add Contact")
-LIST_CONTACTS = T("List Contacts")
 s3.crud_strings[tablename] = Storage(
-    title_create = ADD_CONTACT,
+    title_create = T("Add Contact Information"),
     title_display = T("Contact Details"),
-    title_list = LIST_CONTACTS,
-    title_update = T("Edit Contact"),
-    title_search = T("Search Contacts"),
-    subtitle_create = T("Add New Contact"),
-    subtitle_list = T("Contacts"),
-    label_list_button = LIST_CONTACTS,
-    label_create_button = ADD_CONTACT,
-    msg_record_created = T("Contact added"),
-    msg_record_modified = T("Contact updated"),
-    msg_record_deleted = T("Contact deleted"),
-    msg_list_empty = T("No Contacts currently registered"))
+    title_list = T("Contact Information"),
+    title_update = T("Edit Contact Information"),
+    title_search = T("Search Contact Information"),
+    subtitle_create = T("Add Contact Information"),
+    subtitle_list = T("Contact Information"),
+    label_list_button = T("List Records"),
+    label_create_button = T("Add Record"),
+    label_delete_button = T("Delete Record"),
+    msg_record_created = T("Contact information added"),
+    msg_record_modified = T("Contact information updated"),
+    msg_record_deleted = T("Contact information deleted"),
+    msg_list_empty = T("No contact information available"))
 
 # *****************************************************************************
 # Image (image)
@@ -467,61 +466,6 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Identity updated"),
     msg_record_deleted = T("Identity deleted"),
     msg_list_empty = T("No Identities currently registered"))
-
-# *****************************************************************************
-# Group membership (group_membership)
-#
-
-#
-# group_membership table ------------------------------------------------------
-#
-resource = "group_membership"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, deletion_status,
-                group_id,
-                person_id,
-                Field("group_head", "boolean", default=False),
-                Field("description"),
-                Field("comment"),
-                migrate=migrate)
-
-# Joined Resource
-s3xrc.model.add_component(module, resource,
-                          multiple=True,
-                          joinby=dict(pr_group="group_id",
-                                      pr_person="person_id"),
-                          deletable=True,
-                          editable=True)
-
-s3xrc.model.configure(table,
-                      list_fields=["id",
-                                   "group_id",
-                                   "person_id",
-                                   "group_head",
-                                   "description"])
-
-# Field validation
-
-# Field representation
-table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]
-
-# Field labels
-
-# CRUD Strings
-s3.crud_strings[tablename] = Storage(
-    title_create = T("Add Group Membership"),
-    title_display = T("Group Membership Details"),
-    title_list = T("Group Memberships"),
-    title_update = T("Edit Membership"),
-    title_search = T("Search Membership"),
-    subtitle_create = T("Add New Group Membership"),
-    subtitle_list = T("Current Group Memberships"),
-    label_list_button = T("List All Group Memberships"),
-    label_create_button = T("Add Group Membership"),
-    msg_record_created = T("Group Membership added"),
-    msg_record_modified = T("Group Membership updated"),
-    msg_record_deleted = T("Group Membership deleted"),
-    msg_list_empty = T("No Group Memberships currently registered"))
 
 # -----------------------------------------------------------------------------
 # PR Extension: physical descriptions

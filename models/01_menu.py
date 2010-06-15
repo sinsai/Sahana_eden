@@ -32,14 +32,18 @@ if not auth.is_logged_in():
                      URL(request.application, "default", "user/retrieve_password")]]
              ],
 else:
-    s3.menu_auth = ["Logged-in as: " + auth.user.first_name + " " + auth.user.last_name, True, None,
+    s3.menu_auth = ["%s: %s %s" % (T("Logged-in as: "),
+                                  auth.user.first_name,
+                                  auth.user.last_name), True, None,
          [
                 [T("Logout"), False,
                  URL(request.application, "default", "user/logout")],
-                [T("Edit Profile"), False,
+                [T("User Profile"), False,
                  URL(request.application, "default", "user/profile")],
-                [T("My contact details"), False,
-                 URL(request.application, "msg", "pe_contact")],
+                [T("Personal Data"), False,
+                 URL(request.application, c="pr", f="person", vars={"person.uid" : auth.user.person_uuid})],
+                [T("Contact details"), False,
+                 URL(request.application, c="pr", f="person", args="pe_contact", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]
          ]

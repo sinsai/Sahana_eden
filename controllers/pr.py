@@ -20,18 +20,27 @@ def shn_menu():
         [T("Groups"), False, URL(r=request, f="group"), [
             [T("List"), False, URL(r=request, f="group")],
             [T("Add"), False, URL(r=request, f="group", args="create")],
-            [T("Group Memberships"), False, URL(r=request, f="group_membership")],
         ]]]
+    menu_selected = []
+    if session.rcvars and "pr_group" in session.rcvars:
+        group = db.pr_group
+        query = (group.id == session.rcvars["pr_group"])
+        record = db(query).select(group.id, group.group_name, limitby=(0, 1)).first()
+        if record:
+            name = record.group_name
+            menu_selected.append(["%s: %s" % (T("Group"), name), False,
+                                 URL(r=request, f="group", args=[record.id])])
     if session.rcvars and "pr_person" in session.rcvars:
         person = db.pr_person
         query = (person.id == session.rcvars["pr_person"])
-        selection = db(query).select(person.id, limitby=(0,1)).first()
-        if selection:
-            selection = shn_pr_person_represent(selection.id)
-            menu_person = [
-                [str(T("Person:")) + " " + selection, False, URL(r=request, f="person")]
-            ]
-            response.menu_options.extend(menu_person)
+        record = db(query).select(person.id, limitby=(0, 1)).first()
+        if record:
+            name = shn_pr_person_represent(record.id)
+            menu_selected.append(["%s: %s" % (T("Person"), name), False,
+                                 URL(r=request, f="person", args=[record.id])])
+    if menu_selected:
+        menu_selected = [T("Open recent"), True, None, menu_selected]
+        response.menu_options.append(menu_selected)
 
 shn_menu()
 
@@ -69,13 +78,22 @@ def person():
 
     response.s3.pagination = True
 
+    s3xrc.model.configure(db.pr_group_membership,
+                          list_fields=["id",
+                                       "group_id",
+                                       "group_head",
+                                       "description"])
+
     def person_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                linkto = shn_linkto(jr, sticky=True)("[id]")
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=linkto)
-                ]
+                label = T("Details")
+            else:
+                label = T("Update")
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
         return output
     response.s3.postp = person_postp
 
@@ -88,6 +106,7 @@ def person():
                             (T("Identity"), "identity"),
                             (T("Address"), "address"),
                             (T("Contact Data"), "pe_contact"),
+                            (T("Memberships"), "group_membership"),
                             (T("Presence Log"), "presence")]),
                 sticky=True,
                 rss=dict(title=shn_pr_person_represent,
@@ -103,10 +122,35 @@ def group():
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
+
+    s3xrc.model.configure(db.pr_group_membership,
+                          list_fields=["id",
+                                       "person_id",
+                                       "group_head",
+                                       "description"])
+
+    def group_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                label = T("Details")
+            else:
+                label = T("Update")
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
+        return output
+    response.s3.postp = group_postp
+
     output = shn_rest_controller(module, "group",
                 main="group_name",
                 extra="group_description",
-                rheader=shn_pr_rheader,
+                rheader=lambda jr: shn_pr_rheader(jr,
+                    tabs = [(T("Group Details"), None),
+                            (T("Address"), "address"),
+                            (T("Contact Data"), "pe_contact"),
+                            (T("Members"), "group_membership")]),
+                sticky=True,
                 deletable=False)
 
     shn_menu()

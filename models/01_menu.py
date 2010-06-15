@@ -41,10 +41,9 @@ else:
                 [T("User Profile"), False,
                  URL(request.application, "default", "user/profile")],
                 [T("Personal Data"), False,
-                 URL(request.application, c="pr", f="person", vars={"person.uid":auth.user.person_uuid})],
+                 URL(request.application, c="pr", f="person", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Contact details"), False,
-                 URL(request.application, c="pr", f="person/pe_contact", vars={"person.uid":auth.user.person_uuid})],
-                 #URL(request.application, "msg", "pe_contact")],
+                 URL(request.application, c="pr", f="person", args="pe_contact", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]
          ]

@@ -25,7 +25,7 @@ def shn_menu():
     if session.rcvars and "pr_group" in session.rcvars:
         group = db.pr_group
         query = (group.id == session.rcvars["pr_group"])
-        record = db(query).select(group.id, group.group_name, limitby=(0,1)).first()
+        record = db(query).select(group.id, group.group_name, limitby=(0, 1)).first()
         if record:
             name = record.group_name
             menu_selected.append(["%s: %s" % (T("Group"), name), False,
@@ -33,7 +33,7 @@ def shn_menu():
     if session.rcvars and "pr_person" in session.rcvars:
         person = db.pr_person
         query = (person.id == session.rcvars["pr_person"])
-        record = db(query).select(person.id, limitby=(0,1)).first()
+        record = db(query).select(person.id, limitby=(0, 1)).first()
         if record:
             name = shn_pr_person_represent(record.id)
             menu_selected.append(["%s: %s" % (T("Person"), name), False,

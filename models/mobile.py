@@ -26,14 +26,3 @@ table.to_variable.label = T('To variable')
 table.message_variable.label = T('Message variable')
 table.modem_port.label = T('Port')
 table.modem_baud.label = T('Baud')
-
-# SMS store for persistence and scratch pad for combining incoming xform chunks
-resource = 'store'
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                Field('sender', 'string', length = 20),
-                Field('fileno', 'integer'),
-                Field('totalno', 'integer'),
-                Field('partno', 'integer'),
-                Field('message', 'string', length = 160),
-            migrate=migrate)

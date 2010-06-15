@@ -89,3 +89,14 @@ if deployment_settings.has_module(module):
             msg_record_modified = T('Message updated'),
             msg_record_deleted = T('Message deleted'),
             msg_list_empty = T('No Message currently in your OutBox'))
+
+    # SMS store for persistence and scratch pad for combining incoming xform chunks
+    resource = 'xforms_store'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                Field('sender', 'string', length = 20),
+                Field('fileno', 'integer'),
+                Field('totalno', 'integer'),
+                Field('partno', 'integer'),
+                Field('message', 'string', length = 160),
+            migrate=migrate)

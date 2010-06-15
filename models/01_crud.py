@@ -1204,11 +1204,11 @@ def shn_read(jr, **attr):
 #
 # shn_linkto ------------------------------------------------------------------
 #
-def shn_linkto(jr):
+def shn_linkto(jr, sticky=False):
 
     """ Helper function to generate links in list views """
 
-    def shn_list_linkto(field, jr=jr):
+    def shn_list_linkto(field, jr=jr, sticky=sticky):
         if jr.component:
             authorised = shn_has_permission("update", jr.component.table)
             if authorised:
@@ -1222,9 +1222,15 @@ def shn_linkto(jr):
         else:
             authorised = shn_has_permission("update", jr.table)
             if authorised:
+                if sticky:
+                    # Render "sticky" update form (returns to itself)
+                    _next = str(URL(r=request, args=[field], vars=request.vars))
+                     # need to avoid double URL-encoding if "[id]"
+                    _next = str(_next).replace("%5Bid%5D", "[id]")
+                else:
+                    _next = URL(r=request, args=request.args, vars=request.vars)
                 return response.s3.linkto_update or \
-                       URL(r=request, args=[field, "update"],
-                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+                       URL(r=request, args=[field, "update"], vars={"_next":_next})
             else:
                 return response.s3.linkto or \
                        URL(r=request, args=[field],
@@ -1252,6 +1258,7 @@ def shn_list(jr, **attr):
 
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
+    sticky = _attr.get("sticky", False)
     rss = _attr.get("rss", None)
     listadd = _attr.get("listadd", True)
     main = _attr.get("main", None)
@@ -1351,7 +1358,7 @@ def shn_list(jr, **attr):
             rows = db(query).select(table.ALL, orderby = orderby)
 
         # Where to link the ID column?
-        linkto = shn_linkto(jr)
+        linkto = shn_linkto(jr, sticky)
 
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
@@ -1414,7 +1421,7 @@ def shn_list(jr, **attr):
             # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
             limitby = (0, 1)
 
-        linkto = shn_linkto(jr)
+        linkto = shn_linkto(jr, sticky)
 
         items = crud.select(table, query=query,
             fields=fields,

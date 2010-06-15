@@ -23,11 +23,13 @@ def shn_menu():
             [T("Group Memberships"), False, URL(r=request, f="group_membership")],
         ]]]
     if session.rcvars and "pr_person" in session.rcvars:
-        selection = db.pr_person[session.rcvars["pr_person"]]
+        person = db.pr_person
+        query = (person.id == session.rcvars["pr_person"])
+        selection = db(query).select(person.id, limitby=(0,1)).first()
         if selection:
             selection = shn_pr_person_represent(selection.id)
             menu_person = [
-                [str(T("Person:")) + " " + selection, False, URL(r=request, f="person", args="read")]
+                [str(T("Person:")) + " " + selection, False, URL(r=request, f="person")]
             ]
             response.menu_options.extend(menu_person)
 

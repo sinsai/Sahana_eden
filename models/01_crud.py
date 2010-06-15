@@ -1377,10 +1377,6 @@ def shn_list(jr, **attr):
                 title = s3.crud_strings[jr.tablename].title_display
             except:
                 title = s3.crud_strings.title_display
-            try:
-                subtitle = s3.crud_strings[tablename].subtitle_list
-            except:
-                subtitle = s3.crud_strings.subtitle_list
 
             if rheader:
                 try:
@@ -1395,10 +1391,11 @@ def shn_list(jr, **attr):
                 title = s3.crud_strings[tablename].title_list
             except:
                 title = s3.crud_strings.title_list
-            try:
-                subtitle = s3.crud_strings[tablename].subtitle_list
-            except:
-                subtitle = s3.crud_strings.subtitle_list
+
+        try:
+            subtitle = s3.crud_strings[tablename].subtitle_list
+        except:
+            subtitle = s3.crud_strings.subtitle_list
 
         output.update(title=title, subtitle=subtitle)
 

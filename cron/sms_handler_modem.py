@@ -69,7 +69,7 @@ if len(modems) == 0:
     #  # No way yet to pass back the error yet
     #  pass
     pass
-
-# Starting a thread for each modem we have
-for modem in modems:
-	ModemThread(modem).run()
+else:
+    # Starting a thread for each modem we have
+    for modem in modems:
+        ModemThread(modem).run()

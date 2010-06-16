@@ -264,10 +264,12 @@ if empty:
         if not db(table.id > 0).count():
             table.insert(to_variable = 'to')
         tablename = 'msg_setting'
+        table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(
                 audit_read = False,
-                audit_write = True
+                audit_write = False,
+                outgoing_sms_handler = 'Gateway'
                 )
 
 

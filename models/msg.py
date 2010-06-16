@@ -18,8 +18,6 @@ if deployment_settings.has_module(module):
     resource = "email_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    # Also needs to be used by Auth (order issues), DB calls are overheads
-                    # - as easy for admin to edit source in 000_config.py as to edit DB (although an admin panel can be nice)
                     Field("inbound_mail_server"),
                     Field("inbound_mail_type"),
                     Field("inbound_mail_ssl", "boolean"),
@@ -27,6 +25,8 @@ if deployment_settings.has_module(module):
                     Field("inbound_mail_username"),
                     Field("inbound_mail_password"),
                     Field("inbound_mail_delete", "boolean"),
+                    # Also needs to be used by Auth (order issues), DB calls are overheads
+                    # - as easy for admin to edit source in 000_config.py as to edit DB (although an admin panel can be nice)
                     #Field("outbound_mail_server"),
                     #Field("outbound_mail_from"),
                     migrate=migrate)

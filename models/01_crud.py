@@ -1027,6 +1027,9 @@ def import_xml(jr, **attr):
         source = jr.request.body
 
     tree = s3xrc.xml.parse(source)
+    if not tree:
+        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error)
+        raise HTTP(400, body=item)
 
     # XSLT Transformation
     if not jr.representation == "xml":

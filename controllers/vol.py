@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Volunteer Management Module
+    Volunteer Management System
 """
 
 module = "vol"
@@ -10,10 +10,12 @@ if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
+
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
         [T('Projects'), False, URL(r=request, f='project'),[
+
             [T('Search'), False, URL(r=request, f='project', args='search_location')],
             [T('Add Project'), False, URL(r=request, f='project', args='create')],
         ]],
@@ -43,9 +45,13 @@ def shn_menu():
                     [T('Address'), False, URL(r=request, f='person', args='address')],
                     [T('Contact'), False, URL(r=request, f='person', args='pe_contact')],
                     [T('Identity'), False, URL(r=request, f='person', args='identity')],
+                    [T('Skill'), False, URL(r=request, f='person', args='skill')],
+                    [T('Add New Skill'), False, URL(r=request, f='skillcust')],
                 ]]
             ]
             menu.extend(menu_person)
+    
+              
     if auth.user is not None:
         menu_user = [
             [T('My Tasks'), False, URL(r=request, f='task', args='')]
@@ -130,3 +136,6 @@ def task():
     response.s3.pagination = True
 
     return shn_rest_controller(module, 'task', listadd=False)
+ 
+def skillcust():
+    return shn_rest_controller(module, 'skillcust')

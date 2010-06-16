@@ -638,3 +638,96 @@ if deployment_settings.has_module(module):
                     return rheader
 
         return None
+
+
+    # -----------------------------------------------------------------------------
+    # vol_skill
+    #   Selecting a Skill
+    #
+
+    resource = 'skill'
+    tablename = module + '_' + resource
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                person_id,
+        Field('General_Skill', 'boolean'),
+            Field('Animals', 'boolean'),
+                Field('Animal_Control_Vehicles', 'boolean'),
+                Field('Animal_Handling', 'boolean'),
+                Field('Other', 'boolean'),
+            Field('Automotives', 'boolean'),
+                Field('Body_Repair', 'boolean'),
+                Field('Engine_Repair', 'boolean'),
+                Field('Tire_Repair', 'boolean'),
+            Field('Electrical', 'boolean'),
+                Field('External_Wiring', 'boolean'),
+                Field('Internal_Wiring', 'boolean'),
+        Field('Resources', 'boolean'),
+            Field('Building_Aide', 'boolean'),
+                Field('Own_BackHoe', 'boolean'),
+                Field('Own_Crane', 'boolean'),
+            Field('Vehicle', 'boolean'),
+                Field('Own_Aircraft', 'boolean'),
+                Field('Own_Boat', 'boolean'),
+            Field('Warehouse', 'boolean'),
+                Field('ForkLift', 'boolean'),
+                Field('General', 'boolean'),
+        Field('Restrictions', 'boolean'),
+            Field('Can_not_Drive', 'boolean'),
+            Field('Can_not_Swim', 'boolean'),
+            Field('No_Heavy_Lifting', 'boolean'),
+        Field('Site_Manager', 'boolean'),
+        Field('Unskilled', 'boolean'),
+            Field('Skill_Other', 'boolean'),
+                Field('Baby_Care_Help', 'boolean'),
+                Field('Clerical', 'boolean'),
+                Field('Food_Help', 'boolean'),
+            Field('With_Tools', 'boolean'),
+                Field('With_Brooms', 'boolean'),
+                Field('With_Carpentry_Tools', 'boolean'),
+                Field('With_Other_Tools', 'boolean'),    
+        Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),             
+                    migrate=migrate)    
+     
+         
+                    
+    # CRUD Strings
+    ADD_SKILL = T('Add Skill')
+    SKILL = T('Skill')
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SKILL,
+        title_display = T('Skill Details'),
+        title_list = SKILL,
+        title_update = T('Edit Skill'),
+        title_search = T('Search Skill'),
+        subtitle_create = T('Add New Skill'),
+        subtitle_list = SKILL,
+        label_list_button = T('List Skill'),
+        label_create_button = ADD_SKILL,
+        msg_record_created = T('Skill added'),
+        msg_record_modified = T('Skill updated'),
+        msg_record_deleted = T('Skill deleted'),
+        msg_list_empty = T('No skills currently set'))
+                    
+
+    s3xrc.model.add_component(module, resource,
+        multiple=True,
+        joinby=dict(pr_person='person_id'),
+        deletable=True,
+        editable=True,
+        main='person_id',
+
+        )
+
+
+    # -----------------------------------------------------------------------------
+    # vol_skillcust
+    #   Customize to add more client defined Skill
+    #
+
+    resource = 'skillcust'
+    tablename = module + '_' + resource
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+            Field('skill_name', 'string', length=50),
+            Field('skill_category', 'string', length=50),
+            Field('skill_subcategory',  'string', length=50),
+            migrate=migrate)

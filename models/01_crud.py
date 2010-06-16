@@ -2105,14 +2105,14 @@ def shn_search(jr, **attr):
     elif jr.representation == "json":
 
         _vars = request.vars
-        _table - jr.table
-        _field = _table[field]
-
+        _table = jr.table
+        
         # JQuery Autocomplete uses "q" instead of "value"
         value = _vars.value or _vars.q or None
 
         if _vars.field and _vars.filter and value:
             field = str.lower(_vars.field)
+            _field = _table[field]
 
             # Optional fields
             if "field2" in _vars:
@@ -2123,11 +2123,11 @@ def shn_search(jr, **attr):
                 field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            if "extra_string" in _vars:
-                extra_string = str.lower(_vars.extra_string)
+            if "level" in _vars:
+                level = str.upper(_vars.level)
             else:
-                extra_string = None
-            if "parent" in _vars:
+                level = None
+            if "parent" in _vars and _vars.parent:
                 parent = int(_vars.parent)
             else:
                 parent = None
@@ -2152,20 +2152,22 @@ def shn_search(jr, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
-                elif extra_string:
+                elif level:
 
                     # gis_location hierarchical search
                     if parent:
                         query = query & (_table.parent == parent) & \
-                                        (_field.like("%" + value + "%")) & \
-                                        (_field.like("%" + extra_string + "%"))
+                                        (_table.level == level) & \
+                                        (_field.like("%" + value + "%"))
+
                     else:
-                        query = query & (_field.like("%" + value + "%")) & \
-                                        (_field.like("%" + extra_string + "%"))
+                        query = query & (_table.level == level) & \
+                                        (_field.like("%" + value + "%"))
+                        return str(query)
 
                 elif exclude:
 
-                    # gis_location without Admin Areas
+                    # gis_location without Admin Areas (old: assumes 'Lx:' in name)
                     query = query & ~(_field.like(exclude)) & \
                                     (_field.like("%" + value + "%"))
 

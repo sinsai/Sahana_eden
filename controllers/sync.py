@@ -37,10 +37,16 @@ def now():
     # retrieve sync partners from DB
     peers = db().select(db.sync_partner.ALL)
     
+    # for eden instances
     final_status = ''
     modules = s3.modules
     db_tables = db.tables
-    
+    tables = []
+    for _module in modules:
+        for _table in db_tables:
+            if _table.startswith(_module + '_'):
+                tables.append([_module, _table[len(_module)+1:]])
+
     self_instance_url = db().select(db.sync_setting.instance_url)[0].instance_url
     if not self_instance_url:
         final_status = 'Please specify Instance URL in Sync Settings before proceeding with Sync, your instance URL is the root URL of SahanaEden application, similar to http://demo.eden.sahanafoundation.org/eden/.<br /><br /><a href="' + URL(r=request, c='sync', f='setting/1/update') + '">Click here</a> to go to Sync Settings.<br /><br />\n'
@@ -58,32 +64,29 @@ def now():
         final_status += '<br />Begin sync with: ' + peer.uuid + ', ' + peer.instance_url + ' (' + peer.instance_type + '):<br />\n\n'
         peer_sync_success = True
         last_sync_on = peer.last_sync_on
-        last_sync_on_str = ''
         if peer.instance_type == 'SahanaEden':
-            for _module in modules:
-                for _table in db_tables:
-                    if _table.startswith(_module+'_'):
-                        _resource = _table[_table.find(_module+'_')+len(_module)+1:]
-                        resource_url = peer.instance_url
-                        if resource_url.endswith('/')==False:
-                            resource_url += '/'
-                        resource_url += 'sync/sync.xml/' + _module + '/' + _resource
-                        if not last_sync_on is None:
-                            last_sync_on_str = last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
-                            resource_url += '?msince=' + last_sync_on_str
-                        final_status += '......processing ' + resource_url + '<br />\n'
-                        # sync this resource (Pull => fetch and sync)
-                        resource_sync_url = _base_url + 'sync/sync.xml/create/' + _module + '/' + _resource + '?fetchurl=' + resource_url
-                        import urllib2
-                        try:
-                            _request = urllib2.Request(resource_sync_url, None, request.cookies)
-                            _response = urllib2.urlopen(_request).read()
-                        except IOError, e:
-                            peer_sync_success = False
-                            final_status = 'ERROR while processing: ' + resource_sync_url + '<br /><br />\n'
-                            return dict(module_name=module_name, sync_status=final_status)
-                        else:
-                            final_status += '.........processed ' + resource_sync_url + '<br />\n'
+            if not last_sync_on is None:
+                last_sync_on_str = '?msince=' + last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
+            else:
+                last_sync_on_str = ''
+            for _module, _resource in tables:
+                resource_url = peer.instance_url
+                if resource_url.endswith('/')==False:
+                    resource_url += '/'
+                resource_url += 'sync/sync.xml/' + _module + '/' + _resource + last_sync_on_str
+                final_status += '......processing ' + resource_url + '<br />\n'
+                # sync this resource (Pull => fetch and sync)
+                resource_sync_url = _base_url + 'sync/sync.xml/create/' + _module + '/' + _resource + '?fetchurl=' + resource_url
+                import urllib2
+                try:
+                    _request = urllib2.Request(resource_sync_url, None, request.cookies)
+                    _response = urllib2.urlopen(_request).read()
+                except IOError, e:
+                    peer_sync_success = False
+                    final_status = 'ERROR while processing: ' + resource_sync_url + '<br /><br />\n'
+                    return dict(module_name=module_name, sync_status=final_status)
+                else:
+                    final_status += '.........processed ' + resource_sync_url + '<br />\n'
             final_status += '......completed<br /><br />\n'
         else:
             peer_sync_success = False
@@ -97,7 +100,21 @@ def now():
     
     return dict(module_name=module_name, sync_status=final_status)
 
-#@auth.requires_login()
+def sync_auth():
+    def decorator(action):
+        def f(*a, **b):
+            if 'create/' in auth.environment.request.raw_args:
+                if not auth.basic() and not auth.is_logged_in():
+                    request = auth.environment.request
+                    next = URL(r=request,args=request.args,
+                               vars=request.get_vars)
+                    redirect(auth.settings.login_url + '?_next='+urllib.quote(next))
+            return action(*a, **b)
+        f.__doc__ = action.__doc__
+        return f
+    return decorator
+
+@sync_auth()
 def sync():
     if len(request.args) == 3:
         _function, _module, _resource = tuple(request.args)

@@ -188,7 +188,7 @@ def export_pdf(table, query):
         LEFTMARGIN += COLWIDTH
 
     mod, res = str(table).split("_", 1)
-    mod_nice = db(db.s3_module.name==mod).select().first().name_nice
+    mod_nice = s3.modules[mod]["name_nice"]
     _title = mod_nice + ": " + res.capitalize()
 
     class MyReport(Report):
@@ -785,7 +785,7 @@ def shn_audit_delete(module, resource, record, representation=None):
         module = module
         table = "%s_%s" % (module, resource)
         old_value = []
-        _old_value = db(db[table].id == record).select().first()
+        _old_value = db(db[table].id == record).select(limitby=(0, 1)).first()
         for field in _old_value:
             old_value.append(field + ":" + str(_old_value[field]))
         db.s3_audit.insert(
@@ -1993,7 +1993,7 @@ def shn_delete(jr, **attr):
             try:
                 shn_audit_delete(module, resource, row.id, jr.representation)
                 if "deleted" in db[table] and \
-                   db(db.s3_setting.id == 1).select().first().archive_not_delete:
+                   db(db.s3_setting.id == 1).select(limitby=(0, 1)).first().archive_not_delete:
                     if crud.settings.delete_onvalidation:
                         crud.settings.delete_onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and

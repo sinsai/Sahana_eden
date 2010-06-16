@@ -10,7 +10,7 @@
 {{else:}}
 {{pass}}
 {{if "or_office" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Office").select().first().id}}
+    {{fc = db(db.gis_feature_class.name == "Office").select(limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
     $(function() {
@@ -33,12 +33,12 @@
         $("#gis_location_osm_id__row").hide();
         
         // Provide tiered Location AutoCompletes
-        //include 'gis/location_autocomplete.js'
+        //{include 'gis/location_autocomplete.js'}
         //}
     });
     //]]></script>
 {{elif "hms_hospital" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Hospital").select().first().id}}
+    {{fc = db(db.gis_feature_class.name == "Hospital").select(limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
     $(function() {

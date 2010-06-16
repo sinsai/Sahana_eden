@@ -204,7 +204,7 @@ class GIS(object):
         " Acquire API key from the database "
 
         query = self.db.gis_apikey.name == layer
-        return self.db(query).select().first().apikey
+        return self.db(query).select(limitby=(0, 1)).first().apikey
 
     def get_bearing(lat_start, lon_start, lat_end, lon_end):
         """
@@ -512,8 +512,8 @@ class GIS(object):
             zoom = config.zoom
         if not projection:
             _projection = config.projection_id
-            projection = db(db.gis_projection.id == _projection).select().first().epsg
-        epsg = db(db.gis_projection.epsg == projection).select().first()
+            projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+        epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
         units = epsg.units
         maxResolution = epsg.maxResolution
         maxExtent = epsg.maxExtent
@@ -1285,7 +1285,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 format = "type: '" + layer.format + "'"
             except:
                 format = ""
-            wms_projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
+            wms_projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
             if wms_projection == 4326:
                 wms_projection = "projection: proj4326"
             else:
@@ -1559,7 +1559,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 if "parent" in feature_overlays:
-                    parent_id = db(db.gis_location.name == parent).select().first().id
+                    parent_id = db(db.gis_location.name == parent).select(limitby=(0, 1)).first().id
                     query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) & (db.gis_location.parent == parent_id)
                 else:
                     query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
@@ -1636,16 +1636,16 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
-                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select().first().epsg
+                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select(limitby=(0, 1)).first().epsg
                     if georss_projection == 4326:
                         projection_str = "projection: proj4326,"
                     else:
                         projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select().first().image
+                        marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select().first().image
+                        marker = db(db.gis_marker.id == marker_default).select(limitby=(0, 1)).first().image
                     marker_url = URL(r=request, c='default', f='download', args=marker)
 
                     if cache:
@@ -1665,7 +1665,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                             # URL inaccessible
                             if os.access(filepath, os.R_OK):
                                 # Use cached version
-                                date = db(db.gis_cache.name == name).select().first().modified_on
+                                date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
                                 response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                                 url = URL(r=request, c="default", f="download", args=[filename])
                             else:
@@ -1751,14 +1751,14 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 for layer in gpx_enabled:
                     name = layer["name"]
-                    track = db(db.gis_track.id == layer.track_id).select().first()
+                    track = db(db.gis_track.id == layer.track_id).select(limitby=(0, 1)).first()
                     url = track.track
                     visible = layer["visible"]
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select().first().image
+                        marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select().first().image
+                        marker = db(db.gis_marker.id == marker_default).select(limitby=(0, 1)).first().image
                     marker_url = URL(r=request, c='default', f='download', args=marker)
 
                     # Generate HTML snippet
@@ -1875,7 +1875,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 statinfo = os.stat(filepath)
                                 if statinfo.st_size:
                                     # Use cached version
-                                    date = db(db.gis_cache.name == name).select().first().modified_on
+                                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
                                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                                     url = URL(r=request, c="default", f="download", args=[filename])
                                 else:
@@ -2391,7 +2391,7 @@ class GoogleGeocoder(Geocoder):
     def get_api_key(self):
         " Acquire API key from the database "
         query = self.db.gis_apikey.name == "google"
-        return self.db(query).select().first().apikey
+        return self.db(query).select(limitby=(0, 1)).first().apikey
 
     def construct_url(self):
         " Construct the URL based on the arguments passed "
@@ -2414,7 +2414,7 @@ class YahooGeocoder(Geocoder):
     def get_api_key(self):
         " Acquire API key from the database "
         query = self.db.gis_apikey.name == "yahoo"
-        return self.db(query).select().first().apikey
+        return self.db(query).select(limitby=(0, 1)).first().apikey
 
     def construct_url(self):
         " Construct the URL based on the arguments passed "

@@ -8,62 +8,61 @@ module = "msg"
 if deployment_settings.has_module(module):
 
     # Settings
+    resource = "setting"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                    Field("audit_read", "boolean"),
+                    Field("audit_write", "boolean"),
+                    migrate=migrate)
+
     resource = "email_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    Field('audit_read', 'boolean'),
-                    Field('audit_write', 'boolean'),
                     # Also needs to be used by Auth (order issues), DB calls are overheads
-                    # - as easy for admin to edit source in 00_db.py as to edit DB (although an admin panel can be nice)
-                    Field('inbound_mail_server'),
-                    Field('inbound_mail_type'),
-                    Field('inbound_mail_ssl', 'boolean'),
-                    Field('inbound_mail_port', 'integer'),
-                    Field('inbound_mail_username'),
-                    Field('inbound_mail_password'),
-                    Field('inbound_mail_delete', 'boolean'),
-                    #Field('outbound_mail_server'),
-                    #Field('outbound_mail_from'),
+                    # - as easy for admin to edit source in 000_config.py as to edit DB (although an admin panel can be nice)
+                    Field("inbound_mail_server"),
+                    Field("inbound_mail_type"),
+                    Field("inbound_mail_ssl", "boolean"),
+                    Field("inbound_mail_port", "integer"),
+                    Field("inbound_mail_username"),
+                    Field("inbound_mail_password"),
+                    Field("inbound_mail_delete", "boolean"),
+                    #Field("outbound_mail_server"),
+                    #Field("outbound_mail_from"),
                     migrate=migrate)
-    table.inbound_mail_type.requires = IS_IN_SET(['imap', 'pop3'], zero=None)
-    table.inbound_mail_port.comment = DIV(DIV(_class="tooltip",
-        _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP \
-            this is usually 143 (993 for IMAP).")))
-    table.inbound_mail_delete.comment = DIV(DIV(_class="tooltip",
-            _title=T("Delete|If this is set to True then mails will be \
-            deleted from the server after downloading.")))
-
+    table.inbound_mail_type.requires = IS_IN_SET(["imap", "pop3"], zero=None)
+    
     # Status
-    resource = 'email_inbound_status'
+    resource = "email_inbound_status"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    Field('status'),
+                    Field("status"),
                     migrate=migrate)
 
 
     # Valid message outbox status'
     msg_status_type_opts = {
-        1:T('Unsent'),
-        2:T('Sent'),
-        3:T('Draft'),
-        4:T('Invalid')
+        1:T("Unsent"),
+        2:T("Sent"),
+        3:T("Draft"),
+        4:T("Invalid")
         }
 
-    opt_msg_status = db.Table(None, 'opt_msg_status',
-                        Field('status', 'integer', notnull=True,
+    opt_msg_status = db.Table(None, "opt_msg_status",
+                        Field("status", "integer", notnull=True,
                         requires = IS_IN_SET(msg_status_type_opts, zero=None),
                         default = 1,
-                        label = T('Status'),
+                        label = T("Status"),
                         represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
 
 	# Person entity outbox - Should be extended for non pr_pe_id type resources
-    resource = 'outbox'
+    resource = "outbox"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_status,
                     pr_pe_id,
                     person_id,
-                    Field('subject', length=78),    # RFC 2822
-                    Field('body', 'text'),
+                    Field("subject", length=78),    # RFC 2822
+                    Field("body", "text"),
                     Field("pr_message_method",
                       "integer",
                       requires = IS_IN_SET(pr_contact_method_opts, zero=None),
@@ -72,85 +71,43 @@ if deployment_settings.has_module(module):
                       represent = lambda opt: pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
                     opt_msg_status,
                     migrate=migrate)
-    table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-    table.pr_pe_id.label = T('Recipients ')
-    table.person_id.label = T('Sender')
-    table.subject.label = T('Subject')
-    table.body.label = T('Body')
-    SEND_MESSAGE = T('Send Message')
-    VIEW_MESSAGE_OUTBOX = T('View OutBox')
-    s3.crud_strings[tablename] = Storage(
-            title_create = SEND_MESSAGE,
-            title_display = T('Message Details'),
-            title_list = VIEW_MESSAGE_OUTBOX,
-            title_update = T('Edit Message'),
-            title_search = T('Search OutBox'),
-            subtitle_create = SEND_MESSAGE,
-            subtitle_list = T('OutBox'),
-            label_list_button = VIEW_MESSAGE_OUTBOX,
-            label_create_button = SEND_MESSAGE,
-            msg_record_created = T('Message created'),
-            msg_record_modified = T('Message updated'),
-            msg_record_deleted = T('Message deleted'),
-            msg_list_empty = T('No Message currently in your OutBox'))
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    
 
     # SMS store for persistence and scratch pad for combining incoming xform chunks
-    resource = 'xforms_store'
+    resource = "xforms_store"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                Field('sender', 'string', length = 20),
-                Field('fileno', 'integer'),
-                Field('totalno', 'integer'),
-                Field('partno', 'integer'),
-                Field('message', 'string', length = 160),
+                Field("sender", "string", length = 20),
+                Field("fileno", "integer"),
+                Field("totalno", "integer"),
+                Field("partno", "integer"),
+                Field("message", "string", length = 160),
             migrate=migrate)
 
     # Settings for modem.
-    resource = 'modem_settings'
+    resource = "modem_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                #Field('account_name'), # Nametag to remember account - Too be used later
-                Field('modem_port'),
-                Field('modem_baud', 'integer', default = 115200),
-                Field('enabled', 'boolean', default = False),
-#                Field('preference', 'integer', default = 5), To be used later
+                #Field("account_name"), # Nametag to remember account - To be used later
+                Field("modem_port"),
+                Field("modem_baud", "integer", default = 115200),
+                Field("enabled", "boolean", default = False),
+#                Field("preference", "integer", default = 5), To be used later
                 migrate=migrate)
-    table.modem_port.label = T('Port')
-    table.modem_baud.label = T('Baud')
-    table.modem_port.comment = DIV(DIV(_class="tooltip",
-        _title=T("Port|The serial port at which the modem is connected -\
-            /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
-    table.modem_baud.comment = DIV(DIV(_class="tooltip",
-        _title=T("Baud|Baud rate to use for your modem - The default is safe\
-            for most cases")))
-    table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=T("Enabled|Unselect to disable the modem")))
-
+    
 
     # Settings for modem.
-    resource = 'gateway_settings'
+    resource = "gateway_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-               Field('url', default =\
-                'https://api.clickatell.com/http/sendmsg'),
-                Field('parameters', default =\
-                'user=yourusername&password=yourpassword&api_id=yourapiid'),
-                Field('message_variable', 'string', default = 'text'),
-                Field('to_variable', 'string', default = 'to'),
-                Field('enabled', 'boolean', default = False),
-#                Field('preference', 'integer', default = 5), To be used later
+               Field("url", default =\
+                "https://api.clickatell.com/http/sendmsg"),
+                Field("parameters", default =\
+                "user=yourusername&password=yourpassword&api_id=yourapiid"),
+                Field("message_variable", "string", default = "text"),
+                Field("to_variable", "string", default = "to"),
+                Field("enabled", "boolean", default = False),
+#                Field("preference", "integer", default = 5), To be used later
                 migrate=migrate)
-    table.to_variable.label = T('To variable')
-    table.message_variable.label = T('Message variable')
-    table.url.comment = DIV(DIV(_class="tooltip",
-        _title=T("URL|The URL of your web gateway without the post parameters")))
-    table.parameters.comment = DIV(DIV(_class="tooltip",
-        _title=T("Parameters|The post variables other than the ones containing\
-            the message and the phone number")))
-    table.message_variable.comment = DIV(DIV(_class="tooltip",
-        _title=T("Message Variable|The post variable on the URL used for\
-        sending messages")))
-    table.to_variable.comment = DIV(DIV(_class="tooltip",
-        _title=T("To variable|The post variable containing the phone number")))
-    table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=T("Enabled|Unselect to disable the modem")))
+    

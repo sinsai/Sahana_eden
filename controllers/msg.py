@@ -173,7 +173,9 @@ def search():
 #-------------------------------------------------------------------------------
 def outbox():
     "RESTlike CRUD controller"
-    
+    resource = "outbox"
+    tablename = module + "_" + resource
+    table = db[tablename]
     if auth.is_logged_in() or auth.basic():
         if auth.has_membership(1):
             pass

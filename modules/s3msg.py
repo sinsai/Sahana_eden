@@ -107,7 +107,7 @@ class Msg(object):
                         else:
                             return self.send_sms_via_modem(recipient.value, contents)
                     if (contact_method == 2 and option == 1):
-                        if outgoing_is_gateway:
+                        if self.outgoing_is_gateway:
                             return self.send_sms_via_api(recipient.value, contents)
                         else:
                             return False

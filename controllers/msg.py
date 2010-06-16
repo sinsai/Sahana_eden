@@ -173,7 +173,9 @@ def search():
 #-------------------------------------------------------------------------------
 def outbox():
     "RESTlike CRUD controller"
-    
+    resource = "outbox"
+    tablename = module + "_" + resource
+    table = db[tablename]
     if auth.is_logged_in() or auth.basic():
         if auth.has_membership(1):
             pass
@@ -343,3 +345,35 @@ def gateway_settings():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
+@auth.requires_membership("Administrator")
+def setting():
+    """Overall settings for the messaging framework"""
+    resource = "setting"
+    tablename = module + "_" + resource
+    table = db[tablename]
+    table.outgoing_sms_handler.label = T('Outgoing SMS handler')
+    table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
+    _title=T("Outgoing SMS handler|Selects whether to use the gateway or the Modem for sending out SMS")))
+    # CRUD Strings
+    ADD_SETTING = T("Add Setting")
+    VIEW_SETTINGS = T("View Settings")
+    s3.crud_strings[tablename] = Storage(
+    title_create = ADD_SETTING,
+    title_display = T("Setting Details"),
+    title_list = VIEW_SETTINGS,
+    title_update = T("Edit Messaging Settings"),
+    title_search = T("Search Settings"),
+    subtitle_list = T("Settings"),
+    label_list_button = VIEW_SETTINGS,
+    label_create_button = ADD_SETTING,
+    msg_record_created = T("Setting added"),
+    msg_record_modified = T("Messaging settings updated"),
+    msg_record_deleted = T("Setting deleted"),
+    msg_list_empty = T("No Settings currently defined")
+    )
+    
+    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    response.menu_options = admin_menu_options
+    return shn_rest_controller(module, resource, deletable=False,
+    listadd=False)
+    

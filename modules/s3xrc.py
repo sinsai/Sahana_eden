@@ -3167,7 +3167,7 @@ class S3XML(object):
                     symbol = None
                     try:
                         db = self.db
-                        symbol = db(db.gis_feature_class.id == record.feature_class_id).select().first().gps_marker
+                        symbol = db(db.gis_feature_class.id == record.feature_class_id).select(limitby=(0, 1)).first().gps_marker
                     except:
                         # No Feature Class
                         pass

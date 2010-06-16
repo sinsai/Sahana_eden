@@ -12,34 +12,14 @@ module = "gis"
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
+    [T("Locations"), False, URL(r=request, f="location"), [
+            [T("List"), False, URL(r=request, f="location")],
+            [T("Add"), False, URL(r=request, f="location", args="create")],
+        ]],
     [T("Map Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
     [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
-
-# Model options used in multiple Actions
-table = db.gis_location
-table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
-table.level.label = T("Level")
-table.level.comment = DIV( _class="tooltip", _title=T("Level|The Level in the Hierarchy of this location: L0=Country, L1=State, L2=District, L3=Town."))
-table.code.label = T("Code")
-table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-table.description.label = T("Description")
-table.parent.label = T("Parent")
-table.addr_street.label = T("Street Address")
-table.gis_feature_type.label = T("Feature Type")
-table.lat.label = T("Latitude")
-#table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."))
-CONVERSION_TOOL = T("Conversion Tool")
-#table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _class="colorbox", _href=URL(r=request, c="gis", f="convert_gps", vars=dict(KeepThis="true"))+"&TB_iframe=true", _target="top", _title=CONVERSION_TOOL), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
-table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-table.lon.label = T("Longitude")
-table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-table.wkt.label = T("Well-Known Text")
-table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-table.osm_id.label = "OpenStreetMap"
-table.osm_id.comment = DIV( _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
 # Joined Resource
 #s3xrc.model.add_component("media", "metadata",
@@ -261,9 +241,28 @@ def location():
     "RESTlike CRUD controller"
     resource = "location"
     tablename = module + "_" + resource
-
+    table = db[tablename]
+    
     # Model options
-    # used in multiple controllers, so at the top of the file
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.level.label = T("Level")
+    table.level.comment = DIV( _class="tooltip", _title=T("Level|Is the location is a geographic area, then state at what level here."))
+    table.code.label = T("Code")
+    table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+    table.description.label = T("Description")
+    table.parent.label = T("Parent")
+    table.addr_street.label = T("Street Address")
+    table.gis_feature_type.label = T("Feature Type")
+    table.lat.label = T("Latitude")
+    CONVERSION_TOOL = T("Conversion Tool")
+    table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    table.lon.label = T("Longitude")
+    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    table.wkt.label = T("Well-Known Text")
+    table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+    table.osm_id.label = "OpenStreetMap"
+    table.osm_id.comment = DIV( _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
     # CRUD Strings
     LIST_LOCATIONS = T("List Locations")
@@ -283,14 +282,16 @@ def location():
         msg_record_deleted = T("Location deleted"),
         msg_list_empty = T("No Locations currently available"))
 
+    # Options
+    _vars = request.vars
     filters = []
-    if "feature_class" in request.vars:
-        fclass = request.vars["feature_class"]
+    if "feature_class" in _vars:
+        fclass = _vars["feature_class"]
         filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
                               (db.gis_feature_class.name.like(fclass)))
 
-    if "feature_group" in request.vars:
-        fgroup = request.vars["feature_group"]
+    if "feature_group" in _vars:
+        fgroup = _vars["feature_group"]
         # Filter to those Features which are in Feature Groups through their Feature Class
         filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
            (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
@@ -299,8 +300,8 @@ def location():
         #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
         #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
 
-    if "parent" in request.vars:
-        parent = request.vars["parent"]
+    if "parent" in _vars:
+        parent = _vars["parent"]
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!
         filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
@@ -314,7 +315,12 @@ def location():
 
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource)
+    output = shn_rest_controller(module, resource)
+    
+    if isinstance(output, dict):
+        output.update(gis_location_hierarchy=gis_location_hierarchy)
+    
+    return output
 
 def marker():
     "RESTlike CRUD controller"

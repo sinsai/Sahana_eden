@@ -220,12 +220,6 @@ def modem_settings():
     resource = 'modem_settings'
     tablename = module + '_' + resource
     table = db[tablename]
-    # Model options
-    table.modem_port.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T('Port|The serial port where your modem is connected.'))
-    table.modem_baud.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T('Baud|The Baud rate of your modem - Usually listed in your\
-    modem manual.'))
     # CRUD Strings
     ADD_SETTING = T('Add Setting')
     VIEW_SETTINGS = T('View Settings')
@@ -242,7 +236,7 @@ def modem_settings():
     msg_record_modified = T('Modem settings updated'),
     msg_record_deleted = T('Setting deleted'),
     msg_list_empty = T('No Settings currently defined'))
-    
+
     crud.settings.update_next = URL(r=request, args=[1, 'update'])
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, resource, deletable=False,
@@ -254,17 +248,6 @@ def gateway_settings():
     resource = 'gateway_settings'
     tablename = module + '_' + resource
     table = db[tablename]
-    # Model options
-    table.url.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T('URL|The url for your gateway'))
-    table.parameters.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T('Parameters|The parameters for gateway'))
-    table.message_variable.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T('Message variable|The message variable used for \
-    the gateway'))
-    table.to_variable.comment = A(SPAN("[Help]"), _class="tooltip",
-    _title=T('To variable|The variable containing the phone number '))
-    
     # CRUD Strings
     ADD_SETTING = T('Add Setting')
     VIEW_SETTINGS = T('View Settings')
@@ -281,9 +264,9 @@ def gateway_settings():
     msg_record_modified = T('Gateway settings updated'),
     msg_record_deleted = T('Setting deleted'),
     msg_list_empty = T('No Settings currently defined'))
-    
+
     crud.settings.update_next = URL(r=request, args=[1, 'update'])
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
-    
+

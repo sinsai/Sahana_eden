@@ -26,8 +26,12 @@ if deployment_settings.has_module(module):
                     #Field('outbound_mail_from'),
                     migrate=migrate)
     table.inbound_mail_type.requires = IS_IN_SET(['imap', 'pop3'], zero=None)
-    table.inbound_mail_port.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP)."))
-    table.inbound_mail_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Delete|If this is set to True then mails will be deleted from the server after downloading."))
+    table.inbound_mail_port.comment = DIV(DIV(_class="tooltip",
+        _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP \
+            this is usually 143 (993 for IMAP).")))
+    table.inbound_mail_delete.comment = DIV(DIV(_class="tooltip",
+            _title=T("Delete|If this is set to True then mails will be \
+            deleted from the server after downloading.")))
 
     # Status
     resource = 'email_inbound_status'
@@ -113,6 +117,14 @@ if deployment_settings.has_module(module):
                 migrate=migrate)
     table.modem_port.label = T('Port')
     table.modem_baud.label = T('Baud')
+    table.modem_port.comment = DIV(DIV(_class="tooltip",
+        _title=T("Port|The serial port at which the modem is connected -\
+            /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
+    table.modem_baud.comment = DIV(DIV(_class="tooltip",
+        _title=T("Baud|Baud rate to use for your modem - The default is safe\
+            for most cases")))
+    table.enabled.comment = DIV(DIV(_class="tooltip",
+        _title=T("Enabled|Unselect to disable the modem")))
 
 
     # Settings for modem.
@@ -130,3 +142,15 @@ if deployment_settings.has_module(module):
                 migrate=migrate)
     table.to_variable.label = T('To variable')
     table.message_variable.label = T('Message variable')
+    table.url.comment = DIV(DIV(_class="tooltip",
+        _title=T("URL|The URL of your web gateway without the post parameters")))
+    table.parameters.comment = DIV(DIV(_class="tooltip",
+        _title=T("Parameters|The post variables other than the ones containing\
+            the message and the phone number")))
+    table.message_variable.comment = DIV(DIV(_class="tooltip",
+        _title=T("Message Variable|The post variable on the URL used for\
+        sending messages")))
+    table.to_variable.comment = DIV(DIV(_class="tooltip",
+        _title=T("To variable|The post variable containing the phone number")))
+    table.enabled.comment = DIV(DIV(_class="tooltip",
+        _title=T("Enabled|Unselect to disable the modem")))

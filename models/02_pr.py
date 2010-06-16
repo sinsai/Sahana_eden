@@ -338,8 +338,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("local_name"),                    # name in local language and script, Sahana legacy
                 opt_pr_gender,
                 opt_pr_age_group,
-                Field("email", length=128),             # Deprecated - see pe_contact
-                Field("mobile_phone"),                  # Deprecated - see pe_contact
                 # Person Details
                 Field("date_of_birth", "date"),         # Sahana legacy
                 opt_pr_nationality,                     # Nationality
@@ -354,9 +352,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
                                         error_message="%s " % T("Enter a date before") + "%(max)s!"))
 table.first_name.requires = IS_NOT_EMPTY()   # People don"t have to have unique names, some just have a single name
-table.email.requires = IS_NOT_IN_DB(db, "%s.email" % tablename)     # Needs to be unique as used for AAA
-table.email.requires = IS_NULL_OR(IS_EMAIL())
-table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.mobile_phone" % tablename))   # Needs to be unique as used for AAA
 table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_person.pr_pe_label"))
 
 # Field representation
@@ -368,10 +363,6 @@ table.preferred_name.comment = DIV(DIV(_class="tooltip",
     _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional).")))
 table.local_name.comment = DIV(DIV(_class="tooltip",
     _title=T("Local Name|Name of the person in local language and script (optional).")))
-table.email.comment = DIV(DIV(_class="tooltip",
-    _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates.")))
-table.mobile_phone.comment = DIV(DIV(_class="tooltip",
-    _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates.")))
 table.opt_pr_nationality.comment = DIV(DIV(_class="tooltip",
     _title=T("Nationality|Nationality of the person.")))
 table.opt_pr_country.comment = DIV(DIV(_class="tooltip",
@@ -382,7 +373,6 @@ table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 # Field labels
 table.opt_pr_gender.label = T("Gender")
 table.opt_pr_age_group.label = T("Age group")
-table.mobile_phone.label = T("Mobile Phone #")
 
 # CRUD Strings
 ADD_PERSON = T("Add Person")
@@ -533,6 +523,75 @@ s3xrc.model.configure(table,
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
 # *****************************************************************************
+# Group membership (group_membership)
+#
+resource = "group_membership"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
+                group_id,
+                person_id,
+                Field("group_head", "boolean", default=False),
+                Field("description"),
+                Field("comment"),
+                migrate=migrate)
+
+# Joined Resource
+s3xrc.model.add_component(module, resource,
+                          multiple=True,
+                          joinby=dict(pr_group="group_id",
+                                      pr_person="person_id"),
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "group_id",
+                                   "person_id",
+                                   "group_head",
+                                   "description"])
+
+# Field validation
+
+# Field representation
+table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]
+
+# Field labels
+
+# CRUD Strings
+if request.function in ("person", "group_membership"):
+    s3.crud_strings[tablename] = Storage(
+        title_create = T("Add Membership"),
+        title_display = T("Membership Details"),
+        title_list = T("Memberships"),
+        title_update = T("Edit Membership"),
+        title_search = T("Search Membership"),
+        subtitle_create = T("Add New Membership"),
+        subtitle_list = T("Current Memberships"),
+        label_list_button = T("List All Memberships"),
+        label_create_button = T("Add Membership"),
+        label_delete_button = T("Delete Membership"),
+        msg_record_created = T("Membership added"),
+        msg_record_modified = T("Membership updated"),
+        msg_record_deleted = T("Membership deleted"),
+        msg_list_empty = T("No Memberships currently registered"))
+elif request.function == "group":
+    s3.crud_strings[tablename] = Storage(
+        title_create = T("Add Member"),
+        title_display = T("Membership Details"),
+        title_list = T("Group Members"),
+        title_update = T("Edit Membership"),
+        title_search = T("Search Member"),
+        subtitle_create = T("Add New Member"),
+        subtitle_list = T("Current Group Members"),
+        label_list_button = T("List Members"),
+        label_create_button = T("Add Group Member"),
+        label_delete_button = T("Delete Membership"),
+        msg_record_created = T("Group Member added"),
+        msg_record_modified = T("Membership updated"),
+        msg_record_deleted = T("Membership deleted"),
+        msg_list_empty = T("No Members currently registered"))
+
+# *****************************************************************************
 # Functions:
 #
 def shn_pr_person_search_simple(xrequest, **attr):
@@ -672,8 +731,34 @@ def shn_pr_rheader(jr, tabs=[]):
         else:
             pass
 
-    elif resource == "group":
-        pass
+    elif jr.name == "group":
+        if jr.representation == "html":
+
+            _next = jr.here()
+            _same = jr.same()
+
+            group = jr.record
+
+            rheader_tabs = shn_rheader_tabs(jr, tabs)
+
+            if group:
+                rheader = DIV(TABLE(
+
+                    TR(TH(T("Name: ")),
+                       group.group_name,
+                       TH(""),
+                       ""),
+                    TR(TH(T("Description: ")),
+                       group.group_description,
+                       TH(""),
+                       "")
+
+                    ), rheader_tabs)
+
+                return rheader
+
+        else:
+            pass
     else:
         pass
 

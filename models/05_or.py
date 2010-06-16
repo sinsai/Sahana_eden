@@ -157,7 +157,7 @@ organisation_id = SQLTable(None, "organisation_id",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "or_organisation.id", "%(name)s")),
                            represent = lambda id: (id and [db(db.or_organisation.id==id).select().first().name] or ["None"])[0],
                            label = T("Organization"),
-                           comment = DIV(A(ADD_ORGANISATION, _class="colorbox", _href=organisation_popup_url, _target="top", _title=ADD_ORGANISATION), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Organization|The Organization this record is associated with."))),
+                           comment = DIV(A(ADD_ORGANISATION, _class="colorbox", _href=organisation_popup_url, _target="top", _title=ADD_ORGANISATION), DIV(DIV(_class="tooltip", _title=T("Add Organization|The Organization this record is associated with.")))),
                            ondelete = "RESTRICT"
                           ))
 

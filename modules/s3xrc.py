@@ -1816,6 +1816,7 @@ class S3ResourceController(object):
             limitby = None
 
         # Load primary records
+        results = self.db(query).count()
         records = self.db(query).select(table.ALL, limitby=limitby) or []
 
         # Filter by permission
@@ -1927,7 +1928,7 @@ class S3ResourceController(object):
             else:
                 exp_map[table._tablename] = [record.id]
 
-        results = len(resources)
+        #results = len(resources)
 
         # Add referenced resources to the tree
         depth = dereference and self.MAX_DEPTH or 0
@@ -2788,7 +2789,8 @@ class S3XML(object):
             result = etree.parse(source, parser)
             return result
         except:
-            self.error = S3XRC_PARSE_ERROR
+            e = sys.exc_info()[1]
+            self.error = e
             return None
 
 
@@ -2838,9 +2840,9 @@ class S3XML(object):
         """
 
         return etree.tostring(tree,
-                                xml_declaration=True,
-                                encoding="utf-8",
-                                pretty_print=pretty_print)
+                              xml_declaration=True,
+                              encoding="utf-8",
+                              pretty_print=pretty_print)
 
 
     def tree(self, resources, domain=None, url=None,
@@ -3236,6 +3238,9 @@ class S3XML(object):
                 return resources
         else:
             root = tree
+
+        if not root:
+            return resources
 
         expr = './%s[@%s="%s"]' % (
                self.TAG.resource,

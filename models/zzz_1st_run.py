@@ -254,9 +254,6 @@ if empty:
                 inbound_mail_delete = False,
                 #outbound_mail_server = 'mail:25',
                 #outbound_mail_from = 'demo@sahanapy.org',
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
             )
         tablename = 'msg_modem_settings'
         table = db[tablename]
@@ -266,6 +263,12 @@ if empty:
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(to_variable = 'to')
+        tablename = 'msg_setting'
+        if not db(table.id > 0).count():
+            table.insert(
+                audit_read = False,
+                audit_write = True
+                )
 
 
     # Missing Person Registry

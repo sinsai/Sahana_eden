@@ -40,7 +40,11 @@ def now():
     # for eden instances
     final_status = ''
     modules = s3.modules
-    db_tables = db.tables
+    _db_tables = db.tables
+    db_tables = []
+    for __table in _db_tables:
+        if 'modified_on' in db[__table].fields and 'uuid' in db[__table].fields:
+            db_tables.append(__table)
     tables = []
     for _module in modules:
         for _table in db_tables:

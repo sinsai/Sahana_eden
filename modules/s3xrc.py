@@ -36,7 +36,7 @@
 __name__ = "S3XRC"
 __all__ = ["S3RESTController", "S3ResourceController"]
 
-import sys, uuid, datetime, time
+import sys, uuid, datetime, time, urllib
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -1017,6 +1017,7 @@ class S3RESTRequest(object):
     def export_xml(self,
                    permit=None,
                    audit=None,
+                   title=None,
                    template=None,
                    filterby=None,
                    pretty_print=False):
@@ -1083,7 +1084,16 @@ class S3RESTRequest(object):
                                   marker=marker)
 
         if template is not None:
-            args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.rc.domain,
+                        base_url=self.rc.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+            if title:
+                args.update(title=title)
+            if self.component:
+                args.update(id=self.id, component=self.component.tablename)
             mode = self.request.vars.get("mode", None)
             if mode is not None:
                 args.update(mode=mode)
@@ -1098,6 +1108,7 @@ class S3RESTRequest(object):
     def export_json(self,
                     permit=None,
                     audit=None,
+                    title=None,
                     template=None,
                     filterby=None,
                     pretty_print=False):
@@ -1149,7 +1160,16 @@ class S3RESTRequest(object):
                                show_urls=False)
 
         if template is not None:
-            args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.rc.domain,
+                        base_url=self.rc.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+            if title:
+                args.update(title=title)
+            if self.component:
+                args.update(id=self.id, component=self.component.tablename)
             mode = self.request.vars.get("mode", None)
             if mode is not None:
                 args.update(mode=mode)
@@ -2823,7 +2843,8 @@ class S3XML(object):
                     result = transformer(tree)
                 return result
             except:
-                self.error = S3XRC_TRANSFORMATION_ERROR
+                e = sys.exc_info()[1]
+                self.error = e
                 return None
         else:
             # Error parsing the XSL template

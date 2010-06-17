@@ -254,9 +254,6 @@ if empty:
                 inbound_mail_delete = False,
                 #outbound_mail_server = 'mail:25',
                 #outbound_mail_from = 'demo@sahanapy.org',
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
             )
         tablename = 'msg_modem_settings'
         table = db[tablename]
@@ -266,6 +263,14 @@ if empty:
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(to_variable = 'to')
+        tablename = 'msg_setting'
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(
+                audit_read = False,
+                audit_write = False,
+                outgoing_sms_handler = 'Gateway'
+                )
 
 
     # Missing Person Registry
@@ -494,7 +499,7 @@ if empty:
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SHELTER',
             name = 'Shelter',
-            marker_id = db(db.gis_marker.name == 'shelter').select().first().id,
+            marker_id = db(db.gis_marker.name == 'shelter').select(limitby=(0, 1)).first().id,
             gps_marker = "Campground",
             module = 'cr',
             resource = 'shelter'
@@ -502,7 +507,7 @@ if empty:
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-OFFICE',
             name = 'Office',
-            marker_id = db(db.gis_marker.name == 'office').select().first().id,
+            marker_id = db(db.gis_marker.name == 'office').select(limitby=(0, 1)).first().id,
             gps_marker = "Building",
             module = 'or',
             resource = 'office'
@@ -515,25 +520,25 @@ if empty:
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT',
             name = 'Airport',
-            marker_id = db(db.gis_marker.name == 'airport').select().first().id,
+            marker_id = db(db.gis_marker.name == 'airport').select(limitby=(0, 1)).first().id,
             gps_marker = "Airport",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-BRIDGE',
             name = 'Bridge',
-            marker_id = db(db.gis_marker.name == 'bridge').select().first().id,
+            marker_id = db(db.gis_marker.name == 'bridge').select(limitby=(0, 1)).first().id,
             gps_marker = "Bridge",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT',
             name = 'Port',
-            marker_id = db(db.gis_marker.name == 'port').select().first().id,
+            marker_id = db(db.gis_marker.name == 'port').select(limitby=(0, 1)).first().id,
             gps_marker = "Marina",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-HOSPITAL',
             name = 'Hospital',
-            marker_id = db(db.gis_marker.name == 'hospital').select().first().id,
+            marker_id = db(db.gis_marker.name == 'hospital').select(limitby=(0, 1)).first().id,
             gps_marker = "Medical Facility",
             module = 'hms',
             resource = 'hospital'
@@ -541,36 +546,36 @@ if empty:
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-CHURCH',
             name = 'Church',
-            marker_id = db(db.gis_marker.name == 'church').select().first().id,
+            marker_id = db(db.gis_marker.name == 'church').select(limitby=(0, 1)).first().id,
             gps_marker = "Church",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SCHOOL',
             name = 'School',
-            marker_id = db(db.gis_marker.name == 'school').select().first().id,
+            marker_id = db(db.gis_marker.name == 'school').select(limitby=(0, 1)).first().id,
             gps_marker = "School",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-FOOD',
             name = 'Food',
-            marker_id = db(db.gis_marker.name == 'food').select().first().id,
+            marker_id = db(db.gis_marker.name == 'food').select(limitby=(0, 1)).first().id,
             gps_marker = "Restaurant",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-WATER',
             name = 'Water',
-            marker_id = db(db.gis_marker.name == 'water').select().first().id,
+            marker_id = db(db.gis_marker.name == 'water').select(limitby=(0, 1)).first().id,
             gps_marker = "Drinking Water",
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-SMS',
             name = 'SMS',
-            marker_id = db(db.gis_marker.name == 'phone').select().first().id,
+            marker_id = db(db.gis_marker.name == 'phone').select(limitby=(0, 1)).first().id,
         )
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON',
             name = 'Person',
-            marker_id = db(db.gis_marker.name == 'person').select().first().id,
+            marker_id = db(db.gis_marker.name == 'person').select(limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
             module = 'pr',
             resource = 'person'
@@ -578,7 +583,7 @@ if empty:
         table.insert(
             uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-VEHICLE',
             name = 'Vehicle',
-            marker_id = db(db.gis_marker.name == 'vehicle').select().first().id,
+            marker_id = db(db.gis_marker.name == 'vehicle').select(limitby=(0, 1)).first().id,
             gps_marker = "Car",
         )
     tablename = 'gis_feature_group'
@@ -624,56 +629,56 @@ if empty:
     table = db[tablename]
     if not db(table.id > 0).count():
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Towns').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Town').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Towns').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Town').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Transport').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Airport').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Transport').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Airport').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Transport').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Bridge').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Transport').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Bridge').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Transport').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Port').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Transport').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Port').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Hospitals').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Hospital').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Hospitals').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Hospital').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Church').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Church').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'School').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Infrastructure').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'School').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Programme').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Food').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Programme').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Food').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Programme').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Water').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Programme').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Water').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Offices').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Office').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Offices').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Office').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'SMS Alerts').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'SMS').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'SMS Alerts').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'SMS').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'People').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Person').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'People').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Person').select(limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == 'Vehicles').select().first().id,
-            feature_class_id = db(db.gis_feature_class.name == 'Vehicle').select().first().id,
+            feature_group_id = db(db.gis_feature_group.name == 'Vehicles').select(limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Vehicle').select(limitby=(0, 1)).first().id,
         )
 
     tablename = 'gis_apikey'
@@ -751,7 +756,7 @@ if empty:
                 name = 'VMap0',
                 description = 'A Free low-resolution Vector Map of the whole world',
                 url = 'http://labs.metacarta.com/wms/vmap0',
-                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
+                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = 'basic',
                 enabled = False
             )
@@ -759,7 +764,7 @@ if empty:
                 name = 'Blue Marble',
                 description = 'A Free low-resolution Vector Map of the whole world',
                 url = 'http://maps.opengeo.org/geowebcache/service/wms',
-                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
+                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = 'bluemarble',
                 enabled = False
             )
@@ -771,16 +776,16 @@ if empty:
                 name = 'Earthquakes',
                 description = 'USGS: Global 7-day',
                 url = 'http://earthquake.usgs.gov/eqcenter/catalogs/eqs7day-M2.5.xml',
-                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
-                marker_id = db(db.gis_marker.name == 'earthquake').select().first().id,
+                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
+                marker_id = db(db.gis_marker.name == 'earthquake').select(limitby=(0, 1)).first().id,
                 enabled = False
             )
         table.insert(
                 name = 'Volcanoes',
                 description = 'USGS: US recent',
                 url = 'http://volcano.wr.usgs.gov/rss/vhpcaprss.xml',
-                projection_id = db(db.gis_projection.epsg == 4326).select().first().id,
-                marker_id = db(db.gis_marker.name == 'volcano').select().first().id,
+                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
+                marker_id = db(db.gis_marker.name == 'volcano').select(limitby=(0, 1)).first().id,
                 enabled = False
             )
 

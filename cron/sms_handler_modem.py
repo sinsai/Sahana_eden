@@ -40,15 +40,35 @@ from pygsm.autogsmmodem import GsmModemNotFound
 import s3msg
 
 class ModemThread( threading.Thread ):
-	def __init__(self,modem):
-		self.modem = modem
-		threading.Thread.__init__ ( self )
-		self.msg = s3msg.Msg(globals(), db, T, modem = modem)
-	def run(self):
-		while True:
-			self.msg.process_outbox(contact_method = 2, option = 2)
-			time.sleep(20)
-			pass
+    def __init__(self,modem):
+        self.modem = modem
+        threading.Thread.__init__ ( self )
+        self.msg = s3msg.Msg(globals(), db, T, modem = modem)
+    def run(self):
+        boxdata = self.modem.query('AT+CMGD=?')
+        boxsize = int(boxdata.split("(")[1].split(")")[0].split("-")[1])
+        cleanup = False
+        while True:
+            self.msg.process_outbox(contact_method = 2, option = 2)
+            for i in range(5):
+                # parse 5 messages in one shot
+                message = self.modem.next_message()
+                if message is not None:
+                    cleanup = True
+                    # for debug purposes
+                    print "Got message: " + message.text
+                    # Temp: SMS AutoResponder on by default
+                    self.modem.send_sms(message.sender,"This is to be replaced with the autorespond message")
+                if cleanup:
+                    for i in range(boxsize): # For cleaning up read messages.
+                        try:
+                            temp = self.modem.command('AT+CMGR=' + str(i+1)+',1')
+                            if "REC READ" in temp[0]:
+                                self.modem.query('AT+CMGD=' + str(i+1))
+                        except:
+                            pass
+                    cleanup = False
+            time.sleep(5)
 		#self.modem.send_sms("9935648569","Hey!")
 
 
@@ -69,7 +89,7 @@ if len(modems) == 0:
     #  # No way yet to pass back the error yet
     #  pass
     pass
-
-# Starting a thread for each modem we have
-for modem in modems:
-	ModemThread(modem).run()
+else:
+    # Starting a thread for each modem we have
+    for modem in modems:
+        ModemThread(modem).run()

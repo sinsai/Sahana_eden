@@ -60,7 +60,7 @@ ADD_IMAGE = T("Add Image")
 image_id = SQLTable(None, "image_id",
             Field("image_id", db.media_image,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "media_image.id", "%(name)s")),
-                represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=db(db.media_image.id==id).select().first().image), _height=40), _class="zoom", _href="#zoom-media_image-%s" % id), DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.media_image.id==id).select()[0].image),_width=600), _id="zoom-media_image-%s" % id, _class="hidden"))] or [""])[0],
+                represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=db(db.media_image.id == id).select(limitby=(0, 1)).first().image), _height=40), _class="zoom", _href="#zoom-media_image-%s" % id), DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.media_image.id==id).select()[0].image),_width=600), _id="zoom-media_image-%s" % id, _class="hidden"))] or [""])[0],
                 label = T("Image"),
                 comment = DIV(A(ADD_IMAGE, _class="colorbox", _href=URL(r=request, c="media", f="image", args="create", vars=dict(format="popup")), _target="top", _title=ADD_IMAGE), A(SPAN("[Help]"), _class="tooltip", _title=T("Photo|Add a Photo to describe this."))),
                 ondelete = "RESTRICT"

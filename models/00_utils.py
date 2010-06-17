@@ -28,10 +28,10 @@ def shn_sessions():
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
     response.s3.formats = Storage()
-    settings = db(db.s3_setting.id > 0).select().first()
+    settings = db(db.s3_setting.id > 0).select(limitby=(0, 1)).first()
     controller_settings_table = "%s_setting" % request.controller
     controller_settings = controller_settings_table in db.tables and \
-       db(db[controller_settings_table].id > 0).select().first()
+       db(db[controller_settings_table].id > 0).select(limitby=(0, 1)).first()
     # Are we running in debug mode?
     session.s3.debug = "debug" in request.vars or settings and settings.debug
     session.s3.security_policy = (settings and settings.security_policy) or 1
@@ -336,7 +336,7 @@ def shn_last_update(table, record_id):
             if "modified_by" in table.fields:
                 user = auth.settings.table_user[record.modified_by]
                 if user:
-                    person = db(db.pr_person.uuid==user.person_uuid).select().first()
+                    person = db(db.pr_person.uuid == user.person_uuid).select(limitby=(0, 1)).first()
                     if person:
                         modified_by = "%s%s" % (mod_by_str, vita.fullname(person))
 

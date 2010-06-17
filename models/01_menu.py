@@ -44,6 +44,8 @@ else:
                  URL(request.application, c="pr", f="person", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Contact details"), False,
                  URL(request.application, c="pr", f="person", args="pe_contact", vars={"person.uid" : auth.user.person_uuid})],
+                [T("Subscriptions"), False,
+                 URL(request.application, c="pr", f="person", args="pe_subscription", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]
          ]
@@ -71,6 +73,7 @@ admin_menu_options = [
             [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])]
     ]],
     [T("Messaging"), False, "#",[
+            [T("Global Messaging Settings"), False, URL(r=request, c="msg", f="setting", args=[1, "update"])],
             [T("Email Settings"), False, URL(r=request, c="msg", f="email_settings", args=[1, "update"])],
             [T("Modem Settings"), False, URL(r=request, c="msg", f="modem_settings", args=[1, "update"])],
             [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])]

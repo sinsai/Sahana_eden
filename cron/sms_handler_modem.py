@@ -57,6 +57,7 @@ class ModemThread( threading.Thread ):
                     cleanup = True
                     # for debug purposes
                     print "Got message: " + message.text
+                    # Temp: SMS AutoResponder on by default
                     self.modem.send_sms(message.sender,"This is to be replaced with the autorespond message")
                 if cleanup:
                     for i in range(boxsize): # For cleaning up read messages.

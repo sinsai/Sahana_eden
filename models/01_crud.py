@@ -28,6 +28,7 @@ shn_xml_export_formats = dict(
     pfif = "application/xml",
     have = "application/xml",
     osm = "application/xml",
+    rss = "application/rss+xml",
     georss = "application/rss+xml",
     kml = "application/vnd.google-earth.kml+xml"
 ) #: Supported XML output formats and corresponding response headers
@@ -226,7 +227,10 @@ def export_pdf(table, query):
 #
 def export_rss(module, resource, query, rss=None, linkto=None):
 
-    """ Export record(s) as RSS feed """
+    """ Export record(s) as RSS feed
+
+        @deprecated
+    """
 
     # This can not work when proxied through Apache (since it's always a local request):
     #if request.env.remote_addr == '127.0.0.1':
@@ -380,8 +384,12 @@ def export_json(jr):
             raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
+    prefix, name, table, tablename = jr.target()
+    title = shn_get_crud_strings(tablename).subtitle_list
+
     output = jr.export_json(permit=shn_has_permission,
                             audit=shn_audit,
+                            title=title,
                             template=template,
                             pretty_print=PRETTY_PRINT,
                             filterby=response.s3.filter)
@@ -416,8 +424,12 @@ def export_xml(jr):
             raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
+    prefix, name, table, tablename = jr.target()
+    title = shn_get_crud_strings(tablename).subtitle_list
+
     output = jr.export_xml(permit=shn_has_permission,
                            audit=shn_audit,
+                           title=title,
                            template=template,
                            pretty_print=PRETTY_PRINT,
                            filterby=response.s3.filter)
@@ -985,7 +997,9 @@ def import_json(jr, **attr):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
+            tree = s3xrc.xml.transform(tree, template_file,
+                                       domain=s3xrc.domain,
+                                       base_url=s3xrc.base_url)
             if not tree:
                 session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -1070,7 +1084,7 @@ def shn_read(jr, **attr):
     sticky = attr.get("sticky", False)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
-    rss = attr.get("rss", None)
+    #rss = attr.get("rss", None)
 
     # TODO: this function not filter-aware!
 
@@ -1110,7 +1124,7 @@ def shn_read(jr, **attr):
         editable = s3xrc.model.get_attr(resource, "editable")
         deletable = s3xrc.model.get_attr(resource, "deletable")
 
-        rss = s3xrc.model.get_attr(resource, "rss")
+        #rss = s3xrc.model.get_attr(resource, "rss")
 
     else:
         record_id = jr.id
@@ -1200,9 +1214,9 @@ def shn_read(jr, **attr):
         elif jr.representation in shn_xml_export_formats:
             return export_xml(jr)
 
-        elif jr.representation == "rss": # TODO: replace by XML export
-            query = db[table].id == record_id
-            return export_rss(module, resource, query, rss=rss, linkto=jr.here("html"))
+        #elif jr.representation == "rss": # TODO: replace by XML export
+            #query = db[table].id == record_id
+            #return export_rss(module, resource, query, rss=rss, linkto=jr.here("html"))
 
         else:
             session.error = BADFORMAT
@@ -1269,7 +1283,7 @@ def shn_list(jr, **attr):
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
     sticky = _attr.get("sticky", False)
-    rss = _attr.get("rss", None)
+    #rss = _attr.get("rss", None)
     listadd = _attr.get("listadd", True)
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
@@ -1581,8 +1595,8 @@ def shn_list(jr, **attr):
     elif jr.representation in shn_xml_export_formats:
         return export_xml(jr)
 
-    elif jr.representation == "rss":
-        return export_rss(module, resource, query, rss=rss, linkto=jr.there("html"))
+    #elif jr.representation == "rss":
+        #return export_rss(module, resource, query, rss=rss, linkto=jr.there("html"))
 
     else:
         session.error = BADFORMAT

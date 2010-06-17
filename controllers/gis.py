@@ -900,8 +900,8 @@ def feature_create_map():
     "Show a map to draw the feature"
     title = T("Add GIS Feature")
     form = crud.create("gis_location", onvalidation=lambda form: gis.wkt_centroid(form))
-    _projection = db(db.gis_config.id==1).select().first().projection_id
-    projection = db(db.gis_projection.id==_projection).select().first().epsg
+    _projection = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().projection_id
+    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
 
     # Layers
     baselayers = layers()
@@ -961,7 +961,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.media_metadata.location_id==id & db.media_metadata.deleted==False).select()
+            metadata = db(db.media_metadata.location_id == id & db.media_metadata.deleted == False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -1018,7 +1018,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.media_metadata.location_id==id & db.media_metadata.deleted==False).select()
+            metadata = db(db.media_metadata.location_id == id & db.media_metadata.deleted == False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -1041,11 +1041,11 @@ def feature_group_dupes(form):
     if "feature_class_id" in form.vars:
         feature_class_id = form.vars.feature_class_id
         table = db.gis_feature_class_to_feature_group
-        query = (table.feature_group==feature_group) & (table.feature_class_id==feature_class_id)
+        query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
     elif "location_id" in form.vars:
         location_id = form.vars.location_id
         table = db.gis_location_to_feature_group
-        query = (table.feature_group==feature_group) & (table.location_id==location_id)
+        query = (table.feature_group == feature_group) & (table.location_id == location_id)
     else:
         # Something went wrong!
         return
@@ -1069,12 +1069,12 @@ def feature_group_update_items():
             if "feature_class_id" in var:
                 # Delete
                 feature_class_id = var[14:]
-                query = (tables[0].feature_group==feature_group) & (tables[0].feature_class_id==feature_class_id)
+                query = (tables[0].feature_group == feature_group) & (tables[0].feature_class_id == feature_class_id)
                 db(query).delete()
             elif "location_id" in var:
                 # Delete
                 location_id = var[8:]
-                query = (tables[1].feature_group==feature_group) & (tables[1].location_id==location_id)
+                query = (tables[1].feature_group == feature_group) & (tables[1].location_id == location_id)
                 db(query).delete()
         # Audit
         shn_audit_update_m2m(resource="feature_group_contents", record=feature_group, representation="html")
@@ -1165,7 +1165,7 @@ def layers():
 
     # OpenStreetMap
     layers.openstreetmap = Storage()
-    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled==True).select()
+    layers_openstreetmap = db(db.gis_layer_openstreetmap.enabled == True).select()
     for layer in layers_openstreetmap:
         for subtype in gis_layer_openstreetmap_subtypes:
             if layer.subtype == subtype:
@@ -1176,7 +1176,7 @@ def layers():
     # Check for Google Key
     try:
         layers.google.key = db(db.gis_apikey.name == "google").select(db.gis_apikey.apikey).first().apikey
-        layers_google = db(db.gis_layer_google.enabled==True).select()
+        layers_google = db(db.gis_layer_google.enabled == True).select()
         for layer in layers_google:
             for subtype in gis_layer_google_subtypes:
                 if layer.subtype == subtype:
@@ -1192,7 +1192,7 @@ def layers():
     # Check for Yahoo Key
     try:
         layers.yahoo.key = db(db.gis_apikey.name == "yahoo").select(db.gis_apikey.apikey).first().apikey
-        layers_yahoo = db(db.gis_layer_yahoo.enabled==True).select()
+        layers_yahoo = db(db.gis_layer_yahoo.enabled == True).select()
         for layer in layers_yahoo:
             for subtype in gis_layer_yahoo_subtypes:
                 if layer.subtype == subtype:
@@ -1206,7 +1206,7 @@ def layers():
     # Bing (Virtual Earth)
     # Broken in GeoExt: http://www.geoext.org/pipermail/users/2009-December/000393.html
     #layers.bing = Storage()
-    #layers_bing = db(db.gis_layer_bing.enabled==True).select()
+    #layers_bing = db(db.gis_layer_bing.enabled == True).select()
     #for layer in layers_bing:
     #    for subtype in gis_layer_bing_subtypes:
     #        if layer.subtype == subtype:
@@ -1214,17 +1214,17 @@ def layers():
 
     # GPX
     layers.gpx = Storage()
-    layers_gpx = db(db.gis_layer_gpx.enabled==True).select()
+    layers_gpx = db(db.gis_layer_gpx.enabled == True).select()
     for layer in layers_gpx:
         name = layer.name
         layers.gpx[name] = Storage()
-        track = db(db.gis_track.id==layer.track_id).select().first()
+        track = db(db.gis_track.id == layer.track_id).select(limitby=(0, 1)).first()
         layers.gpx[name].url = track.track
         if layer.marker_id:
-            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select().first().image
+            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select(limitby=(0, 1)).first().image
         else:
-            marker_id = db(db.gis_config.id==1).select().first().marker_id
-            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select().first().image
+            marker_id = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().marker_id
+            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
 
     cachepath = os.path.join(request.folder, "uploads", "gis_cache")
     if os.access(cachepath, os.W_OK):
@@ -1234,7 +1234,7 @@ def layers():
 
     # GeoRSS
     layers.georss = Storage()
-    layers_georss = db(db.gis_layer_georss.enabled==True).select()
+    layers_georss = db(db.gis_layer_georss.enabled == True).select()
     if layers_georss and not cache:
         response.warning += cachepath + " " + str(T("not writable - unable to cache GeoRSS layers!")) + "\n"
     for layer in layers_georss:
@@ -1259,7 +1259,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select().first().modified_on
+                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                     url = URL(r=request, c="default", f="download", args=[filename])
                 else:
@@ -1274,12 +1274,12 @@ def layers():
         # Add to return
         layers.georss[name] = Storage()
         layers.georss[name].url = url
-        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
+        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
         if layer.marker_id:
-            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select().first().image
+            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select(limitby=(0, 1)).first().image
         else:
-            marker_id = db(db.gis_config.id == 1).select().first().marker_id
-            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select().first().image
+            marker_id = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().marker_id
+            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
 
     # KML
     layers.kml = Storage()
@@ -1306,7 +1306,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select().first().modified_on
+                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                     url = URL(r=request, c="default", f="download", args=[filename])
                 else:
@@ -1341,7 +1341,7 @@ def layers():
 
     # WMS
     layers.wms = Storage()
-    layers_wms = db(db.gis_layer_wms.enabled==True).select()
+    layers_wms = db(db.gis_layer_wms.enabled == True).select()
     for layer in layers_wms:
         name = layer.name
         layers.wms[name] = Storage()
@@ -1350,14 +1350,14 @@ def layers():
         if layer.map:
             layers.wms[name].map = layer.map
         layers.wms[name].layers = layer.layers
-        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
+        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
         layers.wms[name].transparent = layer.transparent
         if layer.format:
             layers.wms[name].format = layer.format
 
     # TMS
     layers.tms = Storage()
-    layers_tms = db(db.gis_layer_tms.enabled==True).select()
+    layers_tms = db(db.gis_layer_tms.enabled == True).select()
     for layer in layers_tms:
         name = layer.name
         layers.tms[name] = Storage()
@@ -1367,7 +1367,7 @@ def layers():
             layers.tms[name].format = layer.format
 
     # MGRS - only a single one of these should be defined & it actually appears as a Control not a Layer
-    mgrs = db(db.gis_layer_mgrs.enabled==True).select().first()
+    mgrs = db(db.gis_layer_mgrs.enabled == True).select(limitby=(0, 1)).first()
     if mgrs:
         layers.mgrs = Storage()
         layers.mgrs.name = mgrs.name
@@ -1375,7 +1375,7 @@ def layers():
 
     # XYZ
     layers.xyz = Storage()
-    layers_xyz = db(db.gis_layer_xyz.enabled==True).select()
+    layers_xyz = db(db.gis_layer_xyz.enabled == True).select()
     for layer in layers_xyz:
         name = layer.name
         layers.xyz[name] = Storage()
@@ -1390,7 +1390,7 @@ def layers():
 
     # JS
     layers.js = Storage()
-    layers_js = db(db.gis_layer_js.enabled==True).select()
+    layers_js = db(db.gis_layer_js.enabled == True).select()
     for layer in layers_js:
         name = layer.name
         layers.js[name] = Storage()
@@ -1411,10 +1411,10 @@ def layers_enable():
             query = table.id > 0
             sqlrows = db(query).select()
             for row in sqlrows:
-                query_inner = table.id==row.id
+                query_inner = (table.id == row.id)
                 var = "%s_%i" % (type, row.id)
                 # Read current state
-                if db(query_inner).select().first().enabled:
+                if db(query_inner).select(limitby=(0, 1)).first().enabled:
                     # Old state: Enabled
                     if var in request.vars:
                         # Do nothing
@@ -1459,7 +1459,7 @@ def map_viewing_client():
     height = config.map_height
     numZoomLevels = config.zoom_levels
     _projection = config.projection_id
-    projection = db(db.gis_projection.id==_projection).select().first().epsg
+    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1473,7 +1473,7 @@ def map_viewing_client():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg==projection).select().first()
+    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
     units = epsg.units
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
@@ -1521,7 +1521,7 @@ def map_viewing_client():
                 feature.resource = feature.gis_feature_class.resource
                 if feature.module and feature.resource:
                     try:
-                        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.gis_location.id).select().first().id
+                        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.gis_location.id).select(limitby=(0, 1)).first().id
                     except:
                         feature.resource_id = None
                 else:
@@ -1570,7 +1570,7 @@ def display_feature():
 
     # The Feature
     feature_id = request.args(0)
-    feature = db(db.gis_location.id == feature_id).select().first()
+    feature = db(db.gis_location.id == feature_id).select(limitby=(0, 1)).first()
 
     # Check user is authorised to access record
     if not shn_has_permission("read", db.gis_location, feature.id):
@@ -1583,7 +1583,7 @@ def display_feature():
     height = config.map_height
     numZoomLevels = config.zoom_levels
     _projection = config.projection_id
-    projection = db(db.gis_projection.id==_projection).select().first().epsg
+    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1597,7 +1597,7 @@ def display_feature():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg==projection).select().first()
+    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
     units = epsg.units
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
@@ -1611,7 +1611,7 @@ def display_feature():
 
     # Feature details
     try:
-        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select().first()
+        feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select(limitby=(0, 1)).first()
         feature.module = feature_class.module
         feature.resource = feature_class.resource
     except:
@@ -1619,7 +1619,7 @@ def display_feature():
         feature.module = None
         feature.resource = None
     if feature.module and feature.resource:
-        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select().first().id
+        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select(limitby=(0, 1)).first().id
     else:
         feature.resource_id = None
     # provide an extra access so no need to duplicate popups code
@@ -1731,7 +1731,7 @@ def display_features():
     height = config.map_height
     numZoomLevels = config.zoom_levels
     _projection = config.projection_id
-    projection = db(db.gis_projection.id==_projection).select().first().epsg
+    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1745,7 +1745,7 @@ def display_features():
         zoom = request.vars.zoom
     else:
         zoom = None
-    epsg = db(db.gis_projection.epsg==projection).select().first()
+    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
     units = epsg.units
     maxResolution = epsg.maxResolution
     maxExtent = epsg.maxExtent
@@ -1760,14 +1760,14 @@ def display_features():
     # Feature details
     for feature in features:
         try:
-            feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select().first()
+            feature_class = db(db.gis_feature_class.id == feature.feature_class_id).select(limitby=(0, 1)).first()
         except:
             feature_class = None
         feature.module = feature_class.module
         feature.resource = feature_class.resource
         if feature.module and feature.resource:
             try:
-                feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select().first().id
+                feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select(limitby=(0, 1)).first().id
             except:
                 feature.resource_id = None
         else:

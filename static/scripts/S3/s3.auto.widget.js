@@ -49,7 +49,7 @@ function s3_auto_widget_result(event, data, formatted, AutoID, AutocompleteField
     
     //Display popup "Edit" -> update link
     selAutoEdit.show();
-    selAutoEdit.attr("href", PopupURL + "/update/" + data.id + "?format=popup" +
+    selAutoEdit.attr("href", PopupURL + "/" + data.id + "/update?format=popup" +
                                                                 "&auto_id=" + AutoID +
                                                                 "&fields=['" +  AutocompleteField + "']");
     }; 
@@ -71,6 +71,7 @@ function s3_auto_widget_change(AutoID, AutocompleteField, ParseChars, PopupURL)
     if (AutoText != "")
         {
         //TODO - use Split to separate AutocompleteText and for AutocompleteFields[1-n]
+        AutoText = AutoText.replace(/'/g,"\"");
         var NewJSON = "{'"+ AutocompleteField + "':'" + 
                         AutoText + "'}";
         selAutoJSON.val(NewJSON);
@@ -82,7 +83,7 @@ function s3_auto_widget_change(AutoID, AutocompleteField, ParseChars, PopupURL)
             }
 
         //Add "Enter Details"" Link - var - <AutocompleteField> = $("#" + AutocompleteID).val()
-        selAutoEdit.attr("href",PopupURL + 
+        selAutoEdit.attr("href", PopupURL + 
                         "/create" +
                         "?format=popup" +
                         "&auto_id=" + AutoID +

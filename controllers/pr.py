@@ -107,7 +107,9 @@ def person():
                             (T("Address"), "address"),
                             (T("Contact Data"), "pe_contact"),
                             (T("Memberships"), "group_membership"),
-                            (T("Presence Log"), "presence")]),
+                            (T("Presence Log"), "presence"),
+                            (T("Subscriptions"), "pe_subscription")
+                            ]),
                 sticky=True,
                 rss=dict(title=shn_pr_person_represent,
                         description="ID Label: %(pr_pe_label)s\n%(comment)s"))
@@ -190,13 +192,19 @@ def group_membership():
 def pentity():
     "RESTlike CRUD controller"
     return shn_rest_controller(module, "pentity")
+
 # -----------------------------------------------------------------------------
 def download():
-    "Download a file."
+
+    """ Download a file. """
+
     return response.download(request, db)
 
 # -----------------------------------------------------------------------------
 def tooltip():
+
+    """ Ajax tooltips """
+
     if "formfield" in request.vars:
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()

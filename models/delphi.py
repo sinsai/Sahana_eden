@@ -62,7 +62,7 @@ if deployment_settings.has_module(module):
 
     table.group_id.label = T('Problem Group')
     table.group_id.requires = IS_IN_DB(db, 'delphi_group.id', '%(name)s')
-    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id==id).select().first().name] or ["None"])[0]
+    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
     table.user_id.label = T('User')
     table.user_id.represent = lambda user_id: (user_id == 0) and '-' or '%(first_name)s %(last_name)s [%(id)d]' % db(db.auth_user.id==user_id).select()[0]
     #table.user_id.requires = IS_IN_DB(db, 'auth_user.id', '%(first_name)s %(last_name)s [%(id)d]')
@@ -110,7 +110,7 @@ if deployment_settings.has_module(module):
     table.created_by.default = auth.user.id if auth.user else 0
     table.group_id.label = T('Problem Group')
     table.group_id.requires = IS_IN_DB(db, 'delphi_group.id', '%(name)s')
-    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id==id).select().first().name] or ["None"])[0]
+    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
 
     # CRUD Strings
     ADD_PROBLEM = T('Add Problem')
@@ -156,7 +156,7 @@ if deployment_settings.has_module(module):
     table.problem_id.label = T('Problem')
     table.problem_id.default = get_last_problem_id()
     table.problem_id.requires = IS_IN_DB(db, 'delphi_problem.id', '%(id)s: %(name)s')
-    table.problem_id.represent = lambda id: (id and [db(db.delphi_problem.id==id).select().first().name] or ["None"])[0]
+    table.problem_id.represent = lambda id: (id and [db(db.delphi_problem.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
 
     # CRUD Strings
     ADD_SOLUTION = T('Add Solution')

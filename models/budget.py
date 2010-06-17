@@ -138,11 +138,11 @@ if deployment_settings.has_module(module):
         total_minute_cost = 0
         total_megabyte_cost = 0
         for item in items:
-            query = (table.kit_id==kit) & (table.item_id==item.item_id)
-            total_unit_cost += (db(db.budget_item.id==item.item_id).select().first().unit_cost) * (db(query).select().first().quantity)
-            total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().monthly_cost) * (db(query).select().first().quantity)
-            total_minute_cost += (db(db.budget_item.id==item.item_id).select().first().minute_cost) * (db(query).select().first().quantity)
-            total_megabyte_cost += (db(db.budget_item.id==item.item_id).select().first().megabyte_cost) * (db(query).select().first().quantity)
+            query = (table.kit_id == kit) & (table.item_id == item.item_id)
+            total_unit_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().unit_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
+            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().monthly_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
+            total_minute_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().minute_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
+            total_megabyte_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().megabyte_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
         db(db.budget_kit.id==kit).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost, total_minute_cost=total_minute_cost, total_megabyte_cost=total_megabyte_cost)
 
     def kit_total(form):
@@ -187,21 +187,21 @@ if deployment_settings.has_module(module):
         query = table.bundle_id==bundle
         kits = db(query).select()
         for kit in kits:
-            query = (table.bundle_id==bundle) & (table.kit_id==kit.kit_id)
-            total_unit_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_unit_cost) * (db(query).select().first().quantity)
-            total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_monthly_cost) * (db(query).select().first().quantity)
-            total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
-            total_monthly_cost += (db(db.budget_kit.id==kit.kit_id).select().first().total_megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
+            query = (table.bundle_id == bundle) & (table.kit_id == kit.kit_id)
+            total_unit_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_unit_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
+            total_monthly_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_monthly_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
+            total_monthly_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_minute_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().minutes)
+            total_monthly_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_megabyte_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().megabytes)
 
         table = db.budget_bundle_item
         query = table.bundle_id==bundle
         items = db(query).select()
         for item in items:
-            query = (table.bundle_id==bundle) & (table.item_id==item.item_id)
-            total_unit_cost += (db(db.budget_item.id==item.item_id).select().first().unit_cost) * (db(query).select().first().quantity)
-            total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().monthly_cost) * (db(query).select().first().quantity)
-            total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().minute_cost) * (db(query).select().first().quantity) * (db(query).select().first().minutes)
-            total_monthly_cost += (db(db.budget_item.id==item.item_id).select().first().megabyte_cost) * (db(query).select().first().quantity) * (db(query).select().first().megabytes)
+            query = (table.bundle_id == bundle) & (table.item_id == item.item_id)
+            total_unit_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().unit_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
+            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().monthly_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
+            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().minute_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().minutes)
+            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().megabyte_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().megabytes)
 
         db(db.budget_bundle.id==bundle).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost)
 

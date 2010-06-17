@@ -44,6 +44,8 @@ else:
                  URL(request.application, c="pr", f="person", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Contact details"), False,
                  URL(request.application, c="pr", f="person", args="pe_contact", vars={"person.uid" : auth.user.person_uuid})],
+                [T("Subscriptions"), False,
+                 URL(request.application, c="pr", f="person", args="pe_subscription", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]
          ]

@@ -42,12 +42,19 @@ function S3MultiselectWidgetAddClick(Args)
             {
             JSONValue = "'" + InputSelector.val() + "'";
             DisplayValue = $(InputID + " option:selected").text();
+            InputSelector.val("");
             }
         else if ( AutoTextValue != undefined )
             {
             //This is an autocomplete
             DisplayValue = AutoTextValue
             JSONValue = $(InputID + "_auto_json").val();
+            //MH DRRPP hack - don't allow empty JSON from Autocomplete
+            if (Args.ColumnFields[i].slice(-3) == "_id" && JSONValue == "")
+	            {
+	            DisplayValue = "";
+	            break;
+                }
             $(InputID + "_auto_text").val("");
             $(InputID + "_auto_json").val("");
             $(InputID + "_auto_edit").hide();
@@ -60,8 +67,8 @@ function S3MultiselectWidgetAddClick(Args)
                 FileInputID = InputID;
                 NewFileInputID = Args.ColumnFields[i] + S3MultiselectWidgetFileCounter;
                 JSONValue = "'" + NewFileInputID + "'"
-                DisplayValue = "<div id ='" + NewFileInputID + "'></div>" + 
-                                DisplayValue;
+                //DisplayValue = "<div id ='" + NewFileInputID + "'></div>" + 
+                //                DisplayValue;
                 S3MultiselectWidgetFileCounter++;
                 }
             }
@@ -74,6 +81,7 @@ function S3MultiselectWidgetAddClick(Args)
                 {
                 DisplayValue = JSONValue.replace("$","");
                 }
+            DisplayValue = DisplayValue.replace(/'/g,"\"");    
             JSONValue = "'" + DisplayValue + "'"
             }
 
@@ -83,14 +91,14 @@ function S3MultiselectWidgetAddClick(Args)
             }
 
         //Replace the dummy value in the Append Row with this value
-        NewRow = NewRow.replace(DummyDisplayValues[i],DisplayValue);
-        NewRow = NewRow.replace(DummyJSONValues[i],JSONValue);
+        NewRow = NewRow.replace(DummyDisplayValues[i], DisplayValue);
+        NewRow = NewRow.replace(DummyJSONValues[i], JSONValue);
 
-        //Add the new data to the JSON Input
+        //Add the new data to the JSON Input        
         newJSONInputValue = newJSONInputValue + "'" + Args.ColumnFields[i]+ "':" + JSONValue + "," 
         }
 
-    newJSONInputValue = newJSONInputValue.slice(0,-1) + "}"
+    newJSONInputValue = newJSONInputValue.slice(0, -1) + "}"
 
     //Test: if there is data in the input fields, and it does not match data whcih has already been added
     if (!InputBlank && !JSONInputValue.match(newJSONInputValue))
@@ -111,15 +119,25 @@ function S3MultiselectWidgetAddClick(Args)
         if (FileInputID != "")
             {
             //There is a file input in the Row
-            //Copy the current file input
-            $("#" + NewFileInputID).replaceWith( $(FileInputID).clone() );
-            //Change the ID of the new file input
-            $(FileInputID + ":first").attr("id",NewFileInputID);
-            //Set the Name of the new file input (so that it is passed back to the server)
+            //Change the ID of the old file input
+            $(FileInputID).attr("id",NewFileInputID);
             $("#" + NewFileInputID).attr("name",NewFileInputID);
+            //Hide the old file input
             $("#" + NewFileInputID).hide();
+            //add a new file input
+            $('<input class="upload" id="drrpp_framework_file_dummy_file" type="file" />').insertAfter("#" + NewFileInputID)
+            
+            
+            //Copy the current file input
+            //$("#" + NewFileInputID).replaceWith( $(FileInputID).clone() );
+            
+            //Change the ID of the new file input
+            //$(FileInputID + ":first").attr("id",NewFileInputID);
+            //Set the Name of the new file input (so that it is passed back to the server)
+            //$("#" + NewFileInputID).attr("name",NewFileInputID);
+            //$("#" + NewFileInputID).hide();
 
-            $(FileInputID).val("");
+            //$(FileInputID).val("");
             }
         }
     };

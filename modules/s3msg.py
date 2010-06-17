@@ -39,8 +39,8 @@ class Msg(object):
     def __init__(self, environment, db=None, T=None, mail=None, modem=None):
         try:
             self.db = db
-            self.outgoing_is_gateway = db(db.msg_setting.outgoing_sms_handler ==  "Gateway").select().first()
-            self.sms_api = db(db.msg_gateway_settings.enabled == True).select().first()
+            self.outgoing_is_gateway = db(db.msg_setting.outgoing_sms_handler ==  "Gateway").select(limitby=(0, 1)).first()
+            self.sms_api = db(db.msg_gateway_settings.enabled == True).select(limitby=(0, 1)).first()
             if self.sms_api:
                 tmp_parameters = self.sms_api.parameters.split('&')
                 self.sms_api_enabled = self.sms_api.enabled
@@ -95,7 +95,7 @@ class Msg(object):
             entity = row.pr_pe_id
             table2 = self.db.pr_pentity
             query = table2.id == entity
-            entity_type = self.db(query).select().first().opt_pr_entity_type
+            entity_type = self.db(query).select(limitby=(0, 1)).first().opt_pr_entity_type
             def send_pr_pe_id(pr_pe_id):
                 table3 = self.db.pr_pe_contact
                 query = (table3.pr_pe_id == pr_pe_id) & (table3.opt_pr_contact_method == contact_method)
@@ -117,7 +117,7 @@ class Msg(object):
                 # Group
                 table3 = self.db.pr_group
                 query = (table3.pr_pe_id == entity)
-                group_id = self.db(query).select().first().id
+                group_id = self.db(query).select(limitby=(0, 1)).first().id
                 table4 = self.db.pr_group_membership
                 query = (table4.group_id == group_id)
                 recipients = self.db(query).select()
@@ -125,7 +125,7 @@ class Msg(object):
                     person_id = recipient.person_id
                     table5 = self.db.pr_person
                     query = (table5.id == person_id)
-                    pr_pe_id = self.db(query).select().first().pr_pe_id
+                    pr_pe_id = self.db(query).select(limitby=(0, 1)).first().pr_pe_id
                     status = send_pr_pe_id(pr_pe_id)
             if entity_type == 1:
                 # Person

@@ -389,6 +389,64 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Presence Log Entries currently registered"))
 
 # *****************************************************************************
+# Subscription (pe_subscription)
+#
+
+#
+# subscription table ---------------------------------------------------------------
+#
+resource = "pe_subscription"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                pr_pe_id,               # Person Entity ID
+                Field("resource"),      
+                Field("record"),        # type="s3uuid"
+                Field("comment"),       # Comment
+                migrate=migrate)
+
+# Joined Resource
+s3xrc.model.add_component(module, resource,
+                          multiple=True,
+                          joinby="pr_pe_id",
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "resource",
+                                   "record"])
+
+# Field validation
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.pr_pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
+                                    shn_pentity_represent,
+                                    filterby="opt_pr_entity_type",
+                                    filter_opts=(1, 2))
+# Moved to zzz_last.py to ensure all tables caught!
+#table.resource.requires = IS_IN_SET(db.tables)
+
+# Field representation
+
+# Field labels
+
+# CRUD Strings
+s3.crud_strings[tablename] = Storage(
+    title_create = T("Add Subscription"),
+    title_display = T("Subscription Details"),
+    title_list = T("Subscriptions"),
+    title_update = T("Edit Subscription"),
+    title_search = T("Search Subscriptions"),
+    subtitle_create = T("Add Subscription"),
+    subtitle_list = T("Subscriptions"),
+    label_list_button = T("List Subscriptions"),
+    label_create_button = T("Add Subscription"),
+    label_delete_button = T("Delete Subscription"),
+    msg_record_created = T("Subscription added"),
+    msg_record_modified = T("Subscription updated"),
+    msg_record_deleted = T("Subscription deleted"),
+    msg_list_empty = T("No Subscription available"))
+
+# *****************************************************************************
 # Identity (identity)
 #
 

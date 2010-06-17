@@ -686,10 +686,9 @@ if deployment_settings.has_module(module):
                 Field('With_Carpentry_Tools', 'boolean'),
                 Field('With_Other_Tools', 'boolean'),    
         Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),             
-                    migrate=migrate)    
-     
-         
-                    
+                    migrate=migrate)  
+   
+                         
     # CRUD Strings
     ADD_SKILL = T('Add Skill')
     SKILL = T('Skill')
@@ -720,14 +719,54 @@ if deployment_settings.has_module(module):
 
 
     # -----------------------------------------------------------------------------
-    # vol_skillcust
+    # vol_skill_types
     #   Customize to add more client defined Skill
     #
 
-    resource = 'skillcust'
+    resource = 'skill_types'
     tablename = module + '_' + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-            Field('skill_name', 'string', length=50),
-            Field('skill_category', 'string', length=50),
-            Field('skill_subcategory',  'string', length=50),
+            Field('name', length=128, notnull=True),                      
+            Field('category', 'string', length=50),
+            Field('description'),
             migrate=migrate)
+
+# Field settings
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
+table.name.label = T('Name')
+table.name.comment = SPAN("*", _class="req")
+
+# CRUD strings
+s3.crud_strings[tablename] = Storage(
+    title_create = T('Add Skill Type'),
+    title_display = T('Skill Type Details'),
+    title_list = T('Skill Type'),
+    title_update = T('Edit Skill Type'),
+    title_search = T('Search Skill Type'),
+    subtitle_create = T('Add New Skill Type'),
+    subtitle_list = T('Skill Type'),
+    label_list_button = T('List Skill Types'),
+    label_create_button = T('Add Skill Types'),
+    label_delete_button = T('Delete Skill Type'),
+    msg_record_created = T('Skill Type added'),
+    msg_record_modified = T('Skill Type updated'),
+    msg_record_deleted = T('Skill Type deleted'),
+    msg_list_empty = T('No Skill Types currently set'))
+
+field_settings = S3CheckboxesWidget(db = db, 
+                                    lookup_table_name = "vol_skill_types", 
+                                    lookup_field_name = "name",
+                                    multiple = True,
+                                    num_column=3
+                                    )
+
+# Reusable field
+skill_ids = SQLTable(None, 'skill_ids',
+                     FieldS3( 'skill_ids', 
+                           requires = field_settings.requires, 
+                           widget = field_settings.widget,                           
+                           represent = field_settings.represent,
+                           label = T("skills"),
+                           ondelete = "RESTRICT"
+                          ))

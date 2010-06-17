@@ -15,7 +15,6 @@ if module not in deployment_settings.modules:
 def shn_menu():
     menu = [
         [T('Projects'), False, URL(r=request, f='project'),[
-
             [T('Search'), False, URL(r=request, f='project', args='search_location')],
             [T('Add Project'), False, URL(r=request, f='project', args='create')],
         ]],
@@ -45,8 +44,7 @@ def shn_menu():
                     [T('Address'), False, URL(r=request, f='person', args='address')],
                     [T('Contact'), False, URL(r=request, f='person', args='pe_contact')],
                     [T('Identity'), False, URL(r=request, f='person', args='identity')],
-                    [T('Skill'), False, URL(r=request, f='person', args='skill')],
-                    [T('Add New Skill'), False, URL(r=request, f='skillcust')],
+                    [T('Skill'), False, URL(r=request, f='person', args='skill')],                    
                 ]]
             ]
             menu.extend(menu_person)
@@ -54,13 +52,13 @@ def shn_menu():
               
     if auth.user is not None:
         menu_user = [
-            [T('My Tasks'), False, URL(r=request, f='task', args='')]
+            [T('My Tasks'), False, URL(r=request, f='task', args='')],
+            [T('Skill Type'), False, URL(r=request, f='skill_types')],
         ]
         menu.extend(menu_user)
     response.menu_options = menu
 
 shn_menu()
-
 
 def index():
 
@@ -137,5 +135,5 @@ def task():
 
     return shn_rest_controller(module, 'task', listadd=False)
  
-def skillcust():
-    return shn_rest_controller(module, 'skillcust')
+def skill_types():
+    return shn_rest_controller(module, 'skill_types')
